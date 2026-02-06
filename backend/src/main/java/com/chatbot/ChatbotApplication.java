@@ -8,6 +8,7 @@ import org.springframework.scheduling.annotation.EnableAsync;
 @EnableScheduling
 @SpringBootApplication(scanBasePackages = {
     "com.chatbot.modules.identity",
+    "com.chatbot.modules.auth",
     "com.chatbot.modules.auth.security", 
     "com.chatbot.modules.tenant",
     "com.chatbot.modules.userInfo",
