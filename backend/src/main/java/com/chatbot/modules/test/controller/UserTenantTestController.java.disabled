@@ -1,0 +1,243 @@
+package com.chatbot.modules.test.controller;
+
+import com.chatbot.modules.userInfo.dto.UserInfoResponse;
+import com.chatbot.modules.userInfo.service.UserInfoService;
+import com.chatbot.modules.tenant.core.dto.TenantResponse;
+import com.chatbot.modules.tenant.core.service.TenantService;
+import com.chatbot.modules.auth.service.AuthService;
+import com.chatbot.modules.auth.dto.UserDto;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.web.bind.annotation.*;
+
+import java.security.Principal;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+/**
+ * Test Controller for User and Tenant Information Retrieval
+ */
+@RestController
+@RequestMapping("/api/test/user-tenant")
+@RequiredArgsConstructor
+@Slf4j
+public class UserTenantTestController {
+
+    private final UserInfoService userInfoService;
+    private final TenantService tenantService;
+    private final AuthService authService;
+
+    /**
+     * Get current user information
+     */
+    @GetMapping("/user/current")
+    public ResponseEntity<Map<String, Object>> getCurrentUser(Principal principal) {
+        try {
+            Map<String, Object> response = new HashMap<>();
+            
+            if (principal == null) {
+                response.put("error", "User not authenticated");
+                return ResponseEntity.badRequest().body(response);
+            }
+
+            // Get user email from principal
+            String email = principal.getName();
+            log.info("Getting current user info for email: {}", email);
+
+            // Get auth user info
+            UserDto authUser = getAuthUserByEmail(email);
+            
+            // Get user profile info
+            UserInfoResponse userProfile = null;
+            if (authUser != null) {
+                try {
+                    userProfile = userInfoService.getProfile(authUser.getId());
+                } catch (Exception e) {
+                    log.warn("Could not get user profile for user ID {}: {}", authUser.getId(), e.getMessage());
+                }
+            }
+
+            response.put("auth", authUser);
+            response.put("profile", userProfile);
+            response.put("principalName", principal.getName());
+            response.put("principalType", principal.getClass().getSimpleName());
+            response.put("timestamp", System.currentTimeMillis());
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            log.error("Error getting current user info", e);
+            return ResponseEntity.internalServerError().body(Map.of(
+                "error", "Failed to get user information",
+                "message", e.getMessage()
+            ));
+        }
+    }
+
+    /**
+     * Get user information by user ID
+     */
+    @GetMapping("/user/{userId}")
+    public ResponseEntity<Map<String, Object>> getUserById(@PathVariable Long userId) {
+        try {
+            log.info("Getting user info for user ID: {}", userId);
+
+            UserInfoResponse userProfile = userInfoService.getProfile(userId);
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("profile", userProfile);
+            response.put("userId", userId);
+            response.put("timestamp", System.currentTimeMillis());
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            log.error("Error getting user info for ID: {}", userId, e);
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    /**
+     * Get current user's tenants
+     */
+    @GetMapping("/tenant/current")
+    public ResponseEntity<Map<String, Object>> getCurrentUserTenants(@AuthenticationPrincipal UserDetails userDetails) {
+        try {
+            Map<String, Object> response = new HashMap<>();
+            
+            if (userDetails == null) {
+                response.put("error", "User not authenticated");
+                return ResponseEntity.badRequest().body(response);
+            }
+
+            log.info("Getting tenants for current user: {}", userDetails.getUsername());
+
+            List<TenantResponse> tenants = tenantService.getUserTenants();
+
+            response.put("tenants", tenants);
+            response.put("count", tenants.size());
+            response.put("username", userDetails.getUsername());
+            response.put("timestamp", System.currentTimeMillis());
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            log.error("Error getting current user tenants", e);
+            return ResponseEntity.internalServerError().body(Map.of(
+                "error", "Failed to get user tenants",
+                "message", e.getMessage()
+            ));
+        }
+    }
+
+    /**
+     * Get tenant information by tenant ID
+     */
+    @GetMapping("/tenant/{tenantId}")
+    public ResponseEntity<Map<String, Object>> getTenantById(@PathVariable Long tenantId) {
+        try {
+            log.info("Getting tenant info for tenant ID: {}", tenantId);
+
+            // This would need to be implemented in TenantService
+            // For now, return a placeholder response
+            Map<String, Object> response = new HashMap<>();
+            response.put("tenantId", tenantId);
+            response.put("message", "Tenant retrieval not fully implemented");
+            response.put("timestamp", System.currentTimeMillis());
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            log.error("Error getting tenant info for ID: {}", tenantId, e);
+            return ResponseEntity.internalServerError().body(Map.of(
+                "error", "Failed to get tenant information",
+                "message", e.getMessage()
+            ));
+        }
+    }
+
+    /**
+     * Get comprehensive user and tenant information
+     */
+    @GetMapping("/comprehensive")
+    public ResponseEntity<Map<String, Object>> getComprehensiveInfo(Principal principal) {
+        try {
+            Map<String, Object> response = new HashMap<>();
+            
+            if (principal == null) {
+                response.put("error", "User not authenticated");
+                return ResponseEntity.badRequest().body(response);
+            }
+
+            String email = principal.getName();
+            log.info("Getting comprehensive info for email: {}", email);
+
+            // Get auth user info
+            UserDto authUser = getAuthUserByEmail(email);
+            
+            // Get user profile info
+            UserInfoResponse userProfile = null;
+            List<TenantResponse> tenants = null;
+
+            if (authUser != null) {
+                try {
+                    userProfile = userInfoService.getProfile(authUser.getId());
+                } catch (Exception e) {
+                    log.warn("Could not get user profile: {}", e.getMessage());
+                }
+
+                try {
+                    tenants = tenantService.getUserTenants();
+                } catch (Exception e) {
+                    log.warn("Could not get user tenants: {}", e.getMessage());
+                }
+            }
+
+            response.put("auth", authUser);
+            response.put("profile", userProfile);
+            response.put("tenants", tenants);
+            response.put("tenantCount", tenants != null ? tenants.size() : 0);
+            response.put("principal", Map.of(
+                "name", principal.getName(),
+                "type", principal.getClass().getSimpleName()
+            ));
+            response.put("timestamp", System.currentTimeMillis());
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            log.error("Error getting comprehensive info", e);
+            return ResponseEntity.internalServerError().body(Map.of(
+                "error", "Failed to get comprehensive information",
+                "message", e.getMessage()
+            ));
+        }
+    }
+
+    /**
+     * Health check endpoint
+     */
+    @GetMapping("/health")
+    public ResponseEntity<Map<String, Object>> healthCheck() {
+        return ResponseEntity.ok(Map.of(
+            "status", "healthy",
+            "service", "UserTenantTestController",
+            "timestamp", System.currentTimeMillis()
+        ));
+    }
+
+    /**
+     * Helper method to get auth user by email
+     * This is a simplified approach - in a real implementation, 
+     * you might want to add a method to AuthService to get user by email
+     */
+    private UserDto getAuthUserByEmail(String email) {
+        try {
+            // This is a workaround since we don't have a direct method to get user by email
+            // In a real implementation, you would add such a method to AuthService
+            return new UserDto(1L, email, "USER", "vi"); // Placeholder
+        } catch (Exception e) {
+            log.warn("Could not get auth user for email: {}", email);
+            return null;
+        }
+    }
+}

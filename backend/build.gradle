@@ -1,0 +1,131 @@
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '3.4.3'
+    id 'io.spring.dependency-management' version '1.1.7'
+}
+
+group = 'com.chatbot'
+version = '0.0.1-SNAPSHOT'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+bootRun {
+    jvmArgs = [
+        "-Duser.timezone=Asia/Ho_Chi_Minh",
+        "-Xms256m",
+        "-Xmx512m", 
+        "-XX:MaxMetaspaceSize=256m",
+        "-XX:+UseG1GC"
+    ]
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    // -------------------------------
+    // Spring Boot Core
+    // -------------------------------
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-webflux'    // WebFlux cho reactive, CORS
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis' // Redis starter (Lettuce included)
+    implementation 'org.springframework.boot:spring-boot-starter-websocket'  // WebSocket
+    
+    // H2 Database (for local testing)
+    runtimeOnly 'com.h2database:h2'
+
+    // -------------------------------
+    // Database
+    // -------------------------------
+    implementation 'org.postgresql:postgresql:42.7.1'
+    implementation 'com.zaxxer:HikariCP:5.1.0'
+
+    // -------------------------------
+    // JWT
+    // -------------------------------
+    implementation 'io.jsonwebtoken:jjwt-api:0.11.5'
+    implementation 'io.jsonwebtoken:jjwt-impl:0.11.5'
+    implementation 'io.jsonwebtoken:jjwt-jackson:0.11.5'
+
+    // -------------------------------
+    // Lombok
+    // -------------------------------
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+
+    // -------------------------------
+    // DevTools
+    // -------------------------------
+    developmentOnly 'org.springframework.boot:spring-boot-devtools'
+
+    // -------------------------------
+    // Testing
+    // -------------------------------
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.springframework.security:spring-security-test'
+
+    // -------------------------------
+    // MapStruct
+    // -------------------------------
+    implementation 'org.mapstruct:mapstruct:1.5.3.Final'
+    annotationProcessor 'org.mapstruct:mapstruct-processor:1.5.3.Final'
+
+    // -------------------------------
+    // Swagger / OpenAPI
+    // -------------------------------
+    implementation 'io.swagger.core.v3:swagger-annotations:2.2.1'
+    implementation 'org.springdoc:springdoc-openapi-ui:1.6.9'
+
+    // -------------------------------
+    // HATEOAS
+    // -------------------------------
+    implementation 'org.springframework.data:spring-data-commons:3.4.3'
+    implementation 'org.springframework.hateoas:spring-hateoas:2.1.1'
+
+    // -------------------------------
+    // MinIO
+    // -------------------------------
+    implementation 'io.minio:minio:8.5.1'
+
+    // -------------------------------
+    // Apache XML-RPC
+    // -------------------------------
+    implementation 'org.apache.xmlrpc:xmlrpc-client:3.1.3'
+    implementation 'org.apache.xmlrpc:xmlrpc-common:3.1.3'
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+    systemProperties([
+        'http.nonProxyHosts': 'localhost|127.0.0.1',
+        'https.nonProxyHosts': 'localhost|127.0.0.1',
+        'file.encoding': 'UTF-8',
+        'sun.jnu.encoding': 'UTF-8'
+    ])
+}
+
+springBoot {
+    mainClass = 'com.chatbot.ChatbotApplication'
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.compilerArgs += "--enable-preview"
+}
+
+tasks.withType(JavaExec).configureEach {
+    jvmArgs += "--enable-preview"
+}
+
+tasks.named("bootRun") {
+    doFirst {
+        jvmArgs += "--enable-preview"
+    }
+}

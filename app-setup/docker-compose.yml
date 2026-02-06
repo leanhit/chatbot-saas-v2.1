@@ -1,0 +1,96 @@
+services:
+  # ----------------------------------------
+  # PostgreSQL Shared (pgvector)
+  # ----------------------------------------
+  db:
+    image: ankane/pgvector:latest
+    container_name: traloitudong_postgres
+    restart: always
+    environment:
+      POSTGRES_DB: traloitudong_db
+      POSTGRES_USER: traloitudong_user
+      POSTGRES_PASSWORD: traloitudong_Admin_2025
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./postgres-init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+    - "5432:5432" 
+    networks:
+      - internal
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U traloitudong_user -d traloitudong_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  
+  # ----------------------------------------
+  # MinIO
+  # ----------------------------------------
+  minio:
+    image: quay.io/minio/minio
+    container_name: minio
+    restart: always
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    command: server /data --console-address ":9090"
+    ports:
+      - "9000:9000"
+      - "9090:9090"
+    volumes:
+      - minio_data:/data
+    networks:
+      - internal
+
+  # ----------------------------------------
+  # Botpress
+  # ----------------------------------------
+  botpress:
+    image: botpress/server:v12_28_0
+    container_name: botpress
+    restart: always
+    user: root
+    ports:
+      - "3001:3000"
+    environment:
+      - DATABASE=postgres
+      - DATABASE_URL=postgres://traloitudong_user:traloitudong_Admin_2025@db:5432/traloitudong_db
+    volumes:
+      - ./data:/botpress/data
+    depends_on:
+      - db
+    networks:
+      - internal
+
+  # ----------------------------------------
+  # Odoo + Init Script
+  # ----------------------------------------
+  odoo:
+    image: odoo:17
+    container_name: odoo
+    restart: always
+    depends_on:
+      - db
+    environment:
+      POSTGRES_HOST: db
+      POSTGRES_USER: traloitudong_user
+      POSTGRES_PASSWORD: traloitudong_Admin_2025
+      POSTGRES_DB: traloitudong_db
+    ports:
+      - "3005:8069"
+    volumes:
+      - odoo_data:/var/lib/odoo
+      - ./odoo-init.sh:/usr/local/bin/odoo-init.sh
+    command: ["/usr/local/bin/odoo-init.sh"]
+    networks:
+      - internal
+
+volumes:
+  postgres_data:
+  odoo_data:
+  minio_data:
+
+networks:
+  internal:
+    driver: bridge

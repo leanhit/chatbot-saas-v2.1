@@ -1,0 +1,55 @@
+# =============================
+# Root project
+# =============================
+
+# IDE / OS
+*.log
+*.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# =============================
+# Docker / Compose
+# =============================
+# Log và override của Docker Compose
+*.log
+docker-compose.override.yml
+
+# =============================
+# Backend: Spring Boot
+# =============================
+# Thư mục build
+/backend/target/
+/backend/*.jar
+/backend/*.war
+/backend/*.ear
+/backend/*.iml
+
+# Maven / Gradle
+/backend/.mvn/
+/backend/.gradle/
+/backend/build/
+/backend/pom.xml.tag
+/backend/pom.xml.releaseBackup
+/backend/pom.xml.versionsBackup
+/backend/pom.xml.next
+/backend/release.properties
+/backend/dependency-reduced-pom.xml
+/backend/buildNumber.properties
+
+# =============================
+# Frontend: Vue 3 / Node.js
+# =============================
+/frontend/node_modules/
+/frontend/dist/
+/frontend/npm-debug.log*
+/frontend/yarn-debug.log*
+/frontend/yarn-error.log*
+/frontend/pnpm-debug.log*
+
+# Environment files
+/backend/.env
+/frontend/.env
+/frontend/.env.local
+/frontend/.env.*.local

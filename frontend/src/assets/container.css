@@ -1,0 +1,33 @@
+.fixed-table {
+    table-layout: fixed;
+}
+.text-truncate {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.truncate-text {
+    display: block;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* ✨ THÊM MỚI: CSS cho container cuộn */
+.table-scroll-container {
+    /* Đặt chiều cao tối đa mà bạn muốn cho khu vực cuộn */
+    max-height: 60vh; /* Ví dụ: 60% chiều cao viewport */
+    /* HOẶC nếu bạn muốn cố định: height: 500px; */
+    
+    /* Kích hoạt thanh cuộn dọc khi nội dung tràn */
+    overflow-y: auto; 
+    
+    /* Đảm bảo chiều rộng không bị ảnh hưởng */
+    width: 100%;
+}
+
+/* Quan trọng: Bỏ padding/margin dư thừa nếu cần */
+.card-table {
+    margin-bottom: 0;
+}

@@ -1,0 +1,21 @@
+package com.chatbot.modules.tenant.profile.dto;
+
+import lombok.Builder;
+import lombok.Getter;
+
+@Getter
+@Builder
+public class TenantProfileResponse {
+
+    private Long tenantId;
+
+    private String legalName;
+    private String taxCode;
+
+    private String contactEmail;
+    private String contactPhone;
+
+    private String logoUrl;
+    private String faviconUrl;
+    private String primaryColor;
+}

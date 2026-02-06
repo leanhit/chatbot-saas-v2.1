@@ -1,0 +1,25 @@
+{
+  "name": "hoc_rieng_le",
+  "utterances": {
+    "en": [
+      "h﻿ọc riêng lẻ",
+      "h﻿ọc rieng",
+      "h﻿ọc rieng lẻ",
+      "riêng lẻ",
+      "rieng le",
+      "riêng le",
+      "rieng lẻ",
+      "học riêng fb",
+      "học tiktok",
+      "hoc rieng fb",
+      "học riêng tiktok",
+      "hoc tiktok",
+      "học lẻ",
+      "hoc le"
+    ]
+  },
+  "slots": [],
+  "contexts": [
+    "global"
+  ]
+}

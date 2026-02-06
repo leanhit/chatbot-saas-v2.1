@@ -1,0 +1,3 @@
+// FILE DELETED - TenantJoinRequestRepository.java
+// This legacy repository has been removed as part of Tenant Hub v0.1 cleanup
+// Join Request feature is out of scope for v0.1
