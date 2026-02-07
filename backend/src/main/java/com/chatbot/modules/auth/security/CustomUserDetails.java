@@ -47,9 +47,9 @@ public class CustomUserDetails implements UserDetails {
     }
 
     // Thêm getter cho userId
-    public Long getUserId() {
+    public UUID getUserId() {
         if (auth != null) {
-            return auth.getId();
+            return UUID.nameUUIDFromBytes(("auth_" + auth.getId()).getBytes());
         } else if (user != null) {
             return user.getId();
         } else {

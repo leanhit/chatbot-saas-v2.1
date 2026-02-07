@@ -43,7 +43,7 @@ public class PennyBotController {
             ));
         }
         
-        Long userId = Long.parseLong(principal.getName());
+        UUID userId = UUID.fromString(principal.getName());
         String botName = request.get("botName");
         String botTypeStr = request.getOrDefault("botType", "CUSTOMER_SERVICE");
         String description = request.getOrDefault("botDescription", "");
@@ -76,7 +76,7 @@ public class PennyBotController {
      */
     @GetMapping
     public ResponseEntity<List<Map<String, Object>>> getBots(Principal principal) {
-        Long userId = Long.parseLong(principal.getName());
+        UUID userId = UUID.fromString(principal.getName());
         
         log.info("📋 Getting Penny bots for user: {}", userId);
         
@@ -154,7 +154,7 @@ public class PennyBotController {
             @RequestBody Map<String, Object> updates,
             Principal principal) {
         
-        Long userId = Long.parseLong(principal.getName());
+        UUID userId = UUID.fromString(principal.getName());
         UUID botUuid = UUID.fromString(botId);
         
         log.info("📝 Updating Penny bot: {} by user: {}", botId, userId);
@@ -188,7 +188,7 @@ public class PennyBotController {
             @RequestParam Boolean enabled,
             Principal principal) {
         
-        Long userId = Long.parseLong(principal.getName());
+        UUID userId = UUID.fromString(principal.getName());
         UUID botUuid = UUID.fromString(botId);
         
         log.info("🔄 Toggling Penny bot: {} to {} by user: {}", botId, enabled ? "enabled" : "disabled", userId);
@@ -221,7 +221,7 @@ public class PennyBotController {
             @RequestParam(defaultValue = "7days") String timeRange,
             Principal principal) {
         
-        Long userId = Long.parseLong(principal.getName());
+        UUID userId = UUID.fromString(principal.getName());
         UUID botUuid = UUID.fromString(botId);
         
         log.info("📊 Getting analytics for bot: {} by user: {} with range: {}", botId, userId, timeRange);
@@ -246,7 +246,7 @@ public class PennyBotController {
             @PathVariable String botId,
             Principal principal) {
         
-        Long userId = Long.parseLong(principal.getName());
+        UUID userId = UUID.fromString(principal.getName());
         UUID botUuid = UUID.fromString(botId);
         
         log.info("🗑️ Deleting Penny bot: {} by user: {}", botId, userId);

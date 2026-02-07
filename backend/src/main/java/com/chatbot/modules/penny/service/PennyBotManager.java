@@ -30,7 +30,7 @@ public class PennyBotManager {
      * Create Penny Bot với tenant validation
      */
     @Transactional
-    public PennyBot createBot(Long userId, String botName, PennyBotType botType, String description) {
+    public PennyBot createBot(UUID userId, String botName, PennyBotType botType, String description) {
         log.info("🤖 Creating Penny bot: {} of type: {} for user: {}", botName, botType, userId);
         
         // 1. Get current tenant context
@@ -69,7 +69,7 @@ public class PennyBotManager {
      * Get all bots for current user
      */
     @Transactional(readOnly = true)
-    public List<PennyBot> getBotsForUser(Long userId) {
+    public List<PennyBot> getBotsForUser(UUID userId) {
         UUID tenantId = TenantContext.getTenantId();
         if (tenantId == null) {
             return List.of();
@@ -122,7 +122,7 @@ public class PennyBotManager {
      * Update bot information
      */
     @Transactional
-    public PennyBot updateBot(UUID botId, Map<String, Object> updates, Long userId) {
+    public PennyBot updateBot(UUID botId, Map<String, Object> updates, UUID userId) {
         log.info("📝 Updating Penny bot: {} by user: {}", botId, userId);
         
         PennyBot existingBot = getBot(botId);
@@ -155,7 +155,7 @@ public class PennyBotManager {
      * Toggle bot status (active/inactive)
      */
     @Transactional
-    public PennyBot toggleBotStatus(UUID botId, Boolean enabled, Long userId) {
+    public PennyBot toggleBotStatus(UUID botId, Boolean enabled, UUID userId) {
         log.info("🔄 Toggling Penny bot: {} to {} by user: {}", botId, enabled ? "enabled" : "disabled", userId);
         
         PennyBot existingBot = getBot(botId);
@@ -178,7 +178,7 @@ public class PennyBotManager {
      * Delete bot (hard delete)
      */
     @Transactional
-    public Boolean deleteBot(UUID botId, Long userId) {
+    public Boolean deleteBot(UUID botId, UUID userId) {
         log.info("🗑️ Deleting Penny bot: {} by user: {}", botId, userId);
         
         try {
@@ -242,7 +242,7 @@ public class PennyBotManager {
      * Get bot analytics
      */
     @Transactional(readOnly = true)
-    public Map<String, Object> getBotAnalytics(UUID botId, String timeRange, Long userId) {
+    public Map<String, Object> getBotAnalytics(UUID botId, String timeRange, UUID userId) {
         log.info("📊 Getting analytics for bot: {} by user: {} with range: {}", botId, userId, timeRange);
         
         try {

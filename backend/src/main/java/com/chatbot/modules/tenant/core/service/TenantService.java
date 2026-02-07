@@ -4,6 +4,7 @@ import com.chatbot.modules.tenant.core.dto.CreateTenantRequest;
 import com.chatbot.modules.tenant.core.dto.TenantResponse;
 import com.chatbot.modules.tenant.core.model.Tenant;
 import com.chatbot.modules.tenant.core.model.TenantStatus;
+import com.chatbot.modules.tenant.core.model.TenantVisibility;
 import com.chatbot.modules.tenant.core.repository.TenantRepository;
 import com.chatbot.modules.tenant.membership.model.TenantMember;
 import com.chatbot.modules.tenant.membership.model.TenantRole;
@@ -84,6 +85,7 @@ public class TenantService {
         Tenant tenant = Tenant.builder()
                 .name(request.getName())
                 .status(TenantStatus.ACTIVE)
+                .visibility(request.getVisibility() != null ? request.getVisibility() : TenantVisibility.PUBLIC)
                 .build();
         
         tenant = tenantRepository.save(tenant);

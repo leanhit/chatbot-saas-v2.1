@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
+import java.util.UUID;
 
 /**
  * User repository for identity operations
@@ -13,7 +14,7 @@ import java.util.Optional;
  * TODO: Add bulk operations
  */
 @Repository
-public interface UserRepository extends JpaRepository<User, Long> {
+public interface UserRepository extends JpaRepository<User, UUID> {
     
     Optional<User> findByEmail(String email);
     

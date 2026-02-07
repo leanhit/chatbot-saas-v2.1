@@ -101,8 +101,7 @@ public class SecurityConfig {
                 ).permitAll()
                 .requestMatchers(
                     "/api/auth/**",
-                    "/api/tenant/create",
-                    "/api/tenant/**"
+                    "/api/tenants/**"
                 ).authenticated()
                 .anyRequest().permitAll() // Tạm thời cho phép tất cả requests
             )

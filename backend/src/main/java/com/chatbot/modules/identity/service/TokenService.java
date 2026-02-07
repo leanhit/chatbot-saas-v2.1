@@ -43,14 +43,14 @@ public class TokenService {
     /**
      * Generate access and refresh tokens for user
      */
-    public LoginResponse generateTokens(Long userId, List<UUID> tenantIds) {
+    public LoginResponse generateTokens(UUID userId, List<UUID> tenantIds) {
         return generateTokens(userId, tenantIds, "vi"); // Default locale
     }
     
     /**
      * Generate access and refresh tokens for user with locale
      */
-    public LoginResponse generateTokens(Long userId, List<UUID> tenantIds, String locale) {
+    public LoginResponse generateTokens(UUID userId, List<UUID> tenantIds, String locale) {
         String accessToken = generateAccessToken(userId, tenantIds, locale);
         String refreshToken = generateRefreshToken(userId);
         
@@ -66,14 +66,14 @@ public class TokenService {
     /**
      * Generate access token with basic claims only
      */
-    private String generateAccessToken(Long userId, List<UUID> tenantIds) {
+    private String generateAccessToken(UUID userId, List<UUID> tenantIds) {
         return generateAccessToken(userId, tenantIds, "vi"); // Default locale
     }
     
     /**
      * Generate access token with basic claims and locale
      */
-    private String generateAccessToken(Long userId, List<UUID> tenantIds, String locale) {
+    private String generateAccessToken(UUID userId, List<UUID> tenantIds, String locale) {
         Instant now = Instant.now();
         Instant expiration = now.plus(jwtProperties.getExpiration(), ChronoUnit.MILLIS);
         
@@ -92,7 +92,7 @@ public class TokenService {
     /**
      * Generate refresh token
      */
-    private String generateRefreshToken(Long userId) {
+    private String generateRefreshToken(UUID userId) {
         Instant now = Instant.now();
         Instant expiration = now.plus(jwtProperties.getRefreshExpiration(), ChronoUnit.MILLIS);
         
@@ -137,9 +137,9 @@ public class TokenService {
     /**
      * Extract user ID from token
      */
-    public Long extractUserId(String token) {
+    public UUID extractUserId(String token) {
         Claims claims = validateToken(token);
-        return Long.parseLong(claims.getSubject());
+        return UUID.fromString(claims.getSubject());
     }
     
     /**
@@ -167,7 +167,7 @@ public class TokenService {
             throw new SecurityException("Invalid refresh token");
         }
         
-        Long userId = extractUserId(refreshToken);
+        UUID userId = extractUserId(refreshToken);
         
         String newAccessToken = generateAccessToken(userId, tenantIds);
         String newRefreshToken = generateRefreshToken(userId);

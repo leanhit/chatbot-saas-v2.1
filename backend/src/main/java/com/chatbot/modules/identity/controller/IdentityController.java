@@ -149,7 +149,7 @@ public class IdentityController {
             
             // Create response object properly
             var response = new Object() {
-                public final Long userId = user.getId();
+                public final UUID userId = user.getId();
                 public final String email = user.getEmail();
                 public final List<UUID> tenantIds = authenticationService.getUserTenantIds(token);
                 public final String status = user.getStatus().name();

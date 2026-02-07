@@ -38,6 +38,15 @@ public class Tenant {
     @Builder.Default
     private String defaultLocale = "vi";
 
+    @Column(name = "is_default", nullable = false, columnDefinition = "boolean default false")
+    @Builder.Default
+    private Boolean isDefault = false;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    @Builder.Default
+    private TenantVisibility visibility = TenantVisibility.PUBLIC;
+
     @Column(name = "created_at", updatable = false, nullable = false)
     private LocalDateTime createdAt;
 

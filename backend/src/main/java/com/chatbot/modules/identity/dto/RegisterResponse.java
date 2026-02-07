@@ -1,16 +1,15 @@
 package com.chatbot.modules.identity.dto;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
+import java.util.UUID;
 
-@Data
+@Getter
+@Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class RegisterResponse {
-    private Long userId;
+    private UUID userId;
     private String email;
     private String message;
 }

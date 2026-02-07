@@ -30,6 +30,7 @@ import java.util.Map;
     basePackages = {
         "com.chatbot.modules.identity.repository",
         "com.chatbot.modules.auth.repository",
+        "com.chatbot.modules.userInfo.repository",
         "com.chatbot.modules.tenant.core.repository",
         "com.chatbot.modules.tenant.membership.repository",
         "com.chatbot.modules.app.core.repository",
@@ -68,6 +69,7 @@ public class IdentityConfig {
         emf.setPackagesToScan(
             "com.chatbot.modules.identity.model",
             "com.chatbot.modules.auth.model",
+            "com.chatbot.modules.userInfo.model",
             "com.chatbot.modules.tenant.core.model",
             "com.chatbot.modules.tenant.membership.model",
             "com.chatbot.modules.app.core.model",

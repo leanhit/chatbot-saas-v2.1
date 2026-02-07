@@ -19,16 +19,16 @@ import java.util.UUID;
 @Repository
 public interface UserTenantRepository extends JpaRepository<UserTenant, Long> {
     
-    List<UserTenant> findByUserIdAndIsActive(Long userId, Boolean isActive);
+    List<UserTenant> findByUserIdAndIsActive(UUID userId, Boolean isActive);
     
     List<UserTenant> findByTenantIdAndIsActive(UUID tenantId, Boolean isActive);
     
-    Optional<UserTenant> findByUserIdAndTenantId(Long userId, UUID tenantId);
+    Optional<UserTenant> findByUserIdAndTenantId(UUID userId, UUID tenantId);
     
-    boolean existsByUserIdAndTenantId(Long userId, UUID tenantId);
+    boolean existsByUserIdAndTenantId(UUID userId, UUID tenantId);
     
-    @Query("SELECT ut.tenantId FROM UserTenant ut WHERE ut.user.id = :userId AND ut.isActive = true")
-    List<UUID> findActiveTenantIdsByUserId(@Param("userId") Long userId);
+    @Query("SELECT ut.tenantId FROM UserTenant ut WHERE ut.userId = :userId AND ut.isActive = true")
+    List<UUID> findActiveTenantIdsByUserId(@Param("userId") UUID userId);
     
     @Query("SELECT COUNT(ut) FROM UserTenant ut WHERE ut.tenantId = :tenantId AND ut.isActive = true")
     long countActiveMembersByTenantId(@Param("tenantId") UUID tenantId);

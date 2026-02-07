@@ -36,7 +36,7 @@ public class PennyBot {
     private UUID tenantId;
 
     @Column(name = "user_id", nullable = false)
-    private Long userId;
+    private UUID userId;
 
     @Column(name = "botpress_bot_id", nullable = false)
     private String botpressBotId;

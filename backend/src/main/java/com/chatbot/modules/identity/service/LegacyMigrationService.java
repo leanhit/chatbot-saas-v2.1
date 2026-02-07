@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 /**
  * Service for migrating legacy users to Identity Hub credentials
@@ -63,14 +64,14 @@ public class LegacyMigrationService {
     /**
      * Check if user needs migration (no credential exists)
      */
-    public boolean needsMigration(Long userId) {
+    public boolean needsMigration(UUID userId) {
         return !credentialRepository.existsById(userId);
     }
 
     /**
      * Get credential for user, or null if not exists
      */
-    public Credential getCredential(Long userId) {
+    public Credential getCredential(UUID userId) {
         return credentialRepository.findById(userId).orElse(null);
     }
 }

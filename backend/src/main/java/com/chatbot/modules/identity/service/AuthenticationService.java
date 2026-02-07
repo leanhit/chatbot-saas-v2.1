@@ -14,9 +14,6 @@ import com.chatbot.modules.identity.model.UserStatus;
 import com.chatbot.modules.identity.repository.CredentialRepository;
 import com.chatbot.modules.identity.repository.UserRepository;
 import com.chatbot.modules.identity.repository.UserTenantRepository;
-import com.chatbot.modules.tenant.core.dto.CreateTenantRequest;
-import com.chatbot.modules.tenant.core.dto.TenantResponse;
-import com.chatbot.modules.tenant.core.service.TenantService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -40,7 +37,6 @@ public class AuthenticationService {
     private final UserTenantRepository userTenantRepository;
     private final TokenService tokenService;
     private final PasswordEncoder passwordEncoder;
-    private final TenantService tenantService;
 
     // =========================
     // REGISTER
@@ -80,8 +76,8 @@ public class AuthenticationService {
         log.info("REGISTER: Created identity_user with ID: {} for email: {}", savedUser.getId(), savedUser.getEmail());
         log.info("REGISTER: Created user_credentials for user ID: {} email: {}", savedUser.getId(), savedUser.getEmail());
         
-        // 3. Create default tenant for new user
-        createDefaultTenantForNewUser(savedUser);
+        // 3. Create default tenant for new user - DISABLED
+        // createDefaultTenantForNewUser(savedUser);
         
         return RegisterResponse.builder()
                 .userId(savedUser.getId())
@@ -248,7 +244,7 @@ public class AuthenticationService {
     @Transactional
     public RefreshResponse refreshTokens(RefreshRequest request) {
 
-        Long userId = tokenService.extractUserId(request.getRefreshToken());
+        UUID userId = tokenService.extractUserId(request.getRefreshToken());
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() ->
@@ -272,7 +268,7 @@ public class AuthenticationService {
     }
 
     public User validateTokenAndGetUser(String token) {
-        Long userId = tokenService.extractUserId(token);
+        UUID userId = tokenService.extractUserId(token);
         return userRepository.findById(userId)
                 .orElseThrow(() ->
                         new ResponseStatusException(
@@ -287,9 +283,10 @@ public class AuthenticationService {
     }
 
     /**
-     * Create default tenant for newly registered user
+     * Create default tenant for newly registered user - DISABLED
      * This method is called after successful user registration
      */
+    /*
     private void createDefaultTenantForNewUser(User user) {
         try {
             log.info("Creating default tenant for new user: {} (ID: {})", user.getEmail(), user.getId());
@@ -300,6 +297,7 @@ public class AuthenticationService {
             // Create tenant request
             CreateTenantRequest tenantRequest = CreateTenantRequest.builder()
                     .name(defaultTenantName)
+                    .visibility(TenantVisibility.PUBLIC)
                     .build();
             
             // Create tenant using TenantService with explicit user context
@@ -319,13 +317,16 @@ public class AuthenticationService {
             // Tenant creation failure should not prevent user registration
         }
     }
+    */
     
     /**
-     * Generate default tenant name from user email
+     * Generate default tenant name from user email - DISABLED
      */
+    /*
     private String generateDefaultTenantName(String email) {
         // Extract username from email (everything before @)
         String username = email.split("@")[0];
         return username + "'s Workspace";
     }
+    */
 }

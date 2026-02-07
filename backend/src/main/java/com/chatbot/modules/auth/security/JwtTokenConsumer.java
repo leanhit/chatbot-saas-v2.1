@@ -1,10 +1,10 @@
 package com.chatbot.modules.auth.security;
 
-import com.chatbot.modules.identity.security.JwtProperties;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
@@ -20,27 +20,38 @@ import java.util.UUID;
 @Slf4j
 public class JwtTokenConsumer {
 
-    private final JwtProperties jwtProperties;
+    @Value("${jwt.secret}")
+    private String legacyJwtSecret;
+    
+    @Value("${identity.jwt.secret}")
+    private String identityJwtSecret;
 
-    public JwtTokenConsumer(JwtProperties jwtProperties) {
-        this.jwtProperties = jwtProperties;
-    }
+    private SecretKey identitySigningKey;
+    private SecretKey legacySigningKey;
 
-    private SecretKey signingKey;
-
-    private SecretKey getSigningKey() {
-        if (signingKey == null) {
-            signingKey = Keys.hmacShaKeyFor(jwtProperties.getSecret().getBytes());
+    private SecretKey getIdentitySigningKey() {
+        if (identitySigningKey == null) {
+            identitySigningKey = Keys.hmacShaKeyFor(identityJwtSecret.getBytes());
         }
-        return signingKey;
+        return identitySigningKey;
+    }
+    
+    private SecretKey getLegacySigningKey() {
+        if (legacySigningKey == null) {
+            legacySigningKey = Keys.hmacShaKeyFor(legacyJwtSecret.getBytes());
+        }
+        return legacySigningKey;
     }
 
     /**
-     * Extract all claims from token
+     * Extract all claims from token with appropriate key
      */
-    public Claims extractAllClaims(String token) {
+    private Claims extractAllClaims(String token) {
+        boolean isIdentityHubToken = isIdentityHubToken(token);
+        SecretKey signingKey = isIdentityHubToken ? getIdentitySigningKey() : getLegacySigningKey();
+        
         return Jwts.parserBuilder()
-                .setSigningKey(getSigningKey())
+                .setSigningKey(signingKey)
                 .build()
                 .parseClaimsJws(token)
                 .getBody();
@@ -56,12 +67,17 @@ public class JwtTokenConsumer {
     /**
      * Extract user ID from token (for Identity Hub tokens)
      */
-    public Long extractUserId(String token) {
+    public UUID extractUserId(String token) {
         try {
             String subject = extractSubject(token);
-            // Check if subject is numeric (Identity Hub) or email (legacy)
+            // Check if subject is UUID format (Identity Hub) or email (legacy)
+            if (subject.matches("^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$")) {
+                return UUID.fromString(subject);
+            }
+            // Handle legacy numeric IDs for backward compatibility
             if (subject.matches("\\d+")) {
-                return Long.valueOf(subject);
+                log.warn("Legacy numeric userId detected, consider migrating: {}", subject);
+                return null; // Legacy tokens should be handled differently
             }
             return null;
         } catch (Exception e) {
@@ -125,10 +141,25 @@ public class JwtTokenConsumer {
      */
     public boolean isIdentityHubToken(String token) {
         try {
-            Claims claims = extractAllClaims(token);
+            // Try to parse with identity key first
+            Claims claims = Jwts.parserBuilder()
+                    .setSigningKey(getIdentitySigningKey())
+                    .build()
+                    .parseClaimsJws(token)
+                    .getBody();
             return "identity".equals(claims.get("scope"));
         } catch (Exception e) {
-            return false;
+            // If identity key fails, try legacy key
+            try {
+                Claims claims = Jwts.parserBuilder()
+                        .setSigningKey(getLegacySigningKey())
+                        .build()
+                        .parseClaimsJws(token)
+                        .getBody();
+                return claims.get("scope") != null && "identity".equals(claims.get("scope"));
+            } catch (Exception ex) {
+                return false;
+            }
         }
     }
 

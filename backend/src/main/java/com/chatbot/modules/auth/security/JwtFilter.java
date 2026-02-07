@@ -13,6 +13,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
@@ -68,7 +69,11 @@ public class JwtFilter extends OncePerRequestFilter {
             token = authHeader.substring(7);
         }
 
-        if (token != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+        if (token != null) {
+            log.info("JWT Filter: Processing token for request: {}", request.getRequestURI());
+            Authentication existingAuth = SecurityContextHolder.getContext().getAuthentication();
+            log.info("JWT Filter: Existing authentication: {}", existingAuth != null ? existingAuth.getClass() : "null");
+            
             try {
                 // Validate token signature and expiration
                 if (!jwtTokenConsumer.validateToken(token)) {
@@ -83,7 +88,7 @@ public class JwtFilter extends OncePerRequestFilter {
 
                 if (isIdentityHubToken) {
                     // Identity Hub token: extract userId and tenant_ids
-                    Long userId = jwtTokenConsumer.extractUserId(token);
+                    UUID userId = jwtTokenConsumer.extractUserId(token);
                     List<UUID> tenantIds = jwtTokenConsumer.extractTenantIds(token);
                     
                     if (userId == null) {
@@ -91,7 +96,7 @@ public class JwtFilter extends OncePerRequestFilter {
                         return;
                     }
 
-                    // Load user by ID using Identity UserDetailsService
+                    // Load user by UUID for Identity Hub tokens
                     userDetails = identityUserDetailsService.loadUserByUserId(userId);
                     identifier = userId.toString();
 
@@ -100,9 +105,19 @@ public class JwtFilter extends OncePerRequestFilter {
                     log.info("Identity Hub token - User: {}, Tenants: {}", userId, tenantIds);
 
                 } else {
-                    // Legacy tokens are no longer supported - reject them
-                    sendErrorResponse(response, "Legacy tokens are no longer supported");
-                    return;
+                    // Legacy token: extract email and load user
+                    String email = jwtTokenConsumer.extractEmail(token);
+                    
+                    if (email == null) {
+                        sendErrorResponse(response, "Token không có thông tin email");
+                        return;
+                    }
+
+                    // Load user by email - IdentityUserDetailsService now handles both tables
+                    userDetails = identityUserDetailsService.loadUserByUsername(email);
+                    identifier = email;
+                    
+                    log.info("Legacy token - User: {}", email);
                 }
 
                 // Set authentication
@@ -119,7 +134,7 @@ public class JwtFilter extends OncePerRequestFilter {
                 
                 SecurityContextHolder.getContext().setAuthentication(authenticationToken);
                 
-                log.info("Authenticated successfully: {}", identifier);
+                log.info("JWT Filter: Authentication set successfully for: {}", identifier);
 
             } catch (ExpiredJwtException e) {
                 sendErrorResponse(response, "Token đã hết hạn");

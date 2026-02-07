@@ -3,6 +3,7 @@ package com.chatbot.modules.identity.model;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 /**
  * Global user identity entity - contains ONLY identity fields
@@ -18,9 +19,9 @@ import java.time.LocalDateTime;
 public class User {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Builder.Default
-    private Long id = 0L;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    @Column(nullable = false, updatable = false)
+    private UUID id;
     
     @Column(unique = true, nullable = false)
     private String email;
@@ -68,7 +69,7 @@ public class User {
     }
     
     // Thêm getter methods cho compatibility
-    public Long getId() {
+    public UUID getId() {
         return this.id;
     }
     

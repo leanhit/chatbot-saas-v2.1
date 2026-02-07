@@ -1,6 +1,10 @@
 package com.chatbot.modules.tenant.core.util;
 
 import com.chatbot.modules.auth.security.CustomUserDetails;
+import com.chatbot.modules.auth.model.Auth;
+import com.chatbot.modules.auth.repository.AuthRepository;
+import com.chatbot.modules.identity.model.User;
+import com.chatbot.modules.identity.repository.UserRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -10,18 +14,25 @@ import java.util.UUID;
 
 /**
  * Utility class to extract current user information from SecurityContext
- * This replaces hardcoded user IDs in TenantService
- * Updated to work exclusively with CustomUserDetails from Identity module
+ * Updated to handle both CustomUserDetails and String principals with database lookup
  */
 @Component
 @Slf4j
 public class SecurityContextUtil {
 
+    private final UserRepository userRepository;
+    private final AuthRepository authRepository;
+
+    public SecurityContextUtil(UserRepository userRepository, AuthRepository authRepository) {
+        this.userRepository = userRepository;
+        this.authRepository = authRepository;
+    }
+
     /**
      * Get current user ID from SecurityContext
-     * @return Long ID of current user, or null if not authenticated
+     * @return UUID ID of current user, or null if not authenticated
      */
-    public Long getCurrentUserId() {
+    public UUID getCurrentUserId() {
         try {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             if (authentication == null || !authentication.isAuthenticated()) {
@@ -32,17 +43,39 @@ public class SecurityContextUtil {
             Object principal = authentication.getPrincipal();
             
             if (principal instanceof CustomUserDetails customUserDetails) {
-                Long userId = customUserDetails.getUserId();
+                UUID userId = customUserDetails.getUserId();
                 log.debug("Found authenticated user with ID: {}", userId);
                 return userId;
             }
             
-            // Fallback for String principal (test purposes)
+            // Handle String principal (email addresses) with database lookup
             if (principal instanceof String) {
+                String emailPrincipal = (String) principal;
+                log.debug("Found String principal (email): {}", emailPrincipal);
+                
                 try {
-                    return Long.parseLong((String) principal);
-                } catch (NumberFormatException e) {
-                    log.warn("Cannot parse String principal to Long: {}", principal);
+                    // First try to find in identity_users table
+                    User user = userRepository.findByEmail(emailPrincipal)
+                            .orElse(null);
+                    
+                    if (user != null) {
+                        log.debug("Found user in identity_users table: {}", emailPrincipal);
+                        return user.getId();
+                    }
+                    
+                    // If not found in identity_users, try auth_users table
+                    Auth auth = authRepository.findByEmail(emailPrincipal)
+                            .orElse(null);
+                            
+                    if (auth != null) {
+                        log.debug("Found user in auth_users table (legacy): {}", emailPrincipal);
+                        return UUID.nameUUIDFromBytes(("auth_" + auth.getId()).getBytes());
+                    }
+                    
+                    log.warn("User not found in either table for email: {}", emailPrincipal);
+                    return null;
+                } catch (Exception e) {
+                    log.error("Error looking up user by email: {}", emailPrincipal, e);
                     return null;
                 }
             }
@@ -57,7 +90,7 @@ public class SecurityContextUtil {
     }
     
     /**
-     * Get current user ID as UUID from SecurityContext
+     * Get current user ID as UUID from SecurityContext (legacy compatible)
      * @return UUID ID of current user, or null if not authenticated
      */
     public UUID getCurrentUserIdUUID() {
@@ -76,13 +109,34 @@ public class SecurityContextUtil {
                 return userId;
             }
             
-            // Fallback for String principal (test purposes)
+            // Handle String principal (email addresses) with database lookup
             if (principal instanceof String) {
+                String emailPrincipal = (String) principal;
+                log.debug("Found String principal (email): {}", emailPrincipal);
+                
                 try {
-                    Long longId = Long.parseLong((String) principal);
-                    return UUID.nameUUIDFromBytes(("user_" + longId).getBytes());
-                } catch (NumberFormatException e) {
-                    log.warn("Cannot parse String principal to Long: {}", principal);
+                    // First try to find in identity_users table
+                    User user = userRepository.findByEmail(emailPrincipal)
+                            .orElse(null);
+                    
+                    if (user != null) {
+                        log.debug("Found user in identity_users table: {}", emailPrincipal);
+                        return user.getId();
+                    }
+                    
+                    // If not found in identity_users, try auth_users table
+                    Auth auth = authRepository.findByEmail(emailPrincipal)
+                            .orElse(null);
+                            
+                    if (auth != null) {
+                        log.debug("Found user in auth_users table (legacy): {}", emailPrincipal);
+                        return UUID.nameUUIDFromBytes(("auth_" + auth.getId()).getBytes());
+                    }
+                    
+                    log.warn("User not found in either table for email: {}", emailPrincipal);
+                    return null;
+                } catch (Exception e) {
+                    log.error("Error looking up user by email: {}", emailPrincipal, e);
                     return null;
                 }
             }
@@ -111,6 +165,16 @@ public class SecurityContextUtil {
             
             if (principal instanceof CustomUserDetails customUserDetails) {
                 return customUserDetails.getUsername();
+            }
+            
+            // Handle Spring Security User object
+            if (principal instanceof org.springframework.security.core.userdetails.User user) {
+                return user.getUsername();
+            }
+            
+            // Handle String principal (fallback)
+            if (principal instanceof String) {
+                return (String) principal;
             }
             
             log.error("Unsupported principal type: {}", principal.getClass().getSimpleName());

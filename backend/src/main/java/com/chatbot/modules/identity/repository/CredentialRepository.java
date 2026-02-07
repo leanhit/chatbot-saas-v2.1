@@ -9,21 +9,22 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
+import java.util.UUID;
 
 @Repository
-public interface CredentialRepository extends JpaRepository<Credential, Long> {
+public interface CredentialRepository extends JpaRepository<Credential, UUID> {
 
-    Optional<Credential> findByUserId(Long userId);
+    Optional<Credential> findByUserId(UUID userId);
 
-    boolean existsByUserId(Long userId);
+    boolean existsByUserId(UUID userId);
 
     @Modifying
     @Query("UPDATE Credential c SET c.failedAttempts = :attempts WHERE c.userId = :userId")
-    int updateFailedAttempts(@Param("userId") Long userId,
+    int updateFailedAttempts(@Param("userId") UUID userId,
                              @Param("attempts") Integer attempts);
 
     @Modifying
     @Query("UPDATE Credential c SET c.lockedUntil = :lockedUntil WHERE c.userId = :userId")
-    int updateLockedUntil(@Param("userId") Long userId,
+    int updateLockedUntil(@Param("userId") UUID userId,
                            @Param("lockedUntil") LocalDateTime lockedUntil);
 }

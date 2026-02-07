@@ -1,6 +1,6 @@
 package com.chatbot.modules.auth.service;
 
-import com.chatbot.modules.address.service.AddressService;
+// import com.chatbot.modules.address.service.AddressService;
 import com.chatbot.modules.auth.dto.*;
 import com.chatbot.modules.auth.model.Auth;
 import com.chatbot.modules.auth.model.SystemRole;
@@ -8,6 +8,8 @@ import com.chatbot.modules.auth.repository.AuthRepository;
 import com.chatbot.modules.auth.security.CustomUserDetails;
 import com.chatbot.modules.userInfo.model.UserInfo;
 import com.chatbot.modules.identity.service.IdentityBridgeService;
+
+import java.util.UUID;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -27,7 +29,7 @@ public class AuthService implements UserDetailsService {
     private final AuthRepository authRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
-    private final AddressService addressService;
+    // private final AddressService addressService;
     
     // Identity Hub bridge service for separate transaction
     private final IdentityBridgeService identityBridgeService;
@@ -97,7 +99,8 @@ public class AuthService implements UserDetailsService {
 
         // tạo address (không ảnh hưởng transaction chính)
         try {
-            addressService.createEmptyAddressForUser(savedUser.getId());
+            // addressService.createEmptyAddressForUser(savedUser.getId());
+            log.info("AddressService temporarily disabled - skipping address creation for user {}", savedUser.getId());
         } catch (Exception e) {
             log.error("Không thể tạo địa chỉ trống cho user {}: {}", savedUser.getId(), e.getMessage());
         }
@@ -105,7 +108,7 @@ public class AuthService implements UserDetailsService {
         String token = jwtService.generateToken(savedUser.getEmail());
 
         UserDto userDto = new UserDto(
-                savedUser.getId(),
+                UUID.nameUUIDFromBytes(("auth_" + savedUser.getId()).getBytes()),
                 savedUser.getEmail(),
                 savedUser.getSystemRole().name(),
                 "vi"
@@ -123,8 +126,9 @@ public class AuthService implements UserDetailsService {
         }
 
         String token = jwtService.generateToken(user.getEmail());
+
         UserDto userDto = new UserDto(
-                user.getId(),
+                UUID.nameUUIDFromBytes(("auth_" + user.getId()).getBytes()),
                 user.getEmail(),
                 user.getSystemRole().name(),
                 "vi"
@@ -147,7 +151,7 @@ public class AuthService implements UserDetailsService {
         // --- TẠO LẠI TOKEN MỚI VÀ TRẢ VỀ GIỐNG LOGIN ---
         String newToken = jwtService.generateToken(user.getEmail());
         UserDto userDto = new UserDto(
-                user.getId(),
+                UUID.nameUUIDFromBytes(("auth_" + user.getId()).getBytes()),
                 user.getEmail(),
                 user.getSystemRole().name(),
                 "vi"
@@ -169,7 +173,7 @@ public class AuthService implements UserDetailsService {
 
         // 3. Trả về thông tin user sau khi cập nhật
         return new UserDto(
-                user.getId(),
+                UUID.nameUUIDFromBytes(("auth_" + user.getId()).getBytes()),
                 user.getEmail(),
                 user.getSystemRole().name(),
                 "vi"

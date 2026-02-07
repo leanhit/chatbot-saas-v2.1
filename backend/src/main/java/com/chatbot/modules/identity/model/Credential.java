@@ -3,6 +3,7 @@ package com.chatbot.modules.identity.model;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 /**
  * Credential entity - contains ONLY password-related data
@@ -19,7 +20,7 @@ import java.time.LocalDateTime;
 public class Credential {
 
     @Id
-    private Long userId; // Same as User.id
+    private UUID userId; // Same as User.id
     
     @OneToOne
     @MapsId

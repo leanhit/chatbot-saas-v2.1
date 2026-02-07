@@ -28,7 +28,7 @@ public class TestBotController {
         
         // Generate test bot data
         UUID botId = UUID.randomUUID();
-        Long userId = Long.parseLong(principal.getName());
+        UUID userId = UUID.fromString(principal.getName());
         
         Map<String, Object> response = Map.of(
             "id", botId.toString(),

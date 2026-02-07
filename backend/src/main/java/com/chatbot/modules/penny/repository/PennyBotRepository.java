@@ -25,12 +25,12 @@ public interface PennyBotRepository extends JpaRepository<PennyBot, UUID> {
     /**
      * Find all bots for a specific user
      */
-    List<PennyBot> findByUserId(Long userId);
+    List<PennyBot> findByUserId(UUID userId);
     
     /**
      * Find bots for tenant and user
      */
-    List<PennyBot> findByTenantIdAndUserId(UUID tenantId, Long userId);
+    List<PennyBot> findByTenantIdAndUserId(UUID tenantId, UUID userId);
     
     /**
      * Find active bots for tenant
