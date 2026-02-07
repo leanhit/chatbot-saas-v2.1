@@ -85,11 +85,24 @@ export default defineComponent({
     const authStore = useAuthStore()
     const tenantStore = useGatewayTenantStore()
 
-    const activeTab = ref<'my' | 'search' | 'pending' | 'my-invitations'>('my')
+    console.log('🚀 List.vue setup() called!')
+    console.log('🏪 Components available:', { MyTenantTab, CreateTenantModal, PendingTenantTab, SearchTenantTab, UserInvitationsTab })
+
+    const activeTab = ref<'my' | 'search' | 'pending' | 'my-invitations'>('search')
     const showCreateModal = ref(false)
 
     onMounted(() => {
+      console.log('🚀 List.vue onMounted() called!')
+      console.log('📋 Active tab on mount:', activeTab.value)
       tenantStore.fetchUserTenants()
+      
+      // Check if SearchTenantTab component is available
+      console.log('🔍 Checking SearchTenantTab component...')
+      if (SearchTenantTab) {
+        console.log('✅ SearchTenantTab component is available')
+      } else {
+        console.log('❌ SearchTenantTab component is NOT available')
+      }
     })
 
     const onTabChange = (tab: string) => {

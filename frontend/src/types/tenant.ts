@@ -59,15 +59,17 @@ export interface TenantResponse {
 }
 
 export interface TenantSearchResponse {
-  id: number;
+  id: string;                    // UUID string from backend
   name: string;
-  status: TenantStatus;
-  visibility: TenantVisibility;
+  status: string;                 // Backend returns string, not enum
+  defaultLocale?: string | null; // Optional field from backend
   createdAt: string;
-  membershipStatus: TenantMembershipStatus;
-  logoUrl: string;
-  contactEmail: string;
-  province: string;
+  // Add missing fields with defaults for UI compatibility
+  visibility?: 'PUBLIC' | 'PRIVATE';
+  membershipStatus?: 'NONE' | 'PENDING' | 'APPROVED';
+  logoUrl?: string;
+  contactEmail?: string;
+  province?: string;
 }
 
 /** ========================

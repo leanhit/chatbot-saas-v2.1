@@ -15,6 +15,9 @@ public interface TenantInvitationRepository extends JpaRepository<TenantInvitati
     // Tìm lời mời theo token duy nhất
     Optional<TenantInvitation> findByToken(String token);
     
+    // Tìm lời mời theo token và status
+    Optional<TenantInvitation> findByTokenAndStatus(String token, InvitationStatus status);
+    
     // Kiểm tra tồn tại lời mời để tránh gửi trùng
     boolean existsByTenantIdAndEmailAndStatus(UUID tenantId, String email, InvitationStatus status);
     

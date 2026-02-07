@@ -26,7 +26,7 @@ public class TenantInvitation {
     private Long id;
     
     @ManyToOne
-    @JoinColumn(name = "tenant_id", nullable = false)
+    @JoinColumn(name = "tenant_id", nullable = false, insertable = false, updatable = false)
     private Tenant tenant;
     
     @Column(nullable = false)
@@ -50,5 +50,5 @@ public class TenantInvitation {
     private LocalDateTime expiresAt;
     
     @Column(name = "invited_by")
-    private UUID invitedBy;
+    private Long invitedBy;
 }

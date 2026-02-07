@@ -36,21 +36,21 @@ instance.interceptors.request.use(
             config.headers.Authorization = `Bearer ${token}`;
         }
 
-        // 2. XỬ LÝ TENANT KEY VỚI BỘ LỌC
-        const activeTenantKey = localStorage.getItem(ACTIVE_TENANT_ID);
+        // 2. XỬ LÝ TENANT ID VỚI BỘ LỌC
+        const activeTenantId = localStorage.getItem(ACTIVE_TENANT_ID);
 
         // Kiểm tra xem URL hiện tại có nằm trong danh sách loại trừ không
         const isExcluded = EXCLUDED_PATHS.some(path => config.url?.includes(path));
 
-        console.log(`[Axios Debug] URL: ${config.url}, ActiveTenantKey: ${activeTenantKey}, IsExcluded: ${isExcluded} - v2.1`);
+        console.log(`[Axios Debug] URL: ${config.url}, ActiveTenantId: ${activeTenantId}, IsExcluded: ${isExcluded} - v2.1`);
         console.log(`[Axios Debug] EXCLUDED_PATHS:`, EXCLUDED_PATHS);
         console.log(`[Axios Debug] Current headers before:`, config.headers);
 
-        if (activeTenantKey && !isExcluded) {
-            config.headers['X-Tenant-Key'] = activeTenantKey; // ✅ Send tenantKey
-            console.log(`[Tenant Context] Applied Key: ${activeTenantKey} for ${config.url}`);
+        if (activeTenantId && !isExcluded) {
+            config.headers['X-Tenant-Key'] = activeTenantId; // ✅ Send tenantId as X-Tenant-Key header
+            console.log(`[Tenant Context] Applied ID: ${activeTenantId} for ${config.url}`);
         } else {
-            console.log(`[Tenant Context] Skipped X-Tenant-Key for ${config.url} (activeTenantKey: ${activeTenantKey}, isExcluded: ${isExcluded})`);
+            console.log(`[Tenant Context] Skipped X-Tenant-Key for ${config.url} (activeTenantId: ${activeTenantId}, isExcluded: ${isExcluded})`);
         }
 
         console.log(`[Axios Debug] Final headers:`, config.headers);

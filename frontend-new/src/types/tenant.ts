@@ -1,4 +1,4 @@
-import type { AddressDetailResponseDTO } from './address';
+import type { AddressEmbedded } from './address';
 
 /** ========================
  * ENUMS (Khớp 100% Java Enum)
@@ -83,7 +83,7 @@ export interface TenantDetailResponse {
   expiresAt: string | null;
   createdAt: string;
   profile: TenantProfileResponse;
-  address: AddressDetailResponseDTO | null;
+  address: AddressEmbedded | null; // Dùng AddressEmbedded cho tenant
 }
 
 export interface TenantResponse {
@@ -97,16 +97,11 @@ export interface TenantResponse {
 }
 
 export interface TenantSearchResponse {
-  id: number; // Internal ID (backend only)
-  tenantKey: string; // ✅ UUID for frontend
+  id: string; // UUID string from API
   name: string;
   status: TenantStatus;
-  visibility: TenantVisibility;
+  defaultLocale?: string | null;
   createdAt: string;
-  membershipStatus: TenantMembershipStatus;
-  logoUrl: string;
-  contactEmail: string;
-  province: string;
 }
 
 /** ========================
@@ -122,7 +117,7 @@ export interface InviteMemberRequest {
 
 // Khớp với InvitationResponse.java
 export interface InvitationResponse {
-  id: number;
+  id: string;
   name: string;
   email: string;
   role: TenantRole;
@@ -138,7 +133,7 @@ export interface InvitationResponse {
 // Khớp với MemberResponse.java (Dùng cho bảng TenantMember)
 export interface MemberResponse {
   id: number;
-  userId: number;
+  userId: string;
   email: string;
   role: TenantRole;
   status: MembershipStatus;
@@ -148,9 +143,9 @@ export interface MemberResponse {
 
 // Khớp với TenantPendingResponse.java
 export interface TenantPendingResponse {
-  id: number;
+  id: string;
   name: string;
-  status: TenantStatus;
+  status: TenantMembershipStatus;
   visibility: TenantVisibility;
   requestedAt: string;
 }

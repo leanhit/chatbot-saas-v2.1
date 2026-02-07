@@ -69,7 +69,7 @@ public class SecurityContextUtil {
                             
                     if (auth != null) {
                         log.debug("Found user in auth_users table (legacy): {}", emailPrincipal);
-                        return UUID.nameUUIDFromBytes(("auth_" + auth.getId()).getBytes());
+                        return auth.getUserId(); // Use the new UUID field
                     }
                     
                     log.warn("User not found in either table for email: {}", emailPrincipal);
@@ -130,7 +130,7 @@ public class SecurityContextUtil {
                             
                     if (auth != null) {
                         log.debug("Found user in auth_users table (legacy): {}", emailPrincipal);
-                        return UUID.nameUUIDFromBytes(("auth_" + auth.getId()).getBytes());
+                        return auth.getUserId(); // Use the new UUID field
                     }
                     
                     log.warn("User not found in either table for email: {}", emailPrincipal);

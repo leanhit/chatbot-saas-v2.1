@@ -51,12 +51,12 @@ export const usersApi = {
             if (token) {
                 try {
                     const payload = JSON.parse(atob(token.split('.')[1]));
-                    userId = parseInt(payload.sub) || parseInt(payload.userId) || parseInt(payload.id) || 1;
+                    userId = payload.sub || payload.userId || payload.id || payload.user_id || '00000000-0000-0000-0000-000000000000';
                 } catch (e) {
-                    userId = 1;
+                    userId = '00000000-0000-0000-0000-000000000000';
                 }
             } else {
-                userId = 1;
+                userId = '00000000-0000-0000-0000-000000000000';
             }
         }
         
@@ -74,12 +74,12 @@ export const usersApi = {
             if (token) {
                 try {
                     const payload = JSON.parse(atob(token.split('.')[1]));
-                    userId = parseInt(payload.sub) || parseInt(payload.userId) || parseInt(payload.id) || 1;
+                    userId = payload.sub || payload.userId || payload.id || payload.user_id || '00000000-0000-0000-0000-000000000000';
                 } catch (e) {
-                    userId = 1;
+                    userId = '00000000-0000-0000-0000-000000000000';
                 }
             } else {
-                userId = 1;
+                userId = '00000000-0000-0000-0000-000000000000';
             }
         }
         
@@ -97,12 +97,12 @@ export const usersApi = {
             if (token) {
                 try {
                     const payload = JSON.parse(atob(token.split('.')[1]));
-                    userId = parseInt(payload.sub) || parseInt(payload.userId) || parseInt(payload.id) || 1;
+                    userId = payload.sub || payload.userId || payload.id || payload.user_id || '00000000-0000-0000-0000-000000000000';
                 } catch (e) {
-                    userId = 1;
+                    userId = '00000000-0000-0000-0000-000000000000';
                 }
             } else {
-                userId = 1;
+                userId = '00000000-0000-0000-0000-000000000000';
             }
         }
         
@@ -119,12 +119,12 @@ export const usersApi = {
             if (token) {
                 try {
                     const payload = JSON.parse(atob(token.split('.')[1]));
-                    userId = parseInt(payload.sub) || parseInt(payload.userId) || parseInt(payload.id) || 1;
+                    userId = payload.sub || payload.userId || payload.id || payload.user_id || '00000000-0000-0000-0000-000000000000';
                 } catch (e) {
-                    userId = 1;
+                    userId = '00000000-0000-0000-0000-000000000000';
                 }
             } else {
-                userId = 1;
+                userId = '00000000-0000-0000-0000-000000000000';
             }
         }
         

@@ -76,8 +76,8 @@
               <!-- LEFT -->
               <div class="info-side">
                 <div class="tenant-avatar-search">
-                  <img v-if="tenant.logoUrl" :src="secureImageUrl(tenant.logoUrl)" :alt="tenant.name" />
-                  <div v-else class="avatar-fallback">
+                  <!-- Không có logoUrl trong API response, dùng fallback -->
+                  <div class="avatar-fallback">
                     {{ tenant.name?.charAt(0).toUpperCase() }}
                   </div>
                 </div>
@@ -89,40 +89,27 @@
 
                   <div class="tenant-meta">
                     <span>ID: {{ tenant.id }}</span><br />
-                    <span v-if="tenant.province">
-                      Province: {{ tenant.province }}
+                    <span v-if="tenant.defaultLocale">
+                      Locale: {{ tenant.defaultLocale }}
                     </span>
                   </div>
 
-                  <div v-if="tenant.contactEmail" class="tenant-email">
+                  <!-- Không có contactEmail trong API response -->
+                  <!-- <div v-if="tenant.contactEmail" class="tenant-email">
                     Contact Email: {{ maskEmail(tenant.contactEmail) }}
-                  </div>
+                  </div> -->
                 </div>
               </div>
 
               <!-- RIGHT -->
               <div class="action-side">
+                <!-- Không có membershipStatus trong API response, mặc định là NONE -->
                 <button
-                  v-if="tenant.membershipStatus === 'NONE'"
                   @click="onJoinClick(tenant.id)"
                   class="join-button"
                 >
                   Join
                 </button>
-
-                <span
-                  v-else-if="tenant.membershipStatus === 'PENDING'"
-                  class="pending-tag"
-                >
-                  Pending
-                </span>
-
-                <span
-                  v-else-if="tenant.membershipStatus === 'APPROVED'"
-                  class="member-tag"
-                >
-                  Member
-                </span>
               </div>
             </div>
           </div>

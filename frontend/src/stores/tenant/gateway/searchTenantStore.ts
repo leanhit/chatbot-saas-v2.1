@@ -16,8 +16,15 @@ export const useGatewaySearchStore = defineStore('gateway-search', () => {
 
     loading.value = true
     try {
+      console.log('🔍 Search keyword:', keyword)
       const { data } = await tenantApi.searchTenant(keyword)
-      results.value = data.content || []
+      console.log('📦 API response data:', data)
+      console.log('📊 Data type:', typeof data)
+      console.log('📏 Data length:', Array.isArray(data) ? data.length : 'Not array')
+      
+      // API returns array directly, not wrapped in .content
+      results.value = data || []
+      console.log('💾 Store results after update:', results.value)
     } catch (error) {
       console.error('searchTenants error:', error)
       throw error

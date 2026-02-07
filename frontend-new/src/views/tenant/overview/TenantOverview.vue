@@ -336,7 +336,7 @@ export default {
     })
 
     const tenantKey = computed(() => {
-      return tenant.value?.tenantKey || ''
+      return tenant.value?.tenantKey || tenant.value?.id || ''
     })
 
     const tenantExpiresAt = computed(() => {
@@ -593,18 +593,18 @@ export default {
           tenantKey: tenant.value?.tenantKey
         })
         
-        if (tenant.value?.tenantKey) {
-          // Load by tenantKey (primary method)
-          console.log('📡 Calling getTenantDetailByTenantKey with key:', tenant.value.tenantKey)
-          const response = await tenantApi.getTenantDetailByTenantKey(tenant.value.tenantKey)
-          tenantStore.setCurrentTenant(response.data)
-          console.log('✅ Tenant data loaded by key:', response.data)
-        } else if (tenant.value?.id) {
-          // Fallback: load by ID (legacy)
+        if (tenant.value?.id) {
+          // Load by ID (primary method since backend only returns id)
           console.log('📡 Calling getTenantDetail with ID:', tenant.value.id)
           const response = await tenantApi.getTenantDetail(tenant.value.id)
           tenantStore.setCurrentTenant(response.data)
           console.log('✅ Tenant data loaded by ID:', response.data)
+        } else if (tenant.value?.tenantKey) {
+          // Fallback: load by tenantKey (if available)
+          console.log('📡 Calling getTenantDetailByTenantKey with key:', tenant.value.tenantKey)
+          const response = await tenantApi.getTenantDetailByTenantKey(tenant.value.tenantKey)
+          tenantStore.setCurrentTenant(response.data)
+          console.log('✅ Tenant data loaded by key:', response.data)
         } else {
           console.warn('❌ No tenant ID or tenantKey found')
         }

@@ -65,7 +65,11 @@ export const tenantApi = {
    * @returns Thông tin chi tiết của tenant
    */
   async getTenantDetail(tenantId: string): Promise<{ data: TenantDetailResponse }> {
-    return axios.get(`/tenants/${tenantId}/full`);
+    return axios.get(`/tenants/${tenantId}`);
+  },
+
+  async getTenantDetailByTenantKey(tenantId: string): Promise<{ data: TenantDetailResponse }> {
+    return axios.get(`/tenants/${tenantId}`);
   },
 
   async suspendTenant(id: number | string): Promise<void> {

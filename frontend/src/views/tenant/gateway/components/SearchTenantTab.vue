@@ -1,5 +1,5 @@
 <script lang="ts">
-import { defineComponent, ref, watch, onUnmounted, computed } from 'vue'
+import { defineComponent, ref, watch, onUnmounted, onMounted, computed } from 'vue'
 import { Search } from '@element-plus/icons-vue'
 import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
@@ -18,11 +18,19 @@ export default defineComponent({
     const keyword = ref('')
     let debounceTimer: number | null = null
 
-    const results = computed(() => searchStore.results)
-    const loading = computed(() => searchStore.loading)
+    const results = computed(() => {
+      console.log('🔄 Computing results, current value:', searchStore.results)
+      return searchStore.results
+    })
+    const loading = computed(() => {
+      console.log('🔄 Computing loading, current value:', searchStore.loading)
+      return searchStore.loading
+    })
 
     const executeSearch = async () => {
+      console.log('⚡ executeSearch called with keyword:', keyword.value.trim())
       await searchStore.searchTenants(keyword.value.trim())
+      console.log('✅ executeSearch completed')
     }
 
     const handleManualSearch = async () => {
@@ -30,16 +38,10 @@ export default defineComponent({
       await executeSearch()
     }
 
-    const onJoinClick = async (tenantId: number) => {
+    const onJoinClick = async (tenantId: string) => {
       try {
         await searchStore.requestJoinTenant(String(tenantId))
         ElMessage.success(t('Tenant.JoinRequested'))
-
-        // update UI immediately
-        const tenant = searchStore.results.find(t => t.id === tenantId)
-        if (tenant) {
-          tenant.membershipStatus = 'PENDING'
-        }
       } catch {
         ElMessage.error(t('Tenant.JoinFailed'))
       }
@@ -70,6 +72,16 @@ export default defineComponent({
     onUnmounted(() => {
       if (debounceTimer) clearTimeout(debounceTimer)
       searchStore.clearResults()
+    })
+
+    onMounted(() => {
+      console.log('🚀 SearchTenantTab component MOUNTED!')
+      console.log('🏪 Search store:', searchStore)
+      console.log('🔍 Initial results:', searchStore.results)
+      // Simple alert to verify component is loaded
+      if (typeof window !== 'undefined') {
+        alert('🚀 SearchTenantTab component is MOUNTED!')
+      }
     })
 
     return {
@@ -115,6 +127,17 @@ export default defineComponent({
 
     <!-- Result -->
     <template v-else>
+      <!-- DEBUG INFO -->
+      <div style="background: #f0f0f0; padding: 10px; margin-bottom: 10px; font-size: 12px;">
+        <strong>DEBUG:</strong><br>
+        Results length: {{ results.length }}<br>
+        Loading: {{ loading }}<br>
+        Keyword: "{{ keyword }}"<br>
+        <div v-if="results.length > 0">
+          First result: {{ JSON.stringify(results[0]) }}
+        </div>
+      </div>
+
       <el-empty
         v-if="results.length === 0"
         :description="keyword
@@ -137,7 +160,6 @@ export default defineComponent({
                   <el-avatar
                     :size="45"
                     class="tenant-avatar-search"
-                    :src="tenant.logoUrl || undefined"
                   >
                     {{ tenant.name?.charAt(0).toUpperCase() }}
                   </el-avatar>
@@ -149,27 +171,17 @@ export default defineComponent({
 
                     <div class="tenant-meta">
                       <span>ID: {{ tenant.id }}</span><br />
-                      <span v-if="tenant.province">
-                        {{ t('Province') }}: {{ tenant.province }}
+                      <span>Status: {{ tenant.status }}</span><br />
+                      <span v-if="tenant.defaultLocale">
+                        Locale: {{ tenant.defaultLocale }}
                       </span>
                     </div>
-
-                    <el-tooltip
-                      v-if="tenant.contactEmail"
-                      :content="tenant.contactEmail"
-                    >
-                      <div class="tenant-email">
-                        {{ t('ContactEmail') }}:
-                        {{ maskEmail(tenant.contactEmail) }}
-                      </div>
-                    </el-tooltip>
                   </div>
                 </div>
 
                 <!-- RIGHT -->
                 <div class="action-side">
                   <el-button
-                    v-if="tenant.membershipStatus === 'NONE'"
                     type="primary"
                     plain
                     size="small"
@@ -177,21 +189,6 @@ export default defineComponent({
                   >
                     {{ t('Join') }}
                   </el-button>
-
-                  <el-tag
-                    v-else-if="tenant.membershipStatus === 'PENDING'"
-                    type="warning"
-                    effect="dark"
-                  >
-                    {{ t('Pending') }}
-                  </el-tag>
-
-                  <el-tag
-                    v-else-if="tenant.membershipStatus === 'APPROVED'"
-                    type="success"
-                  >
-                    {{ t('Member') }}
-                  </el-tag>
                 </div>
               </div>
             </el-card>

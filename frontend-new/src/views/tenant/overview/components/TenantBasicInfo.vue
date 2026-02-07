@@ -102,7 +102,7 @@
     <TenantBasicInfoForm
       v-if="showEditModal"
       :visible="showEditModal"
-      :tenant-key="tenantKey"
+      :tenant-key="tenantKey || tenantId"
       :basic-info="basicInfo"
       @close="showEditModal = false"
       @updated="handleUpdated"
@@ -125,7 +125,11 @@ export default {
   props: {
     tenantKey: {
       type: String,
-      required: true
+      required: false
+    },
+    tenantId: {
+      type: String,
+      required: false
     }
   },
   emits: ['updated'],
@@ -138,7 +142,7 @@ export default {
     const loadBasicInfo = async () => {
       loading.value = true
       try {
-        const response = await tenantApi.getTenantDetail(props.tenantKey)
+        const response = await tenantApi.getTenantDetail(props.tenantKey || props.tenantId)
         basicInfo.value = response.data
       } catch (error) {
         console.error('Error loading tenant basic info:', error)
@@ -167,7 +171,7 @@ export default {
       loading.value = true
       try {
         // Use new tenant API to update basic info
-        const response = await tenantApi.updateTenantBasicInfo(props.tenantKey, {
+        const response = await tenantApi.updateTenantBasicInfo(props.tenantKey || props.tenantId, {
           name: formData.companyName,
           description: formData.description,
           // Map other fields as needed

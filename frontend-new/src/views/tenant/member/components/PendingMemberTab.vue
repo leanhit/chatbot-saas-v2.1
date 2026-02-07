@@ -202,47 +202,35 @@ export default {
     })
 
     const loadRequests = async () => {
+      if (!tenantStore.currentTenant?.id) return
+      
       loading.value = true
       try {
-        // Mock data - replace with actual API call
-        const mockRequests = [
-          {
-            id: 1,
-            name: 'David Lee',
-            email: 'david@example.com',
-            avatar: null,
-            requestedRole: 'MEMBER',
-            status: 'PENDING',
-            message: 'I would like to join this workspace to collaborate on projects.',
-            requestedAt: '2024-01-19T10:30:00Z'
-          },
-          {
-            id: 2,
-            name: 'Emma Wilson',
-            email: 'emma@example.com',
-            avatar: null,
-            requestedRole: 'EDITOR',
-            status: 'REVIEWING',
-            message: 'Interested in contributing content to this workspace.',
-            requestedAt: '2024-01-18T14:15:00Z'
-          }
-        ]
+        // Call real API for join requests
+        const response = await tenantApi.getTenantJoinRequests(tenantStore.currentTenant.id)
         
-        requests.value = mockRequests
-        totalRequests.value = mockRequests.length
+        // Map backend response to frontend format
+        const requestsData = Array.isArray(response.data) 
+          ? response.data 
+          : response.data?.content || []
         
-        // In real implementation:
-        // const response = await tenantApi.getPendingMemberRequests(tenantStore.currentTenant.id, {
-        //   page: currentPage.value,
-        //   size: pageSize.value,
-        //   search: searchQuery.value,
-        //   status: statusFilter.value
-        // })
-        // requests.value = response.data.content || response.data
-        // totalRequests.value = response.data.totalElements || response.data.length
+        requests.value = requestsData.map(request => ({
+          id: request.id,
+          name: request.email?.split('@')[0] || request.name || 'Unknown',
+          email: request.email,
+          role: request.requestedRole || 'MEMBER',
+          avatar: defaultAvatar,
+          requestedAt: request.createdAt || request.requestedAt,
+          status: request.status || 'PENDING',
+          message: request.message || ''
+        }))
+        
+        totalRequests.value = requests.value.length
         
       } catch (error) {
-        console.error('Error loading pending requests:', error)
+        console.error('Error loading join requests:', error)
+        requests.value = []
+        totalRequests.value = 0
       } finally {
         loading.value = false
       }
@@ -254,10 +242,13 @@ export default {
       }
 
       try {
-        // In real implementation:
-        // await tenantApi.approveMemberRequest(tenantStore.currentTenant.id, request.id)
+        // Call real API
+        await tenantApi.approveJoinRequest(tenantStore.currentTenant.id, request.id)
         
-        request.status = 'APPROVED'
+        // Update local state
+        requests.value = requests.value.filter(r => r.id !== request.id)
+        totalRequests.value = requests.value.length
+        
         emit('request-approved', request)
       } catch (error) {
         console.error('Error approving request:', error)
@@ -266,14 +257,18 @@ export default {
     }
 
     const rejectRequest = async (request) => {
-      const reason = prompt(`Why are you rejecting ${request.name}'s request? (Optional)`)
-      if (reason === null) return // User cancelled
+      if (!confirm(`Are you sure you want to reject ${request.name}'s request?`)) {
+        return
+      }
 
       try {
-        // In real implementation:
-        // await tenantApi.rejectMemberRequest(tenantStore.currentTenant.id, request.id, reason)
+        // Call real API
+        await tenantApi.rejectJoinRequest(tenantStore.currentTenant.id, request.id)
         
-        request.status = 'REJECTED'
+        // Update local state
+        requests.value = requests.value.filter(r => r.id !== request.id)
+        totalRequests.value = requests.value.length
+        
         emit('request-rejected', request)
       } catch (error) {
         console.error('Error rejecting request:', error)

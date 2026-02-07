@@ -169,7 +169,7 @@
     <InviteMemberModal
       v-if="showInviteModal"
       :visible="showInviteModal"
-      :tenant-key="tenantKey"
+      :tenant-key="tenantKey || tenantId"
       @close="showInviteModal = false"
       @invited="handleInvited"
     />
@@ -178,7 +178,7 @@
     <EditMemberModal
       v-if="showEditModal"
       :visible="showEditModal"
-      :tenant-key="tenantKey"
+      :tenant-key="tenantKey || tenantId"
       :member="selectedMember"
       @close="showEditModal = false"
       @updated="handleMemberUpdated"
@@ -204,7 +204,11 @@ export default {
   props: {
     tenantKey: {
       type: String,
-      required: true
+      required: false
+    },
+    tenantId: {
+      type: String,
+      required: false
     }
   },
   emits: ['updated'],
@@ -248,7 +252,7 @@ export default {
     const loadMembers = async () => {
       loading.value = true
       try {
-        const response = await tenantApi.getTenantMembers(props.tenantKey, {
+        const response = await tenantApi.getTenantMembers(props.tenantKey || props.tenantId, {
           page: currentPage.value,
           size: pageSize.value,
           search: searchQuery.value,
@@ -279,7 +283,7 @@ export default {
       }
 
       try {
-        await tenantApi.removeTenantMember(props.tenantKey, member.id)
+        await tenantApi.removeTenantMember(props.tenantKey || props.tenantId, member.id)
         await loadMembers()
         emit('updated')
       } catch (error) {

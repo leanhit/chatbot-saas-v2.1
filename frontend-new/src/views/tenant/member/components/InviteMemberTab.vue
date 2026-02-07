@@ -216,61 +216,35 @@ export default {
     const loadInvitations = async () => {
       loading.value = true
       try {
-        // Mock data - replace with actual API call
-        const mockInvitations = [
-          {
-            id: 1,
-            email: 'newuser1@example.com',
-            role: 'MEMBER',
-            status: 'PENDING',
-            message: 'Welcome to our team! Looking forward to working with you.',
-            invitedBy: 'John Doe',
-            invitedByName: 'John Doe',
-            invitedByAvatar: null,
-            invitedAt: '2024-01-18T10:30:00Z',
-            expiresAt: '2024-01-25T10:30:00Z'
-          },
-          {
-            id: 2,
-            email: 'newuser2@example.com',
-            role: 'EDITOR',
-            status: 'PENDING',
-            message: 'Join us as an editor to help manage content.',
-            invitedBy: 'Jane Smith',
-            invitedByName: 'Jane Smith',
-            invitedByAvatar: null,
-            invitedAt: '2024-01-17T14:15:00Z',
-            expiresAt: '2024-01-24T14:15:00Z'
-          },
-          {
-            id: 3,
-            email: 'expired@example.com',
-            role: 'VIEWER',
-            status: 'EXPIRED',
-            message: 'This invitation has expired.',
-            invitedBy: 'John Doe',
-            invitedByName: 'John Doe',
-            invitedByAvatar: null,
-            invitedAt: '2024-01-10T09:00:00Z',
-            expiresAt: '2024-01-17T09:00:00Z'
-          }
-        ]
+        // Call API to get invitations
+        const response = await tenantApi.getInvitations(tenantStore.currentTenant.id, {
+          page: currentPage.value - 1,
+          size: pageSize.value
+        })
         
-        invitations.value = mockInvitations
-        totalInvitations.value = mockInvitations.length
+        // Map backend response to frontend format
+        const invitationsData = Array.isArray(response.data) 
+          ? response.data 
+          : response.data?.content || []
         
-        // In real implementation:
-        // const response = await tenantApi.getPendingInvitations(tenantStore.currentTenant.id, {
-        //   page: currentPage.value,
-        //   size: pageSize.value,
-        //   search: searchQuery.value,
-        //   status: statusFilter.value
-        // })
-        // invitations.value = response.data.content || response.data
-        // totalInvitations.value = response.data.totalElements || response.data.length
+        invitations.value = invitationsData.map(invitation => ({
+          id: invitation.id,
+          email: invitation.email,
+          role: invitation.role,
+          avatar: defaultAvatar,
+          invitedAt: invitation.createdAt || invitation.invitedAt,
+          expiresAt: invitation.expiresAt,
+          status: invitation.status || 'PENDING',
+          invitedBy: invitation.invitedBy || 'Admin'
+        }))
+        
+        totalInvitations.value = invitations.value.length
         
       } catch (error) {
         console.error('Error loading invitations:', error)
+        // If backend controller is disabled, show empty state
+        invitations.value = []
+        totalInvitations.value = 0
       } finally {
         loading.value = false
       }
@@ -294,16 +268,18 @@ export default {
     }
 
     const revokeInvitation = async (invitation) => {
-      if (!confirm(`Are you sure you want to revoke the invitation to ${invitation.email}?`)) {
+      if (!confirm(`Are you sure you want to revoke invitation sent to ${invitation.email}?`)) {
         return
       }
 
       try {
-        // In real implementation:
-        // await tenantApi.revokeInvitation(tenantStore.currentTenant.id, invitation.id)
+        // Call real API
+        await tenantApi.revokeInvitation(tenantStore.currentTenant.id, invitation.id)
         
-        invitations.value = invitations.value.filter(inv => inv.id !== invitation.id)
-        totalInvitations.value -= 1
+        // Update local state
+        invitations.value = invitations.value.filter(i => i.id !== invitation.id)
+        totalInvitations.value = invitations.value.length
+        
         emit('invitation-revoked', invitation)
       } catch (error) {
         console.error('Error revoking invitation:', error)

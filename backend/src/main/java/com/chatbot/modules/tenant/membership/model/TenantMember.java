@@ -1,5 +1,6 @@
 package com.chatbot.modules.tenant.membership.model;
 
+import com.chatbot.modules.auth.model.Auth;
 import com.chatbot.modules.tenant.core.model.Tenant;
 import jakarta.persistence.*;
 import lombok.*;
@@ -45,6 +46,11 @@ public class TenantMember {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private TenantRole role;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    @Builder.Default
+    private MembershipStatus status = MembershipStatus.ACTIVE;
 
     @Column(name = "joined_at")
     private LocalDateTime joinedAt;

@@ -201,78 +201,34 @@ export default {
     })
 
     const loadMembers = async () => {
+      if (!tenantStore.currentTenant?.id) return
+      
       loading.value = true
       try {
-        // Mock data - replace with actual API call
-        const mockMembers = [
-          {
-            id: 1,
-            name: 'John Doe',
-            email: 'john@example.com',
-            role: 'OWNER',
-            status: 'ACTIVE',
-            avatar: null,
-            joinedAt: '2024-01-15T10:30:00Z',
-            lastActiveAt: '2024-01-20T14:22:00Z'
-          },
-          {
-            id: 2,
-            name: 'Jane Smith',
-            email: 'jane@example.com',
-            role: 'ADMIN',
-            status: 'ACTIVE',
-            avatar: null,
-            joinedAt: '2024-01-16T09:15:00Z',
-            lastActiveAt: '2024-01-19T16:45:00Z'
-          },
-          {
-            id: 3,
-            name: 'Bob Johnson',
-            email: 'bob@example.com',
-            role: 'MEMBER',
-            status: 'ACTIVE',
-            avatar: null,
-            joinedAt: '2024-01-17T11:20:00Z',
-            lastActiveAt: '2024-01-18T13:30:00Z'
-          },
-          {
-            id: 4,
-            name: 'Alice Brown',
-            email: 'alice@example.com',
-            role: 'EDITOR',
-            status: 'ACTIVE',
-            avatar: null,
-            joinedAt: '2024-01-18T14:45:00Z',
-            lastActiveAt: '2024-01-20T10:15:00Z'
-          },
-          {
-            id: 5,
-            name: 'Charlie Wilson',
-            email: 'charlie@example.com',
-            role: 'VIEWER',
-            status: 'ACTIVE',
-            avatar: null,
-            joinedAt: '2024-01-19T08:30:00Z',
-            lastActiveAt: '2024-01-19T17:20:00Z'
-          }
-        ]
+        // Call real API
+        const response = await tenantApi.getTenantMembers(tenantStore.currentTenant.id)
         
-        members.value = mockMembers
-        totalMembers.value = mockMembers.length
+        // Map backend response to frontend format
+        const membersData = Array.isArray(response.data) 
+          ? response.data 
+          : response.data?.content || []
         
-        // In real implementation:
-        // const response = await tenantApi.getTenantMembers(tenantStore.currentTenant.id, {
-        //   page: currentPage.value,
-        //   size: pageSize.value,
-        //   search: searchQuery.value,
-        //   role: roleFilter.value,
-        //   status: 'ACTIVE'
-        // })
-        // members.value = response.data.content || response.data
-        // totalMembers.value = response.data.totalElements || response.data.length
+        members.value = membersData.map(member => ({
+          id: member.userId,
+          name: member.email.split('@')[0], // Extract name from email
+          email: member.email,
+          role: member.role,
+          avatar: defaultAvatar,
+          joinedAt: member.joinedAt,
+          status: 'ACTIVE'
+        }))
+        
+        totalMembers.value = members.value.length
         
       } catch (error) {
         console.error('Error loading members:', error)
+        members.value = []
+        totalMembers.value = 0
       } finally {
         loading.value = false
       }
@@ -280,15 +236,19 @@ export default {
 
     const handleRoleChange = async (member, newRole) => {
       try {
-        // In real implementation:
-        // await tenantApi.updateMemberRole(tenantStore.currentTenant.id, member.id, newRole)
+        // Call real API
+        await tenantApi.updateTenantMemberRole(tenantStore.currentTenant.id, member.id, newRole)
         
-        console.log(`Changed role for ${member.name} to ${newRole}`)
-        emit('member-updated', member)
+        // Update local state
+        const memberIndex = members.value.findIndex(m => m.id === member.id)
+        if (memberIndex !== -1) {
+          members.value[memberIndex].role = newRole
+        }
+        
+        emit('member-updated', { ...member, role: newRole })
       } catch (error) {
-        console.error('Error changing role:', error)
-        // Revert the change
-        member.role = member.previousRole
+        console.error('Error updating member role:', error)
+        alert('Failed to update member role. Please try again.')
       }
     }
 
@@ -298,11 +258,13 @@ export default {
       }
 
       try {
-        // In real implementation:
-        // await tenantApi.removeTenantMember(tenantStore.currentTenant.id, member.id)
+        // Call real API
+        await tenantApi.removeTenantMember(tenantStore.currentTenant.id, member.id)
         
+        // Update local state
         members.value = members.value.filter(m => m.id !== member.id)
-        totalMembers.value -= 1
+        totalMembers.value = members.value.length
+        
         emit('member-removed', member)
       } catch (error) {
         console.error('Error removing member:', error)

@@ -67,7 +67,7 @@
           <div class="card-content">
             <div class="info-item">
               <span class="label">Key:</span>
-              <span class="value text-xs font-mono">{{ tenant.tenantKey }}</span>
+              <span class="value text-xs font-mono">{{ tenant.tenantKey || tenant.id }}</span>
             </div>
             <div class="info-item">
               <span class="label">ID:</span>
@@ -146,7 +146,7 @@ export default {
       if (tenant.status !== 'ACTIVE') return
 
       try {
-        await tenantStore.switchTenant(tenant.tenantKey) // ✅ Use tenantKey from new backend
+        await tenantStore.switchTenant(tenant.id) // Use tenant.id since backend only returns id
         router.push('/dashboard')
         emit('tenant-entered')
       } catch (error) {

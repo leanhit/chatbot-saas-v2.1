@@ -2,6 +2,7 @@ package com.chatbot.modules.tenant.core.controller;
 
 import com.chatbot.modules.tenant.core.dto.CreateTenantRequest;
 import com.chatbot.modules.tenant.core.dto.TenantResponse;
+import com.chatbot.modules.tenant.core.dto.TenantSearchRequest;
 import com.chatbot.modules.tenant.core.service.TenantService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -40,6 +41,17 @@ public class TenantController {
     public ResponseEntity<TenantResponse> createTenant(@Valid @RequestBody CreateTenantRequest request) {
         TenantResponse tenant = tenantService.createTenant(request);
         return ResponseEntity.ok(tenant);
+    }
+
+    /**
+     * Search tenants
+     */
+    @GetMapping("/search")
+    public ResponseEntity<List<TenantResponse>> searchTenants(@RequestParam String keyword) {
+        TenantSearchRequest searchRequest = new TenantSearchRequest();
+        searchRequest.setKeyword(keyword);
+        List<TenantResponse> tenants = tenantService.searchTenants(searchRequest);
+        return ResponseEntity.ok(tenants);
     }
 
     /**

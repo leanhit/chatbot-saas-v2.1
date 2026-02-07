@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -89,12 +90,12 @@ public class AddressServiceImpl implements AddressService {
 
     @Override
     @Transactional
-    public void createEmptyAddressForUser(Long userId) {
+    public void createEmptyAddressForUser(UUID userId) {
         // Create a default empty address for the user
         Address emptyAddress = Address.builder()
-                .tenantId(userId) // Assuming user is also the tenant for simplicity
+                .tenantId(null) // TODO: Determine tenant ID from user context
                 .ownerType(OwnerType.USER)
-                .ownerId(userId)
+                .ownerId(null) // TODO: Convert UUID to Long or update Address model
                 .houseNumber("")
                 .street("")
                 .ward("")

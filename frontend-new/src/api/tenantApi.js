@@ -3,9 +3,9 @@ import router from '@/router';
 
 export const tenantApi = {
   // Tenant core
-  async getTenant(tenantKey) {
+  async getTenant(tenantId) {
     try {
-      const response = await axios.get(`/tenants/key/${tenantKey}`);
+      const response = await axios.get(`/tenants/${tenantId}`);
       return response;
     } catch (error) {
       handleTenantError(error);
@@ -13,9 +13,9 @@ export const tenantApi = {
     }
   },
 
-  async switchTenant(tenantKey) {
+  async switchTenant(tenantId) {
     try {
-      const response = await axios.post(`/tenants/key/${tenantKey}/switch`);
+      const response = await axios.post(`/tenants/${tenantId}/switch`);
       return response;
     } catch (error) {
       handleTenantError(error);
@@ -44,8 +44,8 @@ export const tenantApi = {
     }
   },
 
-  async deleteTenant(tenantKey) {
-    return axios.delete(`/tenants/key/${tenantKey}`);
+  async deleteTenant(tenantId) {
+    return axios.delete(`/tenants/${tenantId}`);
   },
 
   async searchTenant(keyword) {
@@ -54,20 +54,20 @@ export const tenantApi = {
 
   /**
    * Lấy thông tin chi tiết tenant bao gồm profile và địa chỉ
-   * @param tenantKey UUID của tenant cần lấy thông tin
+   * @param tenantId UUID của tenant cần lấy thông tin
    * @returns Thông tin chi tiết của tenant
    */
-  async getTenantDetail(tenantKey) {
-    return axios.get(`/tenants/key/${tenantKey}/full`);
+  async getTenantDetail(tenantId) {
+    return axios.get(`/tenants/${tenantId}`);
   },
 
   /**
-   * Lấy thông tin chi tiết tenant bằng tenantKey (cho frontend)
-   * @param tenantKey UUID của tenant cần lấy thông tin
+   * Lấy thông tin chi tiết tenant bằng tenantId (cho frontend)
+   * @param tenantId UUID của tenant cần lấy thông tin
    * @returns Thông tin chi tiết của tenant
    */
-  async getTenantDetailByTenantKey(tenantKey) {
-    return axios.get(`/tenants/key/${tenantKey}/full`);
+  async getTenantDetailByTenantKey(tenantId) {
+    return axios.get(`/tenants/${tenantId}`);
   },
 
   async suspendTenant(id) {
@@ -91,12 +91,12 @@ export const tenantApi = {
   },
 
   // Profile - Similar to user profile endpoints
-  async getTenantProfile(tenantKey) {
-    return axios.get(`/v1/tenant/profile/${tenantKey}`);
+  async getTenantProfile(tenantId) {
+    return axios.get(`/v1/tenant/profile/${tenantId}`);
   },
 
-  async updateTenantProfile(tenantKey, data) {
-    return axios.put(`/v1/tenant/profile/${tenantKey}`, data);
+  async updateTenantProfile(tenantId, data) {
+    return axios.put(`/v1/tenant/profile/${tenantId}`, data);
   },
 
   async updateTenantLogo(file) {
@@ -110,31 +110,31 @@ export const tenantApi = {
   },
 
   // Basic Info - Similar to user basic info
-  async updateTenantBasicInfo(tenantKey, data) {
-    return axios.put(`/tenants/key/${tenantKey}`, data);
+  async updateTenantBasicInfo(tenantId, data) {
+    return axios.put(`/tenants/${tenantId}`, data);
   },
 
   // Professional Info - Similar to user professional info  
-  async updateTenantProfessionalInfo(tenantKey, data) {
+  async updateTenantProfessionalInfo(tenantId, data) {
     // This would go to TenantProfessionalController if it exists
-    return axios.put(`/v1/tenant/professional/${tenantKey}`, data);
+    return axios.put(`/v1/tenant/professional/${tenantId}`, data);
   },
 
   // Legacy method for backward compatibility
-  async updateTenantProfile_old(tenantKey, data) {
-    return axios.put(`/tenant-profile/${tenantKey}`, data);
+  async updateTenantProfile_old(tenantId, data) {
+    return axios.put(`/tenant-profile/${tenantId}`, data);
   },
 
   // Address
-  async updateTenantAddress(tenantKey, addressId, data) {
-    console.log('Updating tenant address:', tenantKey, addressId, data);
+  async updateTenantAddress(tenantId, addressId, data) {
+    console.log('Updating tenant address:', tenantId, addressId, data);
     return axios.put(`/addresses/${addressId}`, {
       ...data,
       ownerType: 'TENANT',
-      ownerId: tenantKey // Use tenantKey instead of tenantId
+      ownerId: tenantId // Use tenantId instead of tenantKey
     }, {
       headers: {
-        'X-Tenant-Key': tenantKey  // Thêm header X-Tenant-Key
+        'X-Tenant-Key': tenantId  // Thêm header X-Tenant-Key
       }
     });
   },
@@ -142,16 +142,16 @@ export const tenantApi = {
   /**
    * Lấy danh sách yêu cầu đang chờ (Admin)
    */
-  async getJoinRequests(tenantKey) {
-    return axios.get(`/tenants/key/${tenantKey}/members/join-requests`);
+  async getJoinRequests(tenantId) {
+    return axios.get(`/tenants/${tenantId}/members/join-requests`);
   },
 
   /**
    * Phê duyệt hoặc Từ chối yêu cầu
    * @param status 'APPROVED' | 'REJECTED'
    */
-  async updateJoinRequestStatus(tenantKey, requestId, status) {
-    return axios.patch(`/tenants/key/${tenantKey}/members/join-requests/${requestId}`, {
+  async updateJoinRequestStatus(tenantId, requestId, status) {
+    return axios.patch(`/tenants/${tenantId}/members/join-requests/${requestId}`, {
       status: status
     });
   },
@@ -196,6 +196,49 @@ export const tenantApi = {
    */
   async rejectInvitation(invitationId) {
     return axios.post(`/tenants/invitations/${invitationId}/reject`);
+  },
+
+  // Members management
+  async getTenantMembers(tenantId, params = {}) {
+    return axios.get(`/tenants/${tenantId}/members`, { params });
+  },
+
+  async removeTenantMember(tenantId, memberId) {
+    return axios.delete(`/tenants/${tenantId}/members/${memberId}`);
+  },
+
+  async updateTenantMemberRole(tenantId, memberId, role) {
+    return axios.put(`/tenants/${tenantId}/members/${memberId}/role`, role);
+  },
+
+  async inviteTenantMember(tenantId, inviteData) {
+    return axios.post(`/tenants/${tenantId}/invitations`, inviteData);
+  },
+
+  // Join Requests (Admin view)
+  async getTenantJoinRequests(tenantId) {
+    return axios.get(`/tenants/${tenantId}/members/join-requests`);
+  },
+
+  async approveJoinRequest(tenantId, requestId) {
+    return axios.patch(`/tenants/${tenantId}/members/join-requests/${requestId}`, {
+      status: 'APPROVED'
+    });
+  },
+
+  async rejectJoinRequest(tenantId, requestId) {
+    return axios.patch(`/tenants/${tenantId}/members/join-requests/${requestId}`, {
+      status: 'REJECTED'
+    });
+  },
+
+  // Invitations (Admin view) - Note: Backend controller disabled in v0.1
+  async getTenantInvitations(tenantId) {
+    return axios.get(`/tenants/${tenantId}/invitations`);
+  },
+
+  async revokeInvitation(tenantId, invitationId) {
+    return axios.delete(`/tenants/${tenantId}/invitations/${invitationId}`);
   }
 };
 

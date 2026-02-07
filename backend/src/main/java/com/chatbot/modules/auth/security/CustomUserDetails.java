@@ -49,7 +49,7 @@ public class CustomUserDetails implements UserDetails {
     // Thêm getter cho userId
     public UUID getUserId() {
         if (auth != null) {
-            return UUID.nameUUIDFromBytes(("auth_" + auth.getId()).getBytes());
+            return auth.getUserId();
         } else if (user != null) {
             return user.getId();
         } else {
@@ -60,9 +60,9 @@ public class CustomUserDetails implements UserDetails {
     // Thêm getter cho userId UUID
     public UUID getUserIdUUID() {
         if (auth != null) {
-            return UUID.nameUUIDFromBytes(("auth_" + auth.getId()).getBytes());
+            return auth.getUserId();
         } else if (user != null) {
-            return UUID.nameUUIDFromBytes(("user_" + user.getId()).getBytes());
+            return user.getId();
         } else {
             throw new IllegalStateException("Neither auth nor user is set");
         }

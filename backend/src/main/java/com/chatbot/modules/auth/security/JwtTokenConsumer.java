@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
+import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
@@ -181,5 +182,17 @@ public class JwtTokenConsumer {
             log.debug("Token validation failed", e);
             return false;
         }
+    }
+
+    /**
+     * Generate legacy token (for backward compatibility)
+     */
+    public String generateLegacyToken(String email) {
+        return Jwts.builder()
+                .setSubject(email)
+                .setIssuedAt(new Date())
+                .setExpiration(new Date(System.currentTimeMillis() + 86400000)) // 24h
+                .signWith(getLegacySigningKey())
+                .compact();
     }
 }

@@ -1,6 +1,7 @@
 package com.chatbot.modules.tenant.membership.repository;
 
 import com.chatbot.modules.tenant.membership.model.TenantMember;
+import com.chatbot.modules.tenant.membership.model.MembershipStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -29,6 +30,11 @@ public interface TenantMemberRepository extends JpaRepository<TenantMember, UUID
      * Check if user is member of tenant
      */
     boolean existsByTenantIdAndUserId(UUID tenantId, UUID userId);
+
+    /**
+     * Check if user is member of tenant with specific status
+     */
+    boolean existsByTenantIdAndUserIdAndStatus(UUID tenantId, UUID userId, MembershipStatus status);
 
     /**
      * Count members by role in tenant

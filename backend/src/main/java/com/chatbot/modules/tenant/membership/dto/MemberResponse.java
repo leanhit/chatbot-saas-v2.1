@@ -1,6 +1,7 @@
 package com.chatbot.modules.tenant.membership.dto;
 
 import com.chatbot.modules.tenant.membership.model.TenantRole;
+import com.chatbot.modules.tenant.membership.model.MembershipStatus;
 import lombok.*;
 
 import java.time.LocalDateTime;
@@ -20,5 +21,7 @@ public class MemberResponse {
     private UUID userId;
     private String email;
     private TenantRole role;
+    private MembershipStatus status;
     private LocalDateTime joinedAt;
+    private LocalDateTime requestedAt;
 }

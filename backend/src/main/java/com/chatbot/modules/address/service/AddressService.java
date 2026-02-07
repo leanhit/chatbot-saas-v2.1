@@ -4,6 +4,7 @@ import com.chatbot.modules.address.dto.*;
 import com.chatbot.modules.address.model.OwnerType;
 
 import java.util.List;
+import java.util.UUID;
 
 public interface AddressService {
     
@@ -17,5 +18,5 @@ public interface AddressService {
     
     void deleteAddress(Long tenantId, Long id);
     
-    void createEmptyAddressForUser(Long userId);
+    void createEmptyAddressForUser(UUID userId);
 }

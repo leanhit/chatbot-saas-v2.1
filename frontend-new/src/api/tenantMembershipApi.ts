@@ -32,7 +32,7 @@ export const tenantMembershipApi = {
   },
 
   /** Admin thu hồi lời mời đã gửi */
-  async revokeInvitation(tenantId: number | string, invitationId: number): Promise<void> {
+  async revokeInvitation(tenantId: number | string, invitationId: string): Promise<void> {
     return axios.delete(`/tenants/${tenantId}/invitations/${invitationId}`);
   },
 
@@ -61,11 +61,11 @@ export const tenantMembershipApi = {
     return axios.get(`/tenants/${tenantId}/members`);
   },
 
-  async updateUserRole(tenantId: string, userId: number, role: string): Promise<void> {
+  async updateUserRole(tenantId: string, userId: string, role: string): Promise<void> {
     return axios.put(`/tenants/${tenantId}/members/${userId}/role`, { role });
   },
 
-  async removeUserFromTenant(tenantId: string, userId: number): Promise<void> {
+  async removeUserFromTenant(tenantId: string, userId: string): Promise<void> {
     return axios.delete(`/tenants/${tenantId}/members/${userId}`);
   },
 

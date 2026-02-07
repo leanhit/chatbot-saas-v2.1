@@ -76,73 +76,36 @@
           </div>
 
           <!-- Active Members Tab -->
-          <div v-else-if="activeTab === 'active-members'" class="space-y-4">
-            <div class="text-center py-12">
-              <Icon icon="mdi:account-group" class="mx-auto h-12 w-12 text-gray-400" />
-              <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-white">Active Members</h3>
-              <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Component temporarily disabled</p>
-            </div>
-          </div>
+          <ActiveMemberTab 
+            v-if="activeTab === 'active-members'"
+            @member-removed="handleMemberRemoved"
+            @member-updated="handleMemberUpdated"
+          />
 
           <!-- Pending Requests Tab -->
-          <div v-else-if="activeTab === 'pending-requests'" class="space-y-4">
-            <div class="text-center py-12">
-              <Icon icon="mdi:account-clock" class="mx-auto h-12 w-12 text-gray-400" />
-              <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-white">Pending Requests</h3>
-              <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Component temporarily disabled</p>
-            </div>
-          </div>
+          <PendingMemberTab 
+            v-if="activeTab === 'pending-requests'"
+            @request-approved="handleRequestApproved"
+            @request-rejected="handleRequestRejected"
+          />
 
           <!-- Pending Invitations Tab -->
-          <div v-else-if="activeTab === 'pending-invitations'" class="space-y-4">
-            <div class="text-center py-12">
-              <Icon icon="mdi:email-send" class="mx-auto h-12 w-12 text-gray-400" />
-              <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-white">Pending Invitations</h3>
-              <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Component temporarily disabled</p>
-            </div>
-          </div>
+          <InviteMemberTab 
+            v-if="activeTab === 'pending-invitations'"
+            @invitation-revoked="handleInvitationRevoked"
+            @member-invited="handleMemberInvited"
+          />
         </div>
       </div>
     </div>
 
     <!-- Invite Member Modal -->
-    <Modal
+    <InviteMemberModal
       v-if="showInviteModal"
       :visible="showInviteModal"
-      :title="$t('tenant.member.inviteMember')"
-      :subtitle="$t('tenant.member.inviteMember')"
-      btnTextSubmit="Invite"
-      btnTextClose="Cancel"
       @close="showInviteModal = false"
-      @submit="handleInviteMember"
-    >
-      <div class="space-y-4">
-        <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            Email Address
-          </label>
-          <input
-            v-model="inviteEmail"
-            type="email"
-            required
-            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary dark:bg-gray-700 dark:text-white"
-            placeholder="Enter email address"
-          />
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            Role
-          </label>
-          <select
-            v-model="inviteRole"
-            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary dark:bg-gray-700 dark:text-white"
-          >
-            <option value="member">Member</option>
-            <option value="admin">Admin</option>
-          </select>
-        </div>
-      </div>
-    </Modal>
+      @invited="handleInvited"
+    />
   </div>
 </template>
 
@@ -154,6 +117,7 @@ import { useGatewayTenantStore } from '@/stores/tenant/gateway/myTenantStore'
 import ActiveMemberTab from './components/ActiveMemberTab.vue'
 import PendingMemberTab from './components/PendingMemberTab.vue'
 import InviteMemberTab from './components/InviteMemberTab.vue'
+import InviteMemberModal from './components/InviteMemberModal.vue'
 
 export default {
   name: 'TenantMemberIndex',
@@ -161,7 +125,8 @@ export default {
     Icon,
     ActiveMemberTab,
     PendingMemberTab,
-    InviteMemberTab
+    InviteMemberTab,
+    InviteMemberModal
   },
   setup() {
     const { t } = useI18n()
@@ -170,8 +135,6 @@ export default {
     const activeTab = ref('active-members')
     const loading = ref(false)
     const showInviteModal = ref(false)
-    const inviteEmail = ref('')
-    const inviteRole = ref('member')
     
     // Mock counts - in real app, these would come from API
     const activeMembersCount = ref(0)
@@ -182,39 +145,14 @@ export default {
 
     const openInviteModal = () => {
       showInviteModal.value = true
-      inviteEmail.value = ''
-      inviteRole.value = 'member'
     }
 
-    const handleInviteMember = async () => {
-      if (!inviteEmail.value) {
-        alert('Please enter email address')
-        return
-      }
-
-      try {
-        // In real implementation:
-        // await tenantApi.inviteMember(currentTenant.value?.id, {
-        //   email: inviteEmail.value,
-        //   role: inviteRole.value
-        // })
-        
-        console.log('Inviting member:', { email: inviteEmail.value, role: inviteRole.value })
-        
-        // Show success message
-        alert(`Invitation sent to ${inviteEmail.value}`)
-        
-        // Reset and close modal
-        showInviteModal.value = false
-        inviteEmail.value = ''
-        inviteRole.value = 'member'
-        
-        // Refresh data
-        await refreshData()
-      } catch (error) {
-        console.error('Error inviting member:', error)
-        alert('Failed to send invitation. Please try again.')
-      }
+    const handleInvited = (inviteData) => {
+      console.log('Member invited:', inviteData)
+      showInviteModal.value = false
+      pendingInvitationsCount.value += 1
+      // Refresh data
+      refreshData()
     }
 
     const refreshData = async () => {
@@ -278,14 +216,12 @@ export default {
       activeTab,
       loading,
       showInviteModal,
-      inviteEmail,
-      inviteRole,
       activeMembersCount,
       pendingRequestsCount,
       pendingInvitationsCount,
       currentTenant,
       openInviteModal,
-      handleInviteMember,
+      handleInvited,
       refreshData,
       handleMemberRemoved,
       handleMemberUpdated,

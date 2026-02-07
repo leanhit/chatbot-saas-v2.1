@@ -29,7 +29,7 @@ export const useGatewayTenantStore = defineStore('gateway-tenant', () => {
   const switchingTenant = ref(false)
 
   // getters
-  const activeTenantId = computed(() => currentTenant.value?.tenantKey)
+  const activeTenantId = computed(() => currentTenant.value?.id)
 
   // actions
   const fetchUserTenants = async () => {
@@ -51,14 +51,14 @@ export const useGatewayTenantStore = defineStore('gateway-tenant', () => {
     }
   }
 
-  const switchTenant = async (tenantKey) => {
+  const switchTenant = async (tenantId) => {
     switchingTenant.value = true
     try {
-      // Use new endpoint with tenantKey
-      const { data } = await tenantApi.getTenantDetailByTenantKey(tenantKey)
+      // Use tenantId instead of tenantKey since backend only returns id
+      const { data } = await tenantApi.getTenantDetail(tenantId)
       console.log('🔍 Tenant data received:', data)
       console.log('🔍 Tenant ID types:', {
-        tenantKey: typeof tenantKey,
+        tenantId: typeof tenantId,
         dataId: typeof data.id,
         dataTenantKey: typeof data.tenantKey,
         dataTenantKeyType: typeof data.tenantKey
@@ -82,8 +82,8 @@ export const useGatewayTenantStore = defineStore('gateway-tenant', () => {
       try {
         if (typeof localStorage !== 'undefined') {
           localStorage.setItem(TENANT_DATA, JSON.stringify(data))
-          localStorage.setItem(ACTIVE_TENANT_ID, data.tenantKey) // ✅ Lưu tenantKey
-          console.log('✅ Saved tenantKey to localStorage:', data.tenantKey)
+          localStorage.setItem(ACTIVE_TENANT_ID, data.id) // Use data.id instead of data.tenantKey
+          console.log('✅ Saved tenant ID to localStorage:', data.id)
         }
       } catch (storageError) {
         console.warn('localStorage write failed:', storageError)

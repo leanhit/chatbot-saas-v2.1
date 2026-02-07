@@ -20,4 +20,13 @@ public interface TenantRepository extends JpaRepository<Tenant, UUID> {
            "JOIN TenantMember tm ON t.id = tm.tenant.id " +
            "WHERE tm.userId = :userId")
     List<Tenant> findByUserId(UUID userId);
+
+    /**
+     * Search tenants by user ID and keyword
+     */
+    @Query("SELECT DISTINCT t FROM Tenant t " +
+           "JOIN TenantMember tm ON t.id = tm.tenant.id " +
+           "WHERE tm.userId = :userId AND " +
+           "LOWER(t.name) LIKE LOWER(CONCAT('%', :keyword, '%'))")
+    List<Tenant> searchTenants(UUID userId, String keyword);
 }

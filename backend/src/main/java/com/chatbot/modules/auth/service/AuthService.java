@@ -6,6 +6,7 @@ import com.chatbot.modules.auth.model.Auth;
 import com.chatbot.modules.auth.model.SystemRole;
 import com.chatbot.modules.auth.repository.AuthRepository;
 import com.chatbot.modules.auth.security.CustomUserDetails;
+import com.chatbot.modules.auth.security.JwtTokenConsumer;
 import com.chatbot.modules.userInfo.model.UserInfo;
 import com.chatbot.modules.identity.service.IdentityBridgeService;
 
@@ -28,7 +29,7 @@ public class AuthService implements UserDetailsService {
 
     private final AuthRepository authRepository;
     private final PasswordEncoder passwordEncoder;
-    private final JwtService jwtService;
+    private final JwtTokenConsumer jwtTokenConsumer;
     // private final AddressService addressService;
     
     // Identity Hub bridge service for separate transaction
@@ -45,8 +46,8 @@ public class AuthService implements UserDetailsService {
     /**
      * Load user by ID for Identity Hub tokens
      */
-    public UserDetails loadUserById(Long userId) throws UsernameNotFoundException {
-        Auth user = authRepository.findById(userId)
+    public UserDetails loadUserById(UUID userId) throws UsernameNotFoundException {
+        Auth user = authRepository.findByUserId(userId)
                 .orElseThrow(() -> new UsernameNotFoundException("Không tìm thấy người dùng với ID: " + userId));
 
         return new CustomUserDetails(user);
@@ -62,6 +63,7 @@ public class AuthService implements UserDetailsService {
         boolean isFirstUser = authRepository.count() == 0;
 
         Auth user = Auth.builder()
+                .userId(UUID.randomUUID())
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
                 .systemRole(isFirstUser ? SystemRole.ADMIN : SystemRole.USER)
@@ -105,10 +107,10 @@ public class AuthService implements UserDetailsService {
             log.error("Không thể tạo địa chỉ trống cho user {}: {}", savedUser.getId(), e.getMessage());
         }
 
-        String token = jwtService.generateToken(savedUser.getEmail());
+        String token = jwtTokenConsumer.generateLegacyToken(savedUser.getEmail());
 
         UserDto userDto = new UserDto(
-                UUID.nameUUIDFromBytes(("auth_" + savedUser.getId()).getBytes()),
+                savedUser.getUserId(),
                 savedUser.getEmail(),
                 savedUser.getSystemRole().name(),
                 "vi"
@@ -125,10 +127,10 @@ public class AuthService implements UserDetailsService {
             throw new RuntimeException("Mật khẩu không chính xác");
         }
 
-        String token = jwtService.generateToken(user.getEmail());
+        String token = jwtTokenConsumer.generateLegacyToken(user.getEmail());
 
         UserDto userDto = new UserDto(
-                UUID.nameUUIDFromBytes(("auth_" + user.getId()).getBytes()),
+                user.getUserId(),
                 user.getEmail(),
                 user.getSystemRole().name(),
                 "vi"
@@ -149,9 +151,9 @@ public class AuthService implements UserDetailsService {
         authRepository.save(user);
 
         // --- TẠO LẠI TOKEN MỚI VÀ TRẢ VỀ GIỐNG LOGIN ---
-        String newToken = jwtService.generateToken(user.getEmail());
+        String newToken = jwtTokenConsumer.generateLegacyToken(user.getEmail());
         UserDto userDto = new UserDto(
-                UUID.nameUUIDFromBytes(("auth_" + user.getId()).getBytes()),
+                user.getUserId(),
                 user.getEmail(),
                 user.getSystemRole().name(),
                 "vi"
@@ -160,9 +162,9 @@ public class AuthService implements UserDetailsService {
         return new UserResponse(newToken, userDto);
     }
 
-    public UserDto changeRole(Long userId, SystemRole newRole) {
+    public UserDto changeRole(UUID userId, SystemRole newRole) {
         // 1. Tìm người dùng cần đổi role
-        Auth user = authRepository.findById(userId)
+        Auth user = authRepository.findByUserId(userId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng với ID: " + userId));
 
         // 2. Cập nhật role mới

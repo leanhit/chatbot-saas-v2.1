@@ -1,6 +1,5 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { ElMessage } from 'element-plus'
 import { tenantMembershipApi } from '@/api/tenantMembershipApi'
 import type {
   MemberResponse,
@@ -60,17 +59,17 @@ export const useTenantAdminMembersStore = defineStore(
       }
     }
 
-    const updateRole = async (userId: number, role: TenantRole) => {
+    const updateRole = async (userId: string, role: TenantRole) => {
       await tenantMembershipApi.updateUserRole(activeTenantId, userId, role)
       const user = members.value.find(m => m.userId === userId)
       if (user) user.role = role
-      ElMessage.success('Đã cập nhật vai trò')
+      // ElMessage.success('Đã cập nhật vai trò')
     }
 
-    const removeMember = async (userId: number) => {
+    const removeMember = async (userId: string) => {
       await tenantMembershipApi.removeUserFromTenant(activeTenantId, userId)
       members.value = members.value.filter(m => m.userId !== userId)
-      ElMessage.success('Đã xóa thành viên')
+      // ElMessage.success('Đã xóa thành viên')
     }
 
     // ======================
@@ -90,16 +89,16 @@ export const useTenantAdminMembersStore = defineStore(
     const inviteUser = async (payload: InviteMemberRequest) => {
       try {
         await tenantMembershipApi.inviteMember(activeTenantId, payload)
-        ElMessage.success('Đã gửi lời mời')
+        // ElMessage.success('Đã gửi lời mời')
         await fetchInvitations()
       } catch (error: any) {
-        ElMessage.error(
-          error.response?.data?.message || 'Không thể gửi lời mời'
-        )
+        // ElMessage.error(
+        //   error.response?.data?.message || 'Không thể gửi lời mời'
+        // )
       }
     }
 
-    const revokeInvitationAction = async (invitationId: number) => {
+    const revokeInvitationAction = async (invitationId: string) => {
       try {
         await tenantMembershipApi.revokeInvitation(
           activeTenantId,
@@ -108,9 +107,10 @@ export const useTenantAdminMembersStore = defineStore(
         invitations.value = invitations.value.filter(
           i => i.id !== invitationId
         )
-        ElMessage.success('Đã thu hồi lời mời')
+        // ElMessage.success('Đã thu hồi lời mời')
       } catch {
-        ElMessage.error('Không thể thu hồi lời mời')
+        // ElMessage.error('Không thể thu hồi lời mời')
+        console.error('Failed to revoke invitation')
       }
     }
 
@@ -138,7 +138,7 @@ export const useTenantAdminMembersStore = defineStore(
       joinRequests.value = joinRequests.value.filter(
         r => r.id !== requestId
       )
-      ElMessage.success('Đã duyệt yêu cầu tham gia')
+      // ElMessage.success('Đã duyệt yêu cầu tham gia')
       await fetchMembers() // user trở thành member
     }
 
@@ -150,7 +150,7 @@ export const useTenantAdminMembersStore = defineStore(
       joinRequests.value = joinRequests.value.filter(
         r => r.id !== requestId
       )
-      ElMessage.success('Đã từ chối yêu cầu')
+      // ElMessage.success('Đã từ chối yêu cầu')
     }
 
     // ======================

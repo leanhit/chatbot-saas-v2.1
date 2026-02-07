@@ -31,20 +31,20 @@ export const debugJWT = (token) => {
 
 // Get user ID from JWT token with multiple field attempts
 export const getUserIdFromJWT = (token) => {
-  if (!token) return 1;
+  if (!token) return '00000000-0000-0000-0000-000000000000';
   
   try {
     const payload = JSON.parse(atob(token.split('.')[1]));
     
-    // Try multiple possible fields for user ID
-    return parseInt(payload.sub) || 
-           parseInt(payload.userId) || 
-           parseInt(payload.id) || 
-           parseInt(payload.user_id) || 
-           parseInt(payload.subject) || 
-           1;
+    // Try multiple possible fields for user ID (UUID string)
+    return payload.sub || 
+           payload.userId || 
+           payload.id || 
+           payload.user_id || 
+           payload.subject || 
+           '00000000-0000-0000-0000-000000000000';
   } catch (error) {
     console.error('Error getting user ID from JWT:', error);
-    return 1;
+    return '00000000-0000-0000-0000-000000000000';
   }
 };

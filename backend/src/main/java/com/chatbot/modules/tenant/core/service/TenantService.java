@@ -2,6 +2,7 @@ package com.chatbot.modules.tenant.core.service;
 
 import com.chatbot.modules.tenant.core.dto.CreateTenantRequest;
 import com.chatbot.modules.tenant.core.dto.TenantResponse;
+import com.chatbot.modules.tenant.core.dto.TenantSearchRequest;
 import com.chatbot.modules.tenant.core.model.Tenant;
 import com.chatbot.modules.tenant.core.model.TenantStatus;
 import com.chatbot.modules.tenant.core.model.TenantVisibility;
@@ -150,6 +151,31 @@ public class TenantService {
                 .orElseThrow(() -> new IllegalArgumentException("User is not a member of this tenant"));
 
         return mapToResponse(membership.getTenant());
+    }
+
+    /**
+     * Search tenants
+     */
+    @Transactional(readOnly = true)
+    public List<TenantResponse> searchTenants(TenantSearchRequest request) {
+        UUID currentUserId = securityContextUtil.getCurrentUserIdUUID();
+        
+        if (currentUserId == null) {
+            throw new IllegalStateException("No authenticated user found");
+        }
+        
+        log.info("Searching tenants for user: {} with keyword: {}", currentUserId, request.getKeyword());
+        
+        List<Tenant> tenants;
+        if (request.getKeyword() != null && !request.getKeyword().trim().isEmpty()) {
+            tenants = tenantRepository.searchTenants(currentUserId, request.getKeyword().trim());
+        } else {
+            tenants = tenantRepository.findByUserId(currentUserId);
+        }
+        
+        return tenants.stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
     }
 
     private TenantResponse mapToResponse(Tenant tenant) {

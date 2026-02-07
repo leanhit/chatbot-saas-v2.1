@@ -212,7 +212,7 @@ router.beforeEach(async (to, from, next) => {
   
   // Check tenant from store or localStorage (updated for tenantKey)
   const storedTenantData = localStorage.getItem(TENANT_DATA);
-  const activeTenantId = tenantStore.currentTenant?.tenantKey || (storedTenantData ? JSON.parse(storedTenantData).tenantKey : null);
+  const activeTenantId = tenantStore.currentTenant?.id || (storedTenantData ? JSON.parse(storedTenantData).id : null);
   console.log('Active tenant ID:', activeTenantId);
   console.log('Stored tenant data:', storedTenantData ? 'exists' : 'none');
   

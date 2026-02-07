@@ -18,7 +18,7 @@ export const useGatewaySearchTenantStore = defineStore('gateway-search-tenant', 
 
     try {
       const { data } = await tenantApi.searchTenant(keyword)
-      searchResults.value = data.content || []
+      searchResults.value = data || []
     } catch (error) {
       console.error('searchTenants error:', error)
       error.value = error.response?.data?.message || 'Không thể tìm kiếm tenant'

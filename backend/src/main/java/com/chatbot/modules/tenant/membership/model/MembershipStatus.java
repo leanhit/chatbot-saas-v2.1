@@ -1,9 +1,9 @@
 package com.chatbot.modules.tenant.membership.model;
 
-/**
- * Membership status for v0.1
- * Simplified to active state only
- */
 public enum MembershipStatus {
-    ACTIVE
+    PENDING,    // User gửi yêu cầu tham gia, chờ Admin duyệt
+    INVITED,    // Admin mời, chờ User đồng ý
+    ACTIVE,     // Thành viên chính thức
+    REJECTED,   // Yêu cầu bị từ chối
+    BLOCKED     // Bị khóa tài khoản trong Tenant này
 }

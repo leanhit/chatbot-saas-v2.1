@@ -17,6 +17,7 @@ import java.security.Principal;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * Test Controller for User and Tenant Information Retrieval
@@ -55,7 +56,9 @@ public class UserTenantTestController {
             UserInfoResponse userProfile = null;
             if (authUser != null) {
                 try {
-                    userProfile = userInfoService.getProfile(authUser.getId());
+                    // TODO: Update UserInfoService.getProfile() to accept UUID
+                    // userProfile = userInfoService.getProfile(authUser.getId());
+                    log.warn("UserInfoService.getProfile() needs to be updated to accept UUID parameter");
                 } catch (Exception e) {
                     log.warn("Could not get user profile for user ID {}: {}", authUser.getId(), e.getMessage());
                 }
@@ -81,11 +84,13 @@ public class UserTenantTestController {
      * Get user information by user ID
      */
     @GetMapping("/user/{userId}")
-    public ResponseEntity<Map<String, Object>> getUserById(@PathVariable Long userId) {
+    public ResponseEntity<Map<String, Object>> getUserById(@PathVariable UUID userId) {
         try {
             log.info("Getting user info for user ID: {}", userId);
 
-            UserInfoResponse userProfile = userInfoService.getProfile(userId);
+            // TODO: Update UserInfoService to accept UUID instead of Long
+            // UserInfoResponse userProfile = userInfoService.getProfile(userId);
+            UserInfoResponse userProfile = null; // Placeholder until UserInfoService is updated
 
             Map<String, Object> response = new HashMap<>();
             response.put("profile", userProfile);
@@ -181,7 +186,9 @@ public class UserTenantTestController {
 
             if (authUser != null) {
                 try {
-                    userProfile = userInfoService.getProfile(authUser.getId());
+                    // TODO: Update UserInfoService.getProfile() to accept UUID
+                    // userProfile = userInfoService.getProfile(authUser.getId());
+                    log.warn("UserInfoService.getProfile() needs to be updated to accept UUID parameter");
                 } catch (Exception e) {
                     log.warn("Could not get user profile: {}", e.getMessage());
                 }
@@ -234,7 +241,7 @@ public class UserTenantTestController {
         try {
             // This is a workaround since we don't have a direct method to get user by email
             // In a real implementation, you would add such a method to AuthService
-            return new UserDto(1L, email, "USER", "vi"); // Placeholder
+            return new UserDto(UUID.randomUUID(), email, "USER", "vi"); // Placeholder with UUID
         } catch (Exception e) {
             log.warn("Could not get auth user for email: {}", email);
             return null;
