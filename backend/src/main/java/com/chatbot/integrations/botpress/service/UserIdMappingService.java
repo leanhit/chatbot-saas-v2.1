@@ -2,7 +2,7 @@ package com.chatbot.integrations.botpress.service;
 
 import com.chatbot.integrations.botpress.model.UserIdMapping;
 import com.chatbot.integrations.botpress.repository.UserIdMappingRepository;
-import com.chatbot.modules.tenant.infra.TenantContext;
+import com.chatbot.core.tenant.infra.TenantContext;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 

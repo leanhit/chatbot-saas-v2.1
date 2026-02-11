@@ -1,6 +1,6 @@
 package com.chatbot.modules.penny.rules;
 
-import com.chatbot.modules.tenant.infra.TenantContext;
+import com.chatbot.core.tenant.infra.TenantContext;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

@@ -4,9 +4,9 @@
       <!-- Header -->
       <div class="header-row">
         <div class="header-text">
-          <h2>{{ $t('Title') }}</h2>
+          <h2>{{ $t('tenantGateway.title') }}</h2>
           <p class="header-subtitle">
-            {{ $t('Subtitle') }}
+            {{ $t('tenantGateway.subtitle') }}
           </p>
         </div>
         <div class="button-group">
@@ -15,14 +15,14 @@
             class="inline-flex items-center px-5 py-2.5 text-sm font-medium text-white bg-blue-700 rounded-lg hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
           >
             <Icon icon="mdi:plus" class="h-4 w-4 mr-2" />
-            {{ $t('Create') }}
+            {{ $t('tenantGateway.createNewWorkspace') }}
           </button>
           <button
             @click="handleLogout"
             class="inline-flex items-center px-5 py-2.5 text-sm font-medium text-gray-900 bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-4 focus:outline-none focus:ring-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700"
           >
             <Icon icon="mdi:logout" class="h-4 w-4 mr-2" />
-            {{ $t('Logout') }}
+            {{ $t('tenantGateway.logout') }}
           </button>
         </div>
       </div>
@@ -118,8 +118,9 @@ export default {
     const handleLogout = async () => {
       try {
         await authStore.logout()
-        router.push('/login')
+        router.push('/auth/login') // Cập nhật đường dẫn
       } catch (error) {
+        console.error('Logout error:', error)
       }
     }
     let mounted = true

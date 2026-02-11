@@ -5,7 +5,7 @@ package com.chatbot.modules.facebook.connection.service;
 import com.chatbot.modules.facebook.connection.dto.CreateFacebookConnectionRequest;
 import com.chatbot.modules.facebook.connection.dto.FacebookConnectionResponse;
 import com.chatbot.modules.facebook.connection.dto.UpdateFacebookConnectionRequest;
-import com.chatbot.modules.tenant.infra.TenantContext;
+import com.chatbot.core.tenant.infra.TenantContext;
 import com.chatbot.modules.facebook.connection.model.FacebookConnection;
 import com.chatbot.modules.facebook.connection.repository.FacebookConnectionRepository;
 import com.chatbot.modules.penny.service.PennyBotManager;

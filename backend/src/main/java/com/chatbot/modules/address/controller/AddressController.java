@@ -9,7 +9,7 @@ import com.chatbot.modules.address.dto.*;
 import com.chatbot.modules.address.dto.AddressDetailResponseDTO;
 import com.chatbot.modules.address.model.OwnerType;
 import com.chatbot.modules.address.service.AddressService;
-import com.chatbot.modules.tenant.infra.TenantContext;
+import com.chatbot.core.tenant.infra.TenantContext;
 
 @RestController
 @RequestMapping("/api/addresses")

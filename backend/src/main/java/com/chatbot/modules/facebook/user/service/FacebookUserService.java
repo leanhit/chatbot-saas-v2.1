@@ -2,7 +2,7 @@ package com.chatbot.modules.facebook.user.service;
 
 import com.chatbot.modules.facebook.connection.model.FacebookConnection;
 import com.chatbot.modules.facebook.connection.repository.FacebookConnectionRepository;
-import com.chatbot.modules.tenant.infra.TenantContext;
+import com.chatbot.core.tenant.infra.TenantContext;
 import com.chatbot.modules.facebook.user.dto.FacebookUserInfo;
 import com.chatbot.modules.facebook.user.model.FacebookUser;
 import com.chatbot.modules.facebook.user.repository.FacebookUserRepository;

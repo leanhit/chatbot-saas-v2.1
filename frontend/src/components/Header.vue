@@ -185,10 +185,11 @@
             >
               <li>
                 <router-link
-                  to="/profile"
+                  to="/auth/profile"
                   class="block py-2 px-4 hover:bg-primary hover:text-white text-gray-700 dark:text-gray-200"
                   @click="menu = false"
                 >
+                  <Icon icon="mdi:account" class="h-4 w-4 mr-2 inline" />
                   {{ $t('navbar.userProfile') }}
                 </router-link>
               </li>
@@ -196,8 +197,10 @@
                 <a
                   href="#"
                   class="block py-2 px-4 hover:bg-primary hover:text-white"
-                  >{{ $t('navbar.settings') }}</a
                 >
+                  <Icon icon="mdi:cog" class="h-4 w-4 mr-2 inline" />
+                  {{ $t('navbar.settings') }}
+                </a>
               </li>
               <li>
                 <a
@@ -215,8 +218,10 @@
                 href="#"
                 @click.prevent="handleLogout"
                 class="block py-2 px-4 text-sm text-gray-700 dark:text-gray-200 hover:bg-primary hover:text-white"
-                >{{ $t('navbar.signOut') }}</a
               >
+                <Icon icon="mdi:logout" class="h-4 w-4 mr-2 inline" />
+                {{ $t('navbar.signOut') }}
+              </a>
             </div>
           </div>
         </transition>
@@ -225,9 +230,10 @@
       <div class="mr-5 flex gap-3" v-else>
         <LanguageSwitcher />
         <router-link 
-          to="/login" 
+          to="/auth/login" 
           class="bg-primary border flex gap-2 text-white hover:bg-primary/80 dark:border-gray-700 rounded py-2 px-4"
         >
+          <Icon icon="mdi:login" class="h-4 w-4" />
           <span class="text">{{ $t('navbar.login') }}</span>
         </router-link>
       </div>
@@ -416,7 +422,7 @@
       // handle tenant gateway click
       handleTenantGateway() {
         // Navigate to tenant gateway
-        this.$router.push('/tenant-gateway').then(() => {
+        this.$router.push('/tenant/gateway').then(() => {
         }).catch(error => {
         });
         this.menu = false;

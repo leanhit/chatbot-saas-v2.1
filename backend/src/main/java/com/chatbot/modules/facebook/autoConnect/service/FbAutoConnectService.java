@@ -5,7 +5,7 @@ import com.chatbot.modules.facebook.connection.repository.FacebookConnectionRepo
 import com.chatbot.modules.facebook.webhook.service.FacebookApiGraphService;
 import com.chatbot.modules.facebook.autoConnect.dto.AutoConnectResponse;
 import com.chatbot.modules.facebook.autoConnect.dto.ConnectionError;
-import com.chatbot.modules.tenant.infra.TenantContext;
+import com.chatbot.core.tenant.infra.TenantContext;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

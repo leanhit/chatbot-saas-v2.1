@@ -3,7 +3,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import com.chatbot.integrations.odoo.model.*;
 import com.chatbot.integrations.odoo.repository.FbCustomerStagingRepository;
-import com.chatbot.modules.tenant.infra.TenantContext;
+import com.chatbot.core.tenant.infra.TenantContext;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Service;

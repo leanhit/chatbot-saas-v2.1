@@ -151,7 +151,7 @@ public class UserInfoService {
             Category avatarCategory;
             
             // Clear any existing tenant context to get global categories
-            com.chatbot.modules.tenant.infra.TenantContext.clear();
+            com.chatbot.core.tenant.infra.TenantContext.clear();
             
             List<CategoryResponseDTO> categories = categoryService.getAllCategoriesGlobal();
             Optional<Category> existingCategory = categories.stream()

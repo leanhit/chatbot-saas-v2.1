@@ -2,7 +2,7 @@ package com.chatbot.integrations.image.fileMetadata.service;
 
 import com.chatbot.core.identity.model.Auth;
 import com.chatbot.core.identity.repository.AuthRepository;
-import com.chatbot.modules.tenant.infra.TenantContext;
+import com.chatbot.core.tenant.infra.TenantContext;
 import com.chatbot.integrations.image.category.model.Category;
 import com.chatbot.integrations.image.category.service.CategoryService;
 import com.chatbot.integrations.image.fileMetadata.dto.FileRequestDTO;

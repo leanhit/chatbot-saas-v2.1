@@ -4,7 +4,7 @@ import com.chatbot.modules.facebook.connection.dto.CreateFacebookConnectionReque
 import com.chatbot.modules.facebook.connection.dto.FacebookConnectionResponse;
 import com.chatbot.modules.facebook.connection.dto.UpdateFacebookConnectionRequest;
 import com.chatbot.modules.facebook.connection.service.FacebookConnectionService;
-import com.chatbot.modules.tenant.infra.TenantContext;
+import com.chatbot.core.tenant.infra.TenantContext;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;

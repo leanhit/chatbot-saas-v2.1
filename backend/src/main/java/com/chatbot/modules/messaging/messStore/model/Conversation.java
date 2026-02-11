@@ -1,7 +1,7 @@
 package com.chatbot.modules.messaging.messStore.model;
 
 import com.chatbot.modules.messaging.messStore.model.Channel;
-import com.chatbot.modules.tenant.infra.BaseTenantEntity;
+import com.chatbot.core.tenant.infra.BaseTenantEntity;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.*;
 import lombok.*;
@@ -78,4 +78,22 @@ public class Conversation extends BaseTenantEntity {
     @UpdateTimestamp
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS", timezone = "Asia/Ho_Chi_Minh")
     private LocalDateTime updatedAt;
+    
+    @Column(name = "tenant_id")
+    private Long tenantId;
+    
+    @Override
+    public Long getId() {
+        return id;
+    }
+    
+    @Override
+    public Long getTenantId() {
+        return tenantId;
+    }
+    
+    @Override
+    public void setTenantId(Long tenantId) {
+        this.tenantId = tenantId;
+    }
 }

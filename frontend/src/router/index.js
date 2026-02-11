@@ -35,21 +35,15 @@ var appname = " - Windzo Dashboard Admin Template";
 const routes = [
   // Auth Routes (Outside main layout)
   {
-    path: "/login",
+    path: "/auth/login",
     name: "login",
     component: Login,
     meta: { hideNav: true },
   },
   {
-    path: "/register",
+    path: "/auth/register",
     name: "register", 
     component: Register,
-    meta: { hideNav: true },
-  },
-  {
-    path: "/auth/forgot-password",
-    name: "forgot-password",
-    component: ForgotPassword,
     meta: { hideNav: true },
   },
   {
@@ -59,7 +53,13 @@ const routes = [
     meta: { requiresAuth: true, hideNav: true },
   },
   {
-    path: "/tenant-gateway",
+    path: "/auth/forgot-password",
+    name: "forgot-password",
+    component: ForgotPassword,
+    meta: { hideNav: true },
+  },
+  {
+    path: "/tenant/gateway",
     name: "tenant-gateway",
     component: Tenant,
     meta: { requiresAuth: true, hideNav: true },
@@ -129,32 +129,43 @@ router.beforeEach(async (to, from, next) => {
   const authStore = useAuthStore();
   const tenantStore = useGatewayTenantStore();
   const token = authStore.token;
+  
   // Check tenant from store or localStorage (updated for tenantKey)
   const storedTenantData = localStorage.getItem(TENANT_DATA);
   const activeTenantId = tenantStore.currentTenant?.tenantKey || (storedTenantData ? JSON.parse(storedTenantData).tenantKey : null);
+  
   // If tenant in localStorage but not in store, load it (giống frontend)
   if (storedTenantData && !tenantStore.currentTenant) {
     const tenantData = JSON.parse(storedTenantData);
     tenantStore.currentTenant = tenantData;
   }
-  // 1. If not logged in (giống frontend)
+  
+  // 1. Chưa có tài khoản => redirect to login
   if (!token) {
     if (to.meta.requiresAuth) {
       return next({ name: 'login', query: { redirect: to.fullPath } });
     }
     return next();
   }
-  // 2. If logged in and trying to access login (giống frontend)
+  
+  // 2. Đã đăng ký ok => trang login
+  if (to.name === 'register') {
+    return next({ name: 'login' });
+  }
+  
+  // 3. Login ok chưa có tenant phải redirect tenant gateway
   if (to.name === 'login') {
     return activeTenantId ? next({ name: 'dashboard' }) : next({ name: 'tenant-gateway' });
   }
-  // 3. If logged in but no tenant selected (and not on tenant gateway or routes that skip tenant check) (giống frontend)
+  
+  // 4. Khi vào trang ứng dụng phải có đủ user và tenant
   if (to.meta.requiresAuth && !activeTenantId && to.name !== 'tenant-gateway' && !to.meta.skipTenantCheck) {
     return next({ 
       name: 'tenant-gateway', 
       query: { redirect: to.fullPath } 
     });
   }
+  
   next();
 });
 export default router;

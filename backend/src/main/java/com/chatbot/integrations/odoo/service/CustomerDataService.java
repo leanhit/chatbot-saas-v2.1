@@ -2,7 +2,7 @@ package com.chatbot.integrations.odoo.service;
 
 import com.chatbot.modules.facebook.connection.model.FacebookConnection;
 import com.chatbot.modules.facebook.connection.repository.FacebookConnectionRepository;
-import com.chatbot.modules.tenant.infra.TenantContext;
+import com.chatbot.core.tenant.infra.TenantContext;
 import com.chatbot.integrations.odoo.model.CustomerStatus;
 import com.chatbot.integrations.odoo.model.FbCapturedPhone;
 import com.chatbot.integrations.odoo.model.FbCustomerStaging;

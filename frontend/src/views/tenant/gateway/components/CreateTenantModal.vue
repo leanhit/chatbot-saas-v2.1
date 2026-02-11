@@ -2,10 +2,10 @@
   <div v-if="visible" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50" @click="handleOverlayClick">
     <div class="relative top-20 mx-auto p-4 border w-96 shadow-lg rounded-md bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700" @click.stop>
       <div class="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 pb-4">
-        <h3 class="text-lg font-medium text-gray-900 dark:text-white">{{ $t('Create New Workspace') }}</h3>
-        <button @click="handleClose" class="text-gray-400 hover:text-gray-500">
-          <Icon icon="mdi:close" class="h-6 w-6" />
-        </button>
+        <h3 class="text-lg font-medium text-blue-600 dark:text-blue-400">{{ $t('tenantGateway.createNewWorkspace') }}</h3>
+        <router-link to="/tenant/gateway" class="text-blue-600 hover:text-blue-500">
+          {{ $t('tenantGateway.title') }}
+        </router-link>
       </div>
       <form @submit.prevent="handleSubmit" class="mt-4">
         <div class="mb-4">

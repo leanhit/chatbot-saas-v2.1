@@ -8,7 +8,7 @@ import com.chatbot.modules.facebook.autoConnectClient.dto.FbAutoConnectClientReq
 import com.chatbot.modules.facebook.connection.model.FacebookConnection;
 import com.chatbot.modules.facebook.connection.repository.FacebookConnectionRepository;
 import com.chatbot.modules.facebook.webhook.service.FacebookApiGraphService;
-import com.chatbot.modules.tenant.infra.TenantContext;
+import com.chatbot.core.tenant.infra.TenantContext;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;

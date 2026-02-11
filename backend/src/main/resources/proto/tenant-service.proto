@@ -1,0 +1,182 @@
+syntax = "proto3";
+
+package tenant;
+
+option java_package = "com.chatbot.core.tenant.grpc";
+option java_outer_classname = "TenantServiceProto";
+
+// Tenant Service Definition
+service TenantService {
+  // Tenant Management
+  rpc CreateTenant(CreateTenantRequest) returns (TenantResponse);
+  rpc GetTenant(GetTenantRequest) returns (TenantDetailResponse);
+  rpc UpdateTenant(UpdateTenantRequest) returns (TenantResponse);
+  rpc DeleteTenant(DeleteTenantRequest) returns (DeleteTenantResponse);
+  rpc ListTenants(ListTenantsRequest) returns (ListTenantsResponse);
+  rpc SearchTenants(SearchTenantsRequest) returns (SearchTenantsResponse);
+  
+  // Tenant Validation
+  rpc ValidateTenant(ValidateTenantRequest) returns (ValidateTenantResponse);
+  rpc CheckTenantExists(CheckTenantExistsRequest) returns (CheckTenantExistsResponse);
+  
+  // Tenant Status Management
+  rpc ActivateTenant(ActivateTenantRequest) returns (TenantResponse);
+  rpc SuspendTenant(SuspendTenantRequest) returns (TenantResponse);
+  rpc GetTenantStatus(GetTenantStatusRequest) returns (TenantStatusResponse);
+}
+
+// Tenant Management Messages
+message CreateTenantRequest {
+  string name = 1;
+  string description = 2;
+  string tenantKey = 3;
+  string visibility = 4;
+  string ownerEmail = 5;
+}
+
+message GetTenantRequest {
+  string tenantKey = 1;
+}
+
+message UpdateTenantRequest {
+  string tenantKey = 1;
+  string name = 2;
+  string description = 3;
+  string visibility = 4;
+}
+
+message DeleteTenantRequest {
+  string tenantKey = 1;
+}
+
+message DeleteTenantResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message ListTenantsRequest {
+  int32 page = 1;
+  int32 size = 2;
+  string sortBy = 3;
+  string sortDirection = 4;
+}
+
+message ListTenantsResponse {
+  repeated TenantResponse tenants = 1;
+  int32 totalElements = 2;
+  int32 totalPages = 3;
+  int32 currentPage = 4;
+}
+
+message SearchTenantsRequest {
+  string query = 1;
+  repeated string filters = 2;
+  int32 page = 3;
+  int32 size = 4;
+}
+
+message SearchTenantsResponse {
+  repeated TenantResponse tenants = 1;
+  int32 totalElements = 2;
+  int32 totalPages = 3;
+  int32 currentPage = 4;
+}
+
+// Tenant Validation Messages
+message ValidateTenantRequest {
+  string tenantKey = 1;
+}
+
+message ValidateTenantResponse {
+  bool valid = 1;
+  string tenantKey = 2;
+  string status = 3;
+  string message = 4;
+}
+
+message CheckTenantExistsRequest {
+  string tenantKey = 1;
+}
+
+message CheckTenantExistsResponse {
+  bool exists = 1;
+  string tenantKey = 2;
+}
+
+// Tenant Status Messages
+message ActivateTenantRequest {
+  string tenantKey = 1;
+}
+
+message SuspendTenantRequest {
+  string tenantKey = 1;
+  string reason = 2;
+}
+
+message GetTenantStatusRequest {
+  string tenantKey = 1;
+}
+
+message TenantStatusResponse {
+  string tenantKey = 1;
+  string status = 2;
+  string message = 3;
+}
+
+// Response Messages
+message TenantResponse {
+  string id = 1;
+  string tenantKey = 2;
+  string name = 3;
+  string description = 4;
+  string status = 5;
+  string visibility = 6;
+  string createdAt = 7;
+  string updatedAt = 8;
+  string expiresAt = 9;
+}
+
+message TenantDetailResponse {
+  string id = 1;
+  string tenantKey = 2;
+  string name = 3;
+  string description = 4;
+  string status = 5;
+  string visibility = 6;
+  string createdAt = 7;
+  string updatedAt = 8;
+  string expiresAt = 9;
+  TenantProfile profile = 10;
+  repeated TenantMember members = 11;
+  TenantProfessional professional = 12;
+}
+
+message TenantProfile {
+  string id = 1;
+  string logo = 2;
+  string website = 3;
+  string phone = 4;
+  string email = 5;
+  string address = 6;
+  string industry = 7;
+  string size = 8;
+}
+
+message TenantMember {
+  string id = 1;
+  string userId = 2;
+  string email = 3;
+  string role = 4;
+  string status = 5;
+  string joinedAt = 6;
+}
+
+message TenantProfessional {
+  string id = 1;
+  string businessLicense = 2;
+  string taxCode = 3;
+  string industry = 4;
+  string size = 5;
+  string revenue = 6;
+  string establishedAt = 7;
+}

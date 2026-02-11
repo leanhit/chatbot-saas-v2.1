@@ -8,7 +8,7 @@ import com.chatbot.modules.facebook.connection.model.FacebookConnection;
 import com.chatbot.modules.facebook.connection.repository.FacebookConnectionRepository;
 import com.chatbot.modules.facebook.user.service.FacebookUserService;
 import com.chatbot.modules.messaging.messStore.model.Channel;
-import com.chatbot.modules.tenant.infra.TenantContext;
+import com.chatbot.core.tenant.infra.TenantContext;
 
 import java.util.List;
 import java.util.stream.Collectors;

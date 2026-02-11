@@ -13,6 +13,7 @@ export const useAuthStore = defineStore('auth', () => {
   const token = ref(localStorage.getItem('accessToken') || null)
   const isLoading = ref(false)
   const error = ref(null)
+  const rememberMe = ref(false)
   // Getters
   const isLoggedIn = computed(() => !!token.value)
   const isAdmin = computed(() => user.value?.systemRole === 'ADMIN')
@@ -26,6 +27,8 @@ export const useAuthStore = defineStore('auth', () => {
   const initialize = () => {
     const savedToken = localStorage.getItem('accessToken')
     const savedUser = localStorage.getItem('user')
+    const savedRememberMe = localStorage.getItem('rememberMe')
+    
     if (savedToken) {
       token.value = savedToken
     }
@@ -34,6 +37,15 @@ export const useAuthStore = defineStore('auth', () => {
         user.value = JSON.parse(savedUser)
       } catch (e) {
         localStorage.removeItem('user')
+      }
+    }
+    
+    // Khôi phục trạng thái remember me
+    if (savedRememberMe) {
+      try {
+        rememberMe.value = JSON.parse(savedRememberMe)
+      } catch (e) {
+        localStorage.removeItem('rememberMe')
       }
     }
   }
@@ -45,6 +57,9 @@ export const useAuthStore = defineStore('auth', () => {
     user.value = authData.user
     localStorage.setItem('accessToken', authData.token)
     localStorage.setItem('user', JSON.stringify(authData.user))
+    
+    // Lưu trạng thái remember me
+    localStorage.setItem('rememberMe', JSON.stringify(rememberMe.value))
   }
   /**
    * Đăng nhập với credentials
@@ -52,6 +67,12 @@ export const useAuthStore = defineStore('auth', () => {
   const loginWithCredentials = async (credentials) => {
     isLoading.value = true
     error.value = null
+    
+    // Cập nhật rememberMe state trước khi login
+    if (credentials.rememberMe !== undefined) {
+      rememberMe.value = credentials.rememberMe
+    }
+    
     try {
       // 1. Gọi API Login
       const res = await usersApi.login(credentials)
@@ -82,10 +103,10 @@ export const useAuthStore = defineStore('auth', () => {
         await router.push('/')
       }
       return { success: true, data: authData }
-    } catch (err) {
-      const message = err.response?.data?.message || err.message || 'Login failed'
-      error.value = message
-      return { success: false, error: message }
+    } catch (error) {
+      console.error('Login error:', error)
+      error.value = error.response?.data?.message || error.message || 'Login failed'
+      return { success: false, error: error.message }
     } finally {
       isLoading.value = false
     }
@@ -116,14 +137,15 @@ export const useAuthStore = defineStore('auth', () => {
    * Đăng xuất và dọn dẹp dữ liệu
    */
   const logout = () => {
-    const tenantStore = useGatewayTenantStore()
-    // Xóa sạch context của Tenant và Auth
-    tenantStore.clearTenant()
     token.value = null
     user.value = null
     localStorage.removeItem('accessToken')
     localStorage.removeItem('user')
-    localStorage.removeItem(ACTIVE_TENANT_ID) // Use constant
+    localStorage.removeItem('rememberMe') // Xóa remember me khi logout
+    const tenantStore = useGatewayTenantStore()
+    tenantStore.currentTenant = null
+    localStorage.removeItem(TENANT_DATA)
+    localStorage.removeItem(ACTIVE_TENANT_ID)
     router.push({ name: 'login' })
   }
   /**
@@ -162,6 +184,7 @@ export const useAuthStore = defineStore('auth', () => {
     token,
     isLoading,
     error,
+    rememberMe,
     // Getters
     isLoggedIn,
     isAdmin,

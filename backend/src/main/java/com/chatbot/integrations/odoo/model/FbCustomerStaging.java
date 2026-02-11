@@ -1,6 +1,6 @@
 package com.chatbot.integrations.odoo.model;
 
-import com.chatbot.modules.tenant.infra.BaseTenantEntity;
+import com.chatbot.core.tenant.infra.BaseTenantEntity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -55,5 +55,23 @@ public class FbCustomerStaging extends BaseTenantEntity {
         this.psid = psid;
         this.status = CustomerStatus.PENDING;
         this.dataJson = "{}";
+    }
+    
+    @Column(name = "tenant_id")
+    private Long tenantId;
+    
+    @Override
+    public String getId() {
+        return psid;
+    }
+    
+    @Override
+    public Long getTenantId() {
+        return tenantId;
+    }
+    
+    @Override
+    public void setTenantId(Long tenantId) {
+        this.tenantId = tenantId;
     }
 }

@@ -2,7 +2,7 @@ package com.chatbot.integrations.image.fileMetadata.model;
 
 import com.chatbot.integrations.image.category.model.Category;
 import com.chatbot.core.identity.model.Auth;
-import com.chatbot.modules.tenant.infra.BaseTenantEntity;
+import com.chatbot.core.tenant.infra.BaseTenantEntity;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.*;
 import lombok.Data;
@@ -59,4 +59,22 @@ public class FileMetadata extends BaseTenantEntity {
 
     @Column(length = 100)   // để filter sau này
     private String code;
+    
+    @Column(name = "tenant_id")
+    private Long tenantId;
+    
+    @Override
+    public UUID getId() {
+        return id;
+    }
+    
+    @Override
+    public Long getTenantId() {
+        return tenantId;
+    }
+    
+    @Override
+    public void setTenantId(Long tenantId) {
+        this.tenantId = tenantId;
+    }
 }

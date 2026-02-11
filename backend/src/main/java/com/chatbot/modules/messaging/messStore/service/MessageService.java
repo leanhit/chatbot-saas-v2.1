@@ -5,7 +5,7 @@ import com.chatbot.modules.messaging.messStore.model.Conversation;
 import com.chatbot.modules.messaging.messStore.model.Message;
 import com.chatbot.modules.messaging.messStore.repository.ConversationRepository;
 import com.chatbot.modules.messaging.messStore.repository.MessageRepository;
-import com.chatbot.modules.tenant.infra.TenantContext;
+import com.chatbot.core.tenant.infra.TenantContext;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.*;

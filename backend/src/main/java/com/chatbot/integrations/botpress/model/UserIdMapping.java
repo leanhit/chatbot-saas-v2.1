@@ -1,6 +1,6 @@
 package com.chatbot.integrations.botpress.model;
 
-import com.chatbot.modules.tenant.infra.BaseTenantEntity;
+import com.chatbot.core.tenant.infra.BaseTenantEntity;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -22,4 +22,22 @@ public class UserIdMapping extends BaseTenantEntity {
 
     @Column(name = "user_id", nullable = false, length = 255)
     private String userId;
+    
+    @Column(name = "tenant_id")
+    private Long tenantId;
+    
+    @Override
+    public Long getId() {
+        return internalId;
+    }
+    
+    @Override
+    public Long getTenantId() {
+        return tenantId;
+    }
+    
+    @Override
+    public void setTenantId(Long tenantId) {
+        this.tenantId = tenantId;
+    }
 }

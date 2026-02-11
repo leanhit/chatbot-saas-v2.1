@@ -1,6 +1,6 @@
 package com.chatbot.modules.penny.controller;
 
-import com.chatbot.modules.tenant.infra.TenantContext;
+import com.chatbot.core.tenant.infra.TenantContext;
 import com.chatbot.modules.penny.service.PennyBotManager;
 import com.chatbot.modules.penny.model.PennyBot;
 import com.chatbot.modules.penny.model.PennyBotType;

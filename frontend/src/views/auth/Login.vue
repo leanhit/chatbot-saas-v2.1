@@ -69,10 +69,9 @@
               </div>
             </div>
           </div>
-          <!-- Remember me & Forgot password -->
-          <div class="flex items-center justify-between">
-            <div class="flex items-center">
-              <input
+          <!-- Remember me -->
+          <div class="flex items-center">
+            <input
                 id="remember-me"
                 v-model="form.rememberMe"
                 name="remember-me"
@@ -82,12 +81,6 @@
               <label for="remember-me" class="ml-2 block text-sm text-gray-900 dark:text-gray-300">
                 {{ $t('auth.login.rememberMe') }}
               </label>
-            </div>
-            <div class="text-sm">
-              <a href="#" class="font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300">
-                {{ $t('auth.login.forgotPassword') }}
-              </a>
-            </div>
           </div>
         </div>
         <!-- Error Message -->
@@ -127,8 +120,15 @@
           <span class="text-sm text-gray-600 dark:text-gray-400">
             {{ $t('auth.login.noAccount') }}
           </span>
-          <router-link to="/register" class="ml-1 font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300">
+          <router-link to="/auth/register" class="ml-1 font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300">
             {{ $t('auth.login.signUp') }}
+          </router-link>
+        </div>
+        
+        <!-- Forgot Password Link -->
+        <div class="text-center mt-2">
+          <router-link to="/auth/forgot-password" class="font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300">
+            {{ $t('auth.login.forgotPassword') }}
           </router-link>
         </div>
       </form>
@@ -136,7 +136,7 @@
   </div>
 </template>
 <script>
-import { ref, reactive } from 'vue'
+import { ref, reactive, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
 import { Icon } from '@iconify/vue'
@@ -151,7 +151,7 @@ export default {
     const form = reactive({
       email: '',
       password: '',
-      rememberMe: false
+      rememberMe: authStore.rememberMe !== undefined ? authStore.rememberMe : true // Default checked nếu chưa có giá trị
     })
     const showPassword = ref(false)
     const emptyFields = ref(false)
@@ -159,6 +159,11 @@ export default {
       const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
       return regex.test(email)
     }
+    
+    // Watch để cập nhật form khi authStore.rememberMe thay đổi
+    watch(() => authStore.rememberMe, (newValue) => {
+      form.rememberMe = newValue !== undefined ? newValue : true
+    })
     const handleLogin = async () => {
       // Reset error states
       emptyFields.value = false
@@ -175,7 +180,8 @@ export default {
       // Attempt login
       const result = await authStore.loginWithCredentials({
         email: form.email,
-        password: form.password
+        password: form.password,
+        rememberMe: form.rememberMe
       })
       // Navigation is handled by authStore.loginWithCredentials()
       // No need to manually navigate here

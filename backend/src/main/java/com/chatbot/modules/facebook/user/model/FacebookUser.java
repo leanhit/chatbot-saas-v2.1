@@ -1,7 +1,7 @@
 package com.chatbot.modules.facebook.user.model;
 
 import com.chatbot.modules.facebook.connection.model.FacebookConnection;
-import com.chatbot.modules.tenant.infra.BaseTenantEntity;
+import com.chatbot.core.tenant.infra.BaseTenantEntity;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
@@ -83,5 +83,23 @@ public class FacebookUser extends BaseTenantEntity {
     public void updateOdooPartnerId(Integer odooPartnerId) {
         this.odooPartnerId = odooPartnerId != null ? odooPartnerId : this.odooPartnerId;
         this.updatedAt = LocalDateTime.now();
+    }
+    
+    @Column(name = "tenant_id")
+    private Long tenantId;
+    
+    @Override
+    public Long getId() {
+        return id;
+    }
+    
+    @Override
+    public Long getTenantId() {
+        return tenantId;
+    }
+    
+    @Override
+    public void setTenantId(Long tenantId) {
+        this.tenantId = tenantId;
     }
 }

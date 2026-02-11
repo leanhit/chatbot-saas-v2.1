@@ -4,7 +4,7 @@ import com.chatbot.integrations.image.category.dto.CategoryRequestDTO;
 import com.chatbot.integrations.image.category.dto.CategoryResponseDTO;
 import com.chatbot.integrations.image.category.model.Category; // Correct import for Category model
 import com.chatbot.integrations.image.category.repository.CategoryRepository;
-import com.chatbot.modules.tenant.infra.TenantContext;
+import com.chatbot.core.tenant.infra.TenantContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

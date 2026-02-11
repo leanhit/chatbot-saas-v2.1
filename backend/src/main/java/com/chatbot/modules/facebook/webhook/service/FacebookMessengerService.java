@@ -2,7 +2,7 @@ package com.chatbot.modules.facebook.webhook.service;
 
 import com.chatbot.modules.facebook.connection.model.FacebookConnection;
 import com.chatbot.modules.facebook.connection.repository.FacebookConnectionRepository;
-import com.chatbot.modules.tenant.infra.TenantContext;
+import com.chatbot.core.tenant.infra.TenantContext;
 import com.chatbot.integrations.odoo.service.CustomerDataService;
 
 import com.chatbot.modules.messaging.messStore.model.Channel;

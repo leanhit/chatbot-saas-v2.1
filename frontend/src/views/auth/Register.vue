@@ -172,7 +172,7 @@
           <span class="text-sm text-gray-600 dark:text-gray-400">
             {{ $t('auth.register.alreadyHaveAccount') }}
           </span>
-          <router-link to="/login" class="ml-1 font-medium text-green-600 hover:text-green-500 dark:text-green-400 dark:hover:text-green-300">
+          <router-link to="/auth/login" class="ml-1 font-medium text-green-600 hover:text-green-500 dark:text-green-400 dark:hover:text-green-300">
             {{ $t('auth.register.signIn') }}
           </router-link>
         </div>
@@ -236,8 +236,8 @@ export default {
         password: form.password
       })
       if (result.success) {
-        // Navigate to dashboard after successful registration
-        router.push('/dashboard')
+        // Navigate to login after successful registration
+        router.push('/login')
       }
     }
     return {

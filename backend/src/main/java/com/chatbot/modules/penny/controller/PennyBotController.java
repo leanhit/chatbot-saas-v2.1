@@ -3,7 +3,7 @@ package com.chatbot.modules.penny.controller;
 import com.chatbot.modules.penny.service.PennyBotManager;
 import com.chatbot.modules.penny.model.PennyBot;
 import com.chatbot.modules.penny.model.PennyBotType;
-import com.chatbot.modules.tenant.infra.TenantContext;
+import com.chatbot.core.tenant.infra.TenantContext;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
