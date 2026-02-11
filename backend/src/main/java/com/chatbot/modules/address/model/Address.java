@@ -3,8 +3,6 @@ package com.chatbot.modules.address.model;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.Filter;
-import org.hibernate.annotations.FilterDef;
-import org.hibernate.annotations.ParamDef;
 
 @Entity
 @Table(
@@ -13,11 +11,6 @@ import org.hibernate.annotations.ParamDef;
         @Index(name = "idx_address_tenant", columnList = "tenant_id"),
         @Index(name = "idx_address_owner", columnList = "tenant_id, owner_type, owner_id")
     }
-)
-// --- THÊM PHẦN NÀY ---
-@FilterDef(
-    name = "tenantFilter",
-    parameters = @ParamDef(name = "tenantId", type = Long.class)
 )
 @Filter(name = "tenantFilter", condition = "tenant_id = :tenantId")
 // ---------------------
@@ -33,9 +26,9 @@ public class Address {
     private Long id;
 
     /**
-     * Tenant sở hữu address
+     * Tenant ID for multi-tenant architecture
      */
-    @Column(name = "tenant_id", nullable = false)
+    @Column(name = "tenant_id")
     private Long tenantId;
 
     /**
@@ -69,17 +62,4 @@ public class Address {
 
     @Column(length = 255)
     private String country;
-
-    @Builder.Default
-    @Column(name = "is_default", nullable = false)
-    private boolean isDefault = false;
-    
-    // Thêm setter cho compatibility
-    public void setDefault(boolean isDefault) {
-        this.isDefault = isDefault;
-    }
-    
-    public boolean isDefault() {
-        return this.isDefault;
-    }
 }

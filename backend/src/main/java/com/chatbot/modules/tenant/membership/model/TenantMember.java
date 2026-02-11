@@ -1,24 +1,16 @@
 package com.chatbot.modules.tenant.membership.model;
 
-import com.chatbot.modules.auth.model.Auth;
+import com.chatbot.core.identity.model.Auth;
 import com.chatbot.modules.tenant.core.model.Tenant;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
-import java.util.UUID;
 
-/**
- * TenantMember entity - User-tenant relationship
- * 
- * v0.1: Simplified membership model
- * - UUID primary key
- * - Primitive identity fields (no User entity dependency)
- * - Basic role management only
- */
 @Entity
 @Table(
     name = "tenant_members",
     uniqueConstraints = {
+        @UniqueConstraint(columnNames = {"tenant_id", "user_id", "status"}),
         @UniqueConstraint(columnNames = {"tenant_id", "user_id"})
     }
 )
@@ -29,59 +21,53 @@ import java.util.UUID;
 public class TenantMember {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(nullable = false, updatable = false)
-    private UUID id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
+    // Liên kết tới Tenant
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "tenant_id", nullable = false)
     private Tenant tenant;
 
-    @Column(name = "user_id", nullable = false)
-    private UUID userId;
+    // Liên kết tới User (Auth)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private Auth user;
 
-    @Column(name = "email", nullable = false, length = 255)
-    private String email;
-
+    // Vai trò trong Tenant (OWNER, ADMIN, MEMBER)
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
+    @Column(nullable = false)
     private TenantRole role;
 
+    // Trạng thái thành viên (Thay thế hoàn toàn cho biến active cũ)
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     @Builder.Default
-    private MembershipStatus status = MembershipStatus.ACTIVE;
+    private MembershipStatus status = MembershipStatus.PENDING;
 
+    // --- Audit fields ---
+    @Column(name = "created_at", updatable = false)
+    private LocalDateTime createdAt;
+
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+    
     @Column(name = "joined_at")
     private LocalDateTime joinedAt;
 
-    @Column(name = "created_at", updatable = false, nullable = false)
-    private LocalDateTime createdAt;
-
-    @Column(name = "updated_at", nullable = false)
-    private LocalDateTime updatedAt;
-
     @PrePersist
     protected void onCreate() {
-        LocalDateTime now = LocalDateTime.now();
-        createdAt = now;
-        updatedAt = now;
-        if (joinedAt == null) {
-            joinedAt = now;
-        }
+        this.createdAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
     }
 
     @PreUpdate
     protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
     }
 
-    // Business logic helpers
-    public boolean isOwner() {
-        return TenantRole.OWNER.equals(this.role);
-    }
-
-    public boolean canManageMembers() {
-        return TenantRole.OWNER.equals(this.role) || TenantRole.ADMIN.equals(this.role);
+    // Helper method để kiểm tra nhanh quyền truy cập
+    public boolean isActiveMember() {
+        return MembershipStatus.ACTIVE.equals(this.status);
     }
 }

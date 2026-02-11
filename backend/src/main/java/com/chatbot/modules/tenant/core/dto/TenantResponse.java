@@ -1,25 +1,24 @@
 package com.chatbot.modules.tenant.core.dto;
 
 import com.chatbot.modules.tenant.core.model.TenantStatus;
-import lombok.*;
+import com.chatbot.modules.tenant.core.model.TenantVisibility;
+import lombok.Builder;
+import lombok.Getter;
 
 import java.time.LocalDateTime;
-import java.util.UUID;
 
-/**
- * Tenant response DTO for v0.1
- * Simplified tenant information for API responses
- */
 @Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
 @Builder
 public class TenantResponse {
-
-    private UUID id;
+    private String tenantKey; // ✅ Thay vì id
     private String name;
     private TenantStatus status;
-    private String defaultLocale;
+    private TenantVisibility visibility;
+    private LocalDateTime expiresAt;
     private LocalDateTime createdAt;
+    
+    // Profile fields
+    private String logoUrl;
+    private String contactEmail;
+    private String contactPhone;
 }

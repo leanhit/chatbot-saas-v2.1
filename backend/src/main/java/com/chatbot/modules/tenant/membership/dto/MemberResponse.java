@@ -1,24 +1,17 @@
 package com.chatbot.modules.tenant.membership.dto;
 
-import com.chatbot.modules.tenant.membership.model.TenantRole;
 import com.chatbot.modules.tenant.membership.model.MembershipStatus;
-import lombok.*;
+import com.chatbot.modules.tenant.membership.model.TenantRole;
+import lombok.Builder;
+import lombok.Data;
 
 import java.time.LocalDateTime;
-import java.util.UUID;
 
-/**
- * Member response DTO for v0.1
- */
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
+@Data
 @Builder
 public class MemberResponse {
-
-    private UUID id;
-    private UUID userId;
+    private Long id;
+    private Long userId;
     private String email;
     private TenantRole role;
     private MembershipStatus status;

@@ -1,12 +1,7 @@
 package com.chatbot.modules.tenant.membership.controller;
 
-// LEGACY CLASS - DISABLED FOR TENANT HUB v0.1
-// This class contains query controller logic that is not part of v0.1 scope
-// TODO: Remove this class completely when v0.1 is stable
-
-/*
-import com.chatbot.modules.auth.model.Auth;
-import com.chatbot.modules.auth.security.CustomUserDetails;
+import com.chatbot.core.identity.model.Auth;
+import com.chatbot.core.identity.security.CustomUserDetails;
 import com.chatbot.modules.tenant.membership.dto.*;
 import com.chatbot.modules.tenant.membership.service.TenantMembershipFacade;
 import lombok.RequiredArgsConstructor;
@@ -14,6 +9,10 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+
+/**
+ * 
+ */
 
 @RestController
 @RequiredArgsConstructor
@@ -24,18 +23,20 @@ public class TenantMemberQueryController {
 
     @GetMapping("/pending-tenants")
     public List<TenantPendingResponse> myPendingTenants(
-            @AuthenticationPrincipal CustomUserDetails customUser
+            @AuthenticationPrincipal CustomUserDetails customUser // Lấy CustomUserDetails
     ) {
-        // Legacy query controller logic - not used in v0.1
-        return null;
+        // Lấy Entity Auth từ bên trong CustomUserDetails
+        Auth user = customUser.getAuth(); 
+        return facade.myPending(user);
     }
     
+    /**
+     * Lấy danh sách lời mời đang chờ xử lý của user hiện tại
+     */
     @GetMapping("/my-invitations")
     public List<InvitationResponse> getMyInvitations(
             @AuthenticationPrincipal CustomUserDetails customUser
     ) {
-        // Legacy query controller logic - not used in v0.1
-        return null;
+        return facade.getMyInvitations(customUser.getAuth());
     }
 }
-*/

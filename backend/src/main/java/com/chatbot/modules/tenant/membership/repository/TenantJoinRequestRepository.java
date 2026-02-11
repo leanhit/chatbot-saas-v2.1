@@ -6,11 +6,10 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 
 public interface TenantJoinRequestRepository extends JpaRepository<TenantJoinRequest, Long> {
-    List<TenantJoinRequest> findByUserIdAndStatus(UUID userId, MembershipStatus status);
-    List<TenantJoinRequest> findByTenantIdAndStatus(UUID tenantId, MembershipStatus status);
-    Optional<TenantJoinRequest> findByTenantIdAndUserId(UUID tenantId, UUID userId);
-    boolean existsByTenantIdAndUserIdAndStatus(UUID tenantId, UUID userId, MembershipStatus status);
+    List<TenantJoinRequest> findByUser_IdAndStatus(Long userId, MembershipStatus status);
+    List<TenantJoinRequest> findByTenant_IdAndStatus(Long tenantId, MembershipStatus status);
+    Optional<TenantJoinRequest> findByTenant_IdAndUser_Id(Long tenantId, Long userId);
+    boolean existsByTenant_IdAndUser_IdAndStatus(Long tenantId, Long userId, MembershipStatus status);
 }

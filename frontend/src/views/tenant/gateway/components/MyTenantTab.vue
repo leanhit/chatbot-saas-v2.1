@@ -1,259 +1,307 @@
-<script lang="ts">
-import { defineComponent, computed } from 'vue'
-import { useRouter } from 'vue-router'
-import { useI18n } from 'vue-i18n'
-
-import { useGatewayTenantStore } from '@/stores/tenant/gateway/myTenantStore'
-import type { TenantDetailResponse } from '@/types/tenant'
-import { formatDateTime } from '@/utils/search'
-
-export default defineComponent({
-  name: 'MyTenantTab',
-  setup() {
-    const { t } = useI18n()
-    const router = useRouter()
-    const tenantStore = useGatewayTenantStore()
-
-    const tenantList = computed(() => tenantStore.userTenants)
-    const loading = computed(() => tenantStore.loadingTenants)
-
-    const enterWorkspace = async (tenant: TenantDetailResponse) => {
-      if (tenant.status !== 'ACTIVE') return
-
-      await tenantStore.switchTenant(String(tenant.id))
-      router.push('/home') // chỉnh route theo app của bạn
-    }
-
-    // (optional) nếu backend hỗ trợ
-    const suspendTenant = async (id: number) => {
-      console.warn('Suspend tenant not implemented', id)
-      await tenantStore.suspendTenant(id)
-      await tenantStore.fetchUserTenants()
-    }
-
-    const activateTenant = async (id: number) => {
-      console.warn('Activate tenant not implemented', id)
-      await tenantStore.activateTenant(id)
-      await tenantStore.fetchUserTenants()
-    }
-
-    return {
-      t,
-      loading,
-      tenantList,
-      enterWorkspace,
-      suspendTenant,
-      activateTenant,
-      formatDateTime
-    }
-  }
-})
-</script>
-
 <template>
   <div class="my-tenant-tab">
     <div v-if="loading" class="loading-state">
-      <el-row :gutter="20">
-        <el-col v-for="i in 3" :key="i" :xs="24" :sm="12" :md="8">
-          <el-skeleton style="margin-bottom: 20px" animated>
-            <template #template>
-              <el-card shadow="never">
-                <el-skeleton-item
-                  variant="image"
-                  style="width: 40px; height: 40px; border-radius: 50%"
-                />
-                <div style="padding: 14px 0">
-                  <el-skeleton-item variant="p" style="width: 50%" />
-                  <el-skeleton-item variant="text" />
-                </div>
-              </el-card>
-            </template>
-          </el-skeleton>
-        </el-col>
-      </el-row>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        <div v-for="i in 3" :key="i" class="skeleton-card">
+          <div class="animate-pulse">
+            <div class="flex items-center space-x-4 mb-4">
+              <div class="w-12 h-12 bg-gray-300 dark:bg-gray-600 rounded-full"></div>
+              <div class="flex-1 space-y-2">
+                <div class="h-4 bg-gray-300 dark:bg-gray-600 rounded w-3/4"></div>
+                <div class="h-3 bg-gray-300 dark:bg-gray-600 rounded w-1/2"></div>
+              </div>
+            </div>
+            <div class="space-y-2">
+              <div class="h-3 bg-gray-300 dark:bg-gray-600 rounded"></div>
+              <div class="h-3 bg-gray-300 dark:bg-gray-600 rounded w-5/6"></div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
-
     <template v-else>
-      <el-empty
-        v-if="tenantList.length === 0"
-        :description="t('Empty')"
-      />
-
-      <el-row v-else :gutter="20" class="tenant-grid">
-        <el-col
+      <div v-if="tenantList.length === 0" class="empty-state">
+        <div class="text-center py-12">
+          <Icon icon="mdi:office-building" class="h-16 w-16 text-gray-400 mx-auto mb-4" />
+          <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">
+            {{ $t('Empty') }}
+          </h3>
+          <p class="text-gray-600 dark:text-gray-400">
+            You don't have any workspaces yet.
+          </p>
+        </div>
+      </div>
+      <div v-else class="tenant-grid">
+        <div
           v-for="tenant in tenantList"
           :key="tenant.id"
-          :xs="24"
-          :sm="12"
-          :lg="8"
-          class="mb-4"
+          class="bg-white dark:bg-gray-800 rounded-lg shadow-md border border-gray-200 dark:border-gray-700 hover:shadow-lg transition-shadow duration-200 p-6"
         >
-          <el-card class="tenant-card" shadow="hover" :body-style="{ padding: '20px' }">
-            <div class="card-header">
-              <el-avatar
-                :size="48"
-                :src="tenant.profile?.logoUrl"
-                :class="['tenant-avatar', { 'is-inactive': tenant.status !== 'ACTIVE' }]"
-              >
+          <div class="card-header">
+            <div class="tenant-avatar" :class="{ 'is-inactive': tenant.status !== 'ACTIVE' }">
+              <img v-if="tenant.profile?.logoUrl" :src="secureImageUrl(tenant.profile.logoUrl)" :alt="tenant.name" />
+              <div v-else class="avatar-fallback">
                 {{ tenant.name.charAt(0).toUpperCase() }}
-              </el-avatar>
-
-              <div class="header-main">
-                <h3 class="tenant-name text-truncate" :title="tenant.name">
-                  {{ tenant.name }}
-                </h3>
-                <el-tag
-                  :type="tenant.status === 'ACTIVE' ? 'success' : 'info'"
-                  size="small"
-                  effect="light"
-                >
-                  {{ tenant.status === 'ACTIVE'
-                    ? t('Active')
-                    : t('Inactive') }}
-                </el-tag>
               </div>
             </div>
-
-            <div class="card-content">
-              <div class="info-item">
-                <span class="label">ID:</span>
-                <span class="value">#{{ tenant.id }}</span>
-              </div>
-              <div v-if="tenant.profile?.contactEmail" class="info-item">
-                <span class="label">Email:</span>
-                <span class="value text-truncate">
-                  {{ tenant.profile.contactEmail }}
-                </span>
-              </div>
-              <div class="info-item">
-                <span class="label">{{ t('Expire') }}:</span>
-                <span class="value">
-                  {{ formatDateTime(tenant.expiresAt) }}
-                </span>
-              </div>
+            <div class="header-main">
+              <h3 class="tenant-name" :title="tenant.name">
+                {{ tenant.name }}
+              </h3>
+              <span
+                :class="[
+                  'text-xs py-1 px-4 rounded-md',
+                  tenant.status === 'ACTIVE' 
+                    ? 'bg-green-600 text-white' 
+                    : 'bg-red-600 text-white'
+                ]"
+              >
+                {{ tenant.status === 'ACTIVE' ? $t('Active') : $t('Inactive') }}
+              </span>
             </div>
-
-            <div class="card-footer">
-              <div class="action-buttons">
-                <el-button
-                  v-if="tenant.status === 'ACTIVE'"
-                  type="danger"
-                  link
-                  @click="suspendTenant(tenant.id)"
-                >
-                  {{ t('Suspend') }}
-                </el-button>
-
-                <el-button
-                  v-else
-                  type="success"
-                  link
-                  @click="activateTenant(tenant.id)"
-                >
-                  {{ t('Activate') }}
-                </el-button>
-
-                <el-button
-                  type="primary"
-                  :disabled="tenant.status !== 'ACTIVE'"
-                  @click="enterWorkspace(tenant)"
-                >
-                  {{ t('Enter') }}
-                </el-button>
-              </div>
+          </div>
+          <div class="card-content">
+            <div class="info-item">
+              <span class="label">Name:</span>
+              <span class="value">{{ tenant.name }}</span>
             </div>
-          </el-card>
-        </el-col>
-      </el-row>
+            <div class="info-item">
+              <span class="label">Created:</span>
+              <span class="value">{{ formatDateTime(tenant.createdAt) }}</span>
+            </div>
+            <div v-if="tenant.profile?.contactEmail" class="info-item">
+              <span class="label">Email:</span>
+              <span class="value text-truncate">
+                {{ tenant.profile.contactEmail }}
+              </span>
+            </div>
+            <div class="info-item">
+              <span class="label">{{ $t('Expire') }}:</span>
+              <span class="value">
+                {{ formatDateTime(tenant.expiresAt) }}
+              </span>
+            </div>
+          </div>
+          <div class="card-footer">
+            <div class="action-buttons">
+              <button
+                v-if="tenant.status === 'ACTIVE'"
+                @click="suspendTenant(tenant.id)"
+                class="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 text-sm font-medium"
+              >
+                {{ $t('Suspend') }}
+              </button>
+              <button
+                v-else
+                @click="activateTenant(tenant.id)"
+                class="text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300 text-sm font-medium"
+              >
+                {{ $t('Activate') }}
+              </button>
+              <button
+                @click="enterWorkspace(tenant)"
+                :disabled="tenant.status !== 'ACTIVE'"
+                class="inline-flex items-center px-3 py-1.5 bg-primary text-white text-sm font-medium rounded-md hover:bg-primary/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {{ $t('Enter') }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
     </template>
   </div>
 </template>
-
+<script>
+import { computed } from 'vue'
+import { useRouter } from 'vue-router'
+import { Icon } from '@iconify/vue'
+import { useI18n } from 'vue-i18n'
+import { useGatewayTenantStore } from '@/stores/tenant/gateway/myTenantStore'
+import { secureImageUrl } from '@/utils/imageUtils'
+export default {
+  name: 'MyTenantTab',
+  components: {
+    Icon
+  },
+  emits: ['tenant-entered'],
+  setup(props, { emit }) {
+    const { t } = useI18n()
+    const router = useRouter()
+    const tenantStore = useGatewayTenantStore()
+    const tenantList = computed(() => tenantStore.userTenants)
+    const loading = computed(() => tenantStore.loadingTenants)
+    const enterWorkspace = async (tenant) => {
+      if (tenant.status !== 'ACTIVE') return
+      try {
+        await tenantStore.switchTenant(tenant.tenantKey) // ✅ Use tenantKey from new backend
+        router.push('/dashboard')
+        emit('tenant-entered')
+      } catch (error) {
+        // Optionally show error message to user
+        // ElMessage.error('Failed to enter workspace. Please try again.')
+      }
+    }
+    const suspendTenant = async (id) => {
+      await tenantStore.suspendTenant(id)
+      await tenantStore.fetchUserTenants()
+    }
+    const activateTenant = async (id) => {
+      await tenantStore.activateTenant(id)
+      await tenantStore.fetchUserTenants()
+    }
+    const formatDateTime = (dateString) => {
+      if (!dateString) return 'N/A'
+      return new Date(dateString).toLocaleDateString()
+    }
+    return {
+      tenantList,
+      loading,
+      enterWorkspace,
+      suspendTenant,
+      activateTenant,
+      formatDateTime,
+      secureImageUrl
+    }
+  }
+}
+</script>
 <style scoped>
+.my-tenant-tab {
+  width: 100%;
+}
 .tenant-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
   margin-top: 10px;
 }
-
-.mb-4 {
-  margin-bottom: 20px;
-}
-
 .tenant-card {
-  transition: all 0.3s;
+  background: white;
+  dark:bg-gray-800;
   border-radius: 12px;
-  border: 1px solid #ebeef5;
+  border: 1px solid #e5e7eb;
+  dark:border-gray-700;
+  padding: 20px;
+  transition: all 0.3s ease;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
 }
-
 .tenant-card:hover {
   transform: translateY(-4px);
   box-shadow: 0 10px 20px rgba(0,0,0,0.05);
 }
-
 .card-header {
   display: flex;
   align-items: center;
   gap: 15px;
   margin-bottom: 20px;
 }
-
+.tenant-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.tenant-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.avatar-fallback {
+  width: 100%;
+  height: 100%;
+  background: #3b82f6;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 18px;
+}
+.tenant-avatar.is-inactive {
+  filter: grayscale(1);
+  opacity: 0.6;
+}
 .header-main {
   flex: 1;
   overflow: hidden;
 }
-
 .tenant-name {
   margin: 0 0 4px 0;
   font-size: 16px;
   font-weight: 600;
-  color: #303133;
+  color: #1f2937;
+  dark:color-white;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
-
+.status-tag {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+}
+.status-active {
+  background: #dcfce7;
+  color: #16a34a;
+}
+.status-inactive {
+  background: #f3f4f6;
+  color: #6b7280;
+}
 .card-content {
-  background-color: #f8f9fb;
+  background-color: #f9fafb;
+  dark:bg-gray-700;
   border-radius: 8px;
   padding: 12px;
   margin-bottom: 20px;
 }
-
 .info-item {
   display: flex;
   justify-content: space-between;
   margin-bottom: 6px;
   font-size: 13px;
 }
-
 .info-item:last-child {
   margin-bottom: 0;
 }
-
 .label {
-  color: #909399;
+  color: #6b7280;
+  dark:color-gray-400;
 }
-
 .value {
-  color: #606266;
+  color: #374151;
+  dark:color-gray-300;
   font-weight: 500;
 }
-
+.text-truncate {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 .card-footer {
-  border-top: 1px solid #f0f0f0;
+  border-top: 1px solid #f3f4f6;
+  dark:border-gray-700;
   padding-top: 15px;
 }
-
 .action-buttons {
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
-
-.tenant-avatar.is-inactive {
-  filter: grayscale(1);
-  opacity: 0.6;
+.skeleton-card {
+  background: white;
+  dark:bg-gray-800;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  dark:border-gray-700;
+  padding: 20px;
 }
-
-.text-truncate {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+.empty-state {
+  text-align: center;
+  padding: 40px 0;
 }
 </style>

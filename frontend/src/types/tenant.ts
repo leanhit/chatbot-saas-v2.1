@@ -1,153 +1,148 @@
-import type { AddressDetailResponseDTO } from './address';
-
-/** ========================
- * ENUMS (Khớp 100% Java Enum)
- * ======================== */
-export type TenantStatus = 'ACTIVE' | 'SUSPENDED' | 'INACTIVE';
-export type TenantVisibility = 'PUBLIC' | 'PRIVATE';
-export type TenantRole = 'OWNER' | 'ADMIN' | 'EDITOR' | 'VIEWER' | 'MEMBER' | 'NONE';
-
 /**
- * Trạng thái của thành viên trong bảng TenantMember
+ * Tenant Types - Đồng bộ với Backend DTO
+ * Based on: com.chatbot.modules.tenant.core.model.TenantStatus
  */
-export type MembershipStatus = 'PENDING' | 'INVITED' | 'ACTIVE' | 'REJECTED' | 'BLOCKED';
 
-/**
- * Trạng thái yêu cầu tham gia
- */
-export type TenantMembershipStatus = 'NONE' | 'PENDING' | 'APPROVED' | 'REJECTED';
-
-/**
- * Trạng thái lời mời từ InvitationStatus.java
- */
-export type InvitationStatus = 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'EXPIRED' | 'REVOKED';
-
-/** ========================
- * CORE TENANT MODELS
- * ======================== */
-
-export interface TenantProfileResponse {
-  tenantId: number;
-  legalName?: string;
-  taxCode?: string;
-  contactEmail?: string;
-  contactPhone?: string;
-  logoUrl?: string;
-  faviconUrl?: string;
-  primaryColor?: string;
-  description?: string;
+export enum TenantStatus {
+  ACTIVE = 'ACTIVE',
+  INACTIVE = 'INACTIVE', 
+  SUSPENDED = 'SUSPENDED'
 }
 
-export interface TenantDetailResponse {
-  id: number;
-  name: string;
-  status: TenantStatus;
-  visibility: TenantVisibility;
-  expiresAt: string | null;
-  createdAt: string;
-  profile: TenantProfileResponse;
-  address: AddressDetailResponseDTO | null;
+export enum TenantVisibility {
+  PUBLIC = 'PUBLIC',
+  PRIVATE = 'PRIVATE'
 }
 
-export interface TenantResponse {
-  id: number;
-  name: string;
-  status: TenantStatus;
-  visibility: TenantVisibility;
-  expiresAt: string | null;
-  createdAt: string;
+export enum MembershipStatus {
+  NONE = 'NONE',
+  PENDING = 'PENDING',
+  APPROVED = 'APPROVED',
+  REJECTED = 'REJECTED'
 }
 
-export interface TenantSearchResponse {
-  id: string;                    // UUID string from backend
-  name: string;
-  status: string;                 // Backend returns string, not enum
-  defaultLocale?: string | null; // Optional field from backend
-  createdAt: string;
-  // Add missing fields with defaults for UI compatibility
-  visibility?: 'PUBLIC' | 'PRIVATE';
-  membershipStatus?: 'NONE' | 'PENDING' | 'APPROVED';
-  logoUrl?: string;
-  contactEmail?: string;
-  province?: string;
+export enum JoinRequestStatus {
+  PENDING = 'PENDING',
+  APPROVED = 'APPROVED', 
+  REJECTED = 'REJECTED',
+  REVIEWING = 'REVIEWING'
 }
 
-/** ========================
- * INVITATION MODELS (Khớp DTO Server)
- * ======================== */
-
-// Khớp với InviteMemberRequest.java
-export interface InviteMemberRequest {
-  email: string;
-  role: TenantRole;
-  expiryDays: number;
+export enum InvitationStatus {
+  PENDING = 'PENDING',
+  ACCEPTED = 'ACCEPTED',
+  REJECTED = 'REJECTED',
+  EXPIRED = 'EXPIRED'
 }
 
-// Khớp với InvitationResponse.java
-export interface InvitationResponse {
-  id: number;
-  name: string;
-  email: string;
-  role: TenantRole;
-  status: InvitationStatus;
-  expiresAt: string; // ISO Date String
-  invitedByName: string; // Tên của Auth người mời
+export interface TenantBasicInfo {
+  tenantKey: string
+  name: string
+  status: TenantStatus
+  visibility: TenantVisibility
+  expiresAt?: string
+  createdAt: string
+  logoUrl?: string
+  contactEmail?: string
+  contactPhone?: string
 }
 
-/** ========================
- * MEMBERSHIP & JOIN REQUESTS
- * ======================== */
-
-// Khớp với MemberResponse.java (Dùng cho bảng TenantMember)
-export interface MemberResponse {
-  id: number;
-  userId: number;
-  email: string;
-  role: TenantRole;
-  status: MembershipStatus;
-  joinedAt: string | null;
-  requestedAt: string | null;
+export interface TenantProfile {
+  tenantKey: string
+  name: string
+  description?: string
+  logoUrl?: string
+  contactEmail?: string
+  contactPhone?: string
+  website?: string
+  address?: Address
 }
 
-// Khớp với TenantPendingResponse.java
-export interface TenantPendingResponse {
-  id: number;
-  name: string;
-  status: TenantStatus;
-  visibility: TenantVisibility;
-  requestedAt: string;
+export interface Address {
+  id: string
+  street: string
+  ward?: string
+  district: string
+  province: string
+  postalCode?: string
+  country?: string
+  ownerType: 'USER' | 'TENANT'
+  ownerId: string
 }
 
-/** ========================
- * REQUEST PAYLOADS (DTO)
- * ======================== */
-
-export interface CreateTenantRequest {
-  name: string;
-  visibility: TenantVisibility;
+export interface JoinRequest {
+  id: string
+  userId: string
+  tenantId: string
+  requestedRole: 'MEMBER' | 'ADMIN' | 'EDITOR'
+  status: JoinRequestStatus
+  message?: string
+  requestedAt: string
+  user?: {
+    id: string
+    email: string
+    name: string
+    avatar?: string
+  }
 }
 
-export interface TenantBasicInfoRequest {
-  name: string;
-  status: TenantStatus;
-  expiresAt: string | null;
-  visibility: TenantVisibility;
+export interface Invitation {
+  id: string
+  tenantId: string
+  invitedEmail: string
+  invitedBy: string
+  invitedByName: string
+  role: 'MEMBER' | 'ADMIN' | 'EDITOR'
+  status: InvitationStatus
+  message?: string
+  expiresAt: string
+  invitedAt: string
 }
 
-export interface TenantProfileRequest {
-  legalName?: string;
-  taxCode?: string;
-  contactEmail?: string;
-  contactPhone?: string;
-  logoUrl?: string;
-  faviconUrl?: string;
-  primaryColor?: string;
+export interface TenantMember {
+  id: string
+  userId: string
+  tenantId: string
+  role: 'MEMBER' | 'ADMIN' | 'EDITOR'
+  status: 'ACTIVE' | 'INACTIVE'
+  joinedAt: string
+  user?: {
+    id: string
+    email: string
+    name: string
+    avatar?: string
+  }
 }
 
-export interface UpdateJoinRequest {
-  status: 'ACTIVE' | 'REJECTED';
-}
+// Status mappings cho UI
+export const TENANT_STATUS_LABELS = {
+  [TenantStatus.ACTIVE]: 'Active',
+  [TenantStatus.INACTIVE]: 'Inactive',
+  [TenantStatus.SUSPENDED]: 'Suspended'
+} as const
 
-export interface UpdateMemberRoleRequest {
-  role: TenantRole;
-}
+export const TENANT_VISIBILITY_LABELS = {
+  [TenantVisibility.PUBLIC]: 'Public',
+  [TenantVisibility.PRIVATE]: 'Private'
+} as const
+
+export const MEMBERSHIP_STATUS_LABELS = {
+  [MembershipStatus.NONE]: 'None',
+  [MembershipStatus.PENDING]: 'Pending',
+  [MembershipStatus.APPROVED]: 'Member',
+  [MembershipStatus.REJECTED]: 'Rejected'
+} as const
+
+// Status badge classes cho Tailwind
+export const TENANT_STATUS_CLASSES = {
+  [TenantStatus.ACTIVE]: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
+  [TenantStatus.INACTIVE]: 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200',
+  [TenantStatus.SUSPENDED]: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+} as const
+
+export const MEMBERSHIP_STATUS_CLASSES = {
+  [MembershipStatus.NONE]: 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200',
+  [MembershipStatus.PENDING]: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
+  [MembershipStatus.APPROVED]: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
+  [MembershipStatus.REJECTED]: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+} as const

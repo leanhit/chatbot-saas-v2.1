@@ -1,158 +1,163 @@
 package com.chatbot.modules.tenant.membership.service;
 
-import com.chatbot.modules.tenant.membership.repository.TenantInvitationRepository;
-import com.chatbot.modules.tenant.core.repository.TenantRepository;
-import com.chatbot.modules.identity.repository.UserRepository;
-import com.chatbot.modules.tenant.membership.repository.TenantMemberRepository;
-import com.chatbot.modules.tenant.membership.dto.InvitationResponse;
-import com.chatbot.modules.tenant.membership.dto.InviteMemberRequest;
-import com.chatbot.modules.tenant.membership.model.TenantInvitation;
-import com.chatbot.modules.tenant.membership.model.InvitationStatus;
-import com.chatbot.modules.auth.model.Auth;
-import com.chatbot.modules.identity.model.User;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import com.chatbot.modules.tenant.membership.dto.InviteMemberRequest;
+import com.chatbot.modules.tenant.membership.dto.InvitationResponse;
+import com.chatbot.modules.tenant.core.model.Tenant;
+import com.chatbot.modules.tenant.membership.model.TenantInvitation;
+import com.chatbot.modules.tenant.membership.model.TenantMember;
+import com.chatbot.modules.tenant.membership.model.InvitationStatus;
+import com.chatbot.modules.tenant.membership.model.MembershipStatus;
+import com.chatbot.modules.tenant.membership.repository.TenantInvitationRepository;
+import com.chatbot.modules.tenant.membership.repository.TenantMemberRepository;
+import com.chatbot.modules.tenant.core.repository.TenantRepository;
+import com.chatbot.core.identity.model.Auth;
+import com.chatbot.core.identity.repository.AuthRepository;
+
+import lombok.RequiredArgsConstructor;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-/**
- * Tenant invitation service for v0.1
- * Handles member invitations for tenants
- */
 @Service
 @RequiredArgsConstructor
-@Slf4j
 public class TenantInvitationService {
     
     private final TenantInvitationRepository invitationRepo;
     private final TenantRepository tenantRepo;
-    private final UserRepository userRepository;
+    private final AuthRepository authRepository;
     private final TenantMemberRepository memberRepo;
 
     /**
-     * Send invitation to a user
+     * Admin thực hiện mời user vào tenant
      */
     @Transactional
-    public void inviteMember(UUID tenantId, InviteMemberRequest request, Auth admin) {
-        // TODO: Validate admin has permission to invite members
-        
+    public void inviteMember(Long tenantId, InviteMemberRequest request, Auth admin) {
+        Tenant tenant = tenantRepo.findById(tenantId)
+            .orElseThrow(() -> new RuntimeException("Tenant không tồn tại"));
+
+        Auth userToBeInvited = authRepository.findByEmail(request.getEmail().toLowerCase())
+            .orElseThrow(() -> new RuntimeException("Người dùng này chưa có tài khoản trên hệ thống."));
+
+        if (memberRepo.existsByTenantIdAndUserId(tenantId, userToBeInvited.getId())) {
+            throw new RuntimeException("Người dùng đã là thành viên của tổ chức này rồi.");
+        }
+
+        if (invitationRepo.existsByTenantIdAndEmailAndStatus(tenantId, request.getEmail(), InvitationStatus.PENDING)) {
+            throw new RuntimeException("Một lời mời đang ở trạng thái chờ xác nhận.");
+        }
+
         TenantInvitation invitation = TenantInvitation.builder()
-                .tenant(tenantRepo.findById(tenantId).orElseThrow(() -> new IllegalArgumentException("Tenant not found")))
-                .email(request.getEmail())
-                .role(request.getRole())
-                .invitedBy(admin.getId())
-                .status(InvitationStatus.PENDING)
-                .expiresAt(LocalDateTime.now().plusDays(request.getExpiryDays()))
-                .createdAt(LocalDateTime.now())
-                .build();
-        
+            .tenant(tenant)
+            .email(request.getEmail().toLowerCase())
+            .role(request.getRole())
+            .token(UUID.randomUUID().toString())
+            .status(InvitationStatus.PENDING)
+            .createdAt(LocalDateTime.now())
+            .expiresAt(LocalDateTime.now().plusDays(7))
+            .invitedBy(admin)
+            .build();
+            
         invitationRepo.save(invitation);
-        log.info("Invitation sent: tenant={}, email={}, role={}", tenantId, request.getEmail(), request.getRole());
     }
 
     /**
-     * List all invitations for a tenant
+     * Lấy danh sách lời mời của một Tenant (Sửa lỗi: Method listInvitations)
      */
-    @Transactional(readOnly = true)
-    public List<InvitationResponse> listInvitations(UUID tenantId) {
-        // TODO: Validate user has permission to view invitations
-        
-        List<TenantInvitation> invitations = invitationRepo.findByTenantId(tenantId);
-        
-        return invitations.stream()
+    public List<InvitationResponse> listInvitations(Long tenantId) {
+        return invitationRepo.findByTenantId(tenantId).stream()
                 .map(this::convertToResponse)
                 .collect(Collectors.toList());
     }
     
     /**
-     * Get user's pending invitations
+     * Lấy danh sách lời mời đang chờ xử lý của user
+     * @param user Người dùng hiện tại
+     * @return Danh sách lời mời đang chờ xử lý
      */
-    @Transactional(readOnly = true)
     public List<InvitationResponse> getMyPendingInvitations(Auth user) {
-        List<TenantInvitation> invitations = invitationRepo.findByEmailAndStatus(user.getEmail(), InvitationStatus.PENDING);
-        
-        return invitations.stream()
-                .map(this::convertToResponse)
-                .collect(Collectors.toList());
+        return invitationRepo.findByEmailAndStatus(
+            user.getEmail(),
+            InvitationStatus.PENDING
+        ).stream()
+        .filter(invitation -> invitation.getExpiresAt() == null || 
+                            invitation.getExpiresAt().isAfter(LocalDateTime.now()))
+        .map(this::convertToResponse)
+        .collect(Collectors.toList());
     }
 
     /**
-     * Accept invitation with token
+     * User chấp nhận lời mời
      */
     @Transactional
     public void acceptInvitation(String token, Auth user) {
-        TenantInvitation invitation = invitationRepo.findByTokenAndStatus(token, InvitationStatus.PENDING)
-                .orElseThrow(() -> new IllegalArgumentException("Invalid or expired invitation"));
+        TenantInvitation invitation = invitationRepo.findByToken(token)
+            .orElseThrow(() -> new RuntimeException("Lời mời không hợp lệ hoặc đã bị thu hồi."));
 
-        if (!invitation.getEmail().equals(user.getEmail())) {
-            throw new IllegalArgumentException("Invitation email does not match user email");
+        if (invitation.getStatus() != InvitationStatus.PENDING) {
+            throw new RuntimeException("Lời mời này không còn ở trạng thái chờ.");
         }
 
-        if (invitation.getExpiresAt().isBefore(LocalDateTime.now())) {
-            throw new IllegalArgumentException("Invitation has expired");
+        if (!invitation.getEmail().equalsIgnoreCase(user.getEmail())) {
+            throw new RuntimeException("Bạn không có quyền chấp nhận lời mời này.");
         }
 
-        // Update invitation status
+        memberRepo.save(TenantMember.builder()
+            .tenant(invitation.getTenant())
+            .user(user)
+            .role(invitation.getRole())
+            .status(MembershipStatus.ACTIVE)
+            .joinedAt(LocalDateTime.now())
+            .build());
+
         invitation.setStatus(InvitationStatus.ACCEPTED);
         invitationRepo.save(invitation);
-
-        // Add user as tenant member
-        // TODO: Create tenant member entry
-        log.info("Invitation accepted: token={}, user={}", token, user.getId());
     }
 
     /**
-     * Reject invitation with token
+     * User từ chối lời mời
      */
     @Transactional
     public void rejectInvitation(String token, Auth user) {
-        TenantInvitation invitation = invitationRepo.findByTokenAndStatus(token, InvitationStatus.PENDING)
-                .orElseThrow(() -> new IllegalArgumentException("Invalid invitation"));
+        TenantInvitation invitation = invitationRepo.findByToken(token)
+            .orElseThrow(() -> new RuntimeException("Lời mời không tồn tại."));
 
-        if (!invitation.getEmail().equals(user.getEmail())) {
-            throw new IllegalArgumentException("Invitation email does not match user email");
+        if (!invitation.getEmail().equalsIgnoreCase(user.getEmail())) {
+            throw new RuntimeException("Bạn không có quyền từ chối lời mời này.");
         }
 
         invitation.setStatus(InvitationStatus.REJECTED);
         invitationRepo.save(invitation);
-        
-        log.info("Invitation rejected: token={}, user={}", token, user.getId());
     }
 
     /**
-     * Revoke an invitation
+     * Admin thu hồi lời mời (Sửa lỗi: Method revokeInvitation)
      */
     @Transactional
-    public void revokeInvitation(UUID tenantId, Long invitationId) {
-        // TODO: Validate user has permission to revoke invitations
+    public void revokeInvitation(Long tenantId, Long invitationId) {
+        TenantInvitation invitation = invitationRepo.findByIdAndTenantId(invitationId, tenantId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy lời mời trong tổ chức này."));
         
-        TenantInvitation invitation = invitationRepo.findById(invitationId)
-                .orElseThrow(() -> new IllegalArgumentException("Invitation not found"));
-
-        if (!invitation.getTenant().getId().equals(tenantId)) {
-            throw new IllegalArgumentException("Invitation does not belong to this tenant");
-        }
-
-        invitationRepo.delete(invitation);
-        log.info("Invitation revoked: tenant={}, invitation={}", tenantId, invitationId);
+        invitation.setStatus(InvitationStatus.REVOKED);
+        invitationRepo.save(invitation);
     }
 
+    /**
+     * Helper: Convert Entity to DTO
+     */
     private InvitationResponse convertToResponse(TenantInvitation invitation) {
-        // TODO: Get invited by user details
         return InvitationResponse.builder()
                 .id(invitation.getId())
-                .tenantId(invitation.getTenant().getId())
+                .name(invitation.getTenant() != null ? 
+                    invitation.getTenant().getName() : null)
                 .email(invitation.getEmail())
                 .role(invitation.getRole())
                 .status(invitation.getStatus())
-                .invitedAt(invitation.getCreatedAt())
                 .expiresAt(invitation.getExpiresAt())
-                .invitedBy(invitation.getInvitedBy())
                 .build();
     }
 }

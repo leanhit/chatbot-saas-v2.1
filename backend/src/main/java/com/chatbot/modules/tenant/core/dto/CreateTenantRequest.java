@@ -1,23 +1,15 @@
 package com.chatbot.modules.tenant.core.dto;
 
 import com.chatbot.modules.tenant.core.model.TenantVisibility;
+import lombok.Data;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
-import lombok.*;
+import jakarta.validation.constraints.NotNull;
 
-/**
- * Create tenant request DTO for v0.1
- */
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
+@Data
 public class CreateTenantRequest {
-
-    @NotBlank(message = "Tenant name is required")
-    @Size(min = 2, max = 255, message = "Tenant name must be between 2 and 255 characters")
+    @NotBlank
     private String name;
-    
+
+    @NotNull(message = "Visibility cannot be null")
     private TenantVisibility visibility;
 }

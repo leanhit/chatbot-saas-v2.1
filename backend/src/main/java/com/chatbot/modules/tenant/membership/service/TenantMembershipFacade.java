@@ -1,10 +1,15 @@
 package com.chatbot.modules.tenant.membership.service;
 
-// LEGACY CLASS - DISABLED FOR TENANT HUB v0.1
-// This class contains facade logic that is not part of v0.1 scope
-// TODO: Remove this class completely when v0.1 is stable
+import com.chatbot.core.identity.model.Auth;
+import com.chatbot.modules.tenant.membership.dto.*;
+import com.chatbot.modules.tenant.membership.model.*;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
-/*
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 public class TenantMembershipFacade {
@@ -14,54 +19,57 @@ public class TenantMembershipFacade {
     private final TenantSelfService selfService;
     private final TenantInvitationService invitationService;
 
+    /* ================= MEMBERS ================= */
+
     public Page<MemberResponse> listMembers(Long tenantId, Pageable p) {
-        // Legacy facade logic - not used in v0.1
-        return null;
+        return memberService.listMembers(tenantId, p);
     }
 
     public MemberResponse getMember(Long tenantId, Long userId) {
-        // Legacy facade logic - not used in v0.1
-        return null;
+        return memberService.getMember(tenantId, userId);
     }
 
+    /** ✅ SPEC: members/me */
     public MemberResponse myMember(Long tenantId, Auth user) {
-        // Legacy facade logic - not used in v0.1
-        return null;
+        return memberService.getMyMember(tenantId, user);
     }
 
     public void updateRole(Long tenantId, Long userId, TenantRole role) {
-        // Legacy facade logic - not used in v0.1
+        memberService.updateRole(tenantId, userId, role);
     }
 
     public void removeMember(Long tenantId, Long userId) {
-        // Legacy facade logic - not used in v0.1
+        memberService.removeMember(tenantId, userId);
     }
 
+    /* ================= JOIN ================= */
+
     public void requestJoin(Long tenantId, Auth user) {
-        // Legacy facade logic - not used in v0.1
+        joinService.requestToJoin(tenantId, user);
     }
 
     public List<MemberResponse> pending(Long tenantId) {
-        // Legacy facade logic - not used in v0.1
-        return null;
+        return joinService.getPendingRequests(tenantId);
     }
 
     public void updateJoinRequest(Long tenantId, Long requestId, MembershipStatus status) {
-        // Legacy facade logic - not used in v0.1
+        joinService.updateStatus(tenantId, requestId, status);
     }
 
+    /* ================= SELF ================= */
+
     public List<TenantPendingResponse> myPending(Auth user) {
-        // Legacy facade logic - not used in v0.1
-        return null;
+        return selfService.getMyPending(user);
     }
 
     public void leave(Long tenantId, Auth user) {
-        // Legacy facade logic - not used in v0.1
+        selfService.leaveTenant(tenantId, user);
     }
     
+    /**
+     * Lấy danh sách lời mời đang chờ xử lý của user
+     */
     public List<InvitationResponse> getMyInvitations(Auth user) {
-        // Legacy facade logic - not used in v0.1
-        return null;
+        return invitationService.getMyPendingInvitations(user);
     }
 }
-*/

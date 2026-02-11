@@ -10,8 +10,7 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 /**
- * Penny Bot Entity - Bot management với UUID tenant support
- * Adapted từ traloitudongV2 cho chatbot-saas-v2 architecture
+ * Entity representing a Penny Bot in the middleware layer
  */
 @Entity
 @Table(name = "penny_bots")
@@ -33,10 +32,10 @@ public class PennyBot {
     private PennyBotType botType;
 
     @Column(name = "tenant_id", nullable = false)
-    private UUID tenantId;
+    private Long tenantId;
 
-    @Column(name = "user_id", nullable = false)
-    private UUID userId;
+    @Column(name = "owner_id", nullable = false)
+    private String ownerId;
 
     @Column(name = "botpress_bot_id", nullable = false)
     private String botpressBotId;
@@ -46,11 +45,11 @@ public class PennyBot {
 
     @Column(name = "is_active", nullable = false)
     @Builder.Default
-    private Boolean isActive = true;
+    private boolean isActive = true;
 
     @Column(name = "is_enabled", nullable = false)
     @Builder.Default
-    private Boolean isEnabled = true;
+    private boolean isEnabled = true;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     @Builder.Default
@@ -88,9 +87,9 @@ public class PennyBot {
     /**
      * Check if this bot can handle the given message type
      */
-    public Boolean canHandle(String messageType) {
+    public boolean canHandle(String messageType) {
         // Logic to determine if bot can handle specific message types
         // This can be extended based on bot capabilities
-        return Boolean.TRUE.equals(isActive) && Boolean.TRUE.equals(isEnabled);
+        return isActive && isEnabled;
     }
 }

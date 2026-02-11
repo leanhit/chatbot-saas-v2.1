@@ -1,41 +1,38 @@
 package com.chatbot.modules.penny.model;
 
 /**
- * Penny Bot Types enum
- * Định nghĩa các loại bot có thể tạo
+ * Enum định nghĩa các loại bot trong Penny Middleware
  */
 public enum PennyBotType {
-    CUSTOMER_SERVICE("customer_service_bot", "Customer Service Bot"),
-    SALES_ASSISTANT("sales_assistant_bot", "Sales Assistant Bot"),
-    SUPPORT_BOT("support_bot", "Support Bot"),
-    FAQ_BOT("faq_bot", "FAQ Bot"),
-    NOTIFICATION_BOT("notification_bot", "Notification Bot"),
-    CUSTOM("custom_bot", "Custom Bot");
+    CUSTOMER_SERVICE("Customer Service", "botpress-customer-service-001"),
+    SALES("Sales", "botpress-sales-001"),
+    SUPPORT("Technical Support", "botpress-support-001"),
+    MARKETING("Marketing", "botpress-marketing-001"),
+    HR("Human Resources", "botpress-hr-001"),
+    FINANCE("Finance", "botpress-finance-001"),
+    GENERAL("General Purpose", "botpress-general-001");
 
+    private final String displayName;
     private final String botpressBotId;
-    private final String description;
 
-    PennyBotType(String botpressBotId, String description) {
+    PennyBotType(String displayName, String botpressBotId) {
+        this.displayName = displayName;
         this.botpressBotId = botpressBotId;
-        this.description = description;
+    }
+
+    public String getDisplayName() {
+        return displayName;
     }
 
     public String getBotpressBotId() {
         return botpressBotId;
     }
 
-    public String getDescription() {
-        return description;
-    }
-
-    /**
-     * Convert string to PennyBotType
-     */
     public static PennyBotType fromString(String type) {
         try {
             return PennyBotType.valueOf(type.toUpperCase());
         } catch (IllegalArgumentException e) {
-            return CUSTOMER_SERVICE; // Default fallback
+            return GENERAL; // Default fallback
         }
     }
 }

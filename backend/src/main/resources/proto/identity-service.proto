@@ -1,0 +1,81 @@
+syntax = "proto3";
+
+package com.chatbot.identity;
+
+service IdentityService {
+    // Validate JWT token for inter-hub communication
+    rpc ValidateToken(ValidateTokenRequest) returns (ValidateTokenResponse);
+    
+    // Get user profile information
+    rpc GetUserProfile(GetUserRequest) returns (GetUserResponse);
+    
+    // Validate user existence and status
+    rpc ValidateUser(ValidateUserRequest) returns (ValidateUserResponse);
+    
+    // Get user role for authorization
+    rpc GetUserRole(GetUserRoleRequest) returns (GetUserRoleResponse);
+    
+    // Check if user is active
+    rpc IsUserActive(IsUserActiveRequest) returns (IsUserActiveResponse);
+}
+
+// Token validation
+message ValidateTokenRequest {
+    string token = 1;
+}
+
+message ValidateTokenResponse {
+    bool valid = 1;
+    string user_id = 2;
+    string email = 3;
+    string role = 4;
+    string error_message = 5;
+}
+
+// User profile
+message GetUserRequest {
+    string user_id = 1;
+}
+
+message GetUserResponse {
+    string user_id = 1;
+    string email = 2;
+    string role = 3;
+    bool is_active = 4;
+    string created_at = 5;
+    string updated_at = 6;
+    string error_message = 7;
+}
+
+// User validation
+message ValidateUserRequest {
+    string user_id = 1;
+}
+
+message ValidateUserResponse {
+    bool valid = 1;
+    bool is_active = 2;
+    string message = 3;
+}
+
+// User role
+message GetUserRoleRequest {
+    string user_id = 1;
+}
+
+message GetUserRoleResponse {
+    string user_id = 1;
+    string role = 2;
+    string error_message = 3;
+}
+
+// User active status
+message IsUserActiveRequest {
+    string user_id = 1;
+}
+
+message IsUserActiveResponse {
+    string user_id = 1;
+    bool is_active = 2;
+    string error_message = 3;
+}

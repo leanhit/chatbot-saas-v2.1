@@ -1,6 +1,7 @@
 package com.chatbot.modules.tenant.membership.model;
 
 import com.chatbot.modules.tenant.core.model.Tenant;
+import com.chatbot.core.identity.model.Auth;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -10,7 +11,6 @@ import lombok.Setter;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
-import java.util.UUID;
 
 // TenantInvitation.java
 @Entity
@@ -26,7 +26,7 @@ public class TenantInvitation {
     private Long id;
     
     @ManyToOne
-    @JoinColumn(name = "tenant_id", nullable = false, insertable = false, updatable = false)
+    @JoinColumn(name = "tenant_id", nullable = false)
     private Tenant tenant;
     
     @Column(nullable = false)
@@ -49,6 +49,7 @@ public class TenantInvitation {
     @Column
     private LocalDateTime expiresAt;
     
-    @Column(name = "invited_by")
-    private Long invitedBy;
+    @ManyToOne
+    @JoinColumn(name = "invited_by")
+    private Auth invitedBy;
 }

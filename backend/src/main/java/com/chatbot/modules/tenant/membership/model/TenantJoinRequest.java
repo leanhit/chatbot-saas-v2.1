@@ -1,10 +1,10 @@
 package com.chatbot.modules.tenant.membership.model;
 
+import com.chatbot.core.identity.model.Auth;
 import com.chatbot.modules.tenant.core.model.Tenant;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
-import java.util.UUID;
 
 @Entity
 @Table(name = "tenant_join_requests")
@@ -22,11 +22,9 @@ public class TenantJoinRequest {
     @JoinColumn(name = "tenant_id", nullable = false)
     private Tenant tenant;
     
-    @Column(name = "user_id", nullable = false)
-    private UUID userId;
-    
-    @Column(name = "user_email", nullable = false)
-    private String userEmail;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private Auth user;
     
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

@@ -12,7 +12,6 @@ import java.util.UUID;
 
 /**
  * Response Template Entity - Template phản hồi tùy chỉnh
- * Adapted cho UUID tenant support
  */
 @Entity
 @Table(name = "penny_response_templates")
@@ -132,15 +131,6 @@ public class ResponseTemplate {
         LIST,           // List template
         CAROUSEL,       // Carousel template
         FORM,           // Form template
-        CUSTOM,         // Custom template
-        INTERACTIVE,     // Interactive template
-        MEDIA,          // Media template
-        LOCATION,        // Location template
-        CONTACT,        // Contact template
-        POLL,           // Poll template
-        FEEDBACK,       // Feedback template
-        NOTIFICATION,   // Notification template
-        CONFIRMATION,   // Confirmation template
-        ERROR           // Error template
+        CUSTOM          // Custom template
     }
 }

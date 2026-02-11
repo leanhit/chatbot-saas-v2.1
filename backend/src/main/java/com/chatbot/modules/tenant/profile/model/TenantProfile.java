@@ -34,6 +34,16 @@ public class TenantProfile {
     @Column(length = 1000)
     private String description;
 
+    // ===== Business Information =====
+    @Column(length = 100)
+    private String industry;
+
+    @Column(length = 50)
+    private String plan;
+
+    @Column(length = 50)
+    private String companySize;
+
     // ===== Thông tin pháp lý =====
     private String legalName;
 

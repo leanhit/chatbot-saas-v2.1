@@ -1,12 +1,17 @@
 package com.chatbot.modules.address.dto;
 
 import com.chatbot.modules.address.model.OwnerType;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class AddressDetailResponseDTO {
     private Long id;
-    private Long tenantId;
     private OwnerType ownerType;
     private Long ownerId;
 
@@ -18,5 +23,4 @@ public class AddressDetailResponseDTO {
     private String country;
 
     private String fullAddress;
-    private boolean isDefault;
 }

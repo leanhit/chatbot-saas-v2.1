@@ -1,5 +1,6 @@
 package com.chatbot.modules.tenant.membership.service;
 
+import com.chatbot.core.identity.model.Auth;
 import com.chatbot.modules.tenant.core.model.Tenant;
 import com.chatbot.modules.tenant.core.repository.TenantRepository;
 import com.chatbot.modules.tenant.membership.dto.*;
@@ -12,7 +13,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -26,16 +26,16 @@ public class TenantJoinRequestService {
     /* ================= REQUEST ================= */
 
     @Transactional
-    public void requestToJoin(UUID tenantId, UUID userId, String userEmail) {
+    public void requestToJoin(Long tenantId, Auth user) {
         // Check if user already has an active membership
-        if (memberRepo.existsByTenantIdAndUserIdAndStatus(
-                tenantId, userId, MembershipStatus.ACTIVE)) {
+        if (memberRepo.existsByTenant_IdAndUser_IdAndStatus(
+                tenantId, user.getId(), MembershipStatus.ACTIVE)) {
             throw new IllegalStateException("Bạn đã là thành viên của tenant này");
         }
 
         // Check for existing pending join request
-        if (joinRequestRepo.existsByTenantIdAndUserIdAndStatus(
-                tenantId, userId, MembershipStatus.PENDING)) {
+        if (joinRequestRepo.existsByTenant_IdAndUser_IdAndStatus(
+                tenantId, user.getId(), MembershipStatus.PENDING)) {
             throw new IllegalStateException("Bạn đã gửi yêu cầu tham gia tenant này");
         }
 
@@ -45,16 +45,15 @@ public class TenantJoinRequestService {
         // Create new join request
         joinRequestRepo.save(TenantJoinRequest.builder()
                 .tenant(tenant)
-                .userId(userId)
-                .userEmail(userEmail)
+                .user(user)
                 .status(MembershipStatus.PENDING)
                 .build());
     }
 
     /* ================= LIST ================= */
 
-    public List<MemberResponse> getPendingRequests(UUID tenantId) {
-        return joinRequestRepo.findByTenantIdAndStatus(tenantId, MembershipStatus.PENDING)
+    public List<MemberResponse> getPendingRequests(Long tenantId) {
+        return joinRequestRepo.findByTenant_IdAndStatus(tenantId, MembershipStatus.PENDING)
                 .stream()
                 .map(this::toResponse)
                 .toList();
@@ -66,18 +65,17 @@ public class TenantJoinRequestService {
      * { status: APPROVED | REJECTED }
      */
     @Transactional
-    public void updateStatus(UUID tenantId, Long requestId, MembershipStatus status) {
+    public void updateStatus(Long tenantId, Long requestId, MembershipStatus status) {
         TenantJoinRequest request = getPendingRequest(tenantId, requestId);
         
         if (status == MembershipStatus.ACTIVE) {
             // Check if user already has ACTIVE membership
-            if (!memberRepo.existsByTenantIdAndUserIdAndStatus(
-                    tenantId, request.getUserId(), MembershipStatus.ACTIVE)) {
+            if (!memberRepo.existsByTenant_IdAndUser_IdAndStatus(
+                    tenantId, request.getUser().getId(), MembershipStatus.ACTIVE)) {
                 // Create new member
                 memberRepo.save(TenantMember.builder()
                         .tenant(request.getTenant())
-                        .userId(request.getUserId())
-                        .email(request.getUserEmail())
+                        .user(request.getUser())
                         .role(TenantRole.MEMBER)
                         .status(MembershipStatus.ACTIVE)
                         .joinedAt(LocalDateTime.now())
@@ -97,9 +95,9 @@ public class TenantJoinRequestService {
 
     /* ================= HELPERS ================= */
 
-    private TenantJoinRequest getPendingRequest(UUID tenantId, Long requestId) {
+    private TenantJoinRequest getPendingRequest(Long tenantId, Long requestId) {
         TenantJoinRequest request = joinRequestRepo.findById(requestId)
-                .orElseThrow(() -> new IllegalStateException("Không tìm thấy yêu cầu tham gia"));
+                .orElseThrow(() -> new IllegalStateException("Không tìm thấy yêu cầu"));
 
         if (!request.getTenant().getId().equals(tenantId)
                 || request.getStatus() != MembershipStatus.PENDING) {
@@ -110,9 +108,8 @@ public class TenantJoinRequestService {
 
     private MemberResponse toResponse(TenantJoinRequest request) {
         return MemberResponse.builder()
-                .id(request.getUserId())
-                .userId(request.getUserId())
-                .email(request.getUserEmail())
+                .id(request.getUser().getId())
+                .email(request.getUser().getEmail())
                 .status(request.getStatus())
                 .requestedAt(request.getCreatedAt())
                 .build();

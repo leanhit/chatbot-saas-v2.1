@@ -1,6 +1,6 @@
-// package com.chatbot.odoo.client;
+// package com.chatbot.external.odoo.client;
 
-// import com.chatbot.odoo.client.OdooApiClient;
+// import com.chatbot.external.odoo.client.OdooApiClient;
 // import org.junit.jupiter.api.Test;
 // import org.springframework.beans.factory.annotation.Autowired;
 // import org.springframework.boot.test.context.SpringBootTest;

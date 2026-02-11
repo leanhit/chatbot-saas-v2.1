@@ -1,18 +1,12 @@
 package com.chatbot.modules.tenant.core.model;
 
+import com.chatbot.modules.tenant.profile.model.TenantProfile;
+import com.chatbot.modules.tenant.professional.model.TenantProfessional;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-/**
- * Tenant entity - Multi-tenant workspace
- * 
- * v0.1: Simplified core tenant model
- * - UUID primary key for distributed systems
- * - Basic workspace information only
- * - No expiry, profile, or advanced features
- */
 @Entity
 @Table(name = "tenants")
 @Getter
@@ -23,56 +17,52 @@ import java.util.UUID;
 public class Tenant {
 
     @Id
-    @Column(nullable = false, updatable = false)
-    private UUID id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
-    @Column(nullable = false, length = 255)
+    @Column(unique = true, nullable = false)
+    private String tenantKey; // UUID for frontend
+
+    @Column(nullable = false)
     private String name;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
+    @Column(nullable = false)
     @Builder.Default
     private TenantStatus status = TenantStatus.ACTIVE;
-
-    @Column(name = "default_locale", nullable = false, length = 10, columnDefinition = "varchar(10) default 'vi'")
-    @Builder.Default
-    private String defaultLocale = "vi";
-
-    @Column(name = "is_default", nullable = false, columnDefinition = "boolean default false")
-    @Builder.Default
-    private Boolean isDefault = false;
-
+    
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
+    @Column(nullable = false)
     @Builder.Default
     private TenantVisibility visibility = TenantVisibility.PUBLIC;
 
-    @Column(name = "created_at", updatable = false, nullable = false)
-    private LocalDateTime createdAt;
+    @Column(name = "expires_at")
+    private LocalDateTime expiresAt;
 
-    @Column(name = "updated_at", nullable = false)
+    // --- audit ---
+    private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
     @PrePersist
-    protected void onCreate() {
-        // Generate UUID if not set
-        if (this.id == null) {
-            this.id = UUID.randomUUID();
+    void prePersist() {
+        createdAt = LocalDateTime.now();
+        updatedAt = createdAt;
+        // Generate tenantKey if not set
+        if (tenantKey == null || tenantKey.isBlank()) {
+            tenantKey = UUID.randomUUID().toString();
         }
-        
-        // Set timestamps
-        LocalDateTime now = LocalDateTime.now();
-        createdAt = now;
-        updatedAt = now;
     }
 
     @PreUpdate
-    protected void onUpdate() {
+    void preUpdate() {
         updatedAt = LocalDateTime.now();
     }
+    
+    @OneToOne(mappedBy = "tenant", cascade = CascadeType.ALL, orphanRemoval = true)
+    private TenantProfile profile;
 
-    // Business logic helpers
-    public boolean isActive() {
-        return TenantStatus.ACTIVE.equals(status);
-    }
+    @OneToOne(mappedBy = "tenant", cascade = CascadeType.ALL, orphanRemoval = true)
+    private TenantProfessional professional;
+
+    // Các phương thức prePersist và preUpdate vẫn giữ nguyên vì cần xử lý logic đặc biệt
 }

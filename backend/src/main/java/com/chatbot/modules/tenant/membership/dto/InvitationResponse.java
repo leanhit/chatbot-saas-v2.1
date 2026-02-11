@@ -8,7 +8,6 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
-import java.util.UUID;
 
 // InvitationResponse.java
 @Getter
@@ -16,13 +15,10 @@ import java.util.UUID;
 @Setter
 public class InvitationResponse {
     private Long id;
-    private UUID tenantId;
     private String name;
     private String email;
     private TenantRole role;
     private InvitationStatus status;
     private LocalDateTime expiresAt;
-    private LocalDateTime invitedAt;
-    private Long invitedBy;
     private String invitedByName;
 }

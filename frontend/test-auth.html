@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Auth</title>
+</head>
+<body>
+    <h1>Test Authentication</h1>
+    <button onclick="testToken()">Check Token</button>
+    <button onclick="testUpload()">Test Upload</button>
+    <div id="result"></div>
+
+    <script>
+        function testToken() {
+            const token = localStorage.getItem('accessToken');
+            const tenantKey = localStorage.getItem('ACTIVE_TENANT_ID');
+            document.getElementById('result').innerHTML = `
+                <h3>Token Info:</h3>
+                <p>Token: ${token ? token.substring(0, 50) + '...' : 'NOT FOUND'}</p>
+                <p>Tenant Key: ${tenantKey || 'NOT FOUND'}</p>
+            `;
+        }
+
+        async function testUpload() {
+            const token = localStorage.getItem('accessToken');
+            if (!token) {
+                document.getElementById('result').innerHTML = '<p style="color: red">No token found!</p>';
+                return;
+            }
+
+            try {
+                const formData = new FormData();
+                formData.append('logo', new Blob(['test'], { type: 'image/png' }), 'test.png');
+
+                const response = await fetch('http://localhost:8080/api/v1/tenant/logo', {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'X-Tenant-Key': localStorage.getItem('ACTIVE_TENANT_ID') || ''
+                    },
+                    body: formData
+                });
+
+                const result = await response.text();
+                document.getElementById('result').innerHTML = `
+                    <h3>Upload Test Result:</h3>
+                    <p>Status: ${response.status}</p>
+                    <p>Response: ${result}</p>
+                `;
+            } catch (error) {
+                document.getElementById('result').innerHTML = `<p style="color: red">Error: ${error.message}</p>`;
+            }
+        }
+    </script>
+</body>
+</html>

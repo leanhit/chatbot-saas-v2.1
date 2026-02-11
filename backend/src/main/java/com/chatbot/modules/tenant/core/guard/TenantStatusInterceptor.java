@@ -1,10 +1,5 @@
 package com.chatbot.modules.tenant.core.guard;
 
-// LEGACY CLASS - DISABLED FOR TENANT HUB v0.1
-// This class contains interceptor logic that is not part of v0.1 scope
-// TODO: Remove this class completely when v0.1 is stable
-
-/*
 import com.chatbot.modules.tenant.core.model.Tenant;
 import com.chatbot.modules.tenant.core.model.TenantStatus;
 import com.chatbot.modules.tenant.core.service.TenantService;
@@ -27,8 +22,20 @@ public class TenantStatusInterceptor implements HandlerInterceptor {
     public boolean preHandle(HttpServletRequest request,
                              HttpServletResponse response,
                              Object handler) {
-        // Legacy interceptor logic - not used in v0.1
+
+        Long tenantId = TenantContext.getTenantId();
+        if (tenantId == null) {
+            return true; // system-level API
+        }
+
+        Tenant tenant = tenantService.getTenant(tenantId);
+
+        if (tenant.getStatus() != TenantStatus.ACTIVE) {
+            throw new IllegalStateException(
+                "Tenant is not active: " + tenant.getStatus()
+            );
+        }
+
         return true;
     }
 }
-*/

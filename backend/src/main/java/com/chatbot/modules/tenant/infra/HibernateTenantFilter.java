@@ -6,14 +6,6 @@ import org.hibernate.Session;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.annotation.RequestScope;
 
-import java.util.UUID;
-
-/**
- * Hibernate Tenant Filter
- * Applies tenant filtering to Hibernate queries
- * 
- * v0.2: Updated to use UUID tenant IDs
- */
 @Component
 @RequestScope
 public class HibernateTenantFilter {
@@ -22,7 +14,7 @@ public class HibernateTenantFilter {
     private EntityManager entityManager;
 
     public void enable() {
-        UUID tenantId = TenantContext.getTenantId();
+        Long tenantId = TenantContext.getTenantId();
         if (tenantId == null) {
             return;
         }

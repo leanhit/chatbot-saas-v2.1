@@ -6,5 +6,4 @@ import lombok.Data;
 public class AddressResponseDTO {
     private Long id;
     private String fullAddress;
-    private boolean isDefault;
 }

@@ -12,7 +12,6 @@ import java.util.UUID;
 
 /**
  * Bot Rule Entity - Định nghĩa rule tùy chỉnh cho bot
- * Adapted cho UUID tenant support
  */
 @Entity
 @Table(name = "penny_bot_rules")
@@ -108,7 +107,7 @@ public class BotRule {
     /**
      * Check if rule matches trigger
      */
-    public Boolean matchesTrigger(String intent, String message, Map<String, Object> context) {
+    public boolean matchesTrigger(String intent, String message, Map<String, Object> context) {
         switch (triggerType) {
             case INTENT:
                 return intent != null && intent.equals(triggerValue);
@@ -119,8 +118,6 @@ public class BotRule {
             case CONDITION:
                 // Evaluate custom condition (would need expression evaluator)
                 return evaluateCondition(context);
-            case ALWAYS:
-                return true;
             default:
                 return false;
         }
@@ -129,7 +126,7 @@ public class BotRule {
     /**
      * Evaluate custom condition (simplified)
      */
-    private Boolean evaluateCondition(Map<String, Object> context) {
+    private boolean evaluateCondition(Map<String, Object> context) {
         // This would be implemented with a proper expression evaluator
         // For now, return true if condition exists
         return condition != null && !condition.trim().isEmpty();
@@ -140,13 +137,7 @@ public class BotRule {
         RESPONSE,     // Direct response
         REDIRECT,     // Redirect to another flow
         WEBHOOK,      // Call webhook
-        SCRIPT,        // Execute custom script
-        CONDITION,     // Evaluate condition
-        FORWARD,       // Forward to another bot
-        ANALYTICS,     // Track analytics
-        VALIDATION,    // Validate input
-        TRANSFORMATION, // Transform data
-        INTEGRATION    // External system integration
+        SCRIPT        // Execute custom script
     }
 
     public enum TriggerType {
@@ -154,11 +145,6 @@ public class BotRule {
         KEYWORD,      // Trigger by keyword
         REGEX,        // Trigger by regex
         CONDITION,    // Custom condition
-        ALWAYS,        // Always trigger
-        TIME_BASED,   // Time-based trigger
-        EVENT_BASED,  // Event-based trigger
-        USER_BASED,   // User-based trigger
-        CONTEXT_BASED, // Context-based trigger
-        EXTERNAL       // External trigger
+        ALWAYS        // Always trigger
     }
 }

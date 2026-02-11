@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Tenant Key</title>
+</head>
+<body>
+    <h1>Debug Tenant Key</h1>
+    <button onclick="checkLocalStorage()">Check LocalStorage</button>
+    <button onclick="clearAndSet()">Clear & Set Test Key</button>
+    <button onclick="checkHeaders()">Check Headers</button>
+    <div id="result"></div>
+
+    <script>
+        function checkLocalStorage() {
+            const activeTenantKey = localStorage.getItem('active_tenant_id');
+            console.log('Active Tenant Key:', activeTenantKey);
+            document.getElementById('result').innerHTML = `
+                <h3>Active Tenant Key: ${activeTenantKey || 'NULL'}</h3>
+                <p>Length: ${activeTenantKey ? activeTenantKey.length : 0}</p>
+            `;
+        }
+
+        function clearAndSet() {
+            localStorage.removeItem('active_tenant_id');
+            localStorage.setItem('active_tenant_id', '6b281b36-0ab9-44a3-8b12-a1fe8a24dfae');
+            console.log('Set test tenant key');
+            checkLocalStorage();
+        }
+
+        async function checkHeaders() {
+            try {
+                const response = await fetch('/api/tenants/key/6b281b36-0ab9-44a3-8b12-a1fe8a24dfae/full', {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+                
+                const headers = {};
+                response.headers.forEach((value, key) => {
+                    headers[key] = value;
+                });
+                
+                console.log('Response Headers:', headers);
+                document.getElementById('result').innerHTML += `
+                    <h3>API Response Status: ${response.status}</h3>
+                    <h4>Response Headers:</h4>
+                    <pre>${JSON.stringify(headers, null, 2)}</pre>
+                `;
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('result').innerHTML = `<p style="color: red">Error: ${error.message}</p>`;
+            }
+        }
+    </script>
+</body>
+</html>

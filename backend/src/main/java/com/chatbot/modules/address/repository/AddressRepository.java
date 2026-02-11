@@ -12,14 +12,14 @@ import java.util.Optional;
 @Repository
 public interface AddressRepository extends JpaRepository<Address, Long> {
     
-    // 1. Sửa lỗi: findByTenantIdAndOwnerTypeAndOwnerId
-    List<Address> findByTenantIdAndOwnerTypeAndOwnerId(Long tenantId, OwnerType ownerType, Long ownerId);
+    // Lấy địa chỉ duy nhất của user (không cần tenant)
+    Optional<Address> findByOwnerTypeAndOwnerId(OwnerType ownerType, Long ownerId);
 
-    // 2. Sửa lỗi: findByIdAndTenantId
+    // Lấy địa chỉ duy nhất của owner (nếu có)
+    Optional<Address> findByTenantIdAndOwnerTypeAndOwnerId(Long tenantId, OwnerType ownerType, Long ownerId);
+
+    // Lấy địa chỉ theo ID và tenant
     Optional<Address> findByIdAndTenantId(Long id, Long tenantId);
-
-    // 3. Sửa lỗi: findByTenantIdAndOwnerTypeAndOwnerIdAndIsDefaultTrue
-    Optional<Address> findByTenantIdAndOwnerTypeAndOwnerIdAndIsDefaultTrue(Long tenantId, OwnerType ownerType, Long ownerId);
 
     // Các phương thức bổ sung nếu cần
     List<Address> findByOwnerIdAndOwnerType(Long ownerId, OwnerType ownerType);

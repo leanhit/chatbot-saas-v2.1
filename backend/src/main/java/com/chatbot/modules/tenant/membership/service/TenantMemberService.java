@@ -1,103 +1,89 @@
 package com.chatbot.modules.tenant.membership.service;
 
-import com.chatbot.modules.tenant.membership.dto.MemberResponse;
-import com.chatbot.modules.tenant.membership.model.TenantMember;
-import com.chatbot.modules.tenant.membership.model.TenantRole;
+import com.chatbot.core.identity.model.Auth;
+import com.chatbot.modules.tenant.membership.dto.*;
+import com.chatbot.modules.tenant.membership.model.*;
 import com.chatbot.modules.tenant.membership.repository.TenantMemberRepository;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
-import java.util.List;
-import java.util.UUID;
-import java.util.stream.Collectors;
+import java.util.Optional;
 
-/**
- * Tenant member service for v0.1
- * Core member management functionality
- */
 @Service
 @RequiredArgsConstructor
-@Slf4j
+@Transactional(readOnly = true)
 public class TenantMemberService {
 
-    private final TenantMemberRepository tenantMemberRepository;
+    private final TenantMemberRepository memberRepo;
 
-    /**
-     * Get all members of a tenant
-     * TODO: Validate user has access to tenant
-     */
-    @Transactional(readOnly = true)
-    public List<MemberResponse> getTenantMembers(UUID tenantId) {
-        // TODO: Validate current user has permission to view members
-        
-        List<TenantMember> members = tenantMemberRepository.findByTenantId(tenantId);
-        
-        return members.stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
+    /* ================= LIST ================= */
+
+    public Page<MemberResponse> listMembers(Long tenantId, Pageable pageable) {
+        return memberRepo
+                .findByTenant_IdAndStatus(tenantId, MembershipStatus.ACTIVE, pageable)
+                .map(this::toResponse);
     }
 
-    /**
-     * Update member role
-     * Only OWNER can change roles
-     * OWNER cannot be changed
-     * TODO: Validate current user is OWNER
-     */
+    /* ================= GET ================= */
+
+    public MemberResponse getMember(Long tenantId, Long userId) {
+        return getMemberEntity(tenantId, userId)
+                .map(this::toResponse)
+                .orElseThrow(() -> new IllegalStateException("Member not found"));
+    }
+
+    /** ✅ SPEC: GET /tenants/{tenantId}/members/me */
+    public MemberResponse getMyMember(Long tenantId, Auth user) {
+        return getMember(tenantId, user.getId());
+    }
+
+    /* ================= UPDATE ================= */
+
     @Transactional
-    public void updateMemberRole(UUID tenantId, UUID userId, TenantRole newRole) {
-        // TODO: Validate current user is OWNER of this tenant
-        
-        TenantMember member = tenantMemberRepository
-                .findByTenantIdAndUserId(tenantId, userId)
-                .orElseThrow(() -> new IllegalArgumentException("Member not found"));
+    public void updateRole(Long tenantId, Long userId, TenantRole role) {
+        TenantMember member = getMemberEntityRequired(tenantId, userId);
 
         if (member.getRole() == TenantRole.OWNER) {
             throw new IllegalStateException("Cannot change OWNER role");
         }
 
-        if (newRole == TenantRole.OWNER) {
-            // TODO: Validate this is the last OWNER transfer
-            throw new IllegalStateException("Cannot assign OWNER role through this method");
-        }
-
-        member.setRole(newRole);
-        tenantMemberRepository.save(member);
-        
-        log.info("Updated member role: tenant={}, user={}, role={}", tenantId, userId, newRole);
+        member.setRole(role);
     }
 
-    /**
-     * Remove member from tenant
-     * OWNER cannot remove themselves if they're the last OWNER
-     * ADMIN can remove MEMBER only
-     * TODO: Validate current user permissions
-     */
+    /* ================= DELETE ================= */
+
     @Transactional
-    public void removeMember(UUID tenantId, UUID userId) {
-        // TODO: Validate current user permissions based on their role
-        
-        TenantMember member = tenantMemberRepository
-                .findByTenantIdAndUserId(tenantId, userId)
-                .orElseThrow(() -> new IllegalArgumentException("Member not found"));
+    public void removeMember(Long tenantId, Long userId) {
+        TenantMember member = getMemberEntityRequired(tenantId, userId);
 
         if (member.getRole() == TenantRole.OWNER) {
-            // TODO: Check if this is the last OWNER
-            throw new IllegalStateException("Cannot remove OWNER member");
+            throw new IllegalStateException("Cannot remove OWNER");
         }
 
-        tenantMemberRepository.delete(member);
-        log.info("Removed member: tenant={}, user={}", tenantId, userId);
+        memberRepo.delete(member);
     }
 
-    private MemberResponse mapToResponse(TenantMember member) {
+    /* ================= HELPERS ================= */
+
+    Optional<TenantMember> getMemberEntity(Long tenantId, Long userId) {
+        return memberRepo.findByTenant_IdAndUser_Id(tenantId, userId);
+    }
+
+    TenantMember getMemberEntityRequired(Long tenantId, Long userId) {
+        return getMemberEntity(tenantId, userId)
+                .orElseThrow(() -> new IllegalStateException("Member not found"));
+    }
+
+    private MemberResponse toResponse(TenantMember m) {
         return MemberResponse.builder()
-                .id(member.getId())
-                .userId(member.getUserId())
-                .email(member.getEmail())
-                .role(member.getRole())
-                .joinedAt(member.getJoinedAt())
+                .id(m.getId())
+                .userId(m.getUser().getId())
+                .email(m.getUser().getEmail())
+                .role(m.getRole())
+                .joinedAt(m.getJoinedAt() != null ? m.getJoinedAt() : m.getCreatedAt())
                 .build();
     }
 }

@@ -1,86 +1,71 @@
 package com.chatbot.modules.penny.repository;
 
 import com.chatbot.modules.penny.model.PennyBot;
+import com.chatbot.modules.penny.model.PennyBotType;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
 /**
- * Penny Bot Repository
- * Data access layer cho PennyBot entities
+ * Repository for PennyBot entities
  */
 @Repository
 public interface PennyBotRepository extends JpaRepository<PennyBot, UUID> {
-    
+
     /**
-     * Find all bots for a specific tenant
+     * Find active bots by tenant ID
      */
-    List<PennyBot> findByTenantId(UUID tenantId);
-    
+    List<PennyBot> findByTenantIdAndIsActiveTrue(Long tenantId);
+
     /**
-     * Find all bots for a specific user
+     * Find active bots by owner ID
      */
-    List<PennyBot> findByUserId(UUID userId);
-    
+    List<PennyBot> findByOwnerIdAndIsActiveTrue(String ownerId);
+
     /**
-     * Find bots for tenant and user
+     * Find bot by tenant ID and bot type
      */
-    List<PennyBot> findByTenantIdAndUserId(UUID tenantId, UUID userId);
-    
+    Optional<PennyBot> findByTenantIdAndBotTypeAndIsActiveTrue(Long tenantId, PennyBotType botType);
+
     /**
-     * Find active bots for tenant
+     * Check if tenant already has a bot of specific type
      */
-    List<PennyBot> findByTenantIdAndIsActive(UUID tenantId, Boolean isActive);
-    
+    boolean existsByTenantIdAndBotTypeAndIsActiveTrue(Long tenantId, PennyBotType botType);
+
     /**
-     * Find enabled bots for tenant
+     * Find all active bots for a specific owner
      */
-    List<PennyBot> findByTenantIdAndIsEnabled(UUID tenantId, Boolean isEnabled);
-    
+    @Query("SELECT b FROM PennyBot b WHERE b.ownerId = :ownerId AND b.isActive = true ORDER BY b.createdAt DESC")
+    List<PennyBot> findActiveBotsByOwner(@Param("ownerId") String ownerId);
+
     /**
-     * Find active and enabled bots for tenant
+     * Find bot by tenant ID and owner ID
      */
-    List<PennyBot> findByTenantIdAndIsActiveAndIsEnabled(UUID tenantId, Boolean isActive, Boolean isEnabled);
-    
+    Optional<PennyBot> findByTenantIdAndOwnerIdAndIsActiveTrue(Long tenantId, String ownerId);
+
     /**
-     * Find bot by ID and tenant (security check)
+     * Count active bots by tenant
      */
-    Optional<PennyBot> findByIdAndTenantId(UUID id, UUID tenantId);
-    
+    @Query("SELECT COUNT(b) FROM PennyBot b WHERE b.tenantId = :tenantId AND b.isActive = true")
+    long countActiveBotsByTenant(@Param("tenantId") Long tenantId);
+
     /**
-     * Check if bot exists for tenant
+     * Find bots by botpress bot ID
      */
-    boolean existsByTenantIdAndBotName(UUID tenantId, String botName);
-    
+    List<PennyBot> findByBotpressBotIdAndIsActiveTrue(String botpressBotId);
+
     /**
-     * Find bot by Botpress bot ID
+     * Hard delete bot (xóa vĩnh viễn)
      */
-    Optional<PennyBot> findByBotpressBotId(String botpressBotId);
-    
-    /**
-     * Count bots for tenant
-     */
-    long countByTenantId(UUID tenantId);
-    
-    /**
-     * Count active bots for tenant
-     */
-    @Query("SELECT COUNT(pb) FROM PennyBot pb WHERE pb.tenantId = :tenantId AND pb.isActive = true")
-    long countActiveByTenantId(@Param("tenantId") UUID tenantId);
-    
-    /**
-     * Find bots by type for tenant
-     */
-    List<PennyBot> findByTenantIdAndBotType(UUID tenantId, String botType);
-    
-    /**
-     * Update last used timestamp
-     */
-    @Query("UPDATE PennyBot pb SET pb.lastUsedAt = CURRENT_TIMESTAMP WHERE pb.id = :botId")
-    void updateLastUsedAt(@Param("botId") UUID botId);
+    @Modifying
+    @Transactional
+    @Query("DELETE FROM PennyBot b WHERE b.id = :botId")
+    void hardDeleteBot(@Param("botId") UUID botId);
 }

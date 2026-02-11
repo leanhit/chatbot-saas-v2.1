@@ -1,18 +1,16 @@
 package com.chatbot.modules.tenant.infra;
 
-import java.util.UUID;
-
 public final class TenantContext {
 
-    private static final ThreadLocal<UUID> TENANT_ID = new ThreadLocal<>();
+    private static final ThreadLocal<Long> TENANT_ID = new ThreadLocal<>();
 
     private TenantContext() {}
 
-    public static void setTenantId(UUID tenantId) {
+    public static void setTenantId(Long tenantId) {
         TENANT_ID.set(tenantId);
     }
 
-    public static UUID getTenantId() {
+    public static Long getTenantId() {
         return TENANT_ID.get();
     }
 
