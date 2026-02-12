@@ -1,4 +1,4 @@
-package com.chatbot.core.tenant.core.model;
+package com.chatbot.core.tenant.model;
 
 public enum TenantStatus {
     ACTIVE,

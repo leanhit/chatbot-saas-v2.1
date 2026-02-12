@@ -1,4 +1,4 @@
-package com.chatbot.core.tenant.core.model;
+package com.chatbot.core.tenant.model;
 
 import com.chatbot.core.tenant.profile.model.TenantProfile;
 import com.chatbot.core.tenant.professional.model.TenantProfessional;

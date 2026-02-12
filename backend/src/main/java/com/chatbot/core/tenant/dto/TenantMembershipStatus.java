@@ -1,4 +1,4 @@
-package com.chatbot.core.tenant.core.dto;
+package com.chatbot.core.tenant.dto;
 
 public enum TenantMembershipStatus {
     NONE,      // Chưa yêu cầu, chưa tham gia

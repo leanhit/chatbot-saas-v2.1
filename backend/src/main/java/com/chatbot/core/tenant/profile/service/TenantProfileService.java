@@ -1,7 +1,7 @@
 package com.chatbot.core.tenant.profile.service;
 
-import com.chatbot.core.tenant.core.model.Tenant;
-import com.chatbot.core.tenant.core.repository.TenantRepository;
+import com.chatbot.core.tenant.model.Tenant;
+import com.chatbot.core.tenant.repository.TenantRepository;
 import com.chatbot.core.tenant.profile.dto.TenantProfileRequest;
 import com.chatbot.core.tenant.profile.dto.TenantProfileResponse;
 import com.chatbot.core.tenant.profile.model.TenantProfile;

@@ -1,8 +1,8 @@
-package com.chatbot.core.tenant.core.guard;
+package com.chatbot.core.tenant.guard;
 
-import com.chatbot.core.tenant.core.model.Tenant;
-import com.chatbot.core.tenant.core.model.TenantStatus;
-import com.chatbot.core.tenant.core.service.TenantService;
+import com.chatbot.core.tenant.model.Tenant;
+import com.chatbot.core.tenant.model.TenantStatus;
+import com.chatbot.core.tenant.service.TenantService;
 import com.chatbot.core.tenant.infra.TenantContext;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;

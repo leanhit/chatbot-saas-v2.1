@@ -1,4 +1,4 @@
-package com.chatbot.core.tenant.core.service;
+package com.chatbot.core.tenant.service;
 
 import com.chatbot.modules.address.model.OwnerType;
 import com.chatbot.modules.address.service.AddressService;
@@ -9,10 +9,10 @@ import com.chatbot.core.identity.model.Auth;
 import com.chatbot.core.identity.repository.AuthRepository;
 import com.chatbot.core.tenant.membership.model.MembershipStatus;
 import com.chatbot.core.identity.model.SystemRole;
-import com.chatbot.core.tenant.core.dto.*;
-import com.chatbot.core.tenant.core.mapper.TenantMapper;
-import com.chatbot.core.tenant.core.model.*;
-import com.chatbot.core.tenant.core.repository.TenantRepository;
+import com.chatbot.core.tenant.dto.*;
+import com.chatbot.core.tenant.mapper.TenantMapper;
+import com.chatbot.core.tenant.model.*;
+import com.chatbot.core.tenant.repository.TenantRepository;
 import com.chatbot.core.tenant.membership.model.TenantMember;
 import com.chatbot.core.tenant.membership.model.TenantRole;
 import com.chatbot.core.tenant.membership.repository.TenantMemberRepository;

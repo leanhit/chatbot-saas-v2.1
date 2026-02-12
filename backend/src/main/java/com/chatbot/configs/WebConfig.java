@@ -3,7 +3,7 @@ package com.chatbot.configs;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
-import com.chatbot.core.tenant.core.guard.TenantStatusInterceptor;
+import com.chatbot.core.tenant.guard.TenantStatusInterceptor;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 
 @Configuration

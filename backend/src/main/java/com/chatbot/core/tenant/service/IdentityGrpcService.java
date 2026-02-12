@@ -2,7 +2,7 @@ package com.chatbot.core.tenant.service;
 
 import com.chatbot.core.tenant.grpc.TenantGrpcClient;
 import com.chatbot.core.identity.grpc.IdentityGrpcClient;
-import com.chatbot.core.identity.grpc.identity.IdentityServiceOuterClass.*;
+import com.chatbot.core.identity.grpc.IdentityServiceOuterClass.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;

@@ -1,4 +1,4 @@
-package com.chatbot.core.tenant.core.dto;
+package com.chatbot.core.tenant.dto;
 
 import lombok.Data;
 import org.springframework.data.domain.PageRequest;

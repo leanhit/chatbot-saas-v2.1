@@ -1,7 +1,7 @@
 package com.chatbot.core.tenant.membership.dto;
 
-import com.chatbot.core.tenant.core.model.TenantStatus;
-import com.chatbot.core.tenant.core.model.TenantVisibility;
+import com.chatbot.core.tenant.model.TenantStatus;
+import com.chatbot.core.tenant.model.TenantVisibility;
 
 import lombok.Builder;
 import lombok.Data;

@@ -1,9 +1,9 @@
-package com.chatbot.core.tenant.core.mapper;
+package com.chatbot.core.tenant.mapper;
 
-import com.chatbot.core.tenant.core.dto.CreateTenantRequest;
-import com.chatbot.core.tenant.core.dto.TenantResponse;
-import com.chatbot.core.tenant.core.model.Tenant;
-import com.chatbot.core.tenant.core.model.TenantStatus;
+import com.chatbot.core.tenant.dto.CreateTenantRequest;
+import com.chatbot.core.tenant.dto.TenantResponse;
+import com.chatbot.core.tenant.model.Tenant;
+import com.chatbot.core.tenant.model.TenantStatus;
 import com.chatbot.core.tenant.profile.model.TenantProfile;
 import java.time.LocalDateTime;
 

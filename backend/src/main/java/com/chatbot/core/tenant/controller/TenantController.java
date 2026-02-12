@@ -1,7 +1,7 @@
-package com.chatbot.core.tenant.core.controller;
+package com.chatbot.core.tenant.controller;
 
-import com.chatbot.core.tenant.core.dto.*;
-import com.chatbot.core.tenant.core.service.TenantService;
+import com.chatbot.core.tenant.dto.*;
+import com.chatbot.core.tenant.service.TenantService;
 import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.data.domain.Page;

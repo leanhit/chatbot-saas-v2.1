@@ -1,7 +1,7 @@
 package com.chatbot.core.tenant.controller;
 
 import com.chatbot.core.tenant.service.IdentityGrpcService;
-import com.chatbot.core.identity.grpc.identity.IdentityServiceOuterClass.GetUserResponse;
+import com.chatbot.core.identity.grpc.IdentityServiceOuterClass.GetUserResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;

@@ -10,8 +10,8 @@ import com.chatbot.modules.address.mapper.AddressMapper;
 import com.chatbot.modules.address.model.Address;
 import com.chatbot.modules.address.model.OwnerType;
 import com.chatbot.modules.address.repository.AddressRepository;
-import com.chatbot.core.tenant.core.model.Tenant;
-import com.chatbot.core.tenant.core.repository.TenantRepository;
+import com.chatbot.core.tenant.model.Tenant;
+import com.chatbot.core.tenant.repository.TenantRepository;
 
 import java.util.Optional;
 

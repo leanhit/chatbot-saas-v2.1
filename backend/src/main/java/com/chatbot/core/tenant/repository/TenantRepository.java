@@ -1,8 +1,8 @@
-package com.chatbot.core.tenant.core.repository;
+package com.chatbot.core.tenant.repository;
 
-import com.chatbot.core.tenant.core.model.Tenant;
-import com.chatbot.core.tenant.core.model.TenantStatus;
-import com.chatbot.core.tenant.core.model.TenantVisibility;
+import com.chatbot.core.tenant.model.Tenant;
+import com.chatbot.core.tenant.model.TenantStatus;
+import com.chatbot.core.tenant.model.TenantVisibility;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

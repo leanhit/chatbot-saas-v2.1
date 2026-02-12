@@ -5,14 +5,14 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.chatbot.core.tenant.membership.dto.InviteMemberRequest;
 import com.chatbot.core.tenant.membership.dto.InvitationResponse;
-import com.chatbot.core.tenant.core.model.Tenant;
+import com.chatbot.core.tenant.model.Tenant;
+import com.chatbot.core.tenant.repository.TenantRepository;
 import com.chatbot.core.tenant.membership.model.TenantInvitation;
 import com.chatbot.core.tenant.membership.model.TenantMember;
 import com.chatbot.core.tenant.membership.model.InvitationStatus;
 import com.chatbot.core.tenant.membership.model.MembershipStatus;
 import com.chatbot.core.tenant.membership.repository.TenantInvitationRepository;
 import com.chatbot.core.tenant.membership.repository.TenantMemberRepository;
-import com.chatbot.core.tenant.core.repository.TenantRepository;
 import com.chatbot.core.identity.model.Auth;
 import com.chatbot.core.identity.repository.AuthRepository;
 

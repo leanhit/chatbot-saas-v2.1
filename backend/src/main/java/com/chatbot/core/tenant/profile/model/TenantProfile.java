@@ -1,6 +1,6 @@
 package com.chatbot.core.tenant.profile.model;
 
-import com.chatbot.core.tenant.core.model.Tenant;
+import com.chatbot.core.tenant.model.Tenant;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;

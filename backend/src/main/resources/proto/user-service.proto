@@ -1,0 +1,72 @@
+syntax = "proto3";
+
+package user;
+
+option java_package = "com.chatbot.core.user.grpc";
+option java_outer_classname = "UserServiceProto";
+
+// User Service Definition
+service UserService {
+    // Validate user exists and is active
+    rpc ValidateUser(ValidateUserRequest) returns (ValidateUserResponse);
+    
+    // Get user profile information
+    rpc GetUserProfile(GetUserProfileRequest) returns (GetUserProfileResponse);
+    
+    // Get user basic information
+    rpc GetUserBasicInfo(GetUserBasicInfoRequest) returns (GetUserBasicInfoResponse);
+    
+    // Check if user is active
+    rpc IsUserActive(IsUserActiveRequest) returns (IsUserActiveResponse);
+}
+
+// Request/Response Messages
+message ValidateUserRequest {
+    string userId = 1;
+}
+
+message ValidateUserResponse {
+    bool valid = 1;
+    string userId = 2;
+    bool isActive = 3;
+    string message = 4;
+}
+
+message GetUserProfileRequest {
+    string userId = 1;
+}
+
+message GetUserProfileResponse {
+    string userId = 1;
+    string fullName = 2;
+    string phoneNumber = 3;
+    string avatar = 4;
+    string gender = 5;
+    string bio = 6;
+    string jobTitle = 7;
+    string company = 8;
+    string location = 9;
+    string errorMessage = 10;
+}
+
+message GetUserBasicInfoRequest {
+    string userId = 1;
+}
+
+message GetUserBasicInfoResponse {
+    string userId = 1;
+    string email = 2;
+    string role = 3;
+    bool isActive = 4;
+    string errorMessage = 5;
+}
+
+message IsUserActiveRequest {
+    string userId = 1;
+}
+
+message IsUserActiveResponse {
+    string userId = 1;
+    bool isActive = 2;
+    string errorMessage = 3;
+}

@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package com.chatbot.core.identity.grpc.identity;
+package com.chatbot.core.identity.grpc;
 
 service IdentityService {
     // Validate JWT token for inter-hub communication

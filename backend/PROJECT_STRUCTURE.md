@@ -13,6 +13,7 @@ chatbot-saas-v2.1/backend/
 ├── 📁 docs/                           # 📚 Documentation
 │   ├── api/                           # API documentation
 │   │   ├── identity-hub.md
+│   │   ├── user-hub.md
 │   │   ├── tenant-hub.md
 │   │   ├── app-hub.md
 │   │   ├── billing-hub.md
@@ -33,6 +34,7 @@ chatbot-saas-v2.1/backend/
 │   ├── database/                      # Database scripts
 │   │   ├── migrations/                # Flyway/Liquibase migrations
 │   │   │   ├── identity-hub/
+│   │   │   ├── user-hub/
 │   │   │   ├── tenant-hub/
 │   │   │   ├── app-hub/
 │   │   │   ├── billing-hub/
@@ -86,6 +88,49 @@ chatbot-saas-v2.1/backend/
 │   │   │   └── 📁 config/
 │   │   │       ├── 📄 IdentityDatabaseConfig.java
 │   │   │       └── 📄 IdentityGrpcConfig.java
+│   │   │
+│   │   ├── 📁 user/                 # 👥 User Hub
+│   │   │   ├── 📁 controller/
+│   │   │   │   ├── 📄 UserController.java
+│   │   │   │   ├── 📄 UserProfileController.java
+│   │   │   │   ├── 📄 UserPreferencesController.java
+│   │   │   │   ├── 📄 UserActivityController.java
+│   │   │   │   └── 📄 UserAnalyticsController.java
+│   │   │   ├── 📁 service/
+│   │   │   │   ├── 📄 UserService.java
+│   │   │   │   ├── 📄 UserProfileService.java
+│   │   │   │   ├── 📄 UserPreferencesService.java
+│   │   │   │   ├── 📄 UserActivityService.java
+│   │   │   │   ├── 📄 UserAnalyticsService.java
+│   │   │   │   └── 📄 UserSearchService.java
+│   │   │   ├── 📁 repository/
+│   │   │   │   ├── 📄 UserRepository.java
+│   │   │   │   ├── 📄 UserProfileRepository.java
+│   │   │   │   ├── 📄 UserPreferencesRepository.java
+│   │   │   │   ├── 📄 UserActivityRepository.java
+│   │   │   │   └── 📄 UserSessionRepository.java
+│   │   │   ├── 📁 model/
+│   │   │   │   ├── 📄 User.java
+│   │   │   │   ├── 📄 UserProfile.java
+│   │   │   │   ├── 📄 UserPreferences.java
+│   │   │   │   ├── 📄 UserActivity.java
+│   │   │   │   ├── 📄 UserSession.java
+│   │   │   │   ├── 📄 ActivityType.java
+│   │   │   │   └── 📄 UserStatus.java
+│   │   │   ├── 📁 dto/
+│   │   │   │   ├── 📄 UserDto.java
+│   │   │   │   ├── 📄 UserProfileDto.java
+│   │   │   │   ├── 📄 UserPreferencesDto.java
+│   │   │   │   ├── 📄 UserActivityDto.java
+│   │   │   │   ├── 📄 UserAnalyticsDto.java
+│   │   │   │   ├── 📄 UserSearchRequest.java
+│   │   │   │   └── 📄 UserSummaryDto.java
+│   │   │   ├── 📁 grpc/
+│   │   │   │   ├── 📄 UserServiceGrpcImpl.java
+│   │   │   │   └── 📄 UserGrpcClient.java
+│   │   │   └── 📁 config/
+│   │   │       ├── 📄 UserDatabaseConfig.java
+│   │   │       └── 📄 UserGrpcServerConfig.java
 │   │   │
 │   │   ├── 📁 tenant/                # 🏢 Tenant Hub
 │   │   │   ├── 📁 core/
@@ -443,6 +488,7 @@ chatbot-saas-v2.1/backend/
 ├── 📁 src/main/resources/
 │   ├── 📄 application.yml          # Main configuration
 │   ├── 📁 application-identity.yml  # Identity hub config
+│   ├── 📁 application-user.yml     # User hub config
 │   ├── 📁 application-tenant.yml   # Tenant hub config
 │   ├── 📁 application-app.yml      # App hub config
 │   ├── 📁 application-billing.yml  # Billing hub config
@@ -451,6 +497,7 @@ chatbot-saas-v2.1/backend/
 │   ├── 📁 application-message.yml  # Message hub config
 │   ├── 📁 proto/                  # gRPC proto files
 │   │   ├── 📄 identity-service.proto
+│   │   ├── 📄 user-service.proto
 │   │   ├── 📄 tenant-service.proto
 │   │   ├── 📄 app-service.proto
 │   │   ├── 📄 billing-service.proto
@@ -462,6 +509,7 @@ chatbot-saas-v2.1/backend/
 ├── 📁 src/test/java/com/chatbot/
 │   ├── 📁 core/                   # Hub tests
 │   │   ├── 📁 identity/
+│   │   ├── 📁 user/
 │   │   ├── 📁 tenant/
 │   │   ├── 📁 app/
 │   │   ├── 📁 billing/
@@ -494,6 +542,7 @@ chatbot-saas-v2.1/backend/
 
 ### **🔒 Core Hubs (v0.1 LOCKED)**
 - **Identity Hub**: Authentication, JWT (NO tenant, NO role)
+- **User Hub**: User profiles, preferences, activities, analytics
 - **Tenant Hub**: Workspace, membership management
 - **App Hub**: Enable/Disable apps, Guard functionality
 - **Billing Hub**: Entitlement (READ-ONLY)
@@ -521,6 +570,7 @@ chatbot-saas-v2.1/backend/
 ```java
 // Core Hubs
 com.chatbot.core.identity.*
+com.chatbot.core.user.*
 com.chatbot.core.tenant.*
 com.chatbot.core.app.*
 com.chatbot.core.billing.*
@@ -550,6 +600,13 @@ com.chatbot.shared.messaging.*
 chatbot_identity_db    # Identity Hub
 ├── users
 ├── user_profiles
+└── user_sessions
+
+chatbot_user_db       # User Hub
+├── users
+├── user_profiles
+├── user_preferences
+├── user_activities
 └── user_sessions
 
 chatbot_tenant_db     # Tenant Hub
@@ -596,6 +653,7 @@ chatbot_spokes_db     # Spokes
 # Kubernetes Namespaces
 chatbot-system/
 ├── identity-hub/
+├── user-hub/
 ├── tenant-hub/
 ├── app-hub/
 ├── billing-hub/

@@ -1,9 +1,9 @@
-package com.chatbot.core.tenant.core.dto;
+package com.chatbot.core.tenant.dto;
 
 import lombok.Data;
 import java.time.LocalDateTime;
-import com.chatbot.core.tenant.core.model.TenantStatus;
-import com.chatbot.core.tenant.core.model.TenantVisibility;
+import com.chatbot.core.tenant.model.TenantStatus;
+import com.chatbot.core.tenant.model.TenantVisibility;
 
 @Data
 public class TenantBasicInfoRequest {

@@ -1,6 +1,6 @@
 package com.chatbot.core.tenant.membership.model;
 
-import com.chatbot.core.tenant.core.model.Tenant;
+import com.chatbot.core.tenant.model.Tenant;
 import com.chatbot.core.identity.model.Auth;
 
 import jakarta.persistence.*;

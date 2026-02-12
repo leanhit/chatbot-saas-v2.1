@@ -1,7 +1,7 @@
 package com.chatbot.core.tenant.grpc;
 
-import com.chatbot.core.tenant.core.model.Tenant;
-import com.chatbot.core.tenant.core.repository.TenantRepository;
+import com.chatbot.core.tenant.model.Tenant;
+import com.chatbot.core.tenant.repository.TenantRepository;
 import com.chatbot.core.tenant.grpc.TenantServiceProto.*;
 import com.chatbot.core.tenant.grpc.TenantServiceGrpc;
 import io.grpc.stub.StreamObserver;
@@ -22,8 +22,8 @@ public class TenantServiceGrpcImpl extends TenantServiceGrpc.TenantServiceImplBa
     private TenantRepository tenantRepository;
 
     // Helper method để convert Tenant sang TenantResponse
-    private TenantResponse toGrpcTenantResponse(Tenant tenant) {
-        return TenantResponse.newBuilder()
+    private com.chatbot.core.tenant.grpc.TenantServiceProto.TenantResponse toGrpcTenantResponse(Tenant tenant) {
+        return com.chatbot.core.tenant.grpc.TenantServiceProto.TenantResponse.newBuilder()
                 .setId(tenant.getId().toString())
                 .setTenantKey(tenant.getTenantKey())
                 .setName(tenant.getName())
@@ -153,14 +153,14 @@ public class TenantServiceGrpcImpl extends TenantServiceGrpc.TenantServiceImplBa
 
     // Các method khác sẽ được implement sau
     @Override
-    public void createTenant(CreateTenantRequest request, StreamObserver<TenantResponse> responseObserver) {
+    public void createTenant(CreateTenantRequest request, StreamObserver<com.chatbot.core.tenant.grpc.TenantServiceProto.TenantResponse> responseObserver) {
         responseObserver.onError(io.grpc.Status.UNIMPLEMENTED
                 .withDescription("Method chưa được implement")
                 .asRuntimeException());
     }
 
     @Override
-    public void updateTenant(UpdateTenantRequest request, StreamObserver<TenantResponse> responseObserver) {
+    public void updateTenant(UpdateTenantRequest request, StreamObserver<com.chatbot.core.tenant.grpc.TenantServiceProto.TenantResponse> responseObserver) {
         responseObserver.onError(io.grpc.Status.UNIMPLEMENTED
                 .withDescription("Method chưa được implement")
                 .asRuntimeException());
@@ -181,14 +181,14 @@ public class TenantServiceGrpcImpl extends TenantServiceGrpc.TenantServiceImplBa
     }
 
     @Override
-    public void activateTenant(ActivateTenantRequest request, StreamObserver<TenantResponse> responseObserver) {
+    public void activateTenant(ActivateTenantRequest request, StreamObserver<com.chatbot.core.tenant.grpc.TenantServiceProto.TenantResponse> responseObserver) {
         responseObserver.onError(io.grpc.Status.UNIMPLEMENTED
                 .withDescription("Method chưa được implement")
                 .asRuntimeException());
     }
 
     @Override
-    public void suspendTenant(SuspendTenantRequest request, StreamObserver<TenantResponse> responseObserver) {
+    public void suspendTenant(SuspendTenantRequest request, StreamObserver<com.chatbot.core.tenant.grpc.TenantServiceProto.TenantResponse> responseObserver) {
         responseObserver.onError(io.grpc.Status.UNIMPLEMENTED
                 .withDescription("Method chưa được implement")
                 .asRuntimeException());

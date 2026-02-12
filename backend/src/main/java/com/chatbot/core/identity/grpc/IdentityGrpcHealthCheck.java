@@ -1,7 +1,7 @@
 package com.chatbot.core.identity.grpc;
 
-import com.chatbot.core.identity.grpc.identity.IdentityServiceOuterClass.*;
-import com.chatbot.core.identity.grpc.identity.IdentityServiceGrpc;
+import com.chatbot.core.identity.grpc.IdentityServiceOuterClass.*;
+import com.chatbot.core.identity.grpc.IdentityServiceGrpc;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import lombok.extern.slf4j.Slf4j;

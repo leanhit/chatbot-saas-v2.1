@@ -143,11 +143,17 @@ protobuf {
                 java {}
             }
         }
+        all()*.plugins {
+            grpc {}
+        }
     }
 }
 
 sourceSets {
     main {
+        proto {
+            srcDir 'src/main/resources/proto'
+        }
         java {
             srcDirs 'build/generated/source/proto/main/grpc'
             srcDirs 'build/generated/source/proto/main/java'
