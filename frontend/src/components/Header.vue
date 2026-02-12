@@ -185,7 +185,7 @@
             >
               <li>
                 <router-link
-                  to="/auth/profile"
+                  to="/profile"
                   class="block py-2 px-4 hover:bg-primary hover:text-white text-gray-700 dark:text-gray-200"
                   @click="menu = false"
                 >
