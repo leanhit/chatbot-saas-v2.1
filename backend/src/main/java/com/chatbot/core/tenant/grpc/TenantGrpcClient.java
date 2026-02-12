@@ -117,6 +117,28 @@ public class TenantGrpcClient {
         }
     }
 
+    public ListTenantsResponse listTenants(int page, int size) {
+        try {
+            ListTenantsRequest request = ListTenantsRequest.newBuilder()
+                    .setPage(page)
+                    .setSize(size)
+                    .build();
+            return blockingStub.listTenants(request);
+        } catch (Exception e) {
+            log.error("Lỗi khi list tenants qua gRPC", e);
+            return null;
+        }
+    }
+
+    public TenantResponse createTenant(CreateTenantRequest request) {
+        try {
+            return blockingStub.createTenant(request);
+        } catch (Exception e) {
+            log.error("Lỗi khi create tenant qua gRPC", e);
+            return null;
+        }
+    }
+
     @PreDestroy
     public void shutdown() {
         if (channel != null) {

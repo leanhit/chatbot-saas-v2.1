@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package com.chatbot.identity;
+package com.chatbot.core.identity.grpc.identity;
 
 service IdentityService {
     // Validate JWT token for inter-hub communication
@@ -54,8 +54,9 @@ message ValidateUserRequest {
 
 message ValidateUserResponse {
     bool valid = 1;
-    bool is_active = 2;
-    string message = 3;
+    string user_id = 2;
+    bool is_active = 3;
+    string message = 4;
 }
 
 // User role
