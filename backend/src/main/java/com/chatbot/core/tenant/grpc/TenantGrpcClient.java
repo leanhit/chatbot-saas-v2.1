@@ -5,12 +5,14 @@ import com.chatbot.core.tenant.grpc.TenantServiceGrpc;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.DependsOn;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 
 @Component
+@DependsOn("grpcServerConfig")
 @Slf4j
 public class TenantGrpcClient {
 
@@ -20,6 +22,9 @@ public class TenantGrpcClient {
     @PostConstruct
     public void init() {
         try {
+            // Reduced delay since @DependsOn ensures server starts first
+            Thread.sleep(1000);
+            
             // Tạo channel kết nối đến gRPC server
             channel = ManagedChannelBuilder.forAddress("localhost", 50052)
                     .usePlaintext()
@@ -38,47 +43,52 @@ public class TenantGrpcClient {
     }
 
     public void testConnection() {
-        try {
-            log.info("=== Testing gRPC Tenant Service ===");
-            
-            // Test validateTenant
-            ValidateTenantRequest validateRequest = ValidateTenantRequest.newBuilder()
-                    .setTenantKey("test-tenant-key")
-                    .build();
-            
-            ValidateTenantResponse validateResponse = blockingStub.validateTenant(validateRequest);
-            log.info("Validate Tenant Response: valid={}, status={}, message={}", 
-                    validateResponse.getValid(), 
-                    validateResponse.getStatus(), 
-                    validateResponse.getMessage());
-            
-            // Test checkTenantExists
-            CheckTenantExistsRequest existsRequest = CheckTenantExistsRequest.newBuilder()
-                    .setTenantKey("test-tenant-key")
-                    .build();
-            
-            CheckTenantExistsResponse existsResponse = blockingStub.checkTenantExists(existsRequest);
-            log.info("Check Tenant Exists Response: exists={}, tenantKey={}", 
-                    existsResponse.getExists(), 
-                    existsResponse.getTenantKey());
-            
-            // Test listTenants
-            ListTenantsRequest listRequest = ListTenantsRequest.newBuilder()
-                    .setPage(1)
-                    .setSize(10)
-                    .build();
-            
-            ListTenantsResponse listResponse = blockingStub.listTenants(listRequest);
-            log.info("List Tenants Response: totalElements={}, totalPages={}, currentPage={}", 
-                    listResponse.getTotalElements(), 
-                    listResponse.getTotalPages(), 
-                    listResponse.getCurrentPage());
-            
-            log.info("=== gRPC Tenant Service Test Completed ===");
-            
-        } catch (Exception e) {
-            log.error("Lỗi khi test gRPC connection", e);
+        int maxRetries = 5;
+        int retryDelay = 2000; // 2 seconds
+        
+        for (int i = 0; i < maxRetries; i++) {
+            try {
+                log.info("=== Testing gRPC Tenant Service (attempt {}/{}) ===", i + 1, maxRetries);
+                
+                // Test validateTenant
+                ValidateTenantRequest validateRequest = ValidateTenantRequest.newBuilder()
+                        .setTenantKey("test-tenant-key")
+                        .build();
+                
+                ValidateTenantResponse validateResponse = blockingStub.validateTenant(validateRequest);
+                log.info("Validate Tenant Response: valid={}, status={}, message={}", 
+                        validateResponse.getValid(), 
+                        validateResponse.getStatus(), 
+                        validateResponse.getMessage());
+                
+                // Test checkTenantExists
+                CheckTenantExistsRequest existsRequest = CheckTenantExistsRequest.newBuilder()
+                        .setTenantKey("test-tenant-key")
+                        .build();
+                
+                CheckTenantExistsResponse existsResponse = blockingStub.checkTenantExists(existsRequest);
+                log.info("Check Tenant Exists Response: exists={}, tenantKey={}", 
+                        existsResponse.getExists(), 
+                        existsResponse.getTenantKey());
+                
+                // If we get here, connection is successful
+                log.info("✅ gRPC Tenant Service connection test PASSED!");
+                return;
+                
+            } catch (Exception e) {
+                log.warn("❌ gRPC connection test attempt {} failed: {}", i + 1, e.getMessage());
+                if (i < maxRetries - 1) {
+                    try {
+                        Thread.sleep(retryDelay);
+                    } catch (InterruptedException ie) {
+                        Thread.currentThread().interrupt();
+                        break;
+                    }
+                }
+            }
         }
+        
+        log.error("🚨 Failed to connect to gRPC Tenant Service after {} attempts", maxRetries);
     }
 
     public ValidateTenantResponse validateTenant(String tenantKey) {

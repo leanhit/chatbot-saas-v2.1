@@ -10,10 +10,10 @@ export const authGuard = (to, from, next) => {
   if (requiresAuth && !authStore.isLoggedIn) {
     // Redirect to login page with return url
     next({
-      path: '/login',
+      path: '/auth/login',
       query: { redirect: to.fullPath }
     })
-  } else if (to.path === '/login' && authStore.isLoggedIn) {
+  } else if (to.path === '/auth/login' && authStore.isLoggedIn) {
     // If already logged in and trying to access login, redirect to dashboard
     next('/dashboard')
   } else if (to.path === '/register' && authStore.isLoggedIn) {

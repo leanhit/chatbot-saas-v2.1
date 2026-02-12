@@ -237,7 +237,7 @@ export default {
       })
       if (result.success) {
         // Navigate to login after successful registration
-        router.push('/login')
+        router.push('/auth/login')
       }
     }
     return {

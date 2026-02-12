@@ -22,7 +22,7 @@ export const useGatewayCreateTenantStore = defineStore(
           localStorage.removeItem('TENANT_DATA')
           localStorage.removeItem('ACTIVE_TENANT_ID')
           // Redirect to login
-          router.push('/login')
+          router.push('/auth/login')
           return { success: false, error: 'TENANT_SUSPENDED' }
         }
         const errorMessage = error.response?.data?.message || 'Không thể tạo Workspace'

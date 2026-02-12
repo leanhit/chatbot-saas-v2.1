@@ -89,48 +89,28 @@ chatbot-saas-v2.1/backend/
 │   │   │       ├── 📄 IdentityDatabaseConfig.java
 │   │   │       └── 📄 IdentityGrpcConfig.java
 │   │   │
-│   │   ├── 📁 user/                 # 👥 User Hub
+│   │   ├── 📁 user/                 # 👥 User Hub (Consolidated from modules/userInfo)
 │   │   │   ├── 📁 controller/
-│   │   │   │   ├── 📄 UserController.java
-│   │   │   │   ├── 📄 UserProfileController.java
-│   │   │   │   ├── 📄 UserPreferencesController.java
-│   │   │   │   ├── 📄 UserActivityController.java
-│   │   │   │   └── 📄 UserAnalyticsController.java
-│   │   │   ├── 📁 service/
-│   │   │   │   ├── 📄 UserService.java
-│   │   │   │   ├── 📄 UserProfileService.java
-│   │   │   │   ├── 📄 UserPreferencesService.java
-│   │   │   │   ├── 📄 UserActivityService.java
-│   │   │   │   ├── 📄 UserAnalyticsService.java
-│   │   │   │   └── 📄 UserSearchService.java
+│   │   │   │   └── 📄 UserController.java              # Consolidated user & profile endpoints
+│   │   │   ├── � service/
+│   │   │   │   └── 📄 UserService.java                 # Consolidated user & profile services
 │   │   │   ├── 📁 repository/
 │   │   │   │   ├── 📄 UserRepository.java
-│   │   │   │   ├── 📄 UserProfileRepository.java
-│   │   │   │   ├── 📄 UserPreferencesRepository.java
-│   │   │   │   ├── 📄 UserActivityRepository.java
-│   │   │   │   └── 📄 UserSessionRepository.java
-│   │   │   ├── 📁 model/
-│   │   │   │   ├── 📄 User.java
-│   │   │   │   ├── 📄 UserProfile.java
-│   │   │   │   ├── 📄 UserPreferences.java
-│   │   │   │   ├── 📄 UserActivity.java
-│   │   │   │   ├── 📄 UserSession.java
-│   │   │   │   ├── 📄 ActivityType.java
-│   │   │   │   └── 📄 UserStatus.java
+│   │   │   │   └── 📄 UserProfileRepository.java
+│   │   │   ├── � model/
+│   │   │   │   └── 📄 User.java                        # Core user entity
+│   │   │   ├── 📁 profile/                             # User profile subdomain
+│   │   │   │   └── 📄 UserProfile.java                 # Extended user profile (from UserInfo)
 │   │   │   ├── 📁 dto/
-│   │   │   │   ├── 📄 UserDto.java
-│   │   │   │   ├── 📄 UserProfileDto.java
-│   │   │   │   ├── 📄 UserPreferencesDto.java
-│   │   │   │   ├── 📄 UserActivityDto.java
-│   │   │   │   ├── 📄 UserAnalyticsDto.java
-│   │   │   │   ├── 📄 UserSearchRequest.java
-│   │   │   │   └── 📄 UserSummaryDto.java
+│   │   │   │   ├── 📄 UserDto.java                     # Basic user DTO
+│   │   │   │   ├── 📄 UserRequest.java                 # User update request (consolidated)
+│   │   │   │   ├── 📄 UserProfileResponse.java         # Profile response (from UserInfo)
+│   │   │   │   └── 📄 UserFullResponse.java            # Full user response with addresses
 │   │   │   ├── 📁 grpc/
-│   │   │   │   ├── 📄 UserServiceGrpcImpl.java
-│   │   │   │   └── 📄 UserGrpcClient.java
+│   │   │   │   ├── 📄 UserServiceGrpcImpl.java          # gRPC internal communication
+│   │   │   │   └── 📄 user-service.proto               # gRPC service definition
 │   │   │   └── 📁 config/
-│   │   │       ├── 📄 UserDatabaseConfig.java
-│   │   │       └── 📄 UserGrpcServerConfig.java
+│   │   │       └── 📄 UserDatabaseConfig.java
 │   │   │
 │   │   ├── 📁 tenant/                # 🏢 Tenant Hub
 │   │   │   ├── 📁 core/

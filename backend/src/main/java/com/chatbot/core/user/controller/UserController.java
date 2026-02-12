@@ -18,7 +18,6 @@ import jakarta.validation.Valid;
  * User Controller - REST API cho Frontend
  */
 @RestController
-@RequestMapping("/api/users")
 @RequiredArgsConstructor
 @Slf4j
 public class UserController {
@@ -26,10 +25,12 @@ public class UserController {
     private final UserService userService;
     private final AuthRepository authRepository;
 
+    // ===== NEW ENDPOINTS (/api/users) =====
+    
     /**
      * Get current user profile
      */
-    @GetMapping("/me")
+    @GetMapping("/api/users/me")
     public ResponseEntity<UserFullResponse> getMyProfile(
             @AuthenticationPrincipal CustomUserDetails currentUser) {
         
@@ -42,7 +43,7 @@ public class UserController {
     /**
      * Get user profile by ID
      */
-    @GetMapping("/{id}")
+    @GetMapping("/api/users/{id}")
     public ResponseEntity<UserProfileResponse> getUserProfile(@PathVariable Long id) {
         return ResponseEntity.ok(userService.getProfile(id));
     }
@@ -50,7 +51,7 @@ public class UserController {
     /**
      * Update current user profile
      */
-    @PutMapping("/me")
+    @PutMapping("/api/users/me")
     public ResponseEntity<UserProfileResponse> updateMyProfile(
             @AuthenticationPrincipal CustomUserDetails currentUser,
             @RequestBody UserRequest request) {
@@ -67,7 +68,7 @@ public class UserController {
     /**
      * Update user avatar
      */
-    @PutMapping("/me/avatar")
+    @PutMapping("/api/users/me/avatar")
     public ResponseEntity<UserProfileResponse> updateAvatar(
             @AuthenticationPrincipal CustomUserDetails currentUser,
             @RequestParam("avatar") MultipartFile file) {
@@ -84,7 +85,7 @@ public class UserController {
     /**
      * Get user basic info (for internal calls)
      */
-    @GetMapping("/{id}/basic")
+    @GetMapping("/api/users/{id}/basic")
     public ResponseEntity<UserDto> getUserBasicInfo(@PathVariable Long id) {
         com.chatbot.core.user.model.User user = userService.getUser(id);
         
@@ -98,12 +99,107 @@ public class UserController {
         return ResponseEntity.ok(userDto);
     }
 
-    // ===== Methods from UserInfoController (Migrated) =====
+    // ===== LEGACY ENDPOINTS (/api/v1/user-info) - BACKWARD COMPATIBILITY =====
+    
+    /**
+     * LEGACY: Get current user profile (backward compatibility)
+     */
+    @GetMapping("/api/v1/user-info/me")
+    public ResponseEntity<UserFullResponse> getMyProfileLegacy(
+            @AuthenticationPrincipal CustomUserDetails currentUser) {
+        
+        log.warn("Using legacy endpoint /api/v1/user-info/me - please migrate to /api/users/me");
+        
+        Auth auth = authRepository.findByEmail(currentUser.getUsername())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        
+        return ResponseEntity.ok(userService.getFullProfile(auth.getId()));
+    }
+
+    /**
+     * LEGACY: Update current user profile (backward compatibility)
+     */
+    @PutMapping("/api/v1/user-info/me")
+    public ResponseEntity<UserProfileResponse> updateMyProfileLegacy(
+            @AuthenticationPrincipal CustomUserDetails currentUser,
+            @RequestBody UserRequest request) {
+        
+        log.warn("Using legacy endpoint /api/v1/user-info/me - please migrate to /api/users/me");
+        
+        Auth auth = authRepository.findByEmail(currentUser.getUsername())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        
+        UserProfileResponse response = userService.updateProfile(auth.getId(), request);
+        log.info("Updated profile for user: {}", currentUser.getUsername());
+        
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * LEGACY: Update user avatar (backward compatibility)
+     */
+    @PutMapping("/api/v1/user-info/me/avatar")
+    public ResponseEntity<UserProfileResponse> updateAvatarLegacy(
+            @AuthenticationPrincipal CustomUserDetails currentUser,
+            @RequestParam("avatar") MultipartFile file) {
+        
+        log.warn("Using legacy endpoint /api/v1/user-info/me/avatar - please migrate to /api/users/me/avatar");
+        
+        Auth auth = authRepository.findByEmail(currentUser.getUsername())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        
+        UserProfileResponse response = userService.updateAvatar(auth.getId(), file);
+        log.info("Updated avatar for user: {}", currentUser.getUsername());
+        
+        return ResponseEntity.ok(response);
+    }
+
+    // ===== LEGACY ENDPOINTS FOR BASIC/PROFESSIONAL INFO =====
+    
+    /**
+     * LEGACY: Update Basic Info Only (backward compatibility)
+     */
+    @PutMapping("/api/v1/user-info/me/basic-info")
+    public ResponseEntity<UserProfileResponse> updateBasicInfoLegacy(
+            @AuthenticationPrincipal CustomUserDetails currentUser,
+            @Valid @RequestBody UserRequest request) {
+        
+        log.warn("Using legacy endpoint /api/v1/user-info/me/basic-info - please migrate to /api/users/me/basic-info");
+        
+        Auth auth = authRepository.findByEmail(currentUser.getUsername())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        
+        UserProfileResponse response = userService.updateBasicInfo(auth.getId(), request);
+        log.info("Updated basic info for user: {}", currentUser.getUsername());
+        
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * LEGACY: Update Professional Info Only (backward compatibility)
+     */
+    @PutMapping("/api/v1/user-info/me/professional-info")
+    public ResponseEntity<UserProfileResponse> updateProfessionalInfoLegacy(
+            @AuthenticationPrincipal CustomUserDetails currentUser,
+            @Valid @RequestBody UserRequest request) {
+        
+        log.warn("Using legacy endpoint /api/v1/user-info/me/professional-info - please migrate to /api/users/me/professional-info");
+        
+        Auth auth = authRepository.findByEmail(currentUser.getUsername())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        
+        UserProfileResponse response = userService.updateProfessionalInfo(auth.getId(), request);
+        log.info("Updated professional info for user: {}", currentUser.getUsername());
+        
+        return ResponseEntity.ok(response);
+    }
+
+    // ===== NEW ENDPOINTS FOR BASIC/PROFESSIONAL INFO =====
     
     /**
      * Update Basic Info Only - Separate endpoint for basic information
      */
-    @PutMapping("/me/basic-info")
+    @PutMapping("/api/users/me/basic-info")
     public ResponseEntity<UserProfileResponse> updateBasicInfo(
             @AuthenticationPrincipal CustomUserDetails currentUser,
             @Valid @RequestBody UserRequest request) {
@@ -111,7 +207,6 @@ public class UserController {
         Auth auth = authRepository.findByEmail(currentUser.getUsername())
                 .orElseThrow(() -> new RuntimeException("User not found"));
         
-        // Extract basic info from request
         UserProfileResponse response = userService.updateBasicInfo(auth.getId(), request);
         log.info("Updated basic info for user: {}", currentUser.getUsername());
         
@@ -121,7 +216,7 @@ public class UserController {
     /**
      * Update Professional Info Only - Separate endpoint for professional information
      */
-    @PutMapping("/me/professional-info")
+    @PutMapping("/api/users/me/professional-info")
     public ResponseEntity<UserProfileResponse> updateProfessionalInfo(
             @AuthenticationPrincipal CustomUserDetails currentUser,
             @Valid @RequestBody UserRequest request) {
@@ -129,7 +224,6 @@ public class UserController {
         Auth auth = authRepository.findByEmail(currentUser.getUsername())
                 .orElseThrow(() -> new RuntimeException("User not found"));
         
-        // Extract professional info from request
         UserProfileResponse response = userService.updateProfessionalInfo(auth.getId(), request);
         log.info("Updated professional info for user: {}", currentUser.getUsername());
         

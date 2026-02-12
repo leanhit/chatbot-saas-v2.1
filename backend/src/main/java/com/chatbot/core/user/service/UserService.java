@@ -9,12 +9,16 @@ import com.chatbot.modules.address.service.AddressService;
 import com.chatbot.modules.address.dto.AddressDetailResponseDTO;
 import com.chatbot.modules.address.model.OwnerType;
 import com.chatbot.integrations.image.fileMetadata.service.FileMetadataService;
+import com.chatbot.integrations.image.fileMetadata.dto.FileRequestDTO;
 import com.chatbot.integrations.image.category.service.CategoryService;
 import com.chatbot.integrations.image.category.model.Category;
 import com.chatbot.integrations.image.category.dto.CategoryRequestDTO;
 import com.chatbot.integrations.image.category.dto.CategoryResponseDTO;
+import io.minio.MinioClient;
+import io.minio.PutObjectArgs;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -35,6 +39,13 @@ public class UserService {
     private final AddressService addressService;
     private final FileMetadataService fileMetadataService;
     private final CategoryService categoryService;
+    private final MinioClient minioClient;
+
+    @Value("${minio.endpoint:http://localhost:9000}")
+    private String minioEndpoint;
+
+    @Value("${minio.bucket-name:chatbot-files}")
+    private String minioBucketName;
 
     /**
      * Get user by ID
@@ -48,10 +59,20 @@ public class UserService {
     /**
      * Get user profile by ID
      */
-    @Transactional(readOnly = true)
+    @Transactional
     public UserProfileResponse getProfile(Long userId) {
+        // Auto-create UserProfile if not exists (migration compatibility)
         UserProfile profile = userProfileRepository.findByUserId(userId)
-                .orElseThrow(() -> new RuntimeException("User profile not found with ID: " + userId));
+                .orElseGet(() -> {
+                    log.info("Auto-creating UserProfile for user ID: {}", userId);
+                    User user = userRepository.findById(userId)
+                            .orElseThrow(() -> new RuntimeException("User not found with ID: " + userId));
+                    UserProfile newProfile = UserProfile.builder()
+                            .id(userId)
+                            .user(user)
+                            .build();
+                    return userProfileRepository.save(newProfile);
+                });
         return mapToProfileResponse(profile);
     }
 
@@ -60,8 +81,18 @@ public class UserService {
      */
     @Transactional
     public UserProfileResponse updateProfile(Long userId, UserRequest request) {
+        // Auto-create UserProfile if not exists (migration compatibility)
         UserProfile profile = userProfileRepository.findByUserId(userId)
-                .orElseThrow(() -> new RuntimeException("User profile not found with ID: " + userId));
+                .orElseGet(() -> {
+                    log.info("Auto-creating UserProfile for user ID: {}", userId);
+                    User user = userRepository.findById(userId)
+                            .orElseThrow(() -> new RuntimeException("User not found with ID: " + userId));
+                    UserProfile newProfile = UserProfile.builder()
+                            .id(userId)
+                            .user(user)
+                            .build();
+                    return userProfileRepository.save(newProfile);
+                });
         
         // Update basic info
         profile.setFullName(request.getFullName());
@@ -97,12 +128,68 @@ public class UserService {
      */
     @Transactional
     public UserProfileResponse updateAvatar(Long userId, MultipartFile file) {
+        // Auto-create UserProfile if not exists (migration compatibility)
         UserProfile profile = userProfileRepository.findByUserId(userId)
-                .orElseThrow(() -> new RuntimeException("User profile not found with ID: " + userId));
+                .orElseGet(() -> {
+                    log.info("Auto-creating UserProfile for user ID: {}", userId);
+                    User user = userRepository.findById(userId)
+                            .orElseThrow(() -> new RuntimeException("User not found with ID: " + userId));
+                    UserProfile newProfile = UserProfile.builder()
+                            .id(userId)
+                            .user(user)
+                            .build();
+                    return userProfileRepository.save(newProfile);
+                });
 
-        // TODO: Implement avatar upload logic
-        // For now, just update avatar URL placeholder
-        String avatarUrl = "placeholder_" + System.currentTimeMillis();
+        // Upload avatar file using FileMetadataService (same pattern as existing user avatar)
+        String avatarUrl;
+        try {
+            // 1. Find category for avatar - use default category or create new
+            Category avatarCategory;
+            List<CategoryResponseDTO> categories = categoryService.getAllCategories();
+            Optional<Category> existingCategory = categories.stream()
+                .filter(cat -> "avatar".equals(cat.getName()))
+                .findFirst()
+                .map(catDto -> categoryService.getCategoryById(catDto.getId()).orElse(null));
+
+            if (existingCategory.isEmpty()) {
+                // Create default category for avatar if not exists
+                CategoryRequestDTO categoryRequest = new CategoryRequestDTO();
+                categoryRequest.setName("avatar");
+                categoryRequest.setDescription("User avatar images");
+                CategoryResponseDTO newCategoryDto = categoryService.createCategory(categoryRequest);
+                avatarCategory = categoryService.getCategoryById(newCategoryDto.getId()).orElse(null);
+            } else {
+                avatarCategory = existingCategory.get();
+            }
+
+            if (avatarCategory == null) {
+                throw new RuntimeException("Không thể tạo hoặc tìm category cho avatar");
+            }
+
+            // 2. Upload file to MinIO using FileMetadataService
+            FileRequestDTO fileRequest = new FileRequestDTO();
+            fileRequest.setCategoryId(avatarCategory.getId());
+            fileRequest.setTitle("Avatar for user " + userId);
+            fileRequest.setDescription("User avatar uploaded from profile");
+            fileRequest.setTags(List.of("avatar", "user"));
+            fileRequest.setFiles(List.of(file));
+
+            List<com.chatbot.integrations.image.fileMetadata.dto.FileResponseDTO> uploadedFiles = 
+                fileMetadataService.processUploadRequest(fileRequest, getCurrentUserEmail());
+
+            if (uploadedFiles.isEmpty()) {
+                throw new RuntimeException("Không thể upload avatar");
+            }
+
+            // 3. Get public URL from FileResponse (not manual construct)
+            avatarUrl = uploadedFiles.get(0).getFileUrl();
+            
+            log.info("Uploaded avatar for user ID: {} to public URL: {}", userId, avatarUrl);
+        } catch (Exception e) {
+            log.error("Failed to upload avatar for user ID: {}", userId, e);
+            throw new RuntimeException("Failed to upload avatar: " + e.getMessage());
+        }
         profile.setAvatar(avatarUrl);
         
         UserProfile updatedProfile = userProfileRepository.save(profile);
@@ -194,13 +281,21 @@ public class UserService {
     /**
      * Get full user profile with address information
      */
-    @Transactional(readOnly = true)
+    @Transactional
     public UserFullResponse getFullProfile(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found with ID: " + userId));
         
+        // Auto-create UserProfile if not exists (migration compatibility)
         UserProfile profile = userProfileRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User profile not found"));
+                .orElseGet(() -> {
+                    log.info("Auto-creating UserProfile for user ID: {}", userId);
+                    UserProfile newProfile = UserProfile.builder()
+                            .id(userId)
+                            .user(user)
+                            .build();
+                    return userProfileRepository.save(newProfile);
+                });
         
         // Get user address (single address) - không cần tenant
         AddressDetailResponseDTO addressDetail = null;
@@ -276,5 +371,14 @@ public class UserService {
     @Transactional
     public User save(User user) {
         return userRepository.save(user);
+    }
+
+    /**
+     * Get current user email (for file upload)
+     */
+    private String getCurrentUserEmail() {
+        // TODO: Get from security context or pass as parameter
+        // For now, use a default or get from user ID
+        return "system@chatbot.com";
     }
 }

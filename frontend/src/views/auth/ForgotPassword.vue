@@ -145,7 +145,7 @@ export default {
         form.email = ''
         // Redirect to login after 3 seconds
         setTimeout(() => {
-          router.push('/login')
+          router.push('/auth/login')
         }, 3000)
       } catch (error) {
         errorMessage.value = 'Failed to send reset link. Please try again.'
