@@ -14,6 +14,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class UserProfileResponse {
     private Long id;
+    private String email; // Added from UserInfo
     private String fullName;
     private String phoneNumber;
     private String avatar;

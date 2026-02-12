@@ -2,6 +2,9 @@ package com.chatbot.core.user.controller;
 
 import com.chatbot.core.user.dto.*;
 import com.chatbot.core.user.service.UserService;
+import com.chatbot.core.identity.security.CustomUserDetails;
+import com.chatbot.core.identity.model.Auth;
+import com.chatbot.core.identity.repository.AuthRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -9,8 +12,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.chatbot.core.identity.security.CustomUserDetails;
-import com.chatbot.core.user.repository.UserRepository;
+import jakarta.validation.Valid;
 
 /**
  * User Controller - REST API cho Frontend
@@ -22,7 +24,7 @@ import com.chatbot.core.user.repository.UserRepository;
 public class UserController {
 
     private final UserService userService;
-    private final UserRepository userRepository;
+    private final AuthRepository authRepository;
 
     /**
      * Get current user profile
@@ -31,10 +33,10 @@ public class UserController {
     public ResponseEntity<UserFullResponse> getMyProfile(
             @AuthenticationPrincipal CustomUserDetails currentUser) {
         
-        com.chatbot.core.user.model.User user = userRepository.findByEmail(currentUser.getUsername())
+        Auth auth = authRepository.findByEmail(currentUser.getUsername())
                 .orElseThrow(() -> new RuntimeException("User not found"));
         
-        return ResponseEntity.ok(userService.getFullProfile(user.getId()));
+        return ResponseEntity.ok(userService.getFullProfile(auth.getId()));
     }
 
     /**
@@ -53,10 +55,10 @@ public class UserController {
             @AuthenticationPrincipal CustomUserDetails currentUser,
             @RequestBody UserRequest request) {
         
-        com.chatbot.core.user.model.User user = userRepository.findByEmail(currentUser.getUsername())
+        Auth auth = authRepository.findByEmail(currentUser.getUsername())
                 .orElseThrow(() -> new RuntimeException("User not found"));
         
-        UserProfileResponse response = userService.updateProfile(user.getId(), request);
+        UserProfileResponse response = userService.updateProfile(auth.getId(), request);
         log.info("Updated profile for user: {}", currentUser.getUsername());
         
         return ResponseEntity.ok(response);
@@ -70,10 +72,10 @@ public class UserController {
             @AuthenticationPrincipal CustomUserDetails currentUser,
             @RequestParam("avatar") MultipartFile file) {
         
-        com.chatbot.core.user.model.User user = userRepository.findByEmail(currentUser.getUsername())
+        Auth auth = authRepository.findByEmail(currentUser.getUsername())
                 .orElseThrow(() -> new RuntimeException("User not found"));
         
-        UserProfileResponse response = userService.updateAvatar(user.getId(), file);
+        UserProfileResponse response = userService.updateAvatar(auth.getId(), file);
         log.info("Updated avatar for user: {}", currentUser.getUsername());
         
         return ResponseEntity.ok(response);
@@ -94,5 +96,43 @@ public class UserController {
                 .build();
         
         return ResponseEntity.ok(userDto);
+    }
+
+    // ===== Methods from UserInfoController (Migrated) =====
+    
+    /**
+     * Update Basic Info Only - Separate endpoint for basic information
+     */
+    @PutMapping("/me/basic-info")
+    public ResponseEntity<UserProfileResponse> updateBasicInfo(
+            @AuthenticationPrincipal CustomUserDetails currentUser,
+            @Valid @RequestBody UserRequest request) {
+        
+        Auth auth = authRepository.findByEmail(currentUser.getUsername())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        
+        // Extract basic info from request
+        UserProfileResponse response = userService.updateBasicInfo(auth.getId(), request);
+        log.info("Updated basic info for user: {}", currentUser.getUsername());
+        
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Update Professional Info Only - Separate endpoint for professional information
+     */
+    @PutMapping("/me/professional-info")
+    public ResponseEntity<UserProfileResponse> updateProfessionalInfo(
+            @AuthenticationPrincipal CustomUserDetails currentUser,
+            @Valid @RequestBody UserRequest request) {
+        
+        Auth auth = authRepository.findByEmail(currentUser.getUsername())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        
+        // Extract professional info from request
+        UserProfileResponse response = userService.updateProfessionalInfo(auth.getId(), request);
+        log.info("Updated professional info for user: {}", currentUser.getUsername());
+        
+        return ResponseEntity.ok(response);
     }
 }

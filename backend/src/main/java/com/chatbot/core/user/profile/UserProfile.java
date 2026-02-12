@@ -48,6 +48,10 @@ public class UserProfile {
 
     @Column(name = "bio", length = 500)
     private String bio;
+    
+    // Email field from UserInfo
+    @Column(length = 255)
+    private String email;
 
     // ===== Professional Information =====
     @Column(name = "job_title", length = 100)

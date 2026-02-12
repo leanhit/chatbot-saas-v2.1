@@ -17,6 +17,7 @@ public class UserRequest {
     private String phoneNumber;
     private String gender;
     private String bio;
+    private String avatar; // Added from UserInfo
     private String jobTitle;
     private String department;
     private String company;

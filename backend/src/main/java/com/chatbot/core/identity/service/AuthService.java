@@ -6,8 +6,10 @@ import com.chatbot.core.identity.model.Auth;
 import com.chatbot.core.identity.model.SystemRole;
 import com.chatbot.core.identity.repository.AuthRepository;
 import com.chatbot.core.identity.security.CustomUserDetails;
-import com.chatbot.modules.userInfo.model.UserInfo;
-import com.chatbot.modules.userInfo.service.UserInfoService;
+import com.chatbot.core.user.model.User;
+import com.chatbot.core.user.dto.UserRequest;
+import com.chatbot.core.user.profile.UserProfile;
+import com.chatbot.core.user.service.UserService;
 import com.chatbot.integrations.image.fileMetadata.service.FileMetadataService;
 import com.chatbot.integrations.image.category.service.CategoryService;
 import com.chatbot.integrations.image.category.model.Category;
@@ -36,7 +38,7 @@ public class AuthService implements UserDetailsService {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final AddressService addressService;
-    private final UserInfoService userInfoService;
+    private final UserService userService;
     private final FileMetadataService fileMetadataService;
     private final CategoryService categoryService;
 
@@ -57,19 +59,20 @@ public class AuthService implements UserDetailsService {
 
         boolean isFirstUser = authRepository.count() == 0;
 
-        Auth user = Auth.builder()
+        // tạo User entity
+        User userEntity = User.builder()
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
                 .systemRole(isFirstUser ? SystemRole.ADMIN : SystemRole.USER)
                 .build();
 
-        // tạo UserInfo đúng chuẩn MapsId
-        UserInfo userInfo = new UserInfo();
-        userInfo.setAuth(user);
-        user.setUserInfo(userInfo);
+        // tạo UserProfile đúng chuẩn MapsId
+        UserProfile userProfile = new UserProfile();
+        userProfile.setUser(userEntity);
+        userEntity.setProfile(userProfile);
 
-        // CHỈ save Auth – UserInfo sẽ được cascade
-        Auth savedUser = authRepository.save(user);
+        // save User entity (cascade sẽ save UserProfile)
+        User savedUser = userService.save(userEntity);
 
         // tạo address (không ảnh hưởng transaction chính)
         try {
@@ -185,10 +188,9 @@ public class AuthService implements UserDetailsService {
             String avatarUrl = uploadedFiles.get(0).getFileUrl();
 
             // 4. Cập nhật avatar URL trong UserInfo sử dụng UserInfoService
-            com.chatbot.modules.userInfo.dto.UserInfoRequest userInfoRequest = 
-                new com.chatbot.modules.userInfo.dto.UserInfoRequest();
-            userInfoRequest.setAvatar(avatarUrl);
-            userInfoService.updateProfile(user.getId(), userInfoRequest);
+            UserRequest userRequest = new UserRequest();
+            userRequest.setAvatar(avatarUrl);
+            userService.updateProfile(user.getId(), userRequest);
 
             // 6. Tạo token mới và trả về response
             String newToken = jwtService.generateToken(user.getEmail());

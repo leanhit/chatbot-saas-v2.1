@@ -8,6 +8,11 @@ import com.chatbot.core.user.repository.UserProfileRepository;
 import com.chatbot.modules.address.service.AddressService;
 import com.chatbot.modules.address.dto.AddressDetailResponseDTO;
 import com.chatbot.modules.address.model.OwnerType;
+import com.chatbot.integrations.image.fileMetadata.service.FileMetadataService;
+import com.chatbot.integrations.image.category.service.CategoryService;
+import com.chatbot.integrations.image.category.model.Category;
+import com.chatbot.integrations.image.category.dto.CategoryRequestDTO;
+import com.chatbot.integrations.image.category.dto.CategoryResponseDTO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -15,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  * User Service - Business logic for system user management
@@ -27,6 +33,8 @@ public class UserService {
     private final UserRepository userRepository;
     private final UserProfileRepository userProfileRepository;
     private final AddressService addressService;
+    private final FileMetadataService fileMetadataService;
+    private final CategoryService categoryService;
 
     /**
      * Get user by ID
@@ -48,34 +56,6 @@ public class UserService {
     }
 
     /**
-     * Get full user information including addresses
-     */
-    @Transactional(readOnly = true)
-    public UserFullResponse getFullProfile(Long userId) {
-        User user = getUser(userId);
-        UserProfile profile = userProfileRepository.findByUserId(userId)
-                .orElseThrow(() -> new RuntimeException("User profile not found with ID: " + userId));
-        
-        // Get user address (single address)
-        AddressDetailResponseDTO addressDetail = null;
-        try {
-            addressDetail = addressService.getUserAddress(OwnerType.USER, userId);
-        } catch (RuntimeException e) {
-            // User chưa có địa chỉ, bỏ qua
-            log.debug("User {} has no address", userId);
-        }
-        
-        return UserFullResponse.builder()
-                .id(user.getId())
-                .email(user.getEmail())
-                .systemRole(user.getSystemRole().name())
-                .isActive(user.getIsActive())
-                .profile(mapToUserFullProfile(profile))
-                .addresses(addressDetail != null ? List.of(addressDetail) : List.of())
-                .build();
-    }
-
-    /**
      * Update user profile
      */
     @Transactional
@@ -88,6 +68,7 @@ public class UserService {
         profile.setPhoneNumber(request.getPhoneNumber());
         profile.setGender(request.getGender());
         profile.setBio(request.getBio());
+        profile.setAvatar(request.getAvatar()); // Added from UserInfo
         
         // Update professional info
         profile.setJobTitle(request.getJobTitle());
@@ -206,5 +187,94 @@ public class UserService {
                 .hourlyRate(profile.getHourlyRate())
                 .portfolioUrl(profile.getPortfolioUrl())
                 .build();
+    }
+
+    // ===== Methods from UserInfoService (Migrated) =====
+    
+    /**
+     * Get full user profile with address information
+     */
+    @Transactional(readOnly = true)
+    public UserFullResponse getFullProfile(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found with ID: " + userId));
+        
+        UserProfile profile = userProfileRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User profile not found"));
+        
+        // Get user address (single address) - không cần tenant
+        AddressDetailResponseDTO addressDetail = null;
+        try {
+            addressDetail = addressService.getUserAddress(OwnerType.USER, userId);
+        } catch (RuntimeException e) {
+            // User chưa có địa chỉ, bỏ qua
+        }
+        
+        return UserFullResponse.builder()
+                .id(user.getId())
+                .email(user.getEmail())
+                .systemRole(user.getSystemRole().toString())
+                .isActive(user.getIsActive())
+                .profile(mapToUserFullProfile(profile))
+                .addresses(addressDetail != null ? List.of(addressDetail) : List.of())
+                .build();
+    }
+
+    /**
+     * Update basic user information only
+     */
+    @Transactional
+    public UserProfileResponse updateBasicInfo(Long userId, UserRequest request) {
+        UserProfile profile = userProfileRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User profile not found with ID: " + userId));
+        
+        // Update basic info only
+        profile.setFullName(request.getFullName());
+        profile.setPhoneNumber(request.getPhoneNumber());
+        profile.setGender(request.getGender());
+        profile.setBio(request.getBio());
+        
+        profile = userProfileRepository.save(profile);
+        log.info("Updated basic info for user: {}", userId);
+        
+        return mapToProfileResponse(profile);
+    }
+
+    /**
+     * Update professional user information only
+     */
+    @Transactional
+    public UserProfileResponse updateProfessionalInfo(Long userId, UserRequest request) {
+        UserProfile profile = userProfileRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User profile not found with ID: " + userId));
+        
+        // Update professional info only
+        profile.setJobTitle(request.getJobTitle());
+        profile.setDepartment(request.getDepartment());
+        profile.setCompany(request.getCompany());
+        profile.setLinkedinUrl(request.getLinkedinUrl());
+        profile.setWebsite(request.getWebsite());
+        profile.setLocation(request.getLocation());
+        profile.setSkills(request.getSkills());
+        profile.setExperience(request.getExperience());
+        profile.setEducation(request.getEducation());
+        profile.setCertifications(request.getCertifications());
+        profile.setLanguages(request.getLanguages());
+        profile.setAvailability(request.getAvailability());
+        profile.setHourlyRate(request.getHourlyRate());
+        profile.setPortfolioUrl(request.getPortfolioUrl());
+        
+        profile = userProfileRepository.save(profile);
+        log.info("Updated professional info for user: {}", userId);
+        
+        return mapToProfileResponse(profile);
+    }
+
+    /**
+     * Save user entity (for registration)
+     */
+    @Transactional
+    public User save(User user) {
+        return userRepository.save(user);
     }
 }

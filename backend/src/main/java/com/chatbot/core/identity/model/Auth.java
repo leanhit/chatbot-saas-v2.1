@@ -1,6 +1,6 @@
 package com.chatbot.core.identity.model;
 
-import com.chatbot.modules.userInfo.model.UserInfo;
+import com.chatbot.core.user.profile.UserProfile;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -34,7 +34,7 @@ public class Auth {
     @Column(name = "is_active", nullable = false, columnDefinition = "boolean default true")
     private Boolean isActive = true;
 
-    @OneToOne(mappedBy = "auth", cascade = CascadeType.ALL)
-    private UserInfo userInfo;
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
+    private UserProfile userProfile;
 }
 
