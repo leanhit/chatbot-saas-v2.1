@@ -94,6 +94,37 @@
           <div class="item mt-3">
             <menu-accordion>
               <template v-slot:icon>
+                <Icon icon="mdi:application" />
+              </template>
+              <template v-slot:title> App Hub </template>
+              <template v-slot:content>
+                <router-link
+                  to="/app-hub"
+                  @click.stop
+                  class="w-full text-left block rounded-md p-3 hover:bg-gray-200 dark:hover:bg-gray-700"
+                >
+                  Dashboard
+                </router-link>
+                <router-link
+                  to="/app-hub/apps"
+                  @click.stop
+                  class="w-full text-left block rounded-md p-3 hover:bg-gray-200 dark:hover:bg-gray-700"
+                >
+                  App Registry
+                </router-link>
+                <router-link
+                  to="/app-hub/apps/create"
+                  @click.stop
+                  class="w-full text-left block rounded-md p-3 hover:bg-gray-200 dark:hover:bg-gray-700"
+                >
+                  Create App
+                </router-link>
+              </template>
+            </menu-accordion>
+          </div>
+          <div class="item mt-3">
+            <menu-accordion>
+              <template v-slot:icon>
                 <Icon icon="ri:layout-2-fill" />
               </template>
               <template v-slot:title> Layouts </template>

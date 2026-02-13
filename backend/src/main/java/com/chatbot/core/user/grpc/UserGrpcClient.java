@@ -19,7 +19,7 @@ public class UserGrpcClient {
     @Value("${user.grpc.server.host:localhost}")
     private String host;
 
-    @Value("${user.grpc.server.port:50052}")
+    @Value("${user.grpc.server.port:50054}")
     private int port;
 
     private ManagedChannel channel;

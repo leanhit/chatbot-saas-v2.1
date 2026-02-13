@@ -23,7 +23,7 @@ public class GrpcHealthCheck {
             log.info("=== Bắt đầu Health Check cho gRPC Tenant Service ===");
             
             // Tạo channel để test
-            ManagedChannel channel = ManagedChannelBuilder.forAddress("localhost", 50052)
+            ManagedChannel channel = ManagedChannelBuilder.forAddress("localhost", 50053)
                     .usePlaintext()
                     .build();
             
@@ -40,7 +40,7 @@ public class GrpcHealthCheck {
             log.info("   - Response valid: {}", response.getValid());
             log.info("   - Response status: {}", response.getStatus());
             log.info("   - Response message: {}", response.getMessage());
-            log.info("   - gRPC Server đang chạy trên port 50052");
+            log.info("   - gRPC Server đang chạy trên port 50053");
             
             channel.shutdown();
             

@@ -26,13 +26,13 @@ public class TenantGrpcClient {
             Thread.sleep(1000);
             
             // Tạo channel kết nối đến gRPC server
-            channel = ManagedChannelBuilder.forAddress("localhost", 50052)
+            channel = ManagedChannelBuilder.forAddress("localhost", 50053)
                     .usePlaintext()
                     .build();
             
             blockingStub = TenantServiceGrpc.newBlockingStub(channel);
             
-            log.info("gRPC Client đã khởi tạo thành công và kết nối đến port 50052");
+            log.info("gRPC Client đã khởi tạo thành công và kết nối đến port 50053");
             
             // Test kết nối
             testConnection();

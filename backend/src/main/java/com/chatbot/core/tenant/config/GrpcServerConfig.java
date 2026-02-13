@@ -17,7 +17,7 @@ import java.io.IOException;
 @Slf4j
 public class GrpcServerConfig {
 
-    @Value("${spring.grpc.server.port:50052}")
+    @Value("${spring.grpc.server.port:50053}")
     private int grpcPort;
 
     @Autowired

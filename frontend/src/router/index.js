@@ -14,6 +14,10 @@ import Tenant from "../views/tenant/gateway/Gateway.vue";
 import TenantOverview from "../views/tenant/overview/TenantOverview.vue";
 import TenantMember from "../views/tenant/member/TenantMember.vue";
 import TenantSettings from "../views/tenant/settings/TenantSettings.vue";
+// App Hub Pages
+import AppHubDashboard from "../views/app-hub/Dashboard.vue";
+import AppRegistry from "../views/app-hub/AppRegistry.vue";
+import CreateApp from "../views/app-hub/CreateApp.vue";
 // Component Pages
 import Valert from "../views/components/alert.vue";
 import Vaccrodion from "../views/components/accordion.vue";
@@ -95,6 +99,25 @@ const routes = [
     name: "tenant-settings",
     component: TenantSettings,
     meta: { requiresAuth: true, title: "Tenant Settings" + appname, skipTenantCheck: true },
+  },
+  // App Hub Routes
+  {
+    path: "/app-hub",
+    name: "app-hub-dashboard",
+    component: AppHubDashboard,
+    meta: { requiresAuth: true, title: "App Hub Dashboard" + appname, skipTenantCheck: true },
+  },
+  {
+    path: "/app-hub/apps",
+    name: "app-registry",
+    component: AppRegistry,
+    meta: { requiresAuth: true, title: "App Registry" + appname, skipTenantCheck: true },
+  },
+  {
+    path: "/app-hub/apps/create",
+    name: "create-app",
+    component: CreateApp,
+    meta: { requiresAuth: true, title: "Create App" + appname, skipTenantCheck: true },
   },
   // Error pages (No auth required)
   {
