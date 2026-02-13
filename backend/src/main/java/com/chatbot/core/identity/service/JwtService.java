@@ -1,6 +1,6 @@
 // JwtService.java
 package com.chatbot.core.identity.service;
-import com.chatbot.core.identity.model.Auth;
+import com.chatbot.core.user.model.User;
 import lombok.extern.slf4j.Slf4j;
 
 import io.jsonwebtoken.Claims;
@@ -64,10 +64,10 @@ public class JwtService {
         return getEmailFromToken(token);
     }
 
-    public boolean isTokenValid(String token, Auth auth) {
+    public boolean isTokenValid(String token, User user) {
         try {
             String emailFromToken = getEmailFromToken(token);
-            return (emailFromToken.equals(auth.getEmail()) && !isTokenExpired(token));
+            return (emailFromToken.equals(user.getEmail()) && !isTokenExpired(token));
         } catch (Exception e) {
             log.error("Token validation failed: " + e.getMessage());
             return false;

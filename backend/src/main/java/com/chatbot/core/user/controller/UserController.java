@@ -2,9 +2,8 @@ package com.chatbot.core.user.controller;
 
 import com.chatbot.core.user.dto.*;
 import com.chatbot.core.user.service.UserService;
+import com.chatbot.core.user.model.User;
 import com.chatbot.core.identity.security.CustomUserDetails;
-import com.chatbot.core.identity.model.Auth;
-import com.chatbot.core.identity.repository.AuthRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -23,7 +22,6 @@ import jakarta.validation.Valid;
 public class UserController {
 
     private final UserService userService;
-    private final AuthRepository authRepository;
 
     // ===== NEW ENDPOINTS (/api/users) =====
     
@@ -34,10 +32,9 @@ public class UserController {
     public ResponseEntity<UserFullResponse> getMyProfile(
             @AuthenticationPrincipal CustomUserDetails currentUser) {
         
-        Auth auth = authRepository.findByEmail(currentUser.getUsername())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        User user = currentUser.getUser();
         
-        return ResponseEntity.ok(userService.getFullProfile(auth.getId()));
+        return ResponseEntity.ok(userService.getFullProfile(user.getId()));
     }
 
     /**
@@ -56,10 +53,9 @@ public class UserController {
             @AuthenticationPrincipal CustomUserDetails currentUser,
             @RequestBody UserRequest request) {
         
-        Auth auth = authRepository.findByEmail(currentUser.getUsername())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        User user = currentUser.getUser();
         
-        UserProfileResponse response = userService.updateProfile(auth.getId(), request);
+        UserProfileResponse response = userService.updateProfile(user.getId(), request);
         log.info("Updated profile for user: {}", currentUser.getUsername());
         
         return ResponseEntity.ok(response);
@@ -73,10 +69,9 @@ public class UserController {
             @AuthenticationPrincipal CustomUserDetails currentUser,
             @RequestParam("avatar") MultipartFile file) {
         
-        Auth auth = authRepository.findByEmail(currentUser.getUsername())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        User user = currentUser.getUser();
         
-        UserProfileResponse response = userService.updateAvatar(auth.getId(), file);
+        UserProfileResponse response = userService.updateAvatar(user.getId(), file);
         log.info("Updated avatar for user: {}", currentUser.getUsername());
         
         return ResponseEntity.ok(response);
@@ -110,10 +105,9 @@ public class UserController {
         
         log.warn("Using legacy endpoint /api/v1/user-info/me - please migrate to /api/users/me");
         
-        Auth auth = authRepository.findByEmail(currentUser.getUsername())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        User user = currentUser.getUser();
         
-        return ResponseEntity.ok(userService.getFullProfile(auth.getId()));
+        return ResponseEntity.ok(userService.getFullProfile(user.getId()));
     }
 
     /**
@@ -126,10 +120,9 @@ public class UserController {
         
         log.warn("Using legacy endpoint /api/v1/user-info/me - please migrate to /api/users/me");
         
-        Auth auth = authRepository.findByEmail(currentUser.getUsername())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        User user = currentUser.getUser();
         
-        UserProfileResponse response = userService.updateProfile(auth.getId(), request);
+        UserProfileResponse response = userService.updateProfile(user.getId(), request);
         log.info("Updated profile for user: {}", currentUser.getUsername());
         
         return ResponseEntity.ok(response);
@@ -145,10 +138,9 @@ public class UserController {
         
         log.warn("Using legacy endpoint /api/v1/user-info/me/avatar - please migrate to /api/users/me/avatar");
         
-        Auth auth = authRepository.findByEmail(currentUser.getUsername())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        User user = currentUser.getUser();
         
-        UserProfileResponse response = userService.updateAvatar(auth.getId(), file);
+        UserProfileResponse response = userService.updateAvatar(user.getId(), file);
         log.info("Updated avatar for user: {}", currentUser.getUsername());
         
         return ResponseEntity.ok(response);
@@ -166,10 +158,9 @@ public class UserController {
         
         log.warn("Using legacy endpoint /api/v1/user-info/me/basic-info - please migrate to /api/users/me/basic-info");
         
-        Auth auth = authRepository.findByEmail(currentUser.getUsername())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        User user = currentUser.getUser();
         
-        UserProfileResponse response = userService.updateBasicInfo(auth.getId(), request);
+        UserProfileResponse response = userService.updateBasicInfo(user.getId(), request);
         log.info("Updated basic info for user: {}", currentUser.getUsername());
         
         return ResponseEntity.ok(response);
@@ -185,10 +176,9 @@ public class UserController {
         
         log.warn("Using legacy endpoint /api/v1/user-info/me/professional-info - please migrate to /api/users/me/professional-info");
         
-        Auth auth = authRepository.findByEmail(currentUser.getUsername())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        User user = currentUser.getUser();
         
-        UserProfileResponse response = userService.updateProfessionalInfo(auth.getId(), request);
+        UserProfileResponse response = userService.updateProfessionalInfo(user.getId(), request);
         log.info("Updated professional info for user: {}", currentUser.getUsername());
         
         return ResponseEntity.ok(response);
@@ -204,10 +194,9 @@ public class UserController {
             @AuthenticationPrincipal CustomUserDetails currentUser,
             @Valid @RequestBody UserRequest request) {
         
-        Auth auth = authRepository.findByEmail(currentUser.getUsername())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        User user = currentUser.getUser();
         
-        UserProfileResponse response = userService.updateBasicInfo(auth.getId(), request);
+        UserProfileResponse response = userService.updateBasicInfo(user.getId(), request);
         log.info("Updated basic info for user: {}", currentUser.getUsername());
         
         return ResponseEntity.ok(response);
@@ -221,10 +210,9 @@ public class UserController {
             @AuthenticationPrincipal CustomUserDetails currentUser,
             @Valid @RequestBody UserRequest request) {
         
-        Auth auth = authRepository.findByEmail(currentUser.getUsername())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        User user = currentUser.getUser();
         
-        UserProfileResponse response = userService.updateProfessionalInfo(auth.getId(), request);
+        UserProfileResponse response = userService.updateProfessionalInfo(user.getId(), request);
         log.info("Updated professional info for user: {}", currentUser.getUsername());
         
         return ResponseEntity.ok(response);

@@ -1,6 +1,6 @@
 package com.chatbot.core.tenant.membership.service;
 
-import com.chatbot.core.identity.model.Auth;
+import com.chatbot.core.user.model.User;
 import com.chatbot.core.tenant.membership.dto.*;
 import com.chatbot.core.tenant.membership.model.*;
 import com.chatbot.core.tenant.membership.repository.TenantMemberRepository;
@@ -36,7 +36,7 @@ public class TenantMemberService {
     }
 
     /** ✅ SPEC: GET /tenants/{tenantId}/members/me */
-    public MemberResponse getMyMember(Long tenantId, Auth user) {
+    public MemberResponse getMyMember(Long tenantId, User user) {
         return getMember(tenantId, user.getId());
     }
 

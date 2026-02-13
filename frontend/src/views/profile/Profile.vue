@@ -583,35 +583,8 @@ export default {
       }
     }
     const handleAvatarError = (event) => {
-      const img = event.target
-      const originalSrc = img.src
-      // Try to handle Botpress SSL errors with proxy
-      if (originalSrc && originalSrc.includes('cwsv.truyenthongviet.vn:9000')) {
-        try {
-          const urlObj = new URL(originalSrc)
-          // Check if we're in development or production
-          const isDevelopment = window.location.hostname === 'localhost'
-          let proxyUrl
-          if (isDevelopment) {
-            // Development: use local proxy
-            proxyUrl = `http://localhost:3004/files${urlObj.pathname}${urlObj.search}`
-          } else {
-            // Production: use production proxy on same domain
-            proxyUrl = `/files${urlObj.pathname}${urlObj.search}`
-          }
-          img.src = proxyUrl
-          img.onerror = () => {
-            // Fallback to default avatar
-            img.src = defaultAvatar
-          }
-        } catch (e) {
-          // Fallback to default avatar
-          img.src = defaultAvatar
-        }
-      } else {
-        // Fallback to default avatar for other errors
-        img.src = defaultAvatar
-      }
+      // Fallback to default avatar
+      event.target.src = defaultAvatar
     }
     const triggerAvatarUpload = () => {
       avatarInput.value?.click()

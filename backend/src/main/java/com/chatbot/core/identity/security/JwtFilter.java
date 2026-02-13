@@ -1,5 +1,6 @@
 package com.chatbot.core.identity.security;
 
+import com.chatbot.core.identity.security.CustomUserDetails;
 import com.chatbot.core.identity.service.AuthService;
 import com.chatbot.core.identity.service.JwtService;
 import com.fasterxml.jackson.databind.ObjectMapper;

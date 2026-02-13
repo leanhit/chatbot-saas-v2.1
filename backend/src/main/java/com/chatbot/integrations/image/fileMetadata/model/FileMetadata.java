@@ -1,7 +1,7 @@
 package com.chatbot.integrations.image.fileMetadata.model;
 
 import com.chatbot.integrations.image.category.model.Category;
-import com.chatbot.core.identity.model.Auth;
+import com.chatbot.core.user.model.User;
 import com.chatbot.core.tenant.infra.BaseTenantEntity;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.*;
@@ -55,7 +55,7 @@ public class FileMetadata extends BaseTenantEntity {
 
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
-    private Auth user;
+    private User user;
 
     @Column(length = 100)   // để filter sau này
     private String code;

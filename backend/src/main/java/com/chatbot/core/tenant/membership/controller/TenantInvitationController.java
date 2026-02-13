@@ -3,7 +3,7 @@ package com.chatbot.core.tenant.membership.controller;
 import com.chatbot.core.tenant.membership.service.TenantInvitationService;
 import com.chatbot.core.tenant.membership.dto.InviteMemberRequest;
 import com.chatbot.core.tenant.membership.dto.InvitationResponse;
-import com.chatbot.core.identity.model.Auth;
+import com.chatbot.core.user.model.User;
 
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.HttpStatus;
@@ -26,7 +26,7 @@ public class TenantInvitationController {
     public void inviteMember(
             @PathVariable Long tenantId,
             @Valid @RequestBody InviteMemberRequest request,
-            @AuthenticationPrincipal(expression = "auth") Auth currentUser) {
+            @AuthenticationPrincipal(expression = "user") User currentUser) {
         invitationService.inviteMember(tenantId, request, currentUser);
     }
     
@@ -40,7 +40,7 @@ public class TenantInvitationController {
     @PostMapping("/{token}/accept")
     public void acceptInvitation(
             @PathVariable String token,
-            @AuthenticationPrincipal(expression = "auth") Auth user) {
+            @AuthenticationPrincipal(expression = "user") User user) {
         invitationService.acceptInvitation(token, user);
     }
 
@@ -48,7 +48,7 @@ public class TenantInvitationController {
     @PostMapping("/{token}/reject")
     public void rejectInvitation(
             @PathVariable String token,
-            @AuthenticationPrincipal(expression = "auth") Auth user) {
+            @AuthenticationPrincipal(expression = "user") User user) {
         invitationService.rejectInvitation(token, user);
     }
     

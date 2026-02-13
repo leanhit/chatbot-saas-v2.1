@@ -2,19 +2,11 @@ package com.chatbot.core.identity.service;
 
 import com.chatbot.modules.address.service.AddressService;
 import com.chatbot.core.identity.dto.*;
-import com.chatbot.core.identity.model.Auth;
 import com.chatbot.core.identity.model.SystemRole;
 import com.chatbot.core.identity.repository.AuthRepository;
 import com.chatbot.core.identity.security.CustomUserDetails;
 import com.chatbot.core.user.model.User;
-import com.chatbot.core.user.dto.UserRequest;
-import com.chatbot.core.user.profile.UserProfile;
 import com.chatbot.core.user.service.UserService;
-import com.chatbot.integrations.image.fileMetadata.service.FileMetadataService;
-import com.chatbot.integrations.image.category.service.CategoryService;
-import com.chatbot.integrations.image.category.model.Category;
-import com.chatbot.integrations.image.category.dto.CategoryRequestDTO;
-import com.chatbot.integrations.image.category.dto.CategoryResponseDTO;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -24,10 +16,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.multipart.MultipartFile;
-
-import java.util.List;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -39,12 +27,10 @@ public class AuthService implements UserDetailsService {
     private final JwtService jwtService;
     private final AddressService addressService;
     private final UserService userService;
-    private final FileMetadataService fileMetadataService;
-    private final CategoryService categoryService;
 
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-        Auth user = authRepository.findByEmail(email)
+        User user = authRepository.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("Không tìm thấy người dùng với email: " + email));
 
         return new CustomUserDetails(user);
@@ -66,13 +52,9 @@ public class AuthService implements UserDetailsService {
                 .systemRole(isFirstUser ? SystemRole.ADMIN : SystemRole.USER)
                 .build();
 
-        // tạo UserProfile đúng chuẩn MapsId
-        UserProfile userProfile = new UserProfile();
-        userProfile.setUser(userEntity);
-        userEntity.setProfile(userProfile);
-
-        // save User entity (cascade sẽ save UserProfile)
+        // save User entity và tạo profile
         User savedUser = userService.save(userEntity);
+        userService.createEmptyProfile(savedUser);
 
         // tạo address (không ảnh hưởng transaction chính)
         try {
@@ -93,7 +75,7 @@ public class AuthService implements UserDetailsService {
     }
 
     public UserResponse login(LoginRequest request) {
-        Auth user = authRepository.findByEmail(request.getEmail())
+        User user = authRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new UsernameNotFoundException("Không tìm thấy người dùng với email: " + request.getEmail()));
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
@@ -106,7 +88,7 @@ public class AuthService implements UserDetailsService {
     }
 
     public UserResponse changePassword(String email, ChangePasswordRequest request) {
-        Auth user = authRepository.findByEmail(email)
+        User user = authRepository.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("Không tìm thấy người dùng"));
 
         if (!passwordEncoder.matches(request.getOldPassword(), user.getPassword())) {
@@ -126,7 +108,7 @@ public class AuthService implements UserDetailsService {
 
     public UserDto changeRole(Long userId, SystemRole newRole) {
         // 1. Tìm người dùng cần đổi role
-        Auth user = authRepository.findById(userId)
+        User user = authRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng với ID: " + userId));
 
         // 2. Cập nhật role mới
@@ -137,71 +119,5 @@ public class AuthService implements UserDetailsService {
 
         // 3. Trả về thông tin user sau khi cập nhật
         return new UserDto(user.getId(), user.getEmail(), user.getSystemRole().name());
-    }
-
-    @Transactional(rollbackFor = Exception.class)
-    public UserResponse updateAvatar(String email, MultipartFile file) {
-        // 1. Tìm user
-        Auth user = authRepository.findByEmail(email)
-                .orElseThrow(() -> new UsernameNotFoundException("Không tìm thấy người dùng với email: " + email));
-
-        try {
-            // 2. Tìm category cho avatar - sử dụng category mặc định hoặc tạo mới
-            Category avatarCategory;
-            List<CategoryResponseDTO> categories = categoryService.getAllCategories();
-            Optional<Category> existingCategory = categories.stream()
-                .filter(cat -> "avatar".equals(cat.getName()))
-                .findFirst()
-                .map(catDto -> categoryService.getCategoryById(catDto.getId()).orElse(null));
-
-            if (existingCategory.isEmpty()) {
-                // Tạo category mặc định cho avatar nếu chưa có
-                CategoryRequestDTO categoryRequest = new CategoryRequestDTO();
-                categoryRequest.setName("avatar");
-                categoryRequest.setDescription("User avatar images");
-                CategoryResponseDTO newCategoryDto = categoryService.createCategory(categoryRequest);
-                avatarCategory = categoryService.getCategoryById(newCategoryDto.getId()).orElse(null);
-            } else {
-                avatarCategory = existingCategory.get();
-            }
-
-            if (avatarCategory == null) {
-                throw new RuntimeException("Không thể tạo hoặc tìm category cho avatar");
-            }
-
-            // 3. Upload file lên MinIO sử dụng FileMetadataService
-            com.chatbot.integrations.image.fileMetadata.dto.FileRequestDTO fileRequest = 
-                new com.chatbot.integrations.image.fileMetadata.dto.FileRequestDTO();
-            fileRequest.setCategoryId(avatarCategory.getId());
-            fileRequest.setTitle("Avatar for user " + user.getId());
-            fileRequest.setDescription("User avatar uploaded from profile");
-            fileRequest.setTags(List.of("avatar", "user"));
-            fileRequest.setFiles(List.of(file));
-
-            List<com.chatbot.integrations.image.fileMetadata.dto.FileResponseDTO> uploadedFiles = 
-                fileMetadataService.processUploadRequest(fileRequest, email);
-
-            if (uploadedFiles.isEmpty()) {
-                throw new RuntimeException("Không thể upload avatar");
-            }
-
-            String avatarUrl = uploadedFiles.get(0).getFileUrl();
-
-            // 4. Cập nhật avatar URL trong UserInfo sử dụng UserInfoService
-            UserRequest userRequest = new UserRequest();
-            userRequest.setAvatar(avatarUrl);
-            userService.updateProfile(user.getId(), userRequest);
-
-            // 6. Tạo token mới và trả về response
-            String newToken = jwtService.generateToken(user.getEmail());
-            UserDto userDto = new UserDto(user.getId(), user.getEmail(), user.getSystemRole().name());
-            
-            log.info("Avatar updated successfully for user: {}, URL: {}", email, avatarUrl);
-            return new UserResponse(newToken, userDto);
-
-        } catch (Exception e) {
-            log.error("Error updating avatar for user {}: {}", email, e.getMessage(), e);
-            throw new RuntimeException("Không thể cập nhật avatar: " + e.getMessage(), e);
-        }
     }
 }

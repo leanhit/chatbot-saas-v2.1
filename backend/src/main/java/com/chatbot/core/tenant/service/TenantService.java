@@ -5,8 +5,8 @@ import com.chatbot.modules.address.service.AddressService;
 
 import java.util.stream.Collectors;
 import java.util.Map;
-import com.chatbot.core.identity.model.Auth;
-import com.chatbot.core.identity.repository.AuthRepository;
+import com.chatbot.core.user.model.User;
+import com.chatbot.core.user.repository.UserRepository;
 import com.chatbot.core.tenant.membership.model.MembershipStatus;
 import com.chatbot.core.identity.model.SystemRole;
 import com.chatbot.core.tenant.dto.*;
@@ -45,7 +45,7 @@ public class TenantService {
 
     private final TenantRepository tenantRepository;
     private final TenantMemberRepository tenantMemberRepository;
-    private final AuthRepository authRepository;
+    private final UserRepository userRepository;
     private final TenantProfileService tenantProfileService;
     private final TenantProfileRepository tenantProfileRepository;
     private final AddressService addressService;
@@ -61,7 +61,7 @@ public class TenantService {
                 SecurityContextHolder.getContext().getAuthentication().getName();
         log.info("👤 [TenantService] Current user: {}", currentUserEmail);
 
-        Auth currentUser = authRepository.findByEmail(currentUserEmail)
+        User currentUser = userRepository.findByEmail(currentUserEmail)
                 .orElseThrow(() -> new RuntimeException("User not found"));
         log.info("✅ [TenantService] User found: id={}, email={}", currentUser.getId(), currentUser.getEmail());
 
@@ -135,8 +135,8 @@ public class TenantService {
         
         // Kiểm tra quyền admin
         String currentUserEmail = SecurityContextHolder.getContext().getAuthentication().getName();
-        boolean isAdmin = authRepository.findByEmail(currentUserEmail)
-                .map(auth -> auth.getSystemRole() == SystemRole.ADMIN)
+        boolean isAdmin = userRepository.findByEmail(currentUserEmail)
+                .map(user -> user.getSystemRole() == SystemRole.ADMIN)
                 .orElse(false);
                 
         if (!isAdmin) {
@@ -194,8 +194,8 @@ public class TenantService {
         
         // Kiểm tra quyền admin
         String currentUserEmail = SecurityContextHolder.getContext().getAuthentication().getName();
-        boolean isAdmin = authRepository.findByEmail(currentUserEmail)
-                .map(auth -> auth.getSystemRole() == SystemRole.ADMIN)
+        boolean isAdmin = userRepository.findByEmail(currentUserEmail)
+                .map(user -> user.getSystemRole() == SystemRole.ADMIN)
                 .orElse(false);
                 
         if (!isAdmin) {

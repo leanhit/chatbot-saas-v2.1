@@ -1,6 +1,6 @@
 package com.chatbot.core.tenant.membership.model;
 
-import com.chatbot.core.identity.model.Auth;
+import com.chatbot.core.user.model.User;
 import com.chatbot.core.tenant.model.Tenant;
 import jakarta.persistence.*;
 import lombok.*;
@@ -29,10 +29,10 @@ public class TenantMember {
     @JoinColumn(name = "tenant_id", nullable = false)
     private Tenant tenant;
 
-    // Liên kết tới User (Auth)
+    // Liên kết tới User
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
-    private Auth user;
+    private User user;
 
     // Vai trò trong Tenant (OWNER, ADMIN, MEMBER)
     @Enumerated(EnumType.STRING)

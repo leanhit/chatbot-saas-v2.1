@@ -1,6 +1,6 @@
 package com.chatbot.core.tenant.membership.controller;
 
-import com.chatbot.core.identity.model.Auth;
+import com.chatbot.core.user.model.User;
 import com.chatbot.core.identity.security.CustomUserDetails;
 import com.chatbot.core.tenant.membership.dto.*;
 import com.chatbot.core.tenant.membership.service.TenantMembershipFacade;
@@ -25,8 +25,8 @@ public class TenantMemberQueryController {
     public List<TenantPendingResponse> myPendingTenants(
             @AuthenticationPrincipal CustomUserDetails customUser // Lấy CustomUserDetails
     ) {
-        // Lấy Entity Auth từ bên trong CustomUserDetails
-        Auth user = customUser.getAuth(); 
+        // Lấy Entity User từ bên trong CustomUserDetails
+        User user = customUser.getUser(); 
         return facade.myPending(user);
     }
     
@@ -37,6 +37,6 @@ public class TenantMemberQueryController {
     public List<InvitationResponse> getMyInvitations(
             @AuthenticationPrincipal CustomUserDetails customUser
     ) {
-        return facade.getMyInvitations(customUser.getAuth());
+        return facade.getMyInvitations(customUser.getUser());
     }
 }

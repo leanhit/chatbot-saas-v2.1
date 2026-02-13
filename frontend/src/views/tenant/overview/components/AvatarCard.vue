@@ -163,7 +163,7 @@ export default {
       window.open(url, '_blank')
     }
     
-    // Tenant logo URL logic (similar to user avatar)
+    // Tenant logo URL logic (use direct URL from backend)
     const tenantLogoUrl = computed(() => {
       if (logoError.value) return null
       
@@ -176,29 +176,9 @@ export default {
       
       if (!logoUrl) return null
       
-      // Add cache busting timestamp
+      // Use direct URL from backend without modification
       const timestamp = logoTimestamp.value
-      
-      // Get backend API URL
-      const apiUrl = process.env.VITE_API_URL || 'https://chat.truyenthongviet.vn/api'
-      const baseUrl = apiUrl.endsWith('/') ? apiUrl.slice(0, -1) : apiUrl
-      
-      // Handle different URL formats
-      if (logoUrl.startsWith('http')) {
-        // Full URL case
-        return `${logoUrl}?t=${timestamp}`
-      } else if (logoUrl.startsWith('/api/')) {
-        // API relative URL case - remove /api/ prefix since baseUrl already includes /api
-        const pathWithoutApi = logoUrl.replace('/api', '')
-        const fullUrl = `${baseUrl}${pathWithoutApi}?t=${timestamp}`
-        console.log('Constructed full URL:', fullUrl)
-        return fullUrl
-      } else {
-        // File ID case - construct public URL
-        const finalUrl = `${baseUrl}/images/public/${logoUrl}/content?t=${timestamp}`
-        console.log('Constructed URL from file ID:', finalUrl)
-        return finalUrl
-      }
+      return `${logoUrl}?t=${timestamp}`
     })
     
     // Handle logo load error

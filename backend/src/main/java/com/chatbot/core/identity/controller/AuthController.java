@@ -8,7 +8,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.chatbot.core.identity.dto.*;
@@ -17,7 +16,6 @@ import com.chatbot.core.identity.service.AuthService;
 
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.multipart.MultipartFile;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -52,7 +50,7 @@ public class AuthController {
 
     @PostMapping("/change-password")
     public ResponseEntity<UserResponse> changePassword(
-            @AuthenticationPrincipal CustomUserDetails currentUser,
+            @AuthenticationPrincipal(expression = "user") CustomUserDetails currentUser,
             @RequestBody ChangePasswordRequest request) {
         
         // Kiểm tra khớp mật khẩu mới ở tầng Controller để giảm tải cho Service
@@ -60,7 +58,7 @@ public class AuthController {
             throw new RuntimeException("Xác nhận mật khẩu mới không khớp");
         }
 
-        UserResponse response = authService.changePassword(currentUser.getUsername(), request);
+        UserResponse response = authService.changePassword(currentUser.getUser().getEmail(), request);
         return ResponseEntity.ok(response);
     }
 
@@ -71,14 +69,4 @@ public class AuthController {
         return ResponseEntity.ok(updatedUser);
     }
 
-    @PutMapping("/profile/avatar")
-    public ResponseEntity<UserResponse> updateAvatar(
-            @AuthenticationPrincipal CustomUserDetails currentUser,
-            @RequestParam("file") MultipartFile file) {
-        
-        log.info("Updating avatar for user: {}", currentUser.getUsername());
-        UserResponse response = authService.updateAvatar(currentUser.getUsername(), file);
-        log.info("Avatar updated successfully for user: {}", currentUser.getUsername());
-        return ResponseEntity.ok(response);
-    }
 }

@@ -1,6 +1,6 @@
 package com.chatbot.core.tenant.membership.service;
 
-import com.chatbot.core.identity.model.Auth;
+import com.chatbot.core.user.model.User;
 import com.chatbot.core.tenant.model.Tenant;
 import com.chatbot.core.tenant.repository.TenantRepository;
 import com.chatbot.core.tenant.membership.dto.*;
@@ -26,7 +26,7 @@ public class TenantJoinRequestService {
     /* ================= REQUEST ================= */
 
     @Transactional
-    public void requestToJoin(Long tenantId, Auth user) {
+    public void requestToJoin(Long tenantId, User user) {
         // Check if user already has an active membership
         if (memberRepo.existsByTenant_IdAndUser_IdAndStatus(
                 tenantId, user.getId(), MembershipStatus.ACTIVE)) {

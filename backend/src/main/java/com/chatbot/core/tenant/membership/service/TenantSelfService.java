@@ -1,6 +1,6 @@
 package com.chatbot.core.tenant.membership.service;
 
-import com.chatbot.core.identity.model.Auth;
+import com.chatbot.core.user.model.User;
 import com.chatbot.core.tenant.membership.dto.*;
 import com.chatbot.core.tenant.membership.model.*;
 import com.chatbot.core.tenant.membership.repository.TenantJoinRequestRepository;
@@ -21,7 +21,7 @@ public class TenantSelfService {
 
     /* ================= MY PENDING ================= */
 
-    public List<TenantPendingResponse> getMyPending(Auth user) {
+    public List<TenantPendingResponse> getMyPending(User user) {
         return joinRequestRepo.findByUser_IdAndStatus(user.getId(), MembershipStatus.PENDING)
                 .stream()
                 .map(request -> TenantPendingResponse.builder()
@@ -37,7 +37,7 @@ public class TenantSelfService {
     /* ================= LEAVE ================= */
 
     @Transactional
-    public void leaveTenant(Long tenantId, Auth user) {
+    public void leaveTenant(Long tenantId, User user) {
         TenantMember member = memberRepo.findByTenant_IdAndUser_Id(tenantId, user.getId())
                 .orElseThrow(() -> new IllegalStateException("Not a member"));
 

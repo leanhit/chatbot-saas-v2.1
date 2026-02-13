@@ -1,6 +1,6 @@
 package com.chatbot.integrations.image.fileMetadata.service;
 
-import com.chatbot.core.identity.model.Auth;
+import com.chatbot.core.user.model.User;
 import com.chatbot.core.identity.repository.AuthRepository;
 import com.chatbot.core.tenant.infra.TenantContext;
 import com.chatbot.integrations.image.category.model.Category;
@@ -58,7 +58,7 @@ public class FileMetadataService {
         }
 
         // lấy user từ email
-        Auth user = authRepository.findByEmail(email)
+        User user = authRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy user với email: " + email));
 
         // lấy category
@@ -105,7 +105,7 @@ public class FileMetadataService {
 
 
     private FileResponseDTO uploadFile(MultipartFile file, FileRequestDTO request,
-                                       Category category, Auth user)
+                                       Category category, User user)
             throws IOException, MinioException, InvalidKeyException, NoSuchAlgorithmException {
 
         if (file.isEmpty()) {
@@ -164,7 +164,7 @@ public class FileMetadataService {
     }
 
     private FileResponseDTO uploadFromUrl(String url, FileRequestDTO request,
-                                          Category category, Auth user)
+                                          Category category, User user)
             throws IOException, MinioException, InvalidKeyException, NoSuchAlgorithmException {
 
         String originalFilename = StringUtils.getFilename(url);

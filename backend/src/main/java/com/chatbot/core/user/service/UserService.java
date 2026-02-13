@@ -146,7 +146,7 @@ public class UserService {
         try {
             // 1. Find category for avatar - use default category or create new
             Category avatarCategory;
-            List<CategoryResponseDTO> categories = categoryService.getAllCategories();
+            List<CategoryResponseDTO> categories = categoryService.getAllCategoriesGlobal();
             Optional<Category> existingCategory = categories.stream()
                 .filter(cat -> "avatar".equals(cat.getName()))
                 .findFirst()
@@ -157,7 +157,7 @@ public class UserService {
                 CategoryRequestDTO categoryRequest = new CategoryRequestDTO();
                 categoryRequest.setName("avatar");
                 categoryRequest.setDescription("User avatar images");
-                CategoryResponseDTO newCategoryDto = categoryService.createCategory(categoryRequest);
+                CategoryResponseDTO newCategoryDto = categoryService.createCategoryGlobal(categoryRequest);
                 avatarCategory = categoryService.getCategoryById(newCategoryDto.getId()).orElse(null);
             } else {
                 avatarCategory = existingCategory.get();
@@ -176,7 +176,7 @@ public class UserService {
             fileRequest.setFiles(List.of(file));
 
             List<com.chatbot.integrations.image.fileMetadata.dto.FileResponseDTO> uploadedFiles = 
-                fileMetadataService.processUploadRequest(fileRequest, getCurrentUserEmail());
+                fileMetadataService.processUploadRequest(fileRequest, getCurrentUserEmail(userId));
 
             if (uploadedFiles.isEmpty()) {
                 throw new RuntimeException("Không thể upload avatar");
@@ -376,9 +376,14 @@ public class UserService {
     /**
      * Get current user email (for file upload)
      */
-    private String getCurrentUserEmail() {
-        // TODO: Get from security context or pass as parameter
-        // For now, use a default or get from user ID
-        return "system@chatbot.com";
+    private String getCurrentUserEmail(Long userId) {
+        try {
+            User user = userRepository.findById(userId)
+                    .orElseThrow(() -> new RuntimeException("User not found with ID: " + userId));
+            return user.getEmail();
+        } catch (Exception e) {
+            log.error("Failed to get user email for ID: {}", userId, e);
+            return "system@chatbot.com"; // fallback
+        }
     }
 }

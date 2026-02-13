@@ -2,7 +2,7 @@ package com.chatbot.core.identity.grpc;
 
 import com.chatbot.core.identity.grpc.IdentityServiceOuterClass.*;
 import com.chatbot.core.identity.grpc.IdentityServiceGrpc;
-import com.chatbot.core.identity.model.Auth;
+import com.chatbot.core.user.model.User;
 import com.chatbot.core.identity.repository.AuthRepository;
 import com.chatbot.core.identity.service.JwtService;
 import io.grpc.stub.StreamObserver;
@@ -29,7 +29,7 @@ public class IdentityServiceGrpcImpl extends IdentityServiceGrpc.IdentityService
             
             String token = request.getToken();
             String email = jwtService.extractUsername(token);
-            Optional<Auth> userOpt = authRepository.findByEmail(email);
+            Optional<User> userOpt = authRepository.findByEmail(email);
             
             boolean valid = userOpt.isPresent() && jwtService.isTokenValid(token, userOpt.get());
             
@@ -37,7 +37,7 @@ public class IdentityServiceGrpcImpl extends IdentityServiceGrpc.IdentityService
                     .setValid(valid);
             
             if (valid && userOpt.isPresent()) {
-                Auth user = userOpt.get();
+                User user = userOpt.get();
                 responseBuilder
                     .setUserId(user.getId().toString())
                     .setEmail(user.getEmail())
@@ -63,13 +63,13 @@ public class IdentityServiceGrpcImpl extends IdentityServiceGrpc.IdentityService
             log.info("gRPC: Lấy user profile với ID: {}", request.getUserId());
             
             Long userId = Long.parseLong(request.getUserId());
-            Optional<Auth> userOpt = authRepository.findById(userId);
+            Optional<User> userOpt = authRepository.findById(userId);
             
             GetUserResponse.Builder responseBuilder = GetUserResponse.newBuilder()
                     .setUserId(request.getUserId());
             
             if (userOpt.isPresent()) {
-                Auth user = userOpt.get();
+                User user = userOpt.get();
                 responseBuilder
                     .setEmail(user.getEmail())
                     .setRole(user.getSystemRole().name())
@@ -97,9 +97,9 @@ public class IdentityServiceGrpcImpl extends IdentityServiceGrpc.IdentityService
             log.info("gRPC: Validating user với ID: {}", request.getUserId());
             
             Long userId = Long.parseLong(request.getUserId());
-            Optional<Auth> userOpt = authRepository.findById(userId);
+            Optional<User> userOpt = authRepository.findById(userId);
             
-            boolean valid = userOpt.map(Auth::getIsActive).orElse(false);
+            boolean valid = userOpt.map(User::getIsActive).orElse(false);
             String message = valid ? "User hợp lệ" : "User không tồn tại hoặc không active";
             
             ValidateUserResponse response = ValidateUserResponse.newBuilder()
@@ -126,13 +126,13 @@ public class IdentityServiceGrpcImpl extends IdentityServiceGrpc.IdentityService
             log.info("gRPC: Lấy user role với ID: {}", request.getUserId());
             
             Long userId = Long.parseLong(request.getUserId());
-            Optional<Auth> userOpt = authRepository.findById(userId);
+            Optional<User> userOpt = authRepository.findById(userId);
             
             GetUserRoleResponse.Builder responseBuilder = GetUserRoleResponse.newBuilder()
                     .setUserId(request.getUserId());
             
             if (userOpt.isPresent()) {
-                Auth user = userOpt.get();
+                User user = userOpt.get();
                 responseBuilder.setRole(user.getSystemRole().name());
             } else {
                 responseBuilder.setErrorMessage("Không tìm thấy user");
@@ -155,9 +155,9 @@ public class IdentityServiceGrpcImpl extends IdentityServiceGrpc.IdentityService
             log.info("gRPC: Kiểm tra user active với ID: {}", request.getUserId());
             
             Long userId = Long.parseLong(request.getUserId());
-            Optional<Auth> userOpt = authRepository.findById(userId);
+            Optional<User> userOpt = authRepository.findById(userId);
             
-            boolean isActive = userOpt.map(Auth::getIsActive).orElse(false);
+            boolean isActive = userOpt.map(User::getIsActive).orElse(false);
             
             IsUserActiveResponse.Builder responseBuilder = IsUserActiveResponse.newBuilder()
                     .setUserId(request.getUserId())

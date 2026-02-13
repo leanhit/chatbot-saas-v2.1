@@ -53,7 +53,7 @@
         >
           <div class="card-header">
             <div class="tenant-avatar" :class="{ 'is-inactive': tenant.status !== 'ACTIVE' }">
-              <img v-if="tenant.profile?.logoUrl" :src="secureImageUrl(tenant.profile.logoUrl)" :alt="tenant.name" />
+              <img v-if="tenant.profile?.logoUrl" :src="tenant.profile.logoUrl" :alt="tenant.name" />
               <div v-else class="avatar-fallback">
                 {{ tenant.name.charAt(0).toUpperCase() }}
               </div>

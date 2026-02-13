@@ -1,6 +1,6 @@
 package com.chatbot.core.tenant.membership.service;
 
-import com.chatbot.core.identity.model.Auth;
+import com.chatbot.core.user.model.User;
 import com.chatbot.core.tenant.membership.dto.*;
 import com.chatbot.core.tenant.membership.model.*;
 import lombok.RequiredArgsConstructor;
@@ -30,7 +30,7 @@ public class TenantMembershipFacade {
     }
 
     /** ✅ SPEC: members/me */
-    public MemberResponse myMember(Long tenantId, Auth user) {
+    public MemberResponse myMember(Long tenantId, User user) {
         return memberService.getMyMember(tenantId, user);
     }
 
@@ -44,7 +44,7 @@ public class TenantMembershipFacade {
 
     /* ================= JOIN ================= */
 
-    public void requestJoin(Long tenantId, Auth user) {
+    public void requestJoin(Long tenantId, User user) {
         joinService.requestToJoin(tenantId, user);
     }
 
@@ -58,18 +58,18 @@ public class TenantMembershipFacade {
 
     /* ================= SELF ================= */
 
-    public List<TenantPendingResponse> myPending(Auth user) {
+    public List<TenantPendingResponse> myPending(User user) {
         return selfService.getMyPending(user);
     }
 
-    public void leave(Long tenantId, Auth user) {
+    public void leave(Long tenantId, User user) {
         selfService.leaveTenant(tenantId, user);
     }
     
     /**
      * Lấy danh sách lời mời đang chờ xử lý của user
      */
-    public List<InvitationResponse> getMyInvitations(Auth user) {
+    public List<InvitationResponse> getMyInvitations(User user) {
         return invitationService.getMyPendingInvitations(user);
     }
 }

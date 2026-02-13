@@ -1,6 +1,6 @@
 package com.chatbot.core.tenant.membership.controller;
 
-import com.chatbot.core.identity.model.Auth;
+import com.chatbot.core.user.model.User;
 import com.chatbot.core.tenant.membership.dto.*;
 import com.chatbot.core.tenant.membership.service.TenantMembershipFacade;
 
@@ -32,7 +32,7 @@ public class TenantMemberController {
     @PostMapping("/join-requests")
     public void requestJoin(
             @PathVariable Long tenantId,
-            @AuthenticationPrincipal(expression = "auth") Auth user, // Thêm (expression = "auth")
+            @AuthenticationPrincipal(expression = "user") User user, // Thêm (expression = "user")
             HttpServletRequest request
     ) {
         // Lúc này user sẽ không còn null nữa
@@ -120,7 +120,7 @@ public class TenantMemberController {
     @GetMapping("/me")
     public MemberResponse myMember(
             @PathVariable Long tenantId,
-            @AuthenticationPrincipal Auth user
+            @AuthenticationPrincipal User user
     ) {
         return facade.myMember(tenantId, user);
     }
@@ -131,7 +131,7 @@ public class TenantMemberController {
     @DeleteMapping("/me")
     public void leaveTenant(
             @PathVariable Long tenantId,
-            @AuthenticationPrincipal Auth user
+            @AuthenticationPrincipal User user
     ) {
         facade.leave(tenantId, user);
     }

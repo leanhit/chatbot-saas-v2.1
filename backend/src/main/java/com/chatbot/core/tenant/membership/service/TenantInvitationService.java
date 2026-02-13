@@ -13,8 +13,8 @@ import com.chatbot.core.tenant.membership.model.InvitationStatus;
 import com.chatbot.core.tenant.membership.model.MembershipStatus;
 import com.chatbot.core.tenant.membership.repository.TenantInvitationRepository;
 import com.chatbot.core.tenant.membership.repository.TenantMemberRepository;
-import com.chatbot.core.identity.model.Auth;
-import com.chatbot.core.identity.repository.AuthRepository;
+import com.chatbot.core.user.model.User;
+import com.chatbot.core.user.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -29,18 +29,18 @@ public class TenantInvitationService {
     
     private final TenantInvitationRepository invitationRepo;
     private final TenantRepository tenantRepo;
-    private final AuthRepository authRepository;
+    private final UserRepository userRepository;
     private final TenantMemberRepository memberRepo;
 
     /**
      * Admin thực hiện mời user vào tenant
      */
     @Transactional
-    public void inviteMember(Long tenantId, InviteMemberRequest request, Auth admin) {
+    public void inviteMember(Long tenantId, InviteMemberRequest request, User admin) {
         Tenant tenant = tenantRepo.findById(tenantId)
             .orElseThrow(() -> new RuntimeException("Tenant không tồn tại"));
 
-        Auth userToBeInvited = authRepository.findByEmail(request.getEmail().toLowerCase())
+        User userToBeInvited = userRepository.findByEmail(request.getEmail().toLowerCase())
             .orElseThrow(() -> new RuntimeException("Người dùng này chưa có tài khoản trên hệ thống."));
 
         if (memberRepo.existsByTenantIdAndUserId(tenantId, userToBeInvited.getId())) {
@@ -79,7 +79,7 @@ public class TenantInvitationService {
      * @param user Người dùng hiện tại
      * @return Danh sách lời mời đang chờ xử lý
      */
-    public List<InvitationResponse> getMyPendingInvitations(Auth user) {
+    public List<InvitationResponse> getMyPendingInvitations(User user) {
         return invitationRepo.findByEmailAndStatus(
             user.getEmail(),
             InvitationStatus.PENDING
@@ -94,7 +94,7 @@ public class TenantInvitationService {
      * User chấp nhận lời mời
      */
     @Transactional
-    public void acceptInvitation(String token, Auth user) {
+    public void acceptInvitation(String token, User user) {
         TenantInvitation invitation = invitationRepo.findByToken(token)
             .orElseThrow(() -> new RuntimeException("Lời mời không hợp lệ hoặc đã bị thu hồi."));
 
@@ -122,7 +122,7 @@ public class TenantInvitationService {
      * User từ chối lời mời
      */
     @Transactional
-    public void rejectInvitation(String token, Auth user) {
+    public void rejectInvitation(String token, User user) {
         TenantInvitation invitation = invitationRepo.findByToken(token)
             .orElseThrow(() -> new RuntimeException("Lời mời không tồn tại."));
 

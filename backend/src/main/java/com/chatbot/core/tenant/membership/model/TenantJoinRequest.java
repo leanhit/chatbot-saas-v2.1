@@ -1,6 +1,6 @@
 package com.chatbot.core.tenant.membership.model;
 
-import com.chatbot.core.identity.model.Auth;
+import com.chatbot.core.user.model.User;
 import com.chatbot.core.tenant.model.Tenant;
 import jakarta.persistence.*;
 import lombok.*;
@@ -24,7 +24,7 @@ public class TenantJoinRequest {
     
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
-    private Auth user;
+    private User user;
     
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

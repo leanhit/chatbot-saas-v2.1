@@ -4,7 +4,7 @@ import lombok.Data;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
-import com.chatbot.core.identity.model.Auth;
+import com.chatbot.core.user.model.User;
 import java.util.Collection;
 import java.util.List;
 
@@ -12,21 +12,21 @@ import java.util.List;
 public class CustomUserDetails implements UserDetails {
     private static final long serialVersionUID = 1L;
     
-    private final Auth auth;
+    private final User user;
     private final String username;
     private final String password;
     private final List<GrantedAuthority> authorities;
 
-    public CustomUserDetails(Auth user) {
-        this.auth = user;
+    public CustomUserDetails(User user) {
+        this.user = user;
         this.username = user.getEmail();
         this.password = user.getPassword();
         this.authorities = List.of(new SimpleGrantedAuthority("ROLE_" + user.getSystemRole().name()));
     }
 
-    // Thêm getter cho auth object
-    public Auth getAuth() {
-        return auth;
+    // Thêm getter cho user object
+    public User getUser() {
+        return user;
     }
 
     @Override
@@ -61,6 +61,6 @@ public class CustomUserDetails implements UserDetails {
 
     @Override
     public boolean isEnabled() {
-        return auth != null && Boolean.TRUE.equals(auth.getIsActive());
+        return user != null && Boolean.TRUE.equals(user.getIsActive());
     }
 }
