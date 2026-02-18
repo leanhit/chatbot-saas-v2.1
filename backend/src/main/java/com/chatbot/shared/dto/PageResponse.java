@@ -1,79 +1,31 @@
 package com.chatbot.shared.dto;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
 import java.util.List;
 
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class PageResponse<T> {
     
     private List<T> content;
-    private int pageNumber;
-    private int pageSize;
+    private int page;
+    private int size;
     private long totalElements;
     private int totalPages;
-    
-    public PageResponse() {}
-    
-    public PageResponse(List<T> content, int pageNumber, int pageSize, long totalElements, int totalPages) {
-        this.content = content;
-        this.pageNumber = pageNumber;
-        this.pageSize = pageSize;
-        this.totalElements = totalElements;
-        this.totalPages = totalPages;
-    }
-    
-    // Getters and Setters
-    public List<T> getContent() {
-        return content;
-    }
-    
-    public void setContent(List<T> content) {
-        this.content = content;
-    }
-    
-    public int getPageNumber() {
-        return pageNumber;
-    }
-    
-    public void setPageNumber(int pageNumber) {
-        this.pageNumber = pageNumber;
-    }
-    
-    public int getPageSize() {
-        return pageSize;
-    }
-    
-    public void setPageSize(int pageSize) {
-        this.pageSize = pageSize;
-    }
-    
-    public long getTotalElements() {
-        return totalElements;
-    }
-    
-    public void setTotalElements(long totalElements) {
-        this.totalElements = totalElements;
-    }
-    
-    public int getTotalPages() {
-        return totalPages;
-    }
-    
-    public void setTotalPages(int totalPages) {
-        this.totalPages = totalPages;
-    }
-    
-    public boolean isFirst() {
-        return pageNumber == 0;
-    }
-    
-    public boolean isLast() {
-        return pageNumber >= totalPages - 1;
-    }
+    private boolean first;
+    private boolean last;
     
     public boolean hasNext() {
-        return pageNumber < totalPages - 1;
+        return page < totalPages - 1;
     }
     
     public boolean hasPrevious() {
-        return pageNumber > 0;
+        return page > 0;
     }
 }

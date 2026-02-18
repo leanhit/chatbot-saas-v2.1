@@ -77,13 +77,15 @@ public class AppRegistryController {
         Pageable pageable = PageRequest.of(page, size);
         Page<AppResponse> appPage = appRegistryService.searchApps(name, appType, status, isActive, pageable);
         
-        PageResponse<AppResponse> pageResponse = new PageResponse<>(
-                appPage.getContent(),
-                appPage.getNumber(),
-                appPage.getSize(),
-                appPage.getTotalElements(),
-                appPage.getTotalPages()
-        );
+        PageResponse<AppResponse> pageResponse = PageResponse.<AppResponse>builder()
+                .content(appPage.getContent())
+                .page(appPage.getNumber())
+                .size(appPage.getSize())
+                .totalElements(appPage.getTotalElements())
+                .totalPages(appPage.getTotalPages())
+                .first(appPage.isFirst())
+                .last(appPage.isLast())
+                .build();
         
         return ResponseEntity.ok(ApiResponse.success(pageResponse));
     }
