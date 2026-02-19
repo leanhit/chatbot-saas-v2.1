@@ -17,7 +17,7 @@ import java.io.IOException;
 @Slf4j
 public class UserGrpcServerConfig {
 
-    @Value("${user.grpc.server.port:50054}")
+    @Value("${user.grpc.server.port:50056}")
     private int port;
 
     @Bean

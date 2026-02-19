@@ -2,8 +2,8 @@ package com.chatbot.modules.penny.core;
 
 import com.chatbot.modules.facebook.connection.service.FacebookConnectionService;
 import com.chatbot.modules.facebook.webhook.service.ChatbotProviderFactory;
-import com.chatbot.modules.messaging.messStore.service.ConversationService;
-import com.chatbot.modules.messaging.messStore.service.MessageService;
+import com.chatbot.core.message.store.service.ConversationService;
+import com.chatbot.core.message.store.service.MessageService;
 import com.chatbot.core.tenant.infra.TenantContext;
 import com.chatbot.modules.penny.analytics.AnalyticsCollector;
 import com.chatbot.modules.penny.context.ContextManager;

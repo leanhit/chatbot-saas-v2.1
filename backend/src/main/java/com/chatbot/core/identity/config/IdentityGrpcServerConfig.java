@@ -17,7 +17,7 @@ import java.io.IOException;
 @Slf4j
 public class IdentityGrpcServerConfig {
 
-    @Value("${spring.grpc.server.port:50051}")
+    @Value("${identity.grpc.server.port:50051}")
     private int grpcPort;
 
     @Autowired

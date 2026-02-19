@@ -8,12 +8,12 @@ import com.chatbot.modules.facebook.webhook.model.FacebookMessageType;
 
 import com.chatbot.integrations.odoo.service.CustomerDataService;
 
-import com.chatbot.modules.messaging.messStore.service.ConversationService;
-import com.chatbot.modules.messaging.messStore.model.Conversation;
-import com.chatbot.modules.messaging.messStore.model.Channel;
-import com.chatbot.modules.messaging.messStore.service.MessageService;
-import com.chatbot.modules.messaging.takeover.service.TakeoverService;
-import com.chatbot.modules.messaging.takeover.model.TakeoverMessage;
+import com.chatbot.core.message.store.service.ConversationService;
+import com.chatbot.core.message.store.model.Conversation;
+import com.chatbot.core.message.store.model.Channel;
+import com.chatbot.core.message.store.service.MessageService;
+import com.chatbot.core.message.decision.service.TakeoverService;
+import com.chatbot.core.message.decision.model.TakeoverMessage;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;

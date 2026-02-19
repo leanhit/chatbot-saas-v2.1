@@ -2,7 +2,7 @@ package com.chatbot.modules.facebook.webhook.service;
 
 import com.chatbot.modules.facebook.connection.model.FacebookConnection;
 import com.chatbot.modules.facebook.webhook.service.FacebookMessengerService;
-import com.chatbot.modules.messaging.messStore.model.Conversation;
+import com.chatbot.core.message.store.model.Conversation;
 import com.chatbot.modules.penny.core.PennyMiddlewareEngine;
 import com.chatbot.modules.penny.dto.request.MiddlewareRequest;
 import com.chatbot.modules.penny.dto.response.MiddlewareResponse;
