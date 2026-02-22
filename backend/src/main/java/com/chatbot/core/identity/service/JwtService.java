@@ -20,10 +20,10 @@ import java.util.function.Function;
 @Slf4j
 public class JwtService {
 
-    @Value("${jwt.secret}")
+    @Value("${spring.security.jwt.secret}")
     private String secretKey;
 
-    @Value("${jwt.expiration}")
+    @Value("${spring.security.jwt.expiration}")
     private long expirationTime;
 
     private Key key;

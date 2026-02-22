@@ -1,6 +1,6 @@
 package com.chatbot.core.identity.service;
 
-import com.chatbot.modules.address.service.AddressService;
+import com.chatbot.shared.address.service.AddressService;
 import com.chatbot.core.identity.dto.*;
 import com.chatbot.core.identity.model.SystemRole;
 import com.chatbot.core.identity.repository.AuthRepository;

@@ -1,0 +1,499 @@
+syntax = "proto3";
+
+package com.chatbot.message;
+
+option java_package = "com.chatbot.message.grpc";
+option java_outer_classname = "MessageServiceProto";
+
+// Message Service Definition
+service MessageService {
+  // Message operations
+  rpc SendMessage(SendMessageRequest) returns (SendMessageResponse);
+  rpc ReceiveMessage(ReceiveMessageRequest) returns (ReceiveMessageResponse);
+  rpc GetMessage(GetMessageRequest) returns (GetMessageResponse);
+  rpc UpdateMessage(UpdateMessageRequest) returns (UpdateMessageResponse);
+  rpc DeleteMessage(DeleteMessageRequest) returns (DeleteMessageResponse);
+  
+  // Conversation operations
+  rpc CreateConversation(CreateConversationRequest) returns (CreateConversationResponse);
+  rpc GetConversation(GetConversationRequest) returns (GetConversationResponse);
+  rpc UpdateConversation(UpdateConversationRequest) returns (UpdateConversationResponse);
+  rpc DeleteConversation(DeleteConversationRequest) returns (DeleteConversationResponse);
+  rpc ListConversations(ListConversationsRequest) returns (ListConversationsResponse);
+  
+  // Message routing operations
+  rpc RouteMessage(RouteMessageRequest) returns (RouteMessageResponse);
+  rpc GetRoutingRules(GetRoutingRulesRequest) returns (GetRoutingRulesResponse);
+  rpc UpdateRoutingRules(UpdateRoutingRulesRequest) returns (UpdateRoutingRulesResponse);
+  
+  // Message processing operations
+  rpc ProcessMessage(ProcessMessageRequest) returns (ProcessMessageResponse);
+  rpc GetProcessingRules(GetProcessingRulesRequest) returns (GetProcessingRulesResponse);
+  rpc UpdateProcessingRules(UpdateProcessingRulesRequest) returns (UpdateProcessingRulesResponse);
+  
+  // Batch operations
+  rpc SendBatchMessages(SendBatchMessagesRequest) returns (SendBatchMessagesResponse);
+  rpc GetMessagesByConversation(GetMessagesByConversationRequest) returns (GetMessagesByConversationResponse);
+  rpc SearchMessages(SearchMessagesRequest) returns (SearchMessagesResponse);
+}
+
+// Message Types
+message Message {
+  string id = 1;
+  string conversation_id = 2;
+  string sender_id = 3;
+  string recipient_id = 4;
+  MessageType type = 5;
+  string content = 6;
+  map<string, string> metadata = 7;
+  MessageStatus status = 8;
+  string tenant_id = 9;
+  int64 created_at = 10;
+  int64 updated_at = 11;
+  int64 sent_at = 12;
+  int64 delivered_at = 13;
+  int64 read_at = 14;
+  string parent_message_id = 15;
+  repeated string attachments = 16;
+  MessagePriority priority = 17;
+  string channel = 18;
+  string external_id = 19;
+}
+
+message Conversation {
+  string id = 1;
+  string tenant_id = 2;
+  repeated string participants = 3;
+  ConversationType type = 4;
+  ConversationStatus status = 5;
+  string title = 6;
+  string description = 7;
+  map<string, string> metadata = 8;
+  int64 created_at = 9;
+  int64 updated_at = 10;
+  int64 last_activity_at = 11;
+  string last_message_id = 12;
+  MessageSettings settings = 13;
+  string created_by = 14;
+  string updated_by = 15;
+}
+
+message RoutingRule {
+  string id = 1;
+  string tenant_id = 2;
+  string name = 3;
+  string description = 4;
+  repeated RoutingCondition conditions = 5;
+  RoutingAction action = 6;
+  int32 priority = 7;
+  bool active = 8;
+  int64 created_at = 9;
+  int64 updated_at = 10;
+  string created_by = 11;
+  string updated_by = 12;
+}
+
+message ProcessingRule {
+  string id = 1;
+  string tenant_id = 2;
+  string name = 3;
+  string description = 4;
+  repeated ProcessingCondition conditions = 5;
+  ProcessingAction action = 6;
+  int32 priority = 7;
+  bool active = 8;
+  int64 created_at = 9;
+  int64 updated_at = 10;
+  string created_by = 11;
+  string updated_by = 12;
+}
+
+message MessageSettings {
+  bool allow_attachments = 1;
+  int32 max_attachment_size = 2;
+  repeated string allowed_file_types = 3;
+  bool enable_encryption = 4;
+  int32 message_retention_days = 5;
+  bool enable_read_receipts = 6;
+  bool enable_typing_indicators = 7;
+  int32 max_message_length = 8;
+  bool auto_translate = 9;
+  string default_language = 10;
+}
+
+// Enums
+enum MessageType {
+  MESSAGE_TYPE_UNSPECIFIED = 0;
+  MESSAGE_TYPE_TEXT = 1;
+  MESSAGE_TYPE_IMAGE = 2;
+  MESSAGE_TYPE_VIDEO = 3;
+  MESSAGE_TYPE_AUDIO = 4;
+  MESSAGE_TYPE_FILE = 5;
+  MESSAGE_TYPE_LOCATION = 6;
+  MESSAGE_TYPE_CONTACT = 7;
+  MESSAGE_TYPE_SYSTEM = 8;
+  MESSAGE_TYPE_STICKER = 9;
+  MESSAGE_TYPE_POLL = 10;
+}
+
+enum MessageStatus {
+  MESSAGE_STATUS_UNSPECIFIED = 0;
+  MESSAGE_STATUS_DRAFT = 1;
+  MESSAGE_STATUS_SENT = 2;
+  MESSAGE_STATUS_DELIVERED = 3;
+  MESSAGE_STATUS_READ = 4;
+  MESSAGE_STATUS_FAILED = 5;
+  MESSAGE_STATUS_DELETED = 6;
+}
+
+enum MessagePriority {
+  MESSAGE_PRIORITY_UNSPECIFIED = 0;
+  MESSAGE_PRIORITY_LOW = 1;
+  MESSAGE_PRIORITY_NORMAL = 2;
+  MESSAGE_PRIORITY_HIGH = 3;
+  MESSAGE_PRIORITY_URGENT = 4;
+}
+
+enum ConversationType {
+  CONVERSATION_TYPE_UNSPECIFIED = 0;
+  CONVERSATION_TYPE_DIRECT = 1;
+  CONVERSATION_TYPE_GROUP = 2;
+  CONVERSATION_TYPE_BROADCAST = 3;
+  CONVERSATION_TYPE_SUPPORT = 4;
+  CONVERSATION_TYPE_MARKETING = 5;
+}
+
+enum ConversationStatus {
+  CONVERSATION_STATUS_UNSPECIFIED = 0;
+  CONVERSATION_STATUS_ACTIVE = 1;
+  CONVERSATION_STATUS_ARCHIVED = 2;
+  CONVERSATION_STATUS_CLOSED = 3;
+  CONVERSATION_STATUS_SUSPENDED = 4;
+}
+
+// Request/Response Messages
+message SendMessageRequest {
+  Message message = 1;
+  string tenant_id = 2;
+  string user_id = 3;
+  string correlation_id = 4;
+}
+
+message SendMessageResponse {
+  bool success = 1;
+  Message message = 2;
+  string error_message = 3;
+  string correlation_id = 4;
+}
+
+message ReceiveMessageRequest {
+  string conversation_id = 1;
+  string tenant_id = 2;
+  string user_id = 3;
+  int64 last_received_at = 4;
+  int32 limit = 5;
+  string correlation_id = 6;
+}
+
+message ReceiveMessageResponse {
+  bool success = 1;
+  repeated Message messages = 2;
+  string error_message = 3;
+  string correlation_id = 4;
+  int64 next_cursor = 5;
+}
+
+message GetMessageRequest {
+  string message_id = 1;
+  string tenant_id = 2;
+  string user_id = 3;
+  string correlation_id = 4;
+}
+
+message GetMessageResponse {
+  bool success = 1;
+  Message message = 2;
+  string error_message = 3;
+  string correlation_id = 4;
+}
+
+message UpdateMessageRequest {
+  string message_id = 1;
+  Message message = 2;
+  string tenant_id = 3;
+  string user_id = 4;
+  string correlation_id = 5;
+}
+
+message UpdateMessageResponse {
+  bool success = 1;
+  Message message = 2;
+  string error_message = 3;
+  string correlation_id = 4;
+}
+
+message DeleteMessageRequest {
+  string message_id = 1;
+  string tenant_id = 2;
+  string user_id = 3;
+  bool permanent = 4;
+  string correlation_id = 5;
+}
+
+message DeleteMessageResponse {
+  bool success = 1;
+  string error_message = 2;
+  string correlation_id = 3;
+}
+
+message CreateConversationRequest {
+  Conversation conversation = 1;
+  string tenant_id = 2;
+  string user_id = 3;
+  string correlation_id = 4;
+}
+
+message CreateConversationResponse {
+  bool success = 1;
+  Conversation conversation = 2;
+  string error_message = 3;
+  string correlation_id = 4;
+}
+
+message GetConversationRequest {
+  string conversation_id = 1;
+  string tenant_id = 2;
+  string user_id = 3;
+  string correlation_id = 4;
+}
+
+message GetConversationResponse {
+  bool success = 1;
+  Conversation conversation = 2;
+  string error_message = 3;
+  string correlation_id = 4;
+}
+
+message UpdateConversationRequest {
+  string conversation_id = 1;
+  Conversation conversation = 2;
+  string tenant_id = 3;
+  string user_id = 4;
+  string correlation_id = 5;
+}
+
+message UpdateConversationResponse {
+  bool success = 1;
+  Conversation conversation = 2;
+  string error_message = 3;
+  string correlation_id = 4;
+}
+
+message DeleteConversationRequest {
+  string conversation_id = 1;
+  string tenant_id = 2;
+  string user_id = 3;
+  bool permanent = 4;
+  string correlation_id = 5;
+}
+
+message DeleteConversationResponse {
+  bool success = 1;
+  string error_message = 2;
+  string correlation_id = 3;
+}
+
+message ListConversationsRequest {
+  string tenant_id = 1;
+  string user_id = 2;
+  ConversationStatus status = 3;
+  ConversationType type = 4;
+  int32 page = 5;
+  int32 size = 6;
+  string sort_by = 7;
+  string sort_order = 8;
+  string correlation_id = 9;
+}
+
+message ListConversationsResponse {
+  bool success = 1;
+  repeated Conversation conversations = 2;
+  int32 total_count = 3;
+  int32 page = 4;
+  int32 size = 5;
+  int32 total_pages = 6;
+  string error_message = 7;
+  string correlation_id = 8;
+}
+
+message RouteMessageRequest {
+  Message message = 1;
+  repeated RoutingRule rules = 2;
+  string tenant_id = 3;
+  string correlation_id = 4;
+}
+
+message RouteMessageResponse {
+  bool success = 1;
+  string destination = 2;
+  repeated string applied_rules = 3;
+  string error_message = 4;
+  string correlation_id = 5;
+}
+
+message GetRoutingRulesRequest {
+  string tenant_id = 1;
+  bool active_only = 2;
+  string correlation_id = 3;
+}
+
+message GetRoutingRulesResponse {
+  bool success = 1;
+  repeated RoutingRule rules = 2;
+  string error_message = 3;
+  string correlation_id = 4;
+}
+
+message UpdateRoutingRulesRequest {
+  repeated RoutingRule rules = 1;
+  string tenant_id = 2;
+  string user_id = 3;
+  string correlation_id = 4;
+}
+
+message UpdateRoutingRulesResponse {
+  bool success = 1;
+  repeated RoutingRule rules = 2;
+  string error_message = 3;
+  string correlation_id = 4;
+}
+
+message ProcessMessageRequest {
+  Message message = 1;
+  repeated ProcessingRule rules = 2;
+  string tenant_id = 3;
+  string correlation_id = 4;
+}
+
+message ProcessMessageResponse {
+  bool success = 1;
+  Message processed_message = 2;
+  repeated string applied_rules = 3;
+  string error_message = 4;
+  string correlation_id = 5;
+}
+
+message GetProcessingRulesRequest {
+  string tenant_id = 1;
+  bool active_only = 2;
+  string correlation_id = 3;
+}
+
+message GetProcessingRulesResponse {
+  bool success = 1;
+  repeated ProcessingRule rules = 2;
+  string error_message = 3;
+  string correlation_id = 4;
+}
+
+message UpdateProcessingRulesRequest {
+  repeated ProcessingRule rules = 1;
+  string tenant_id = 2;
+  string user_id = 3;
+  string correlation_id = 4;
+}
+
+message UpdateProcessingRulesResponse {
+  bool success = 1;
+  repeated ProcessingRule rules = 2;
+  string error_message = 3;
+  string correlation_id = 4;
+}
+
+message SendBatchMessagesRequest {
+  repeated Message messages = 1;
+  string tenant_id = 2;
+  string user_id = 3;
+  string correlation_id = 4;
+}
+
+message SendBatchMessagesResponse {
+  bool success = 1;
+  repeated Message messages = 2;
+  repeated string failed_message_ids = 3;
+  string error_message = 4;
+  string correlation_id = 5;
+}
+
+message GetMessagesByConversationRequest {
+  string conversation_id = 1;
+  string tenant_id = 2;
+  string user_id = 3;
+  int64 before = 4;
+  int64 after = 5;
+  int32 limit = 6;
+  string cursor = 7;
+  string correlation_id = 8;
+}
+
+message GetMessagesByConversationResponse {
+  bool success = 1;
+  repeated Message messages = 2;
+  string next_cursor = 3;
+  string previous_cursor = 4;
+  bool has_more = 5;
+  string error_message = 6;
+  string correlation_id = 7;
+}
+
+message SearchMessagesRequest {
+  string query = 1;
+  string tenant_id = 2;
+  string user_id = 3;
+  repeated string conversation_ids = 4;
+  MessageType message_type = 5;
+  MessageStatus message_status = 6;
+  int64 from_date = 7;
+  int64 to_date = 8;
+  int32 page = 9;
+  int32 size = 10;
+  string sort_by = 11;
+  string sort_order = 12;
+  string correlation_id = 13;
+}
+
+message SearchMessagesResponse {
+  bool success = 1;
+  repeated Message messages = 2;
+  int32 total_count = 3;
+  int32 page = 4;
+  int32 size = 5;
+  int32 total_pages = 6;
+  string error_message = 7;
+  string correlation_id = 8;
+}
+
+// Routing and Processing Condition/Action Types
+message RoutingCondition {
+  string field = 1;
+  string operator = 2;
+  string value = 3;
+  string logical_operator = 4;
+}
+
+message RoutingAction {
+  string type = 1;
+  map<string, string> parameters = 2;
+}
+
+message ProcessingCondition {
+  string field = 1;
+  string operator = 2;
+  string value = 3;
+  string logical_operator = 4;
+}
+
+message ProcessingAction {
+  string type = 1;
+  map<string, string> parameters = 2;
+}

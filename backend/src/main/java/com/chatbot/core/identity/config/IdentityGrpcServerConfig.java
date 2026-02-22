@@ -9,7 +9,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import java.io.IOException;
 
@@ -17,7 +16,7 @@ import java.io.IOException;
 @Slf4j
 public class IdentityGrpcServerConfig {
 
-    @Value("${identity.grpc.server.port:50051}")
+    @Value("${identity.grpc.server.port}")
     private int grpcPort;
 
     @Autowired
@@ -25,8 +24,8 @@ public class IdentityGrpcServerConfig {
 
     private Server grpcServer;
 
-    @PostConstruct
-    public void startGrpcServer() throws IOException {
+    @Bean
+    public Server identityGrpcServer() throws IOException {
         log.info("Starting Identity gRPC server on port: {}", grpcPort);
         
         grpcServer = ServerBuilder.forPort(grpcPort)
@@ -43,6 +42,8 @@ public class IdentityGrpcServerConfig {
             log.info("Shutting down Identity gRPC server...");
             stopGrpcServer();
         }));
+        
+        return grpcServer;
     }
 
     @PreDestroy
@@ -59,10 +60,5 @@ public class IdentityGrpcServerConfig {
             }
             log.info("Identity gRPC server stopped");
         }
-    }
-
-    @Bean
-    public Server identityGrpcServer() {
-        return grpcServer;
     }
 }

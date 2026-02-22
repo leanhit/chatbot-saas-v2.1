@@ -7,11 +7,11 @@ import com.chatbot.core.tenant.profile.dto.TenantProfileResponse;
 import com.chatbot.core.tenant.profile.model.TenantProfile;
 import com.chatbot.core.tenant.profile.repository.TenantProfileRepository;
 import com.chatbot.core.tenant.infra.TenantContext;
-import com.chatbot.integrations.image.fileMetadata.service.FileMetadataService;
-import com.chatbot.integrations.image.category.service.CategoryService;
-import com.chatbot.integrations.image.category.model.Category;
-import com.chatbot.integrations.image.category.dto.CategoryRequestDTO;
-import com.chatbot.integrations.image.category.dto.CategoryResponseDTO;
+import com.chatbot.spokes.minio.image.fileMetadata.service.FileMetadataService;
+import com.chatbot.spokes.minio.image.category.service.CategoryService;
+import com.chatbot.spokes.minio.image.category.model.Category;
+import com.chatbot.spokes.minio.image.category.dto.CategoryRequestDTO;
+import com.chatbot.spokes.minio.image.category.dto.CategoryResponseDTO;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -146,15 +146,15 @@ public class TenantProfileService {
             }
 
             // 3. Upload file to MinIO using FileMetadataService
-            com.chatbot.integrations.image.fileMetadata.dto.FileRequestDTO fileRequest = 
-                new com.chatbot.integrations.image.fileMetadata.dto.FileRequestDTO();
+            com.chatbot.spokes.minio.image.fileMetadata.dto.FileRequestDTO fileRequest = 
+                new com.chatbot.spokes.minio.image.fileMetadata.dto.FileRequestDTO();
             fileRequest.setCategoryId(logoCategory.getId());
             fileRequest.setTitle("Tenant logo");
             fileRequest.setDescription("Tenant logo uploaded from profile");
             fileRequest.setTags(List.of("tenant", "logo"));
             fileRequest.setFiles(List.of(file));
 
-            List<com.chatbot.integrations.image.fileMetadata.dto.FileResponseDTO> uploadedFiles = 
+            List<com.chatbot.spokes.minio.image.fileMetadata.dto.FileResponseDTO> uploadedFiles = 
                 fileMetadataService.processUploadRequest(fileRequest, getCurrentUserEmail());
 
             if (uploadedFiles.isEmpty()) {

@@ -5,15 +5,15 @@ import com.chatbot.core.user.model.User;
 import com.chatbot.core.user.profile.UserProfile;
 import com.chatbot.core.user.repository.UserRepository;
 import com.chatbot.core.user.repository.UserProfileRepository;
-import com.chatbot.modules.address.service.AddressService;
-import com.chatbot.modules.address.dto.AddressDetailResponseDTO;
-import com.chatbot.modules.address.model.OwnerType;
-import com.chatbot.integrations.image.fileMetadata.service.FileMetadataService;
-import com.chatbot.integrations.image.fileMetadata.dto.FileRequestDTO;
-import com.chatbot.integrations.image.category.service.CategoryService;
-import com.chatbot.integrations.image.category.model.Category;
-import com.chatbot.integrations.image.category.dto.CategoryRequestDTO;
-import com.chatbot.integrations.image.category.dto.CategoryResponseDTO;
+import com.chatbot.shared.address.service.AddressService;
+import com.chatbot.shared.address.dto.AddressDetailResponseDTO;
+import com.chatbot.shared.address.model.OwnerType;
+import com.chatbot.spokes.minio.image.fileMetadata.service.FileMetadataService;
+import com.chatbot.spokes.minio.image.fileMetadata.dto.FileRequestDTO;
+import com.chatbot.spokes.minio.image.category.service.CategoryService;
+import com.chatbot.spokes.minio.image.category.model.Category;
+import com.chatbot.spokes.minio.image.category.dto.CategoryRequestDTO;
+import com.chatbot.spokes.minio.image.category.dto.CategoryResponseDTO;
 import io.minio.MinioClient;
 import io.minio.PutObjectArgs;
 import lombok.RequiredArgsConstructor;
@@ -175,7 +175,7 @@ public class UserService {
             fileRequest.setTags(List.of("avatar", "user"));
             fileRequest.setFiles(List.of(file));
 
-            List<com.chatbot.integrations.image.fileMetadata.dto.FileResponseDTO> uploadedFiles = 
+            List<com.chatbot.spokes.minio.image.fileMetadata.dto.FileResponseDTO> uploadedFiles = 
                 fileMetadataService.processUploadRequest(fileRequest, getCurrentUserEmail(userId));
 
             if (uploadedFiles.isEmpty()) {

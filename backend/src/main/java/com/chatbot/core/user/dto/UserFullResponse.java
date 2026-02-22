@@ -1,6 +1,6 @@
 package com.chatbot.core.user.dto;
 
-import com.chatbot.modules.address.dto.AddressDetailResponseDTO;
+import com.chatbot.shared.address.dto.AddressDetailResponseDTO;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

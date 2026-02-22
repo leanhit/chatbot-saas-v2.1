@@ -1,6 +1,6 @@
 package com.chatbot.core.tenant.dto;
 
-import com.chatbot.modules.address.dto.AddressDetailResponseDTO;
+import com.chatbot.shared.address.dto.AddressDetailResponseDTO;
 import com.chatbot.core.tenant.profile.dto.TenantProfileResponse;
 import com.chatbot.core.tenant.model.TenantStatus;
 import com.chatbot.core.tenant.model.TenantVisibility;

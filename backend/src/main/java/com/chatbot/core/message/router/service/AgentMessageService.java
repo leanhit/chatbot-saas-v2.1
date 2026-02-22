@@ -1,10 +1,12 @@
 package com.chatbot.core.message.router.service;
 
-import com.chatbot.modules.facebook.connection.model.FacebookConnection;
-import com.chatbot.modules.facebook.connection.repository.FacebookConnectionRepository;
-import com.chatbot.modules.facebook.webhook.service.FacebookMessengerService;
+import com.chatbot.spokes.facebook.connection.model.FacebookConnection;
+import com.chatbot.spokes.facebook.connection.repository.FacebookConnectionRepository;
+import com.chatbot.spokes.facebook.webhook.service.ChatbotServiceWrapper;
 import com.chatbot.core.message.store.model.Conversation;
 import com.chatbot.core.message.store.repository.ConversationRepository;
+import com.chatbot.core.tenant.infra.TenantContext;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import java.util.UUID;
@@ -14,21 +16,14 @@ import java.util.UUID;
  * Tách biệt khỏi luồng của Bot (Botpress).
  */
 @Service
+@RequiredArgsConstructor
 @Slf4j
 public class AgentMessageService {
 
-    private final FacebookMessengerService facebookMessengerService;
+    private final ChatbotServiceWrapper chatbotServiceWrapper;
     private final ConversationRepository conversationRepository;
     private final FacebookConnectionRepository connectionRepository; // Cần thiết để lấy pageId
-
-    public AgentMessageService(
-            FacebookMessengerService facebookMessengerService,
-            ConversationRepository conversationRepository,
-            FacebookConnectionRepository connectionRepository) {
-        this.facebookMessengerService = facebookMessengerService;
-        this.conversationRepository = conversationRepository;
-        this.connectionRepository = connectionRepository;
-    }
+    private final FacebookConnectionRepository facebookConnectionRepository;
 
     /**
      * Gửi tin nhắn TEXT từ Agent tới người dùng và xử lý việc lưu trữ.
@@ -58,9 +53,13 @@ public class AgentMessageService {
         // Cần chỉnh sửa: Hàm saveBotMessage trong FacebookMessengerService phải được sửa tên
         // thành saveOutgoingMessage và chấp nhận sender là 'agent' hoặc 'bot'.
         
-        // Tạm thời gọi hàm đã có sẵn trong FacebookMessengerService
-        // (Bạn cần đảm bảo hàm này sử dụng sender="agent" khi tin nhắn này được lưu)
-        facebookMessengerService.sendMessageToUser(pageId, recipientId, content, "agent");
+        // Tìm FacebookConnection từ pageId
+        FacebookConnection fbConnection = facebookConnectionRepository
+                .findByTenantIdAndPageIdAndIsActiveTrue(TenantContext.getTenantId(), pageId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy Facebook connection"));
+        
+        // Gửi tin nhắn qua ChatbotServiceWrapper
+        chatbotServiceWrapper.sendMessageToUser(fbConnection, recipientId, content);
         
         // LƯU Ý QUAN TRỌNG: Hàm sendMessageToUser hiện tại dùng sender="bot" trong hàm saveBotMessage. 
         // Bạn cần sửa lại như hướng dẫn ở mục 3 để dùng sender="agent" cho tin nhắn này.

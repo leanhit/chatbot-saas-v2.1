@@ -39,8 +39,7 @@ public class Entitlement extends BaseTenantEntity {
     private Long limitValue;
 
     @Column(name = "current_usage")
-    @Builder.Default
-    private Long currentUsage = 0L;
+    private Long currentUsage;
 
     @Column(name = "reset_period")
     private String resetPeriod; // MONTHLY, DAILY, YEARLY, NEVER

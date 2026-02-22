@@ -47,8 +47,7 @@ public class Message extends BaseTenantEntity {
     private String externalMessageId; // Có thể null
 
     @Column(nullable = false)
-    @Builder.Default
-    private Boolean isRead = false; // Mặc định là false (chưa đọc)
+    private Boolean isRead; // Mặc định là false (chưa đọc)
 
     private LocalDateTime sentTime; // Thời gian gốc trên nền tảng, có thể null
 

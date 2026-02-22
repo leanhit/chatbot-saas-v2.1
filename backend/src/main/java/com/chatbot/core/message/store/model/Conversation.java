@@ -43,29 +43,25 @@ public class Conversation extends BaseTenantEntity {
     private String userName;
     private String userAvatar;
 
-    @Builder.Default
-    private String status = "open"; // open | closed
+    private String status; // open | closed
 
     // Các trường mới được thêm
     @Enumerated(EnumType.STRING) 
-    @Builder.Default
-    private Channel channel = Channel.FACEBOOK;    
+    private Channel channel;    
 
     private Long lastMessageId; // Có thể null khi mới tạo
 
     private Long agentAssignedId; // Có thể null khi chưa phân công
 
     @Column(nullable = false)
-    @Builder.Default
-    private Boolean isClosedByAgent = false; // Mặc định là false
+    private Boolean isClosedByAgent; // Mặc định là false
 
     /**
      * True nếu Agent đã tiếp quản conversation và Botpress nên im lặng (Bot Flow bị ngắt).
      * False nếu Conversation đang được Botpress xử lý (Bot Flow đang hoạt động).
      */
     @Column(nullable = false)
-    @Builder.Default
-    private Boolean isTakenOverByAgent = false; // Mặc định là Botpress đang hoạt động
+    private Boolean isTakenOverByAgent; // Mặc định là Botpress đang hoạt động
 
     @JdbcTypeCode(SqlTypes.JSON)
     private String tags; // Có thể null

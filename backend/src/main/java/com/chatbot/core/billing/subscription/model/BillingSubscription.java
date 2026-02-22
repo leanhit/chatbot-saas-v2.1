@@ -18,7 +18,8 @@ import java.time.LocalDateTime;
            @Index(name = "idx_subscription_status", columnList = "status"),
            @Index(name = "idx_subscription_billing_account", columnList = "billing_account_id")
        })
-@Getter @Setter
+@Data
+@EqualsAndHashCode(callSuper = false)
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -37,8 +38,7 @@ public class BillingSubscription extends BaseTenantEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
-    @Builder.Default
-    private SubscriptionStatus status = SubscriptionStatus.PENDING;
+    private SubscriptionStatus status;
 
     @Column(name = "plan_name", nullable = false)
     private String planName;
@@ -47,15 +47,13 @@ public class BillingSubscription extends BaseTenantEntity {
     private String planDescription;
 
     @Column(name = "billing_cycle", nullable = false)
-    @Builder.Default
-    private String billingCycle = "MONTHLY"; // MONTHLY, YEARLY
+    private String billingCycle; // MONTHLY, YEARLY
 
     @Column(name = "price", precision = 10, scale = 2)
     private BigDecimal price;
 
     @Column(name = "currency", nullable = false)
-    @Builder.Default
-    private String currency = "USD";
+    private String currency;
 
     @Column(name = "trial_start")
     private LocalDateTime trialStart;

@@ -5,12 +5,16 @@ import com.chatbot.core.identity.grpc.IdentityServiceGrpc;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.DependsOn;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 
+import java.util.concurrent.TimeUnit;
+
 @Component
+@DependsOn("identityGrpcServer")
 @Slf4j
 public class IdentityGrpcClient {
 
@@ -20,14 +24,17 @@ public class IdentityGrpcClient {
     @PostConstruct
     public void init() {
         try {
+            // Reduced delay since @DependsOn ensures server starts first
+            Thread.sleep(1000);
+            
             // Tạo channel kết nối đến Identity gRPC server
-            channel = ManagedChannelBuilder.forAddress("localhost", 50051)
+            channel = ManagedChannelBuilder.forAddress("localhost", 50061)
                     .usePlaintext()
                     .build();
             
             blockingStub = IdentityServiceGrpc.newBlockingStub(channel);
             
-            log.info("Identity gRPC Client đã khởi tạo thành công và kết nối đến port 50051");
+            log.info("Identity gRPC Client đã khởi tạo thành công và kết nối đến port 50061");
             
             // Test kết nối
             testConnection();
@@ -38,36 +45,53 @@ public class IdentityGrpcClient {
     }
 
     public void testConnection() {
-        try {
-            log.info("=== Testing Identity gRPC Service ===");
-            
-            // Test validateUser với user ID không tồn tại
-            ValidateUserRequest validateRequest = ValidateUserRequest.newBuilder()
-                    .setUserId("999")
-                    .build();
-            
-            ValidateUserResponse validateResponse = blockingStub.validateUser(validateRequest);
-            log.info("Validate User Response: valid={}, isActive={}, message={}", 
-                    validateResponse.getValid(), 
-                    validateResponse.getIsActive(), 
-                    validateResponse.getMessage());
-            
-            // Test isUserActive
-            IsUserActiveRequest activeRequest = IsUserActiveRequest.newBuilder()
-                    .setUserId("999")
-                    .build();
-            
-            IsUserActiveResponse activeResponse = blockingStub.isUserActive(activeRequest);
-            log.info("Is User Active Response: userId={}, isActive={}, errorMessage={}", 
-                    activeResponse.getUserId(), 
-                    activeResponse.getIsActive(), 
-                    activeResponse.getErrorMessage());
-            
-            log.info("=== Identity gRPC Service Test Completed ===");
-            
-        } catch (Exception e) {
-            log.error("Lỗi khi test Identity gRPC connection", e);
+        int maxRetries = 5;
+        int retryDelay = 2000; // 2 seconds
+        
+        for (int i = 0; i < maxRetries; i++) {
+            try {
+                log.info("=== Testing Identity gRPC Service (attempt {}/{}) ===", i + 1, maxRetries);
+                
+                // Test validateUser với user ID không tồn tại
+                ValidateUserRequest validateRequest = ValidateUserRequest.newBuilder()
+                        .setUserId("999")
+                        .build();
+                
+                ValidateUserResponse validateResponse = blockingStub.validateUser(validateRequest);
+                log.info("Validate User Response: valid={}, isActive={}, message={}", 
+                        validateResponse.getValid(), 
+                        validateResponse.getIsActive(), 
+                        validateResponse.getMessage());
+                
+                // Test isUserActive
+                IsUserActiveRequest activeRequest = IsUserActiveRequest.newBuilder()
+                        .setUserId("999")
+                        .build();
+                
+                IsUserActiveResponse activeResponse = blockingStub.isUserActive(activeRequest);
+                log.info("Is User Active Response: userId={}, isActive={}, errorMessage={}", 
+                        activeResponse.getUserId(), 
+                        activeResponse.getIsActive(), 
+                        activeResponse.getErrorMessage());
+                
+                // If we get here, connection is successful
+                log.info("✅ Identity gRPC Service connection test PASSED!");
+                return;
+                
+            } catch (Exception e) {
+                log.warn("❌ Identity gRPC connection test attempt {} failed: {}", i + 1, e.getMessage());
+                if (i < maxRetries - 1) {
+                    try {
+                        Thread.sleep(retryDelay);
+                    } catch (InterruptedException ie) {
+                        Thread.currentThread().interrupt();
+                        break;
+                    }
+                }
+            }
         }
+        
+        log.error("🚨 Failed to connect to Identity gRPC Service after {} attempts", maxRetries);
     }
 
     public ValidateTokenResponse validateToken(String token) {

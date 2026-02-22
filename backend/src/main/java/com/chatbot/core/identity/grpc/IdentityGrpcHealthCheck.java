@@ -22,8 +22,11 @@ public class IdentityGrpcHealthCheck {
         try {
             log.info("=== Bắt đầu Health Check cho Identity gRPC Service ===");
             
+            // Đợi 5 giây để gRPC server kịp khởi động
+            Thread.sleep(5000);
+            
             // Tạo channel để test
-            ManagedChannel channel = ManagedChannelBuilder.forAddress("localhost", 50051)
+            ManagedChannel channel = ManagedChannelBuilder.forAddress("localhost", 50061)
                     .usePlaintext()
                     .build();
             

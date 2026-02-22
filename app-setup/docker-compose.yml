@@ -55,7 +55,7 @@ services:
       - "3001:3000"
     environment:
       - DATABASE=postgres
-      - DATABASE_URL=postgres://traloitudong_user:traloitudong_Admin_2025@db:5432/traloitudong_db
+      - DATABASE_URL=postgres://traloitudong_user:traloitudong_Admin_2025@db:5432/botpress_db
     volumes:
       - ./data:/botpress/data
     depends_on:
@@ -74,9 +74,9 @@ services:
       - db
     environment:
       POSTGRES_HOST: db
-      POSTGRES_USER: traloitudong_user
-      POSTGRES_PASSWORD: traloitudong_Admin_2025
-      POSTGRES_DB: traloitudong_db
+      POSTGRES_USER: odoo_user
+      POSTGRES_PASSWORD: odoo_Admin_2025
+      POSTGRES_DB: odoo_db
     ports:
       - "3005:8069"
     volumes:
@@ -86,10 +86,45 @@ services:
     networks:
       - internal
 
+  # ----------------------------------------
+  # RabbitMQ
+  # ----------------------------------------
+  rabbitmq:
+    image: rabbitmq:3.12-management
+    container_name: rabbitmq
+    restart: always
+    environment:
+      RABBITMQ_DEFAULT_USER: admin
+      RABBITMQ_DEFAULT_PASS: admin123
+      RABBITMQ_DEFAULT_VHOST: /
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - internal
+
+  # ----------------------------------------
+  # Redis
+  # ----------------------------------------
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    restart: always
+    ports:
+      - "6380:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - internal
+
 volumes:
   postgres_data:
   odoo_data:
   minio_data:
+  rabbitmq_data:
+  redis_data:
 
 networks:
   internal:

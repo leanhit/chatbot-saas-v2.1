@@ -13,3 +13,22 @@ GRANT ALL PRIVILEGES ON DATABASE botpress_db TO botpress_user;
 GRANT ALL PRIVILEGES ON DATABASE odoo_db TO odoo_user;
 GRANT ALL PRIVILEGES ON DATABASE traloitudong_db TO traloitudong_user;
 
+-- 4. Enable pgvector extension cho vector search
+\c traloitudong_db;
+CREATE EXTENSION IF NOT EXISTS vector;
+
+-- 5. Cấu hình additional settings
+ALTER USER traloitudong_user CREATEDB;
+ALTER USER botpress_user CREATEDB;
+ALTER USER odoo_user CREATEDB;
+
+-- 6. Grant connection privileges
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO traloitudong_user;
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO botpress_user;
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO odoo_user;
+
+-- 7. Grant sequence privileges
+GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO traloitudong_user;
+GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO botpress_user;
+GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO odoo_user;
+

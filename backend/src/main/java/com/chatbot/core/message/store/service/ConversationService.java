@@ -4,9 +4,9 @@ import com.chatbot.core.message.store.model.Conversation;
 import com.chatbot.core.message.store.model.Message;
 import com.chatbot.core.message.store.repository.ConversationRepository;
 import com.chatbot.core.message.store.repository.MessageRepository;
-import com.chatbot.modules.facebook.connection.model.FacebookConnection;
-import com.chatbot.modules.facebook.connection.repository.FacebookConnectionRepository;
-import com.chatbot.modules.facebook.user.service.FacebookUserService;
+import com.chatbot.spokes.facebook.connection.model.FacebookConnection;
+import com.chatbot.spokes.facebook.connection.repository.FacebookConnectionRepository;
+import com.chatbot.spokes.facebook.user.service.FacebookUserService;
 import com.chatbot.core.message.store.model.Channel;
 import com.chatbot.core.tenant.infra.TenantContext;
 

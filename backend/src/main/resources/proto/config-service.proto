@@ -1,0 +1,167 @@
+syntax = "proto3";
+
+package config;
+
+option java_package = "com.chatbot.core.config.grpc";
+option java_outer_classname = "ConfigServiceProto";
+
+// Config Service Definition
+service ConfigService {
+    rpc CreateConfig(CreateConfigRequest) returns (ConfigResponse);
+    rpc GetConfig(GetConfigRequest) returns (ConfigResponse);
+    rpc GetAllConfigs(GetAllConfigsRequest) returns (GetAllConfigsResponse);
+    rpc UpdateConfig(UpdateConfigRequest) returns (ConfigResponse);
+    rpc DeleteConfig(DeleteConfigRequest) returns (DeleteConfigResponse);
+    rpc GetConfigValue(GetConfigValueRequest) returns (GetConfigValueResponse);
+    rpc InvalidateCache(InvalidateCacheRequest) returns (InvalidateCacheResponse);
+}
+
+service EnvironmentConfigService {
+    rpc CreateEnvironmentConfig(CreateEnvironmentConfigRequest) returns (EnvironmentConfigResponse);
+    rpc GetEnvironmentConfig(GetEnvironmentConfigRequest) returns (EnvironmentConfigResponse);
+    rpc GetAllEnvironmentConfigs(GetAllEnvironmentConfigsRequest) returns (GetAllEnvironmentConfigsResponse);
+    rpc UpdateEnvironmentConfig(UpdateEnvironmentConfigRequest) returns (EnvironmentConfigResponse);
+    rpc DeactivateEnvironmentConfig(DeactivateEnvironmentConfigRequest) returns (DeactivateEnvironmentConfigResponse);
+    rpc ReloadConfigs(ReloadConfigsRequest) returns (ReloadConfigsResponse);
+}
+
+// Messages
+message CreateConfigRequest {
+    string config_key = 1;
+    string config_value = 2;
+    string default_value = 3;
+    string config_type = 4;
+    string config_scope = 5;
+    int64 tenant_id = 6;
+    int64 user_id = 7;
+    bool is_encrypted = 8;
+    bool is_readonly = 9;
+    string description = 10;
+}
+
+message GetConfigRequest {
+    string config_key = 1;
+    int64 tenant_id = 2;
+    int64 user_id = 3;
+}
+
+message GetAllConfigsRequest {
+    int64 tenant_id = 1;
+    int64 user_id = 2;
+}
+
+message UpdateConfigRequest {
+    int64 config_id = 1;
+    string config_value = 2;
+    string description = 3;
+}
+
+message DeleteConfigRequest {
+    int64 config_id = 1;
+}
+
+message DeleteConfigResponse {
+    bool success = 1;
+    string message = 2;
+}
+
+message GetConfigValueRequest {
+    string config_key = 1;
+    int64 tenant_id = 2;
+    int64 user_id = 3;
+}
+
+message GetConfigValueResponse {
+    string value = 1;
+}
+
+message InvalidateCacheRequest {
+    string config_key = 1;
+    int64 tenant_id = 2;
+    int64 user_id = 3;
+}
+
+message InvalidateCacheResponse {
+    bool success = 1;
+    string message = 2;
+}
+
+message ConfigResponse {
+    int64 id = 1;
+    string config_key = 2;
+    string config_value = 3;
+    string default_value = 4;
+    string config_type = 5;
+    string config_scope = 6;
+    int64 tenant_id = 7;
+    int64 user_id = 8;
+    bool is_encrypted = 9;
+    bool is_readonly = 10;
+    string description = 11;
+    int32 version = 12;
+    string created_at = 13;
+    string updated_at = 14;
+}
+
+message GetAllConfigsResponse {
+    repeated ConfigResponse configs = 1;
+}
+
+// Environment Config Messages
+message CreateEnvironmentConfigRequest {
+    string environment = 1;
+    string config_key = 2;
+    string config_value = 3;
+    bool is_encrypted = 4;
+    string description = 5;
+}
+
+message GetEnvironmentConfigRequest {
+    string environment = 1;
+    string config_key = 2;
+}
+
+message GetAllEnvironmentConfigsRequest {
+    string environment = 1;
+}
+
+message UpdateEnvironmentConfigRequest {
+    int64 config_id = 1;
+    string config_value = 2;
+    string description = 3;
+}
+
+message DeactivateEnvironmentConfigRequest {
+    int64 config_id = 1;
+}
+
+message ReloadConfigsRequest {
+    string environment = 1;
+}
+
+message ReloadConfigsResponse {
+    bool success = 1;
+    string message = 2;
+    int32 configs_loaded = 3;
+}
+
+message EnvironmentConfigResponse {
+    int64 id = 1;
+    string environment = 2;
+    string config_key = 3;
+    string config_value = 4;
+    bool is_encrypted = 5;
+    bool is_active = 6;
+    string description = 7;
+    string created_at = 8;
+    string updated_at = 9;
+}
+
+message GetAllEnvironmentConfigsResponse {
+    repeated EnvironmentConfigResponse configs = 1;
+}
+
+message DeactivateEnvironmentConfigResponse {
+    bool success = 1;
+    string message = 2;
+}

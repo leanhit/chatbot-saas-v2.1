@@ -1,7 +1,7 @@
 package com.chatbot.core.tenant.service;
 
-import com.chatbot.modules.address.model.OwnerType;
-import com.chatbot.modules.address.service.AddressService;
+import com.chatbot.shared.address.model.OwnerType;
+import com.chatbot.shared.address.service.AddressService;
 
 import java.util.stream.Collectors;
 import java.util.Map;
@@ -20,7 +20,7 @@ import com.chatbot.core.tenant.profile.model.TenantProfile;
 import com.chatbot.core.tenant.profile.repository.TenantProfileRepository;
 import com.chatbot.core.tenant.profile.service.TenantProfileService;
 
-import com.chatbot.modules.address.dto.AddressDetailResponseDTO;
+import com.chatbot.shared.address.dto.AddressDetailResponseDTO;
 import com.chatbot.core.tenant.profile.dto.TenantProfileResponse;
 
 import lombok.RequiredArgsConstructor;
@@ -437,8 +437,8 @@ public class TenantService {
      */
     private void createEmptyAddressForTenant(Long tenantId) {
         // Create an empty address DTO
-        com.chatbot.modules.address.dto.AddressRequestDTO emptyAddress = 
-            new com.chatbot.modules.address.dto.AddressRequestDTO();
+        com.chatbot.shared.address.dto.AddressRequestDTO emptyAddress = 
+            new com.chatbot.shared.address.dto.AddressRequestDTO();
             
         emptyAddress.setOwnerType(OwnerType.TENANT);
         emptyAddress.setOwnerId(tenantId);

@@ -1,0 +1,177 @@
+syntax = "proto3";
+
+package wallet;
+
+option java_package = "com.chatbot.core.wallet.grpc";
+option java_outer_classname = "WalletServiceProto";
+
+// Wallet Service Definition
+service WalletService {
+    rpc CreateWallet(CreateWalletRequest) returns (WalletResponse);
+    rpc GetWallet(GetWalletRequest) returns (WalletResponse);
+    rpc GetUserWallets(GetUserWalletsRequest) returns (GetUserWalletsResponse);
+    rpc GetBalance(GetBalanceRequest) returns (BalanceResponse);
+    rpc SuspendWallet(SuspendWalletRequest) returns (WalletResponse);
+    rpc ActivateWallet(ActivateWalletRequest) returns (WalletResponse);
+}
+
+service TransactionService {
+    rpc CreateTransaction(CreateTransactionRequest) returns (TransactionResponse);
+    rpc CompleteTransaction(CompleteTransactionRequest) returns (TransactionResponse);
+    rpc GetTransaction(GetTransactionRequest) returns (TransactionResponse);
+    rpc GetTransactionHistory(GetTransactionHistoryRequest) returns (GetTransactionHistoryResponse);
+    rpc ProcessTopup(TopupRequest) returns (TransactionResponse);
+    rpc ProcessPurchase(PurchaseRequest) returns (TransactionResponse);
+}
+
+service LedgerService {
+    rpc RecordLedgerEntries(RecordLedgerEntriesRequest) returns (RecordLedgerEntriesResponse);
+    rpc GetLedgerEntries(GetLedgerEntriesRequest) returns (GetLedgerEntriesResponse);
+    rpc ValidateDoubleEntry(ValidateDoubleEntryRequest) returns (ValidateDoubleEntryResponse);
+}
+
+// Messages
+message CreateWalletRequest {
+    int64 user_id = 1;
+    int64 tenant_id = 2;
+    string currency = 3;
+}
+
+message GetWalletRequest {
+    int64 wallet_id = 1;
+}
+
+message GetUserWalletsRequest {
+    int64 user_id = 1;
+    int64 tenant_id = 2;
+}
+
+message GetBalanceRequest {
+    int64 wallet_id = 1;
+}
+
+message SuspendWalletRequest {
+    int64 wallet_id = 1;
+}
+
+message ActivateWalletRequest {
+    int64 wallet_id = 1;
+}
+
+message WalletResponse {
+    int64 id = 1;
+    int64 user_id = 2;
+    int64 tenant_id = 3;
+    string balance = 4;
+    string currency = 5;
+    string status = 6;
+    bool is_active = 7;
+    string created_at = 8;
+    string updated_at = 9;
+}
+
+message GetUserWalletsResponse {
+    repeated WalletResponse wallets = 1;
+}
+
+message BalanceResponse {
+    string balance = 1;
+    string currency = 2;
+    string status = 3;
+}
+
+message CreateTransactionRequest {
+    int64 wallet_id = 1;
+    string transaction_type = 2;
+    string amount = 3;
+    string currency = 4;
+    string description = 5;
+    string external_reference = 6;
+}
+
+message CompleteTransactionRequest {
+    int64 transaction_id = 1;
+}
+
+message GetTransactionRequest {
+    string transaction_reference = 1;
+}
+
+message GetTransactionHistoryRequest {
+    int64 wallet_id = 1;
+    int32 page = 2;
+    int32 size = 3;
+}
+
+message GetTransactionHistoryResponse {
+    repeated TransactionResponse transactions = 1;
+    int32 total_pages = 2;
+    int32 current_page = 3;
+}
+
+message TransactionResponse {
+    int64 id = 1;
+    int64 wallet_id = 2;
+    string transaction_reference = 3;
+    string transaction_type = 4;
+    string amount = 5;
+    string currency = 6;
+    string description = 7;
+    string status = 8;
+    string external_reference = 9;
+    string created_at = 10;
+    string updated_at = 11;
+}
+
+message TopupRequest {
+    int64 wallet_id = 1;
+    string amount = 2;
+    string description = 3;
+    string payment_method = 4;
+    string external_reference = 5;
+}
+
+message PurchaseRequest {
+    int64 wallet_id = 1;
+    string amount = 2;
+    string description = 3;
+    string product_id = 4;
+    string external_reference = 5;
+}
+
+message RecordLedgerEntriesRequest {
+    int64 transaction_id = 1;
+    repeated LedgerEntry entries = 2;
+}
+
+message LedgerEntry {
+    string account_code = 1;
+    string account_name = 2;
+    string debit_amount = 3;
+    string credit_amount = 4;
+    string currency = 5;
+    string description = 6;
+}
+
+message RecordLedgerEntriesResponse {
+    string batch_reference = 1;
+    bool success = 2;
+    string message = 3;
+}
+
+message GetLedgerEntriesRequest {
+    int64 transaction_id = 1;
+}
+
+message GetLedgerEntriesResponse {
+    repeated LedgerEntry entries = 1;
+}
+
+message ValidateDoubleEntryRequest {
+    int64 transaction_id = 1;
+}
+
+message ValidateDoubleEntryResponse {
+    bool is_valid = 1;
+    string message = 2;
+}
