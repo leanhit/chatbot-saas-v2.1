@@ -8,7 +8,11 @@ import com.chatbot.shared.dto.ApiResponse;
 import com.chatbot.shared.dto.PageResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+// import io.swagger.v3.oas.annotations.responses.ApiResponse; // Use fully qualified name to avoid conflict
 import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -31,7 +35,16 @@ public class AppRegistryController {
     
     @PostMapping
     @PreAuthorize("hasRole('ADMIN') or hasRole('APP_MANAGER')")
-    @Operation(summary = "Register a new application", description = "Register a new application in the registry")
+    @Operation(
+        summary = "Register a new application", 
+        description = "Register a new application in the registry",
+        responses = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "201", description = "App registered successfully",
+                content = @Content(schema = @Schema(implementation = ApiResponse.class))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Invalid input data"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "Access denied")
+        }
+    )
     public ResponseEntity<ApiResponse<AppResponse>> registerApp(
             @Valid @RequestBody RegisterAppRequest request) {
         

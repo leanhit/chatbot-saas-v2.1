@@ -1,6 +1,13 @@
 package com.chatbot.shared.address.controller;
 
 import jakarta.validation.Valid;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+// import io.swagger.v3.oas.annotations.responses.ApiResponse; // Use fully qualified name to avoid conflict
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -14,11 +21,21 @@ import com.chatbot.core.tenant.infra.TenantContext;
 @RestController
 @RequestMapping("/api/addresses")
 @RequiredArgsConstructor
+@Tag(name = "Address Management", description = "Address and location management operations")
 public class AddressController {
 
     private final AddressService addressService;
 
     @PostMapping
+    @Operation(
+        summary = "Create address",
+        description = "Create a new address for the tenant",
+        responses = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Address created successfully",
+                content = @Content(schema = @Schema(implementation = AddressResponseDTO.class))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Invalid address data or missing tenant context")
+        }
+    )
     public ResponseEntity<AddressResponseDTO> create(
             @Valid @RequestBody AddressRequestDTO dto) {
         
@@ -31,6 +48,16 @@ public class AddressController {
 
     // Lấy địa chỉ duy nhất của owner (single address)
     @GetMapping("/owner/{type}/{id}")
+    @Operation(
+        summary = "Get single address by owner",
+        description = "Retrieve a single address by owner type and ID",
+        responses = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Address retrieved successfully",
+                content = @Content(schema = @Schema(implementation = AddressDetailResponseDTO.class))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Missing tenant context"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Address not found")
+        }
+    )
     public ResponseEntity<AddressDetailResponseDTO> getSingleByOwner(
             @PathVariable OwnerType type,
             @PathVariable Long id) {
@@ -49,6 +76,15 @@ public class AddressController {
 
     // Lấy hoặc tạo địa chỉ duy nhất cho owner
     @GetMapping("/owner/{type}/{id}/ensure")
+    @Operation(
+        summary = "Get or create single address",
+        description = "Retrieve existing address or create new one for owner",
+        responses = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Address retrieved or created successfully",
+                content = @Content(schema = @Schema(implementation = AddressDetailResponseDTO.class))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Missing tenant context")
+        }
+    )
     public ResponseEntity<AddressDetailResponseDTO> getOrCreateSingleAddress(
             @PathVariable OwnerType type,
             @PathVariable Long id) {
@@ -62,6 +98,16 @@ public class AddressController {
     }
 
     @GetMapping("/{id}")
+    @Operation(
+        summary = "Get address by ID",
+        description = "Retrieve address details by ID",
+        responses = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Address retrieved successfully",
+                content = @Content(schema = @Schema(implementation = AddressDetailResponseDTO.class))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Missing tenant context"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Address not found")
+        }
+    )
     public ResponseEntity<AddressDetailResponseDTO> getById(
             @PathVariable Long id) {
         
@@ -73,6 +119,16 @@ public class AddressController {
     }
 
     @PutMapping("/{id}")
+    @Operation(
+        summary = "Update address",
+        description = "Update an existing address",
+        responses = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Address updated successfully",
+                content = @Content(schema = @Schema(implementation = AddressResponseDTO.class))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Invalid address data or missing tenant context"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Address not found")
+        }
+    )
     public ResponseEntity<AddressResponseDTO> update(
             @PathVariable Long id,
             @Valid @RequestBody AddressRequestDTO dto) {
@@ -86,6 +142,16 @@ public class AddressController {
 
     // Update address fields - no ownerType/ownerId required
     @PutMapping("/{id}/fields")
+    @Operation(
+        summary = "Update address fields",
+        description = "Update specific fields of an address",
+        responses = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Address fields updated successfully",
+                content = @Content(schema = @Schema(implementation = AddressDetailResponseDTO.class))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Invalid address data or missing tenant context"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Address not found")
+        }
+    )
     public ResponseEntity<AddressDetailResponseDTO> updateAddressFields(
             @PathVariable Long id,
             @Valid @RequestBody AddressUpdateRequest dto) {
@@ -98,6 +164,15 @@ public class AddressController {
     }
 
     @DeleteMapping("/{id}")
+    @Operation(
+        summary = "Delete address",
+        description = "Delete an address",
+        responses = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "204", description = "Address deleted successfully"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Missing tenant context"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Address not found")
+        }
+    )
     public ResponseEntity<Void> delete(
             @PathVariable Long id) {
         

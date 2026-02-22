@@ -5,6 +5,13 @@ import com.chatbot.spokes.facebook.connection.dto.FacebookConnectionResponse;
 import com.chatbot.spokes.facebook.connection.dto.UpdateFacebookConnectionRequest;
 import com.chatbot.spokes.facebook.connection.service.FacebookConnectionService;
 import com.chatbot.core.tenant.infra.TenantContext;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+// import io.swagger.v3.oas.annotations.responses.ApiResponse; // Use fully qualified name to avoid conflict
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
@@ -14,6 +21,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/connection/facebook")
+@Tag(name = "Facebook Connection", description = "Facebook platform connection management")
 public class FacebookConnectionController {
 
     private final FacebookConnectionService facebookConnectionService;
@@ -23,6 +31,15 @@ public class FacebookConnectionController {
     }
 
     @PostMapping
+    @Operation(
+        summary = "Create Facebook connection",
+        description = "Create a new Facebook connection for the tenant",
+        responses = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Connection created successfully"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Invalid connection data or missing tenant context"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "Unauthorized")
+        }
+    )
     public ResponseEntity<String> createConnection(@Valid @RequestBody CreateFacebookConnectionRequest request, Principal principal) {
         // ✅ Validate tenant context
         Long tenantId = TenantContext.getTenantId();
@@ -36,6 +53,16 @@ public class FacebookConnectionController {
     }
 
     @PutMapping("/{connectionId}")
+    @Operation(
+        summary = "Update Facebook connection",
+        description = "Update an existing Facebook connection",
+        responses = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Connection updated successfully"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Invalid connection data"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "Unauthorized"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Connection not found")
+        }
+    )
     public ResponseEntity<String> updateConnection(@PathVariable UUID connectionId,
                                                    @Valid @RequestBody UpdateFacebookConnectionRequest request,
                                                    Principal principal) {
@@ -55,6 +82,15 @@ public class FacebookConnectionController {
     }
 
     @GetMapping("/all")
+    @Operation(
+        summary = "Get all Facebook connections",
+        description = "Retrieve all Facebook connections including inactive ones",
+        responses = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "All connections retrieved successfully",
+                content = @Content(schema = @Schema(implementation = Page.class))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "Unauthorized")
+        }
+    )
     public ResponseEntity<Page<FacebookConnectionResponse>> getConnectionsAll(
             Principal principal,
             @RequestParam(defaultValue = "0") int page,
@@ -65,6 +101,14 @@ public class FacebookConnectionController {
     }    
 
     @DeleteMapping("/{id}")
+    @Operation(
+        summary = "Delete Facebook connection",
+        description = "Delete a Facebook connection",
+        responses = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "204", description = "Connection deleted successfully"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Connection not found")
+        }
+    )
     public ResponseEntity<Void> deleteConnection(@PathVariable String id) {
         facebookConnectionService.deleteConnection(id);
         return ResponseEntity.noContent().build();

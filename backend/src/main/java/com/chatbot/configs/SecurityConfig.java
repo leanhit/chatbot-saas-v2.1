@@ -106,6 +106,10 @@ public class SecurityConfig {
                 .requestMatchers("/webhooks/facebook/botpress/**").permitAll()
                 .requestMatchers("/api/images/public/**").permitAll()
                 .requestMatchers("/ws/takeover/**").permitAll()
+                
+                // ================= SWAGGER UI =================
+                .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
+                .requestMatchers("/api/swagger-ui/**", "/api/v3/api-docs/**").permitAll()
 
                 // ================= TENANT (MASTER LEVEL) =================
                 .requestMatchers(HttpMethod.POST, "/api/tenants").authenticated()

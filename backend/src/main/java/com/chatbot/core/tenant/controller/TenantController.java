@@ -10,10 +10,18 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+// import io.swagger.v3.oas.annotations.responses.ApiResponse; // Use fully qualified name to avoid conflict
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 @RestController
 @RequestMapping("/api/tenants")
 @Slf4j
+@Tag(name = "Tenant Management", description = "Multi-tenant operations and management")
 public class TenantController {
 
     private final TenantService tenantService;
@@ -26,6 +34,14 @@ public class TenantController {
      * Lấy danh sách tenant đầy đủ thông tin để hiển thị lựa chọn (Profile, Address)
      */
     @GetMapping("/me")
+    @Operation(
+        summary = "Get user tenants",
+        description = "Retrieve all tenants associated with the authenticated user, including profile and address information.",
+        responses = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Tenants retrieved successfully",
+                content = @Content(schema = @Schema(implementation = TenantDetailResponse.class)))
+        }
+    )
     public List<TenantDetailResponse> getUserTenants() {
         return tenantService.getUserTenantsDetail();
     }
@@ -34,7 +50,19 @@ public class TenantController {
      * Tạo tenant mới.
      */
     @PostMapping
-    public TenantResponse create(@RequestBody CreateTenantRequest request) {
+    @Operation(
+        summary = "Create new tenant",
+        description = "Create a new tenant with the specified details. The user creating the tenant becomes the owner.",
+        responses = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Tenant created successfully",
+                content = @Content(schema = @Schema(implementation = TenantResponse.class))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Invalid input data"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "409", description = "Tenant name already exists")
+        }
+    )
+    public TenantResponse create(
+            @Parameter(description = "Tenant creation details", required = true)
+            @RequestBody CreateTenantRequest request) {
         log.info("🏗️ [TenantController] Starting tenant creation");
         log.info("📋 [TenantController] Request data: name={}, visibility={}", request.getName(), request.getVisibility());
         

@@ -7,7 +7,11 @@ import com.chatbot.shared.dto.ApiResponse;
 import com.chatbot.shared.dto.PageResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+// import io.swagger.v3.oas.annotations.responses.ApiResponse; // Use fully qualified name to avoid conflict
 import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -29,7 +33,16 @@ public class BillingAccountController {
 
     private final BillingAccountService billingAccountService;
 
-    @Operation(summary = "Create billing account", description = "Create a new billing account for a tenant")
+    @Operation(
+        summary = "Create billing account", 
+        description = "Create a new billing account for a tenant",
+        responses = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Billing account created successfully",
+                content = @Content(schema = @Schema(implementation = ApiResponse.class))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Invalid billing data"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "Access denied")
+        }
+    )
     @PostMapping
     @PreAuthorize("hasRole('ADMIN') or hasRole('TENANT_OWNER')")
     public ResponseEntity<ApiResponse<BillingAccountResponse>> createBillingAccount(
@@ -40,7 +53,16 @@ public class BillingAccountController {
         return ResponseEntity.ok(ApiResponse.success(response, "Billing account created successfully"));
     }
 
-    @Operation(summary = "Get billing account by tenant", description = "Retrieve billing account information for a specific tenant")
+    @Operation(
+        summary = "Get billing account by tenant", 
+        description = "Retrieve billing account information for a specific tenant",
+        responses = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Billing account retrieved successfully",
+                content = @Content(schema = @Schema(implementation = ApiResponse.class))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "Access denied"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Tenant not found")
+        }
+    )
     @GetMapping("/tenant/{tenantId}")
     @PreAuthorize("hasRole('ADMIN') or @tenantSecurity.isTenantMember(#tenantId)")
     public ResponseEntity<ApiResponse<BillingAccountResponse>> getBillingAccountByTenant(
@@ -50,7 +72,16 @@ public class BillingAccountController {
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
-    @Operation(summary = "Get billing account by ID", description = "Retrieve billing account information by account ID")
+    @Operation(
+        summary = "Get billing account by ID", 
+        description = "Retrieve billing account information by account ID",
+        responses = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Billing account retrieved successfully",
+                content = @Content(schema = @Schema(implementation = ApiResponse.class))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "Access denied"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Account not found")
+        }
+    )
     @GetMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN') or @billingSecurity.canAccessAccount(#id)")
     public ResponseEntity<ApiResponse<BillingAccountResponse>> getBillingAccountById(
@@ -60,7 +91,17 @@ public class BillingAccountController {
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
-    @Operation(summary = "Update billing account", description = "Update billing account information")
+    @Operation(
+        summary = "Update billing account", 
+        description = "Update billing account information",
+        responses = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Billing account updated successfully",
+                content = @Content(schema = @Schema(implementation = ApiResponse.class))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Invalid billing data"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "Access denied"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Account not found")
+        }
+    )
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN') or @billingSecurity.canManageAccount(#id)")
     public ResponseEntity<ApiResponse<BillingAccountResponse>> updateBillingAccount(
@@ -71,7 +112,16 @@ public class BillingAccountController {
         return ResponseEntity.ok(ApiResponse.success(response, "Billing account updated successfully"));
     }
 
-    @Operation(summary = "Suspend billing account", description = "Suspend a billing account")
+    @Operation(
+        summary = "Suspend billing account", 
+        description = "Suspend a billing account",
+        responses = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Billing account suspended successfully",
+                content = @Content(schema = @Schema(implementation = ApiResponse.class))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "Access denied"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Account not found")
+        }
+    )
     @PostMapping("/{id}/suspend")
     @PreAuthorize("hasRole('ADMIN') or @billingSecurity.canManageAccount(#id)")
     public ResponseEntity<ApiResponse<Void>> suspendBillingAccount(
@@ -82,7 +132,16 @@ public class BillingAccountController {
         return ResponseEntity.ok(ApiResponse.success(null, "Billing account suspended successfully"));
     }
 
-    @Operation(summary = "Reactivate billing account", description = "Reactivate a suspended billing account")
+    @Operation(
+        summary = "Reactivate billing account", 
+        description = "Reactivate a suspended billing account",
+        responses = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Billing account reactivated successfully",
+                content = @Content(schema = @Schema(implementation = ApiResponse.class))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "Access denied"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Account not found")
+        }
+    )
     @PostMapping("/{id}/reactivate")
     @PreAuthorize("hasRole('ADMIN') or @billingSecurity.canManageAccount(#id)")
     public ResponseEntity<ApiResponse<Void>> reactivateBillingAccount(
@@ -92,7 +151,15 @@ public class BillingAccountController {
         return ResponseEntity.ok(ApiResponse.success(null, "Billing account reactivated successfully"));
     }
 
-    @Operation(summary = "Search billing accounts", description = "Search billing accounts by keyword")
+    @Operation(
+        summary = "Search billing accounts", 
+        description = "Search billing accounts by keyword",
+        responses = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Search results retrieved successfully",
+                content = @Content(schema = @Schema(implementation = ApiResponse.class))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "Access denied - Admin role required")
+        }
+    )
     @GetMapping("/search")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<PageResponse<BillingAccountResponse>>> searchAccounts(

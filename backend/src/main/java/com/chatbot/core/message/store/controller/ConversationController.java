@@ -1,12 +1,19 @@
 package com.chatbot.core.message.store.controller;
-import lombok.extern.slf4j.Slf4j;
 
 import com.chatbot.core.message.store.dto.ConversationDTO;
 import com.chatbot.core.message.store.model.Conversation;
 import com.chatbot.core.message.store.model.Channel;
 import com.chatbot.core.message.store.mapper.ConversationMapper;
 import com.chatbot.core.message.store.service.ConversationService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+// import io.swagger.v3.oas.annotations.responses.ApiResponse; // Use fully qualified name to avoid conflict
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -21,6 +28,7 @@ import java.util.List;
 @RequestMapping("/api/conversations")
 @RequiredArgsConstructor
 @Slf4j
+@Tag(name = "Conversation Management", description = "Conversation and messaging operations")
 public class ConversationController {
 
     private final ConversationService conversationService;
@@ -43,6 +51,15 @@ public class ConversationController {
     // 2 LỌC THEO CONNECTION ID của Owner
     // --------------------------------------------------------------------------
     @GetMapping("/by-owner-connection")
+    @Operation(
+        summary = "Get conversations by owner and connection",
+        description = "Retrieve conversations for a specific owner and connection",
+        responses = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Conversations retrieved successfully",
+                content = @Content(schema = @Schema(implementation = Page.class))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "Unauthorized")
+        }
+    )
     public Page<ConversationDTO> getConversationsByOwnerAndConnection(
             @RequestParam UUID connectionId,
             @RequestParam(defaultValue = "0") int page,
@@ -61,6 +78,15 @@ public class ConversationController {
     // dùng/công ty)
     // --------------------------------------------------------------------------
     @GetMapping("/by-owner")
+    @Operation(
+        summary = "Get conversations by owner",
+        description = "Retrieve all conversations for a specific owner",
+        responses = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Conversations retrieved successfully",
+                content = @Content(schema = @Schema(implementation = Page.class))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "Unauthorized")
+        }
+    )
     public Page<ConversationDTO> listByOwnerId(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,        
@@ -79,6 +105,15 @@ public class ConversationController {
     // POST /api/conversations/{conversationId}/close
     // Endpoint để đóng cuộc trò chuyện
     @PostMapping("/{conversationId}/close")
+    @Operation(
+        summary = "Close conversation",
+        description = "Close an active conversation",
+        responses = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Conversation closed successfully",
+                content = @Content(schema = @Schema(implementation = ConversationDTO.class))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Conversation not found")
+        }
+    )
     public ResponseEntity<ConversationDTO> close(@PathVariable Long conversationId) {
         try {
             Conversation c = conversationService.closeConversation(conversationId);
@@ -90,6 +125,14 @@ public class ConversationController {
 
     // POST /api/conversations/find-or-create (Hỗ trợ tạo mới/debug/webhook)
     @PostMapping("/find-or-create")
+    @Operation(
+        summary = "Find or create conversation",
+        description = "Find existing conversation or create new one for user",
+        responses = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Conversation found or created successfully",
+                content = @Content(schema = @Schema(implementation = ConversationDTO.class)))
+        }
+    )
     public ConversationDTO findOrCreate(
             @RequestParam UUID connectionId,
             @RequestParam String externalUserId,
@@ -112,6 +155,16 @@ public class ConversationController {
      * @return ConversationDTO đã được cập nhật
      */
     @PostMapping("/{conversationId}/takeover")
+    @Operation(
+        summary = "Takeover conversation",
+        description = "Agent takes over control of conversation from bot",
+        responses = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Conversation taken over successfully",
+                content = @Content(schema = @Schema(implementation = ConversationDTO.class))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Cannot takeover conversation"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Conversation not found")
+        }
+    )
     public ResponseEntity<ConversationDTO> takeover(
             @PathVariable Long conversationId,
             @RequestParam Long agentId // Agent ID được truyền từ Agent UI
@@ -135,6 +188,16 @@ public class ConversationController {
      * @return ConversationDTO đã được cập nhật
      */
     @PostMapping("/{conversationId}/release")
+    @Operation(
+        summary = "Release conversation",
+        description = "Agent releases conversation back to bot",
+        responses = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Conversation released successfully",
+                content = @Content(schema = @Schema(implementation = ConversationDTO.class))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Cannot release conversation"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Conversation not found")
+        }
+    )
     public ResponseEntity<ConversationDTO> release(@PathVariable Long conversationId) {
         try {
             Conversation c = conversationService.releaseConversation(conversationId);
@@ -160,6 +223,16 @@ public class ConversationController {
      * @return ConversationDTO đã được cập nhật
      */
     @PatchMapping("/{conversationId}/taken-over")
+    @Operation(
+        summary = "Update taken over status",
+        description = "Update the taken over status of a conversation",
+        responses = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Status updated successfully",
+                content = @Content(schema = @Schema(implementation = ConversationDTO.class))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "Permission denied"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Conversation not found")
+        }
+    )
     public ResponseEntity<ConversationDTO> updateTakenOverStatus(
             @PathVariable Long conversationId,
             @RequestParam Boolean isTakenOver,
@@ -189,6 +262,15 @@ public class ConversationController {
      * @return 204 No Content nếu xóa thành công
      */
     @DeleteMapping("/{conversationId}")
+    @Operation(
+        summary = "Delete conversation",
+        description = "Permanently delete a conversation",
+        responses = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "204", description = "Conversation deleted successfully"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "Permission denied"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Conversation not found")
+        }
+    )
     public ResponseEntity<Void> deleteConversation(
         @PathVariable Long conversationId,
         Principal principal) {
@@ -217,6 +299,15 @@ public class ConversationController {
      */    
 
     @DeleteMapping("/batch-delete")
+    @Operation(
+        summary = "Batch delete conversations",
+        description = "Delete multiple conversations at once",
+        responses = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "204", description = "Conversations deleted successfully"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Invalid conversation IDs list"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "Permission denied")
+        }
+    )
     public ResponseEntity<Void> deleteConversations(
             @RequestBody List<Long> conversationIds,
             Principal principal) {

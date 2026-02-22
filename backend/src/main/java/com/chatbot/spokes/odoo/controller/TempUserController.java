@@ -3,6 +3,13 @@ package com.chatbot.integrations.odoo.controller;
 import com.chatbot.integrations.odoo.model.FbCustomerStaging;
 import com.chatbot.integrations.odoo.service.FbCustomerStagingCrudService;
 import com.chatbot.integrations.odoo.dto.UpdateDataRequest;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+// import io.swagger.v3.oas.annotations.responses.ApiResponse; // Use fully qualified name to avoid conflict
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -17,6 +24,7 @@ import java.util.Optional;
 @RestController
 @RequestMapping("/api/odoo/temp-users")
 @RequiredArgsConstructor
+@Tag(name = "Odoo Temp Users", description = "Temporary user management for Odoo integration")
 public class TempUserController {
 
     private final FbCustomerStagingCrudService service;
@@ -55,6 +63,16 @@ public class TempUserController {
      * 🧩 Lấy thông tin user cụ thể theo psid + ownerId
      */
     @GetMapping("/{psid}")
+    @Operation(
+        summary = "Get temp user by PSID",
+        description = "Retrieve a specific temporary user by PSID and owner",
+        responses = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Temp user retrieved successfully",
+                content = @Content(schema = @Schema(implementation = FbCustomerStaging.class))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "Unauthorized"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Temp user not found")
+        }
+    )
     public ResponseEntity<FbCustomerStaging> getByPsid(
             @PathVariable String psid,
             Principal principal // Lấy ownerId từ Principal
@@ -75,6 +93,16 @@ public class TempUserController {
      * 🧩 Tạo mới hoặc cập nhật (upsert)
      */
     @PostMapping
+    @Operation(
+        summary = "Create or update temp user",
+        description = "Create new temporary user or update existing one",
+        responses = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Temp user created/updated successfully",
+                content = @Content(schema = @Schema(implementation = FbCustomerStaging.class))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "Unauthorized"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "Forbidden - Cannot modify other users' data")
+        }
+    )
     public ResponseEntity<FbCustomerStaging> upsert(
             @RequestBody FbCustomerStaging customer,
             Principal principal
@@ -102,6 +130,15 @@ public class TempUserController {
      * 🧩 Xóa user theo psid + ownerId
      */
     @DeleteMapping("/{psid}")
+    @Operation(
+        summary = "Delete temp user",
+        description = "Delete a temporary user by PSID and owner",
+        responses = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "204", description = "Temp user deleted successfully"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "Unauthorized"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Temp user not found")
+        }
+    )
     public ResponseEntity<Void> delete(
             @PathVariable String psid,
             Principal principal // Lấy ownerId từ Principal
@@ -122,6 +159,18 @@ public class TempUserController {
      * 🧩 Cập nhật riêng dataJson và status của user tạm theo psid + ownerId
      */
     @PatchMapping("/{psid}")
+    @Operation(
+        summary = "Update temp user data and status",
+        description = "Update JSON data and status for a temporary user",
+        responses = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Temp user updated successfully",
+                content = @Content(schema = @Schema(implementation = FbCustomerStaging.class))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Invalid update data"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "Unauthorized"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Temp user not found"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "Internal server error")
+        }
+    )
     public ResponseEntity<FbCustomerStaging> updateDataJsonAndStatus(
             @PathVariable String psid,
             @RequestBody UpdateDataRequest updateRequest,

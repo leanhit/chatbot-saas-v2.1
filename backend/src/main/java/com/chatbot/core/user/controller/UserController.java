@@ -12,13 +12,22 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import jakarta.validation.Valid;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+// import io.swagger.v3.oas.annotations.responses.ApiResponse; // Use fully qualified name to avoid conflict
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 /**
  * User Controller - REST API cho Frontend
  */
 @RestController
+@RequestMapping("/api/users")
 @RequiredArgsConstructor
 @Slf4j
+@Tag(name = "User Management", description = "User profile and management operations")
 public class UserController {
 
     private final UserService userService;
@@ -28,9 +37,18 @@ public class UserController {
     /**
      * Get current user profile
      */
-    @GetMapping("/api/users/me")
+    @GetMapping("/me")
+    @Operation(
+        summary = "Get current user profile",
+        description = "Retrieve the complete profile information for the authenticated user.",
+        responses = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Profile retrieved successfully",
+                content = @Content(schema = @Schema(implementation = UserFullResponse.class))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "Unauthorized")
+        }
+    )
     public ResponseEntity<UserFullResponse> getMyProfile(
-            @AuthenticationPrincipal CustomUserDetails currentUser) {
+            @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails currentUser) {
         
         User user = currentUser.getUser();
         
@@ -40,7 +58,7 @@ public class UserController {
     /**
      * Get user profile by ID
      */
-    @GetMapping("/api/users/{id}")
+    @GetMapping("/{id}")
     public ResponseEntity<UserProfileResponse> getUserProfile(@PathVariable Long id) {
         return ResponseEntity.ok(userService.getProfile(id));
     }
@@ -48,7 +66,7 @@ public class UserController {
     /**
      * Update current user profile
      */
-    @PutMapping("/api/users/me")
+    @PutMapping("/me")
     public ResponseEntity<UserProfileResponse> updateMyProfile(
             @AuthenticationPrincipal CustomUserDetails currentUser,
             @RequestBody UserRequest request) {
@@ -189,7 +207,7 @@ public class UserController {
     /**
      * Update Basic Info Only - Separate endpoint for basic information
      */
-    @PutMapping("/api/users/me/basic-info")
+    @PutMapping("/me/basic-info")
     public ResponseEntity<UserProfileResponse> updateBasicInfo(
             @AuthenticationPrincipal CustomUserDetails currentUser,
             @Valid @RequestBody UserRequest request) {
@@ -205,7 +223,7 @@ public class UserController {
     /**
      * Update Professional Info Only - Separate endpoint for professional information
      */
-    @PutMapping("/api/users/me/professional-info")
+    @PutMapping("/me/professional-info")
     public ResponseEntity<UserProfileResponse> updateProfessionalInfo(
             @AuthenticationPrincipal CustomUserDetails currentUser,
             @Valid @RequestBody UserRequest request) {

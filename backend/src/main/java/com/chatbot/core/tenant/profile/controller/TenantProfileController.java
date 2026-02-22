@@ -5,6 +5,13 @@ import com.chatbot.core.tenant.profile.dto.TenantProfileResponse;
 import com.chatbot.core.tenant.profile.service.TenantProfileService;
 import com.chatbot.core.tenant.model.Tenant;
 import com.chatbot.core.tenant.repository.TenantRepository;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+// import io.swagger.v3.oas.annotations.responses.ApiResponse; // Use fully qualified name to avoid conflict
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -13,12 +20,22 @@ import org.springframework.web.multipart.MultipartFile;
 @RestController
 @RequestMapping("/api/tenant")
 @RequiredArgsConstructor
+@Tag(name = "Tenant Profile Management", description = "Tenant profile and branding operations")
 public class TenantProfileController {
 
     private final TenantProfileService tenantProfileService;
     private final TenantRepository tenantRepository;
 
     @GetMapping("/{tenantKey}/profile")
+    @Operation(
+        summary = "Get tenant profile",
+        description = "Retrieve profile information for a specific tenant",
+        responses = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Profile retrieved successfully",
+                content = @Content(schema = @Schema(implementation = TenantProfileResponse.class))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Tenant not found")
+        }
+    )
     public ResponseEntity<TenantProfileResponse> getProfile(
             @PathVariable String tenantKey
     ) {
@@ -30,6 +47,16 @@ public class TenantProfileController {
     }
 
     @PutMapping("/{tenantKey}/profile")
+    @Operation(
+        summary = "Update tenant profile",
+        description = "Update profile information for a specific tenant",
+        responses = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Profile updated successfully",
+                content = @Content(schema = @Schema(implementation = TenantProfileResponse.class))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Invalid profile data"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Tenant not found")
+        }
+    )
     public ResponseEntity<TenantProfileResponse> updateProfile(
             @PathVariable String tenantKey,
             @RequestBody TenantProfileRequest request
@@ -42,6 +69,16 @@ public class TenantProfileController {
     }
 
     @PutMapping("/{tenantKey}/logo")
+    @Operation(
+        summary = "Update tenant logo",
+        description = "Upload and update logo for a specific tenant",
+        responses = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Logo updated successfully",
+                content = @Content(schema = @Schema(implementation = TenantProfileResponse.class))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Invalid file format or size"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Tenant not found")
+        }
+    )
     public ResponseEntity<TenantProfileResponse> updateLogo(
             @PathVariable String tenantKey,
             @RequestParam("logo") MultipartFile file
@@ -53,11 +90,17 @@ public class TenantProfileController {
         );
     }
 
-    /**
-     * Update tenant profile data only (JSON)
-     * Usage: PUT /api/tenant/{tenantKey} with JSON body
-     */
     @PutMapping(value = "/{tenantKey}", consumes = "application/json")
+    @Operation(
+        summary = "Update tenant profile data",
+        description = "Update tenant profile information using JSON data",
+        responses = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Profile updated successfully",
+                content = @Content(schema = @Schema(implementation = TenantProfileResponse.class))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Invalid profile data"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Tenant not found")
+        }
+    )
     public ResponseEntity<TenantProfileResponse> updateTenantProfile(
             @PathVariable String tenantKey,
             @RequestBody TenantProfileRequest request
@@ -70,11 +113,17 @@ public class TenantProfileController {
         );
     }
 
-    /**
-     * Update tenant with logo upload (multipart/form-data)
-     * Usage: PUT /api/tenant/{tenantKey} with multipart/form-data
-     */
     @PutMapping(value = "/{tenantKey}", consumes = "multipart/form-data")
+    @Operation(
+        summary = "Update tenant with logo",
+        description = "Update tenant profile information and optionally upload logo using multipart form data",
+        responses = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Tenant updated successfully",
+                content = @Content(schema = @Schema(implementation = TenantProfileResponse.class))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Invalid data or file format"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Tenant not found")
+        }
+    )
     public ResponseEntity<TenantProfileResponse> updateTenantWithLogo(
             @PathVariable String tenantKey,
             @RequestPart(value = "request", required = false) TenantProfileRequest request,
