@@ -31,45 +31,46 @@ public class TenantProfessional {
     private Tenant tenant;
 
     // ===== Professional Information =====
-    @Column(length = 100)
+    @Column(name = "job_title")
     private String jobTitle;
 
-    @Column(length = 100)
+    @Column(name = "department")
     private String department;
 
     @Column(length = 200)
     private String company;
 
-    @Column(length = 500)
+    @Column(name = "linkedin_url")
     private String linkedinUrl;
 
-    @Column(length = 500)
+    @Column(name = "website")
     private String website;
 
-    @Column(length = 200)
+    @Column(name = "location")
     private String location;
 
-    @Column(length = 1000)
+    @Column(name = "skills")
     private String skills;
 
-    @Column(length = 1000)
+    @Column(name = "experience")
     private String experience;
 
-    @Column(length = 500)
+    @Column(name = "education")
     private String education;
 
-    @Column(length = 500)
+    @Column(name = "certifications")
     private String certifications;
 
-    @Column(length = 200)
+    @Column(name = "languages")
     private String languages;
 
+    @Column(name = "availability")
     private String availability;
 
-    @Column(length = 100)
+    @Column(name = "hourly_rate")
     private String hourlyRate;
 
-    @Column(length = 500)
+    @Column(name = "portfolio_url")
     private String portfolioUrl;
 
     // ===== audit =====

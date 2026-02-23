@@ -45,23 +45,26 @@ public class TenantProfile {
     private String companySize;
 
     // ===== Thông tin pháp lý =====
+    @Column(name = "legal_name")
     private String legalName;
 
-    @Column(length = 50)
+    @Column(name = "tax_code")
     private String taxCode;
 
     // ===== Thông tin liên hệ =====
-    @Column(length = 100)
+    @Column(name = "contact_email")
     private String contactEmail;
 
-    @Column(length = 20)
+    @Column(name = "contact_phone")
     private String contactPhone;
 
     // ===== Branding / White-label =====
+    @Column(name = "logo_url")
     private String logoUrl;
+    @Column(name = "favicon_url")
     private String faviconUrl;
 
-    @Column(length = 7)
+    @Column(name = "primary_color")
     private String primaryColor; // #RRGGBB
 
     // ===== audit =====

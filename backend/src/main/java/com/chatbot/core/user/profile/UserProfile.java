@@ -37,7 +37,7 @@ public class UserProfile {
     @Column(length = 100)
     private String fullName;
 
-    @Column(length = 20)
+    @Column(name = "phone_number")
     private String phoneNumber;
 
     @Column(length = 500)
@@ -84,7 +84,7 @@ public class UserProfile {
     @Column(name = "certifications", length = 500)
     private String certifications;
 
-    @Column(length = 200)
+    @Column(name = "languages")
     private String languages;
 
     @Column(name = "availability", length = 100)

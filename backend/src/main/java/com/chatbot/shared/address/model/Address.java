@@ -45,7 +45,7 @@ public class Address {
     private Long ownerId;
 
     // ===== Địa chỉ =====
-    @Column(name = "house_number", length = 50)
+    @Column(name = "house_number")
     private String houseNumber;
 
     @Column(length = 255)

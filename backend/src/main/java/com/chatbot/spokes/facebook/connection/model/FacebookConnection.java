@@ -21,19 +21,27 @@ public class FacebookConnection extends BaseTenantEntity {
     
     @Id
     private UUID id;
+    @Column(name = "bot_id")
     private String botId;
+    @Column(name = "bot_name")
     private String botName;
+    @Column(name = "owner_id")
     private String ownerId;
     @Column(name = "page_id")
     private String pageId;
+    @Column(name = "fanpage_url")
     private String fanpageUrl;
+    @Column(name = "page_access_token")
     private String pageAccessToken;
     
     // Getters and setters for Lombok compatibility
     public String getOwnerId() { return ownerId; }
     public void setOwnerId(String ownerId) { this.ownerId = ownerId; }
+    @Column(name = "fb_user_id")
     private String fbUserId;
+    @Column(name = "is_enabled")
     private boolean isEnabled; // Trường mới
+    @Column(name = "is_active")
     private boolean isActive;
     
     @Enumerated(EnumType.STRING)

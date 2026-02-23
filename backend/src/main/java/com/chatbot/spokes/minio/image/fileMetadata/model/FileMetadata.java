@@ -28,13 +28,15 @@ public class FileMetadata extends BaseTenantEntity {
     @Column(columnDefinition = "UUID")   // ép Hibernate tạo cột UUID
     private UUID id;
 
-    @Column(nullable = false)
+    @Column(name = "file_name", nullable = false)
     private String fileName;
 
-    @Column(nullable = false)
+    @Column(name = "file_url", nullable = false)
     private String fileUrl;
 
+    @Column(name = "file_size")
     private long fileSize;
+    @Column(name = "content_type")
     private String contentType;
 
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS", timezone = "Asia/Ho_Chi_Minh")

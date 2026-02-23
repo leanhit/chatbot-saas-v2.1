@@ -29,6 +29,7 @@ public class Message extends BaseTenantEntity {
     private Long id;
 
     // Các trường đã có
+    @Column(name = "conversation_id")
     private Long conversationId;
 
     private String sender; // user | bot
@@ -44,6 +45,7 @@ public class Message extends BaseTenantEntity {
     @Column(nullable = false)
     private String messageType; // text | image | video | postback
 
+    @Column(name = "external_message_id")
     private String externalMessageId; // Có thể null
 
     @Column(nullable = false)

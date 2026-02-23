@@ -33,10 +33,12 @@ public class Conversation extends BaseTenantEntity {
     private Long id;
 
     // Các trường đã có
+    @Column(name = "connection_id")
     private UUID connectionId;
 
     private String ownerId;
 
+    @Column(name = "external_user_id")
     private String externalUserId;
 
     // Thông tin người dùng
