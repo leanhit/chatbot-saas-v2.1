@@ -125,6 +125,127 @@
           <div class="item mt-3">
             <menu-accordion>
               <template v-slot:icon>
+                <Icon icon="mdi:credit-card" />
+              </template>
+              <template v-slot:title> Billing </template>
+              <template v-slot:content>
+                <router-link
+                  to="/billing"
+                  @click.stop
+                  class="w-full text-left block rounded-md p-3 hover:bg-gray-200 dark:hover:bg-gray-700"
+                >
+                  Overview
+                </router-link>
+                <router-link
+                  to="/billing/subscriptions"
+                  @click.stop
+                  class="w-full text-left block rounded-md p-3 hover:bg-gray-200 dark:hover:bg-gray-700"
+                >
+                  Subscriptions
+                </router-link>
+                <router-link
+                  to="/billing/invoices"
+                  @click.stop
+                  class="w-full text-left block rounded-md p-3 hover:bg-gray-200 dark:hover:bg-gray-700"
+                >
+                  Invoices
+                </router-link>
+                <router-link
+                  to="/billing/entitlements"
+                  @click.stop
+                  class="w-full text-left block rounded-md p-3 hover:bg-gray-200 dark:hover:bg-gray-700"
+                >
+                  Usage & Entitlements
+                </router-link>
+                <router-link
+                  to="/billing/payment-methods"
+                  @click.stop
+                  class="w-full text-left block rounded-md p-3 hover:bg-gray-200 dark:hover:bg-gray-700"
+                >
+                  Payment Methods
+                </router-link>
+              </template>
+            </menu-accordion>
+          </div>
+          <div class="item mt-3">
+            <menu-accordion>
+              <template v-slot:icon>
+                <Icon icon="mdi:wallet" />
+              </template>
+              <template v-slot:title> Wallet </template>
+              <template v-slot:content>
+                <router-link
+                  to="/wallet"
+                  @click.stop
+                  class="w-full text-left block rounded-md p-3 hover:bg-gray-200 dark:hover:bg-gray-700"
+                >
+                  Overview
+                </router-link>
+                <router-link
+                  to="/wallet/transactions"
+                  @click.stop
+                  class="w-full text-left block rounded-md p-3 hover:bg-gray-200 dark:hover:bg-gray-700"
+                >
+                  Transactions
+                </router-link>
+                <router-link
+                  to="/wallet/topup"
+                  @click.stop
+                  class="w-full text-left block rounded-md p-3 hover:bg-gray-200 dark:hover:bg-gray-700"
+                >
+                  Add Funds
+                </router-link>
+                <router-link
+                  to="/wallet/transfer"
+                  @click.stop
+                  class="w-full text-left block rounded-md p-3 hover:bg-gray-200 dark:hover:bg-gray-700"
+                >
+                  Transfer Funds
+                </router-link>
+              </template>
+            </menu-accordion>
+          </div>
+          <div class="item mt-3">
+            <menu-accordion>
+              <template v-slot:icon>
+                <Icon icon="mdi:robot" />
+              </template>
+              <template v-slot:title> Penny Bots </template>
+              <template v-slot:content>
+                <router-link
+                  to="/penny"
+                  @click.stop
+                  class="w-full text-left block rounded-md p-3 hover:bg-gray-200 dark:hover:bg-gray-700"
+                >
+                  Bot Dashboard
+                </router-link>
+                <router-link
+                  to="/penny/chat"
+                  @click.stop
+                  class="w-full text-left block rounded-md p-3 hover:bg-gray-200 dark:hover:bg-gray-700"
+                >
+                  Chat Interface
+                </router-link>
+                <router-link
+                  to="/penny/bots/create"
+                  @click.stop
+                  class="w-full text-left block rounded-md p-3 hover:bg-gray-200 dark:hover:bg-gray-700"
+                >
+                  Create Bot
+                </router-link>
+                <router-link
+                  to="/penny/analytics"
+                  @click.stop
+                  class="w-full text-left block rounded-md p-3 hover:bg-gray-200 dark:hover:bg-gray-700"
+                >
+                  Analytics
+                </router-link>
+              </template>
+            </menu-accordion>
+          </div>
+          <div class="item mt-3">
+            <menu-accordion>
+              <template v-slot:icon>
                 <Icon icon="ri:layout-2-fill" />
               </template>
               <template v-slot:title> Layouts </template>

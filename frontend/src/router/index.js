@@ -18,6 +18,18 @@ import TenantSettings from "../views/tenant/settings/TenantSettings.vue";
 import AppHubDashboard from "../views/app-hub/Dashboard.vue";
 import AppRegistry from "../views/app-hub/AppRegistry.vue";
 import CreateApp from "../views/app-hub/CreateApp.vue";
+// Billing Pages
+import BillingDashboard from "../views/billing/Dashboard.vue";
+import BillingSubscriptions from "../views/billing/Subscriptions.vue";
+import BillingInvoices from "../views/billing/Invoices.vue";
+import BillingEntitlements from "../views/billing/Entitlements.vue";
+import BillingPaymentMethods from "../views/billing/PaymentMethods.vue";
+// Wallet Pages
+import WalletDashboard from "../views/wallet/Dashboard.vue";
+import WalletTransactions from "../views/wallet/Transactions.vue";
+// Penny Bot Pages
+import PennyDashboard from "../views/penny/Dashboard.vue";
+import PennyChat from "../views/penny/Chat.vue";
 // Component Pages
 import Valert from "../views/components/alert.vue";
 import Vaccrodion from "../views/components/accordion.vue";
@@ -80,6 +92,75 @@ const routes = [
     name: "dasboard",
     component: Dashboard,
     meta: { requiresAuth: true, title: "Dashboard" + appname, skipTenantCheck: true },
+  },
+  // Billing Routes
+  {
+    path: "/billing",
+    name: "billing-overview",
+    component: BillingDashboard,
+    meta: { requiresAuth: true, title: "Billing Dashboard" + appname, skipTenantCheck: true },
+  },
+  {
+    path: "/billing/subscriptions",
+    name: "billing-subscriptions",
+    component: BillingSubscriptions,
+    meta: { requiresAuth: true, title: "Subscriptions" + appname, skipTenantCheck: true },
+  },
+  {
+    path: "/billing/invoices",
+    name: "billing-invoices",
+    component: BillingInvoices,
+    meta: { requiresAuth: true, title: "Invoices" + appname, skipTenantCheck: true },
+  },
+  {
+    path: "/billing/entitlements",
+    name: "billing-entitlements",
+    component: BillingEntitlements,
+    meta: { requiresAuth: true, title: "Usage & Entitlements" + appname, skipTenantCheck: true },
+  },
+  {
+    path: "/billing/payment-methods",
+    name: "billing-payment-methods",
+    component: BillingPaymentMethods,
+    meta: { requiresAuth: true, title: "Payment Methods" + appname, skipTenantCheck: true },
+  },
+  // Wallet Routes
+  {
+    path: "/wallet",
+    name: "wallet-overview",
+    component: WalletDashboard,
+    meta: { requiresAuth: true, title: "Wallet Dashboard" + appname, skipTenantCheck: true },
+  },
+  {
+    path: "/wallet/transactions",
+    name: "wallet-transactions",
+    component: WalletTransactions,
+    meta: { requiresAuth: true, title: "Transactions" + appname, skipTenantCheck: true },
+  },
+  // Penny Bot Routes
+  {
+    path: "/penny",
+    name: "penny-dashboard",
+    component: PennyDashboard,
+    meta: { requiresAuth: true, title: "Penny Bot Dashboard" + appname, skipTenantCheck: true },
+  },
+  {
+    path: "/penny/chat",
+    name: "penny-chat",
+    component: PennyChat,
+    meta: { requiresAuth: true, title: "Chat Interface" + appname, skipTenantCheck: true },
+  },
+  {
+    path: "/penny/bots/create",
+    name: "penny-create-bot",
+    component: () => import("@/components/penny/CreateBotModal.vue"),
+    meta: { requiresAuth: true, title: "Create Bot" + appname, skipTenantCheck: true },
+  },
+  {
+    path: "/penny/analytics",
+    name: "penny-analytics",
+    component: () => import("@/components/penny/ChatHistoryModal.vue"),
+    meta: { requiresAuth: true, title: "Analytics" + appname, skipTenantCheck: true },
   },
   //tenant  
   {

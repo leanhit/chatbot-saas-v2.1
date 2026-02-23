@@ -24,6 +24,14 @@
             <Icon icon="mdi:logout" class="h-4 w-4 mr-2" />
             {{ $t('tenantGateway.logout') }}
           </button>
+          <!-- 🆕 Billing Overview Button -->
+          <button
+            @click="showBillingOverview = true"
+            class="inline-flex items-center px-5 py-2.5 text-sm font-medium text-white bg-green-700 rounded-lg hover:bg-green-800 focus:ring-4 focus:outline-none focus:ring-green-300 dark:bg-green-600 dark:hover:bg-green-700 dark:focus:ring-green-800"
+          >
+            <Icon icon="mdi:account-balance-wallet" class="h-4 w-4 mr-2" />
+            Billing Overview
+          </button>
         </div>
       </div>
       <!-- Card with Tabs -->
