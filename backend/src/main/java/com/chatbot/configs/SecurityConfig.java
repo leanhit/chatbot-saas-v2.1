@@ -101,10 +101,11 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
                 // ================= PUBLIC APIs =================
-                .requestMatchers("/api/auth/**", "/error").permitAll()
-                .requestMatchers("/api/penny/bots/*/chat/public").permitAll()
+                // Most specific paths first
+                .requestMatchers("/auth/**", "/error").permitAll()
+                .requestMatchers("/penny/bots/*/chat/public").permitAll()
                 .requestMatchers("/webhooks/facebook/botpress/**").permitAll()
-                .requestMatchers("/api/images/public/**").permitAll()
+                .requestMatchers("/images/public/**").permitAll()
                 .requestMatchers("/ws/takeover/**").permitAll()
                 
                 // ================= SWAGGER UI =================
@@ -112,22 +113,22 @@ public class SecurityConfig {
                 .requestMatchers("/api/swagger-ui/**", "/api/v3/api-docs/**").permitAll()
 
                 // ================= TENANT (MASTER LEVEL) =================
-                .requestMatchers(HttpMethod.POST, "/api/tenants").authenticated()
-                .requestMatchers(HttpMethod.GET, "/api/tenants").authenticated()
+                .requestMatchers(HttpMethod.POST, "/tenants").authenticated()
+                .requestMatchers(HttpMethod.GET, "/tenants").authenticated()
 
                 // ================= TENANT CONTEXT REQUIRED =================
-                .requestMatchers("/api/tenants/**").authenticated()
-                .requestMatchers("/api/v1/tenant/**").authenticated()
-                .requestMatchers("/api/v1/user-info/**").authenticated()
+                .requestMatchers("/tenants/**").authenticated()
+                .requestMatchers("/v1/tenant/**").authenticated()
+                .requestMatchers("/v1/user-info/**").authenticated()
 
                 // ================= DEFAULT =================
                 .anyRequest().authenticated()
             )
 
-            .authenticationProvider(authenticationProvider)
+            .authenticationProvider(authenticationProvider);
 
-            // JWT filter
-            .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
+        // JWT filter
+        http.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }

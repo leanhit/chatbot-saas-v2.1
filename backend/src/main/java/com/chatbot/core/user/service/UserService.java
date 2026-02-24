@@ -203,8 +203,12 @@ public class UserService {
      */
     @Transactional
     public void createEmptyProfile(User user) {
+        // Fetch managed User entity to avoid detached entity issue
+        User managedUser = userRepository.findById(user.getId())
+                .orElseThrow(() -> new RuntimeException("User not found: " + user.getId()));
+                
         UserProfile profile = UserProfile.builder()
-                .user(user)
+                .user(managedUser)  // Use managed User entity
                 .build();
         
         userProfileRepository.save(profile);
@@ -370,7 +374,7 @@ public class UserService {
      */
     @Transactional
     public User save(User user) {
-        return userRepository.save(user);
+        return userRepository.saveAndFlush(user);
     }
 
     /**

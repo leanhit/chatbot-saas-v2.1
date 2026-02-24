@@ -20,8 +20,10 @@ public class WebConfig implements WebMvcConfigurer {
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
         // Only add TenantStatusInterceptor (TenantHibernateInterceptor is for Hibernate, not Web MVC)
+        // Exclude auth endpoints from tenant validation
         registry.addInterceptor(statusInterceptor)
-                .addPathPatterns("/api/**");
+                .addPathPatterns("/api/**")
+                .excludePathPatterns("/api/auth/**", "/api/error", "/api/actuator/**");
     }
 
     @Override

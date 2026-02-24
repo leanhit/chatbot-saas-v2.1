@@ -52,16 +52,8 @@ public class AuthService implements UserDetailsService {
                 .systemRole(isFirstUser ? SystemRole.ADMIN : SystemRole.USER)
                 .build();
 
-        // save User entity và tạo profile
-        User savedUser = userService.save(userEntity);
-        userService.createEmptyProfile(savedUser);
-
-        // tạo address (không ảnh hưởng transaction chính)
-        try {
-            addressService.createEmptyAddressForUser(savedUser.getId());
-        } catch (Exception e) {
-            log.error("Không thể tạo địa chỉ trống cho user {}: {}", savedUser.getId(), e.getMessage());
-        }
+        // save User entity trực tiếp qua AuthRepository
+        User savedUser = authRepository.save(userEntity);
 
         String token = jwtService.generateToken(savedUser.getEmail());
 
