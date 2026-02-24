@@ -1,8 +1,8 @@
-package com.chatbot.integrations.odoo.controller;
+package com.chatbot.spokes.odoo.controller;
 
-import com.chatbot.integrations.odoo.model.FbCustomerStaging;
-import com.chatbot.integrations.odoo.service.FbCustomerStagingCrudService;
-import com.chatbot.integrations.odoo.dto.UpdateDataRequest;
+import com.chatbot.spokes.odoo.model.FbCustomerStaging;
+import com.chatbot.spokes.odoo.service.FbCustomerStagingCrudService;
+import com.chatbot.spokes.odoo.dto.UpdateDataRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;

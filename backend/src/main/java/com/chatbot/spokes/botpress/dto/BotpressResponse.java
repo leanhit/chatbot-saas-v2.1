@@ -1,4 +1,4 @@
-package com.chatbot.integrations.botpress.dto;
+package com.chatbot.spokes.botpress.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;

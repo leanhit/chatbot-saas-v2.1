@@ -1,8 +1,8 @@
-package com.chatbot.integrations.odoo.service;
+package com.chatbot.spokes.odoo.service;
 import lombok.extern.slf4j.Slf4j;
 
-import com.chatbot.integrations.odoo.client.OdooApiClient;
-import com.chatbot.integrations.odoo.model.FbCustomerStaging;
+import com.chatbot.spokes.odoo.client.OdooApiClient;
+import com.chatbot.spokes.odoo.model.FbCustomerStaging;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;

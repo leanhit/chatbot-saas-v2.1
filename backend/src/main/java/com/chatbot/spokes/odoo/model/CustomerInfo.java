@@ -1,4 +1,4 @@
-package com.chatbot.integrations.odoo.model;
+package com.chatbot.spokes.odoo.model;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

@@ -20,7 +20,8 @@ import java.util.Properties;
 @EnableJpaRepositories(
     basePackages = {
         "com.chatbot.shared.address.repository",
-        "com.chatbot.shared.infrastructure.repository"
+        "com.chatbot.shared.infrastructure.repository",
+        "com.chatbot.spokes.odoo.repository"
     },
     entityManagerFactoryRef = "primaryEntityManagerFactory",
     transactionManagerRef = "primaryTransactionManager"
@@ -45,7 +46,8 @@ public class PrimaryDatabaseConfig {
         em.setDataSource(primaryDataSource());
         em.setPackagesToScan(
             "com.chatbot.shared.address.model",
-            "com.chatbot.shared.infrastructure.model"
+            "com.chatbot.shared.infrastructure.model",
+            "com.chatbot.spokes.odoo.model"
         );
 
         HibernateJpaVendorAdapter vendorAdapter = new HibernateJpaVendorAdapter();

@@ -1,7 +1,7 @@
-package com.chatbot.integrations.odoo.repository;
+package com.chatbot.spokes.odoo.repository;
 
-import com.chatbot.integrations.odoo.model.CustomerStatus;
-import com.chatbot.integrations.odoo.model.FbCustomerStaging;
+import com.chatbot.spokes.odoo.model.CustomerStatus;
+import com.chatbot.spokes.odoo.model.FbCustomerStaging;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;

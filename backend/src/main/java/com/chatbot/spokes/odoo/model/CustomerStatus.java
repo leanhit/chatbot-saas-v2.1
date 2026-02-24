@@ -1,4 +1,4 @@
-package com.chatbot.integrations.odoo.model;
+package com.chatbot.spokes.odoo.model;
 
 public enum CustomerStatus {
     /** Đang thu thập thông tin, chưa đủ data cần thiết. */

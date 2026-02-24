@@ -1,7 +1,7 @@
-package com.chatbot.integrations.botpress.service;
+package com.chatbot.spokes.botpress.service;
 
-import com.chatbot.integrations.botpress.dto.auth.BotpressRegisterRequest;
-import com.chatbot.integrations.botpress.dto.auth.BotpressRegisterResponse;
+import com.chatbot.spokes.botpress.dto.auth.BotpressRegisterRequest;
+import com.chatbot.spokes.botpress.dto.auth.BotpressRegisterResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;

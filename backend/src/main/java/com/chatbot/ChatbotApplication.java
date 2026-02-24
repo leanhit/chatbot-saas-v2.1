@@ -11,7 +11,6 @@ import org.springframework.context.annotation.ComponentScan;
 @EnableAsync
 @ComponentScan(basePackages = {
     "com.chatbot.core",
-    "com.chatbot.integrations",
     "com.chatbot.modules",
     "com.chatbot.shared",
     "com.chatbot.configs",

@@ -1,6 +1,6 @@
-package com.chatbot.integrations.botpress.repository;
+package com.chatbot.spokes.botpress.repository;
 
-import com.chatbot.integrations.botpress.model.UserIdMapping;
+import com.chatbot.spokes.botpress.model.UserIdMapping;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;

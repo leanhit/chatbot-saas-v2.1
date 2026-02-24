@@ -1,4 +1,4 @@
-package com.chatbot.integrations.odoo.client;
+package com.chatbot.spokes.odoo.client;
 
 import jakarta.annotation.PostConstruct;
 import org.apache.xmlrpc.client.XmlRpcClient;

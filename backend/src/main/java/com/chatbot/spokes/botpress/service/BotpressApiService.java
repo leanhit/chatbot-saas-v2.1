@@ -1,4 +1,4 @@
-package com.chatbot.integrations.botpress.service;
+package com.chatbot.spokes.botpress.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;

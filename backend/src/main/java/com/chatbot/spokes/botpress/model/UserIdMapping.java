@@ -1,4 +1,4 @@
-package com.chatbot.integrations.botpress.model;
+package com.chatbot.spokes.botpress.model;
 
 import com.chatbot.core.tenant.infra.BaseTenantEntity;
 import jakarta.persistence.*;

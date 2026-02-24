@@ -1,15 +1,15 @@
-package com.chatbot.integrations.odoo.service;
+package com.chatbot.spokes.odoo.service;
 
 import com.chatbot.spokes.facebook.connection.model.FacebookConnection;
 import com.chatbot.spokes.facebook.connection.repository.FacebookConnectionRepository;
 import com.chatbot.core.tenant.infra.TenantContext;
-import com.chatbot.integrations.odoo.model.CustomerStatus;
-import com.chatbot.integrations.odoo.model.FbCapturedPhone;
-import com.chatbot.integrations.odoo.model.FbCustomerStaging;
-import com.chatbot.integrations.odoo.client.OdooApiClient;
-import com.chatbot.integrations.odoo.model.CustomerInfo;
+import com.chatbot.spokes.odoo.model.CustomerStatus;
+import com.chatbot.spokes.odoo.model.FbCapturedPhone;
+import com.chatbot.spokes.odoo.model.FbCustomerStaging;
+import com.chatbot.spokes.odoo.client.OdooApiClient;
+import com.chatbot.spokes.odoo.model.CustomerInfo;
 import lombok.extern.slf4j.Slf4j;
-import com.chatbot.integrations.odoo.service.FbCapturedPhoneService;
+import com.chatbot.spokes.odoo.service.FbCapturedPhoneService;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;

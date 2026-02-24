@@ -1,6 +1,6 @@
-package com.chatbot.integrations.odoo.service;
+package com.chatbot.spokes.odoo.service;
 
-import com.chatbot.integrations.odoo.model.CustomerInfo;
+import com.chatbot.spokes.odoo.model.CustomerInfo;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 

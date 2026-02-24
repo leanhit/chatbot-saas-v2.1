@@ -1,6 +1,6 @@
-package com.chatbot.integrations.odoo.dto;
+package com.chatbot.spokes.odoo.dto;
 
-import com.chatbot.integrations.odoo.model.CustomerStatus;
+import com.chatbot.spokes.odoo.model.CustomerStatus;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Data;

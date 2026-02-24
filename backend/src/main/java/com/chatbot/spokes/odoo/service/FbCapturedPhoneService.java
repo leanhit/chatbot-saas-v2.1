@@ -1,7 +1,7 @@
-package com.chatbot.integrations.odoo.service;
+package com.chatbot.spokes.odoo.service;
 
-import com.chatbot.integrations.odoo.model.FbCapturedPhone;
-import com.chatbot.integrations.odoo.repository.FbCapturedPhoneRepository;
+import com.chatbot.spokes.odoo.model.FbCapturedPhone;
+import com.chatbot.spokes.odoo.repository.FbCapturedPhoneRepository;
 import com.chatbot.core.tenant.infra.TenantContext;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;

@@ -1,5 +1,5 @@
 // dto/BotpressRegisterRequest.java
-package com.chatbot.integrations.botpress.dto.auth;
+package com.chatbot.spokes.botpress.dto.auth;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

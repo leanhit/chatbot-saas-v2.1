@@ -1,7 +1,7 @@
-package com.chatbot.integrations.odoo.controller;
+package com.chatbot.spokes.odoo.controller;
 
-import com.chatbot.integrations.odoo.model.FbCapturedPhone;
-import com.chatbot.integrations.odoo.service.FbCapturedPhoneService; 
+import com.chatbot.spokes.odoo.model.FbCapturedPhone;
+import com.chatbot.spokes.odoo.service.FbCapturedPhoneService; 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
