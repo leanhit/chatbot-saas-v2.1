@@ -20,7 +20,7 @@ public class MessageGrpcClient {
     @Value("${message.grpc.client.host:localhost}")
     private String host;
     
-    @Value("${message.grpc.client.port:50054}")
+    @Value("${message.grpc.client.port:50058}")
     private int port;
     
     @Value("${message.grpc.client.timeout:30}")

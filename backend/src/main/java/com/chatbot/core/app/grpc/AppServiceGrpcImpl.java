@@ -20,16 +20,10 @@ import com.chatbot.core.app.registry.service.AppRegistryService;
 import com.chatbot.core.app.subscription.dto.SubscriptionResponse;
 import com.chatbot.core.app.subscription.service.AppSubscriptionService;
 import com.chatbot.core.app.guard.service.AppGuardService;
-import io.grpc.Server;
-import io.grpc.ServerBuilder;
 import io.grpc.stub.StreamObserver;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
-import java.io.IOException;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.logging.Logger;
@@ -39,8 +33,6 @@ public class AppServiceGrpcImpl extends AppServiceGrpc.AppServiceImplBase {
     
     private static final Logger logger = Logger.getLogger(AppServiceGrpcImpl.class.getName());
     
-    private Server server;
-    
     @Autowired
     private AppRegistryService appRegistryService;
     
@@ -49,29 +41,6 @@ public class AppServiceGrpcImpl extends AppServiceGrpc.AppServiceImplBase {
     
     @Autowired
     private AppGuardService guardService;
-    
-    @Value("${spring.grpc.server.port:50052}")
-    private int grpcPort;
-    
-    @PostConstruct
-    public void start() throws IOException {
-        server = ServerBuilder.forPort(grpcPort)
-                .addService(this)
-                .build()
-                .start();
-        logger.info("gRPC Server started, listening on " + grpcPort);
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            AppServiceGrpcImpl.this.stop();
-            System.err.println("gRPC Server shut down");
-        }));
-    }
-    
-    @PreDestroy
-    public void stop() {
-        if (server != null) {
-            server.shutdown();
-        }
-    }
     
     @Override
     public void registerApp(RegisterAppRequest request, StreamObserver<RegisterAppResponse> responseObserver) {

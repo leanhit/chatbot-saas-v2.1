@@ -26,7 +26,7 @@ public class IdentityGrpcHealthCheck {
             Thread.sleep(5000);
             
             // Tạo channel để test
-            ManagedChannel channel = ManagedChannelBuilder.forAddress("localhost", 50061)
+            ManagedChannel channel = ManagedChannelBuilder.forAddress("localhost", 50051)
                     .usePlaintext()
                     .build();
             

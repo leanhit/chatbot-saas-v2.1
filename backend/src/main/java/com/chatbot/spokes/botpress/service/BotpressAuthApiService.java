@@ -14,7 +14,7 @@ import org.springframework.web.client.RestTemplate;
 @Slf4j
 public class BotpressAuthApiService {
 
-    @Value("${botpress.api.url}")
+    @Value("${app.integrations.botpress.api-url}")
     private String botpressApiUrl;
 
     private final RestTemplate restTemplate;

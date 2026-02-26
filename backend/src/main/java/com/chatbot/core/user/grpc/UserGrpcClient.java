@@ -4,6 +4,7 @@ import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.DependsOn;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
@@ -11,15 +12,17 @@ import javax.annotation.PreDestroy;
 
 /**
  * User gRPC Client - For calling User Hub from other hubs
+ * NOTE: Disabled to prevent port binding conflicts with UserGrpcServer
  */
-@Component
+// @Component
+// @DependsOn("userGrpcServer")
 @Slf4j
 public class UserGrpcClient {
 
     @Value("${user.grpc.server.host:localhost}")
     private String host;
 
-    @Value("${user.grpc.server.port:50054}")
+    @Value("${user.grpc.server.port:50052}")
     private int port;
 
     private ManagedChannel channel;

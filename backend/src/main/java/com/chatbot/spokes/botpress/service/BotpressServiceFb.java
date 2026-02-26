@@ -18,10 +18,10 @@ import java.util.Map;
 @Slf4j
 public class BotpressServiceFb implements ChatbotProviderService {
 
-    @Value("${botpress.api.url:http://localhost:3000}")
+    @Value("${app.integrations.botpress.api-url:http://localhost:3000}")
     private String botpressUrl;
 
-    @Value("${botpress.api.admin-token:admin-token}")
+    @Value("${app.integrations.botpress.admin-token:admin-token}")
     private String adminToken;
 
     @Override

@@ -41,10 +41,10 @@ public class UserService {
     private final CategoryService categoryService;
     private final MinioClient minioClient;
 
-    @Value("${minio.endpoint:http://localhost:9000}")
+    @Value("${app.integrations.minio.endpoint:http://localhost:9000}")
     private String minioEndpoint;
 
-    @Value("${minio.bucket-name:chatbot-files}")
+    @Value("${app.integrations.minio.bucket:chatbot-files}")
     private String minioBucketName;
 
     /**

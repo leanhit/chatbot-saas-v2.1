@@ -41,10 +41,10 @@ public class FileMetadataService {
     private final CategoryService categoryService;
     private final AuthRepository authRepository;
 
-    @Value("${minio.url}")
+    @Value("${app.integrations.minio.endpoint}")
     private String minioUrl;
 
-    @Value("${minio.bucketName}")
+    @Value("${app.integrations.minio.bucket}")
     private String bucketName;
 
     private final long MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB

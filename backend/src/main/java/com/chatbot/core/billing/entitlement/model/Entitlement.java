@@ -23,9 +23,14 @@ import java.time.LocalDateTime;
 @Builder
 public class Entitlement extends BaseTenantEntity {
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "subscription_id")
-    private com.chatbot.core.billing.subscription.model.BillingSubscription subscription;
+    // Remove problematic relationship for now
+    // @ManyToOne(fetch = FetchType.LAZY)
+    // @JoinColumn(name = "subscription_id")
+    // private com.chatbot.core.billing.subscription.model.BillingSubscription subscription;
+    
+    // Add subscriptionId field as workaround
+    @Column(name = "subscription_id")
+    private Long subscriptionId;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "feature", nullable = false)

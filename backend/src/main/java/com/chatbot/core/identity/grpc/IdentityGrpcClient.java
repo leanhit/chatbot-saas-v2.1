@@ -28,13 +28,13 @@ public class IdentityGrpcClient {
             Thread.sleep(1000);
             
             // Tạo channel kết nối đến Identity gRPC server
-            channel = ManagedChannelBuilder.forAddress("localhost", 50061)
+            channel = ManagedChannelBuilder.forAddress("localhost", 50051)
                     .usePlaintext()
                     .build();
             
             blockingStub = IdentityServiceGrpc.newBlockingStub(channel);
             
-            log.info("Identity gRPC Client đã khởi tạo thành công và kết nối đến port 50061");
+            log.info("Identity gRPC Client đã khởi tạo thành công và kết nối đến port 50051");
             
             // Test kết nối
             testConnection();

@@ -19,7 +19,8 @@
 #
 
 # Fix JAVA_HOME issue
-export JAVA_HOME=/root/.sdkman/candidates/java/current
+# export JAVA_HOME=/root/.sdkman/candidates/java/current
+export JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64
 
 ##############################################################################
 #

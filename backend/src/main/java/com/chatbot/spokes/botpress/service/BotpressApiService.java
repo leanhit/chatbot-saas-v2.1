@@ -15,10 +15,10 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class BotpressApiService {
 
-    @Value("${botpress.api.url}")
+    @Value("${app.integrations.botpress.api-url}")
     private String botpressApiUrl;
 
-    @Value("${botpress.api.admin-token}")
+    @Value("${app.integrations.botpress.admin-token}")
     private String botpressAdminToken;
 
     private final RestTemplate restTemplate;

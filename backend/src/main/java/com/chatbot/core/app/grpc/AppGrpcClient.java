@@ -14,7 +14,7 @@ public class AppGrpcClient {
     @Value("${app.grpc.server.host:localhost}")
     private String grpcHost;
     
-    @Value("${app.grpc.server.port:9090}")
+    @Value("${app.grpc.server.port:50054}")
     private int grpcPort;
     
     private ManagedChannel channel;
