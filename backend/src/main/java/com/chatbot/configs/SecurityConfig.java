@@ -8,10 +8,11 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
-import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
+import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -21,12 +22,14 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.util.List;
 
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
+@EnableWebMvc
 public class SecurityConfig {
 
     // ===================== PASSWORD =====================
@@ -56,8 +59,12 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
 
-        // ⚠️ Dùng allowedOriginPatterns khi allowCredentials = true
-        config.setAllowedOriginPatterns(List.of("*"));
+        // ✅ Restrict to specific domains for production
+        config.setAllowedOriginPatterns(List.of(
+            "http://localhost:*",
+            "https://*.yourdomain.com",
+            "https://yourdomain.com"
+        ));
         config.setAllowedMethods(List.of(
                 "GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"
         ));
@@ -67,7 +74,7 @@ public class SecurityConfig {
                 "X-Tenant-Key",
                 "Cache-Control"
         ));
-        config.setExposedHeaders(List.of("*"));
+        config.setExposedHeaders(List.of("X-Tenant-Key", "X-Total-Count"));
         config.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
@@ -80,7 +87,8 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(
             HttpSecurity http,
             JwtFilter jwtFilter,
-            AuthenticationProvider authenticationProvider
+            AuthenticationProvider authenticationProvider,
+            OncePerRequestFilter securityHeadersFilter
     ) throws Exception {
 
         http
@@ -112,12 +120,15 @@ public class SecurityConfig {
                 .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                 .requestMatchers("/api/swagger-ui/**", "/api/v3/api-docs/**").permitAll()
 
-                // ================= TENANT (MASTER LEVEL) =================
+                // ================= TENANT ENDPOINTS (SPECIFIC FIRST) =================
+                .requestMatchers(HttpMethod.GET, "/tenants/me").authenticated()
                 .requestMatchers(HttpMethod.POST, "/tenants").authenticated()
                 .requestMatchers(HttpMethod.GET, "/tenants").authenticated()
 
                 // ================= TENANT CONTEXT REQUIRED =================
-                .requestMatchers("/tenants/**").authenticated()
+                .requestMatchers("/tenants/create").authenticated()
+                .requestMatchers("/tenants/update").authenticated()
+                .requestMatchers("/tenants/delete").authenticated()
                 .requestMatchers("/v1/tenant/**").authenticated()
                 .requestMatchers("/v1/user-info/**").authenticated()
 
@@ -129,6 +140,9 @@ public class SecurityConfig {
 
         // JWT filter
         http.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
+        
+        // Security headers filter
+        http.addFilterBefore(securityHeadersFilter, JwtFilter.class);
 
         return http.build();
     }
