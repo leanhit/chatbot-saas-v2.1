@@ -25,7 +25,7 @@ public class RateLimitConfig {
     public FilterRegistrationBean<OncePerRequestFilter> rateLimitFilter() {
         FilterRegistrationBean<OncePerRequestFilter> registration = new FilterRegistrationBean<>();
         registration.setFilter(new RateLimitFilter());
-        registration.addUrlPatterns("/api/auth/*", "/api/tenants", "/api/v1/*");
+        // registration.addUrlPatterns("/api/auth/*", "/api/tenants", "/api/v1/*");
         registration.setOrder(Ordered.HIGHEST_PRECEDENCE);
         return registration;
     }

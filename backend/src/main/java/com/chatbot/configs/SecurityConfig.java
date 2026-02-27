@@ -62,6 +62,8 @@ public class SecurityConfig {
         // ✅ Restrict to specific domains for production
         config.setAllowedOriginPatterns(List.of(
             "http://localhost:*",
+            "https://*.truyenthongviet.vn",
+            "https://truyenthongviet.vn",
             "https://*.yourdomain.com",
             "https://yourdomain.com"
         ));
@@ -110,7 +112,7 @@ public class SecurityConfig {
 
                 // ================= PUBLIC APIs =================
                 // Most specific paths first
-                .requestMatchers("/auth/**", "/error").permitAll()
+                .requestMatchers("/auth/**", "/api/auth/**", "/error").permitAll()
                 .requestMatchers("/penny/bots/*/chat/public").permitAll()
                 .requestMatchers("/webhooks/facebook/botpress/**").permitAll()
                 .requestMatchers("/images/public/**").permitAll()

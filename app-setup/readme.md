@@ -14,7 +14,7 @@ docker compose down -v
 
 ===================================================================
 
-docker exec -it traloitudong_postgres psql -U postgres -d postgres
+docker exec -it traloitudong_postgres psql -U traloitudong_user -d postgres
 
 drop database traloitudong_db;
 
