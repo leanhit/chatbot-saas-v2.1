@@ -19,7 +19,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 @RestController
-@RequestMapping("/tenants")
+@RequestMapping("/api/tenants")
 @Slf4j
 @Tag(name = "Tenant Management", description = "Multi-tenant operations and management")
 public class TenantController {

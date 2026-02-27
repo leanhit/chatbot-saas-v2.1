@@ -123,9 +123,9 @@ public class SecurityConfig {
                 .requestMatchers("/api/swagger-ui/**", "/api/v3/api-docs/**").permitAll()
 
                 // ================= TENANT ENDPOINTS (SPECIFIC FIRST) =================
-                .requestMatchers(HttpMethod.GET, "/tenants/me").authenticated()
-                .requestMatchers(HttpMethod.POST, "/tenants").authenticated()
-                .requestMatchers(HttpMethod.GET, "/tenants").authenticated()
+                .requestMatchers(HttpMethod.GET, "/api/tenants/me").authenticated()
+                .requestMatchers(HttpMethod.POST, "/api/tenants").authenticated()
+                .requestMatchers(HttpMethod.GET, "/api/tenants").authenticated()
 
                 // ================= TENANT CONTEXT REQUIRED =================
                 .requestMatchers("/tenants/create").authenticated()
