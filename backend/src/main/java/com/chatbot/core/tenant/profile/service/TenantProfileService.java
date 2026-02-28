@@ -162,7 +162,7 @@ public class TenantProfileService {
             }
 
             String logoFileId = uploadedFiles.get(0).getId().toString();
-            String logoUrl = "/api/images/public/" + logoFileId + "/content";
+            String logoUrl = uploadedFiles.get(0).getFileUrl(); // Use direct MinIO URL like user avatar
 
             // 4. Update tenant profile with new logo URL
             TenantProfileRequest profileRequest = new TenantProfileRequest();

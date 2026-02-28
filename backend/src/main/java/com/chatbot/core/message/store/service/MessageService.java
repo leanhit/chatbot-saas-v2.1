@@ -41,9 +41,23 @@ public class MessageService {
         }
         
         String rawJson = null;
+        String imageUrl = null;
+        
         try {
             if (raw != null) {
                 rawJson = objectMapper.writeValueAsString(raw);
+            }
+            
+            // Xử lý riêng cho image messages
+            if ("image".equals(messageType) && content != null && content.startsWith("http")) {
+                imageUrl = content; // Extract URL from content
+                log.info("🖼️ [MessageService] Detected image message with URL: {}", imageUrl);
+                
+                // Lưu URL vào rawPayload để frontend có thể hiển thị
+                Map<String, Object> imageRawPayload = new java.util.HashMap<>();
+                imageRawPayload.put("imageUrl", imageUrl);
+                imageRawPayload.put("messageType", "image");
+                rawJson = objectMapper.writeValueAsString(imageRawPayload);
             }
         } catch (Exception e) {
             log.error("Error converting raw payload to JSON: " + e.getMessage());

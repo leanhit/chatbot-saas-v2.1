@@ -2,11 +2,16 @@ package com.chatbot.core.tenant.controller;
 
 import com.chatbot.core.tenant.dto.*;
 import com.chatbot.core.tenant.service.TenantService;
+import com.chatbot.core.tenant.profile.service.TenantProfileService;
+import com.chatbot.core.tenant.profile.dto.TenantProfileResponse;
+import com.chatbot.core.tenant.repository.TenantRepository;
+import com.chatbot.core.tenant.model.Tenant;
 import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.data.domain.Page;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Map;
@@ -25,9 +30,13 @@ import io.swagger.v3.oas.annotations.media.Schema;
 public class TenantController {
 
     private final TenantService tenantService;
+    private final TenantProfileService tenantProfileService;
+    private final TenantRepository tenantRepository;
 
-    public TenantController(TenantService tenantService) {
+    public TenantController(TenantService tenantService, TenantProfileService tenantProfileService, TenantRepository tenantRepository) {
         this.tenantService = tenantService;
+        this.tenantProfileService = tenantProfileService;
+        this.tenantRepository = tenantRepository;
     }
 
     /**
@@ -177,5 +186,39 @@ public class TenantController {
             @RequestBody Map<String, Object> contactData
     ) {
         return tenantService.updateContactInfo(tenantKey, contactData);
+    }
+
+    /**
+     * Cập nhật logo tenant.
+     */
+    @PutMapping("/key/{tenantKey}/logo")
+    @Operation(
+        summary = "Update tenant logo",
+        description = "Upload and update tenant logo image",
+        responses = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Logo updated successfully"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Invalid input data"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Tenant not found")
+        }
+    )
+    public TenantResponse updateLogo(
+            @PathVariable String tenantKey,
+            @Parameter(description = "Logo image file", required = true)
+            @RequestParam("file") org.springframework.web.multipart.MultipartFile file
+    ) {
+        try {
+            // Convert tenantKey to tenantId
+            Tenant tenant = tenantRepository.findByTenantKey(tenantKey)
+                .orElseThrow(() -> new RuntimeException("Tenant not found with key: " + tenantKey));
+            
+            // Update logo using TenantProfileService
+            TenantProfileResponse profileResponse = tenantProfileService.updateLogo(tenant.getId(), file);
+            
+            // Convert to TenantResponse
+            return tenantService.getTenantForCurrentUser(tenant.getId());
+        } catch (Exception e) {
+            log.error("❌ [TenantController] Failed to update tenant logo: {}", e.getMessage(), e);
+            throw new RuntimeException("Không thể cập nhật logo: " + e.getMessage(), e);
+        }
     }
 }

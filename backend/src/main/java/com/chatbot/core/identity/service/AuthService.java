@@ -9,13 +9,16 @@ import com.chatbot.core.user.model.User;
 import com.chatbot.core.user.service.UserService;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.transaction.annotation.Transactional;
+import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 
 @Service
 @RequiredArgsConstructor
@@ -52,8 +55,24 @@ public class AuthService implements UserDetailsService {
                 .systemRole(isFirstUser ? SystemRole.ADMIN : SystemRole.USER)
                 .build();
 
-        // save User entity trực tiếp qua AuthRepository
+        // tạo UserProfile với cascade relationship
+        com.chatbot.core.user.profile.UserProfile userProfile = 
+            com.chatbot.core.user.profile.UserProfile.builder()
+                .user(userEntity) // Only set user, ID will be auto-generated
+                .build();
+        
+        // Set bidirectional relationship
+        userEntity.setProfile(userProfile);
+
+        // save User entity - UserProfile sẽ được cascade save
         User savedUser = authRepository.save(userEntity);
+        
+        // tạo address (không ảnh hưởng transaction chính)
+        try {
+            addressService.getOrCreateUserAddress(com.chatbot.shared.address.model.OwnerType.USER, savedUser.getId());
+        } catch (Exception e) {
+            log.error("Không thể tạo địa chỉ trống cho user {}: {}", savedUser.getId(), e.getMessage());
+        }
 
         String token = jwtService.generateToken(savedUser.getEmail());
 

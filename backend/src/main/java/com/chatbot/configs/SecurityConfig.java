@@ -115,8 +115,11 @@ public class SecurityConfig {
                 .requestMatchers("/auth/**", "/api/auth/**", "/error").permitAll()
                 .requestMatchers("/penny/bots/*/chat/public").permitAll()
                 .requestMatchers("/webhooks/facebook/botpress/**").permitAll()
-                .requestMatchers("/images/public/**").permitAll()
+                .requestMatchers("/images/public/**", "/api/images/public/**").permitAll()
                 .requestMatchers("/ws/takeover/**").permitAll()
+                
+                // ================= LOCATION APIs (PUBLIC) =================
+                .requestMatchers("/api/locations/**").permitAll()
                 
                 // ================= SWAGGER UI =================
                 .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()

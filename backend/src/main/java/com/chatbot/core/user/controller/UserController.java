@@ -82,7 +82,7 @@ public class UserController {
     /**
      * Update user avatar
      */
-    @PutMapping("/api/users/me/avatar")
+    @PutMapping("/me/avatar")
     public ResponseEntity<UserProfileResponse> updateAvatar(
             @AuthenticationPrincipal CustomUserDetails currentUser,
             @RequestParam("avatar") MultipartFile file) {
@@ -98,7 +98,7 @@ public class UserController {
     /**
      * Get user basic info (for internal calls)
      */
-    @GetMapping("/api/users/{id}/basic")
+    @GetMapping("/{id}/basic")
     public ResponseEntity<UserDto> getUserBasicInfo(@PathVariable Long id) {
         com.chatbot.core.user.model.User user = userService.getUser(id);
         
@@ -117,7 +117,7 @@ public class UserController {
     /**
      * LEGACY: Get current user profile (backward compatibility)
      */
-    @GetMapping("/api/v1/user-info/me")
+    @GetMapping("/v1/user-info/me")
     public ResponseEntity<UserFullResponse> getMyProfileLegacy(
             @AuthenticationPrincipal CustomUserDetails currentUser) {
         
@@ -131,7 +131,7 @@ public class UserController {
     /**
      * LEGACY: Update current user profile (backward compatibility)
      */
-    @PutMapping("/api/v1/user-info/me")
+    @PutMapping("/v1/user-info/me")
     public ResponseEntity<UserProfileResponse> updateMyProfileLegacy(
             @AuthenticationPrincipal CustomUserDetails currentUser,
             @RequestBody UserRequest request) {
@@ -149,7 +149,7 @@ public class UserController {
     /**
      * LEGACY: Update user avatar (backward compatibility)
      */
-    @PutMapping("/api/v1/user-info/me/avatar")
+    @PutMapping("/v1/user-info/me/avatar")
     public ResponseEntity<UserProfileResponse> updateAvatarLegacy(
             @AuthenticationPrincipal CustomUserDetails currentUser,
             @RequestParam("avatar") MultipartFile file) {
@@ -169,7 +169,7 @@ public class UserController {
     /**
      * LEGACY: Update Basic Info Only (backward compatibility)
      */
-    @PutMapping("/api/v1/user-info/me/basic-info")
+    @PutMapping("/v1/user-info/me/basic-info")
     public ResponseEntity<UserProfileResponse> updateBasicInfoLegacy(
             @AuthenticationPrincipal CustomUserDetails currentUser,
             @Valid @RequestBody UserRequest request) {
@@ -187,7 +187,7 @@ public class UserController {
     /**
      * LEGACY: Update Professional Info Only (backward compatibility)
      */
-    @PutMapping("/api/v1/user-info/me/professional-info")
+    @PutMapping("/v1/user-info/me/professional-info")
     public ResponseEntity<UserProfileResponse> updateProfessionalInfoLegacy(
             @AuthenticationPrincipal CustomUserDetails currentUser,
             @Valid @RequestBody UserRequest request) {

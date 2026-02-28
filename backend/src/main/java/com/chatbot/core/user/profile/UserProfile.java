@@ -7,7 +7,7 @@ import java.time.LocalDateTime;
 
 /**
  * User Profile Entity - Chứa thông tin chi tiết của system user
- * Sử dụng @MapsId để chia sẻ ID với User
+ * Sử dụng bidirectional relationship với User
  */
 @Entity
 @Table(name = "user_profiles", 
@@ -22,15 +22,12 @@ import java.time.LocalDateTime;
 @Builder
 public class UserProfile {
 
-    /**
-     * Dùng chung ID với User (giống UserInfo ↔ Auth cũ)
-     */
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @OneToOne(fetch = FetchType.LAZY)
-    @MapsId
-    @JoinColumn(name = "user_id", nullable = false)
+    @JoinColumn(name = "user_id", nullable = false, unique = true)
     private User user;
 
     // ===== Basic Information =====

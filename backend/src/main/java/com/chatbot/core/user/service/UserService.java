@@ -21,7 +21,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Isolation;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 
 import java.util.List;
 import java.util.Optional;
@@ -46,6 +49,11 @@ public class UserService {
 
     @Value("${app.integrations.minio.bucket:chatbot-files}")
     private String minioBucketName;
+    
+    // Expose repository for direct access
+    public UserProfileRepository getUserProfileRepository() {
+        return userProfileRepository;
+    }
 
     /**
      * Get user by ID
@@ -59,7 +67,7 @@ public class UserService {
     /**
      * Get user profile by ID
      */
-    @Transactional
+    @Transactional(readOnly = true)
     public UserProfileResponse getProfile(Long userId) {
         // Auto-create UserProfile if not exists (migration compatibility)
         UserProfile profile = userProfileRepository.findByUserId(userId)
@@ -68,7 +76,6 @@ public class UserService {
                     User user = userRepository.findById(userId)
                             .orElseThrow(() -> new RuntimeException("User not found with ID: " + userId));
                     UserProfile newProfile = UserProfile.builder()
-                            .id(userId)
                             .user(user)
                             .build();
                     return userProfileRepository.save(newProfile);
@@ -88,7 +95,6 @@ public class UserService {
                     User user = userRepository.findById(userId)
                             .orElseThrow(() -> new RuntimeException("User not found with ID: " + userId));
                     UserProfile newProfile = UserProfile.builder()
-                            .id(userId)
                             .user(user)
                             .build();
                     return userProfileRepository.save(newProfile);
@@ -135,7 +141,6 @@ public class UserService {
                     User user = userRepository.findById(userId)
                             .orElseThrow(() -> new RuntimeException("User not found with ID: " + userId));
                     UserProfile newProfile = UserProfile.builder()
-                            .id(userId)
                             .user(user)
                             .build();
                     return userProfileRepository.save(newProfile);
@@ -295,7 +300,6 @@ public class UserService {
                 .orElseGet(() -> {
                     log.info("Auto-creating UserProfile for user ID: {}", userId);
                     UserProfile newProfile = UserProfile.builder()
-                            .id(userId)
                             .user(user)
                             .build();
                     return userProfileRepository.save(newProfile);
@@ -324,19 +328,40 @@ public class UserService {
      */
     @Transactional
     public UserProfileResponse updateBasicInfo(Long userId, UserRequest request) {
-        UserProfile profile = userProfileRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User profile not found with ID: " + userId));
-        
-        // Update basic info only
-        profile.setFullName(request.getFullName());
-        profile.setPhoneNumber(request.getPhoneNumber());
-        profile.setGender(request.getGender());
-        profile.setBio(request.getBio());
-        
-        profile = userProfileRepository.save(profile);
-        log.info("Updated basic info for user: {}", userId);
-        
-        return mapToProfileResponse(profile);
+        try {
+            log.info("Updating basic info for user ID: {}", userId);
+            
+            // First, ensure profile exists in a separate transaction
+            UserProfile profile = ensureProfileExists(userId);
+            
+            // Then update the profile
+            profile.setFullName(request.getFullName());
+            profile.setPhoneNumber(request.getPhoneNumber());
+            profile.setGender(request.getGender());
+            profile.setBio(request.getBio());
+            
+            profile = userProfileRepository.save(profile);
+            log.info("Successfully updated basic info for user ID: {}", userId);
+            
+            return mapToProfileResponse(profile);
+        } catch (Exception e) {
+            log.error("Error updating basic info for user {}: {}", userId, e.getMessage(), e);
+            throw new RuntimeException("Failed to update basic info: " + e.getMessage(), e);
+        }
+    }
+    
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public UserProfile ensureProfileExists(Long userId) {
+        return userProfileRepository.findByUserId(userId)
+                .orElseGet(() -> {
+                    log.info("Auto-creating UserProfile for user ID: {}", userId);
+                    User user = userRepository.findById(userId)
+                            .orElseThrow(() -> new RuntimeException("User not found with ID: " + userId));
+                    UserProfile newProfile = UserProfile.builder()
+                            .user(user)
+                            .build();
+                    return userProfileRepository.save(newProfile);
+                });
     }
 
     /**
@@ -344,8 +369,17 @@ public class UserService {
      */
     @Transactional
     public UserProfileResponse updateProfessionalInfo(Long userId, UserRequest request) {
-        UserProfile profile = userProfileRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User profile not found with ID: " + userId));
+        // Auto-create UserProfile if not exists (same as updateProfile)
+        UserProfile profile = userProfileRepository.findByUserId(userId)
+                .orElseGet(() -> {
+                    log.info("Auto-creating UserProfile for user ID: {}", userId);
+                    User user = userRepository.findById(userId)
+                            .orElseThrow(() -> new RuntimeException("User not found with ID: " + userId));
+                    UserProfile newProfile = UserProfile.builder()
+                            .user(user)
+                            .build();
+                    return userProfileRepository.save(newProfile);
+                });
         
         // Update professional info only
         profile.setJobTitle(request.getJobTitle());
