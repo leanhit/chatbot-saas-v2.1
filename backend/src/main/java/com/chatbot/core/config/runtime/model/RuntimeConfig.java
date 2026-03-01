@@ -1,6 +1,6 @@
 package com.chatbot.core.config.runtime.model;
 
-import com.chatbot.shared.infrastructure.BaseEntity;
+import com.chatbot.core.tenant.infra.BaseTenantEntity;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -12,11 +12,11 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "runtime_configs")
 @Data
-@EqualsAndHashCode(callSuper = false)
+@EqualsAndHashCode(callSuper = true)
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class RuntimeConfig extends BaseEntity {
+public class RuntimeConfig extends BaseTenantEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -39,9 +39,6 @@ public class RuntimeConfig extends BaseEntity {
     @Column(name = "config_scope", nullable = false)
     private ConfigScope configScope;
 
-    @Column(name = "tenant_id")
-    private Long tenantId;
-
     @Column(name = "user_id")
     private Long userId;
 
@@ -57,16 +54,24 @@ public class RuntimeConfig extends BaseEntity {
     @Column(name = "version", nullable = false)
     private Integer version;
 
-    @Column(name = "created_at")
-    private LocalDateTime createdAt;
+    @Override
+    public Object getId() {
+        return id;
+    }
 
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
+    @Override
+    public Long getTenantId() {
+        return super.getTenantId();
+    }
+
+    @Override
+    public void setTenantId(Long tenantId) {
+        super.setTenantId(tenantId);
+    }
 
     @PrePersist
     protected void onCreate() {
-        createdAt = LocalDateTime.now();
-        updatedAt = LocalDateTime.now();
+        super.onCreate();
         if (version == null) {
             version = 1;
         }
@@ -80,7 +85,7 @@ public class RuntimeConfig extends BaseEntity {
 
     @PreUpdate
     protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
+        super.onUpdate();
         version++;
     }
 }

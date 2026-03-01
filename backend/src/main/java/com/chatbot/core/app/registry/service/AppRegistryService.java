@@ -40,7 +40,7 @@ public class AppRegistryService {
         app.setConfigSchema(request.getConfigSchema());
         app.setDefaultConfig(request.getDefaultConfig());
         app.setIsPublic(request.getIsPublic());
-        app.setCreatedBy(createdBy);
+        app.setCreatedBy(String.valueOf(createdBy));
         
         AppRegistry savedApp = appRegistryRepository.save(app);
         return convertToResponse(savedApp);
@@ -108,7 +108,7 @@ public class AppRegistryService {
         existingApp.setConfigSchema(request.getConfigSchema());
         existingApp.setDefaultConfig(request.getDefaultConfig());
         existingApp.setIsPublic(request.getIsPublic());
-        existingApp.setUpdatedBy(updatedBy);
+        existingApp.setUpdatedBy(String.valueOf(updatedBy));
         
         AppRegistry updatedApp = appRegistryRepository.save(existingApp);
         return convertToResponse(updatedApp);
@@ -119,7 +119,7 @@ public class AppRegistryService {
             .orElseThrow(() -> new ResourceNotFoundException("App not found with id: " + id));
         
         app.setStatus(status);
-        app.setUpdatedBy(updatedBy);
+        app.setUpdatedBy(String.valueOf(updatedBy));
         
         AppRegistry updatedApp = appRegistryRepository.save(app);
         return convertToResponse(updatedApp);
@@ -137,7 +137,7 @@ public class AppRegistryService {
             .orElseThrow(() -> new ResourceNotFoundException("App not found with id: " + id));
         
         app.setIsActive(isActive);
-        app.setUpdatedBy(updatedBy);
+        app.setUpdatedBy(String.valueOf(updatedBy));
         
         AppRegistry updatedApp = appRegistryRepository.save(app);
         return convertToResponse(updatedApp);
@@ -145,7 +145,7 @@ public class AppRegistryService {
     
     private AppResponse convertToResponse(AppRegistry app) {
         AppResponse response = new AppResponse();
-        response.setId(app.getId());
+        response.setId((Long) app.getId());
         response.setName(app.getName());
         response.setDisplayName(app.getDisplayName());
         response.setDescription(app.getDescription());
@@ -158,8 +158,8 @@ public class AppRegistryService {
         response.setIsPublic(app.getIsPublic());
         response.setCreatedAt(app.getCreatedAt());
         response.setUpdatedAt(app.getUpdatedAt());
-        response.setCreatedBy(app.getCreatedBy());
-        response.setUpdatedBy(app.getUpdatedBy());
+        response.setCreatedBy(app.getCreatedBy() != null ? Long.valueOf(app.getCreatedBy()) : null);
+        response.setUpdatedBy(app.getUpdatedBy() != null ? Long.valueOf(app.getUpdatedBy()) : null);
         
         // Convert configurations
         List<AppResponse.AppConfigurationDto> configDtos = app.getConfigurations().stream()

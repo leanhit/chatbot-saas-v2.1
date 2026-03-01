@@ -124,7 +124,7 @@ public class TransactionService {
 
     private TransactionResponse toTransactionResponse(Transaction transaction) {
         TransactionResponse response = new TransactionResponse();
-        response.setId(transaction.getId());
+        response.setId((Long) transaction.getId());
         response.setWalletId(transaction.getWalletId());
         response.setTransactionReference(transaction.getTransactionReference());
         response.setTransactionType(transaction.getTransactionType().name());

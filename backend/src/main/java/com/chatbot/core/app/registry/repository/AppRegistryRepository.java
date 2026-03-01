@@ -30,7 +30,7 @@ public interface AppRegistryRepository extends JpaRepository<AppRegistry, Long> 
     
     List<AppRegistry> findByIsPublic(Boolean isPublic);
     
-    List<AppRegistry> findByCreatedBy(Long createdBy);
+    List<AppRegistry> findByCreatedBy(String createdBy);
     
     @Query("SELECT a FROM AppRegistry a WHERE " +
            "(:name IS NULL OR LOWER(a.name) LIKE LOWER(CONCAT('%', :name, '%'))) AND " +

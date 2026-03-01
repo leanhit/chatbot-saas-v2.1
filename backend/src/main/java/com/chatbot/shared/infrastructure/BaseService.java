@@ -1,5 +1,6 @@
 package com.chatbot.shared.infrastructure;
 
+import com.chatbot.core.tenant.infra.BaseTenantEntity;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.transaction.annotation.Transactional;
@@ -84,6 +85,10 @@ public abstract class BaseService<T, ID, R extends BaseRepository<T, ID>> {
         return repository.findAllActive(pageable);
     }
 
+    public List<T> findAllDeleted() {
+        return repository.findAllDeleted();
+    }
+
     public boolean existsById(ID id) {
         return repository.existsById(id);
     }
@@ -105,11 +110,7 @@ public abstract class BaseService<T, ID, R extends BaseRepository<T, ID>> {
         repository.deleteInactive();
     }
 
-    protected void validateEntity(T entity) {
-        if (entity == null) {
-            throw new IllegalArgumentException("Entity cannot be null");
-        }
-    }
+    protected abstract void validateEntity(T entity);
 
     protected void validateId(ID id) {
         if (id == null) {
@@ -131,12 +132,12 @@ public abstract class BaseService<T, ID, R extends BaseRepository<T, ID>> {
     }
 
     protected boolean isActive(T entity) {
-        return entity instanceof BaseEntity && ((BaseEntity) entity).isActive();
+        return entity instanceof BaseTenantEntity && !((BaseTenantEntity) entity).getIsDeleted();
     }
 
     protected void setActive(T entity, boolean active) {
-        if (entity instanceof BaseEntity) {
-            ((BaseEntity) entity).setActive(active);
+        if (entity instanceof BaseTenantEntity) {
+            ((BaseTenantEntity) entity).setIsDeleted(!active);
         }
     }
 
@@ -183,14 +184,15 @@ public abstract class BaseService<T, ID, R extends BaseRepository<T, ID>> {
     @Transactional
     public T createOrUpdate(T entity, String userId) {
         validateEntity(entity);
-        if (entity instanceof BaseEntity) {
-            BaseEntity baseEntity = (BaseEntity) entity;
+        if (entity instanceof BaseTenantEntity) {
+            BaseTenantEntity baseEntity = (BaseTenantEntity) entity;
             if (baseEntity.getId() == null) {
                 return create(entity, userId);
             } else {
                 return update(entity, userId);
             }
+        } else {
+            return repository.save(entity);
         }
-        return save(entity);
     }
 }

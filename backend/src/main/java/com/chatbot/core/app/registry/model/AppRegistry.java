@@ -1,13 +1,19 @@
 package com.chatbot.core.app.registry.model;
 
-import com.chatbot.shared.infrastructure.BaseEntity;
+import com.chatbot.core.tenant.infra.BaseTenantEntity;
 import jakarta.persistence.*;
+import lombok.*;
 import java.time.LocalDateTime;
 import java.util.Map;
 
 @Entity
 @Table(name = "app_registry")
-public class AppRegistry extends BaseEntity {
+@Getter @Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+@EqualsAndHashCode(callSuper = true)
+public class AppRegistry extends BaseTenantEntity {
     
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -47,158 +53,35 @@ public class AppRegistry extends BaseEntity {
     @Lob
     private String defaultConfig;
     
+    @Builder.Default
     @Column(name = "is_active")
     private Boolean isActive = true;
     
+    @Builder.Default
     @Column(name = "is_public")
     private Boolean isPublic = false;
     
-    @Column(name = "created_by")
-    private Long createdBy;
-    
-    @Column(name = "updated_by")
-    private Long updatedBy;
-    
+    @Builder.Default
     @OneToMany(mappedBy = "app", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private java.util.Set<AppConfiguration> configurations = new java.util.HashSet<>();
     
-    // Constructors
-    public AppRegistry() {}
-    
-    public AppRegistry(String name, String displayName, String description, AppType appType) {
-        this.name = name;
-        this.displayName = displayName;
-        this.description = description;
-        this.appType = appType;
-        this.status = AppStatus.DRAFT;
-    }
-    
-    // Getters and Setters
-    public Long getId() {
+    @Override
+    public Object getId() {
         return id;
     }
     
-    public void setId(Long id) {
-        this.id = id;
+    @Override
+    public Long getTenantId() {
+        return super.getTenantId();
     }
     
-    public String getName() {
-        return name;
+    @Override
+    public void setTenantId(Long tenantId) {
+        super.setTenantId(tenantId);
     }
     
-    public void setName(String name) {
-        this.name = name;
-    }
-    
-    public String getDisplayName() {
-        return displayName;
-    }
-    
-    public void setDisplayName(String displayName) {
-        this.displayName = displayName;
-    }
-    
-    public String getDescription() {
-        return description;
-    }
-    
-    public void setDescription(String description) {
-        this.description = description;
-    }
-    
-    public AppType getAppType() {
-        return appType;
-    }
-    
-    public void setAppType(AppType appType) {
-        this.appType = appType;
-    }
-    
-    public AppStatus getStatus() {
-        return status;
-    }
-    
-    public void setStatus(AppStatus status) {
-        this.status = status;
-    }
-    
-    public String getVersion() {
-        return version;
-    }
-    
-    public void setVersion(String version) {
-        this.version = version;
-    }
-    
-    public String getApiEndpoint() {
-        return apiEndpoint;
-    }
-    
-    public void setApiEndpoint(String apiEndpoint) {
-        this.apiEndpoint = apiEndpoint;
-    }
-    
-    public String getWebhookUrl() {
-        return webhookUrl;
-    }
-    
-    public void setWebhookUrl(String webhookUrl) {
-        this.webhookUrl = webhookUrl;
-    }
-    
-    public String getConfigSchema() {
-        return configSchema;
-    }
-    
-    public void setConfigSchema(String configSchema) {
-        this.configSchema = configSchema;
-    }
-    
-    public String getDefaultConfig() {
-        return defaultConfig;
-    }
-    
-    public void setDefaultConfig(String defaultConfig) {
-        this.defaultConfig = defaultConfig;
-    }
-    
-    public Boolean getIsActive() {
-        return isActive;
-    }
-    
-    public void setIsActive(Boolean isActive) {
-        this.isActive = isActive;
-    }
-    
-    public Boolean getIsPublic() {
-        return isPublic;
-    }
-    
-    public void setIsPublic(Boolean isPublic) {
-        this.isPublic = isPublic;
-    }
-    
-    public Long getCreatedBy() {
-        return createdBy;
-    }
-    
-    public void setCreatedBy(Long createdBy) {
-        this.createdBy = createdBy;
-    }
-    
-    public Long getUpdatedBy() {
-        return updatedBy;
-    }
-    
-    public void setUpdatedBy(Long updatedBy) {
-        this.updatedBy = updatedBy;
-    }
-    
-    public java.util.Set<AppConfiguration> getConfigurations() {
-        return configurations;
-    }
-    
-    public void setConfigurations(java.util.Set<AppConfiguration> configurations) {
-        this.configurations = configurations;
+    @PrePersist
+    protected void onCreate() {
+        super.onCreate();
     }
 }

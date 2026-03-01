@@ -51,12 +51,12 @@ public class RuntimeConfigService {
                 .defaultValue(request.getDefaultValue())
                 .configType(request.getConfigType())
                 .configScope(request.getConfigScope())
-                .tenantId(request.getTenantId())
                 .userId(request.getUserId())
                 .isEncrypted(request.getIsEncrypted())
                 .isReadonly(request.getIsReadonly())
                 .description(request.getDescription())
                 .build();
+        config.setTenantId(request.getTenantId());
 
         RuntimeConfig savedConfig = runtimeConfigRepository.save(config);
         log.info("Created runtime config with ID: {}", savedConfig.getId());
@@ -134,7 +134,7 @@ public class RuntimeConfigService {
 
     private ConfigResponse toConfigResponse(RuntimeConfig config) {
         ConfigResponse response = new ConfigResponse();
-        response.setId(config.getId());
+        response.setId((Long) config.getId());
         response.setConfigKey(config.getConfigKey());
         response.setConfigValue(config.getIsEncrypted() ? "***ENCRYPTED***" : config.getConfigValue());
         response.setDefaultValue(config.getDefaultValue());

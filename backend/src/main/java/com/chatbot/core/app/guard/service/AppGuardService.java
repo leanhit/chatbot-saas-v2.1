@@ -37,9 +37,13 @@ public class AppGuardService {
             throw new ValidationException("Guard with name '" + guardName + "' already exists for this app");
         }
         
-        AppGuard guard = new AppGuard(appId, guardName, guardType);
-        guard.setDescription(description);
-        guard.setCreatedBy(createdBy);
+        AppGuard guard = AppGuard.builder()
+                .appId(appId)
+                .guardName(guardName)
+                .guardType(guardType)
+                .description(description)
+                .build();
+        guard.setCreatedBy(String.valueOf(createdBy));
         
         return appGuardRepository.save(guard);
     }
@@ -77,7 +81,7 @@ public class AppGuardService {
         existingGuard.setGuardName(guardName);
         existingGuard.setGuardType(guardType);
         existingGuard.setDescription(description);
-        existingGuard.setUpdatedBy(updatedBy);
+        existingGuard.setUpdatedBy(String.valueOf(updatedBy));
         
         return appGuardRepository.save(existingGuard);
     }
@@ -85,7 +89,7 @@ public class AppGuardService {
     public void toggleGuardActivation(Long id, Boolean isActive, Long updatedBy) {
         AppGuard guard = getGuardById(id);
         guard.setIsActive(isActive);
-        guard.setUpdatedBy(updatedBy);
+        guard.setUpdatedBy(String.valueOf(updatedBy));
         appGuardRepository.save(guard);
     }
     
@@ -126,7 +130,7 @@ public class AppGuardService {
         
         // Check if name is being changed and if new name already exists
         if (!existingRule.getRuleName().equals(ruleName) && 
-            guardRuleRepository.existsByAppGuardIdAndRuleNameAndIdNot(existingRule.getAppGuard().getId(), ruleName, id)) {
+            guardRuleRepository.existsByAppGuardIdAndRuleNameAndIdNot((Long) existingRule.getAppGuard().getId(), ruleName, id)) {
             throw new ValidationException("Rule with name '" + ruleName + "' already exists for this guard");
         }
         
@@ -158,7 +162,7 @@ public class AppGuardService {
         List<AppGuard> activeGuards = getActiveGuardsByAppId(appId);
         
         for (AppGuard guard : activeGuards) {
-            List<GuardRule> activeRules = getActiveRulesByGuardId(guard.getId());
+            List<GuardRule> activeRules = getActiveRulesByGuardId((Long) guard.getId());
             
             for (GuardRule rule : activeRules) {
                 if (!accessControlService.evaluateRule(rule, context, requestData)) {
@@ -175,7 +179,7 @@ public class AppGuardService {
         List<AppGuard> activeGuards = getActiveGuardsByAppId(appId);
         
         return activeGuards.stream()
-            .flatMap(guard -> getActiveRulesByGuardId(guard.getId()).stream())
+            .flatMap(guard -> getActiveRulesByGuardId((Long) guard.getId()).stream())
             .map(rule -> accessControlService.evaluateRuleWithResult(rule, context, requestData))
             .collect(Collectors.toList());
     }

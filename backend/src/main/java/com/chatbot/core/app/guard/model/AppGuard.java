@@ -1,12 +1,18 @@
 package com.chatbot.core.app.guard.model;
 
-import com.chatbot.shared.infrastructure.BaseEntity;
+import com.chatbot.core.tenant.infra.BaseTenantEntity;
 import jakarta.persistence.*;
+import lombok.*;
 import java.util.List;
 
 @Entity
 @Table(name = "app_guards")
-public class AppGuard extends BaseEntity {
+@Getter @Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+@EqualsAndHashCode(callSuper = true)
+public class AppGuard extends BaseTenantEntity {
     
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -25,108 +31,35 @@ public class AppGuard extends BaseEntity {
     @Column(name = "description")
     private String description;
     
+    @Builder.Default
     @Column(name = "is_active")
     private Boolean isActive = true;
     
+    @Builder.Default
     @Column(name = "priority")
     private Integer priority = 0;
     
+    @Builder.Default
     @OneToMany(mappedBy = "appGuard", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<GuardRule> rules = new java.util.ArrayList<>();
     
-    @Column(name = "created_by")
-    private Long createdBy;
-    
-    @Column(name = "updated_by")
-    private Long updatedBy;
-    
-    // Constructors
-    public AppGuard() {}
-    
-    public AppGuard(Long appId, String guardName, GuardType guardType) {
-        this.appId = appId;
-        this.guardName = guardName;
-        this.guardType = guardType;
-    }
-    
-    // Getters and Setters
-    public Long getId() {
+    @Override
+    public Object getId() {
         return id;
     }
     
-    public void setId(Long id) {
-        this.id = id;
+    @Override
+    public Long getTenantId() {
+        return super.getTenantId();
     }
     
-    public Long getAppId() {
-        return appId;
+    @Override
+    public void setTenantId(Long tenantId) {
+        super.setTenantId(tenantId);
     }
     
-    public void setAppId(Long appId) {
-        this.appId = appId;
-    }
-    
-    public String getGuardName() {
-        return guardName;
-    }
-    
-    public void setGuardName(String guardName) {
-        this.guardName = guardName;
-    }
-    
-    public GuardType getGuardType() {
-        return guardType;
-    }
-    
-    public void setGuardType(GuardType guardType) {
-        this.guardType = guardType;
-    }
-    
-    public String getDescription() {
-        return description;
-    }
-    
-    public void setDescription(String description) {
-        this.description = description;
-    }
-    
-    public Boolean getIsActive() {
-        return isActive;
-    }
-    
-    public void setIsActive(Boolean isActive) {
-        this.isActive = isActive;
-    }
-    
-    public Integer getPriority() {
-        return priority;
-    }
-    
-    public void setPriority(Integer priority) {
-        this.priority = priority;
-    }
-    
-    public List<GuardRule> getRules() {
-        return rules;
-    }
-    
-    public void setRules(List<GuardRule> rules) {
-        this.rules = rules;
-    }
-    
-    public Long getCreatedBy() {
-        return createdBy;
-    }
-    
-    public void setCreatedBy(Long createdBy) {
-        this.createdBy = createdBy;
-    }
-    
-    public Long getUpdatedBy() {
-        return updatedBy;
-    }
-    
-    public void setUpdatedBy(Long updatedBy) {
-        this.updatedBy = updatedBy;
+    @PrePersist
+    protected void onCreate() {
+        super.onCreate();
     }
 }

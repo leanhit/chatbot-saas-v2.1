@@ -37,12 +37,12 @@ public class WalletService {
 
         Wallet wallet = Wallet.builder()
                 .userId(request.getUserId())
-                .tenantId(request.getTenantId())
                 .currency(request.getCurrency())
                 .balance(BigDecimal.ZERO)
                 .status(WalletStatus.ACTIVE)
-                .isActive(true)
                 .build();
+        wallet.setTenantId(request.getTenantId());
+        wallet.setIsActive(true);
 
         Wallet savedWallet = walletRepository.save(wallet);
         log.info("Created wallet with ID: {}", savedWallet.getId());
@@ -98,7 +98,7 @@ public class WalletService {
 
     private WalletResponse toWalletResponse(Wallet wallet) {
         WalletResponse response = new WalletResponse();
-        response.setId(wallet.getId());
+        response.setId((Long) wallet.getId());
         response.setUserId(wallet.getUserId());
         response.setTenantId(wallet.getTenantId());
         response.setBalance(wallet.getBalance());

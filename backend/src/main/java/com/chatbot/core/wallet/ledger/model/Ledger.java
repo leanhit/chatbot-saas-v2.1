@@ -1,6 +1,6 @@
 package com.chatbot.core.wallet.ledger.model;
 
-import com.chatbot.shared.infrastructure.BaseEntity;
+import com.chatbot.core.tenant.infra.BaseTenantEntity;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -13,11 +13,11 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "ledger")
 @Data
-@EqualsAndHashCode(callSuper = false)
+@EqualsAndHashCode(callSuper = true)
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class Ledger extends BaseEntity {
+public class Ledger extends BaseTenantEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -54,12 +54,24 @@ public class Ledger extends BaseEntity {
     @Column(name = "description", length = 500)
     private String description;
 
-    @Column(name = "created_at")
-    private LocalDateTime createdAt;
+    @Override
+    public Object getId() {
+        return id;
+    }
+
+    @Override
+    public Long getTenantId() {
+        return super.getTenantId();
+    }
+
+    @Override
+    public void setTenantId(Long tenantId) {
+        super.setTenantId(tenantId);
+    }
 
     @PrePersist
     protected void onCreate() {
-        createdAt = LocalDateTime.now();
+        super.onCreate();
         if (batchReference == null) {
             batchReference = generateBatchReference();
         }

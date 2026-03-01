@@ -48,7 +48,7 @@ public class AppSubscriptionService {
         subscription.setUserId(userId);
         subscription.setSubscriptionPlan(request.getSubscriptionPlan());
         subscription.setAutoRenew(request.getAutoRenew());
-        subscription.setCreatedBy(userId);
+        subscription.setCreatedBy(String.valueOf(userId));
         
         // Set trial period for free plans
         if (request.getSubscriptionPlan() == SubscriptionPlan.FREE) {
@@ -106,7 +106,7 @@ public class AppSubscriptionService {
         
         existingSubscription.setSubscriptionPlan(request.getSubscriptionPlan());
         existingSubscription.setAutoRenew(request.getAutoRenew());
-        existingSubscription.setUpdatedBy(updatedBy);
+        existingSubscription.setUpdatedBy(String.valueOf(updatedBy));
         
         // Process plan change
         validationService.processPlanChange(existingSubscription, request.getSubscriptionPlan());
@@ -123,7 +123,7 @@ public class AppSubscriptionService {
         validationService.validateStatusTransition(subscription.getSubscriptionStatus(), status);
         
         subscription.setSubscriptionStatus(status);
-        subscription.setUpdatedBy(updatedBy);
+        subscription.setUpdatedBy(String.valueOf(updatedBy));
         
         // Process status change
         validationService.processStatusChange(subscription, status);
@@ -138,7 +138,7 @@ public class AppSubscriptionService {
         
         subscription.setSubscriptionStatus(SubscriptionStatus.CANCELLED);
         subscription.setAutoRenew(false);
-        subscription.setUpdatedBy(updatedBy);
+        subscription.setUpdatedBy(String.valueOf(updatedBy));
         
         subscriptionRepository.save(subscription);
     }
@@ -152,7 +152,7 @@ public class AppSubscriptionService {
         
         // Process renewal
         validationService.processRenewal(subscription);
-        subscription.setUpdatedBy(updatedBy);
+        subscription.setUpdatedBy(String.valueOf(updatedBy));
         
         subscriptionRepository.save(subscription);
     }
@@ -173,7 +173,7 @@ public class AppSubscriptionService {
     
     private SubscriptionResponse convertToResponse(AppSubscription subscription) {
         SubscriptionResponse response = new SubscriptionResponse();
-        response.setId(subscription.getId());
+        response.setId((Long) subscription.getId());
         response.setTenantId(subscription.getTenantId());
         response.setUserId(subscription.getUserId());
         response.setSubscriptionPlan(subscription.getSubscriptionPlan());
@@ -184,8 +184,8 @@ public class AppSubscriptionService {
         response.setTrialEnd(subscription.getTrialEnd());
         response.setCreatedAt(subscription.getCreatedAt());
         response.setUpdatedAt(subscription.getUpdatedAt());
-        response.setCreatedBy(subscription.getCreatedBy());
-        response.setUpdatedBy(subscription.getUpdatedBy());
+        response.setCreatedBy(subscription.getCreatedBy() != null ? Long.valueOf(subscription.getCreatedBy()) : null);
+        response.setUpdatedBy(subscription.getUpdatedBy() != null ? Long.valueOf(subscription.getUpdatedBy()) : null);
         
         // Convert app details
         try {

@@ -1,12 +1,18 @@
 package com.chatbot.core.app.subscription.model;
 
-import com.chatbot.shared.infrastructure.BaseEntity;
+import com.chatbot.core.tenant.infra.BaseTenantEntity;
 import jakarta.persistence.*;
+import lombok.*;
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "app_subscriptions")
-public class AppSubscription extends BaseEntity {
+@Getter @Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+@EqualsAndHashCode(callSuper = true)
+public class AppSubscription extends BaseTenantEntity {
     
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -14,9 +20,6 @@ public class AppSubscription extends BaseEntity {
     
     @Column(name = "app_id", nullable = false)
     private Long appId;
-    
-    @Column(name = "tenant_id", nullable = false)
-    private Long tenantId;
     
     @Column(name = "user_id", nullable = false)
     private Long userId;
@@ -35,6 +38,7 @@ public class AppSubscription extends BaseEntity {
     @Column(name = "subscription_end")
     private LocalDateTime subscriptionEnd;
     
+    @Builder.Default
     @Column(name = "auto_renew")
     private Boolean autoRenew = false;
     
@@ -44,126 +48,29 @@ public class AppSubscription extends BaseEntity {
     @Column(name = "config_data", columnDefinition = "TEXT")
     private String configData;
     
-    @Column(name = "created_by")
-    private Long createdBy;
-    
-    @Column(name = "updated_by")
-    private Long updatedBy;
-    
-    // Constructors
-    public AppSubscription() {}
-    
-    public AppSubscription(Long appId, Long tenantId, Long userId, SubscriptionPlan subscriptionPlan) {
-        this.appId = appId;
-        this.tenantId = tenantId;
-        this.userId = userId;
-        this.subscriptionPlan = subscriptionPlan;
-        this.subscriptionStatus = SubscriptionStatus.PENDING;
-        this.subscriptionStart = LocalDateTime.now();
-    }
-    
-    // Getters and Setters
-    public Long getId() {
+    @Override
+    public Object getId() {
         return id;
     }
     
-    public void setId(Long id) {
-        this.id = id;
-    }
-    
-    public Long getAppId() {
-        return appId;
-    }
-    
-    public void setAppId(Long appId) {
-        this.appId = appId;
-    }
-    
+    @Override
     public Long getTenantId() {
-        return tenantId;
+        return super.getTenantId();
     }
     
+    @Override
     public void setTenantId(Long tenantId) {
-        this.tenantId = tenantId;
+        super.setTenantId(tenantId);
     }
     
-    public Long getUserId() {
-        return userId;
-    }
-    
-    public void setUserId(Long userId) {
-        this.userId = userId;
-    }
-    
-    public SubscriptionPlan getSubscriptionPlan() {
-        return subscriptionPlan;
-    }
-    
-    public void setSubscriptionPlan(SubscriptionPlan subscriptionPlan) {
-        this.subscriptionPlan = subscriptionPlan;
-    }
-    
-    public SubscriptionStatus getSubscriptionStatus() {
-        return subscriptionStatus;
-    }
-    
-    public void setSubscriptionStatus(SubscriptionStatus subscriptionStatus) {
-        this.subscriptionStatus = subscriptionStatus;
-    }
-    
-    public LocalDateTime getSubscriptionStart() {
-        return subscriptionStart;
-    }
-    
-    public void setSubscriptionStart(LocalDateTime subscriptionStart) {
-        this.subscriptionStart = subscriptionStart;
-    }
-    
-    public LocalDateTime getSubscriptionEnd() {
-        return subscriptionEnd;
-    }
-    
-    public void setSubscriptionEnd(LocalDateTime subscriptionEnd) {
-        this.subscriptionEnd = subscriptionEnd;
-    }
-    
-    public Boolean getAutoRenew() {
-        return autoRenew;
-    }
-    
-    public void setAutoRenew(Boolean autoRenew) {
-        this.autoRenew = autoRenew;
-    }
-    
-    public LocalDateTime getTrialEnd() {
-        return trialEnd;
-    }
-    
-    public void setTrialEnd(LocalDateTime trialEnd) {
-        this.trialEnd = trialEnd;
-    }
-    
-    public String getConfigData() {
-        return configData;
-    }
-    
-    public void setConfigData(String configData) {
-        this.configData = configData;
-    }
-    
-    public Long getCreatedBy() {
-        return createdBy;
-    }
-    
-    public void setCreatedBy(Long createdBy) {
-        this.createdBy = createdBy;
-    }
-    
-    public Long getUpdatedBy() {
-        return updatedBy;
-    }
-    
-    public void setUpdatedBy(Long updatedBy) {
-        this.updatedBy = updatedBy;
+    @PrePersist
+    protected void onCreate() {
+        super.onCreate();
+        if (subscriptionStart == null) {
+            subscriptionStart = LocalDateTime.now();
+        }
+        if (subscriptionStatus == null) {
+            subscriptionStatus = SubscriptionStatus.PENDING;
+        }
     }
 }

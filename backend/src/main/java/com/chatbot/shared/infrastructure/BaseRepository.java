@@ -1,5 +1,6 @@
 package com.chatbot.shared.infrastructure;
 
+import com.chatbot.core.tenant.infra.BaseTenantEntity;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -14,8 +15,8 @@ public interface BaseRepository<T, ID> extends JpaRepository<T, ID>, JpaSpecific
 
     default Optional<T> findByIdAndActive(ID id) {
         return findById(id).filter(entity -> {
-            if (entity instanceof BaseEntity) {
-                return ((BaseEntity) entity).isActive();
+            if (entity instanceof BaseTenantEntity) {
+                return !((BaseTenantEntity) entity).getIsDeleted();
             }
             return true;
         });
@@ -24,8 +25,8 @@ public interface BaseRepository<T, ID> extends JpaRepository<T, ID>, JpaSpecific
     default List<T> findAllActive() {
         return findAll().stream()
                 .filter(entity -> {
-                    if (entity instanceof BaseEntity) {
-                        return ((BaseEntity) entity).isActive();
+                    if (entity instanceof BaseTenantEntity) {
+                        return !((BaseTenantEntity) entity).getIsDeleted();
                     }
                     return true;
                 })
@@ -34,20 +35,33 @@ public interface BaseRepository<T, ID> extends JpaRepository<T, ID>, JpaSpecific
 
     default Page<T> findAllActive(Pageable pageable) {
         return findAll(pageable).map(entity -> {
-            if (entity instanceof BaseEntity) {
-                return ((BaseEntity) entity).isActive() ? entity : null;
+            if (entity instanceof BaseTenantEntity) {
+                return !((BaseTenantEntity) entity).getIsDeleted() ? entity : null;
             }
             return entity;
         });
     }
 
     default void softDelete(T entity) {
-        if (entity instanceof BaseEntity) {
-            ((BaseEntity) entity).setActive(false);
+        if (entity instanceof BaseTenantEntity) {
+            ((BaseTenantEntity) entity).setIsDeleted(true);
             save(entity);
         } else {
             delete(entity);
         }
+    }
+
+    default void softActivate(T entity) {
+        if (entity instanceof BaseTenantEntity) {
+            ((BaseTenantEntity) entity).setIsDeleted(false);
+            save(entity);
+        }
+    }
+
+    default List<T> findAllDeleted() {
+        return findAll().stream()
+                .filter(entity -> entity instanceof BaseTenantEntity && ((BaseTenantEntity) entity).getIsDeleted())
+                .toList();
     }
 
     default void softDeleteById(ID id) {
@@ -55,8 +69,8 @@ public interface BaseRepository<T, ID> extends JpaRepository<T, ID>, JpaSpecific
     }
 
     default void restore(T entity) {
-        if (entity instanceof BaseEntity) {
-            ((BaseEntity) entity).setActive(true);
+        if (entity instanceof BaseTenantEntity) {
+            ((BaseTenantEntity) entity).setIsDeleted(false);
             save(entity);
         }
     }
@@ -75,7 +89,7 @@ public interface BaseRepository<T, ID> extends JpaRepository<T, ID>, JpaSpecific
 
     default void deleteInactive() {
         findAll().stream()
-                .filter(entity -> entity instanceof BaseEntity && !((BaseEntity) entity).isActive())
+                .filter(entity -> entity instanceof BaseTenantEntity && ((BaseTenantEntity) entity).getIsDeleted())
                 .forEach(this::delete);
     }
 }
