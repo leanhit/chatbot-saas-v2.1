@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.Builder;
 
+import com.chatbot.shared.utils.DateUtils;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -21,7 +22,7 @@ public class FileResponseDTO {
     private long fileSize;
     private String contentType;
     
-    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS", timezone = "Asia/Ho_Chi_Minh")
+    @JsonFormat(pattern = DateUtils.STANDARD_JSON_FORMAT, timezone = DateUtils.STANDARD_TIMEZONE)
     private LocalDateTime updatedAt;
 
     private String title;

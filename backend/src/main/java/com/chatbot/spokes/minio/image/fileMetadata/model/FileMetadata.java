@@ -11,6 +11,7 @@ import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
 import lombok.Builder;
 import java.util.UUID;
+import com.chatbot.shared.utils.DateUtils;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -39,7 +40,7 @@ public class FileMetadata extends BaseTenantEntity {
     @Column(name = "content_type")
     private String contentType;
 
-    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS", timezone = "Asia/Ho_Chi_Minh")
+    @JsonFormat(pattern = DateUtils.STANDARD_JSON_FORMAT, timezone = DateUtils.STANDARD_TIMEZONE)
     private LocalDateTime updatedAt;
 
     private String title;

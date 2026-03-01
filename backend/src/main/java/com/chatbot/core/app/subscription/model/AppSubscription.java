@@ -1,6 +1,8 @@
 package com.chatbot.core.app.subscription.model;
 
 import com.chatbot.core.tenant.infra.BaseTenantEntity;
+import com.chatbot.shared.utils.DateUtils;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
@@ -32,9 +34,11 @@ public class AppSubscription extends BaseTenantEntity {
     @Column(name = "subscription_status", nullable = false)
     private SubscriptionStatus subscriptionStatus;
     
+    @JsonFormat(pattern = DateUtils.STANDARD_JSON_FORMAT, timezone = DateUtils.STANDARD_TIMEZONE)
     @Column(name = "subscription_start")
     private LocalDateTime subscriptionStart;
     
+    @JsonFormat(pattern = DateUtils.STANDARD_JSON_FORMAT, timezone = DateUtils.STANDARD_TIMEZONE)
     @Column(name = "subscription_end")
     private LocalDateTime subscriptionEnd;
     
@@ -42,6 +46,7 @@ public class AppSubscription extends BaseTenantEntity {
     @Column(name = "auto_renew")
     private Boolean autoRenew = false;
     
+    @JsonFormat(pattern = DateUtils.STANDARD_JSON_FORMAT, timezone = DateUtils.STANDARD_TIMEZONE)
     @Column(name = "trial_end")
     private LocalDateTime trialEnd;
     

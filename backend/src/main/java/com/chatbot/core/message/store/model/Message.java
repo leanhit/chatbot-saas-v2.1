@@ -8,6 +8,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
+import com.chatbot.shared.utils.DateUtils;
 import java.time.LocalDateTime;
 
 @Data
@@ -55,7 +56,7 @@ public class Message extends BaseTenantEntity {
 
     // Timestamp
     @CreationTimestamp
-    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS", timezone = "Asia/Ho_Chi_Minh")
+    @JsonFormat(pattern = DateUtils.STANDARD_JSON_FORMAT, timezone = DateUtils.STANDARD_TIMEZONE)
     private LocalDateTime createdAt;
     
     @Column(name = "tenant_id")

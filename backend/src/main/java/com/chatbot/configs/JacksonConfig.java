@@ -1,5 +1,6 @@
 package com.chatbot.configs;
 
+import com.chatbot.shared.utils.DateUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -17,7 +18,7 @@ public class JacksonConfig {
         ObjectMapper mapper = new ObjectMapper();
         mapper.registerModule(new JavaTimeModule());
         mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
-        mapper.setDateFormat(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS"));
+        mapper.setDateFormat(new SimpleDateFormat(DateUtils.STANDARD_JSON_FORMAT));
 
         // =======================================================
         // ✨ DÒNG GIẢI QUYẾT VẤN ĐỀ UNRECOGNIZED FIELD ✨

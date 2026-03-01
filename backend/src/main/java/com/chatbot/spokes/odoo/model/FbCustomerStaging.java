@@ -6,6 +6,7 @@ import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.chatbot.shared.utils.DateUtils;
 import java.time.LocalDateTime;
 
 @Data
@@ -48,12 +49,12 @@ public class FbCustomerStaging extends BaseTenantEntity {
     // ✅ Thêm 2 cột thời gian
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
-    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS", timezone = "Asia/Ho_Chi_Minh")
+    @JsonFormat(pattern = DateUtils.STANDARD_JSON_FORMAT, timezone = DateUtils.STANDARD_TIMEZONE)
     private LocalDateTime createdAt;
 
     @UpdateTimestamp
     @Column(name = "updated_at")
-    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS", timezone = "Asia/Ho_Chi_Minh")
+    @JsonFormat(pattern = DateUtils.STANDARD_JSON_FORMAT, timezone = DateUtils.STANDARD_TIMEZONE)
     private LocalDateTime updatedAt;
 
     // ✅ Constructor tiện dụng

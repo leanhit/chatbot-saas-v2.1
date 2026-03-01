@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import com.chatbot.shared.utils.DateUtils;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -48,10 +49,10 @@ public class FacebookConnection extends BaseTenantEntity {
     @Column(name = "chatbot_provider")
     private ChatbotProvider chatbotProvider = ChatbotProvider.BOTPRESS; // Mặc định là BOTPRESS
 
-    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS", timezone = "Asia/Ho_Chi_Minh")
+    @JsonFormat(pattern = DateUtils.STANDARD_JSON_FORMAT, timezone = DateUtils.STANDARD_TIMEZONE)
     private LocalDateTime createdAt;
 
-    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS", timezone = "Asia/Ho_Chi_Minh")
+    @JsonFormat(pattern = DateUtils.STANDARD_JSON_FORMAT, timezone = DateUtils.STANDARD_TIMEZONE)
     private LocalDateTime updatedAt; // Trường mới
     
     @Column(name = "tenant_id")

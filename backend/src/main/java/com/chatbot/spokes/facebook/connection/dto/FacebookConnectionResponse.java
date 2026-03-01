@@ -3,6 +3,7 @@
 package com.chatbot.spokes.facebook.connection.dto;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
+import com.chatbot.shared.utils.DateUtils;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -17,9 +18,9 @@ public class FacebookConnectionResponse {
     private boolean isEnabled;
     private boolean isActive;
 
-    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS", timezone = "Asia/Ho_Chi_Minh")
+    @JsonFormat(pattern = DateUtils.STANDARD_JSON_FORMAT, timezone = DateUtils.STANDARD_TIMEZONE)
     private LocalDateTime createdAt;
 
-    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS", timezone = "Asia/Ho_Chi_Minh")
+    @JsonFormat(pattern = DateUtils.STANDARD_JSON_FORMAT, timezone = DateUtils.STANDARD_TIMEZONE)
     private LocalDateTime updatedAt;
 }

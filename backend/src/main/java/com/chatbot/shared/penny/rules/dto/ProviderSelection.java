@@ -1,6 +1,8 @@
 package com.chatbot.shared.penny.rules.dto;
 
 import com.chatbot.shared.penny.routing.ProviderSelector;
+import com.chatbot.shared.utils.DateUtils;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -46,6 +48,7 @@ public class ProviderSelection {
     /**
      * Selection timestamp
      */
+    @JsonFormat(pattern = DateUtils.STANDARD_JSON_FORMAT, timezone = DateUtils.STANDARD_TIMEZONE)
     private Instant timestamp;
     
     /**

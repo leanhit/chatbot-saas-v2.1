@@ -10,6 +10,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
+import com.chatbot.shared.utils.DateUtils;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -70,11 +71,11 @@ public class Conversation extends BaseTenantEntity {
 
     // Timestamp
     @CreationTimestamp
-    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS", timezone = "Asia/Ho_Chi_Minh")
+    @JsonFormat(pattern = DateUtils.STANDARD_JSON_FORMAT, timezone = DateUtils.STANDARD_TIMEZONE)
     private LocalDateTime createdAt;
 
     @UpdateTimestamp
-    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS", timezone = "Asia/Ho_Chi_Minh")
+    @JsonFormat(pattern = DateUtils.STANDARD_JSON_FORMAT, timezone = DateUtils.STANDARD_TIMEZONE)
     private LocalDateTime updatedAt;
     
     @Column(name = "tenant_id")

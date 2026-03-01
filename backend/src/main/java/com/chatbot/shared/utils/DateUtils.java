@@ -11,6 +11,8 @@ public class DateUtils {
     public static final String ISO_DATETIME_FORMAT = "yyyy-MM-dd'T'HH:mm:ss";
     public static final String ISO_DATETIME_WITH_ZONE = "yyyy-MM-dd'T'HH:mm:ssXXX";
     public static final String DEFAULT_FORMAT = "yyyy-MM-dd HH:mm:ss";
+    public static final String STANDARD_JSON_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSS";
+    public static final String STANDARD_TIMEZONE = "Asia/Ho_Chi_Minh";
 
     public static String formatLocalDate(LocalDate date, String pattern) {
         if (date == null) return null;

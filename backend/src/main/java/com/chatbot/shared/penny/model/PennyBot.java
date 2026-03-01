@@ -1,5 +1,7 @@
 package com.chatbot.shared.penny.model;
 
+import com.chatbot.shared.utils.DateUtils;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -51,14 +53,17 @@ public class PennyBot {
     @Builder.Default
     private boolean isEnabled = true;
 
+    @JsonFormat(pattern = DateUtils.STANDARD_JSON_FORMAT, timezone = DateUtils.STANDARD_TIMEZONE)
     @Column(name = "created_at", nullable = false, updatable = false)
     @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
 
+    @JsonFormat(pattern = DateUtils.STANDARD_JSON_FORMAT, timezone = DateUtils.STANDARD_TIMEZONE)
     @Column(name = "updated_at", nullable = false)
     @Builder.Default
     private LocalDateTime updatedAt = LocalDateTime.now();
 
+    @JsonFormat(pattern = DateUtils.STANDARD_JSON_FORMAT, timezone = DateUtils.STANDARD_TIMEZONE)
     @Column(name = "last_used_at")
     private LocalDateTime lastUsedAt;
 

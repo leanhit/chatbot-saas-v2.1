@@ -6,6 +6,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import com.chatbot.shared.utils.DateUtils;
 import java.time.Instant;
 import java.util.Map;
 import java.util.UUID;
@@ -67,7 +68,7 @@ public class MiddlewareRequest {
     /**
      * Request timestamp
      */
-    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS", timezone = "UTC")
+    @JsonFormat(pattern = DateUtils.STANDARD_JSON_FORMAT, timezone = DateUtils.STANDARD_TIMEZONE)
     private Instant timestamp;
     
     /**

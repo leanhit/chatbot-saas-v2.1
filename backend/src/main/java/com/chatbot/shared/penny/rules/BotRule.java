@@ -1,5 +1,7 @@
 package com.chatbot.shared.penny.rules;
 
+import com.chatbot.shared.utils.DateUtils;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -61,10 +63,12 @@ public class BotRule {
     @Column(name = "trigger_value")
     private String triggerValue; // Intent name, keyword, etc.
 
+    @JsonFormat(pattern = DateUtils.STANDARD_JSON_FORMAT, timezone = DateUtils.STANDARD_TIMEZONE)
     @Column(name = "created_at", nullable = false, updatable = false)
     @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
 
+    @JsonFormat(pattern = DateUtils.STANDARD_JSON_FORMAT, timezone = DateUtils.STANDARD_TIMEZONE)
     @Column(name = "updated_at", nullable = false)
     @Builder.Default
     private LocalDateTime updatedAt = LocalDateTime.now();
@@ -79,6 +83,7 @@ public class BotRule {
     @Builder.Default
     private Long executionCount = 0L;
 
+    @JsonFormat(pattern = DateUtils.STANDARD_JSON_FORMAT, timezone = DateUtils.STANDARD_TIMEZONE)
     @Column(name = "last_executed_at")
     private LocalDateTime lastExecutedAt;
 

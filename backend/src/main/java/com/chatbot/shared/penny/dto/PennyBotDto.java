@@ -1,6 +1,8 @@
 package com.chatbot.shared.penny.dto;
 
 import com.chatbot.shared.penny.model.PennyBotType;
+import com.chatbot.shared.utils.DateUtils;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -27,6 +29,8 @@ public class PennyBotDto {
     private String description;
     private Boolean isActive;
     private Boolean isEnabled;
+    @JsonFormat(pattern = DateUtils.STANDARD_JSON_FORMAT, timezone = DateUtils.STANDARD_TIMEZONE)
     private LocalDateTime createdAt;
+    @JsonFormat(pattern = DateUtils.STANDARD_JSON_FORMAT, timezone = DateUtils.STANDARD_TIMEZONE)
     private LocalDateTime updatedAt;
 }
