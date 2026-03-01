@@ -1,6 +1,6 @@
 package com.chatbot.core.billing.subscription.model;
 
-import com.chatbot.shared.infrastructure.BaseTenantEntity;
+import com.chatbot.core.tenant.infra.BaseTenantEntity;
 import jakarta.persistence.*;
 import lombok.*;
 import java.math.BigDecimal;
@@ -19,11 +19,15 @@ import java.time.LocalDateTime;
            @Index(name = "idx_subscription_billing_account", columnList = "billing_account_id")
        })
 @Data
-@EqualsAndHashCode(callSuper = false)
+@EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class BillingSubscription extends BaseTenantEntity {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
     @Column(name = "subscription_number", unique = true, nullable = false)
     private String subscriptionNumber;
@@ -98,26 +102,28 @@ public class BillingSubscription extends BaseTenantEntity {
     @Column(name = "max_api_calls_per_month")
     private Long maxApiCallsPerMonth;
 
-    // Audit fields
-    @Column(name = "created_at")
-    private LocalDateTime createdAt;
+    @Override
+    public Object getId() {
+        return id;
+    }
 
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
+    @Override
+    public Long getTenantId() {
+        return super.getTenantId();
+    }
+
+    @Override
+    public void setTenantId(Long tenantId) {
+        super.setTenantId(tenantId);
+    }
 
     @PrePersist
     protected void onCreate() {
-        this.createdAt = LocalDateTime.now();
-        this.updatedAt = LocalDateTime.now();
+        super.onCreate();
         // Generate subscription number if not set
         if (subscriptionNumber == null || subscriptionNumber.isBlank()) {
             subscriptionNumber = "SUB-" + System.currentTimeMillis() + "-" + (int)(Math.random() * 1000);
         }
-    }
-
-    @PreUpdate
-    protected void onUpdate() {
-        this.updatedAt = LocalDateTime.now();
     }
 
     // Helper methods

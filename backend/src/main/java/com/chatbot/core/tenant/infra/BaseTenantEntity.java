@@ -21,6 +21,10 @@ public abstract class BaseTenantEntity {
     @Column(name = "tenant_key")
     private String tenantKey;
     
+    // Add explicit tenantId field for database compatibility
+    @Column(name = "tenant_id")
+    private Long tenantId;
+    
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -43,15 +47,11 @@ public abstract class BaseTenantEntity {
     
     // Tenant ID methods for compatibility
     public Long getTenantId() {
-        // For entities that use Long tenant ID
-        // This can be overridden by concrete classes
-        return null;
+        return tenantId;
     }
     
     public void setTenantId(Long tenantId) {
-        // For entities that use Long tenant ID
-        // This can be overridden by concrete classes
-        // Default implementation does nothing
+        this.tenantId = tenantId;
     }
     
     @PrePersist

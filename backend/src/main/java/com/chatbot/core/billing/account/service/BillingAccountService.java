@@ -190,7 +190,7 @@ public class BillingAccountService {
 
     private BillingAccountResponse mapToResponse(BillingAccount account) {
         return BillingAccountResponse.builder()
-                .id(account.getId())
+                .id((Long) account.getId())
                 .accountNumber(account.getAccountNumber())
                 .billingType(account.getBillingType())
                 .accountName(account.getAccountName())

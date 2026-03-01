@@ -1,6 +1,6 @@
 package com.chatbot.core.billing.entitlement.model;
 
-import com.chatbot.shared.infrastructure.BaseTenantEntity;
+import com.chatbot.core.tenant.infra.BaseTenantEntity;
 import jakarta.persistence.*;
 import lombok.*;
 import java.math.BigDecimal;
@@ -21,7 +21,12 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@EqualsAndHashCode(callSuper = true)
 public class Entitlement extends BaseTenantEntity {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
     // Remove problematic relationship for now
     // @ManyToOne(fetch = FetchType.LAZY)
@@ -81,27 +86,29 @@ public class Entitlement extends BaseTenantEntity {
     @Column(name = "last_warning_at")
     private LocalDateTime lastWarningAt;
 
-    // Audit fields
-    @Column(name = "created_at")
-    private LocalDateTime createdAt;
+    @Override
+    public Object getId() {
+        return id;
+    }
 
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
+    @Override
+    public Long getTenantId() {
+        return super.getTenantId();
+    }
+
+    @Override
+    public void setTenantId(Long tenantId) {
+        super.setTenantId(tenantId);
+    }
 
     @PrePersist
     protected void onCreate() {
-        this.createdAt = LocalDateTime.now();
-        this.updatedAt = LocalDateTime.now();
+        super.onCreate();
         
         // Set initial reset schedule
         if (resetPeriod != null && lastResetAt == null) {
             resetUsage();
         }
-    }
-
-    @PreUpdate
-    protected void onUpdate() {
-        this.updatedAt = LocalDateTime.now();
     }
 
     // Helper methods

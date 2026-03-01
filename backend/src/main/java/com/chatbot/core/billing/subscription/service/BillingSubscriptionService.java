@@ -280,9 +280,9 @@ public class BillingSubscriptionService {
 
     private SubscriptionResponse mapToResponse(BillingSubscription subscription) {
         return SubscriptionResponse.builder()
-                .id(subscription.getId())
+                .id((Long) subscription.getId())
                 .subscriptionNumber(subscription.getSubscriptionNumber())
-                .billingAccountId(subscription.getBillingAccount() != null ? subscription.getBillingAccount().getId() : null)
+                .billingAccountId(subscription.getBillingAccount() != null ? (Long) subscription.getBillingAccount().getId() : null)
                 .plan(subscription.getPlan())
                 .status(subscription.getStatus())
                 .planName(subscription.getPlanName())

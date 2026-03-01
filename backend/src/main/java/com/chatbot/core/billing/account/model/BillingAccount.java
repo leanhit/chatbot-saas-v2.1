@@ -1,7 +1,7 @@
 package com.chatbot.core.billing.account.model;
 
 import com.chatbot.core.billing.model.BillingType;
-import com.chatbot.shared.infrastructure.BaseTenantEntity;
+import com.chatbot.core.tenant.infra.BaseTenantEntity;
 import jakarta.persistence.*;
 import lombok.*;
 import java.math.BigDecimal;
@@ -21,7 +21,12 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@EqualsAndHashCode(callSuper = true)
 public class BillingAccount extends BaseTenantEntity {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
     @Column(name = "account_number", unique = true, nullable = false)
     private String accountNumber;
@@ -77,28 +82,29 @@ public class BillingAccount extends BaseTenantEntity {
     @Column(name = "suspension_reason")
     private String suspensionReason;
 
-    // Audit fields
-    @Column(name = "created_at")
-    private LocalDateTime createdAt;
+    @Override
+    public Object getId() {
+        return id;
+    }
 
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
+    @Override
+    public Long getTenantId() {
+        return super.getTenantId();
+    }
+
+    @Override
+    public void setTenantId(Long tenantId) {
+        super.setTenantId(tenantId);
+    }
 
     @PrePersist
     protected void onCreate() {
-        this.createdAt = LocalDateTime.now();
-        this.updatedAt = LocalDateTime.now();
+        super.onCreate();
         // Generate account number if not set
         if (accountNumber == null || accountNumber.isBlank()) {
             accountNumber = "BA-" + System.currentTimeMillis() + "-" + (int)(Math.random() * 1000);
         }
     }
-
-    @PreUpdate
-    protected void onUpdate() {
-        this.updatedAt = LocalDateTime.now();
-    }
-
 
     // Helper methods
     public boolean isSuspended() {
