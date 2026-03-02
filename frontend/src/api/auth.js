@@ -82,12 +82,11 @@ class AuthAPI {
     }
   }
   // Change password
-  async changePassword(currentPassword, newPassword, confirmPassword) {
+  async changePassword(currentPassword, newPassword) {
     try {
       const response = await axios.post('/auth/change-password', {
         currentPassword,
         newPassword,
-        confirmPassword,
       })
       return response
     } catch (error) {

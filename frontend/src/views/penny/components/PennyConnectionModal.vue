@@ -1,570 +1,1157 @@
 <template>
-  <div class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full z-50">
-    <div class="relative min-h-screen flex items-center justify-center p-4">
-      <div class="relative bg-white dark:bg-gray-800 rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:w-full sm:max-w-3xl">
-        <!-- Header -->
-        <div class="bg-white dark:bg-gray-800 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-          <div class="flex items-center justify-between">
-            <h3 class="text-lg leading-6 font-medium text-gray-900 dark:text-white">
-              {{ connection ? $t('Edit Connection') : $t('Create Connection') }}
-            </h3>
-            <button
-              @click="$emit('close')"
-              class="rounded-md text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-            >
-              <Icon icon="mdi:close" class="h-6 w-6" />
-            </button>
-          </div>
-        </div>
-
-        <!-- Body -->
-        <form @submit.prevent="handleSubmit" class="bg-white dark:bg-gray-800 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-          <div class="space-y-6">
-            <!-- Connection Name -->
+  <div class="penny-connection-modal-backdrop" @click="closeOnBackdrop">
+    <div class="penny-connection-modal" @click.stop>
+      <div class="modal-header">
+        <div class="header-content">
+          <div class="connection-info">
+            <Icon icon="mdi:connection" class="h-6 w-6 mr-3" />
             <div>
-              <label for="connection-name" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                {{ $t('Connection Name') }}
-              </label>
-              <div class="mt-1">
+              <h2 class="modal-title">{{ isEditMode ? $t('Edit Connection') : $t('Create Connection') }}</h2>
+              <p class="bot-name">{{ bot?.botName }}</p>
+            </div>
+          </div>
+          <button @click="$emit('close')" class="close-button">
+            <Icon icon="mdi:close" class="h-5 w-5" />
+          </button>
+        </div>
+      </div>
+
+      <div class="modal-body">
+        <form @submit.prevent="handleSubmit" class="connection-form">
+          <!-- Basic Information -->
+          <div class="form-section">
+            <h3 class="section-title">{{ $t('Basic Information') }}</h3>
+            <div class="form-grid">
+              <div class="form-group full-width">
+                <label for="connectionName" class="form-label">
+                  {{ $t('Connection Name') }} <span class="required">*</span>
+                </label>
                 <input
-                  id="connection-name"
-                  v-model="form.name"
+                  id="connectionName"
+                  v-model="formData.connectionName"
                   type="text"
-                  required
+                  class="form-input"
                   :placeholder="$t('Enter connection name')"
-                  class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  required
                 />
               </div>
-            </div>
-
-            <!-- Connection Type -->
-            <div>
-              <label for="connection-type" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                {{ $t('Connection Type') }}
-              </label>
-              <div class="mt-1">
+              <div class="form-group">
+                <label for="connectionType" class="form-label">
+                  {{ $t('Connection Type') }} <span class="required">*</span>
+                </label>
                 <select
-                  id="connection-type"
-                  v-model="form.type"
+                  id="connectionType"
+                  v-model="formData.connectionType"
+                  class="form-select"
+                  @change="onConnectionTypeChange"
                   required
-                  @change="onTypeChange"
-                  class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                 >
-                  <option value="">{{ $t('Select connection type') }}</option>
-                  <option value="facebook">{{ $t('Facebook Messenger') }}</option>
-                  <option value="webhook">{{ $t('Webhook') }}</option>
-                  <option value="api">{{ $t('REST API') }}</option>
-                  <option value="database">{{ $t('Database') }}</option>
+                  <option value="" disabled>{{ $t('Select connection type') }}</option>
+                  <option
+                    v-for="type in connectionTypes"
+                    :key="type.value"
+                    :value="type.value"
+                  >
+                    {{ type.label }}
+                  </option>
                 </select>
               </div>
-            </div>
-
-            <!-- Facebook Messenger Fields -->
-            <div v-if="form.type === 'facebook'" class="space-y-4">
-              <div>
-                <label for="page-id" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  {{ $t('Page ID') }}
+              <div class="form-group">
+                <label for="priority" class="form-label">
+                  {{ $t('Priority') }}
                 </label>
-                <div class="mt-1">
+                <input
+                  id="priority"
+                  v-model.number="formData.priority"
+                  type="number"
+                  min="0"
+                  max="100"
+                  class="form-input"
+                />
+                <p class="form-help">{{ $t('Higher priority connections are checked first') }}</p>
+              </div>
+            </div>
+            <div class="form-group full-width">
+              <label for="description" class="form-label">
+                {{ $t('Description') }}
+              </label>
+              <textarea
+                id="description"
+                v-model="formData.description"
+                rows="2"
+                class="form-textarea"
+                :placeholder="$t('Describe what this connection does')"
+              ></textarea>
+            </div>
+          </div>
+
+          <!-- Connection Configuration -->
+          <div class="form-section">
+            <h3 class="section-title">{{ $t('Connection Configuration') }}</h3>
+            
+            <!-- Facebook Configuration -->
+            <div v-if="formData.connectionType === 'FACEBOOK'" class="connection-config">
+              <div class="form-grid">
+                <div class="form-group">
+                  <label for="pageId" class="form-label">
+                    {{ $t('Page ID') }} <span class="required">*</span>
+                  </label>
                   <input
-                    id="page-id"
-                    v-model="form.pageId"
+                    id="pageId"
+                    v-model="formData.pageId"
                     type="text"
-                    required
+                    class="form-input"
                     :placeholder="$t('Enter Facebook Page ID')"
-                    class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                    required
                   />
                 </div>
-              </div>
-
-              <div>
-                <label for="fanpage-url" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  {{ $t('Fanpage URL') }}
-                </label>
-                <div class="mt-1">
+                <div class="form-group">
+                  <label for="fanpageUrl" class="form-label">
+                    {{ $t('Fanpage URL') }}
+                  </label>
                   <input
-                    id="fanpage-url"
-                    v-model="form.fanpageUrl"
+                    id="fanpageUrl"
+                    v-model="formData.fanpageUrl"
                     type="url"
+                    class="form-input"
                     :placeholder="$t('Enter fanpage URL')"
-                    class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                   />
+                  <div v-if="formData.fanpageUrl" class="form-actions">
+                    <a
+                      :href="formData.fanpageUrl"
+                      target="_blank"
+                      class="external-link"
+                    >
+                      <Icon icon="mdi:external-link" class="h-4 w-4 mr-1" />
+                      {{ $t('Go to page') }}
+                    </a>
+                  </div>
                 </div>
               </div>
-
-              <div>
-                <label for="page-access-token" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  {{ $t('Page Access Token') }}
-                </label>
-                <div class="mt-1">
-                  <input
-                    id="page-access-token"
-                    v-model="form.pageAccessToken"
-                    type="password"
-                    required
-                    :placeholder="$t('Enter page access token')"
-                    class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                  />
+              <div class="form-grid">
+                <div class="form-group">
+                  <label for="appSecret" class="form-label">
+                    {{ $t('App Secret') }} <span class="required">*</span>
+                  </label>
+                  <div class="input-with-copy">
+                    <input
+                      id="appSecret"
+                      v-model="formData.appSecret"
+                      type="password"
+                      class="form-input"
+                      :placeholder="$t('Enter Facebook App Secret')"
+                      required
+                    />
+                    <button
+                      type="button"
+                      @click="copyToClipboard(formData.appSecret, 'appSecret')"
+                      class="copy-button"
+                    >
+                      <Icon icon="mdi:content-copy" class="h-4 w-4" />
+                    </button>
+                  </div>
                 </div>
-              </div>
-
-              <div>
-                <label for="app-secret" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  {{ $t('App Secret') }}
-                </label>
-                <div class="mt-1">
-                  <input
-                    id="app-secret"
-                    v-model="form.appSecret"
-                    type="password"
-                    :placeholder="$t('Enter app secret')"
-                    class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <!-- Webhook Fields -->
-            <div v-if="form.type === 'webhook'" class="space-y-4">
-              <div>
-                <label for="webhook-url" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  {{ $t('Webhook URL') }}
-                </label>
-                <div class="mt-1">
-                  <input
-                    id="webhook-url"
-                    v-model="form.webhookUrl"
-                    type="url"
-                    required
-                    :placeholder="$t('Enter webhook URL')"
-                    class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label for="verify-token" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  {{ $t('Verify Token') }}
-                </label>
-                <div class="mt-1">
-                  <input
-                    id="verify-token"
-                    v-model="form.verifyToken"
-                    type="text"
-                    :placeholder="$t('Enter verify token')"
-                    class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                  />
+                <div class="form-group">
+                  <label for="pageAccessToken" class="form-label">
+                    {{ $t('Page Access Token') }} <span class="required">*</span>
+                  </label>
+                  <div class="input-with-copy">
+                    <input
+                      id="pageAccessToken"
+                      v-model="formData.pageAccessToken"
+                      type="password"
+                      class="form-input"
+                      :placeholder="$t('Enter Page Access Token')"
+                      required
+                    />
+                    <button
+                      type="button"
+                      @click="copyToClipboard(formData.pageAccessToken, 'pageAccessToken')"
+                      class="copy-button"
+                    >
+                      <Icon icon="mdi:content-copy" class="h-4 w-4" />
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
 
-            <!-- REST API Fields -->
-            <div v-if="form.type === 'api'" class="space-y-4">
-              <div>
-                <label for="api-url" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  {{ $t('API URL') }}
+            <!-- Webhook Configuration -->
+            <div v-else-if="formData.connectionType === 'WEBHOOK'" class="connection-config">
+              <div class="form-group full-width">
+                <label for="webhookUrl" class="form-label">
+                  {{ $t('Webhook URL') }} <span class="required">*</span>
                 </label>
-                <div class="mt-1">
-                  <input
-                    id="api-url"
-                    v-model="form.apiUrl"
-                    type="url"
-                    required
-                    :placeholder="$t('Enter API URL')"
-                    class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                  />
-                </div>
+                <input
+                  id="webhookUrl"
+                  v-model="formData.webhookUrl"
+                  type="url"
+                  class="form-input"
+                  :placeholder="$t('Enter webhook URL')"
+                  required
+                />
               </div>
-
-              <div>
-                <label for="api-key" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  {{ $t('API Key') }}
-                </label>
-                <div class="mt-1">
-                  <input
-                    id="api-key"
-                    v-model="form.apiKey"
-                    type="password"
-                    :placeholder="$t('Enter API key')"
-                    class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label for="api-version" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  {{ $t('API Version') }}
-                </label>
-                <div class="mt-1">
-                  <input
-                    id="api-version"
-                    v-model="form.apiVersion"
-                    type="text"
-                    :placeholder="$t('Enter API version')"
-                    class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <!-- Database Fields -->
-            <div v-if="form.type === 'database'" class="space-y-4">
-              <div>
-                <label for="database-host" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  {{ $t('Database Host') }}
-                </label>
-                <div class="mt-1">
-                  <input
-                    id="database-host"
-                    v-model="form.databaseHost"
-                    type="text"
-                    required
-                    :placeholder="$t('Enter database host')"
-                    class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label for="database-port" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  {{ $t('Database Port') }}
-                </label>
-                <div class="mt-1">
-                  <input
-                    id="database-port"
-                    v-model="form.databasePort"
-                    type="number"
-                    required
-                    :placeholder="$t('Enter database port')"
-                    class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label for="database-name" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  {{ $t('Database Name') }}
-                </label>
-                <div class="mt-1">
-                  <input
-                    id="database-name"
-                    v-model="form.databaseName"
-                    type="text"
-                    required
-                    :placeholder="$t('Enter database name')"
-                    class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label for="username" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  {{ $t('Username') }}
-                </label>
-                <div class="mt-1">
-                  <input
-                    id="username"
-                    v-model="form.username"
-                    type="text"
-                    required
-                    :placeholder="$t('Enter username')"
-                    class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label for="password" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  {{ $t('Password') }}
-                </label>
-                <div class="mt-1">
-                  <input
-                    id="password"
-                    v-model="form.password"
-                    type="password"
-                    required
-                    :placeholder="$t('Enter password')"
-                    class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <!-- Common Fields -->
-            <div class="space-y-4">
-              <div v-if="form.type === 'webhook' || form.type === 'api'">
-                <label for="http-method" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  {{ $t('HTTP Method') }}
-                </label>
-                <div class="mt-1">
+              <div class="form-grid">
+                <div class="form-group">
+                  <label for="webhookMethod" class="form-label">
+                    {{ $t('HTTP Method') }}
+                  </label>
                   <select
-                    id="http-method"
-                    v-model="form.httpMethod"
-                    class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                    id="webhookMethod"
+                    v-model="formData.webhookMethod"
+                    class="form-select"
                   >
-                    <option value="GET">GET</option>
                     <option value="POST">POST</option>
+                    <option value="GET">GET</option>
                     <option value="PUT">PUT</option>
                     <option value="DELETE">DELETE</option>
                   </select>
                 </div>
-              </div>
-
-              <div v-if="form.type === 'webhook' || form.type === 'api'">
-                <label for="timeout" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  {{ $t('Timeout (seconds)') }}
-                </label>
-                <div class="mt-1">
+                <div class="form-group">
+                  <label for="webhookTimeout" class="form-label">
+                    {{ $t('Timeout (seconds)') }}
+                  </label>
                   <input
-                    id="timeout"
-                    v-model.number="form.timeout"
+                    id="webhookTimeout"
+                    v-model.number="formData.webhookTimeout"
                     type="number"
                     min="1"
-                    max="300"
-                    :placeholder="$t('Enter timeout in seconds')"
-                    class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                    max="60"
+                    class="form-input"
                   />
                 </div>
               </div>
-
-              <div v-if="form.type === 'webhook' || form.type === 'api'">
-                <label for="headers" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              <div class="form-group full-width">
+                <label for="webhookHeaders" class="form-label">
                   {{ $t('Headers (JSON)') }}
                 </label>
-                <div class="mt-1">
-                  <textarea
-                    id="headers"
-                    v-model="form.headers"
-                    rows="3"
-                    :placeholder='$t("Enter headers in JSON format")'
-                    class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                <textarea
+                  id="webhookHeaders"
+                  v-model="formData.webhookHeaders"
+                  rows="3"
+                  class="form-textarea"
+                  :placeholder="$t('Enter webhook headers as JSON')"
+                ></textarea>
+                <p class="form-help">{{ $t('Example: {\"Authorization\": \"Bearer token\"}') }}</p>
+              </div>
+            </div>
+
+            <!-- API Configuration -->
+            <div v-else-if="formData.connectionType === 'API'" class="connection-config">
+              <div class="form-group full-width">
+                <label for="apiUrl" class="form-label">
+                  {{ $t('API URL') }} <span class="required">*</span>
+                </label>
+                <input
+                  id="apiUrl"
+                  v-model="formData.apiUrl"
+                  type="url"
+                  class="form-input"
+                  :placeholder="$t('Enter API endpoint URL')"
+                  required
+                />
+              </div>
+              <div class="form-grid">
+                <div class="form-group">
+                  <label for="apiKey" class="form-label">
+                    {{ $t('API Key') }}
+                  </label>
+                  <div class="input-with-copy">
+                    <input
+                      id="apiKey"
+                      v-model="formData.apiKey"
+                      type="password"
+                      class="form-input"
+                      :placeholder="$t('Enter API key')"
+                    />
+                    <button
+                      type="button"
+                      @click="copyToClipboard(formData.apiKey, 'apiKey')"
+                      class="copy-button"
+                    >
+                      <Icon icon="mdi:content-copy" class="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label for="apiVersion" class="form-label">
+                    {{ $t('API Version') }}
+                  </label>
+                  <input
+                    id="apiVersion"
+                    v-model="formData.apiVersion"
+                    type="text"
+                    class="form-input"
+                    :placeholder="$t('Enter API version')"
                   />
                 </div>
               </div>
+            </div>
 
-              <div>
-                <label class="flex items-center">
+            <!-- Database Configuration -->
+            <div v-else-if="formData.connectionType === 'DATABASE'" class="connection-config">
+              <div class="form-grid">
+                <div class="form-group">
+                  <label for="dbHost" class="form-label">
+                    {{ $t('Database Host') }} <span class="required">*</span>
+                  </label>
                   <input
-                    v-model="form.isEnabled"
-                    type="checkbox"
-                    class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded dark:bg-gray-700 dark:border-gray-600"
+                    id="dbHost"
+                    v-model="formData.dbHost"
+                    type="text"
+                    class="form-input"
+                    :placeholder="$t('Enter database host')"
+                    required
                   />
-                  <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">
-                    {{ $t('Enabled') }}
-                  </span>
+                </div>
+                <div class="form-group">
+                  <label for="dbPort" class="form-label">
+                    {{ $t('Database Port') }}
+                  </label>
+                  <input
+                    id="dbPort"
+                    v-model.number="formData.dbPort"
+                    type="number"
+                    min="1"
+                    max="65535"
+                    class="form-input"
+                    :placeholder="$t('Enter database port')"
+                  />
+                </div>
+              </div>
+              <div class="form-grid">
+                <div class="form-group">
+                  <label for="dbName" class="form-label">
+                    {{ $t('Database Name') }} <span class="required">*</span>
+                  </label>
+                  <input
+                    id="dbName"
+                    v-model="formData.dbName"
+                    type="text"
+                    class="form-input"
+                    :placeholder="$t('Enter database name')"
+                    required
+                  />
+                </div>
+                <div class="form-group">
+                  <label for="dbUsername" class="form-label">
+                    {{ $t('Username') }} <span class="required">*</span>
+                  </label>
+                  <input
+                    id="dbUsername"
+                    v-model="formData.dbUsername"
+                    type="text"
+                    class="form-input"
+                    :placeholder="$t('Enter database username')"
+                    required
+                  />
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="dbPassword" class="form-label">
+                  {{ $t('Password') }} <span class="required">*</span>
                 </label>
+                <div class="input-with-copy">
+                  <input
+                    id="dbPassword"
+                    v-model="formData.dbPassword"
+                    type="password"
+                    class="form-input"
+                    :placeholder="$t('Enter database password')"
+                    required
+                  />
+                  <button
+                    type="button"
+                    @click="copyToClipboard(formData.dbPassword, 'dbPassword')"
+                    class="copy-button"
+                  >
+                    <Icon icon="mdi:content-copy" class="h-4 w-4" />
+                  </button>
+                </div>
               </div>
             </div>
           </div>
-        </form>
 
-        <!-- Footer -->
-        <div class="bg-gray-50 dark:bg-gray-700 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-          <button
-            type="button"
-            @click="$emit('close')"
-            class="w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 text-base font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white dark:hover:bg-gray-700 sm:w-auto sm:ml-3"
-          >
-            {{ $t('Cancel') }}
-          </button>
-          <button
-            type="submit"
-            @click="handleSubmit"
-            :disabled="loading"
-            class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 text-base font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:w-auto"
-          >
-            <Icon v-if="loading" icon="mdi:loading" class="animate-spin h-4 w-4 mr-2" />
-            {{ connection ? $t('Update Connection') : $t('Create Connection') }}
-          </button>
-        </div>
+          <!-- Status (edit mode only) -->
+          <div v-if="isEditMode" class="form-section">
+            <h3 class="section-title">{{ $t('Status') }}</h3>
+            <div class="form-group">
+              <label class="checkbox-label">
+                <input
+                  type="checkbox"
+                  v-model="formData.isEnabled"
+                  class="checkbox-input"
+                />
+                <span class="checkbox-text">{{ formData.isEnabled ? $t('Enabled') : $t('Disabled') }}</span>
+              </label>
+            </div>
+          </div>
+        </form>
+      </div>
+
+      <div class="modal-footer">
+        <button
+          type="button"
+          @click="$emit('close')"
+          class="btn btn-secondary"
+        >
+          {{ $t('Cancel') }}
+        </button>
+        <button
+          type="button"
+          @click="testConnection"
+          :disabled="!canTestConnection"
+          class="btn btn-outline"
+        >
+          <Icon icon="mdi:test-tube" class="h-4 w-4 mr-2" />
+          {{ $t('Test Connection') }}
+        </button>
+        <button
+          type="submit"
+          @click="handleSubmit"
+          :disabled="submitting"
+          class="btn btn-primary"
+        >
+          <Icon v-if="submitting" icon="mdi:loading" class="animate-spin h-4 w-4 mr-2" />
+          <Icon v-else icon="mdi:plus" class="h-4 w-4 mr-2" />
+          {{ isEditMode ? $t('Update Connection') : $t('Create Connection') }}
+        </button>
       </div>
     </div>
   </div>
 </template>
 
-<script setup>
-import { ref, watch, onMounted } from 'vue'
-import { useI18n } from 'vue-i18n'
+<script>
+import { ref, computed, onMounted } from 'vue'
 import { Icon } from '@iconify/vue'
+import { useI18n } from 'vue-i18n'
+import { pennyConnectionApi } from '@/api/pennyConnectionApi'
 
-const { t } = useI18n()
-
-const props = defineProps({
-  connection: {
-    type: Object,
-    default: null
+export default {
+  name: 'PennyConnectionModal',
+  components: {
+    Icon
   },
-  botId: {
-    type: String,
-    required: true
+  props: {
+    bot: {
+      type: Object,
+      required: true
+    },
+    connection: {
+      type: Object,
+      default: null
+    }
   },
-  show: {
-    type: Boolean,
-    default: false
-  }
-})
+  emits: ['close', 'saved'],
+  setup(props, { emit }) {
+    const { t } = useI18n()
+    const submitting = ref(false)
+    const copiedKey = ref(null)
 
-const emit = defineEmits(['close', 'saved'])
-
-// State
-const loading = ref(false)
-const form = ref({
-  name: '',
-  type: '',
-  // Facebook fields
-  pageId: '',
-  fanpageUrl: '',
-  pageAccessToken: '',
-  appSecret: '',
-  // Webhook fields
-  webhookUrl: '',
-  verifyToken: '',
-  // API fields
-  apiUrl: '',
-  apiKey: '',
-  apiVersion: '',
-  // Database fields
-  databaseHost: '',
-  databasePort: '',
-  databaseName: '',
-  username: '',
-  password: '',
-  // Common fields
-  httpMethod: 'POST',
-  timeout: 30,
-  headers: '',
-  isEnabled: true
-})
-
-// Methods
-const onTypeChange = () => {
-  // Reset form when type changes
-  form.value = {
-    ...form.value,
-    // Reset type-specific fields
-    pageId: '',
-    fanpageUrl: '',
-    pageAccessToken: '',
-    appSecret: '',
-    webhookUrl: '',
-    verifyToken: '',
-    apiUrl: '',
-    apiKey: '',
-    apiVersion: '',
-    databaseHost: '',
-    databasePort: '',
-    databaseName: '',
-    username: '',
-    password: ''
-  }
-}
-
-const handleSubmit = async () => {
-  loading.value = true
-  try {
-    // TODO: Replace with actual API call
-    // const connectionData = {
-    //   ...form.value,
-    //   id: props.connection?.id
-    // }
-    // 
-    // if (props.connection) {
-    //   await pennyApi.updateConnection(props.botId, props.connection.id, connectionData)
-    // } else {
-    //   const response = await pennyApi.createConnection(props.botId, connectionData)
-    //   connectionData.id = response.data.id
-    // }
-    
-    // Mock API call
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    
-    const savedConnection = {
-      id: props.connection?.id || Date.now().toString(),
-      ...form.value,
-      botId: props.botId,
-      health: 'Healthy',
-      lastUsed: new Date(),
-      createdAt: props.connection?.createdAt || new Date(),
-      updatedAt: new Date()
-    }
-    
-    emit('saved', savedConnection)
-  } catch (error) {
-    console.error('Failed to save connection:', error)
-  } finally {
-    loading.value = false
-  }
-}
-
-// Watch for connection prop changes
-watch(() => props.connection, (newConnection) => {
-  if (newConnection) {
-    form.value = {
-      name: newConnection.name || '',
-      type: newConnection.type || '',
-      pageId: newConnection.pageId || '',
-      fanpageUrl: newConnection.fanpageUrl || '',
-      pageAccessToken: newConnection.pageAccessToken || '',
-      appSecret: newConnection.appSecret || '',
-      webhookUrl: newConnection.webhookUrl || '',
-      verifyToken: newConnection.verifyToken || '',
-      apiUrl: newConnection.apiUrl || '',
-      apiKey: newConnection.apiKey || '',
-      apiVersion: newConnection.apiVersion || '',
-      databaseHost: newConnection.databaseHost || '',
-      databasePort: newConnection.databasePort || '',
-      databaseName: newConnection.databaseName || '',
-      username: newConnection.username || '',
-      password: newConnection.password || '',
-      httpMethod: newConnection.httpMethod || 'POST',
-      timeout: newConnection.timeout || 30,
-      headers: newConnection.headers || '',
-      isEnabled: newConnection.isEnabled ?? true
-    }
-  } else {
-    form.value = {
-      name: '',
-      type: '',
+    const formData = ref({
+      connectionName: '',
+      description: '',
+      connectionType: '',
+      priority: 0,
+      isEnabled: true,
+      // Facebook fields
       pageId: '',
       fanpageUrl: '',
-      pageAccessToken: '',
       appSecret: '',
-      webhookUrl: '',
+      pageAccessToken: '',
       verifyToken: '',
+      urlCallback: 'https://chat.truyenthongviet.vn/webhooks/facebook/botpress',
+      // Webhook fields
+      webhookUrl: '',
+      webhookMethod: 'POST',
+      webhookTimeout: 30,
+      webhookHeaders: '',
+      // API fields
       apiUrl: '',
       apiKey: '',
       apiVersion: '',
-      databaseHost: '',
-      databasePort: '',
-      databaseName: '',
-      username: '',
-      password: '',
-      httpMethod: 'POST',
-      timeout: 30,
-      headers: '',
-      isEnabled: true
-    }
-  }
-}, { immediate: true })
+      // Database fields
+      dbHost: '',
+      dbPort: 5432,
+      dbName: '',
+      dbUsername: '',
+      dbPassword: ''
+    })
 
-// Close modal when ESC key is pressed
-onMounted(() => {
-  const handleEscape = (e) => {
-    if (e.key === 'Escape' && props.show) {
-      emit('close')
+    const connectionTypes = [
+      { value: 'FACEBOOK', label: 'Facebook Messenger' },
+      { value: 'WEBHOOK', label: 'Webhook' },
+      { value: 'API', label: 'REST API' },
+      { value: 'DATABASE', label: 'Database' }
+    ]
+
+    const isEditMode = computed(() => !!props.connection)
+
+    const canTestConnection = computed(() => {
+      return formData.value.connectionName && 
+             formData.value.connectionType &&
+             isConnectionConfigValid()
+    })
+
+    const isConnectionConfigValid = () => {
+      switch (formData.value.connectionType) {
+        case 'FACEBOOK':
+          return formData.value.pageId && formData.value.appSecret && formData.value.pageAccessToken
+        case 'WEBHOOK':
+          return formData.value.webhookUrl
+        case 'API':
+          return formData.value.apiUrl
+        case 'DATABASE':
+          return formData.value.dbHost && formData.value.dbName && formData.value.dbUsername && formData.value.dbPassword
+        default:
+          return false
+      }
+    }
+
+    const onConnectionTypeChange = () => {
+      // Reset connection-specific fields when type changes
+      Object.keys(formData.value).forEach(key => {
+        if (key.startsWith('fb') || key.startsWith('webhook') || key.startsWith('api') || key.startsWith('db')) {
+          formData.value[key] = ''
+        }
+      })
+      
+      // Set defaults for specific types
+      if (formData.value.connectionType === 'WEBHOOK') {
+        formData.value.webhookMethod = 'POST'
+        formData.value.webhookTimeout = 30
+      } else if (formData.value.connectionType === 'DATABASE') {
+        formData.value.dbPort = 5432
+      }
+    }
+
+    const copyToClipboard = async (text, fieldName) => {
+      try {
+        await navigator.clipboard.writeText(text)
+        copiedKey.value = fieldName
+        setTimeout(() => {
+          copiedKey.value = null
+        }, 2000)
+      } catch (error) {
+        console.error('Failed to copy to clipboard:', error)
+      }
+    }
+
+    const handleSubmit = async () => {
+      if (!formData.value.connectionName || !formData.value.connectionType) {
+        return
+      }
+
+      submitting.value = true
+      try {
+        // For Facebook connections, use the old structure from frontend-old
+        if (formData.value.connectionType === 'FACEBOOK') {
+          const connectionData = {
+            connectionName: formData.value.connectionName,
+            connectionType: formData.value.connectionType,
+            description: formData.value.description,
+            priority: formData.value.priority || 0,
+            isEnabled: formData.value.isEnabled,
+            // Facebook specific fields (matching frontend-old)
+            pageId: formData.value.pageId,
+            fanpageUrl: formData.value.fanpageUrl,
+            appSecret: formData.value.appSecret,
+            pageAccessToken: formData.value.pageAccessToken,
+            verifyToken: formData.value.verifyToken,
+            urlCallback: formData.value.urlCallback || 'https://chat.truyenthongviet.vn/webhooks/facebook/botpress'
+          }
+
+          if (isEditMode.value) {
+            // Update existing Facebook connection
+            await pennyConnectionApi.updateConnection(props.bot.id, props.connection.id, connectionData)
+            console.log('Facebook connection updated successfully')
+          } else {
+            // Create new Facebook connection
+            await pennyConnectionApi.createConnection(props.bot.id, connectionData)
+            console.log('Facebook connection created successfully')
+          }
+        } else {
+          // For other connection types, use generic structure
+          const connectionData = {
+            connectionName: formData.value.connectionName,
+            connectionType: formData.value.connectionType,
+            description: formData.value.description,
+            priority: formData.value.priority || 0,
+            isEnabled: formData.value.isEnabled,
+            // Type-specific fields
+            ...(formData.value.connectionType === 'WEBHOOK' && {
+              webhookUrl: formData.value.webhookUrl,
+              webhookMethod: formData.value.webhookMethod,
+              webhookTimeout: formData.value.webhookTimeout,
+              webhookHeaders: formData.value.webhookHeaders
+            }),
+            ...(formData.value.connectionType === 'API' && {
+              apiUrl: formData.value.apiUrl,
+              apiKey: formData.value.apiKey,
+              apiVersion: formData.value.apiVersion
+            }),
+            ...(formData.value.connectionType === 'DATABASE' && {
+              dbHost: formData.value.dbHost,
+              dbPort: formData.value.dbPort,
+              dbName: formData.value.dbName,
+              dbUsername: formData.value.dbUsername,
+              dbPassword: formData.value.dbPassword
+            })
+          }
+
+          if (isEditMode.value) {
+            // Update existing connection
+            await pennyConnectionApi.updateConnection(props.bot.id, props.connection.id, connectionData)
+            console.log('Connection updated successfully')
+          } else {
+            // Create new connection
+            await pennyConnectionApi.createConnection(props.bot.id, connectionData)
+            console.log('Connection created successfully')
+          }
+        }
+        
+        emit('saved')
+      } catch (error) {
+        console.error('Failed to save connection:', error)
+        alert('Failed to save connection: ' + (error.response?.data?.error || error.message))
+      } finally {
+        submitting.value = false
+      }
+    }
+
+    const testConnection = async () => {
+      if (!canTestConnection.value) return
+      
+      try {
+        // For Facebook connections, use the old testing method from frontend-old
+        if (formData.value.connectionType === 'FACEBOOK') {
+          const testData = {
+            pageId: formData.value.pageId,
+            pageAccessToken: formData.value.pageAccessToken
+          }
+
+          let response
+          if (isEditMode.value && props.connection) {
+            // Test existing connection
+            response = await pennyConnectionApi.testConnection(props.bot.id, props.connection.id, testData)
+          } else {
+            // For new connections, create a temporary connection for testing
+            const tempConnectionData = {
+              connectionName: `TEST_${Date.now()}`,
+              connectionType: 'FACEBOOK',
+              pageId: formData.value.pageId,
+              pageAccessToken: formData.value.pageAccessToken,
+              appSecret: formData.value.appSecret,
+              verifyToken: formData.value.verifyToken,
+              urlCallback: formData.value.urlCallback,
+              isEnabled: true
+            }
+            
+            const createdConnection = await pennyConnectionApi.createConnection(props.bot.id, tempConnectionData)
+            response = await pennyConnectionApi.testConnection(props.bot.id, createdConnection.data.connectionId, testData)
+            await pennyConnectionApi.deleteConnection(props.bot.id, createdConnection.data.connectionId)
+          }
+
+          console.log('Facebook connection test result:', response.data)
+          
+          if (response.data.success) {
+            alert(`✅ Facebook connection test successful!\n\nConnection: ${formData.value.connectionName}\nPage ID: ${formData.value.pageId}\nResponse: ${response.data.message}`)
+          } else {
+            alert(`❌ Facebook connection test failed.\n\nError: ${response.data.error}`)
+          }
+        } else {
+          // For other connection types, use generic testing
+          const testData = {
+            connectionType: formData.value.connectionType,
+            config: getConnectionConfig()
+          }
+
+          let response
+          if (isEditMode.value && props.connection) {
+            // Test existing connection
+            response = await pennyConnectionApi.testConnection(props.bot.id, props.connection.id, testData)
+          } else {
+            // For new connections, create a temporary connection for testing
+            const tempConnectionData = {
+              connectionName: `TEST_${Date.now()}`,
+              connectionType: formData.value.connectionType,
+              ...getConnectionConfig()
+            }
+            
+            const createdConnection = await pennyConnectionApi.createConnection(props.bot.id, tempConnectionData)
+            response = await pennyConnectionApi.testConnection(props.bot.id, createdConnection.data.connectionId, testData)
+            await pennyConnectionApi.deleteConnection(props.bot.id, createdConnection.data.connectionId)
+          }
+
+          console.log('Connection test result:', response.data)
+          
+          if (response.data.success) {
+            alert(`✅ Connection test successful!\n\nConnection: ${formData.value.connectionName}\nType: ${formData.value.connectionType}\nResponse: ${response.data.message}`)
+          } else {
+            alert(`❌ Connection test failed.\n\nError: ${response.data.error}`)
+          }
+        }
+      } catch (error) {
+        console.error('Failed to test connection:', error)
+        alert('Failed to test connection: ' + (error.response?.data?.error || error.message))
+      }
+    }
+
+    const getConnectionConfig = () => {
+      const config = {}
+      switch (formData.value.connectionType) {
+        case 'FACEBOOK':
+          return {
+            pageId: formData.value.pageId,
+            appSecret: formData.value.appSecret,
+            pageAccessToken: formData.value.pageAccessToken,
+            verifyToken: formData.value.verifyToken,
+            urlCallback: formData.value.urlCallback
+          }
+        case 'WEBHOOK':
+          return {
+            url: formData.value.webhookUrl,
+            method: formData.value.webhookMethod,
+            timeout: formData.value.webhookTimeout,
+            headers: formData.value.webhookHeaders ? JSON.parse(formData.value.webhookHeaders) : {}
+          }
+        case 'API':
+          return {
+            url: formData.value.apiUrl,
+            key: formData.value.apiKey,
+            version: formData.value.apiVersion
+          }
+        case 'DATABASE':
+          return {
+            host: formData.value.dbHost,
+            port: formData.value.dbPort,
+            database: formData.value.dbName,
+            username: formData.value.dbUsername,
+            password: formData.value.dbPassword
+          }
+        default:
+          return {}
+      }
+    }
+
+    const closeOnBackdrop = (event) => {
+      if (event.target === event.currentTarget) {
+        emit('close')
+      }
+    }
+
+    // Initialize form data
+    onMounted(() => {
+      if (props.connection) {
+        // Edit mode - populate with existing data
+        Object.assign(formData.value, props.connection)
+      } else {
+        // Create mode - set defaults
+        formData.value = {
+          connectionName: '',
+          description: '',
+          connectionType: '',
+          priority: 0,
+          isEnabled: true,
+          pageId: '',
+          fanpageUrl: '',
+          appSecret: '',
+          pageAccessToken: '',
+          verifyToken: '',
+          urlCallback: 'https://chat.truyenthongviet.vn/webhooks/facebook/botpress',
+          webhookUrl: '',
+          webhookMethod: 'POST',
+          webhookTimeout: 30,
+          webhookHeaders: '',
+          apiUrl: '',
+          apiKey: '',
+          apiVersion: '',
+          dbHost: '',
+          dbPort: 5432,
+          dbName: '',
+          dbUsername: '',
+          dbPassword: ''
+        }
+      }
+    })
+
+    return {
+      formData,
+      submitting,
+      copiedKey,
+      isEditMode,
+      canTestConnection,
+      connectionTypes,
+      onConnectionTypeChange,
+      copyToClipboard,
+      handleSubmit,
+      testConnection,
+      closeOnBackdrop
     }
   }
-  document.addEventListener('keydown', handleEscape)
-  
-  return () => {
-    document.removeEventListener('keydown', handleEscape)
-  }
-})
+}
 </script>
 
 <style scoped>
-.animate-spin {
-  animation: spin 1s linear infinite;
+.penny-connection-modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  z-index: 1000;
+  padding: 40px 20px 20px;
+}
+
+.penny-connection-modal {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  max-width: 800px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  margin-top: 20px;
+}
+
+.dark .penny-connection-modal {
+  background: #1f2937;
+}
+
+.modal-header {
+  padding: 24px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.dark .modal-header {
+  border-bottom-color: #374151;
+}
+
+.header-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.connection-info {
+  display: flex;
+  align-items: center;
+  flex: 1;
+}
+
+.modal-title {
+  margin: 0 0 4px 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.dark .modal-title {
+  color: white;
+}
+
+.bot-name {
+  margin: 0;
+  font-size: 14px;
+  color: #6b7280;
+}
+
+.dark .bot-name {
+  color: #9ca3af;
+}
+
+.close-button {
+  background: none;
+  border: none;
+  padding: 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  color: #6b7280;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.close-button:hover {
+  background-color: #f3f4f6;
+  color: #1f2937;
+}
+
+.dark .close-button {
+  color: #9ca3af;
+}
+
+.dark .close-button:hover {
+  background-color: #374151;
+  color: white;
+}
+
+.modal-body {
+  padding: 24px;
+}
+
+.connection-form {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.form-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.form-section:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.section-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.dark .section-title {
+  color: white;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-group.full-width {
+  grid-column: 1 / -1;
+}
+
+.form-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151;
+}
+
+.dark .form-label {
+  color: #d1d5db;
+}
+
+.required {
+  color: #ef4444;
+}
+
+.form-input,
+.form-select,
+.form-textarea {
+  padding: 10px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 14px;
+  background: white;
+  color: #1f2937;
+  transition: all 0.2s;
+}
+
+.dark .form-input,
+.dark .form-select,
+.dark .form-textarea {
+  background: #374151;
+  border-color: #4b5563;
+  color: white;
+}
+
+.form-input:focus,
+.form-select:focus,
+.form-textarea:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.form-textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.form-help {
+  font-size: 12px;
+  color: #6b7280;
+  margin-top: 4px;
+}
+
+.dark .form-help {
+  color: #9ca3af;
+}
+
+.input-with-copy {
+  position: relative;
+  display: flex;
+}
+
+.input-with-copy .form-input {
+  flex: 1;
+  padding-right: 40px;
+}
+
+.copy-button {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  padding: 6px;
+  border-radius: 4px;
+  cursor: pointer;
+  color: #6b7280;
+  transition: all 0.2s;
+}
+
+.copy-button:hover {
+  background: #f3f4f6;
+  color: #1f2937;
+}
+
+.dark .copy-button {
+  color: #9ca3af;
+}
+
+.dark .copy-button:hover {
+  background: #4b5563;
+  color: white;
+}
+
+.copy-button.copied {
+  color: #10b981;
+}
+
+.form-actions {
+  margin-top: 4px;
+}
+
+.external-link {
+  display: inline-flex;
+  align-items: center;
+  font-size: 12px;
+  color: #3b82f6;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.external-link:hover {
+  color: #2563eb;
+}
+
+.connection-config {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.checkbox-input {
+  width: 16px;
+  height: 16px;
+  accent-color: #3b82f6;
+}
+
+.checkbox-text {
+  font-size: 14px;
+  color: #374151;
+}
+
+.dark .checkbox-text {
+  color: #d1d5db;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 24px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.dark .modal-footer {
+  border-top-color: #374151;
+}
+
+.btn {
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+  display: inline-flex;
+  align-items: center;
+}
+
+.btn-secondary {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.btn-secondary:hover {
+  background: #e5e7eb;
+}
+
+.dark .btn-secondary {
+  background: #374151;
+  color: #d1d5db;
+}
+
+.dark .btn-secondary:hover {
+  background: #4b5563;
+}
+
+.btn-outline {
+  background: transparent;
+  color: #3b82f6;
+  border: 1px solid #3b82f6;
+}
+
+.btn-outline:hover:not(:disabled) {
+  background: #3b82f6;
+  color: white;
+}
+
+.btn-primary {
+  background: #3b82f6;
+  color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: #2563eb;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 @keyframes spin {
@@ -574,5 +1161,9 @@ onMounted(() => {
   to {
     transform: rotate(360deg);
   }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
 }
 </style>

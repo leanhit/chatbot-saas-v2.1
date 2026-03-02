@@ -73,7 +73,7 @@
               <!-- LEFT -->
               <div class="info-side">
                 <div class="tenant-avatar-search">
-                  <img v-if="tenant.logoUrl" :src="tenant.logoUrl" :alt="tenant.name" />
+                  <img v-if="tenant.logoUrl" :src="secureImageUrl(tenant.logoUrl)" :alt="tenant.name" />
                   <div v-else class="avatar-fallback">
                     {{ tenant.name?.charAt(0).toUpperCase() }}
                   </div>

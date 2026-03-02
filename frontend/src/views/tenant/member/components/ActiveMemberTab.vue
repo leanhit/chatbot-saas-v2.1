@@ -118,7 +118,7 @@
           <!-- Last Active -->
           <div v-if="member.lastActiveAt" class="flex items-center justify-between">
             <span class="text-xs font-medium text-gray-700 dark:text-gray-300">{{ $t('tenant.member.lastActive') }}</span>
-            <span class="text-xs text-gray-900 dark:text-white">{{ formatLastActive(member.lastActiveAt) }}</span>
+            <span class="text-xs text-gray-900 dark:text-white">{{ getRelativeTime(member.lastActiveAt) }}</span>
           </div>
         </div>
       </div>
@@ -151,6 +151,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { Icon } from '@iconify/vue'
 import { tenantApi } from '@/api/tenantApi'
+import { formatDate, getRelativeTime } from '@/utils/dateUtils'
 import { useGatewayTenantStore } from '@/stores/tenant/gateway/myTenantStore'
 import defaultAvatar from '@/assets/img/user.jpg'
 export default {
@@ -308,22 +309,6 @@ export default {
         default: return status
       }
     }
-    const formatDate = (dateString) => {
-      if (!dateString) return 'N/A'
-      return new Date(dateString).toLocaleDateString()
-    }
-    const formatLastActive = (dateString) => {
-      if (!dateString) return 'Never'
-      const date = new Date(dateString)
-      const now = new Date()
-      const diffMs = now - date
-      const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
-      if (diffDays === 0) return 'Today'
-      if (diffDays === 1) return 'Yesterday'
-      if (diffDays < 7) return `${diffDays} days ago`
-      if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`
-      return formatDate(dateString)
-    }
     // Watch for filter changes
     watch([searchQuery, roleFilter], () => {
       currentPage.value = 1
@@ -350,7 +335,7 @@ export default {
       getStatusBadgeClass,
       getStatusLabel,
       formatDate,
-      formatLastActive
+      getRelativeTime
     }
   }
 }

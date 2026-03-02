@@ -31,6 +31,19 @@
       href="https://fonts.googleapis.com/css2?family=Lexend:wght@100;200;300;400;500;600;700;800;900&display=swap"
       rel="stylesheet"
     />
+    <!-- Facebook SDK -->
+    <script async defer crossorigin="anonymous" src="https://connect.facebook.net/vi_VN/sdk.js"></script>
+    <script>
+      window.fbAsyncInit = function() {
+        FB.init({
+          appId: '1512336249760267', // Facebook App ID from frontend-old
+          cookie: true,
+          xfbml: true,
+          version: 'v18.0'
+        });
+        FB.AppEvents.logPageView();
+      };
+    </script>
   </head>
   <body>
     <noscript>

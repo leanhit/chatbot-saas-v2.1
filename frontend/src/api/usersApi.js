@@ -43,8 +43,6 @@ export const usersApi = {
         return axios.post('/auth/change-password', params);
     },
     updateTenantLogo(formData) {
-        // DEPRECATED: Use tenantApi.updateTenant() instead
-        // NEW: await tenantApi.updateTenant(tenantKey, null, file)
         return axios.put('/v1/tenant/logo', formData, {
             headers: {
                 'Content-Type': 'multipart/form-data',

@@ -1,103 +1,118 @@
 <template>
-  <div class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full z-50">
-    <div class="relative min-h-screen flex items-center justify-center p-4">
-      <div class="relative bg-white dark:bg-gray-800 rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:w-full sm:max-w-3xl">
-        <!-- Header -->
-        <div class="bg-white dark:bg-gray-800 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-          <div class="flex items-center justify-between">
-            <h3 class="text-lg leading-6 font-medium text-gray-900 dark:text-white">
-              {{ $t('Chat with') }} {{ bot.name }}
-            </h3>
-            <button
-              @click="$emit('close')"
-              class="rounded-md text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-            >
-              <Icon icon="mdi:close" class="h-6 w-6" />
+  <div class="penny-bot-chat-modal-backdrop" @click="closeOnBackdrop">
+    <div class="penny-bot-chat-modal" @click.stop>
+      <div class="modal-header">
+        <div class="header-content">
+          <div class="bot-info">
+            <Icon :icon="getBotTypeIcon(bot.botType)" class="h-6 w-6 mr-3" />
+            <div>
+              <h2 class="modal-title">{{ bot.botName }}</h2>
+              <p class="bot-type">{{ getBotTypeDisplayName(bot.botType) }}</p>
+            </div>
+          </div>
+          <div class="header-actions">
+            <div class="status-indicator" :class="{ online: bot.isActive && bot.isEnabled }">
+              <div class="status-dot"></div>
+              <span class="status-text">
+                {{ bot.isActive && bot.isEnabled ? $t('Online') : $t('Offline') }}
+              </span>
+            </div>
+            <button @click="$emit('close')" class="close-button">
+              <Icon icon="mdi:close" class="h-5 w-5" />
             </button>
           </div>
         </div>
+      </div>
 
+      <div class="modal-body">
         <!-- Chat Messages -->
-        <div class="bg-white dark:bg-gray-800 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-          <div class="flex flex-col h-96">
-            <!-- Messages Area -->
-            <div ref="messagesContainer" class="flex-1 overflow-y-auto space-y-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg mb-4">
-              <div
-                v-for="message in messages"
-                :key="message.id"
-                :class="[
-                  'flex',
-                  message.sender === 'user' ? 'justify-end' : 'justify-start'
-                ]"
-              >
-                <div
-                  :class="[
-                    'max-w-xs lg:max-w-md px-4 py-2 rounded-lg',
-                    message.sender === 'user'
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-gray-200 dark:bg-gray-600 text-gray-900 dark:text-white'
-                  ]"
-                >
-                  <p class="text-sm">{{ message.text }}</p>
-                  <p class="text-xs mt-1 opacity-70">
-                    {{ formatTime(message.timestamp) }}
-                  </p>
+        <div ref="chatContainer" class="chat-container">
+          <div v-if="messages.length === 0" class="empty-chat">
+            <Icon icon="mdi:chat-outline" class="h-12 w-12 text-gray-400 mb-4" />
+            <p class="empty-chat-text">{{ $t('Start a conversation with') }} {{ bot.botName }}</p>
+            <p class="empty-chat-hint">{{ $t('Type a message below to begin chatting') }}</p>
+          </div>
+
+          <div v-else class="messages-list">
+            <div
+              v-for="(message, index) in messages"
+              :key="index"
+              :class="['message', message.type]"
+            >
+              <div class="message-content">
+                <div class="message-avatar">
+                  <Icon
+                    :icon="message.type === 'user' ? 'mdi:account' : getBotTypeIcon(bot.botType)"
+                    class="h-5 w-5"
+                  />
+                </div>
+                <div class="message-bubble">
+                  <p class="message-text">{{ message.text }}</p>
+                  <p class="message-time">{{ formatTime(message.timestamp) }}</p>
                 </div>
               </div>
+            </div>
 
-              <!-- Typing Indicator -->
-              <div v-if="isTyping" class="flex justify-start">
-                <div class="bg-gray-200 dark:bg-gray-600 text-gray-900 dark:text-white max-w-xs lg:max-w-md px-4 py-2 rounded-lg">
-                  <div class="flex items-center space-x-1">
-                    <div class="flex space-x-1">
-                      <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                      <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 0.1s"></div>
-                      <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
-                    </div>
-                    <span class="text-sm ml-2">{{ bot.name }} is typing...</span>
+            <!-- Typing Indicator -->
+            <div v-if="isTyping" class="message bot">
+              <div class="message-content">
+                <div class="message-avatar">
+                  <Icon :icon="getBotTypeIcon(bot.botType)" class="h-5 w-5" />
+                </div>
+                <div class="message-bubble typing-bubble">
+                  <div class="typing-indicator">
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
                   </div>
                 </div>
               </div>
             </div>
-
-            <!-- Message Input -->
-            <div class="flex items-center space-x-2">
-              <input
-                v-model="newMessage"
-                @keydown.enter="sendMessage"
-                type="text"
-                :placeholder="$t('Type your message...')"
-                :disabled="sending"
-                class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-              />
-              <button
-                @click="sendMessage"
-                :disabled="!newMessage.trim() || sending"
-                class="inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <Icon v-if="sending" icon="mdi:loading" class="animate-spin h-4 w-4 mr-2" />
-                <Icon v-else icon="mdi:send" class="h-4 w-4" />
-              </button>
-            </div>
           </div>
         </div>
 
-        <!-- Footer -->
-        <div class="bg-gray-50 dark:bg-gray-700 px-4 py-3 sm:px-6">
-          <div class="flex items-center justify-between">
-            <div class="text-sm text-gray-500 dark:text-gray-400">
-              <p>{{ $t('Start a conversation with') }} {{ bot.name }}</p>
-              <p class="text-xs mt-1">{{ $t('Type your message below to begin chatting') }}</p>
-            </div>
-            <div class="flex items-center space-x-2">
+        <!-- Message Input -->
+        <div class="message-input-container">
+          <form @submit.prevent="sendMessage" class="message-form">
+            <div class="input-wrapper">
+              <input
+                v-model="newMessage"
+                type="text"
+                :placeholder="$t('Type your message...')"
+                class="message-input"
+                :disabled="!bot.isActive || !bot.isEnabled || chatLoading"
+                @keydown.enter.prevent="sendMessage"
+              />
               <button
-                @click="clearChat"
-                class="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white dark:hover:bg-gray-700"
+                type="submit"
+                :disabled="!newMessage.trim() || !bot.isActive || !bot.isEnabled || chatLoading"
+                class="send-button"
               >
-                <Icon icon="mdi:delete-sweep" class="h-4 w-4 mr-1" />
-                {{ $t('Clear') }}
+                <Icon
+                  v-if="chatLoading"
+                  icon="mdi:loading"
+                  class="animate-spin h-5 w-5"
+                />
+                <Icon
+                  v-else
+                  icon="mdi:send"
+                  class="h-5 w-5"
+                />
               </button>
             </div>
+          </form>
+
+          <!-- Quick Actions -->
+          <div class="quick-actions">
+            <button
+              v-for="action in quickActions"
+              :key="action.text"
+              @click="sendQuickMessage(action.text)"
+              :disabled="!bot.isActive || !bot.isEnabled || chatLoading"
+              class="quick-action-button"
+            >
+              {{ action.text }}
+            </button>
           </div>
         </div>
       </div>
@@ -105,154 +120,602 @@
   </div>
 </template>
 
-<script setup>
-import { ref, nextTick, onMounted, watch } from 'vue'
-import { useI18n } from 'vue-i18n'
+<script>
+import { ref, computed, onMounted, nextTick, watch } from 'vue'
 import { Icon } from '@iconify/vue'
+import { useI18n } from 'vue-i18n'
+import { getRelativeTime, formatTime } from '@/utils/dateUtils'
+import { usePennyBotStore } from '@/stores/pennyBotStore'
 
-const { t } = useI18n()
-
-const props = defineProps({
-  bot: {
-    type: Object,
-    required: true
+export default {
+  name: 'PennyBotChatModal',
+  components: {
+    Icon
   },
-  show: {
-    type: Boolean,
-    default: false
-  }
-})
+  props: {
+    bot: {
+      type: Object,
+      required: true
+    }
+  },
+  emits: ['close'],
+  setup(props) {
+    const { t } = useI18n()
+    const pennyBotStore = usePennyBotStore()
 
-const emit = defineEmits(['close'])
+    const messages = ref([])
+    const newMessage = ref('')
+    const isTyping = ref(false)
+    const chatContainer = ref(null)
+    const chatLoading = computed(() => pennyBotStore.chatLoading)
 
-// State
-const messages = ref([])
-const newMessage = ref('')
-const sending = ref(false)
-const isTyping = ref(false)
-const messagesContainer = ref(null)
+    const quickActions = [
+      { text: 'Hello' },
+      { text: 'How are you?' },
+      { text: 'What can you do?' },
+      { text: 'Help' },
+      { text: 'Thank you' }
+    ]
 
-// Mock responses for demo
-const botResponses = [
-  "Hello! I'm here to help you. What can I assist you with today?",
-  "I understand your question. Let me help you with that.",
-  "That's a great question! Based on what you've told me, I would suggest...",
-  "Thank you for your message. I'm processing your request now.",
-  "I'm here to help! Could you provide more details about what you need?"
-]
-
-// Methods
-const sendMessage = async () => {
-  if (!newMessage.value.trim() || sending.value) return
-
-  const userMessage = {
-    id: Date.now().toString(),
-    sender: 'user',
-    text: newMessage.value,
-    timestamp: new Date()
-  }
-
-  messages.value.push(userMessage)
-  const messageText = newMessage.value
-  newMessage.value = ''
-  sending.value = true
-
-  // Scroll to bottom
-  await nextTick()
-  scrollToBottom()
-
-  // Simulate bot typing
-  isTyping.value = true
-  await nextTick()
-  scrollToBottom()
-
-  // Simulate bot response
-  setTimeout(() => {
-    const botMessage = {
-      id: (Date.now() + 1).toString(),
-      sender: 'bot',
-      text: botResponses[Math.floor(Math.random() * botResponses.length)],
-      timestamp: new Date()
+    const scrollToBottom = () => {
+      nextTick(() => {
+        if (chatContainer.value) {
+          chatContainer.value.scrollTop = chatContainer.value.scrollHeight
+        }
+      })
     }
 
-    messages.value.push(botMessage)
-    isTyping.value = false
-    sending.value = false
-
-    nextTick(() => {
-      scrollToBottom()
-    })
-  }, 1500 + Math.random() * 1500)
-}
-
-const clearChat = () => {
-  messages.value = []
-}
-
-const scrollToBottom = () => {
-  if (messagesContainer.value) {
-    messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight
-  }
-}
-
-const formatTime = (timestamp) => {
-  return new Intl.DateTimeFormat('en-US', {
-    hour: '2-digit',
-    minute: '2-digit'
-  }).format(new Date(timestamp))
-}
-
-// Watch for show prop changes
-watch(() => props.show, (newShow) => {
-  if (newShow) {
-    // Add welcome message when chat opens
-    if (messages.value.length === 0) {
-      const welcomeMessage = {
-        id: '0',
-        sender: 'bot',
-        text: `Hello! I'm ${props.bot.name}. ${t('How can I help you today?')}`,
+    const addMessage = (text, type = 'user') => {
+      messages.value.push({
+        text,
+        type,
         timestamp: new Date()
-      }
-      messages.value = [welcomeMessage]
-    }
-    
-    nextTick(() => {
+      })
       scrollToBottom()
-    })
-  }
-})
+    }
 
-// Close modal when ESC key is pressed
-onMounted(() => {
-  const handleEscape = (e) => {
-    if (e.key === 'Escape' && props.show) {
-      emit('close')
+    const sendMessage = async () => {
+      if (!newMessage.value.trim() || !props.bot.isActive || !props.bot.isEnabled) {
+        return
+      }
+
+      const userMessage = newMessage.value.trim()
+      newMessage.value = ''
+
+      // Add user message
+      addMessage(userMessage, 'user')
+
+      // Show typing indicator
+      isTyping.value = true
+      scrollToBottom()
+
+      try {
+        // Get bot response
+        const response = await pennyBotStore.chatWithPennyBot(props.bot.botId, userMessage)
+        
+        // Hide typing indicator
+        isTyping.value = false
+
+        // Add bot response
+        addMessage(response.response, 'bot')
+      } catch (error) {
+        isTyping.value = false
+        console.error('Failed to send message:', error)
+        
+        // Add error message
+        addMessage('Sorry, I encountered an error. Please try again.', 'bot')
+      }
+    }
+
+    const sendQuickMessage = (message) => {
+      newMessage.value = message
+      sendMessage()
+    }
+
+    const closeOnBackdrop = (event) => {
+      if (event.target === event.currentTarget) {
+        props.$emit('close')
+      }
+    }
+
+    const getBotTypeIcon = (botType) => {
+      const icons = {
+        'CUSTOMER_SERVICE': 'mdi:headset',
+        'SALES': 'mdi:cash-register',
+        'SUPPORT': 'mdi:tools',
+        'MARKETING': 'mdi:bullhorn',
+        'HR': 'mdi:account-tie',
+        'FINANCE': 'mdi:currency-usd',
+        'GENERAL': 'mdi:robot'
+      }
+      return icons[botType] || 'mdi:robot'
+    }
+
+    const getBotTypeDisplayName = (botType) => {
+      const names = {
+        'CUSTOMER_SERVICE': 'Customer Service',
+        'SALES': 'Sales',
+        'SUPPORT': 'Technical Support',
+        'MARKETING': 'Marketing',
+        'HR': 'Human Resources',
+        'FINANCE': 'Finance',
+        'GENERAL': 'General Purpose'
+      }
+      return names[botType] || botType
+    }
+
+    // Add welcome message when modal opens
+    onMounted(() => {
+      if (props.bot.isActive && props.bot.isEnabled) {
+        addMessage(`Hello! I'm ${props.bot.botName}, your ${getBotTypeDisplayName(props.bot.botType)} assistant. How can I help you today?`, 'bot')
+      }
+    })
+
+    return {
+      messages,
+      newMessage,
+      isTyping,
+      chatContainer,
+      chatLoading,
+      quickActions,
+      sendMessage,
+      sendQuickMessage,
+      closeOnBackdrop,
+      getBotTypeIcon,
+      getBotTypeDisplayName,
+      formatTime
     }
   }
-  document.addEventListener('keydown', handleEscape)
-  
-  return () => {
-    document.removeEventListener('keydown', handleEscape)
-  }
-})
+}
 </script>
 
 <style scoped>
-.animate-bounce {
-  animation: bounce 1.4s infinite ease-in-out both;
+.penny-bot-chat-modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  z-index: 1000;
+  padding: 40px 20px 20px;
 }
 
-@keyframes bounce {
-  0%, 80%, 100% {
-    transform: scale(0);
+.penny-bot-chat-modal {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  width: 100%;
+  max-width: 600px;
+  height: 600px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  margin-top: 20px;
+}
+
+.dark .penny-bot-chat-modal {
+  background: #1f2937;
+}
+
+.modal-header {
+  padding: 20px;
+  border-bottom: 1px solid #e5e7eb;
+  flex-shrink: 0;
+}
+
+.dark .modal-header {
+  border-bottom-color: #374151;
+}
+
+.header-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.bot-info {
+  display: flex;
+  align-items: center;
+}
+
+.modal-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.dark .modal-title {
+  color: white;
+}
+
+.bot-type {
+  margin: 4px 0 0 0;
+  font-size: 14px;
+  color: #6b7280;
+}
+
+.dark .bot-type {
+  color: #9ca3af;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.status-indicator {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 20px;
+  background: #f3f4f6;
+}
+
+.dark .status-indicator {
+  background: #374151;
+}
+
+.status-indicator.online {
+  background: #dcfce7;
+}
+
+.dark .status-indicator.online {
+  background: #14532d;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #6b7280;
+}
+
+.status-indicator.online .status-dot {
+  background: #16a34a;
+  animation: pulse 2s infinite;
+}
+
+.status-text {
+  font-size: 12px;
+  font-weight: 500;
+  color: #6b7280;
+}
+
+.status-indicator.online .status-text {
+  color: #166534;
+}
+
+.dark .status-text {
+  color: #9ca3af;
+}
+
+.dark .status-indicator.online .status-text {
+  color: #86efac;
+}
+
+.close-button {
+  background: none;
+  border: none;
+  padding: 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  color: #6b7280;
+  transition: all 0.2s;
+}
+
+.close-button:hover {
+  background-color: #f3f4f6;
+  color: #1f2937;
+}
+
+.dark .close-button {
+  color: #9ca3af;
+}
+
+.dark .close-button:hover {
+  background-color: #374151;
+  color: white;
+}
+
+.modal-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.chat-container {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+  background: #f8fafc;
+}
+
+.dark .chat-container {
+  background: #111827;
+}
+
+.empty-chat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  text-align: center;
+}
+
+.empty-chat-text {
+  font-size: 16px;
+  color: #374151;
+  margin-bottom: 8px;
+}
+
+.dark .empty-chat-text {
+  color: #d1d5db;
+}
+
+.empty-chat-hint {
+  font-size: 14px;
+  color: #6b7280;
+}
+
+.dark .empty-chat-hint {
+  color: #9ca3af;
+}
+
+.messages-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.message {
+  display: flex;
+  align-items: flex-start;
+}
+
+.message.user {
+  flex-direction: row-reverse;
+}
+
+.message-content {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  max-width: 80%;
+}
+
+.message.user .message-content {
+  flex-direction: row-reverse;
+}
+
+.message-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #e5e7eb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #6b7280;
+  flex-shrink: 0;
+}
+
+.message.bot .message-avatar {
+  background: #3b82f6;
+  color: white;
+}
+
+.message.user .message-avatar {
+  background: #10b981;
+  color: white;
+}
+
+.message-bubble {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  padding: 12px 16px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.dark .message-bubble {
+  background: #374151;
+  border-color: #4b5563;
+  color: #f3f4f6;
+}
+
+.message.user .message-bubble {
+  background: #3b82f6;
+  border-color: #3b82f6;
+  color: white;
+}
+
+.message-text {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.4;
+  word-wrap: break-word;
+}
+
+.message-time {
+  margin: 4px 0 0 0;
+  font-size: 11px;
+  opacity: 0.7;
+}
+
+.typing-bubble {
+  padding: 12px 16px;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+}
+
+.dark .typing-bubble {
+  background: #374151;
+  border-color: #4b5563;
+}
+
+.typing-indicator {
+  display: flex;
+  gap: 4px;
+}
+
+.typing-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #6b7280;
+  animation: typing 1.4s infinite;
+}
+
+.dark .typing-dot {
+  background: #9ca3af;
+}
+
+.typing-dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.typing-dot:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+.message-input-container {
+  padding: 20px;
+  border-top: 1px solid #e5e7eb;
+  background: white;
+  flex-shrink: 0;
+}
+
+.dark .message-input-container {
+  background: #1f2937;
+  border-top-color: #374151;
+}
+
+.message-form {
+  margin-bottom: 12px;
+}
+
+.input-wrapper {
+  display: flex;
+  gap: 8px;
+}
+
+.message-input {
+  flex: 1;
+  padding: 12px 16px;
+  border: 1px solid #d1d5db;
+  border-radius: 24px;
+  font-size: 14px;
+  background: white;
+  color: #1f2937;
+  transition: all 0.2s;
+}
+
+.dark .message-input {
+  background: #374151;
+  border-color: #4b5563;
+  color: white;
+}
+
+.message-input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.message-input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.send-button {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: none;
+  background: #3b82f6;
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.send-button:hover:not(:disabled) {
+  background: #2563eb;
+}
+
+.send-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.quick-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.quick-action-button {
+  padding: 6px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  background: white;
+  color: #6b7280;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.dark .quick-action-button {
+  background: #374151;
+  border-color: #4b5563;
+  color: #9ca3af;
+}
+
+.quick-action-button:hover:not(:disabled) {
+  background: #f3f4f6;
+  border-color: #3b82f6;
+  color: #3b82f6;
+}
+
+.dark .quick-action-button:hover:not(:disabled) {
+  background: #4b5563;
+  color: #93c5fd;
+}
+
+.quick-action-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
   }
-  40% {
-    transform: scale(1);
+  50% {
+    opacity: 0.5;
   }
 }
 
-.animate-spin {
-  animation: spin 1s linear infinite;
+@keyframes typing {
+  0%, 60%, 100% {
+    transform: translateY(0);
+  }
+  30% {
+    transform: translateY(-10px);
+  }
 }
 
 @keyframes spin {
@@ -262,5 +725,9 @@ onMounted(() => {
   to {
     transform: rotate(360deg);
   }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
 }
 </style>

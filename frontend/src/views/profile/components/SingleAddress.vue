@@ -164,8 +164,8 @@ export default {
     const handleSubmit = async (formData) => {
       try {
         if (isEdit.value) {
-          // Update existing address using user endpoint (no tenant required)
-          await addressApi.updateUserAddress(props.ownerType, props.ownerId, formData)
+          // Update existing address
+          await addressApi.updateAddress(address.value.id, formData)
         } else {
           // Create new address
           await addressApi.createAddress(formData)

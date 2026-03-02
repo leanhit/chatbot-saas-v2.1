@@ -168,6 +168,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { Icon } from '@iconify/vue'
 import { tenantApi } from '@/api/tenantApi'
+import { formatDate, isExpiringSoon } from '@/utils/dateUtils'
 import { useGatewayTenantStore } from '@/stores/tenant/gateway/myTenantStore'
 import defaultAvatar from '@/assets/img/user.jpg'
 export default {
@@ -290,14 +291,6 @@ export default {
     const handleAvatarError = (event) => {
       event.target.src = defaultAvatar
     }
-    const isExpiringSoon = (expiresAt) => {
-      if (!expiresAt) return false
-      const expiryDate = new Date(expiresAt)
-      const now = new Date()
-      const diffTime = expiryDate - now
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-      return diffDays <= 3 && diffDays > 0
-    }
     const getStatusBadgeClass = (status) => {
       switch (status) {
         case 'PENDING':
@@ -320,10 +313,6 @@ export default {
         case 'REVOKED': return 'Revoked'
         default: return status
       }
-    }
-    const formatDate = (dateString) => {
-      if (!dateString) return 'N/A'
-      return new Date(dateString).toLocaleDateString()
     }
     // Watch for filter changes
     watch([searchQuery, statusFilter], () => {

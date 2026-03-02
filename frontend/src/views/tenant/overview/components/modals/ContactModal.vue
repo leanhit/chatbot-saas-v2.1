@@ -93,7 +93,16 @@
                 class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary dark:bg-gray-700 dark:border-gray-600 dark:text-white"
               />
             </div>
-                        <div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Logo URL</label>
+              <input
+                v-model="form.logoUrl"
+                type="url"
+                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                placeholder="https://example.com/logo.png"
+              />
+            </div>
+            <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Favicon URL</label>
               <input
                 v-model="form.faviconUrl"
@@ -175,6 +184,7 @@ export default {
       taxCode: '',
       contactEmail: '',
       contactPhone: '',
+      logoUrl: '',
       faviconUrl: '',
       primaryColor: ''
     })
@@ -191,6 +201,7 @@ export default {
           taxCode: newTenant?.profile?.taxCode || '',
           contactEmail: newTenant?.profile?.contactEmail || '',
           contactPhone: newTenant?.profile?.contactPhone || '',
+          logoUrl: newTenant?.profile?.logoUrl || '',
           faviconUrl: newTenant?.profile?.faviconUrl || '',
           primaryColor: newTenant?.profile?.primaryColor || ''
         }

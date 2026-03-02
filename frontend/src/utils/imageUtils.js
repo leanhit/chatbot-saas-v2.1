@@ -9,6 +9,26 @@
  */
 export function secureImageUrl(url) {
   if (!url) return undefined;
+  
+  // Handle localhost:9000 - convert to production API endpoint
+  if (url.includes('localhost:9000')) {
+    // Extract filename from URL
+    const urlObj = new URL(url);
+    const filename = urlObj.pathname.split('/').pop();
+    const apiUrl = process.env.VITE_API_URL || 'http://localhost:8080/api';
+    const baseUrl = apiUrl.endsWith('/') ? apiUrl.slice(0, -1) : apiUrl;
+    return `${baseUrl}/images/public/filename/${filename}/content`;
+  }
+  
+  // Handle direct chatbot-files URLs - convert to API endpoint
+  if (url.includes('chatbot-files/')) {
+    // Extract filename from URL
+    const filename = url.split('chatbot-files/').pop().split('?')[0];
+    const apiUrl = process.env.VITE_API_URL || 'http://localhost:8080/api';
+    const baseUrl = apiUrl.endsWith('/') ? apiUrl.slice(0, -1) : apiUrl;
+    return `${baseUrl}/images/public/filename/${filename}/content`;
+  }
+  
   // Handle Botpress server SSL issues - use proxy for port 9000
   if (url.includes('cwsv.truyenthongviet.vn:9000')) {
     try {

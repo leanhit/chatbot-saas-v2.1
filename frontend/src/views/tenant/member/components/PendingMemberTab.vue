@@ -155,6 +155,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { Icon } from '@iconify/vue'
 import { tenantApi } from '@/api/tenantApi'
+import { formatDate } from '@/utils/dateUtils'
 import { useGatewayTenantStore } from '@/stores/tenant/gateway/myTenantStore'
 import defaultAvatar from '@/assets/img/user.jpg'
 export default {
@@ -283,10 +284,6 @@ export default {
         case 'REJECTED': return 'Rejected'
         default: return status
       }
-    }
-    const formatDate = (dateString) => {
-      if (!dateString) return 'N/A'
-      return new Date(dateString).toLocaleDateString()
     }
     // Watch for filter changes
     watch([searchQuery, statusFilter], () => {

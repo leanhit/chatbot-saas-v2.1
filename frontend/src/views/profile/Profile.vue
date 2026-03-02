@@ -156,20 +156,6 @@
                       </div>
                     </span>
                   </button>
-                  <button
-                    @click="activeTab = 'security'"
-                    :class="[
-                      activeTab === 'security'
-                        ? 'border-primary text-primary'
-                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300',
-                      'whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm transition-colors duration-200'
-                    ]"
-                  >
-                    <span class="flex items-center">
-                      <Icon icon="mdi:lock" class="h-4 w-4 mr-2" />
-                      Security
-                    </span>
-                  </button>
                 </nav>
               </div>
               <!-- Tab Content -->
@@ -363,58 +349,6 @@
                     </div>
                   </div>
                 </div>
-                <!-- Security Tab -->
-                <div v-if="activeTab === 'security'" class="space-y-6">
-                  <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
-                    <div class="flex justify-between items-center mb-6">
-                      <h3 class="text-lg font-medium text-gray-900 dark:text-white">Security Settings</h3>
-                    </div>
-                    <div class="space-y-6">
-                      <!-- Change Password Section -->
-                      <div class="border-l-4 border-blue-500 pl-4">
-                        <h4 class="text-md font-medium text-gray-900 dark:text-white mb-2">Change Password</h4>
-                        <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                          Update your password to keep your account secure
-                        </p>
-                        <router-link
-                          to="/auth/change-password"
-                          class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-primary hover:bg-primary/80 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors"
-                        >
-                          <Icon icon="mdi:lock-reset" class="h-4 w-4 mr-2" />
-                          Change Password
-                        </router-link>
-                      </div>
-                      
-                      <!-- Account Activity Section -->
-                      <div class="border-l-4 border-green-500 pl-4">
-                        <h4 class="text-md font-medium text-gray-900 dark:text-white mb-2">Account Activity</h4>
-                        <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                          View your recent account activity and login history
-                        </p>
-                        <button
-                          class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-600 transition-colors"
-                        >
-                          <Icon icon="mdi:history" class="h-4 w-4 mr-2" />
-                          View Activity
-                        </button>
-                      </div>
-                      
-                      <!-- Two-Factor Authentication Section -->
-                      <div class="border-l-4 border-yellow-500 pl-4">
-                        <h4 class="text-md font-medium text-gray-900 dark:text-white mb-2">Two-Factor Authentication</h4>
-                        <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                          Add an extra layer of security to your account
-                        </p>
-                        <button
-                          class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-600 transition-colors"
-                        >
-                          <Icon icon="mdi:cellphone-key" class="h-4 w-4 mr-2" />
-                          Setup 2FA
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
               </div>
             </div>
           </div>
@@ -454,6 +388,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { Icon } from '@iconify/vue'
 import { useI18n } from 'vue-i18n'
+import { formatDate } from '@/utils/dateUtils'
 import { useAuthStore } from '@/stores/authStore'
 import { secureImageUrl } from '@/utils/imageUtils'
 import { usersApi } from '@/api/usersApi'
@@ -493,8 +428,7 @@ export default {
     const tabs = [
       { id: 'basic', label: 'Basic Info', icon: 'mdi:account' },
       { id: 'professional', label: 'Professional Info', icon: 'mdi:briefcase' },
-      { id: 'address', label: 'Address', icon: 'mdi:map-marker' },
-      { id: 'security', label: 'Security', icon: 'mdi:lock' }
+      { id: 'address', label: 'Address', icon: 'mdi:map-marker' }
     ]
     // Computed properties
     const user = computed(() => authStore.currentUser)
@@ -583,8 +517,35 @@ export default {
       }
     }
     const handleAvatarError = (event) => {
-      // Fallback to default avatar
-      event.target.src = defaultAvatar
+      const img = event.target
+      const originalSrc = img.src
+      // Try to handle Botpress SSL errors with proxy
+      if (originalSrc && originalSrc.includes('cwsv.truyenthongviet.vn:9000')) {
+        try {
+          const urlObj = new URL(originalSrc)
+          // Check if we're in development or production
+          const isDevelopment = window.location.hostname === 'localhost'
+          let proxyUrl
+          if (isDevelopment) {
+            // Development: use local proxy
+            proxyUrl = `http://localhost:3004/files${urlObj.pathname}${urlObj.search}`
+          } else {
+            // Production: use production proxy on same domain
+            proxyUrl = `/files${urlObj.pathname}${urlObj.search}`
+          }
+          img.src = proxyUrl
+          img.onerror = () => {
+            // Fallback to default avatar
+            img.src = defaultAvatar
+          }
+        } catch (e) {
+          // Fallback to default avatar
+          img.src = defaultAvatar
+        }
+      } else {
+        // Fallback to default avatar for other errors
+        img.src = defaultAvatar
+      }
     }
     const triggerAvatarUpload = () => {
       avatarInput.value?.click()
@@ -654,10 +615,6 @@ export default {
     const openLink = (url) => {
       window.open(url, '_blank')
     }
-    const formatDate = (date) => {
-      if (!date) return 'N/A'
-      return new Date(date).toLocaleDateString()
-    }
     const handleTabChange = (tabName) => {
       activeTab.value = tabName
     }
@@ -726,8 +683,14 @@ export default {
           toast?.error('Address not found. Please contact support.')
           return
         }
-        // Update existing address using user endpoint (no tenant required)
-        await addressApi.updateUserAddress('USER', currentUserId, formData)
+        // Update existing address
+        // Add required owner information for backend validation
+        const addressUpdateData = {
+          ...formData,
+          ownerId: currentUserId,
+          ownerType: 'USER'
+        }
+        await addressApi.updateAddress(userAddress.value.firstAddress?.id, addressUpdateData)
         // Close modal and refresh data
         showAddressModal.value = false
         currentAddressData.value = {}

@@ -75,62 +75,19 @@ export const tenantApi = {
   },
   // Profile - Similar to user profile endpoints
   async getTenantProfile(tenantKey) {
-    return axios.get(`/tenant/${tenantKey}/profile`);
+    return axios.get(`/v1/tenant/profile/${tenantKey}`);
   },
   async updateTenantProfile(tenantKey, data) {
-    return axios.put(`/tenant/${tenantKey}/profile`, data);
+    return axios.put(`/v1/tenant/profile/${tenantKey}`, data);
   },
-  async updateTenantLogo(tenantKey, file) {
+  async updateTenantLogo(file) {
     const formData = new FormData();
     formData.append('logo', file);
-    return axios.put(`/tenant/${tenantKey}/logo`, formData, {
+    return axios.put('/v1/tenant/logo', formData, {
       headers: {
         'Content-Type': 'multipart/form-data'
       }
     });
-  },
-  /**
- * Unified update endpoint - can handle profile data and logo upload together
- * Usage: 
- * - Update profile only: updateTenant(tenantKey, {description: 'New desc'})
- * - Update logo only: updateTenant(tenantKey, null, file)
- * - Update both: updateTenant(tenantKey, {description: 'New desc'}, file)
- * 
- * MIGRATION GUIDE:
- * OLD: updateTenantProfile(tenantKey, data) -> NEW: updateTenant(tenantKey, data)
- * OLD: updateTenantLogo(tenantKey, file) -> NEW: updateTenant(tenantKey, null, file)
- * OLD: getTenantProfile(tenantKey) -> NEW: getTenantProfile(tenantKey) (endpoint updated)
- */
-  async updateTenant(tenantKey, data = null, file = null) {
-    if (file && !data) {
-      // Logo only update - use dedicated logo endpoint
-      const formData = new FormData();
-      formData.append('logo', file);
-      return axios.put(`/tenant/${tenantKey}/logo`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
-      });
-    } else if (data && file) {
-      // Both profile and logo update - use multipart endpoint
-      const formData = new FormData();
-      formData.append('logo', file);
-      formData.append('request', new Blob([JSON.stringify(data)], { type: 'application/json' }));
-      return axios.put(`/tenant/${tenantKey}`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
-      });
-    } else if (data) {
-      // Profile only update - use JSON endpoint
-      return axios.put(`/tenant/${tenantKey}`, data, {
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      });
-    } else {
-      throw new Error('Either data or file must be provided');
-    }
   },
   // Basic Info - Similar to user basic info
   async updateTenantBasicInfo(tenantKey, data) {

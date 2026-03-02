@@ -7,10 +7,10 @@
           <Icon icon="fa6-solid:key" class="h-6 w-6 text-yellow-600 dark:text-yellow-300" />
         </div>
         <h2 class="mt-6 text-3xl font-extrabold text-gray-900 dark:text-white">
-          {{ $t('auth.login.forgotPasswordSection.title') }}
+          Forgot your password?
         </h2>
         <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
-          {{ $t('auth.login.forgotPasswordSection.subtitle') }}
+          Enter your email address and we'll send you a link to reset your password.
         </p>
       </div>
       <!-- Forgot Password Form -->
@@ -19,7 +19,7 @@
           <!-- Email -->
           <div>
             <label for="email" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              {{ $t('auth.login.forgotPasswordSection.email') }}
+              Email address
             </label>
             <div class="mt-1 relative">
               <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -34,7 +34,7 @@
                 required
                 class="appearance-none relative block w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white bg-white dark:bg-gray-800 rounded-md focus:outline-none focus:ring-yellow-500 focus:border-yellow-500 sm:text-sm"
                 :class="{ 'border-red-500 dark:border-red-400': emptyFields && !form.email }"
-                :placeholder="$t('auth.login.forgotPassword.emailPlaceholder')"
+                placeholder="Enter your email"
               />
             </div>
           </div>
@@ -47,7 +47,7 @@
             </div>
             <div class="ml-3">
               <h3 class="text-sm font-medium text-green-800 dark:text-green-200">
-                {{ $t('auth.login.forgotPassword.success') }}
+                Success
               </h3>
               <div class="mt-2 text-sm text-green-700 dark:text-green-300">
                 {{ successMessage }}
@@ -63,7 +63,7 @@
             </div>
             <div class="ml-3">
               <h3 class="text-sm font-medium text-red-800 dark:text-red-200">
-                {{ $t('auth.login.forgotPassword.error') }}
+                Error
               </h3>
               <div class="mt-2 text-sm text-red-700 dark:text-red-300">
                 {{ errorMessage }}
@@ -84,16 +84,16 @@
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
               </svg>
             </span>
-            {{ isLoading ? $t('auth.login.forgotPassword.sending') : $t('auth.login.forgotPassword.sendResetLink') }}
+            {{ isLoading ? 'Sending...' : 'Send reset link' }}
           </button>
         </div>
         <!-- Back to Login -->
         <div class="text-center">
           <span class="text-sm text-gray-600 dark:text-gray-400">
-            {{ $t('auth.login.forgotPassword.rememberPassword') }}
+            Remember your password?
           </span>
-          <router-link to="/auth/login" class="ml-1 font-medium text-yellow-600 hover:text-yellow-500 dark:text-yellow-400 dark:hover:text-yellow-300">
-            {{ $t('auth.login.forgotPassword.backToLogin') }}
+          <router-link to="/login" class="ml-1 font-medium text-yellow-600 hover:text-yellow-500 dark:text-yellow-400 dark:hover:text-yellow-300">
+            Back to login
           </router-link>
         </div>
       </form>
@@ -145,7 +145,7 @@ export default {
         form.email = ''
         // Redirect to login after 3 seconds
         setTimeout(() => {
-          router.push('/auth/login')
+          router.push('/login')
         }, 3000)
       } catch (error) {
         errorMessage.value = 'Failed to send reset link. Please try again.'

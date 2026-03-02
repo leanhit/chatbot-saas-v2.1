@@ -16,7 +16,7 @@ export const useTenantAdminSettingsStore = defineStore('tenantAdminSettings', ()
   const updateProfile = async (tenantId, payload) => {
     loading.value = true
     try {
-      await tenantApi.updateTenant(tenantId, payload)
+      await tenantApi.updateTenantProfile(tenantId, payload)
       // ElMessage.success('Đã cập nhật profile') // Comment out for Windzo
     } finally {
       loading.value = false

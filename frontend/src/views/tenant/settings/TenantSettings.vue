@@ -177,6 +177,7 @@ import { Icon } from '@iconify/vue'
 import { useRouter } from 'vue-router'
 import { useTenantAdminContextStore } from '@/stores/tenant/admin/tenantContextStore'
 import { tenantApi } from '@/api/tenantApi'
+import { formatDate, formatDateTimeLocal, dateTimeLocalToIso } from '@/utils/dateUtils'
 import { getCurrentInstance } from 'vue'
 
 export default {
@@ -215,7 +216,7 @@ export default {
             name: tenant.name || '',
             status: tenant.status || 'ACTIVE',
             visibility: tenant.visibility || 'PUBLIC',
-            expiresAt: tenant.expiresAt ? new Date(tenant.expiresAt).toISOString().slice(0, 16) : '',
+            expiresAt: formatDateTimeLocal(tenant.expiresAt) || '',
             tenantKey: tenant.tenantKey || '',
             createdAt: tenant.createdAt || '',
             updatedAt: tenant.updatedAt || ''
@@ -236,7 +237,7 @@ export default {
           name: settings.value.name,
           status: settings.value.status,
           visibility: settings.value.visibility,
-          expiresAt: settings.value.expiresAt ? new Date(settings.value.expiresAt).toISOString() : null
+          expiresAt: dateTimeLocalToIso(settings.value.expiresAt)
         }
         
         const response = await tenantApi.updateTenantBasicInfo(tenantStore.activeTenantId, updateData)
@@ -300,11 +301,6 @@ export default {
     const copyTenantKey = () => {
       navigator.clipboard.writeText(settings.value.tenantKey)
       toast?.success('Tenant Key đã được sao chép')
-    }
-    
-    const formatDate = (dateString) => {
-      if (!dateString) return 'Không có dữ liệu'
-      return new Date(dateString).toLocaleString('vi-VN')
     }
     
     // Load data on mount

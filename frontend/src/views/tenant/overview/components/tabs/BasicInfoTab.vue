@@ -49,6 +49,7 @@
 
 <script>
 import { Icon } from '@iconify/vue'
+import { formatDate } from '@/utils/dateUtils'
 
 export default {
   name: 'BasicInfoTab',
@@ -110,11 +111,6 @@ export default {
         case 'PRIVATE': return 'Private'
         default: return 'Unknown'
       }
-    }
-    
-    const formatDate = (dateString) => {
-      if (!dateString) return null
-      return new Date(dateString).toLocaleString()
     }
     
     return {

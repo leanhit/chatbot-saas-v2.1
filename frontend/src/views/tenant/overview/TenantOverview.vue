@@ -164,6 +164,7 @@ import AddressModal from './components/modals/AddressModal.vue'
 import { useTenantAdminContextStore } from '@/stores/tenant/admin/tenantContextStore'
 import { tenantApi } from '@/api/tenantApi'
 import { addressApi } from '@/api/addressApi'
+import { dateTimeLocalToIso } from '@/utils/dateUtils'
 import { getCurrentInstance } from 'vue'
 
 export default {
@@ -267,7 +268,7 @@ export default {
         }
         
         // Call tenant API to update logo
-        const response = await tenantApi.updateTenant(tenantStore.activeTenantId, null, file)
+        const response = await tenantApi.updateTenantLogo(file)
         
         // Refresh tenant data
         await tenantStore.loadTenant()
@@ -302,7 +303,11 @@ export default {
           updateData.visibility = formData.visibility
         }
         if (formData.expiresAt) {
-          updateData.expiresAt = formData.expiresAt
+          // Convert datetime-local to ISO string for backend
+          const isoDate = dateTimeLocalToIso(formData.expiresAt)
+          if (isoDate) {
+            updateData.expiresAt = isoDate
+          }
         }
         
         const response = await tenantApi.updateTenantBasicInfo(tenantStore.activeTenantId, updateData)
@@ -357,6 +362,9 @@ export default {
         if (formData.contactPhone && formData.contactPhone.trim()) {
           updateData.contactPhone = formData.contactPhone
         }
+        if (formData.logoUrl && formData.logoUrl.trim()) {
+          updateData.logoUrl = formData.logoUrl
+        }
         if (formData.faviconUrl && formData.faviconUrl.trim()) {
           updateData.faviconUrl = formData.faviconUrl
         }
@@ -364,7 +372,7 @@ export default {
           updateData.primaryColor = formData.primaryColor
         }
         
-        const response = await tenantApi.updateTenant(tenantStore.activeTenantId, updateData)
+        const response = await tenantApi.updateTenantProfile(tenantStore.activeTenantId, updateData)
         
         // Update tenant data directly from response
         if (response.data) {

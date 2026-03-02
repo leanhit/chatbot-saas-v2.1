@@ -73,6 +73,7 @@
 <script>
 import { ref, watch } from 'vue'
 import { Icon } from '@iconify/vue'
+import { formatDateTimeLocal, dateTimeLocalToIso } from '@/utils/dateUtils'
 
 export default {
   name: 'BasicInfoModal',
@@ -109,7 +110,7 @@ export default {
           name: newTenant?.name || '',
           status: newTenant?.status || 'ACTIVE',
           visibility: newTenant?.visibility || 'PUBLIC',
-          expiresAt: newTenant?.expiresAt ? new Date(newTenant.expiresAt).toISOString().slice(0, 16) : ''
+          expiresAt: formatDateTimeLocal(newTenant?.expiresAt)
         }
       }
     }, { immediate: true })

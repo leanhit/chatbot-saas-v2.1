@@ -7,22 +7,8 @@
             <div class="flex items-center space-x-4 mb-4">
               <div class="w-12 h-12 bg-gray-300 dark:bg-gray-600 rounded-full"></div>
               <div class="flex-1 space-y-2">
-                <template>
-                  <div class="min-h-screen bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
-                    <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-                      <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-xl rounded-lg">
-                        <div class="px-4 py-5 sm:p-6 lg:p-8">
-                          <div class="flex justify-between items-center mb-6">
-                            <h3 class="text-lg font-medium text-gray-900 dark:text-white">{{ $t('tenant.member.myTenants') }}</h3>
-                            <router-link to="/tenant/gateway" class="text-blue-600 hover:text-blue-500">
-                              {{ $t('tenantGateway.title') }}
-                            </router-link>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </template>
+                <div class="h-4 bg-gray-300 dark:bg-gray-600 rounded w-3/4"></div>
+                <div class="h-3 bg-gray-300 dark:bg-gray-600 rounded w-1/2"></div>
               </div>
             </div>
             <div class="space-y-2">
@@ -53,7 +39,7 @@
         >
           <div class="card-header">
             <div class="tenant-avatar" :class="{ 'is-inactive': tenant.status !== 'ACTIVE' }">
-              <img v-if="tenant.profile?.logoUrl" :src="tenant.profile.logoUrl" :alt="tenant.name" />
+              <img v-if="tenant.profile?.logoUrl" :src="secureImageUrl(tenant.profile.logoUrl)" :alt="tenant.name" />
               <div v-else class="avatar-fallback">
                 {{ tenant.name.charAt(0).toUpperCase() }}
               </div>
@@ -130,6 +116,7 @@
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { Icon } from '@iconify/vue'
+import { formatDateTime } from '@/utils/dateUtils'
 import { useI18n } from 'vue-i18n'
 import { useGatewayTenantStore } from '@/stores/tenant/gateway/myTenantStore'
 import { secureImageUrl } from '@/utils/imageUtils'
@@ -164,17 +151,12 @@ export default {
       await tenantStore.activateTenant(id)
       await tenantStore.fetchUserTenants()
     }
-    const formatDateTime = (dateString) => {
-      if (!dateString) return 'N/A'
-      return new Date(dateString).toLocaleDateString()
-    }
     return {
       tenantList,
       loading,
       enterWorkspace,
       suspendTenant,
       activateTenant,
-      formatDateTime,
       secureImageUrl
     }
   }
