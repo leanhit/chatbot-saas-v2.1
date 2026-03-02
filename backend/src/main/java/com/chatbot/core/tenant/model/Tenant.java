@@ -1,7 +1,11 @@
 package com.chatbot.core.tenant.model;
 
+import com.chatbot.core.tenant.model.TenantStatus;
+import com.chatbot.core.tenant.model.TenantVisibility;
 import com.chatbot.core.tenant.profile.model.TenantProfile;
 import com.chatbot.core.tenant.professional.model.TenantProfessional;
+import com.chatbot.shared.utils.DateUtils;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
@@ -37,10 +41,16 @@ public class Tenant {
     private TenantVisibility visibility = TenantVisibility.PUBLIC;
 
     @Column(name = "expires_at")
+    @JsonFormat(pattern = DateUtils.STANDARD_JSON_FORMAT, timezone = DateUtils.STANDARD_TIMEZONE)
     private LocalDateTime expiresAt;
 
     // --- audit ---
+    @Column
+    @JsonFormat(pattern = DateUtils.STANDARD_JSON_FORMAT, timezone = DateUtils.STANDARD_TIMEZONE)
     private LocalDateTime createdAt;
+    
+    @Column
+    @JsonFormat(pattern = DateUtils.STANDARD_JSON_FORMAT, timezone = DateUtils.STANDARD_TIMEZONE)
     private LocalDateTime updatedAt;
 
     @PrePersist

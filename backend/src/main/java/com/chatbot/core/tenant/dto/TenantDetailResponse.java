@@ -4,6 +4,8 @@ import com.chatbot.shared.address.dto.AddressDetailResponseDTO;
 import com.chatbot.core.tenant.profile.dto.TenantProfileResponse;
 import com.chatbot.core.tenant.model.TenantStatus;
 import com.chatbot.core.tenant.model.TenantVisibility;
+import com.chatbot.shared.utils.DateUtils;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -22,7 +24,11 @@ public class TenantDetailResponse {
     private String name;
     private TenantStatus status;
     private TenantVisibility visibility;
+    
+    @JsonFormat(pattern = DateUtils.STANDARD_JSON_FORMAT, timezone = DateUtils.STANDARD_TIMEZONE)
     private LocalDateTime expiresAt;
+    
+    @JsonFormat(pattern = DateUtils.STANDARD_JSON_FORMAT, timezone = DateUtils.STANDARD_TIMEZONE)
     private LocalDateTime createdAt;
     private TenantProfileResponse profile;
     private AddressDetailResponseDTO address;
