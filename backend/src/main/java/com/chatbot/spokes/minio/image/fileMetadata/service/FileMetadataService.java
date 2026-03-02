@@ -331,7 +331,25 @@ public class FileMetadataService {
     }
 
     /**
-     * Get file content from MinIO by file ID
+     * Get file content from MinIO by filename (direct from MinIO without database lookup)
+     * @param filename: Filename
+     * @return File content as byte array
+     */
+    public byte[] getFileContentByFilename(String filename) {
+        try {
+            return minioClient.getObject(
+                io.minio.GetObjectArgs.builder()
+                    .bucket(bucketName)
+                    .object(filename)
+                    .build()
+            ).readAllBytes();
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to get file content by filename: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Get file content by ID (from database lookup)
      * @param id: File ID
      * @return File content as byte array
      */

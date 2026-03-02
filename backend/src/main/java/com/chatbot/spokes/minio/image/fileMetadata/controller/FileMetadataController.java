@@ -115,6 +115,28 @@ public class FileMetadataController {
     }
 
     /**
+     * Public endpoint for avatar images by filename (no authentication required)
+     * @param filename: Filename
+     * @return File content as ResponseEntity
+     */
+    @GetMapping("/public/filename/{filename}/content")
+    public ResponseEntity<byte[]> getPublicFileContentByFilename(@PathVariable String filename) {
+        try {
+            byte[] fileContent = fileMetadataService.getFileContentByFilename(filename);
+            if (fileContent != null) {
+                return ResponseEntity.ok()
+                    .header("Content-Type", "image/jpeg") // Adjust based on file type
+                    .header("Cache-Control", "max-age=3600")
+                    .body(fileContent);
+            } else {
+                return ResponseEntity.notFound().build();
+            }
+        } catch (Exception e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    /**
      * Public endpoint for avatar images (no authentication required)
      * @param id: File ID
      * @return File content as ResponseEntity
