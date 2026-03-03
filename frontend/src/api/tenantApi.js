@@ -1,10 +1,23 @@
 import axios from '@/plugins/axios';
 import router from '@/router';
+import {
+  CreateTenantRequest,
+  TenantBasicInfoRequest,
+  TenantSearchRequest,
+  TenantProfileRequest,
+  InviteMemberRequest,
+  validateCreateTenantRequest,
+  validateInviteMemberRequest,
+  validateTenantBasicInfoRequest,
+  validateTenantProfileRequest,
+  validateTenantSearchRequest
+} from '@/types/tenant';
+
 export const tenantApi = {
   // Tenant core
   async getTenant(tenantKey) {
     try {
-      const response = await axios.get(`/tenants/key/${tenantKey}`);
+      const response = await axios.get(`/tenants/key/${tenantKey}/full`);
       return response;
     } catch (error) {
       handleTenantError(error);
@@ -24,9 +37,14 @@ export const tenantApi = {
     return axios.get('/tenants/me');
   },
   async createTenant(data) {
+    // Validate request using types
+    const errors = validateCreateTenantRequest(data);
+    if (errors.length > 0) {
+      throw new Error(errors.join(', '));
+    }
+    
     try {
       const response = await axios.post('/tenants', data);
-      // ElMessage.success('Tạo workspace mới thành công'); // Comment out for Windzo
       return response;
     } catch (error) {
       handleTenantError(error);
@@ -34,101 +52,152 @@ export const tenantApi = {
     }
   },
   async deleteTenant(tenantKey) {
-    return axios.delete(`/tenants/key/${tenantKey}`);
-  },
-  async searchTenant(keyword) {
-    return axios.get('/tenants/search', { params: { keyword } });
-  },
-  /**
-   * Lấy thông tin chi tiết tenant bao gồm profile và địa chỉ
-   * @param tenantKey UUID của tenant cần lấy thông tin
-   * @returns Thông tin chi tiết của tenant
-   */
-  async getTenantDetail(tenantKey) {
-    return axios.get(`/tenants/key/${tenantKey}/full`);
-  },
-  /**
-   * Lấy thông tin chi tiết tenant bằng tenantKey (cho frontend)
-   * @param tenantKey UUID của tenant cần lấy thông tin
-   * @returns Thông tin chi tiết của tenant
-   */
-  async getTenantDetailByTenantKey(tenantKey) {
-    return axios.get(`/tenants/key/${tenantKey}/full`);
-  },
-  async suspendTenant(id) {
     try {
-      await axios.post(`/tenants/${id}/suspend`);
-      // ElMessage.success('Đã tạm dừng workspace thành công'); // Comment out for Windzo
+      const response = await axios.delete(`/tenants/key/${tenantKey}`);
+      return response;
     } catch (error) {
       handleTenantError(error);
       throw error;
     }
   },
-  async activateTenant(id) {
+  async updateTenant(tenantKey, data) {
+    // Validate basic info request
+    const errors = validateTenantBasicInfoRequest(data);
+    if (errors.length > 0) {
+      throw new Error(errors.join(', '));
+    }
+    
     try {
-      await axios.post(`/tenants/${id}/activate`);
-      // ElMessage.success('Đã kích hoạt lại workspace thành công'); // Comment out for Windzo
+      const response = await axios.put(`/tenants/key/${tenantKey}`, data);
+      return response;
     } catch (error) {
       handleTenantError(error);
       throw error;
     }
   },
-  // Profile - Similar to user profile endpoints
-  async getTenantProfile(tenantKey) {
-    return axios.get(`/v1/tenant/profile/${tenantKey}`);
+  async updateTenantProfile(tenantKey, profileData) {
+    // Validate profile request
+    const errors = validateTenantProfileRequest(profileData);
+    if (errors.length > 0) {
+      throw new Error(errors.join(', '));
+    }
+    
+    try {
+      const response = await axios.put(`/tenant/${tenantKey}/profile`, profileData);
+      return response;
+    } catch (error) {
+      handleTenantError(error);
+      throw error;
+    }
   },
-  async updateTenantProfile(tenantKey, data) {
-    return axios.put(`/v1/tenant/profile/${tenantKey}`, data);
+  async uploadTenantLogo(tenantKey, file) {
+    // Create FormData with correct parameter name for backend
+    const formData = new FormData()
+    formData.append('logo', file)
+    
+    try {
+      const response = await axios.put(`/tenant/${tenantKey}/logo`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      return response;
+    } catch (error) {
+      handleTenantError(error);
+      throw error;
+    }
   },
-  async updateTenantLogo(file) {
-    const formData = new FormData();
-    formData.append('logo', file);
-    return axios.put('/v1/tenant/logo', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data'
-      }
-    });
+  async uploadTenantFavicon(tenantKey, formData) {
+    try {
+      const response = await axios.post(`/tenants/key/${tenantKey}/favicon`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      return response;
+    } catch (error) {
+      handleTenantError(error);
+      throw error;
+    }
   },
-  // Basic Info - Similar to user basic info
-  async updateTenantBasicInfo(tenantKey, data) {
-    return axios.put(`/tenants/key/${tenantKey}`, data);
+  async searchTenants(searchRequest) {
+    // Validate search request
+    const errors = validateTenantSearchRequest(searchRequest);
+    if (errors.length > 0) {
+      throw new Error(errors.join(', '));
+    }
+    
+    try {
+      const params = new URLSearchParams();
+      if (searchRequest.keyword) params.append('keyword', searchRequest.keyword);
+      params.append('page', searchRequest.page);
+      params.append('size', searchRequest.size);
+      params.append('sortBy', searchRequest.sortBy);
+      params.append('sortDirection', searchRequest.sortDirection);
+      
+      const response = await axios.get(`/tenants/search?${params.toString()}`);
+      return response;
+    } catch (error) {
+      handleTenantError(error);
+      throw error;
+    }
   },
-  // Professional Info - Similar to user professional info  
-  async updateTenantProfessionalInfo(tenantKey, data) {
-    // This would go to TenantProfessionalController if it exists
-    return axios.put(`/v1/tenant/professional/${tenantKey}`, data);
+  async getTenantStats(tenantKey) {
+    try {
+      const response = await axios.get(`/tenants/key/${tenantKey}/stats`);
+      return response;
+    } catch (error) {
+      handleTenantError(error);
+      throw error;
+    }
   },
-  // Legacy method for backward compatibility
-  async updateTenantProfile_old(tenantKey, data) {
-    return axios.put(`/tenant-profile/${tenantKey}`, data);
+  // Tenant membership
+  async getTenantMembers(tenantKey) {
+    return axios.get(`/tenants/key/${tenantKey}/members`);
   },
-  // Address
-  async updateTenantAddress(tenantKey, addressId, data) {
-    return axios.put(`/addresses/${addressId}`, {
-      ...data,
-      ownerType: 'TENANT',
-      ownerId: tenantKey // Use tenantKey instead of tenantId
-    }, {
-      headers: {
-        'X-Tenant-Key': tenantKey  // Thêm header X-Tenant-Key
-      }
-    });
+  async updateMemberRole(tenantKey, memberId, role) {
+    return axios.put(`/tenants/key/${tenantKey}/members/${memberId}/role`, { role });
   },
-  // Status Management
-  async suspendTenant(tenantKey) {
-    return axios.post(`/tenants/key/${tenantKey}/suspend`);
+  async removeMember(tenantKey, memberId) {
+    return axios.delete(`/tenants/key/${tenantKey}/members/${memberId}`);
   },
-  async activateTenant(tenantKey) {
-    return axios.post(`/tenants/key/${tenantKey}/activate`);
+  async inviteMember(tenantKey, inviteData) {
+    return axios.post(`/tenants/key/${tenantKey}/invitations`, inviteData);
   },
-  async deactivateTenant(tenantKey) {
-    return axios.post(`/tenants/key/${tenantKey}/deactivate`);
+  async getTenantInvitations(tenantKey) {
+    return axios.get(`/tenants/key/${tenantKey}/invitations`);
   },
-  /**
-   * Lấy danh sách yêu cầu đang chờ (Admin)
-   */
-  async getJoinRequests(tenantKey) {
-    return axios.get(`/tenants/key/${tenantKey}/members/join-requests`);
+  async revokeInvitation(tenantKey, invitationId) {
+    return axios.delete(`/tenants/key/${tenantKey}/invitations/${invitationId}`);
+  },
+  async resendInvitation(tenantKey, invitationId) {
+    return axios.post(`/tenants/key/${tenantKey}/invitations/${invitationId}/resend`);
+  },
+  async requestJoinTenant(tenantKey) {
+    const url = `/tenants/key/${tenantKey}/members/join-requests`;
+    console.log('requestJoinTenant URL:', url);
+    console.log('Making POST request to:', url);
+    const result = axios.post(url);
+    console.log('Request result:', result);
+    return result;
+  },
+  async getMyJoinRequests() {
+    return axios.get('/tenants/members/join-requests');
+  },
+  async cancelJoinRequest(requestId) {
+    return axios.delete(`/tenants/members/join-requests/${requestId}`);
+  },
+  async getMyInvitations() {
+    return axios.get('/tenants/members/my-invitations');
+  },
+  async acceptInvitation(invitationId) {
+    return axios.post(`/tenants/members/invitations/${invitationId}/accept`);
+  },
+  async rejectInvitation(invitationId) {
+    return axios.post(`/tenants/members/invitations/${invitationId}/reject`);
+  },
+  async leaveTenant(tenantKey) {
+    return axios.post(`/tenants/key/${tenantKey}/leave`);
   },
   /**
    * Phê duyệt hoặc Từ chối yêu cầu
@@ -140,72 +209,108 @@ export const tenantApi = {
     });
   },
   /**
-   * Lấy danh sách yêu cầu đang chờ (cho user)
+   * Revoke invitation
    */
-  async getPendingRequests() {
-    return axios.get('/tenants/pending-requests');
+  async revokeInvitation(tenantKey, invitationId) {
+    return axios.delete(`/tenants/key/${tenantKey}/invitations/${invitationId}`);
   },
   /**
-   * Phê duyệt yêu cầu tham gia
+   * Request to join a tenant
    */
-  async approvePendingRequest(requestId) {
-    return axios.post(`/tenants/pending-requests/${requestId}/approve`);
+  async requestJoinTenant(tenantKey) {
+    const url = `/tenants/key/${tenantKey}/members/join-requests`;
+    console.log('requestJoinTenant URL:', url);
+    console.log('Making POST request to:', url);
+    const result = axios.post(url);
+    console.log('Request result:', result);
+    return result;
   },
   /**
-   * Từ chối yêu cầu tham gia
+   * Get pending join requests for a tenant
    */
-  async rejectPendingRequest(requestId) {
-    return axios.post(`/tenants/pending-requests/${requestId}/reject`);
+  async getPendingJoinRequests(tenantKey) {
+    return axios.get(`/tenants/key/${tenantKey}/members/join-requests/pending`);
   },
   /**
-   * Lấy danh sách lời mời của user
+   * Get pending invitations for a tenant
    */
-  async getUserInvitations() {
-    return axios.get('/tenants/invitations/me');
+  async getPendingInvitations(tenantKey) {
+    return axios.get(`/tenants/key/${tenantKey}/invitations/pending`);
   },
   /**
-   * Chấp nhận lời mời
+   * Get member statistics
    */
-  async acceptInvitation(invitationId) {
-    return axios.post(`/tenants/invitations/${invitationId}/accept`);
+  async getMemberStats(tenantKey) {
+    return axios.get(`/tenants/key/${tenantKey}/members/stats`);
   },
   /**
-   * Từ chối lời mời
+   * Bulk update member roles
    */
-  async rejectInvitation(invitationId) {
-    return axios.post(`/tenants/invitations/${invitationId}/reject`);
+  async bulkUpdateMemberRoles(tenantKey, updates) {
+    return axios.put(`/tenants/key/${tenantKey}/members/bulk-update-roles`, updates);
+  },
+  /**
+   * Export member list
+   */
+  async exportMembers(tenantKey, format = 'csv') {
+    return axios.get(`/tenants/key/${tenantKey}/members/export?format=${format}`, {
+      responseType: 'blob'
+    });
+  },
+  /**
+   * Import members from CSV
+   */
+  async importMembers(tenantKey, formData) {
+    return axios.post(`/tenants/key/${tenantKey}/members/import`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+  },
+  /**
+   * Get member activity log
+   */
+  async getMemberActivityLog(tenantKey, memberId) {
+    return axios.get(`/tenants/key/${tenantKey}/members/${memberId}/activity`);
+  },
+  /**
+   * Update member profile
+   */
+  async updateMemberProfile(tenantKey, memberId, profileData) {
+    return axios.put(`/tenants/key/${tenantKey}/members/${memberId}/profile`, profileData);
+  },
+  /**
+   * Deactivate member
+   */
+  async deactivateMember(tenantKey, memberId) {
+    return axios.patch(`/tenants/key/${tenantKey}/members/${memberId}/deactivate`);
+  },
+  /**
+   * Reactivate member
+   */
+  async reactivateMember(tenantKey, memberId) {
+    return axios.patch(`/tenants/key/${tenantKey}/members/${memberId}/reactivate`);
   }
 };
-// Xử lý lỗi chung cho các API liên quan đến tenant
+
+// Error handler
 function handleTenantError(error) {
-  if (error.response) {
-    const { status, data } = error.response;
-    if (status === 500 && data?.message?.includes('SUSPENDED')) {
-      // ElMessage.error('Workspace này đã bị tạm dừng. Vui lòng liên hệ quản trị viên.'); // Comment out for Windzo
-      // Xóa thông tin tenant đang lưu trong localStorage
-      localStorage.removeItem('TENANT_DATA');
-      localStorage.removeItem('ACTIVE_TENANT_ID');
-      // Chuyển hướng về trang đăng nhập
-      router.push('/login');
-      return;
-    }
-    if (status === 401) {
-      // Xử lý lỗi xác thực
-      localStorage.clear();
-      router.push('/login');
-      return;
-    }
-    // Hiển thị thông báo lỗi từ server nếu có
-    if (data?.message) {
-      // ElMessage.error(data.message); // Comment out for Windzo
-    } else {
-      // ElMessage.error('Đã có lỗi xảy ra. Vui lòng thử lại sau.'); // Comment out for Windzo
-    }
-  } else if (error.request) {
-    // Lỗi không nhận được phản hồi từ server
-    // ElMessage.error('Không thể kết nối đến máy chủ. Vui lòng kiểm tra kết nối mạng của bạn.'); // Comment out for Windzo
+  if (error.response?.status === 401) {
+    // Token expired or invalid
+    router.push('/login');
+  } else if (error.response?.status === 403) {
+    // Forbidden access
+    console.error('Access forbidden:', error.response?.data?.message || 'Access denied');
+  } else if (error.response?.status === 404) {
+    // Resource not found
+    console.error('Resource not found:', error.response?.data?.message || 'Resource not found');
+  } else if (error.response?.status >= 500) {
+    // Server error
+    console.error('Server error:', error.response?.data?.message || 'Internal server error');
   } else {
-    // Lỗi khi thiết lập request
-    // ElMessage.error('Đã có lỗi xảy ra khi gửi yêu cầu.'); // Comment out for Windzo
+    // Other errors
+    console.error('API error:', error.message || 'Unknown error occurred');
   }
 }
+
+export default tenantApi;

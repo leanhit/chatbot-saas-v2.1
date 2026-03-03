@@ -16,4 +16,7 @@ public class TenantPendingResponse {
     private TenantStatus status;
     private TenantVisibility visibility;
     private LocalDateTime requestedAt;
+    
+    // Avatar information from tenant profile
+    private String logoUrl;
 }

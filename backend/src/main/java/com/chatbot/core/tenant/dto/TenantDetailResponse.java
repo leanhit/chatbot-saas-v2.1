@@ -4,13 +4,11 @@ import com.chatbot.shared.address.dto.AddressDetailResponseDTO;
 import com.chatbot.core.tenant.profile.dto.TenantProfileResponse;
 import com.chatbot.core.tenant.model.TenantStatus;
 import com.chatbot.core.tenant.model.TenantVisibility;
-import com.chatbot.shared.utils.DateUtils;
-import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 
 /**
@@ -20,16 +18,18 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class TenantDetailResponse {
-    private String tenantKey; // ✅ Thay vì id
+    private Long id;
+    private String tenantKey;
     private String name;
     private TenantStatus status;
     private TenantVisibility visibility;
     
-    @JsonFormat(pattern = DateUtils.STANDARD_JSON_FORMAT, timezone = DateUtils.STANDARD_TIMEZONE)
-    private LocalDateTime expiresAt;
+    // Instant sẽ được serialize thành ISO 8601 tự động bởi Jackson
+    private Instant expiresAt;
     
-    @JsonFormat(pattern = DateUtils.STANDARD_JSON_FORMAT, timezone = DateUtils.STANDARD_TIMEZONE)
-    private LocalDateTime createdAt;
+    // Instant sẽ được serialize thành ISO 8601 tự động bởi Jackson
+    private Instant createdAt;
+    
     private TenantProfileResponse profile;
     private AddressDetailResponseDTO address;
 
@@ -42,7 +42,8 @@ public class TenantDetailResponse {
             AddressDetailResponseDTO address) {
         
         TenantDetailResponse response = new TenantDetailResponse();
-        response.setTenantKey(tenant.getTenantKey()); // ✅ Thay vì getId()
+        response.setId(tenant.getId());
+        response.setTenantKey(tenant.getTenantKey());
         response.setName(tenant.getName());
         response.setStatus(tenant.getStatus());
         response.setVisibility(tenant.getVisibility());
@@ -62,7 +63,8 @@ public class TenantDetailResponse {
             List<AddressDetailResponseDTO> addresses) {
         
         TenantDetailResponse response = new TenantDetailResponse();
-        response.setTenantKey(tenant.getTenantKey()); // ✅ Thay vì getId()
+        response.setId(tenant.getId());
+        response.setTenantKey(tenant.getTenantKey());
         response.setName(tenant.getName());
         response.setStatus(tenant.getStatus());
         response.setVisibility(tenant.getVisibility());

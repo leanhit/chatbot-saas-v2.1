@@ -2,22 +2,33 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { tenantApi } from '@/api/tenantApi'
+import { TenantBasicInfoRequest, TenantProfileRequest, validateTenantBasicInfoRequest, validateTenantProfileRequest } from '@/types/tenant'
 export const useTenantAdminSettingsStore = defineStore('tenantAdminSettings', () => {
   const loading = ref(false)
   const updateBasicInfo = async (tenantId, payload) => {
+    // Validate payload using types
+    const errors = validateTenantBasicInfoRequest(payload);
+    if (errors.length > 0) {
+      throw new Error(errors.join(', '));
+    }
+    
     loading.value = true
     try {
-      await tenantApi.updateTenantBasicInfo(tenantId, payload)
-      // ElMessage.success('Đã cập nhật thông tin cơ bản') // Comment out for Windzo
+      await tenantApi.updateTenant(tenantId, payload)
     } finally {
       loading.value = false
     }
   }
   const updateProfile = async (tenantId, payload) => {
+    // Validate payload using types
+    const errors = validateTenantProfileRequest(payload);
+    if (errors.length > 0) {
+      throw new Error(errors.join(', '));
+    }
+    
     loading.value = true
     try {
       await tenantApi.updateTenantProfile(tenantId, payload)
-      // ElMessage.success('Đã cập nhật profile') // Comment out for Windzo
     } finally {
       loading.value = false
     }

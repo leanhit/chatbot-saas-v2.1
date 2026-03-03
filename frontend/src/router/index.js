@@ -33,6 +33,11 @@ import PageMaintenance from "../views/layouts/error/maintenance.vue";
 import Tables from "../views/tables.vue";
 var appname = " - Windzo Dashboard Admin Template";
 const routes = [
+  // Root route - redirect to login
+  {
+    path: "/",
+    redirect: "/login"
+  },
   // Auth Routes (Outside main layout)
   {
     path: "/login",

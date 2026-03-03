@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { tenantMembershipApi } from '@/api/tenantMembershipApi'
 import { ACTIVE_TENANT_ID } from '@/utils/constant'
+import { MembershipStatus, InvitationStatus, TenantRole } from '@/types/tenant'
 export const useTenantAdminMembersStore = defineStore(
   'tenantAdminMembers',
   () => {
@@ -18,15 +19,15 @@ export const useTenantAdminMembersStore = defineStore(
     // ======================
     /** Thành viên chính thức */
     const activeMembers = computed(() =>
-      members.value.filter(m => m.status === 'ACTIVE')
+      members.value.filter(m => m.status === MembershipStatus.ACTIVE)
     )
     /** Lời mời đang chờ */
     const pendingInvitations = computed(() =>
-      invitations.value.filter(i => i.status === 'PENDING')
+      invitations.value.filter(i => i.status === InvitationStatus.PENDING)
     )
     /** User xin vào tenant */
     const pendingMembers = computed(() =>
-      joinRequests.value.filter(r => r.status === 'PENDING')
+      joinRequests.value.filter(r => r.status === MembershipStatus.PENDING)
     )
     // ======================
     // ACTIONS - MEMBERS

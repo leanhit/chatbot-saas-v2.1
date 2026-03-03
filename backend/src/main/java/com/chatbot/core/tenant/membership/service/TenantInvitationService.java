@@ -17,6 +17,7 @@ import com.chatbot.core.user.model.User;
 import com.chatbot.core.user.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -25,12 +26,15 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Transactional
+@Slf4j
 public class TenantInvitationService {
     
     private final TenantInvitationRepository invitationRepo;
     private final TenantRepository tenantRepo;
-    private final UserRepository userRepository;
     private final TenantMemberRepository memberRepo;
+    private final UserRepository userRepo;
+    private final TenantNotificationService notificationService;
 
     /**
      * Admin thực hiện mời user vào tenant
@@ -40,7 +44,7 @@ public class TenantInvitationService {
         Tenant tenant = tenantRepo.findById(tenantId)
             .orElseThrow(() -> new RuntimeException("Tenant không tồn tại"));
 
-        User userToBeInvited = userRepository.findByEmail(request.getEmail().toLowerCase())
+        User userToBeInvited = userRepo.findByEmail(request.getEmail().toLowerCase())
             .orElseThrow(() -> new RuntimeException("Người dùng này chưa có tài khoản trên hệ thống."));
 
         if (memberRepo.existsByTenantIdAndUserId(tenantId, userToBeInvited.getId())) {
@@ -62,7 +66,17 @@ public class TenantInvitationService {
             .invitedBy(admin)
             .build();
             
-        invitationRepo.save(invitation);
+        invitation = invitationRepo.save(invitation);
+
+        // Send notification
+        notificationService.sendInvitationNotification(
+            tenantId, 
+            tenant.getName(), 
+            request.getEmail(), 
+            request.getRole().toString(),
+            invitation.getToken(),
+            admin.getEmail()
+        );
     }
 
     /**
@@ -116,6 +130,14 @@ public class TenantInvitationService {
 
         invitation.setStatus(InvitationStatus.ACCEPTED);
         invitationRepo.save(invitation);
+
+        // Send notification
+        notificationService.sendInvitationAcceptedNotification(
+            invitation.getTenant().getId(),
+            invitation.getTenant().getName(),
+            user.getEmail(),
+            invitation.getRole().toString()
+        );
     }
 
     /**
@@ -158,6 +180,11 @@ public class TenantInvitationService {
                 .role(invitation.getRole())
                 .status(invitation.getStatus())
                 .expiresAt(invitation.getExpiresAt())
+                .invitedByName(invitation.getInvitedBy() != null && 
+                    invitation.getInvitedBy().getProfile() != null ?
+                    invitation.getInvitedBy().getProfile().getFullName() : 
+                    invitation.getInvitedBy().getEmail())
+                .token(invitation.getToken()) // Include token for accept/reject
                 .build();
     }
 }

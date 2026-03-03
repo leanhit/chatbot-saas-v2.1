@@ -1,20 +1,42 @@
 /**
  * Date utility functions for consistent date formatting across the application
- * Matches backend DateUtils constants
+ * Matches backend DateUtils constants - ISO 8601 UTC Standard
  */
 
-// Backend constants from DateUtils.java
-export const STANDARD_JSON_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSS"
-export const STANDARD_TIMEZONE = "Asia/Ho_Chi_Minh"
+// Backend constants from DateUtils.java - Updated for consistency
+export const API_DATETIME_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSSXXX"
+export const API_TIMEZONE = "UTC"
+export const ISO_DATETIME_WITH_ZONE = "yyyy-MM-dd'T'HH:mm:ssXXX"
+export const ISO_DATETIME_WITH_MILLIS = "yyyy-MM-dd'T'HH:mm:ss.SSSXXX"
 
 /**
- * Format date for display in UI
- * @param {string|Date|Array} dateString - Date string, Date object, or array from gRPC
- * @param {Object} options - Formatting options
- * @returns {string} Formatted date string
+ * Convert datetime-local input value to ISO string for API
+ * @param {string} dateTimeLocalValue - DateTime-local input value (YYYY-MM-DDTHH:mm)
+ * @returns {string} ISO string for API or null if invalid
  */
-export function formatDate(dateString, options = {}) {
-  if (!dateString) return options.fallback || 'N/A'
+export function dateTimeLocalToIso(dateTimeLocalValue) {
+  if (!dateTimeLocalValue) return null
+  
+  try {
+    const date = new Date(dateTimeLocalValue)
+    if (isNaN(date.getTime())) return null
+    
+    // Return ISO 8601 with timezone (Z for UTC) - consistent with backend
+    return date.toISOString()
+  } catch (e) {
+    console.warn('DateTime-local to ISO conversion error:', dateTimeLocalValue, e)
+    return null
+  }
+}
+
+/**
+ * Format backend ISO datetime to local datetime input
+ * @param {string|Date|Array} dateString - Date string, Date object, or array from gRPC
+ * @returns {string} Date in YYYY-MM-DDTHH:mm format for datetime-local input
+ */
+export function formatDateTimeLocal(dateString) {
+  console.log('formatDateTimeLocal input:', dateString, typeof dateString);
+  if (!dateString && dateString !== 0) return ''
   
   try {
     let date
@@ -24,11 +46,104 @@ export function formatDate(dateString, options = {}) {
       const [year, month, day, hour, minute, second] = dateString
       // gRPC months are 1-based, JS months are 0-based
       date = new Date(year, month - 1, day, hour || 0, minute || 0, second || 0)
+    } else if (typeof dateString === 'number') {
+      // Handle Unix timestamp (could be seconds or milliseconds)
+      // If timestamp is in seconds (less than year 2000), convert to milliseconds
+      const timestamp = dateString < 10000000000 ? dateString * 1000 : dateString
+      console.log('timestamp after conversion:', timestamp);
+      date = new Date(timestamp)
+    } else {
+      // Parse ISO 8601 from backend (should be UTC)
+      date = new Date(dateString)
+    }
+    
+    console.log('date object:', date, 'isValid:', !isNaN(date.getTime()));
+    
+    if (isNaN(date.getTime())) return ''
+    
+    // Handle special case for timestamp 0 (no expiry)
+    if (date.getTime() === 0) {
+      console.log('timestamp is 0, returning empty string');
+      return ''
+    }
+    
+    // Convert to local time and format as YYYY-MM-DDTHH:mm
+    const localDate = new Date(date.getTime() - (date.getTimezoneOffset() * 60000))
+    const result = localDate.toISOString().slice(0, 16)
+    console.log('formatDateTimeLocal result:', result);
+    return result
+  } catch (e) {
+    console.warn('DateTime-local formatting error:', dateString, e)
+    return ''
+  }
+}
+
+/**
+ * Parse backend datetime response to local Date object
+ * @param {string} isoDateTime - ISO datetime string from backend
+ * @returns {Date} Local Date object
+ */
+export function parseBackendDateTime(isoDateTime) {
+  if (!isoDateTime) return null
+  
+  try {
+    // Backend should send ISO 8601 UTC format
+    return new Date(isoDateTime)
+  } catch (e) {
+    console.warn('Backend datetime parsing error:', isoDateTime, e)
+    return null
+  }
+}
+
+/**
+ * Format local Date to backend ISO datetime
+ * @param {Date} localDate - Local Date object
+ * @returns {string} ISO datetime string for backend
+ */
+export function formatToBackendDateTime(localDate) {
+  if (!localDate) return null
+  
+  try {
+    // Convert to ISO 8601 UTC for backend
+    return localDate.toISOString()
+  } catch (e) {
+    console.warn('Backend datetime formatting error:', localDate, e)
+    return null
+  }
+}
+
+/**
+ * Format date for display in UI
+ * @param {string|Date|Array} dateString - Date string, Date object, or array from gRPC
+ * @param {Object} options - Formatting options
+ * @returns {string} Formatted date string
+ */
+export function formatDate(dateString, options = {}) {
+  if (!dateString && dateString !== 0) return options.fallback || 'N/A'
+  
+  try {
+    let date
+    
+    // Handle gRPC array format: [year, month, day, hour, minute, second, nanosecond]
+    if (Array.isArray(dateString)) {
+      const [year, month, day, hour, minute, second] = dateString
+      // gRPC months are 1-based, JS months are 0-based
+      date = new Date(year, month - 1, day, hour || 0, minute || 0, second || 0)
+    } else if (typeof dateString === 'number') {
+      // Handle Unix timestamp (could be seconds or milliseconds)
+      // If timestamp is in seconds (less than year 2000), convert to milliseconds
+      const timestamp = dateString < 10000000000 ? dateString * 1000 : dateString
+      date = new Date(timestamp)
     } else {
       date = new Date(dateString)
     }
     
     if (isNaN(date.getTime())) return options.fallback || 'Invalid Date'
+    
+    // Handle special case for timestamp 0 (no expiry)
+    if (date.getTime() === 0) {
+      return options.fallback || 'No expiry'
+    }
     
     const defaultOptions = {
       year: 'numeric',
@@ -50,7 +165,7 @@ export function formatDate(dateString, options = {}) {
  * @returns {string} Formatted date-time string
  */
 export function formatDateTime(dateString, options = {}) {
-  if (!dateString) return options.fallback || 'N/A'
+  if (!dateString && dateString !== 0) return options.fallback || 'N/A'
   
   try {
     let date
@@ -60,11 +175,21 @@ export function formatDateTime(dateString, options = {}) {
       const [year, month, day, hour, minute, second] = dateString
       // gRPC months are 1-based, JS months are 0-based
       date = new Date(year, month - 1, day, hour || 0, minute || 0, second || 0)
+    } else if (typeof dateString === 'number') {
+      // Handle Unix timestamp (could be seconds or milliseconds)
+      // If timestamp is in seconds (less than year 2000), convert to milliseconds
+      const timestamp = dateString < 10000000000 ? dateString * 1000 : dateString
+      date = new Date(timestamp)
     } else {
       date = new Date(dateString)
     }
     
     if (isNaN(date.getTime())) return options.fallback || 'Invalid Date'
+    
+    // Handle special case for timestamp 0 (no expiry)
+    if (date.getTime() === 0) {
+      return options.fallback || 'No expiry'
+    }
     
     const defaultOptions = {
       year: 'numeric',
@@ -78,56 +203,6 @@ export function formatDateTime(dateString, options = {}) {
   } catch (e) {
     console.warn('Date-time formatting error:', dateString, e)
     return options.fallback || 'Invalid Date'
-  }
-}
-
-/**
- * Format date for datetime-local input
- * @param {string|Date|Array} dateString - Date string, Date object, or array from gRPC
- * @returns {string} Date in YYYY-MM-DDTHH:mm format for datetime-local input
- */
-export function formatDateTimeLocal(dateString) {
-  if (!dateString) return ''
-  
-  try {
-    let date
-    
-    // Handle gRPC array format: [year, month, day, hour, minute, second, nanosecond]
-    if (Array.isArray(dateString)) {
-      const [year, month, day, hour, minute, second] = dateString
-      // gRPC months are 1-based, JS months are 0-based
-      date = new Date(year, month - 1, day, hour || 0, minute || 0, second || 0)
-    } else {
-      date = new Date(dateString)
-    }
-    
-    if (isNaN(date.getTime())) return ''
-    
-    // Convert to local time and format as YYYY-MM-DDTHH:mm
-    const localDate = new Date(date.getTime() - (date.getTimezoneOffset() * 60000))
-    return localDate.toISOString().slice(0, 16)
-  } catch (e) {
-    console.warn('DateTime-local formatting error:', dateString, e)
-    return ''
-  }
-}
-
-/**
- * Convert datetime-local input value to ISO string for API
- * @param {string} dateTimeLocalValue - DateTime-local input value (YYYY-MM-DDTHH:mm)
- * @returns {string} ISO string for API or null if invalid
- */
-export function dateTimeLocalToIso(dateTimeLocalValue) {
-  if (!dateTimeLocalValue) return null
-  
-  try {
-    const date = new Date(dateTimeLocalValue)
-    if (isNaN(date.getTime())) return null
-    
-    return date.toISOString()
-  } catch (e) {
-    console.warn('DateTime-local to ISO conversion error:', dateTimeLocalValue, e)
-    return null
   }
 }
 
@@ -166,8 +241,23 @@ export function getRelativeTime(dateString) {
   if (!dateString) return 'N/A'
   
   try {
-    const date = new Date(dateString)
+    let date
+    
+    if (typeof dateString === 'number') {
+      // Handle Unix timestamp (could be seconds or milliseconds)
+      // If timestamp is in seconds (less than year 2000), convert to milliseconds
+      const timestamp = dateString < 10000000000 ? dateString * 1000 : dateString
+      date = new Date(timestamp)
+    } else {
+      date = new Date(dateString)
+    }
+    
     if (isNaN(date.getTime())) return 'Invalid Date'
+    
+    // Handle special case for timestamp 0 (no expiry)
+    if (date.getTime() === 0) {
+      return 'Never expires'
+    }
     
     const now = new Date()
     const diffMs = now - date

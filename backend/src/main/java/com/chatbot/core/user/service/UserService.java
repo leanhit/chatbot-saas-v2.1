@@ -5,6 +5,9 @@ import com.chatbot.core.user.model.User;
 import com.chatbot.core.user.profile.UserProfile;
 import com.chatbot.core.user.repository.UserRepository;
 import com.chatbot.core.user.repository.UserProfileRepository;
+import com.chatbot.core.tenant.membership.model.TenantJoinRequest;
+import com.chatbot.core.tenant.membership.model.MembershipStatus;
+import com.chatbot.core.tenant.membership.repository.TenantJoinRequestRepository;
 import com.chatbot.shared.address.service.AddressService;
 import com.chatbot.shared.address.dto.AddressDetailResponseDTO;
 import com.chatbot.shared.address.model.OwnerType;
@@ -39,6 +42,7 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final UserProfileRepository userProfileRepository;
+    private final TenantJoinRequestRepository joinRequestRepository;
     private final AddressService addressService;
     private final FileMetadataService fileMetadataService;
     private final CategoryService categoryService;
@@ -231,6 +235,30 @@ public class UserService {
         } catch (Exception e) {
             log.error("Failed to create empty address for user {}: {}", userId, e.getMessage());
         }
+    }
+
+    /**
+     * Cancel user's own join request
+     */
+    @Transactional
+    public void cancelJoinRequest(Long requestId, User user) {
+        // Find the join request
+        TenantJoinRequest request = joinRequestRepository.findById(requestId)
+                .orElseThrow(() -> new RuntimeException("Join request not found: " + requestId));
+
+        // Verify that the request belongs to the user
+        if (!request.getUser().getId().equals(user.getId())) {
+            throw new RuntimeException("You can only cancel your own join requests");
+        }
+
+        // Verify that the request is still pending
+        if (request.getStatus() != MembershipStatus.PENDING) {
+            throw new RuntimeException("Can only cancel pending requests");
+        }
+
+        // Delete the request
+        joinRequestRepository.delete(request);
+        log.info("Cancelled join request: {} for user: {}", requestId, user.getEmail());
     }
 
     // ===== Mappers =====

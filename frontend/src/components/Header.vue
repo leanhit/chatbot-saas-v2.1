@@ -36,17 +36,28 @@
           </svg>
         </button>
         <div
-          class="input-box border dark:bg-gray-900 lg:ml-0 ml-5 dark:border-gray-700 rounded-md hidden lg:w-search w-full box-border lg:flex md:flex focus-within:bg-gray-100 dark:focus-within:bg-gray-700"
+          class="input-box border dark:bg-gray-900 lg:ml-0 ml-5 dark:border-gray-700 rounded-md hidden lg:w-search w-full box-border lg:flex md:flex focus-within:bg-gray-100 dark:focus-within:bg-gray-700 relative"
         >
           <span class="text-3xl p-2 text-gray-400"
             ><Icon icon="ei:search"
           /></span>
           <input
             type="text"
-            :placeholder="$t('header.searchPlaceholder')"
-            class="p-3 w-full bg-white dark:bg-gray-900 dark:text-gray-400 rounded-md outline-none focus:bg-gray-100 dark:focus:bg-gray-700"
+            v-model="searchStore.searchQuery"
+            :placeholder="searchPlaceholder"
+            class="p-3 w-full bg-white dark:bg-gray-900 dark:text-gray-400 rounded-md outline-none focus:bg-gray-100 dark:focus:bg-gray-700 pr-10"
           />
+          <!-- Clear button -->
+          <button
+            v-if="searchStore.hasQuery"
+            @click="searchStore.clearSearch"
+            class="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-1"
+          >
+            <Icon icon="mdi:close" class="h-4 w-4" />
+          </button>
         </div>
+        <!-- Search Context Indicator -->
+        <SearchContextIndicator />
       </div>
       <div class="mr-5 flex gap-3" v-if="authStore.isLoggedIn">
         <!-- Language Switcher -->
@@ -189,6 +200,7 @@
                   class="block py-2 px-4 hover:bg-primary hover:text-white text-gray-700 dark:text-gray-200"
                   @click="menu = false"
                 >
+                  <Icon icon="mdi:account-circle" class="h-4 w-4 mr-2 inline" />
                   {{ $t('navbar.userProfile') }}
                 </router-link>
               </li>
@@ -196,8 +208,10 @@
                 <a
                   href="#"
                   class="block py-2 px-4 hover:bg-primary hover:text-white"
-                  >{{ $t('navbar.settings') }}</a
                 >
+                  <Icon icon="mdi:cog" class="h-4 w-4 mr-2 inline" />
+                  {{ $t('navbar.settings') }}
+                </a>
               </li>
               <li>
                 <a
@@ -215,8 +229,10 @@
                 href="#"
                 @click.prevent="handleLogout"
                 class="block py-2 px-4 text-sm text-gray-700 dark:text-gray-200 hover:bg-primary hover:text-white"
-                >{{ $t('navbar.signOut') }}</a
               >
+                <Icon icon="mdi:logout" class="h-4 w-4 mr-2 inline" />
+                {{ $t('navbar.signOut') }}
+              </a>
             </div>
           </div>
         </transition>
@@ -228,6 +244,7 @@
           to="/login" 
           class="bg-primary border flex gap-2 text-white hover:bg-primary/80 dark:border-gray-700 rounded py-2 px-4"
         >
+          <Icon icon="mdi:login" class="h-4 w-4" />
           <span class="text">{{ $t('navbar.login') }}</span>
         </router-link>
       </div>
@@ -239,11 +256,13 @@
   import { Icon } from "@iconify/vue";
   import { useRouter } from "vue-router";
   import { useI18n } from 'vue-i18n';
-  import { ref, onUnmounted } from 'vue';
+  import { ref, onUnmounted, computed } from 'vue';
   import { fullscreen } from "@/helper/fullscreen";
   import { setDarkMode, loadDarkMode } from "@/helper/theme";
   import LanguageSwitcher from "./LanguageSwitcher.vue";
+  import SearchContextIndicator from "./common/SearchContextIndicator.vue";
   import { useAuthStore } from '@/stores/authStore';
+  import { useSearchStore } from '@/stores/searchStore';
   import { usersApi } from '@/api/usersApi';
   import { secureImageUrl } from '@/utils/imageUtils';
   export default {
@@ -281,12 +300,28 @@
     components: {
       Icon,
       LanguageSwitcher,
+      SearchContextIndicator,
     },
     setup() {
       const { t } = useI18n()
       const authStore = useAuthStore();
+      const searchStore = useSearchStore();
       const router = useRouter();
       const avatarTimestamp = ref(Date.now());
+      
+      // Computed property for search placeholder based on context
+      const searchPlaceholder = computed(() => {
+        switch (searchStore.searchContext) {
+          case 'members':
+            return t('header.searchMembers') || 'Search members...';
+          case 'projects':
+            return t('header.searchProjects') || 'Search projects...';
+          case 'files':
+            return t('header.searchFiles') || 'Search files...';
+          default:
+            return t('header.searchPlaceholder') || 'Search...';
+        }
+      });
       // Listen for avatar updates from profile component
       const handleAvatarUpdate = () => {
         avatarTimestamp.value = Date.now();
@@ -299,9 +334,11 @@
       });
       return {
         authStore,
+        searchStore,
         router,
         t,
-        avatarTimestamp
+        avatarTimestamp,
+        searchPlaceholder
       };
     },
     computed: {

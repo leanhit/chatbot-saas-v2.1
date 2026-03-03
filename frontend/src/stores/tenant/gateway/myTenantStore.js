@@ -3,6 +3,7 @@ import { ref, computed } from 'vue'
 import { tenantApi } from '@/api/tenantApi'
 import { usersApi } from '@/api/usersApi'
 import { useAuthStore } from '@/stores/authStore'
+import { TenantStatus } from '@/types/tenant'
 // Constants (moved from utils/constant to avoid import issues)
 const ACTIVE_TENANT_ID = 'active_tenant_id'
 const TENANT_DATA = 'tenant_data'
@@ -46,7 +47,7 @@ export const useGatewayTenantStore = defineStore('gateway-tenant', () => {
     switchingTenant.value = true
     try {
       // Use new endpoint with tenantKey
-      const { data } = await tenantApi.getTenantDetailByTenantKey(tenantKey)
+      const { data } = await tenantApi.getTenant(tenantKey)
       console.log({
         tenantKey: typeof tenantKey,
         dataId: typeof data.id,
@@ -88,12 +89,12 @@ export const useGatewayTenantStore = defineStore('gateway-tenant', () => {
     } catch (error) {
     }
   }
-  const suspendTenant = async (id) => {
-    await tenantApi.suspendTenant(id);
+  const suspendTenant = async (tenantKey) => {
+    await tenantApi.suspendTenant(tenantKey);
     await fetchUserTenants(); // Cập nhật lại danh sách để thấy status thay đổi
   };
-  const activateTenant = async (id) => {
-    await tenantApi.activateTenant(id);
+  const activateTenant = async (tenantKey) => {
+    await tenantApi.activateTenant(tenantKey);
     await fetchUserTenants();
   };
   return {

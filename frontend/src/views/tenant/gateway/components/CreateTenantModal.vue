@@ -26,7 +26,7 @@
               <input
                 v-model="formData.visibility"
                 type="radio"
-                value="PUBLIC"
+                :value="TenantVisibility.PUBLIC"
                 class="radio-input"
               />
               <span class="radio-text">{{ $t('Public') }}</span>
@@ -36,7 +36,7 @@
               <input
                 v-model="formData.visibility"
                 type="radio"
-                value="PRIVATE"
+                :value="TenantVisibility.PRIVATE"
                 class="radio-input"
               />
               <span class="radio-text">{{ $t('Private') }}</span>
@@ -72,6 +72,7 @@ import { ref, computed, watch } from 'vue'
 import { Icon } from '@iconify/vue'
 import { useI18n } from 'vue-i18n'
 import { useGatewayCreateTenantStore } from '@/stores/tenant/gateway/createTenantStore'
+import { CreateTenantRequest, TenantVisibility, createDefaultTenantRequest } from '@/types/tenant'
 export default {
   name: 'CreateTenantModal',
   components: {
@@ -88,13 +89,13 @@ export default {
     const { t } = useI18n()
     const createTenantStore = useGatewayCreateTenantStore()
     const formData = ref({
-      name: '',
-      visibility: 'PUBLIC'
+      ...createDefaultTenantRequest()
     })
     const loading = computed(() => createTenantStore.loading)
     const error = computed(() => createTenantStore.error)
     const isFormValid = computed(() => {
-      return formData.value.name.trim() !== '' && formData.value.visibility !== ''
+      return formData.value.name.trim() !== '' && 
+             Object.values(TenantVisibility).includes(formData.value.visibility)
     })
     const handleClose = () => {
       if (!loading.value) {
@@ -121,8 +122,7 @@ export default {
     }
     const resetForm = () => {
       formData.value = {
-        name: '',
-        visibility: 'PUBLIC'
+        ...createDefaultTenantRequest()
       }
       createTenantStore.clearError()
     }
@@ -139,7 +139,8 @@ export default {
       isFormValid,
       handleClose,
       handleOverlayClick,
-      handleSubmit
+      handleSubmit,
+      TenantVisibility
     }
   }
 }

@@ -6,6 +6,8 @@ import com.chatbot.core.tenant.model.Tenant;
 import com.chatbot.core.tenant.model.TenantStatus;
 import com.chatbot.core.tenant.profile.model.TenantProfile;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.Instant;
 
 public class TenantMapper {
 
@@ -21,27 +23,29 @@ public class TenantMapper {
                 .build();
     }
 
-    // Entity → Response
+    // Entity → Response (convert LocalDateTime → Instant)
     public static TenantResponse toResponse(Tenant tenant) {
         return TenantResponse.builder()
-                .tenantKey(tenant.getTenantKey()) // ✅ Thay vì id
-                .name(tenant.getName())
-                .status(tenant.getStatus())
-                .visibility(tenant.getVisibility())
-                .expiresAt(tenant.getExpiresAt())
-                .createdAt(tenant.getCreatedAt())
-                .build();
-    }
-
-    // Entity → Response with Profile
-    public static TenantResponse toResponseWithProfile(Tenant tenant, TenantProfile profile) {
-        TenantResponse.TenantResponseBuilder builder = TenantResponse.builder()
+                .id(tenant.getId())
                 .tenantKey(tenant.getTenantKey())
                 .name(tenant.getName())
                 .status(tenant.getStatus())
                 .visibility(tenant.getVisibility())
-                .expiresAt(tenant.getExpiresAt())
-                .createdAt(tenant.getCreatedAt());
+                .expiresAt(toInstant(tenant.getExpiresAt()))
+                .createdAt(toInstant(tenant.getCreatedAt()))
+                .build();
+    }
+
+    // Entity → Response with Profile (convert LocalDateTime → Instant)
+    public static TenantResponse toResponseWithProfile(Tenant tenant, TenantProfile profile) {
+        TenantResponse.TenantResponseBuilder builder = TenantResponse.builder()
+                .id(tenant.getId())
+                .tenantKey(tenant.getTenantKey())
+                .name(tenant.getName())
+                .status(tenant.getStatus())
+                .visibility(tenant.getVisibility())
+                .expiresAt(toInstant(tenant.getExpiresAt()))
+                .createdAt(toInstant(tenant.getCreatedAt()));
 
         // Add profile fields if available
         if (profile != null) {
@@ -51,5 +55,11 @@ public class TenantMapper {
         }
 
         return builder.build();
+    }
+
+    // Helper method: LocalDateTime → Instant
+    private static Instant toInstant(LocalDateTime localDateTime) {
+        return localDateTime != null ? 
+            localDateTime.atZone(ZoneId.systemDefault()).toInstant() : null;
     }
 }

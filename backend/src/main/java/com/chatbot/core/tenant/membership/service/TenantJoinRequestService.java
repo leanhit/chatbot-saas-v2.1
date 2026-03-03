@@ -8,6 +8,7 @@ import com.chatbot.core.tenant.membership.model.*;
 import com.chatbot.core.tenant.membership.repository.TenantMemberRepository;
 import com.chatbot.core.tenant.membership.repository.TenantJoinRequestRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,11 +18,13 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
+@Slf4j
 public class TenantJoinRequestService {
 
     private final TenantMemberRepository memberRepo;
     private final TenantJoinRequestRepository joinRequestRepo;
     private final TenantRepository tenantRepo;
+    private final TenantNotificationService notificationService;
 
     /* ================= REQUEST ================= */
 
@@ -47,7 +50,16 @@ public class TenantJoinRequestService {
                 .tenant(tenant)
                 .user(user)
                 .status(MembershipStatus.PENDING)
+                .createdAt(LocalDateTime.now())
                 .build());
+
+        // Send notification to tenant admins
+        notificationService.sendJoinRequestNotification(
+            tenantId,
+            tenant.getName(),
+            user.getEmail(),
+            user.getEmail() // Could be enhanced with user's display name
+        );
     }
 
     /* ================= LIST ================= */
@@ -72,14 +84,21 @@ public class TenantJoinRequestService {
             // Check if user already has ACTIVE membership
             if (!memberRepo.existsByTenant_IdAndUser_IdAndStatus(
                     tenantId, request.getUser().getId(), MembershipStatus.ACTIVE)) {
-                // Create new member
+                // Add user as active member
                 memberRepo.save(TenantMember.builder()
                         .tenant(request.getTenant())
                         .user(request.getUser())
-                        .role(TenantRole.MEMBER)
+                        .role(TenantRole.MEMBER) // Default role for join requests
                         .status(MembershipStatus.ACTIVE)
                         .joinedAt(LocalDateTime.now())
                         .build());
+
+                // Send notification to user
+                notificationService.sendJoinRequestApprovedNotification(
+                    request.getTenant().getId(),
+                    request.getTenant().getName(),
+                    request.getUser().getEmail()
+                );
             }
             
             // Delete the join request
@@ -91,6 +110,27 @@ public class TenantJoinRequestService {
         } else {
             throw new IllegalStateException("Trạng thái không hợp lệ");
         }
+    }
+
+    /**
+     * Cancel/withdraw user's own join request
+     */
+    public void cancelUserRequest(Long requestId, User user) {
+        TenantJoinRequest request = joinRequestRepo.findById(requestId)
+                .orElseThrow(() -> new IllegalStateException("Không tìm thấy yêu cầu"));
+
+        // Verify that the request belongs to the user
+        if (!request.getUser().getId().equals(user.getId())) {
+            throw new IllegalStateException("Bạn không thể hủy yêu cầu của người khác");
+        }
+
+        // Verify that the request is still pending
+        if (request.getStatus() != MembershipStatus.PENDING) {
+            throw new IllegalStateException("Chỉ có thể hủy yêu cầu đang chờ xử lý");
+        }
+
+        // Delete the request
+        joinRequestRepo.delete(request);
     }
 
     /* ================= HELPERS ================= */

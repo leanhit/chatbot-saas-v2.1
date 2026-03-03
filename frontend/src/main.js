@@ -24,9 +24,24 @@ app.use(ToastPlugin);
 // Initialize auth store
 import { useAuthStore } from './stores/authStore'
 import { useGatewayTenantStore } from './stores/tenant/gateway/myTenantStore'
+import websocketService from './services/websocketService'
 const authStore = useAuthStore()
 const tenantStore = useGatewayTenantStore()
 authStore.initialize()
+
+// Initialize WebSocket when user is authenticated
+authStore.$subscribe((state, prevState) => {
+  if (state.isAuthenticated && !prevState.isAuthenticated) {
+    // User just logged in, connect WebSocket
+    const token = localStorage.getItem('accessToken')
+    if (token) {
+      websocketService.connect(token)
+    }
+  } else if (!state.isAuthenticated && prevState.isAuthenticated) {
+    // User just logged out, disconnect WebSocket
+    websocketService.disconnect()
+  }
+})
 // tenantStore doesn't have initialize method
 // Global properties (giống frontend)
 app.config.globalProperties.$http = axios

@@ -221,18 +221,17 @@ public class UserController {
     }
 
     /**
-     * Update Professional Info Only - Separate endpoint for professional information
+     * Cancel user's own join request
      */
-    @PutMapping("/me/professional-info")
-    public ResponseEntity<UserProfileResponse> updateProfessionalInfo(
+    @DeleteMapping("/join-requests/{requestId}")
+    public ResponseEntity<Void> cancelJoinRequest(
             @AuthenticationPrincipal CustomUserDetails currentUser,
-            @Valid @RequestBody UserRequest request) {
-        
+            @PathVariable Long requestId
+    ) {
         User user = currentUser.getUser();
+        userService.cancelJoinRequest(requestId, user);
+        log.info("Cancelled join request: {} for user: {}", requestId, currentUser.getUsername());
         
-        UserProfileResponse response = userService.updateProfessionalInfo(user.getId(), request);
-        log.info("Updated professional info for user: {}", currentUser.getUsername());
-        
-        return ResponseEntity.ok(response);
+        return ResponseEntity.noContent().build();
     }
 }

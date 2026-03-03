@@ -1,32 +1,16 @@
 <template>
   <div class="active-members-container">
-    <!-- Search and Filter -->
-    <div class="mb-6 flex flex-col sm:flex-row gap-4">
-      <div class="flex-1">
-        <div class="relative">
-          <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <Icon icon="mdi:magnify" class="h-5 w-5 text-gray-400" />
-          </div>
-          <input
-            v-model="searchQuery"
-            type="text"
-            :placeholder="$t('tenant.member.searchMembers')"
-            class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-primary focus:border-primary dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white"
-          />
-        </div>
-      </div>
+    <!-- Role Filter Only -->
+    <div class="mb-6 flex justify-end">
       <div class="flex gap-2">
         <select
           v-model="roleFilter"
           class="block px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary dark:bg-gray-700 dark:border-gray-600 dark:text-white"
         >
           <option value="">{{ $t('tenant.member.allRoles') }}</option>
-          <option value="OWNER">Owner</option>
-          <option value="ADMIN">Admin</option>
-          <option value="MANAGER">Manager</option>
-          <option value="MEMBER">Member</option>
-          <option value="EDITOR">Editor</option>
-          <option value="VIEWER">Viewer</option>
+          <option :value="TenantRole.OWNER">Owner</option>
+          <option :value="TenantRole.ADMIN">Admin</option>
+          <option :value="TenantRole.MEMBER">Member</option>
         </select>
       </div>
     </div>
@@ -57,8 +41,8 @@
               @error="handleAvatarError"
             />
             <div>
-              <h4 class="text-sm font-medium text-gray-900 dark:text-white">{{ member.name }}</h4>
-              <p class="text-xs text-gray-500 dark:text-gray-400">{{ member.email }}</p>
+              <h4 class="text-sm font-medium text-gray-900 dark:text-white">{{ member.name || 'Unknown' }}</h4>
+              <p class="text-xs text-gray-500 dark:text-gray-400">{{ member.email || 'No email' }}</p>
             </div>
           </div>
           <div class="flex items-center space-x-1">
@@ -70,8 +54,8 @@
               <Icon icon="mdi:eye" class="h-4 w-4" />
             </button>
             <button
-              v-if="member.role !== 'OWNER'"
-              @click="handleRemove(member)"
+              v-if="member?.role !== TenantRole.OWNER"
+              @click="removeMember(member)"
               class="p-1 text-gray-400 hover:text-red-600 dark:hover:text-red-400"
               :title="$t('tenant.member.removeMember')"
             >
@@ -83,7 +67,7 @@
           <!-- Role Selection -->
           <div class="flex items-center justify-between">
             <span class="text-xs font-medium text-gray-700 dark:text-gray-300">{{ $t('tenant.member.role') }}</span>
-            <div v-if="member.role === 'OWNER'" class="flex items-center">
+            <div v-if="member?.role === TenantRole.OWNER" class="flex items-center">
               <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
                 <Icon icon="mdi:crown" class="h-3 w-3 mr-1" />
                 OWNER
@@ -93,14 +77,11 @@
               v-else
               v-model="member.role"
               @change="handleRoleChange(member, $event.target.value)"
-              :disabled="!canChangeRole(member.role)"
+              :disabled="!canChangeRole(member?.role)"
               class="text-xs border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-primary dark:bg-gray-700 dark:border-gray-600 dark:text-white"
             >
-              <option value="ADMIN">Admin</option>
-              <option value="MANAGER">Manager</option>
-              <option value="MEMBER">Member</option>
-              <option value="EDITOR">Editor</option>
-              <option value="VIEWER">Viewer</option>
+              <option :value="TenantRole.ADMIN">Admin</option>
+              <option :value="TenantRole.MEMBER">Member</option>
             </select>
           </div>
           <!-- Status -->
@@ -153,9 +134,16 @@ import { Icon } from '@iconify/vue'
 import { tenantApi } from '@/api/tenantApi'
 import { formatDate, getRelativeTime } from '@/utils/dateUtils'
 import { useGatewayTenantStore } from '@/stores/tenant/gateway/myTenantStore'
+import { TenantRole, MembershipStatus } from '@/types/tenant'
 import defaultAvatar from '@/assets/img/user.jpg'
 export default {
   name: 'ActiveMemberTab',
+  props: {
+    searchQuery: {
+      type: String,
+      default: ''
+    }
+  },
   components: {
     Icon
   },
@@ -164,120 +152,137 @@ export default {
     const tenantStore = useGatewayTenantStore()
     const loading = ref(false)
     const members = ref([])
-    const searchQuery = ref('')
     const roleFilter = ref('')
     const currentPage = ref(1)
     const pageSize = ref(12)
     const totalMembers = ref(0)
+    
+    // Defensive check for tenantStore
+    if (!tenantStore) {
+      console.error('TenantStore is not available')
+      return {
+        loading,
+        members,
+        searchQuery,
+        roleFilter,
+        currentPage,
+        pageSize,
+        totalMembers,
+        totalPages: computed(() => 0),
+        filteredMembers: computed(() => []),
+        defaultAvatar,
+        handleRoleChange: () => {},
+        removeMember: () => {},
+        viewDetails: () => {},
+        handleAvatarError: () => {},
+        canChangeRole: () => false,
+        getStatusBadgeClass: () => '',
+        getStatusLabel: () => '',
+        formatDate: () => '',
+        getRelativeTime: () => ''
+      }
+    }
     const totalPages = computed(() => Math.ceil(totalMembers.value / pageSize.value))
     const filteredMembers = computed(() => {
       let filtered = members.value
-      if (searchQuery.value) {
-        const query = searchQuery.value.toLowerCase()
-        filtered = filtered.filter(member => 
-          member.name.toLowerCase().includes(query) ||
-          member.email.toLowerCase().includes(query)
-        )
+      if (props.searchQuery) {
+        const query = props.searchQuery.toLowerCase()
+        filtered = filtered.filter(member => {
+          // Defensive checks for member properties
+          const name = member?.name || ''
+          const email = member?.email || ''
+          return name.toLowerCase().includes(query) || email.toLowerCase().includes(query)
+        })
       }
       if (roleFilter.value) {
-        filtered = filtered.filter(member => member.role === roleFilter.value)
+        filtered = filtered.filter(member => member?.role === roleFilter.value)
       }
       return filtered
     })
     const loadMembers = async () => {
       loading.value = true
       try {
-        // Mock data - replace with actual API call
-        const mockMembers = [
-          {
-            id: 1,
-            name: 'John Doe',
-            email: 'john@example.com',
-            role: 'OWNER',
-            status: 'ACTIVE',
-            avatar: null,
-            joinedAt: '2024-01-15T10:30:00Z',
-            lastActiveAt: '2024-01-20T14:22:00Z'
-          },
-          {
-            id: 2,
-            name: 'Jane Smith',
-            email: 'jane@example.com',
-            role: 'ADMIN',
-            status: 'ACTIVE',
-            avatar: null,
-            joinedAt: '2024-01-16T09:15:00Z',
-            lastActiveAt: '2024-01-19T16:45:00Z'
-          },
-          {
-            id: 3,
-            name: 'Bob Johnson',
-            email: 'bob@example.com',
-            role: 'MEMBER',
-            status: 'ACTIVE',
-            avatar: null,
-            joinedAt: '2024-01-17T11:20:00Z',
-            lastActiveAt: '2024-01-18T13:30:00Z'
-          },
-          {
-            id: 4,
-            name: 'Alice Brown',
-            email: 'alice@example.com',
-            role: 'EDITOR',
-            status: 'ACTIVE',
-            avatar: null,
-            joinedAt: '2024-01-18T14:45:00Z',
-            lastActiveAt: '2024-01-20T10:15:00Z'
-          },
-          {
-            id: 5,
-            name: 'Charlie Wilson',
-            email: 'charlie@example.com',
-            role: 'VIEWER',
-            status: 'ACTIVE',
-            avatar: null,
-            joinedAt: '2024-01-19T08:30:00Z',
-            lastActiveAt: '2024-01-19T17:20:00Z'
-          }
-        ]
-        members.value = mockMembers
-        totalMembers.value = mockMembers.length
-        // In real implementation:
-        // const response = await tenantApi.getTenantMembers(tenantStore.currentTenant.id, {
-        //   page: currentPage.value,
-        //   size: pageSize.value,
-        //   search: searchQuery.value,
-        //   role: roleFilter.value,
-        //   status: 'ACTIVE'
-        // })
-        // members.value = response.data.content || response.data
-        // totalMembers.value = response.data.totalElements || response.data.length
+        // Get tenantKey from current tenant
+        const tenantKey = tenantStore.currentTenant?.tenantKey
+        if (!tenantKey) {
+          console.warn('No tenant selected or tenant not loaded')
+          members.value = []
+          totalMembers.value = 0
+          return
+        }
+
+        // Call actual API to get tenant members
+        const response = await tenantApi.getTenantMembers(tenantKey)
+        members.value = response.data?.content || response.data || []
+        totalMembers.value = members.value.length
       } catch (error) {
+        console.error('Failed to load members:', error)
+        console.error('Error details:', {
+          message: error.message,
+          status: error.response?.status,
+          statusText: error.response?.statusText,
+          data: error.response?.data,
+          config: error.config
+        })
+        
+        // Show user-friendly error message
+        if (error.response?.status === 409) {
+          console.warn('Conflict error - possibly duplicate request or state conflict')
+        } else if (error.response?.status === 401) {
+          console.warn('Unauthorized - token may be expired')
+        } else if (error.response?.status === 403) {
+          console.warn('Forbidden - insufficient permissions')
+        } else if (error.response?.status === 404) {
+          console.warn('Not found - tenant or endpoint not found')
+        }
+        
+        members.value = []
+        totalMembers.value = 0
       } finally {
         loading.value = false
       }
     }
     const handleRoleChange = async (member, newRole) => {
       try {
-        // In real implementation:
-        // await tenantApi.updateMemberRole(tenantStore.currentTenant.id, member.id, newRole)
+        // Get tenantKey from current tenant
+        const tenantKey = tenantStore.currentTenant?.tenantKey
+        if (!tenantKey) {
+          alert('No tenant selected')
+          return
+        }
+
+        // Call API to update member role
+        await tenantApi.updateMemberRole(tenantKey, member.id, newRole)
+        
+        // Update local member data
+        member.role = newRole
         emit('member-updated', member)
       } catch (error) {
-        // Revert the change
-        member.role = member.previousRole
+        console.error('Failed to update member role:', error)
+        alert('Failed to update member role. Please try again.')
       }
     }
-    const handleRemove = async (member) => {
-      if (!confirm(`Are you sure you want to remove ${member.name} from the tenant?`)) {
+    const removeMember = async (member) => {
+      if (!confirm(`Are you sure you want to remove ${member?.name || 'this member'} from this tenant?`)) {
         return
       }
       try {
-        // In real implementation:
-        // await tenantApi.removeTenantMember(tenantStore.currentTenant.id, member.id)
+        // Get tenantKey from current tenant
+        const tenantKey = tenantStore.currentTenant?.tenantKey
+        if (!tenantKey) {
+          alert('No tenant selected')
+          return
+        }
+
+        // Call API to remove member
+        await tenantApi.removeMember(tenantKey, member.id)
+        
+        // Remove from local list
         members.value = members.value.filter(m => m.id !== member.id)
         totalMembers.value -= 1
         emit('member-removed', member)
       } catch (error) {
+        console.error('Failed to remove member:', error)
         alert('Failed to remove member. Please try again.')
       }
     }
@@ -285,18 +290,22 @@ export default {
       // In real implementation, open member details modal or navigate to details page
     }
     const handleAvatarError = (event) => {
-      event.target.src = defaultAvatar
+      if (event?.target) {
+        event.target.src = defaultAvatar
+      }
     }
     const canChangeRole = (role) => {
       // Only admin and above can change roles
       // In real implementation, check current user permissions
+      // Defensive check for role parameter
+      if (!role) return false
       return true
     }
     const getStatusBadgeClass = (status) => {
       switch (status) {
-        case 'ACTIVE':
+        case MembershipStatus.ACTIVE:
           return 'inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-        case 'INACTIVE':
+        case MembershipStatus.INACTIVE:
           return 'inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
         default:
           return 'inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
@@ -304,13 +313,13 @@ export default {
     }
     const getStatusLabel = (status) => {
       switch (status) {
-        case 'ACTIVE': return 'Active'
-        case 'INACTIVE': return 'Inactive'
+        case MembershipStatus.ACTIVE: return 'Active'
+        case MembershipStatus.INACTIVE: return 'Inactive'
         default: return status
       }
     }
     // Watch for filter changes
-    watch([searchQuery, roleFilter], () => {
+    watch([() => props.searchQuery, roleFilter], () => {
       currentPage.value = 1
     })
     onMounted(() => {
@@ -319,7 +328,6 @@ export default {
     return {
       loading,
       members,
-      searchQuery,
       roleFilter,
       currentPage,
       pageSize,
@@ -328,14 +336,16 @@ export default {
       filteredMembers,
       defaultAvatar,
       handleRoleChange,
-      handleRemove,
+      removeMember,
       viewDetails,
       handleAvatarError,
       canChangeRole,
       getStatusBadgeClass,
       getStatusLabel,
       formatDate,
-      getRelativeTime
+      getRelativeTime,
+      TenantRole,
+      MembershipStatus
     }
   }
 }

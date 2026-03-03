@@ -3,6 +3,8 @@ package com.chatbot.core.tenant.membership.controller;
 import com.chatbot.core.user.model.User;
 import com.chatbot.core.tenant.membership.dto.*;
 import com.chatbot.core.tenant.membership.service.TenantMembershipFacade;
+import com.chatbot.core.tenant.membership.model.TenantRole;
+import com.chatbot.core.tenant.membership.model.MembershipStatus;
 
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -12,6 +14,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -134,5 +137,17 @@ public class TenantMemberController {
             @AuthenticationPrincipal User user
     ) {
         facade.leave(tenantId, user);
+    }
+
+    /**
+     * DELETE /tenants/join-requests/{requestId}
+     * Cancel/withdraw user's own join request
+     */
+    @DeleteMapping("/join-requests/{requestId}")
+    public void cancelJoinRequest(
+            @PathVariable Long requestId,
+            @AuthenticationPrincipal User user
+    ) {
+        facade.cancelJoinRequest(requestId, user);
     }
 }

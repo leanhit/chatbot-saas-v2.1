@@ -15,6 +15,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class TenantSearchResponse {
     private Long id;
+    private String tenantKey;
     private String name;
     private TenantStatus status;
     private TenantVisibility visibility;

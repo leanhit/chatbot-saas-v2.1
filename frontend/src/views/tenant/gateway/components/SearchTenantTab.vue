@@ -95,24 +95,24 @@
               </div>
               <!-- RIGHT -->
               <div class="action-side">
+                <!-- Debug: Show membership status -->
+                <div style="font-size: 10px; color: red; margin-bottom: 5px;">
+                  Status: {{ tenant.membershipStatus }} | ID: {{ tenant.id }} | Can Join: {{ canJoinTenant(tenant.membershipStatus) }}
+                </div>
                 <button
-                  v-if="tenant.membershipStatus === 'NONE'"
-                  @click="onJoinClick(tenant.id)"
-                  class="join-button"
+                  v-if="canJoinTenant(tenant.membershipStatus)"
+                  @click="onJoinClick(tenant.tenantKey)"
+                  :disabled="joinLoading"
+                  :class="getJoinButtonClass(tenant.membershipStatus)"
                 >
-                  Join
+                  <Icon v-if="joinLoading" icon="mdi:loading" class="animate-spin" />
+                  {{ joinLoading ? 'Sending...' : getJoinButtonText(tenant.membershipStatus, t) }}
                 </button>
                 <span
-                  v-else-if="tenant.membershipStatus === 'PENDING'"
-                  class="pending-tag"
+                  v-else
+                  :class="getJoinButtonClass(tenant.membershipStatus)"
                 >
-                  Pending
-                </span>
-                <span
-                  v-else-if="tenant.membershipStatus === 'APPROVED'"
-                  class="member-tag"
-                >
-                  Member
+                  {{ getJoinButtonText(tenant.membershipStatus, t) }}
                 </span>
               </div>
             </div>
@@ -128,6 +128,7 @@ import { Icon } from '@iconify/vue'
 import { useI18n } from 'vue-i18n'
 import { useGatewaySearchTenantStore } from '@/stores/tenant/gateway/searchTenantStore'
 import { secureImageUrl } from '@/utils/imageUtils'
+import { TenantMembershipStatus, canJoinTenant, getJoinButtonText, getJoinButtonClass } from '@/types/tenant'
 export default {
   name: 'SearchTenantTab',
   components: {
@@ -140,6 +141,7 @@ export default {
     let debounceTimer = null
     const results = computed(() => searchStore.searchResults || [])
     const loading = computed(() => searchStore.loading)
+    const joinLoading = ref(false)
     const executeSearch = async () => {
       await searchStore.searchTenants(keyword.value.trim())
     }
@@ -147,16 +149,22 @@ export default {
       if (!keyword.value.trim()) return
       await executeSearch()
     }
-    const onJoinClick = async (tenantId) => {
+    const onJoinClick = async (tenantKey) => {
+      console.log('Join clicked for tenant:', tenantKey)
+      joinLoading.value = true
       try {
-        // TODO: Implement join tenant functionality
-        // await searchStore.requestJoinTenant(String(tenantId))
-        // Update UI immediately
-        // const tenant = searchStore.searchResults.find(t => t.id === tenantId)
-        // if (tenant) {
-        //   tenant.membershipStatus = 'PENDING'
-        // }
+        console.log('Sending join request...')
+        await searchStore.requestJoinTenant(tenantKey)
+        console.log('Join request sent successfully')
+        // Show success message
+        alert('Join request sent successfully! Please wait for approval.')
+        // Re-fetch search results to get updated status
+        await executeSearch()
       } catch (error) {
+        console.error('Failed to join tenant:', error)
+        alert('Failed to send join request. Please try again.')
+      } finally {
+        joinLoading.value = false
       }
     }
     const maskEmail = (email) => {
@@ -182,13 +190,18 @@ export default {
       searchStore.clearResults()
     })
     return {
+      t,
       keyword,
       loading,
+      joinLoading,
       results,
       handleManualSearch,
       onJoinClick,
       maskEmail,
-      secureImageUrl
+      secureImageUrl,
+      canJoinTenant,
+      getJoinButtonText,
+      getJoinButtonClass
     }
   }
 }
@@ -219,6 +232,19 @@ export default {
   dark:color-gray-400;
   margin: 0 12px;
   flex-shrink: 0;
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 .search-input {
   flex: 1;
@@ -391,6 +417,14 @@ export default {
   padding: 6px 12px;
   background: #dcfce7;
   color: #16a34a;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+}
+.rejected-tag {
+  padding: 6px 12px;
+  background: #fee2e2;
+  color: #dc2626;
   border-radius: 6px;
   font-size: 12px;
   font-weight: 500;

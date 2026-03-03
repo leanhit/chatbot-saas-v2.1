@@ -161,7 +161,6 @@ public class TenantProfileService {
                 throw new RuntimeException("Không thể upload tenant logo");
             }
 
-            String logoFileId = uploadedFiles.get(0).getId().toString();
             String logoUrl = uploadedFiles.get(0).getFileUrl(); // Use direct MinIO URL like user avatar
 
             // 4. Update tenant profile with new logo URL

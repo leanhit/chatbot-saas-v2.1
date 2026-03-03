@@ -1,23 +1,30 @@
 package com.chatbot.core.tenant.controller;
 
 import com.chatbot.core.tenant.dto.*;
+import com.chatbot.core.tenant.mapper.TenantMapper;
 import com.chatbot.core.tenant.service.TenantService;
 import com.chatbot.core.tenant.profile.service.TenantProfileService;
-import com.chatbot.core.tenant.profile.dto.TenantProfileResponse;
 import com.chatbot.core.tenant.repository.TenantRepository;
 import com.chatbot.core.tenant.model.Tenant;
+import com.chatbot.core.user.repository.UserRepository;
+import com.chatbot.core.identity.model.SystemRole;
+import com.chatbot.core.tenant.membership.model.TenantRole;
+import com.chatbot.core.tenant.membership.model.MembershipStatus;
+import com.chatbot.core.tenant.membership.repository.TenantMemberRepository;
+import com.chatbot.core.tenant.membership.service.TenantMembershipFacade;
 import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
+import org.springframework.http.HttpStatus;
 
 import java.util.List;
 import java.util.Map;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 // import io.swagger.v3.oas.annotations.responses.ApiResponse; // Use fully qualified name to avoid conflict
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -32,11 +39,22 @@ public class TenantController {
     private final TenantService tenantService;
     private final TenantProfileService tenantProfileService;
     private final TenantRepository tenantRepository;
+    private final UserRepository userRepository;
+    private final TenantMemberRepository tenantMemberRepository;
+    private final TenantMembershipFacade tenantMembershipFacade;
 
-    public TenantController(TenantService tenantService, TenantProfileService tenantProfileService, TenantRepository tenantRepository) {
+    public TenantController(TenantService tenantService, 
+                          TenantProfileService tenantProfileService, 
+                          TenantRepository tenantRepository,
+                          UserRepository userRepository,
+                          TenantMemberRepository tenantMemberRepository,
+                          TenantMembershipFacade tenantMembershipFacade) {
         this.tenantService = tenantService;
         this.tenantProfileService = tenantProfileService;
         this.tenantRepository = tenantRepository;
+        this.userRepository = userRepository;
+        this.tenantMemberRepository = tenantMemberRepository;
+        this.tenantMembershipFacade = tenantMembershipFacade;
     }
 
     /**
@@ -204,21 +222,188 @@ public class TenantController {
     public TenantResponse updateLogo(
             @PathVariable String tenantKey,
             @Parameter(description = "Logo image file", required = true)
-            @RequestParam("file") org.springframework.web.multipart.MultipartFile file
+            @RequestParam("logo") org.springframework.web.multipart.MultipartFile file
     ) {
         try {
+            // Validate tenantKey format
+            if (tenantKey == null || tenantKey.trim().isEmpty()) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Tenant key không được để trống");
+            }
+            
+            // Check if tenantKey looks like [object File] or other invalid patterns
+            if (tenantKey.contains("[object") || tenantKey.contains("undefined") || tenantKey.length() < 10) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, 
+                    "Tenant key không hợp lệ. Expected UUID format, received: " + tenantKey);
+            }
+            
+            // Validate file
+            if (file == null || file.isEmpty()) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "File không được để trống");
+            }
+            
+            // Validate file content (check if it's actual image data, not "undefined")
+            if (file.getSize() == 0) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "File không có nội dung");
+            }
+            
+            // Validate file type (only allow images)
+            String contentType = file.getContentType();
+            if (contentType == null || !contentType.startsWith("image/")) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, 
+                    "Chỉ chấp nhận file ảnh. Received: " + contentType);
+            }
+            
+            // Validate file size (max 5MB)
+            if (file.getSize() > 5 * 1024 * 1024) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, 
+                    "File quá lớn. Kích thước tối đa: 5MB");
+            }
+            
+            log.info("📤 [TenantController] Updating logo for tenantKey: {}, fileName: {}, fileSize: {}", 
+                    tenantKey, file.getOriginalFilename(), file.getSize());
+            
             // Convert tenantKey to tenantId
+            Tenant tenant = tenantRepository.findByTenantKey(tenantKey)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, 
+                    "Tenant không tồn tại với key: " + tenantKey));
+            
+            // Check authorization - user must be OWNER or ADMIN
+            String currentUserEmail = SecurityContextHolder.getContext().getAuthentication().getName();
+            
+            boolean isAdmin = userRepository.findByEmail(currentUserEmail)
+                    .map(user -> user.getSystemRole() == SystemRole.ADMIN)
+                    .orElse(false);
+                    
+            boolean isOwner = tenantMemberRepository.findByTenantIdAndUserEmailAndStatus(
+                    tenant.getId(), 
+                    currentUserEmail, 
+                    MembershipStatus.ACTIVE
+            ).map(member -> member.getRole() == TenantRole.OWNER)
+            .orElse(false);
+            
+            if (!isAdmin && !isOwner) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, 
+                    "Bạn không có quyền cập nhật logo tenant này");
+            }
+            
+            // Update logo using TenantProfileService
+            tenantProfileService.updateLogo(tenant.getId(), file);
+            
+            log.info("✅ [TenantController] Logo updated successfully for tenant: {}", tenantKey);
+            
+            // Return tenant response directly to avoid redundant query
+            return TenantMapper.toResponse(tenant);
+            
+        } catch (ResponseStatusException e) {
+            // Re-throw ResponseStatusException as-is
+            throw e;
+        } catch (Exception e) {
+            log.error("❌ [TenantController] Failed to update tenant logo: {}", e.getMessage(), e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, 
+                "Không thể cập nhật logo: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Get tenant members
+     */
+    @GetMapping("/key/{tenantKey}/members")
+    public Object getTenantMembers(@PathVariable String tenantKey, Pageable pageable) {
+        try {
+            // Convert tenantKey to tenantId and delegate to membership facade
             Tenant tenant = tenantRepository.findByTenantKey(tenantKey)
                 .orElseThrow(() -> new RuntimeException("Tenant not found with key: " + tenantKey));
             
-            // Update logo using TenantProfileService
-            TenantProfileResponse profileResponse = tenantProfileService.updateLogo(tenant.getId(), file);
-            
-            // Convert to TenantResponse
-            return tenantService.getTenantForCurrentUser(tenant.getId());
+            // Delegate to TenantMembershipFacade
+            return tenantMembershipFacade.listMembers(tenant.getId(), pageable);
         } catch (Exception e) {
-            log.error("❌ [TenantController] Failed to update tenant logo: {}", e.getMessage(), e);
-            throw new RuntimeException("Không thể cập nhật logo: " + e.getMessage(), e);
+            log.error("Failed to get tenant members: {}", e.getMessage(), e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, 
+                "Failed to get tenant members: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Get tenant join requests
+     */
+    @GetMapping("/key/{tenantKey}/members/join-requests")
+    public Object getJoinRequests(@PathVariable String tenantKey) {
+        try {
+            // Convert tenantKey to tenantId and delegate to membership facade
+            Tenant tenant = tenantRepository.findByTenantKey(tenantKey)
+                .orElseThrow(() -> new RuntimeException("Tenant not found with key: " + tenantKey));
+            
+            // Delegate to TenantMembershipFacade
+            return tenantMembershipFacade.pending(tenant.getId());
+        } catch (Exception e) {
+            log.error("Failed to get join requests: {}", e.getMessage(), e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, 
+                "Failed to get join requests: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Get tenant invitations
+     */
+    @GetMapping("/key/{tenantKey}/invitations")
+    public Object getInvitations(@PathVariable String tenantKey) {
+        try {
+            // Convert tenantKey to tenantId and delegate to invitation service
+            Long tenantId = tenantMembershipFacade.getTenantIdByKey(tenantKey);
+            
+            // Delegate to TenantInvitationService through facade
+            return tenantMembershipFacade.getInvitations(tenantId);
+        } catch (Exception e) {
+            log.error("Failed to get invitations: {}", e.getMessage(), e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, 
+                "Failed to get invitations: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Update member role
+     */
+    @PutMapping("/key/{tenantKey}/members/{userId}/role")
+    public void updateMemberRole(@PathVariable String tenantKey, @PathVariable Long userId, @RequestBody Map<String, String> request) {
+        try {
+            Long tenantId = tenantMembershipFacade.getTenantIdByKey(tenantKey);
+            String role = request.get("role");
+            tenantMembershipFacade.updateRole(tenantId, userId, com.chatbot.core.tenant.membership.model.TenantRole.valueOf(role));
+        } catch (Exception e) {
+            log.error("Failed to update member role: {}", e.getMessage(), e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, 
+                "Failed to update member role: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Remove member
+     */
+    @DeleteMapping("/key/{tenantKey}/members/{userId}")
+    public void removeMember(@PathVariable String tenantKey, @PathVariable Long userId) {
+        try {
+            Long tenantId = tenantMembershipFacade.getTenantIdByKey(tenantKey);
+            tenantMembershipFacade.removeMember(tenantId, userId);
+        } catch (Exception e) {
+            log.error("Failed to remove member: {}", e.getMessage(), e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, 
+                "Failed to remove member: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Update join request status
+     */
+    @PatchMapping("/key/{tenantKey}/members/join-requests/{requestId}")
+    public void updateJoinRequest(@PathVariable String tenantKey, @PathVariable Long requestId, @RequestBody Map<String, String> request) {
+        try {
+            Long tenantId = tenantMembershipFacade.getTenantIdByKey(tenantKey);
+            String status = request.get("status");
+            tenantMembershipFacade.updateJoinRequest(tenantId, requestId, com.chatbot.core.tenant.membership.model.MembershipStatus.valueOf(status));
+        } catch (Exception e) {
+            log.error("Failed to update join request: {}", e.getMessage(), e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, 
+                "Failed to update join request: " + e.getMessage(), e);
         }
     }
 }

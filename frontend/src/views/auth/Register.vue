@@ -236,8 +236,8 @@ export default {
         password: form.password
       })
       if (result.success) {
-        // Navigate to dashboard after successful registration
-        router.push('/dashboard')
+        // Navigate to login after successful registration
+        router.push('/login')
       }
     }
     return {

@@ -38,7 +38,7 @@
           class="bg-white dark:bg-gray-800 rounded-lg shadow-md border border-gray-200 dark:border-gray-700 hover:shadow-lg transition-shadow duration-200 p-6"
         >
           <div class="card-header">
-            <div class="tenant-avatar" :class="{ 'is-inactive': tenant.status !== 'ACTIVE' }">
+            <div class="tenant-avatar" :class="{ 'is-inactive': tenant.status !== TenantStatus.ACTIVE }">
               <img v-if="tenant.profile?.logoUrl" :src="secureImageUrl(tenant.profile.logoUrl)" :alt="tenant.name" />
               <div v-else class="avatar-fallback">
                 {{ tenant.name.charAt(0).toUpperCase() }}
@@ -51,12 +51,12 @@
               <span
                 :class="[
                   'text-xs py-1 px-4 rounded-md',
-                  tenant.status === 'ACTIVE' 
+                  tenant.status === TenantStatus.ACTIVE 
                     ? 'bg-green-600 text-white' 
                     : 'bg-red-600 text-white'
                 ]"
               >
-                {{ tenant.status === 'ACTIVE' ? $t('Active') : $t('Inactive') }}
+                {{ tenant.status === TenantStatus.ACTIVE ? $t('Active') : $t('Inactive') }}
               </span>
             </div>
           </div>
@@ -85,22 +85,22 @@
           <div class="card-footer">
             <div class="action-buttons">
               <button
-                v-if="tenant.status === 'ACTIVE'"
-                @click="suspendTenant(tenant.id)"
+                v-if="tenant.status === TenantStatus.ACTIVE"
+                @click="suspendTenant(tenant.tenantKey)"
                 class="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 text-sm font-medium"
               >
                 {{ $t('Suspend') }}
               </button>
               <button
                 v-else
-                @click="activateTenant(tenant.id)"
+                @click="activateTenant(tenant.tenantKey)"
                 class="text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300 text-sm font-medium"
               >
                 {{ $t('Activate') }}
               </button>
               <button
                 @click="enterWorkspace(tenant)"
-                :disabled="tenant.status !== 'ACTIVE'"
+                :disabled="tenant.status !== TenantStatus.ACTIVE"
                 class="inline-flex items-center px-3 py-1.5 bg-primary text-white text-sm font-medium rounded-md hover:bg-primary/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {{ $t('Enter') }}
@@ -120,6 +120,7 @@ import { formatDateTime } from '@/utils/dateUtils'
 import { useI18n } from 'vue-i18n'
 import { useGatewayTenantStore } from '@/stores/tenant/gateway/myTenantStore'
 import { secureImageUrl } from '@/utils/imageUtils'
+import { TenantStatus } from '@/types/tenant'
 export default {
   name: 'MyTenantTab',
   components: {
@@ -133,9 +134,9 @@ export default {
     const tenantList = computed(() => tenantStore.userTenants)
     const loading = computed(() => tenantStore.loadingTenants)
     const enterWorkspace = async (tenant) => {
-      if (tenant.status !== 'ACTIVE') return
+      if (tenant.status !== TenantStatus.ACTIVE) return
       try {
-        await tenantStore.switchTenant(tenant.tenantKey) // ✅ Use tenantKey from new backend
+        await tenantStore.switchTenant(tenant.tenantKey)
         router.push('/dashboard')
         emit('tenant-entered')
       } catch (error) {
@@ -143,12 +144,12 @@ export default {
         // ElMessage.error('Failed to enter workspace. Please try again.')
       }
     }
-    const suspendTenant = async (id) => {
-      await tenantStore.suspendTenant(id)
+    const suspendTenant = async (tenantKey) => {
+      await tenantStore.suspendTenant(tenantKey)
       await tenantStore.fetchUserTenants()
     }
-    const activateTenant = async (id) => {
-      await tenantStore.activateTenant(id)
+    const activateTenant = async (tenantKey) => {
+      await tenantStore.activateTenant(tenantKey)
       await tenantStore.fetchUserTenants()
     }
     return {
@@ -157,7 +158,9 @@ export default {
       enterWorkspace,
       suspendTenant,
       activateTenant,
-      secureImageUrl
+      secureImageUrl,
+      formatDateTime,
+      TenantStatus
     }
   }
 }

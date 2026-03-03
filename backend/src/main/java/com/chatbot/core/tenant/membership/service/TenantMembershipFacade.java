@@ -56,6 +56,10 @@ public class TenantMembershipFacade {
         joinService.updateStatus(tenantId, requestId, status);
     }
 
+    public void cancelJoinRequest(Long requestId, User user) {
+        joinService.cancelUserRequest(requestId, user);
+    }
+
     /* ================= SELF ================= */
 
     public List<TenantPendingResponse> myPending(User user) {
@@ -71,5 +75,19 @@ public class TenantMembershipFacade {
      */
     public List<InvitationResponse> getMyInvitations(User user) {
         return invitationService.getMyPendingInvitations(user);
+    }
+
+    /**
+     * Lấy danh sách lời mời của tenant
+     */
+    public List<InvitationResponse> getInvitations(Long tenantId) {
+        return invitationService.listInvitations(tenantId);
+    }
+
+    /**
+     * Convert tenantKey to tenantId
+     */
+    public Long getTenantIdByKey(String tenantKey) {
+        return memberService.getTenantIdByKey(tenantKey);
     }
 }

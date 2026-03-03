@@ -31,6 +31,8 @@
       </router-view>
       <Footer v-if="!$route.meta.hideNav" />
     </div>
+    <!-- Notification Toast Container -->
+    <NotificationToast />
   </div>
   <!-- End app -->
 </template>
@@ -39,6 +41,7 @@
   import Sidebar from "@/components/Sidebar";
   import Header from "@/components/Header";
   import Footer from "@/components/Footer";
+  import NotificationToast from "@/components/common/NotificationToast";
   // npm-js
   import Scrollbar from "smooth-scrollbar";
   export default {
@@ -53,6 +56,7 @@
       Header,
       Footer,
       Sidebar,
+      NotificationToast
     },
     methods: {
       open() {

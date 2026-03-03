@@ -21,4 +21,5 @@ public class InvitationResponse {
     private InvitationStatus status;
     private LocalDateTime expiresAt;
     private String invitedByName;
+    private String token; // Add token for accept/reject functionality
 }

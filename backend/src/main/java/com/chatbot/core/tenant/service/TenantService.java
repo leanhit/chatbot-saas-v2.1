@@ -27,6 +27,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.data.domain.Page;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -51,14 +52,24 @@ public class TenantService {
     private final AddressService addressService;
 
     /**
+     * Helper method để lấy email user hiện tại một cách nhất quán
+     */
+    private String getCurrentUserEmail() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !auth.isAuthenticated()) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not authenticated");
+        }
+        return auth.getName();
+    }
+
+    /**
      * Tạo tenant mới và gán user hiện tại làm OWNER.
      */
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public TenantResponse createTenant(CreateTenantRequest request) {
         log.info("🏗️ [TenantService] Starting tenant creation process");
         
-        String currentUserEmail =
-                SecurityContextHolder.getContext().getAuthentication().getName();
+        String currentUserEmail = getCurrentUserEmail();
         log.info("👤 [TenantService] Current user: {}", currentUserEmail);
 
         User currentUser = userRepository.findByEmail(currentUserEmail)
@@ -92,21 +103,27 @@ public class TenantService {
         log.info("✅ [TenantService] Tenant membership created successfully");
 
         // Create empty tenant profile
+        log.info("📄 [TenantService] Creating tenant profile for tenant {}", savedTenant.getId());
         try {
-            log.info("📄 [TenantService] Creating tenant profile for tenant {}", savedTenant.getId());
             createEmptyTenantProfile(savedTenant);
             log.info("✅ [TenantService] Tenant profile created successfully");
         } catch (Exception e) {
             log.error("❌ [TenantService] Failed to create tenant profile for tenant {}: {}", savedTenant.getId(), e.getMessage(), e);
+            // Rollback transaction để đảm bảo data consistency
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, 
+                "Không thể tạo tenant profile: " + e.getMessage(), e);
         }
 
         // Create empty address
+        log.info("🏠 [TenantService] Creating address for tenant {}", savedTenant.getId());
         try {
-            log.info("🏠 [TenantService] Creating address for tenant {}", savedTenant.getId());
             createEmptyAddressForTenant(savedTenant.getId());
             log.info("✅ [TenantService] Address created successfully");
         } catch (Exception e) {
             log.error("❌ [TenantService] Failed to create address for tenant {}: {}", savedTenant.getId(), e.getMessage(), e);
+            // Rollback transaction để đảm bảo data consistency
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, 
+                "Không thể tạo địa chỉ tenant: " + e.getMessage(), e);
         }
 
         TenantResponse response = TenantMapper.toResponse(savedTenant);
@@ -134,23 +151,23 @@ public class TenantService {
         Tenant tenant = getTenant(tenantId);
         
         // Kiểm tra quyền admin
-        String currentUserEmail = SecurityContextHolder.getContext().getAuthentication().getName();
+        String currentUserEmail = getCurrentUserEmail();
         boolean isAdmin = userRepository.findByEmail(currentUserEmail)
                 .map(user -> user.getSystemRole() == SystemRole.ADMIN)
                 .orElse(false);
                 
         if (!isAdmin) {
-            throw new RuntimeException("Chỉ admin mới có quyền tạm dừng tenant");
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Chỉ admin mới có quyền tạm dừng tenant");
         }
         
-        // Kiểm tra trạng thái hiện tại
-        if (tenant.getStatus() == TenantStatus.SUSPENDED) {
-            throw new RuntimeException("Tenant đã ở trạng thái tạm dừng");
-        }
-        
-        // Thực hiện cập nhật
+        // Validate và thực hiện chuyển trạng thái
+        validateStatusTransition(tenant.getStatus(), TenantStatus.SUSPENDED);
         tenant.setStatus(TenantStatus.SUSPENDED);
         tenant.setUpdatedAt(LocalDateTime.now());
+        
+        // Lưu thay đổi vào database
+        tenantRepository.save(tenant);
+        log.info("Tenant {} đã được tạm dừng bởi admin {}", tenantId, currentUserEmail);
     }
 
     /**
@@ -162,26 +179,26 @@ public class TenantService {
         Tenant tenant = getTenant(tenantId);
         
         // Kiểm tra quyền owner
-        String currentUserEmail = SecurityContextHolder.getContext().getAuthentication().getName();
-        boolean isOwner = tenantMemberRepository.existsByTenantIdAndUserEmailAndRoleAndStatus(
+        String currentUserEmail = getCurrentUserEmail();
+        boolean isOwner = tenantMemberRepository.findByTenantIdAndUserEmailAndStatus(
                 tenantId, 
                 currentUserEmail, 
-                TenantRole.OWNER,
                 MembershipStatus.ACTIVE
-        );
+        ).map(member -> member.getRole() == TenantRole.OWNER)
+        .orElse(false);
         
         if (!isOwner) {
-            throw new RuntimeException("Chỉ chủ sở hữu mới có quyền vô hiệu hóa tenant");
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Chỉ chủ sở hữu mới có quyền vô hiệu hóa tenant");
         }
         
-        // Kiểm tra trạng thái hiện tại
-        if (tenant.getStatus() == TenantStatus.INACTIVE) {
-            throw new RuntimeException("Tenant đã ở trạng thái không hoạt động");
-        }
-        
-        // Thực hiện cập nhật
+        // Validate và thực hiện chuyển trạng thái
+        validateStatusTransition(tenant.getStatus(), TenantStatus.INACTIVE);
         tenant.setStatus(TenantStatus.INACTIVE);
         tenant.setUpdatedAt(LocalDateTime.now());
+        
+        // Lưu thay đổi vào database
+        tenantRepository.save(tenant);
+        log.info("Tenant {} đã được vô hiệu hóa bởi owner {}", tenantId, currentUserEmail);
     }
 
     /**
@@ -193,23 +210,23 @@ public class TenantService {
         Tenant tenant = getTenant(tenantId);
         
         // Kiểm tra quyền admin
-        String currentUserEmail = SecurityContextHolder.getContext().getAuthentication().getName();
+        String currentUserEmail = getCurrentUserEmail();
         boolean isAdmin = userRepository.findByEmail(currentUserEmail)
                 .map(user -> user.getSystemRole() == SystemRole.ADMIN)
                 .orElse(false);
                 
         if (!isAdmin) {
-            throw new RuntimeException("Chỉ admin mới có quyền kích hoạt tenant");
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Chỉ admin mới có quyền kích hoạt tenant");
         }
         
-        // Kiểm tra trạng thái hiện tại
-        if (tenant.getStatus() == TenantStatus.ACTIVE) {
-            throw new RuntimeException("Tenant đã ở trạng thái hoạt động");
-        }
-        
-        // Thực hiện cập nhật
+        // Validate và thực hiện chuyển trạng thái
+        validateStatusTransition(tenant.getStatus(), TenantStatus.ACTIVE);
         tenant.setStatus(TenantStatus.ACTIVE);
         tenant.setUpdatedAt(LocalDateTime.now());
+        
+        // Lưu thay đổi vào database
+        tenantRepository.save(tenant);
+        log.info("Tenant {} đã được kích hoạt bởi admin {}", tenantId, currentUserEmail);
     }
 
     /**
@@ -217,7 +234,7 @@ public class TenantService {
      */
     @Transactional(readOnly = true)
     public List<TenantDetailResponse> getUserTenantsDetail() {
-        String currentUserEmail = SecurityContextHolder.getContext().getAuthentication().getName();
+        String currentUserEmail = getCurrentUserEmail();
 
         // 1. Lấy danh sách Tenant mà user là member
         List<Tenant> tenants = tenantMemberRepository
@@ -254,8 +271,7 @@ public class TenantService {
      */
     @Transactional(readOnly = true)
     public TenantResponse getTenantForCurrentUser(Long tenantId) {
-        String currentUserEmail =
-                SecurityContextHolder.getContext().getAuthentication().getName();
+        String currentUserEmail = getCurrentUserEmail();
 
         // Chỉ cho phép truy cập nếu thành viên có trạng thái ACTIVE
         TenantMember member =
@@ -294,7 +310,6 @@ public class TenantService {
         
         // Tạo và trả về response
         TenantDetailResponse response = TenantDetailResponse.from(tenantResponse, profile, addressDetail);
-        response.setAddress(addressDetail);
         return response;
     }
 
@@ -325,7 +340,6 @@ public class TenantService {
         
         // Tạo và trả về response
         TenantDetailResponse response = TenantDetailResponse.from(tenantResponse, profile, addressDetail);
-        response.setAddress(addressDetail);
         return response;
     }
 
@@ -396,6 +410,7 @@ public class TenantService {
 
             return TenantSearchResponse.builder()
                     .id(tenant.getId())
+                    .tenantKey(tenant.getTenantKey())
                     .name(tenant.getName())
                     .status(tenant.getStatus())
                     .visibility(tenant.getVisibility())
@@ -454,16 +469,42 @@ public class TenantService {
         log.info("Created empty address for tenant: {}", tenantId);
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public TenantResponse updateBasicInfo(String tenantKey, TenantBasicInfoRequest req) {
+        // Validate tenantKey
+        if (tenantKey == null || tenantKey.trim().isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Tenant key không được để trống");
+        }
+        
         Tenant tenant = tenantRepository.findByTenantKey(tenantKey)
         .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Tenant không tồn tại với key: " + tenantKey));
 
-        // Chỉ cập nhật các trường không null
-        if (req.getName() != null) {
-            tenant.setName(req.getName());
+        // Kiểm tra quyền truy cập
+        String currentUserEmail = getCurrentUserEmail();
+        
+        // Kiểm tra quyền ADMIN hoặc OWNER
+        boolean isAdmin = userRepository.findByEmail(currentUserEmail)
+                .map(user -> user.getSystemRole() == SystemRole.ADMIN)
+                .orElse(false);
+                
+        boolean isOwner = tenantMemberRepository.findByTenantIdAndUserEmailAndStatus(
+                tenant.getId(), 
+                currentUserEmail, 
+                MembershipStatus.ACTIVE
+        ).map(member -> member.getRole() == TenantRole.OWNER)
+        .orElse(false);
+        
+        if (!isAdmin && !isOwner) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Bạn không có quyền cập nhật thông tin tenant này");
+        }
+
+        // Chỉ cập nhật các trường không null và không empty
+        if (req.getName() != null && !req.getName().trim().isEmpty()) {
+            tenant.setName(req.getName().trim());
         }
         if (req.getStatus() != null) {
+            // Validate status transition
+            validateStatusTransition(tenant.getStatus(), req.getStatus());
             tenant.setStatus(req.getStatus());
         }
         if (req.getVisibility() != null) {
@@ -477,33 +518,99 @@ public class TenantService {
         return TenantMapper.toResponse(tenant);
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public TenantResponse updateContactInfo(String tenantKey, Map<String, Object> contactData) {
+        // Validate tenantKey
+        if (tenantKey == null || tenantKey.trim().isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Tenant key không được để trống");
+        }
+        
         Tenant tenant = tenantRepository.findByTenantKey(tenantKey)
         .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Tenant không tồn tại với key: " + tenantKey));
+
+        // Kiểm tra quyền truy cập
+        String currentUserEmail = getCurrentUserEmail();
+        
+        // Kiểm tra quyền ADMIN hoặc OWNER
+        boolean isAdmin = userRepository.findByEmail(currentUserEmail)
+                .map(user -> user.getSystemRole() == SystemRole.ADMIN)
+                .orElse(false);
+                
+        boolean isOwner = tenantMemberRepository.findByTenantIdAndUserEmailAndStatus(
+                tenant.getId(), 
+                currentUserEmail, 
+                MembershipStatus.ACTIVE
+        ).map(member -> member.getRole() == TenantRole.OWNER)
+        .orElse(false);
+        
+        if (!isAdmin && !isOwner) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Bạn không có quyền cập nhật thông tin liên hệ tenant này");
+        }
 
         // Update contact fields in tenant profile
         TenantProfile profile = tenantProfileRepository.findByTenant_Id(tenant.getId())
                 .orElseGet(() -> {
                     TenantProfile p = new TenantProfile();
                     p.setTenant(tenant);
-                    return p;
+                    return tenantProfileRepository.save(p);  // Save ngay lập tức
                 });
 
-        if (contactData.containsKey("email")) {
-            profile.setContactEmail((String) contactData.get("email"));
+        // Chỉ cập nhật các trường không null và không empty
+        if (contactData.containsKey("email") && contactData.get("email") != null) {
+            String email = ((String) contactData.get("email")).trim();
+            if (!email.isEmpty()) {
+                profile.setContactEmail(email);
+            }
         }
-        if (contactData.containsKey("phone")) {
-            profile.setContactPhone((String) contactData.get("phone"));
+        if (contactData.containsKey("phone") && contactData.get("phone") != null) {
+            String phone = ((String) contactData.get("phone")).trim();
+            if (!phone.isEmpty()) {
+                profile.setContactPhone(phone);
+            }
         }
-        if (contactData.containsKey("website")) {
-            // Store website in tenant or profile - decide based on your data model
-            // For now, let's store it in tenant as a custom field or ignore
+        if (contactData.containsKey("website") && contactData.get("website") != null) {
+            String website = ((String) contactData.get("website")).trim();
+            if (!website.isEmpty()) {
+                // Store website in tenant or profile - decide based on your data model
+                // For now, let's store it in tenant as a custom field or ignore
+            }
         }
 
         tenantProfileRepository.save(profile);
         
         // Return updated tenant with contact info
         return TenantMapper.toResponseWithProfile(tenant, profile);
+    }
+
+    /**
+     * Validate status transition to prevent invalid state changes
+     * Note: Allow same status updates for idempotent operations
+     */
+    private void validateStatusTransition(TenantStatus currentStatus, TenantStatus newStatus) {
+        // Allow same status updates (idempotent operation)
+        if (currentStatus == newStatus) {
+            return;
+        }
+
+        switch (currentStatus) {
+            case ACTIVE:
+                if (newStatus == TenantStatus.SUSPENDED || newStatus == TenantStatus.INACTIVE) {
+                    return; // Valid transitions
+                }
+                break;
+            case SUSPENDED:
+                if (newStatus == TenantStatus.ACTIVE) {
+                    return; // Valid transition
+                }
+                break;
+            case INACTIVE:
+                if (newStatus == TenantStatus.ACTIVE) {
+                    return; // Valid transition (admin only)
+                }
+                break;
+        }
+
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, 
+            "Không thể chuyển từ trạng thái " + currentStatus + " sang " + newStatus);
     }
 }

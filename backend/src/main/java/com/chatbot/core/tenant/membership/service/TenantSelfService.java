@@ -30,6 +30,8 @@ public class TenantSelfService {
                         .status(request.getTenant().getStatus())
                         .visibility(request.getTenant().getVisibility())
                         .requestedAt(request.getCreatedAt())
+                        .logoUrl(request.getTenant().getProfile() != null ? 
+                                request.getTenant().getProfile().getLogoUrl() : null)
                         .build())
                 .toList();
     }

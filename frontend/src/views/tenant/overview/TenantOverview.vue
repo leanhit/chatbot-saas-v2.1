@@ -192,13 +192,31 @@ export default {
     const showContactModal = ref(false)
     const showAddressModal = ref(false)
     
-    // Mock stats data - could be replaced with real API call
+    // Real stats data from API
     const stats = ref({
-      activeUsers: 156,
-      totalProjects: 42,
-      storageUsed: '2.4 GB',
-      apiCalls: '1.2M'
+      activeUsers: 0,
+      totalProjects: 0,
+      storageUsed: '0 GB',
+      apiCalls: '0'
     })
+    
+    // Load tenant statistics
+    const loadStats = async () => {
+      try {
+        const tenantKey = tenantStore.activeTenantKey
+        if (!tenantKey) return
+        
+        // Call API to get tenant statistics
+        // Note: This endpoint needs to be implemented in backend
+        // const response = await tenantApi.getTenantStats(tenantKey)
+        // stats.value = response.data
+        
+        // For now, keep default values until backend endpoint is ready
+        console.log('Tenant stats endpoint not yet implemented')
+      } catch (error) {
+        console.error('Failed to load tenant stats:', error)
+      }
+    }
     
     // Computed properties
     const tenant = computed(() => tenantStore.tenant)
@@ -268,7 +286,7 @@ export default {
         }
         
         // Call tenant API to update logo
-        const response = await tenantApi.updateTenantLogo(file)
+        const response = await tenantApi.uploadTenantLogo(tenantStore.activeTenantKey, file)
         
         // Refresh tenant data
         await tenantStore.loadTenant()
@@ -281,7 +299,16 @@ export default {
         toast?.success('Logo updated successfully!')
       } catch (error) {
         console.error('Logo upload error:', error)
-        toast?.error('Failed to update logo')
+        
+        // Show specific error message
+        let errorMessage = 'Failed to update logo'
+        if (error.response?.data?.message) {
+          errorMessage = error.response.data.message
+        } else if (error.message) {
+          errorMessage = error.message
+        }
+        
+        toast?.error(errorMessage)
       }
     }
     
@@ -310,7 +337,7 @@ export default {
           }
         }
         
-        const response = await tenantApi.updateTenantBasicInfo(tenantStore.activeTenantId, updateData)
+        const response = await tenantApi.updateTenant(tenantStore.activeTenantKey, updateData)
         
         // Update tenant data directly from response
         if (response.data) {
@@ -372,7 +399,7 @@ export default {
           updateData.primaryColor = formData.primaryColor
         }
         
-        const response = await tenantApi.updateTenantProfile(tenantStore.activeTenantId, updateData)
+        const response = await tenantApi.updateTenantProfile(tenantStore.activeTenantKey, updateData)
         
         // Update tenant data directly from response
         if (response.data) {
@@ -395,8 +422,8 @@ export default {
     
     const handleAddressSubmit = async (formData) => {
       try {
-        // Use activeTenantId from store (UUID like other tabs)
-        const tenantKey = tenantStore.activeTenantId
+        // Use activeTenantKey from store (UUID like other tabs)
+        const tenantKey = tenantStore.activeTenantKey
         if (!tenantKey) {
           toast?.error('Tenant ID not found')
           return
@@ -434,6 +461,7 @@ export default {
     onMounted(async () => {
       try {
         await tenantStore.loadTenant()
+        await loadStats() // Load statistics
         console.log('Tenant data loaded')
       } catch (error) {
         toast?.error('Error loading tenant data')

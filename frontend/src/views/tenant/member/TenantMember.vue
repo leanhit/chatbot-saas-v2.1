@@ -73,28 +73,28 @@
             <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">{{ $t('tenant.member.loading') }}</p>
           </div>
           <!-- Active Members Tab -->
-          <div v-else-if="activeTab === 'active-members'" class="space-y-4">
-            <div class="text-center py-12">
-              <Icon icon="mdi:account-group" class="mx-auto h-12 w-12 text-gray-400" />
-              <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-white">Active Members</h3>
-              <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Component temporarily disabled</p>
-            </div>
-          </div>
+        <div v-else-if="activeTab === 'active-members'" class="p-6">
+          <ActiveMemberTab 
+            :search-query="searchStore.searchQuery"
+            @member-removed="handleMemberRemoved"
+            @member-updated="handleMemberUpdated"
+          />
+        </div>
           <!-- Pending Requests Tab -->
-          <div v-else-if="activeTab === 'pending-requests'" class="space-y-4">
-            <div class="text-center py-12">
-              <Icon icon="mdi:account-clock" class="mx-auto h-12 w-12 text-gray-400" />
-              <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-white">Pending Requests</h3>
-              <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Component temporarily disabled</p>
-            </div>
-          </div>
+        <div v-else-if="activeTab === 'pending-requests'" class="p-6">
+          <PendingMemberTab 
+            :search-query="searchStore.searchQuery"
+            @request-approved="handleRequestApproved"
+            @request-rejected="handleRequestRejected"
+          />
+        </div>
           <!-- Pending Invitations Tab -->
-          <div v-else-if="activeTab === 'pending-invitations'" class="space-y-4">
-            <div class="text-center py-12">
-              <Icon icon="mdi:email-send" class="mx-auto h-12 w-12 text-gray-400" />
-              <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-white">Pending Invitations</h3>
-              <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Component temporarily disabled</p>
-            </div>
+          <div v-else-if="activeTab === 'pending-invitations'" class="p-6">
+            <InviteMemberTab 
+              :search-query="searchStore.searchQuery"
+              @invitation-revoked="handleInvitationRevoked"
+              @invitation-sent="handleMemberInvited"
+            />
           </div>
         </div>
       </div>
@@ -109,41 +109,61 @@
 </template>
 <script>
 import { ref, computed, onMounted } from 'vue'
-import { Icon } from '@iconify/vue'
 import { useI18n } from 'vue-i18n'
+import { Icon } from '@iconify/vue'
 import { useGatewayTenantStore } from '@/stores/tenant/gateway/myTenantStore'
+import { useSearchStore } from '@/stores/searchStore'
+import { tenantApi } from '@/api/tenantApi'
 import ActiveMemberTab from './components/ActiveMemberTab.vue'
 import PendingMemberTab from './components/PendingMemberTab.vue'
 import InviteMemberModal from './components/InviteMemberModal.vue'
+import InviteMemberTab from './components/InviteMemberTab.vue'
+
 export default {
   name: 'TenantMemberIndex',
   components: {
     Icon,
     ActiveMemberTab,
     PendingMemberTab,
+    InviteMemberTab,
     InviteMemberModal
   },
   setup() {
     const { t } = useI18n()
     const tenantStore = useGatewayTenantStore()
+    const searchStore = useSearchStore()
     const activeTab = ref('active-members')
     const loading = ref(false)
     const showInviteModal = ref(false)
-    // Mock counts - in real app, these would come from API
+    // Real counts from API calls
     const activeMembersCount = ref(0)
     const pendingRequestsCount = ref(0)
     const pendingInvitationsCount = ref(0)
     const currentTenant = computed(() => tenantStore.currentTenant)
+    
+    // Set search context when component mounts
+    onMounted(() => {
+      searchStore.setSearchContext('members')
+      searchStore.clearFilters() // Reset any existing filters
+    })
     const openInviteModal = () => {
       showInviteModal.value = true
     }
     const handleInviteMember = async (inviteData) => {
       try {
-        // In real implementation:
-        // await tenantApi.inviteMember(currentTenant.value?.id, {
-        //   email: inviteData.email,
-        //   role: inviteData.role
-        // })
+        // Use tenantKey from currentTenant object
+        const tenantKey = currentTenant.value?.tenantKey
+        if (!tenantKey) {
+          alert('No tenant selected')
+          return
+        }
+        
+        // Call API with tenantKey instead of ID
+        await tenantApi.inviteMember(tenantKey, {
+          email: inviteData.email,
+          role: inviteData.role
+        })
+        
         // Show success message
         alert(`Invitation sent to ${inviteData.email}`)
         // Reset and close modal
@@ -157,25 +177,80 @@ export default {
     const refreshData = async () => {
       loading.value = true
       try {
-        // Refresh data based on current tab
-        // In real implementation, this would call appropriate API methods
-        await new Promise(resolve => setTimeout(resolve, 1000))
-        // Update counts
-        await updateCounts()
+        // Get tenantKey from current tenant
+        const tenantKey = currentTenant.value?.tenantKey
+        if (!tenantKey) {
+          console.error('No tenant selected')
+          return
+        }
+
+        // Load real data from APIs
+        await Promise.all([
+          updateCounts(tenantKey),
+          // Refresh child components data by emitting events
+          refreshChildComponents()
+        ])
       } catch (error) {
+        console.error('Failed to refresh data:', error)
+        console.error('Error details:', {
+          message: error.message,
+          status: error.response?.status,
+          statusText: error.response?.statusText,
+          data: error.response?.data
+        })
+        
+        // Show user-friendly error message
+        if (error.response?.status === 409) {
+          console.warn('Conflict error - possibly duplicate request')
+        } else if (error.response?.status === 401) {
+          console.warn('Unauthorized - token may be expired')
+        } else if (error.response?.status === 403) {
+          console.warn('Forbidden - insufficient permissions')
+        }
       } finally {
         loading.value = false
       }
     }
-    const updateCounts = async () => {
+    const updateCounts = async (tenantKey) => {
       try {
-        // In real implementation, these would be API calls
-        // For now, using mock data
-        activeMembersCount.value = 5
-        pendingRequestsCount.value = 2
-        pendingInvitationsCount.value = 3
+        // Get real counts from API calls
+        const [membersResponse, requestsResponse, invitationsResponse] = await Promise.all([
+          tenantApi.getTenantMembers(tenantKey),
+          tenantApi.getJoinRequests(tenantKey),
+          tenantApi.getTenantInvitations(tenantKey)
+        ])
+
+        // Update counts with real data
+        activeMembersCount.value = (membersResponse.data?.content || membersResponse.data || []).length
+        pendingRequestsCount.value = (requestsResponse.data || []).length
+        pendingInvitationsCount.value = (invitationsResponse.data || []).length
       } catch (error) {
+        console.error('Failed to update counts:', error)
+        console.error('Error details:', {
+          message: error.message,
+          status: error.response?.status,
+          statusText: error.response?.statusText,
+          data: error.response?.data
+        })
+        
+        // Show user-friendly error message
+        if (error.response?.status === 409) {
+          console.warn('Conflict error - possibly duplicate request')
+        } else if (error.response?.status === 401) {
+          console.warn('Unauthorized - token may be expired')
+        } else if (error.response?.status === 403) {
+          console.warn('Forbidden - insufficient permissions')
+        }
+        
+        // Set to 0 on error
+        activeMembersCount.value = 0
+        pendingRequestsCount.value = 0
+        pendingInvitationsCount.value = 0
       }
+    }
+    const refreshChildComponents = () => {
+      // Trigger refresh in child components through refs or events
+      // This will be handled by the child components' onMounted lifecycle
     }
     const handleMemberRemoved = () => {
       activeMembersCount.value = Math.max(0, activeMembersCount.value - 1)
@@ -196,13 +271,15 @@ export default {
     const handleMemberInvited = () => {
       pendingInvitationsCount.value += 1
     }
-    onMounted(() => {
-      updateCounts()
+    onMounted(async () => {
+      // Load real data on component mount
+      await refreshData()
     })
     return {
       activeTab,
       loading,
       showInviteModal,
+      searchStore,
       activeMembersCount,
       pendingRequestsCount,
       pendingInvitationsCount,

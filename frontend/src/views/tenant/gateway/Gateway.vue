@@ -100,7 +100,7 @@ export default {
     const activeTab = ref('my')
     const showCreateModal = ref(false)
     const tabs = [
-      { name: 'my', label: t('Tenant'), icon: 'mdi:office-building' },
+      { name: 'my', label: t('My Workspaces'), icon: 'mdi:office-building' },
       { name: 'search', label: t('Search'), icon: 'mdi:search' },
       { name: 'pending', label: t('Pending'), icon: 'mdi:clock' },
       { name: 'my-invitations', label: t('My Invitations'), icon: 'mdi:email' }

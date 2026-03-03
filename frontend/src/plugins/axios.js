@@ -20,6 +20,9 @@ const EXCLUDED_PATHS = [
     '/tenants/me',           // Get user tenants - không cần tenant context
     '/tenants/search',
     '/tenants/my-list',
+    '/tenants/members/pending-tenants', // User's own pending requests
+    '/tenants/members/my-invitations', // User's own invitations
+    '/tenants/members/join-requests', // Join requests - user doesn't have active tenant yet
     '/images' // Image API không cần tenant ID
 ];
 instance.interceptors.request.use(

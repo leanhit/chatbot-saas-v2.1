@@ -216,7 +216,11 @@ export default {
             name: tenant.name || '',
             status: tenant.status || 'ACTIVE',
             visibility: tenant.visibility || 'PUBLIC',
-            expiresAt: formatDateTimeLocal(tenant.expiresAt) || '',
+            expiresAt: (() => {
+            const formatted = formatDateTimeLocal(tenant.expiresAt);
+            console.log('expiresAt value:', tenant.expiresAt, typeof tenant.expiresAt, 'formatted:', formatted);
+            return formatted || '';
+          })(),
             tenantKey: tenant.tenantKey || '',
             createdAt: tenant.createdAt || '',
             updatedAt: tenant.updatedAt || ''
@@ -240,7 +244,7 @@ export default {
           expiresAt: dateTimeLocalToIso(settings.value.expiresAt)
         }
         
-        const response = await tenantApi.updateTenantBasicInfo(tenantStore.activeTenantId, updateData)
+        const response = await tenantApi.updateTenant(tenantStore.activeTenantId, updateData)
         
         // Update local data
         if (response.data) {
@@ -306,8 +310,17 @@ export default {
     // Load data on mount
     onMounted(async () => {
       await loadTenantData()
-      // TODO: Load member count from API
-      memberCount.value = Math.floor(Math.random() * 50) + 10 // Mock data
+      // Load real member count from API
+      try {
+        const tenantKey = settings.value?.tenantKey || localStorage.getItem('active_tenant_id')
+        if (tenantKey) {
+          const response = await tenantApi.getTenantMembers(tenantKey)
+          memberCount.value = (response.data?.content || response.data || []).length
+        }
+      } catch (error) {
+        console.error('Failed to load member count:', error)
+        memberCount.value = 0
+      }
     })
     
     return {

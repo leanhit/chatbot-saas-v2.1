@@ -1,20 +1,7 @@
 <template>
   <div class="pending-members-container">
-    <!-- Search and Filter -->
-    <div class="mb-6 flex flex-col sm:flex-row gap-4">
-      <div class="flex-1">
-        <div class="relative">
-          <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <Icon icon="mdi:magnify" class="h-5 w-5 text-gray-400" />
-          </div>
-          <input
-            v-model="searchQuery"
-            type="text"
-            :placeholder="$t('tenant.member.searchRequests')"
-            class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-primary focus:border-primary dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white"
-          />
-        </div>
-      </div>
+    <!-- Status Filter Only -->
+    <div class="mb-6 flex justify-end">
       <div class="flex gap-2">
         <select
           v-model="statusFilter"
@@ -160,6 +147,12 @@ import { useGatewayTenantStore } from '@/stores/tenant/gateway/myTenantStore'
 import defaultAvatar from '@/assets/img/user.jpg'
 export default {
   name: 'PendingMemberTab',
+  props: {
+    searchQuery: {
+      type: String,
+      default: ''
+    }
+  },
   components: {
     Icon
   },
@@ -168,7 +161,6 @@ export default {
     const tenantStore = useGatewayTenantStore()
     const loading = ref(false)
     const requests = ref([])
-    const searchQuery = ref('')
     const statusFilter = ref('')
     const currentPage = ref(1)
     const pageSize = ref(10)
@@ -176,8 +168,8 @@ export default {
     const totalPages = computed(() => Math.ceil(totalRequests.value / pageSize.value))
     const filteredRequests = computed(() => {
       let filtered = requests.value
-      if (searchQuery.value) {
-        const query = searchQuery.value.toLowerCase()
+      if (props.searchQuery) {
+        const query = props.searchQuery.toLowerCase()
         filtered = filtered.filter(request => 
           request.name.toLowerCase().includes(query) ||
           request.email.toLowerCase().includes(query) ||
@@ -192,41 +184,21 @@ export default {
     const loadRequests = async () => {
       loading.value = true
       try {
-        // Mock data - replace with actual API call
-        const mockRequests = [
-          {
-            id: 1,
-            name: 'David Lee',
-            email: 'david@example.com',
-            avatar: null,
-            requestedRole: 'MEMBER',
-            status: 'PENDING',
-            message: 'I would like to join this workspace to collaborate on projects.',
-            requestedAt: '2024-01-19T10:30:00Z'
-          },
-          {
-            id: 2,
-            name: 'Emma Wilson',
-            email: 'emma@example.com',
-            avatar: null,
-            requestedRole: 'EDITOR',
-            status: 'REVIEWING',
-            message: 'Interested in contributing content to this workspace.',
-            requestedAt: '2024-01-18T14:15:00Z'
-          }
-        ]
-        requests.value = mockRequests
-        totalRequests.value = mockRequests.length
-        // In real implementation:
-        // const response = await tenantApi.getPendingMemberRequests(tenantStore.currentTenant.id, {
-        //   page: currentPage.value,
-        //   size: pageSize.value,
-        //   search: searchQuery.value,
-        //   status: statusFilter.value
-        // })
-        // requests.value = response.data.content || response.data
-        // totalRequests.value = response.data.totalElements || response.data.length
+        // Get tenantKey from current tenant
+        const tenantKey = tenantStore.currentTenant?.tenantKey
+        if (!tenantKey) {
+          console.error('No tenant selected')
+          return
+        }
+
+        // Call actual API to get pending join requests
+        const response = await tenantApi.getJoinRequests(tenantKey)
+        requests.value = response.data || []
+        totalRequests.value = requests.value.length
       } catch (error) {
+        console.error('Failed to load pending requests:', error)
+        requests.value = []
+        totalRequests.value = 0
       } finally {
         loading.value = false
       }
@@ -236,11 +208,21 @@ export default {
         return
       }
       try {
-        // In real implementation:
-        // await tenantApi.approveMemberRequest(tenantStore.currentTenant.id, request.id)
-        request.status = 'APPROVED'
+        // Get tenantKey from current tenant
+        const tenantKey = tenantStore.currentTenant?.tenantKey
+        if (!tenantKey) {
+          alert('No tenant selected')
+          return
+        }
+
+        // Call API to approve request
+        await tenantApi.updateJoinRequestStatus(tenantKey, request.id, 'APPROVED')
+        
+        // Remove from local list
+        requests.value = requests.value.filter(r => r.id !== request.id)
         emit('request-approved', request)
       } catch (error) {
+        console.error('Failed to approve request:', error)
         alert('Failed to approve request. Please try again.')
       }
     }
@@ -248,11 +230,21 @@ export default {
       const reason = prompt(`Why are you rejecting ${request.name}'s request? (Optional)`)
       if (reason === null) return // User cancelled
       try {
-        // In real implementation:
-        // await tenantApi.rejectMemberRequest(tenantStore.currentTenant.id, request.id, reason)
-        request.status = 'REJECTED'
+        // Get tenantKey from current tenant
+        const tenantKey = tenantStore.currentTenant?.tenantKey
+        if (!tenantKey) {
+          alert('No tenant selected')
+          return
+        }
+
+        // Call API to reject request
+        await tenantApi.updateJoinRequestStatus(tenantKey, request.id, 'REJECTED')
+        
+        // Remove from local list
+        requests.value = requests.value.filter(r => r.id !== request.id)
         emit('request-rejected', request)
       } catch (error) {
+        console.error('Failed to reject request:', error)
         alert('Failed to reject request. Please try again.')
       }
     }
@@ -286,7 +278,7 @@ export default {
       }
     }
     // Watch for filter changes
-    watch([searchQuery, statusFilter], () => {
+    watch([() => props.searchQuery, statusFilter], () => {
       currentPage.value = 1
     })
     onMounted(() => {
@@ -295,7 +287,6 @@ export default {
     return {
       loading,
       requests,
-      searchQuery,
       statusFilter,
       currentPage,
       pageSize,

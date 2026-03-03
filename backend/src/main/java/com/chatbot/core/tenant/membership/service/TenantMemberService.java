@@ -4,6 +4,8 @@ import com.chatbot.core.user.model.User;
 import com.chatbot.core.tenant.membership.dto.*;
 import com.chatbot.core.tenant.membership.model.*;
 import com.chatbot.core.tenant.membership.repository.TenantMemberRepository;
+import com.chatbot.core.tenant.model.Tenant;
+import com.chatbot.core.tenant.repository.TenantRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,6 +20,7 @@ import java.util.Optional;
 public class TenantMemberService {
 
     private final TenantMemberRepository memberRepo;
+    private final TenantRepository tenantRepo;
 
     /* ================= LIST ================= */
 
@@ -85,5 +88,11 @@ public class TenantMemberService {
                 .role(m.getRole())
                 .joinedAt(m.getJoinedAt() != null ? m.getJoinedAt() : m.getCreatedAt())
                 .build();
+    }
+
+    public Long getTenantIdByKey(String tenantKey) {
+        return tenantRepo.findByTenantKey(tenantKey)
+                .map(Tenant::getId)
+                .orElseThrow(() -> new IllegalArgumentException("Tenant not found with key: " + tenantKey));
     }
 }
