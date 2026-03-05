@@ -1,0 +1,31 @@
+# PennyBot Default Messages Configuration
+pennybot:
+  default-messages:
+    # Vietnamese messages
+    greetings:
+      vi: "Xin chào! Tôi là PennyBot, trợ lý ảo của bạn. Tôi có thể giúp gì cho bạn ạ?"
+      en: "Hello! I'm PennyBot, your virtual assistant. How can I help you today?"
+    gratitude:
+      vi: "Rất vui vì đã giúp được bạn! Còn điều gì tôi có thể hỗ trợ không ạ?"
+      en: "I'm glad I could help! Is there anything else I can assist you with?"
+    goodbye:
+      vi: "Chào bạn và hẹn gặp lại! Nếu cần giúp đỡ, đừng ngần ngại liên hệ nhé."
+      en: "Goodbye and see you again! If you need help, don't hesitate to contact us."
+    identity:
+      vi: "Tôi là PennyBot, một trợ lý ảo thông minh được thiết kế để hỗ trợ bạn trong các công việc hàng ngày."
+      en: "I'm PennyBot, an intelligent virtual assistant designed to help you with daily tasks."
+    capabilities:
+      vi: "Tôi có thể giúp bạn với nhiều việc như: hỗ trợ khách hàng, quản lý đơn hàng, trả lời câu hỏi về sản phẩm, và nhiều hơn nữa!"
+      en: "I can help you with many things like: customer support, order management, product inquiries, and much more!"
+    fallback:
+      vi: "Xin lỗi, tôi chưa hiểu ý của bạn. Tôi có thể giúp bạn với các chủ đề về sản phẩm, đơn hàng, hoặc hỗ trợ khách hàng. Bạn có thể nói rõ hơn được không ạ?"
+      en: "I'm sorry, I don't understand what you mean. I can help you with topics about products, orders, or customer support. Could you clarify more?"
+
+# PennyBot Integration Settings
+app:
+  integrations:
+    pennybot:
+      api-url: "http://localhost:3000"
+      api-key: "pennybot-key"
+      timeout: 30000
+      retry-attempts: 3

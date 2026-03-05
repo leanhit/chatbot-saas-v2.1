@@ -643,48 +643,43 @@ export default {
 
       submitting.value = true
       try {
-        // Create connection request object
-        const connectionRequest = new ConnectionRequest({
+        // Create connection request object matching backend DTO
+        const connectionRequest = {
           connectionName: formData.value.connectionName,
           connectionType: formData.value.connectionType,
           botId: formData.value.botId,
           description: formData.value.description,
           priority: formData.value.priority,
           pageId: formData.value.pageId,
-          webhookUrl: formData.value.webhookUrl,
-          apiUrl: formData.value.apiUrl,
-          dbHost: formData.value.dbHost,
+          fanpageUrl: formData.value.fanpageUrl,
+          pageAccessToken: formData.value.pageAccessToken,
+          appSecret: formData.value.appSecret,
+          verifyToken: formData.value.verifyToken,
+          urlCallback: formData.value.urlCallback || 'https://chat.truyenthongviet.vn/webhooks/facebook/pennybot',
+          isEnabled: true,
+          chatbotProvider: 'PENNYBOT', // Use PENNYBOT instead of BOTPRESS
           config: {
-            fanpageUrl: formData.value.fanpageUrl,
-            appSecret: formData.value.appSecret,
-            pageAccessToken: formData.value.pageAccessToken,
-            verifyToken: formData.value.verifyToken,
-            urlCallback: formData.value.urlCallback,
+            webhookUrl: formData.value.webhookUrl,
             webhookMethod: formData.value.webhookMethod,
             webhookTimeout: formData.value.webhookTimeout,
             webhookHeaders: formData.value.webhookHeaders,
+            apiUrl: formData.value.apiUrl,
             apiKey: formData.value.apiKey,
             apiVersion: formData.value.apiVersion,
+            dbHost: formData.value.dbHost,
             dbPort: formData.value.dbPort,
             dbName: formData.value.dbName,
             dbUsername: formData.value.dbUsername,
             dbPassword: formData.value.dbPassword
           }
-        })
-
-        // Validate request
-        const validation = connectionRequest.validate()
-        if (!validation.isValid) {
-          alert('Validation errors: ' + validation.errors.join(', '))
-          return
         }
 
         if (props.connection) {
           // Update existing connection
-          await pennyConnectionApi.updateConnection(props.connection.id, connectionRequest.toApiRequest())
+          await pennyConnectionApi.updateConnection(props.connection.id, connectionRequest)
         } else {
           // Create new connection
-          await pennyConnectionApi.createConnection(connectionRequest.toApiRequest())
+          await pennyConnectionApi.createConnection(formData.value.botId, connectionRequest)
         }
         emit('saved')
       } catch (error) {

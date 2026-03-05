@@ -11,7 +11,6 @@
           <option value="OWNER">Owner</option>
           <option value="ADMIN">Admin</option>
           <option value="EDITOR">Editor</option>
-          <option value="VIEWER">Viewer</option>
           <option value="MEMBER">Member</option>
         </select>
       </div>
@@ -100,7 +99,6 @@
             >
               <option value="ADMIN">Admin</option>
               <option value="EDITOR">Editor</option>
-              <option value="VIEWER">Viewer</option>
               <option value="MEMBER">Member</option>
             </select>
           </div>

@@ -34,7 +34,6 @@
           >
             <option value="ADMIN">{{ $t('tenant.member.admin') }}</option>
             <option value="EDITOR">{{ $t('tenant.member.editor') }}</option>
-            <option value="VIEWER">{{ $t('tenant.member.viewer') }}</option>
             <option value="MEMBER">{{ $t('tenant.member.member') }}</option>
           </select>
         </div>

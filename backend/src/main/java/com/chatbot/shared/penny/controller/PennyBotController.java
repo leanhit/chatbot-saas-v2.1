@@ -251,8 +251,9 @@ public class PennyBotController {
         String ownerId = principal.getName();
         UUID botUuid = UUID.fromString(botId);
         String message = request.get("message");
+        boolean isTestMode = "true".equals(request.get("testMode"));
         
-        log.info("💬 Chatting with Penny bot: {} by owner: {} - Message: {}", botId, ownerId, message);
+        log.info("💬 Chatting with Penny bot: {} by owner: {} - Message: {} - TestMode: {}", botId, ownerId, message, isTestMode);
         
         try {
             // Verify ownership
@@ -274,13 +275,14 @@ public class PennyBotController {
             }
             
             // Process message through Penny middleware
-            String botResponse = pennyBotManager.processMessage(botUuid, message, ownerId);
+            String botResponse = pennyBotManager.processMessage(botUuid, message, ownerId, isTestMode);
             
             return ResponseEntity.ok(Map.of(
                 "botId", botId,
                 "botName", bot.getBotName(),
                 "message", message,
                 "response", botResponse,
+                "testMode", isTestMode,
                 "timestamp", java.time.LocalDateTime.now().toString(),
                 "status", "success"
             ));
@@ -321,7 +323,7 @@ public class PennyBotController {
             }
             
             // Process message through Penny middleware
-            String botResponse = pennyBotManager.processMessage(botUuid, message, "public");
+            String botResponse = pennyBotManager.processMessage(botUuid, message, "public", false);
             
             return ResponseEntity.ok(Map.of(
                 "botId", botId,

@@ -113,6 +113,8 @@ public class SecurityConfig {
                 .requestMatchers("/auth/**", "/api/auth/**", "/error").permitAll()
                 .requestMatchers("/penny/bots/*/chat/public").permitAll()
                 .requestMatchers("/webhooks/facebook/botpress/**").permitAll()
+                .requestMatchers("/webhooks/facebook/pennybot/**").permitAll()
+                .requestMatchers("/api/v1/facebook/webhook/**").permitAll()
                 .requestMatchers("/images/public/**", "/api/images/public/**").permitAll()
                 .requestMatchers("/ws/takeover/**").permitAll()
                 

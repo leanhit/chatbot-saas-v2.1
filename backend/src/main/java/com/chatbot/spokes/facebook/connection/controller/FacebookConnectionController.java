@@ -142,15 +142,30 @@ public class FacebookConnectionController {
 
     @DeleteMapping("/{id}")
     @Operation(
-        summary = "Delete Facebook connection",
-        description = "Delete a Facebook connection",
+        summary = "Delete Facebook connection (Admin Only)",
+        description = "Delete a Facebook connection - requires admin privileges",
         responses = {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "204", description = "Connection deleted successfully"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "Admin privileges required"),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Connection not found")
         }
     )
-    public ResponseEntity<Void> deleteConnection(@PathVariable String id) {
-        facebookConnectionService.deleteConnection(id);
-        return ResponseEntity.noContent().build();
+    public ResponseEntity<String> deleteConnection(@PathVariable String id, Principal principal) {
+        String ownerId = principal.getName();
+        try {
+            facebookConnectionService.deleteConnection(id, ownerId);
+            return ResponseEntity.ok("Connection deleted successfully.");
+        } catch (RuntimeException e) {
+            if (e.getMessage().contains("Admin privileges required")) {
+                return ResponseEntity.status(403).body(e.getMessage());
+            }
+            if (e.getMessage().contains("Connection not found")) {
+                return ResponseEntity.status(404).body(e.getMessage());
+            }
+            if (e.getMessage().contains("Access denied")) {
+                return ResponseEntity.status(403).body(e.getMessage());
+            }
+            return ResponseEntity.badRequest().body("Failed to delete connection: " + e.getMessage());
+        }
     }
 }

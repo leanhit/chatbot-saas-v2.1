@@ -230,10 +230,11 @@
           type="button"
           @click="testRule"
           :disabled="!canTestRule"
+          :title="$t('Test this rule before saving')"
           class="btn btn-outline"
         >
           <Icon icon="mdi:test-tube" class="h-4 w-4 mr-2" />
-          {{ $t('Test Rule') }}
+          {{ $t('Test Before Save') }}
         </button>
         <button
           type="submit"

@@ -204,8 +204,10 @@
                 </button>
                 <button
                   @click="deleteConnection(connection)"
-                  class="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 text-sm font-medium"
+                  class="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 text-sm font-medium flex items-center gap-1"
+                  title="Admin only - Requires admin privileges"
                 >
+                  <Icon icon="mdi:shield-account" class="h-3 w-3" />
                   {{ $t('Delete') }}
                 </button>
               </div>
@@ -301,7 +303,9 @@ export default {
 
     const toggleConnectionStatus = async (connection) => {
       try {
-        await pennyConnectionStore.toggleConnectionStatus(connection.id, !connection.isActive)
+        await pennyConnectionStore.toggleConnectionStatus(currentBotId.value, connection.id)
+        // Refresh connections to get updated status
+        await fetchConnections()
       } catch (error) {
         console.error('Failed to toggle connection status:', error)
       }
@@ -312,18 +316,26 @@ export default {
     }
 
     const deleteConnection = async (connection) => {
-      if (confirm(`Are you sure you want to delete "${connection.name}"?`)) {
+      if (confirm(`Are you sure you want to delete "${connection.name || connection.connectionName}"?`)) {
         try {
-          await pennyConnectionStore.deleteConnection(connection.id)
+          await pennyConnectionStore.deleteConnection(currentBotId.value, connection.id)
         } catch (error) {
           console.error('Failed to delete connection:', error)
+          
+          // Handle admin-only error
+          if (error.response?.status === 403) {
+            alert('❌ Admin privileges required to delete connections. Only admin users can perform this action.')
+            return
+          }
+          
+          alert('Failed to delete connection: ' + (error.response?.data?.message || error.message))
         }
       }
     }
 
     const testConnection = async (connection) => {
       try {
-        await pennyConnectionStore.testConnection(connection.id)
+        await pennyConnectionStore.testConnection(currentBotId.value, connection.id, {})
         alert('Connection test successful!')
       } catch (error) {
         console.error('Connection test failed:', error)

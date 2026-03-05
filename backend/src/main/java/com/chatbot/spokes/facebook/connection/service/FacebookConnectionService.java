@@ -12,6 +12,13 @@ import com.chatbot.shared.penny.service.PennyBotManager;
 import com.chatbot.shared.penny.model.PennyBot;
 import com.chatbot.spokes.facebook.connection.exception.*;
 
+import com.chatbot.core.user.model.User;
+import com.chatbot.core.user.repository.UserRepository;
+import com.chatbot.core.tenant.membership.model.TenantMember;
+import com.chatbot.core.tenant.membership.model.TenantRole;
+import com.chatbot.core.tenant.membership.model.MembershipStatus;
+import com.chatbot.core.tenant.membership.repository.TenantMemberRepository;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -31,13 +38,24 @@ public class FacebookConnectionService {
 
     private final FacebookConnectionRepository connectionRepository;
     private final PennyBotManager pennyBotManager;
+    private final UserRepository userRepository;
+    private final TenantMemberRepository tenantMemberRepository;
 
-    public FacebookConnectionService(FacebookConnectionRepository connectionRepository, PennyBotManager pennyBotManager) {
+    public FacebookConnectionService(FacebookConnectionRepository connectionRepository, 
+                                PennyBotManager pennyBotManager,
+                                UserRepository userRepository,
+                                TenantMemberRepository tenantMemberRepository) {
         this.connectionRepository = connectionRepository;
         this.pennyBotManager = pennyBotManager;
+        this.userRepository = userRepository;
+        this.tenantMemberRepository = tenantMemberRepository;
     }
 
     public String createConnection(String ownerId, CreateFacebookConnectionRequest request) {
+        // Check create permissions
+        if (!canCreateConnections(ownerId, request.getBotId())) {
+            throw new RuntimeException("Insufficient privileges to create connections.");
+        }
         
         // 1. AUTO-CREATE BOT nếu chưa có botId
         String botId = request.getBotId();
@@ -87,6 +105,11 @@ public class FacebookConnectionService {
     }
 
     public List<FacebookConnectionResponse> getConnectionsByOwnerId(String ownerId) {
+        // Check view permissions
+        if (!canViewConnections(ownerId)) {
+            throw new RuntimeException("Insufficient privileges to view connections.");
+        }
+        
         Long tenantId = TenantContext.getTenantId();
         if (tenantId == null) {
             throw new RuntimeException("Không tìm thấy tenant ID trong context");
@@ -202,8 +225,10 @@ public class FacebookConnectionService {
     public void updateConnection(UUID connectionId, String ownerId, UpdateFacebookConnectionRequest request) {
         FacebookConnection connection = connectionRepository.findById(connectionId)
                 .orElseThrow(() -> new RuntimeException("Connection not found."));
-        if (!connection.getOwnerId().equals(ownerId)) {
-            throw new RuntimeException("Access denied.");
+        
+        // Check update permissions
+        if (!canUpdateConnection(ownerId, connection)) {
+            throw new RuntimeException("Insufficient privileges to update this connection.");
         }
         if (request.getBotName() != null) {
             connection.setBotName(request.getBotName());
@@ -230,8 +255,156 @@ public class FacebookConnectionService {
         connectionRepository.save(connection);
     }
 
-    public void deleteConnection(String id) {
+    public void deleteConnection(String id, String ownerId) {
+        // Check admin permissions (System ADMIN or Tenant ADMIN/OWNER)
+        if (!hasAdminPrivileges(ownerId)) {
+            throw new RuntimeException("Admin privileges required to delete connections.");
+        }
+        
         UUID connectionId = UUID.fromString(id);
+        
+        // Verify ownership before deletion
+        FacebookConnection connection = connectionRepository.findById(connectionId)
+                .orElseThrow(() -> new RuntimeException("Connection not found."));
+        
+        if (!connection.getOwnerId().equals(ownerId)) {
+            throw new RuntimeException("Access denied: You can only delete your own connections.");
+        }
+        
+        log.info("🗑️ Admin user {} deleting Facebook connection: {}", ownerId, connectionId);
         connectionRepository.deleteById(connectionId);
+    }
+    
+    private boolean hasAdminPrivileges(String userId) {
+        try {
+            // Check system role first
+            User user = userRepository.findByEmail(userId)
+                    .orElse(null);
+            
+            if (user != null && user.getSystemRole() == com.chatbot.core.identity.model.SystemRole.ADMIN) {
+                return true;
+            }
+            
+            if (user == null) return false;
+            
+            // Check tenant role (current tenant context)
+            Long tenantId = TenantContext.getTenantId();
+            if (tenantId != null) {
+                TenantMember tenantMember = tenantMemberRepository
+                        .findByTenant_IdAndUser_Id(tenantId, user.getId())
+                        .orElse(null);
+                
+                return tenantMember != null && 
+                       tenantMember.getStatus() == MembershipStatus.ACTIVE &&
+                       (tenantMember.getRole() == TenantRole.OWNER || 
+                        tenantMember.getRole() == TenantRole.ADMIN);
+            }
+            
+            return false;
+        } catch (Exception e) {
+            log.error("Error checking admin privileges for user: {}", userId, e);
+            return false;
+        }
+    }
+    
+    private boolean canCreateConnections(String userId, String botId) {
+        try {
+            User user = userRepository.findByEmail(userId).orElse(null);
+            if (user == null) return false;
+            
+            // System ADMIN can create anywhere
+            if (user.getSystemRole() == com.chatbot.core.identity.model.SystemRole.ADMIN) {
+                return true;
+            }
+            
+            Long tenantId = TenantContext.getTenantId();
+            if (tenantId == null) return false;
+            
+            TenantMember member = tenantMemberRepository
+                    .findByTenant_IdAndUser_Id(tenantId, user.getId())
+                    .orElse(null);
+            
+            if (member == null || member.getStatus() != MembershipStatus.ACTIVE) {
+                return false;
+            }
+            
+            // OWNER/ADMIN: Can create connections for any bot
+            if (member.getRole() == TenantRole.OWNER || member.getRole() == TenantRole.ADMIN) {
+                return true;
+            }
+            
+            // EDITOR: Can create connections for their own bots
+            if (member.getRole() == TenantRole.EDITOR) {
+                // TODO: Check if user owns this bot
+                return true; // Simplified for now
+            }
+            
+            // MEMBER: Cannot create
+            return false;
+            
+        } catch (Exception e) {
+            log.error("Error checking create permissions for user: {}", userId, e);
+            return false;
+        }
+    }
+    
+    private boolean canUpdateConnection(String userId, FacebookConnection connection) {
+        try {
+            User user = userRepository.findByEmail(userId).orElse(null);
+            if (user == null) return false;
+            
+            // System ADMIN can update anything
+            if (user.getSystemRole() == com.chatbot.core.identity.model.SystemRole.ADMIN) {
+                return true;
+            }
+            
+            // Owner can always update their own connections
+            if (connection.getOwnerId().equals(userId)) {
+                return true;
+            }
+            
+            Long tenantId = TenantContext.getTenantId();
+            if (tenantId == null) return false;
+            
+            TenantMember member = tenantMemberRepository
+                    .findByTenant_IdAndUser_Id(tenantId, user.getId())
+                    .orElse(null);
+            
+            if (member == null || member.getStatus() != MembershipStatus.ACTIVE) {
+                return false;
+            }
+            
+            // OWNER/ADMIN: Can update any connection in tenant
+            return member.getRole() == TenantRole.OWNER || member.getRole() == TenantRole.ADMIN;
+            
+        } catch (Exception e) {
+            log.error("Error checking update permissions for user: {}", userId, e);
+            return false;
+        }
+    }
+    
+    private boolean canViewConnections(String userId) {
+        try {
+            User user = userRepository.findByEmail(userId).orElse(null);
+            if (user == null) return false;
+            
+            // System ADMIN can view anything
+            if (user.getSystemRole() == com.chatbot.core.identity.model.SystemRole.ADMIN) {
+                return true;
+            }
+            
+            Long tenantId = TenantContext.getTenantId();
+            if (tenantId == null) return false;
+            
+            TenantMember member = tenantMemberRepository
+                    .findByTenant_IdAndUser_Id(tenantId, user.getId())
+                    .orElse(null);
+            
+            return member != null && member.getStatus() == MembershipStatus.ACTIVE;
+            
+        } catch (Exception e) {
+            log.error("Error checking view permissions for user: {}", userId, e);
+            return false;
+        }
     }
 }

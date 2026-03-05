@@ -23,20 +23,26 @@ export const pennyConnectionApi = {
     return axios.get(`/penny/bots/${botId}/connections/by-type/${connectionType}`).catch(handleApiError)
   },
 
-  // Create new connection (Facebook style - matches frontend-old)
+  // Create new connection (Facebook style - matches backend DTO)
   createConnection(botId, connectionData) {
     // For Facebook connections, use the existing Facebook connection API
     if (connectionData.connectionType === 'FACEBOOK') {
       const fbData = {
         botId: botId,
-        botName: connectionData.connectionName,
+        botName: connectionData.connectionName || connectionData.botName,
+        connectionName: connectionData.connectionName,
+        description: connectionData.description,
+        priority: connectionData.priority,
+        connectionType: connectionData.connectionType,
         pageId: connectionData.pageId,
         fanpageUrl: connectionData.fanpageUrl,
-        appSecret: connectionData.appSecret,
         pageAccessToken: connectionData.pageAccessToken,
+        appSecret: connectionData.appSecret,
         verifyToken: connectionData.verifyToken,
-        urlCallback: connectionData.urlCallback || 'https://chat.truyenthongviet.vn/webhooks/facebook/botpress',
-        isEnabled: true
+        urlCallback: connectionData.urlCallback || 'https://chat.truyenthongviet.vn/webhooks/facebook/pennybot',
+        isEnabled: true,
+        chatbotProvider: 'PENNYBOT', // Use PENNYBOT instead of BOTPRESS
+        config: connectionData.config || {}
       }
       return axios.post(`/connection/facebook`, fbData).catch(handleApiError)
     }
@@ -51,14 +57,20 @@ export const pennyConnectionApi = {
     if (connectionData.connectionType === 'FACEBOOK') {
       const fbData = {
         botId: botId,
-        botName: connectionData.connectionName,
+        botName: connectionData.connectionName || connectionData.botName,
+        connectionName: connectionData.connectionName,
+        description: connectionData.description,
+        priority: connectionData.priority,
+        connectionType: connectionData.connectionType,
         pageId: connectionData.pageId,
         fanpageUrl: connectionData.fanpageUrl,
-        appSecret: connectionData.appSecret,
         pageAccessToken: connectionData.pageAccessToken,
+        appSecret: connectionData.appSecret,
         verifyToken: connectionData.verifyToken,
-        urlCallback: connectionData.urlCallback,
-        isEnabled: connectionData.isEnabled
+        urlCallback: connectionData.urlCallback || 'https://chat.truyenthongviet.vn/webhooks/facebook/pennybot',
+        isEnabled: connectionData.isEnabled !== undefined ? connectionData.isEnabled : true,
+        chatbotProvider: 'PENNYBOT', // Use PENNYBOT instead of BOTPRESS
+        config: connectionData.config || {}
       }
       return axios.put(`/connection/facebook/${connectionId}`, fbData).catch(handleApiError)
     }
@@ -119,11 +131,11 @@ export const pennyConnectionApi = {
 
   // Auto-connect Facebook pages
   autoConnectFacebook: (payload) => {
-    return axios.post(`/connection/facebook/auto-connect`, payload).catch(handleApiError)
+    return axios.post(`/connection/facebook/auto-connect/auto`, payload).catch(handleApiError)
   },
 
   // Auto-connect selected Facebook pages (client-side selection)
   autoConnectFacebookClient: (payload) => {
-    return axios.post(`/connection/facebook/auto-connect-client`, payload).catch(handleApiError)
+    return axios.post(`/connection/facebook/auto-connect/client`, payload).catch(handleApiError)
   }
 }

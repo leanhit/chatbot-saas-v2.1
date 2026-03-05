@@ -146,6 +146,7 @@
     "Select rule type": "Select rule type",
     "Action": "Action",
     "Test Rule": "Test Rule",
+    "Test": "Test",
     "Intent Based": "Intent Based",
     "Keyword Based": "Keyword Based",
     "Regex Pattern": "Regex Pattern",

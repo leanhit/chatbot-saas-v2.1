@@ -6,11 +6,31 @@
           <div class="bot-info">
             <Icon :icon="getBotTypeIcon(bot.botType)" class="h-6 w-6 mr-3" />
             <div>
-              <h2 class="modal-title">{{ bot.botName }}</h2>
+              <h2 class="modal-title">
+                {{ bot.botName }}
+                <span v-if="isTestMode" class="test-mode-badge">TEST MODE</span>
+              </h2>
               <p class="bot-type">{{ getBotTypeDisplayName(bot.botType) }}</p>
             </div>
           </div>
           <div class="header-actions">
+            <!-- Mode Selector -->
+            <div class="mode-selector">
+              <button
+                @click="switchMode(false)"
+                :class="['mode-btn', { active: !isTestMode }]"
+                class="text-xs"
+              >
+                {{ $t('Chat') }}
+              </button>
+              <button
+                @click="switchMode(true)"
+                :class="['mode-btn', { active: isTestMode }]"
+                class="text-xs"
+              >
+                {{ $t('Test') }}
+              </button>
+            </div>
             <div class="status-indicator" :class="{ online: bot.isFullyActive() }">
               <div class="status-dot"></div>
               <span class="status-text">
@@ -141,10 +161,14 @@ export default {
     bot: {
       type: Object,
       required: true
+    },
+    isTestMode: {
+      type: Boolean,
+      default: false
     }
   },
-  emits: ['close'],
-  setup(props) {
+  emits: ['close', 'modeChanged'],
+  setup(props, { emit }) {
     const { t } = useI18n()
     const pennyBotStore = usePennyBotStore()
 
@@ -194,41 +218,34 @@ export default {
       isTyping.value = true
 
       try {
-        // Create middleware request
-        const middlewareRequest = new MiddlewareRequest({
-          userId: 'current-user', // Will be set by backend from auth context
-          platform: 'web',
-          message: userMessage,
-          botId: props.bot.id,
-          messageType: 'text',
-          language: 'vi' // Detect Vietnamese or use default
-        })
-
         // Send message to Penny bot
-        const response = await pennyBotStore.chatWithPennyBot(props.bot.id, middlewareRequest.toApiRequest())
+        const response = await pennyBotStore.chatWithPennyBot(props.bot.id, userMessage, props.isTestMode)
         
-        // Convert to MiddlewareResponse if needed
-        const middlewareResponse = response instanceof MiddlewareResponse 
-          ? response 
-          : new MiddlewareResponse(response)
-
+        console.log('🔍 Full API response:', response)
+        console.log('🔍 Response data:', response.data)
+        
+        // Backend returns data directly in response, not in response.data
+        const responseData = response.data || response || {}
+        console.log('🔍 Parsed response data:', responseData)
+        console.log('🔍 Response text:', responseData.response)
+        
         // Add bot response to chat
         const botChatMessage = {
           type: 'bot',
-          text: middlewareResponse.response || 'Xin lỗi, tôi không hiểu yêu cầu của bạn.',
+          text: responseData.response || responseData.message || 'Xin lỗi, tôi không hiểu yêu cầu của bạn.',
           timestamp: new Date(),
           metadata: {
-            providerUsed: middlewareResponse.providerUsed,
-            confidence: middlewareResponse.confidence,
-            intentAnalysis: middlewareResponse.intentAnalysis,
-            processingMetrics: middlewareResponse.processingMetrics
+            providerUsed: responseData.providerUsed || 'PENNYBOT',
+            confidence: responseData.confidence || 0.8,
+            intentAnalysis: responseData.intentAnalysis || {},
+            processingMetrics: responseData.processingMetrics || {}
           }
         }
         addMessage(botChatMessage)
 
         // Add quick replies if available
-        if (middlewareResponse.quickReplies && middlewareResponse.quickReplies.length > 0) {
-          quickReplies.value = middlewareResponse.quickReplies
+        if (responseData.quickReplies && responseData.quickReplies.length > 0) {
+          quickReplies.value = responseData.quickReplies
         }
 
       } catch (error) {
@@ -255,7 +272,7 @@ export default {
 
     const closeOnBackdrop = (event) => {
       if (event.target === event.currentTarget) {
-        props.$emit('close')
+        emit('close')
       }
     }
 
@@ -276,12 +293,28 @@ export default {
       return PennyBotTypeDisplay[botType] || botType
     }
 
+    const formatTime = (timestamp) => {
+      if (!timestamp) return ''
+      const date = new Date(timestamp)
+      return date.toLocaleTimeString('en-US', { 
+        hour: '2-digit', 
+        minute: '2-digit',
+        hour12: false 
+      })
+    }
+
+    const switchMode = (testMode) => {
+      emit('modeChanged', testMode)
+    }
+
     // Add welcome message when modal opens
     onMounted(() => {
       if (props.bot.isFullyActive()) {
         const welcomeMessage = {
           type: 'bot',
-          text: `Hello! I'm ${props.bot.botName}, your ${getBotTypeDisplayName(props.bot.botType)} assistant. How can I help you today?`,
+          text: props.isTestMode 
+            ? `🧪 Test Mode: I'm ${props.bot.botName}, your ${getBotTypeDisplayName(props.bot.botType)} assistant. Send test messages to verify functionality!`
+            : `Hello! I'm ${props.bot.botName}, your ${getBotTypeDisplayName(props.bot.botType)} assistant. How can I help you today?`,
           timestamp: new Date()
         }
         addMessage(welcomeMessage)
@@ -300,7 +333,8 @@ export default {
       closeOnBackdrop,
       getBotTypeIcon,
       getBotTypeDisplayName,
-      formatTime
+      formatTime,
+      switchMode
     }
   }
 }
@@ -651,10 +685,13 @@ export default {
   flex: 1;
   padding: 12px 16px;
   border: 1px solid #d1d5db;
-  border-radius: 24px;
-  font-size: 14px;
+  border-radius: 8px;
   background: white;
-  color: #1f2937;
+  font-size: 14px;
+  line-height: 1.5;
+  resize: horizontal;
+  min-width: 200px;
+  max-width: 100%;
   transition: all 0.2s;
 }
 
@@ -673,6 +710,73 @@ export default {
 .message-input:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+  resize: none;
+}
+
+/* Resize handle styling */
+.message-input::-webkit-resizer {
+  background: #9ca3af;
+  border-radius: 2px;
+}
+
+.message-input::-moz-resizer {
+  background: #9ca3af;
+  border-radius: 2px;
+}
+
+.dark .message-input::-webkit-resizer {
+  background: #6b7280;
+}
+
+.dark .message-input::-moz-resizer {
+  background: #6b7280;
+}
+
+.test-mode-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  margin-left: 8px;
+  font-size: 10px;
+  font-weight: 600;
+  background: #f59e0b;
+  color: white;
+  border-radius: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.mode-selector {
+  display: flex;
+  background: #f3f4f6;
+  border-radius: 6px;
+  padding: 2px;
+  margin-right: 12px;
+}
+
+.dark .mode-selector {
+  background: #374151;
+}
+
+.mode-btn {
+  padding: 4px 8px;
+  border: none;
+  background: transparent;
+  color: #6b7280;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-weight: 500;
+}
+
+.mode-btn.active {
+  background: white;
+  color: #3b82f6;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.dark .mode-btn.active {
+  background: #1f2937;
+  color: #60a5fa;
 }
 
 .send-button {

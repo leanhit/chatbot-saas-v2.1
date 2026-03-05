@@ -248,9 +248,10 @@
               </button>
               <button
                 @click="testRule(rule)"
+                :title="$t('Test this existing rule')"
                 class="text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 text-sm font-medium"
               >
-                {{ $t('Test') }}
+                {{ $t('Test Rule') }}
               </button>
               <button
                 @click="duplicateRule(rule)"

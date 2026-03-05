@@ -159,10 +159,10 @@ export const usePennyBotStore = defineStore('penny-bot', () => {
         }
     }
 
-    const chatWithPennyBot = async (botId, message) => {
+    const chatWithPennyBot = async (botId, message, isTestMode = false) => {
         chatLoading.value = true
         try {
-            const { data } = await pennyApi.chatWithPennyBot(botId, message)
+            const { data } = await pennyApi.chatWithPennyBot(botId, message, isTestMode)
             return data
         } catch (error) {
             console.error('Failed to chat with Penny bot:', error)

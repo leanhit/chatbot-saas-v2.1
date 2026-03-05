@@ -187,14 +187,14 @@
                 {{ $t('Manage Rules') }}
               </button>
               
-              <!-- Test Rule Button -->
+              <!-- Chat/Test Button -->
               <button
-                @click="testRule(bot)"
+                @click="openChatModal(bot)"
                 :disabled="!bot.isFullyActive()"
-                class="flex items-center justify-center px-3 py-2 bg-orange-600 text-white text-sm font-medium rounded-md hover:bg-orange-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed col-span-2"
+                class="flex items-center justify-center px-3 py-2 bg-purple-600 text-white text-sm font-medium rounded-md hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed col-span-2"
               >
-                <Icon icon="mdi:test-tube" class="h-4 w-4 mr-1" />
-                {{ $t('Test Rule (Chat)') }}
+                <Icon icon="mdi:chat" class="h-4 w-4 mr-1" />
+                {{ $t('Chat') }}
               </button>
             </div>
             
@@ -255,7 +255,9 @@
     <PennyBotChatModal
       v-if="showChatModal && selectedBot"
       :bot="selectedBot"
+      :isTestMode="isTestMode"
       @close="showChatModal = false"
+      @modeChanged="isTestMode = $event"
     />
 
     <!-- Rule Modal -->
@@ -370,6 +372,7 @@ export default {
     const showCreateModal = ref(false)
     const showAnalyticsModal = ref(false)
     const showChatModal = ref(false)
+    const isTestMode = ref(false)
     const showRuleModal = ref(false)
     const showRulesModal = ref(false)
     const showConnectionsModal = ref(false)
@@ -417,12 +420,15 @@ export default {
       showAnalyticsModal.value = true
     }
 
-    const chatWithBot = (bot) => {
-      console.log('chatWithBot called with:', bot)
-      console.log('bot status:', bot.isActive, bot.isEnabled)
+    const openChatModal = (bot) => {
+      if (!bot || !bot.id) {
+        console.warn('Invalid bot for chat:', bot)
+        return
+      }
+      console.log('Opening chat modal for bot:', bot.botName)
       selectedBot.value = bot
+      isTestMode.value = false // Default to chat mode
       showChatModal.value = true
-      console.log('showChatModal set to true, selectedBot:', selectedBot.value)
     }
 
     const openConnections = (bot) => {
@@ -493,21 +499,6 @@ export default {
       selectedBot.value = bot
       showRulesModal.value = true
       // Note: The actual deletion will be handled in the rules modal
-    }
-
-    const testRule = (rule) => {
-      if (!rule || !rule.id || rule.id === undefined) {
-        console.warn('Invalid rule selected for testing rule:', rule)
-        return
-      }
-      if (!rule.id) {
-        console.warn('Invalid rule ID for testing rule:', rule)
-        return
-      }
-      selectedBot.value = rule.bot
-      editingRule.value = rule
-      showChatModal.value = true
-      // This opens chat modal for testing rules
     }
 
     const handleAutoConnect = (results) => {
@@ -628,6 +619,7 @@ export default {
       showCreateModal,
       showAnalyticsModal,
       showChatModal,
+      isTestMode,
       showRuleModal,
       showRulesModal,
       showConnectionsModal,
@@ -645,7 +637,7 @@ export default {
       editBot,
       deleteBot,
       viewAnalytics,
-      chatWithBot,
+      openChatModal,
       openConnections,
       goToConnections,
       goToRules,

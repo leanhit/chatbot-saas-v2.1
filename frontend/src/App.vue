@@ -19,6 +19,7 @@
     >
       <Header
         v-if="!$route.meta.hideNav"
+        :sidebar-open="sidebar"
         @sidebarToggle="toggle"
       />
       <router-view v-slot="{ Component }">

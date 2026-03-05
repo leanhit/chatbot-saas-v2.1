@@ -83,9 +83,9 @@ public class ProviderSelector {
     private ProviderType selectByIntent(IntentAnalysisResult analysis, ConversationContext context) {
         String intent = analysis.getPrimaryIntent();
         
-        // Business intents -> Botpress (has ERP integration)
+        // Business intents -> PennyBot (has ERP integration)
         if (isBusinessIntent(intent)) {
-            return ProviderType.BOTPRESS;
+            return ProviderType.PENNYBOT;
         }
         
         // Support intents -> Rasa (better for structured responses)
@@ -93,8 +93,8 @@ public class ProviderSelector {
             return ProviderType.RASA;
         }
         
-        // General chat -> Botpress (default)
-        return ProviderType.BOTPRESS;
+        // General chat -> PennyBot (default)
+        return ProviderType.PENNYBOT;
     }
     
     /**
@@ -103,9 +103,9 @@ public class ProviderSelector {
     private ProviderType selectByComplexity(IntentAnalysisResult analysis, ConversationContext context) {
         String complexity = analysis.getComplexity();
         
-        // High complexity -> Botpress (has more features)
+        // High complexity -> PennyBot (has more features)
         if ("high".equals(complexity)) {
-            return ProviderType.BOTPRESS;
+            return ProviderType.PENNYBOT;
         }
         
         // Medium complexity -> Rasa (faster for moderate complexity)
@@ -113,8 +113,8 @@ public class ProviderSelector {
             return ProviderType.RASA;
         }
         
-        // Low complexity -> Botpress (default)
-        return ProviderType.BOTPRESS;
+        // Low complexity -> PennyBot (default)
+        return ProviderType.PENNYBOT;
     }
     
     /**
@@ -134,8 +134,8 @@ public class ProviderSelector {
             }
         }
         
-        // Default to Botpress
-        return ProviderType.BOTPRESS;
+        // Default to PennyBot
+        return ProviderType.PENNYBOT;
     }
     
     /**
@@ -145,8 +145,8 @@ public class ProviderSelector {
         List<ProviderType> healthyProviders = getHealthyProviders();
         
         if (healthyProviders.isEmpty()) {
-            log.warn("⚠️ No healthy providers available, defaulting to Botpress");
-            return ProviderType.BOTPRESS;
+            log.warn("⚠️ No healthy providers available, defaulting to PennyBot");
+            return ProviderType.PENNYBOT;
         }
         
         // Select randomly from healthy providers for load balancing
@@ -161,16 +161,16 @@ public class ProviderSelector {
         String complexity = analysis.getComplexity();
         double confidence = analysis.getConfidence();
         
-        // Rule 1: Business intents always go to Botpress
+        // Rule 1: Business intents always go to PennyBot
         if (isBusinessIntent(intent)) {
-            log.debug("🎯 Business intent detected, selecting Botpress");
-            return ProviderType.BOTPRESS;
+            log.debug("🎯 Business intent detected, selecting PennyBot");
+            return ProviderType.PENNYBOT;
         }
         
-        // Rule 2: High complexity with low confidence -> Botpress (more robust)
+        // Rule 2: High complexity with low confidence -> PennyBot (more robust)
         if ("high".equals(complexity) && confidence < 0.7) {
-            log.debug("🎯 High complexity + low confidence, selecting Botpress");
-            return ProviderType.BOTPRESS;
+            log.debug("🎯 High complexity + low Confidence, selecting PennyBot");
+            return ProviderType.PENNYBOT;
         }
         
         // Rule 3: Support intents -> Rasa (better for structured support)
@@ -190,19 +190,19 @@ public class ProviderSelector {
         // Rule 5: Health-based fallback
         List<ProviderType> healthyProviders = getHealthyProviders();
         if (!healthyProviders.isEmpty()) {
-            // Prefer Botpress if healthy, otherwise use Rasa
-            if (healthyProviders.contains(ProviderType.BOTPRESS)) {
-                log.debug("🎯 Botpress is healthy, selecting Botpress");
-                return ProviderType.BOTPRESS;
+            // Prefer PennyBot if healthy, otherwise use Rasa
+            if (healthyProviders.contains(ProviderType.PENNYBOT)) {
+                log.debug("🎯 PennyBot is healthy, selecting PennyBot");
+                return ProviderType.PENNYBOT;
             } else if (healthyProviders.contains(ProviderType.RASA)) {
-                log.debug("🎯 Botpress not healthy, selecting Rasa");
+                log.debug("🎯 PennyBot not healthy, selecting Rasa");
                 return ProviderType.RASA;
             }
         }
         
         // Default fallback
-        log.debug("🎯 Using default provider: Botpress");
-        return ProviderType.BOTPRESS;
+        log.debug("🎯 Using default provider: PennyBot");
+        return ProviderType.PENNYBOT;
     }
     
     /**
@@ -304,6 +304,18 @@ public class ProviderSelector {
     }
     
     /**
+     * Check if intent requires default response
+     */
+    private boolean isDefaultIntent(String intent) {
+        return intent.equals("unknown") ||
+               intent.equals("greeting") ||
+               intent.equals("gratitude") ||
+               intent.equals("goodbye") ||
+               intent.equals("smalltalk") ||
+               !isBusinessIntent(intent) && !isSupportIntent(intent);
+    }
+    
+    /**
      * Update provider health status
      */
     public void updateProviderHealth(ProviderType type, boolean isHealthy, String message) {
@@ -328,6 +340,7 @@ public class ProviderSelector {
     
     public enum ProviderType {
         BOTPRESS("Botpress"),
+        PENNYBOT("PennyBot"),
         RASA("Rasa"),
         GPT("GPT");
         

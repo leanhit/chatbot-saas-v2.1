@@ -47,4 +47,31 @@ public class FacebookWebhookController {
             return ResponseEntity.internalServerError().body("Error processing event");
         }
     }
+    
+    @PostMapping("/webhooks/facebook/botpress")
+    public ResponseEntity<String> handleBotpressWebhookEvent(@RequestBody String payload) {
+        log.info("Received Facebook webhook event for botpress endpoint");
+        
+        try {
+            // Route to PennyBot instead of Botpress
+            webhookService.processWebhookEvent(payload);
+            return ResponseEntity.ok("EVENT_RECEIVED");
+        } catch (Exception e) {
+            log.error("Error processing Facebook webhook event for botpress endpoint", e);
+            return ResponseEntity.internalServerError().body("Error processing event");
+        }
+    }
+    
+    @PostMapping("/webhooks/facebook/pennybot")
+    public ResponseEntity<String> handlePennybotWebhookEvent(@RequestBody String payload) {
+        log.info("Received Facebook webhook event for pennybot endpoint");
+        
+        try {
+            webhookService.processWebhookEvent(payload);
+            return ResponseEntity.ok("EVENT_RECEIVED");
+        } catch (Exception e) {
+            log.error("Error processing Facebook webhook event for pennybot endpoint", e);
+            return ResponseEntity.internalServerError().body("Error processing event");
+        }
+    }
 }

@@ -69,7 +69,7 @@ public class ChatbotProviderWrapper implements MiddlewareProvider {
                 request.getUserId(), e.getMessage(), e);
             
             ProviderResponse providerResponse = new ProviderResponse();
-            providerResponse.setProviderType(MiddlewareProvider.ProviderType.BOTPRESS); // Default
+            providerResponse.setProviderType(MiddlewareProvider.ProviderType.PENNYBOT); // Default
             providerResponse.setSuccess(false);
             providerResponse.setErrorMessage(e.getMessage());
             providerResponse.setProcessingTime(System.currentTimeMillis());
@@ -85,7 +85,7 @@ public class ChatbotProviderWrapper implements MiddlewareProvider {
             Map<String, Boolean> providerHealth = new HashMap<>();
             
             // Try to get health status for each provider type
-            String[] providerTypes = {"BOTPRESS", "RASA"};
+            String[] providerTypes = {"PENNYBOT", "RASA"};
             
             for (String providerType : providerTypes) {
                 try {
@@ -177,8 +177,8 @@ public class ChatbotProviderWrapper implements MiddlewareProvider {
             }
         }
         
-        // 4. Default to Botpress
-        return "BOTPRESS";
+        // 4. Default to PennyBot
+        return "PENNYBOT";
     }
     
     private Map<String, Object> buildMetadata(Map<String, Object> response, String providerType) {

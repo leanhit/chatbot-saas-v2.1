@@ -117,19 +117,16 @@ export const pennyApi = {
     /**
      * Chat với Penny bot (cần authentication)
      */
-    chatWithPennyBot(botId, message) {
-        // Create middleware request
-        const middlewareRequest = new MiddlewareRequest({
-            userId: 'current-user', // Will be set by backend from auth context
-            platform: 'web',
+    chatWithPennyBot(botId, message, isTestMode = false) {
+        // Backend expects simple Map<String, String> with message and testMode
+        const request = {
             message: message,
-            botId: botId
-        });
+            testMode: isTestMode ? 'true' : 'false'
+        };
         
-        return axios.post(`/penny/bots/${botId}/chat`, middlewareRequest.toApiRequest())
+        return axios.post(`/penny/bots/${botId}/chat`, request)
             .then(response => {
-                // Convert API response to DTO
-                response.data = new MiddlewareResponse(response.data);
+                // Return response directly as is
                 return response;
             })
             .catch(handleApiError);

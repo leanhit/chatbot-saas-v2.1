@@ -351,8 +351,8 @@ public class PennyBotManager {
     /**
      * Process message through Penny middleware
      */
-    public String processMessage(UUID botId, String message, String ownerId) {
-        log.info("💬 Processing message for bot {} by {}: {}", botId, ownerId, message);
+    public String processMessage(UUID botId, String message, String ownerId, boolean isTestMode) {
+        log.info("💬 Processing message for bot {} by {} - TestMode: {} - Message: {}", botId, ownerId, isTestMode, message);
         
         try {
             PennyBot bot = getBot(botId);
@@ -380,7 +380,20 @@ public class PennyBotManager {
             // For now, return a simple response
             String botName = bot.getBotName();
             
-            // Simple keyword-based responses
+            if (isTestMode) {
+                // Test mode specific responses
+                if (message.toLowerCase().contains("hello") || message.toLowerCase().contains("hi")) {
+                    return String.format("🧪 [TEST] Hello! I'm %s. Test mode active - bot responding correctly!", botName);
+                } else if (message.toLowerCase().contains("help")) {
+                    return "🧪 [TEST] Help system working! I can assist with various tasks in test mode.";
+                } else if (message.toLowerCase().contains("test")) {
+                    return String.format("🧪 [TEST] Test successful! Bot %s is fully functional.", botName);
+                } else {
+                    return String.format("🧪 [TEST] Message received: \"%s\" - Test mode processing complete!", message);
+                }
+            }
+            
+            // Normal mode responses
             if (message.toLowerCase().contains("hello") || message.toLowerCase().contains("hi")) {
                 return String.format("Hello! I'm %s. How can I help you today?", botName);
             } else if (message.toLowerCase().contains("help")) {

@@ -6,6 +6,7 @@ import com.chatbot.core.tenant.membership.model.*;
 import com.chatbot.core.tenant.membership.repository.TenantMemberRepository;
 import com.chatbot.core.tenant.model.Tenant;
 import com.chatbot.core.tenant.repository.TenantRepository;
+import com.chatbot.core.tenant.infra.TenantContext;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -46,20 +47,35 @@ public class TenantMemberService {
     /* ================= UPDATE ================= */
 
     @Transactional
-    public void updateRole(Long tenantId, Long userId, TenantRole role) {
+    public void updateRole(Long tenantId, Long userId, TenantRole newRole) {
+        // Check permissions
+        if (!canManageMembers(tenantId, userId)) {
+            throw new IllegalStateException("Insufficient privileges to manage member roles");
+        }
+        
         TenantMember member = getMemberEntityRequired(tenantId, userId);
 
         if (member.getRole() == TenantRole.OWNER) {
             throw new IllegalStateException("Cannot change OWNER role");
         }
 
-        member.setRole(role);
+        // Check if user is trying to assign higher role than their own
+        if (!canAssignRole(tenantId, userId, newRole)) {
+            throw new IllegalStateException("Cannot assign role higher than your own privileges");
+        }
+
+        member.setRole(newRole);
     }
 
     /* ================= DELETE ================= */
 
     @Transactional
     public void removeMember(Long tenantId, Long userId) {
+        // Check permissions
+        if (!canManageMembers(tenantId, userId)) {
+            throw new IllegalStateException("Insufficient privileges to remove members");
+        }
+        
         TenantMember member = getMemberEntityRequired(tenantId, userId);
 
         if (member.getRole() == TenantRole.OWNER) {
@@ -78,6 +94,60 @@ public class TenantMemberService {
     TenantMember getMemberEntityRequired(Long tenantId, Long userId) {
         return getMemberEntity(tenantId, userId)
                 .orElseThrow(() -> new IllegalStateException("Member not found"));
+    }
+
+    private boolean canManageMembers(Long tenantId, Long userId) {
+        try {
+            // System ADMIN can manage any tenant
+            Optional<TenantMember> memberOpt = getMemberEntity(tenantId, userId);
+            if (memberOpt.isEmpty()) return false;
+            
+            TenantMember member = memberOpt.get();
+            User user = member.getUser();
+            
+            if (user.getSystemRole() == com.chatbot.core.identity.model.SystemRole.ADMIN) {
+                return true;
+            }
+            
+            // OWNER and ADMIN can manage members
+            return member.getRole() == TenantRole.OWNER || member.getRole() == TenantRole.ADMIN;
+            
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    private boolean canAssignRole(Long tenantId, Long userId, TenantRole targetRole) {
+        try {
+            Optional<TenantMember> memberOpt = getMemberEntity(tenantId, userId);
+            if (memberOpt.isEmpty()) return false;
+            
+            TenantMember member = memberOpt.get();
+            User user = member.getUser();
+            
+            // System ADMIN can assign any role
+            if (user.getSystemRole() == com.chatbot.core.identity.model.SystemRole.ADMIN) {
+                return true;
+            }
+            
+            TenantRole currentRole = member.getRole();
+            
+            // OWNER can assign any role except another OWNER
+            if (currentRole == TenantRole.OWNER) {
+                return targetRole != TenantRole.OWNER;
+            }
+            
+            // ADMIN can assign EDITOR, MEMBER, but not OWNER or ADMIN
+            if (currentRole == TenantRole.ADMIN) {
+                return targetRole == TenantRole.EDITOR || targetRole == TenantRole.MEMBER;
+            }
+            
+            // EDITOR and MEMBER cannot assign roles
+            return false;
+            
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     private MemberResponse toResponse(TenantMember m) {

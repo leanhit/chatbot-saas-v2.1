@@ -2,6 +2,12 @@ package com.chatbot.shared.penny.service;
 
 import com.chatbot.core.tenant.repository.TenantRepository;
 import com.chatbot.core.tenant.model.Tenant;
+import com.chatbot.core.tenant.membership.model.TenantMember;
+import com.chatbot.core.tenant.membership.model.TenantRole;
+import com.chatbot.core.tenant.membership.model.MembershipStatus;
+import com.chatbot.core.tenant.membership.repository.TenantMemberRepository;
+import com.chatbot.core.user.model.User;
+import com.chatbot.core.user.repository.UserRepository;
 import com.chatbot.shared.penny.model.PennyBot;
 import com.chatbot.shared.penny.repository.PennyBotRepository;
 import com.chatbot.shared.penny.dto.PennyBotDto;
@@ -9,6 +15,7 @@ import com.chatbot.shared.penny.dto.PennyBotRequest;
 import com.chatbot.shared.penny.dto.PennyBotResponse;
 import com.chatbot.shared.exceptions.ResourceNotFoundException;
 import com.chatbot.shared.constants.CacheConstants;
+import com.chatbot.core.tenant.infra.TenantContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.Cacheable;
@@ -31,6 +38,26 @@ public class PennyBotService {
 
     private final PennyBotRepository pennyBotRepository;
     private final TenantRepository tenantRepository;
+    private final UserRepository userRepository;
+    private final TenantMemberRepository tenantMemberRepository;
+
+    /**
+     * Convert tenantId to tenantKey using database lookup with caching
+     */
+    @Cacheable(value = "tenant-id-to-key", key = "#tenantId", unless = "#result == null")
+    private String convertTenantIdToTenantKey(Long tenantId) {
+        try {
+            // Look up tenant in database using tenantId
+            Tenant tenant = tenantRepository.findById(tenantId)
+                .orElseThrow(() -> new RuntimeException("Tenant not found with ID: " + tenantId));
+            
+            log.info("Found tenant: {} with key: {}", tenantId, tenant.getTenantKey());
+            return tenant.getTenantKey();
+        } catch (Exception e) {
+            log.error("Error converting tenantId to tenantKey: {}", tenantId, e);
+            throw new RuntimeException("Invalid tenant ID: " + tenantId, e);
+        }
+    }
 
     /**
      * Convert tenantKey to tenantId using database lookup with caching
@@ -54,7 +81,12 @@ public class PennyBotService {
      * Create a new Penny Bot
      */
     @Transactional
-    public PennyBotResponse createBot(PennyBotRequest request) {
+    public PennyBotResponse createBot(String ownerId, PennyBotRequest request) {
+        // Check create permissions
+        if (!canManageBots(ownerId)) {
+            throw new RuntimeException("Insufficient privileges to create bots. Only OWNER/ADMIN can create bots.");
+        }
+        
         log.info("Creating Penny bot: {}", request.getBotName());
 
         // Check if bot name already exists for tenant (simplified check)
@@ -301,23 +333,39 @@ public class PennyBotService {
      * Get bot count by tenant
      */
     public long getBotCountByTenant(Long tenantId) {
-        return pennyBotRepository.countActiveBotsByTenant(tenantId);
-    }
-
-    /**
-     * Get active bot count by tenant
-     */
-    public long getActiveBotCountByTenant(Long tenantId) {
         return pennyBotRepository.findByTenantIdAndIsActiveTrue(tenantId).size();
     }
-
-    /**
-     * Convert tenantId to tenantKey
-     */
-    private String convertTenantIdToTenantKey(Long tenantId) {
-        return String.valueOf(tenantId);
+    
+    private boolean canManageBots(String userId) {
+        try {
+            User user = userRepository.findByEmail(userId).orElse(null);
+            if (user == null) return false;
+            
+            // System ADMIN can manage any tenant
+            if (user.getSystemRole() == com.chatbot.core.identity.model.SystemRole.ADMIN) {
+                return true;
+            }
+            
+            Long tenantId = TenantContext.getTenantId();
+            if (tenantId == null) return false;
+            
+            TenantMember member = tenantMemberRepository
+                    .findByTenant_IdAndUser_Id(tenantId, user.getId())
+                    .orElse(null);
+            
+            if (member == null || member.getStatus() != MembershipStatus.ACTIVE) {
+                return false;
+            }
+            
+            // OWNER and ADMIN can manage bots
+            return member.getRole() == TenantRole.OWNER || member.getRole() == TenantRole.ADMIN;
+            
+        } catch (Exception e) {
+            log.error("Error checking bot management permissions for user: {}", userId, e);
+            return false;
+        }
     }
-
+    
     /**
      * Map entity to DTO
      */
