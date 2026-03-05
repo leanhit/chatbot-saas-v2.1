@@ -1,10 +1,5 @@
 package com.chatbot.shared.penny.core;
 
-import com.chatbot.spokes.facebook.connection.service.FacebookConnectionService;
-import com.chatbot.spokes.facebook.webhook.service.ChatbotProviderFactory;
-import com.chatbot.core.message.store.service.ConversationService;
-import com.chatbot.core.message.store.service.MessageService;
-import com.chatbot.core.tenant.infra.TenantContext;
 import com.chatbot.shared.penny.analytics.AnalyticsCollector;
 import com.chatbot.shared.penny.context.ContextManager;
 import com.chatbot.shared.penny.context.ConversationContext;
@@ -16,10 +11,9 @@ import com.chatbot.shared.penny.service.IntentAnalyzer;
 import com.chatbot.shared.penny.routing.ProviderSelector;
 import com.chatbot.shared.penny.routing.dto.IntentAnalysisResult;
 import com.chatbot.shared.penny.routing.dto.ProviderSelection;
-import lombok.Data;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.NoArgsConstructor;
-import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -35,12 +29,6 @@ import java.util.concurrent.CompletableFuture;
 @Slf4j
 public class PennyMiddlewareEngine {
     
-    // Existing services from current system
-    private final ChatbotProviderFactory existingProviderFactory;
-    private final ConversationService existingConversationService;
-    private final FacebookConnectionService facebookConnectionService;
-    private final MessageService existingMessageService;
-    
     // New Penny services
     private final ContextManager contextManager;
     private final IntentAnalyzer intentAnalyzer;
@@ -49,20 +37,12 @@ public class PennyMiddlewareEngine {
     private final AnalyticsCollector analyticsCollector;
     private final CustomLogicEngine customLogicEngine;
     
-    public PennyMiddlewareEngine(ChatbotProviderFactory existingProviderFactory,
-                                ConversationService existingConversationService,
-                                FacebookConnectionService facebookConnectionService,
-                                MessageService existingMessageService,
-                                ContextManager contextManager,
+    public PennyMiddlewareEngine(ContextManager contextManager,
                                 IntentAnalyzer intentAnalyzer,
                                 ProviderSelector providerSelector,
                                 ErrorHandler errorHandler,
                                 AnalyticsCollector analyticsCollector,
                                 CustomLogicEngine customLogicEngine) {
-        this.existingProviderFactory = existingProviderFactory;
-        this.existingConversationService = existingConversationService;
-        this.facebookConnectionService = facebookConnectionService;
-        this.existingMessageService = existingMessageService;
         this.contextManager = contextManager;
         this.intentAnalyzer = intentAnalyzer;
         this.providerSelector = providerSelector;
@@ -83,7 +63,7 @@ public class PennyMiddlewareEngine {
                 requestId, request.getUserId(), request.getPlatform());
             
             // STEP 1: Validate request
-            ConversationContext conversationContext = contextManager.loadContext(request);
+            ConversationContext conversationContext = (ConversationContext) contextManager.loadContext(request);
             
             // STEP 2: Analyze intent và entities
             IntentAnalysisResult analysis = intentAnalyzer.analyze(request, conversationContext);

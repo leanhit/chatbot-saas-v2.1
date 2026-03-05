@@ -56,10 +56,10 @@ public class IntentAnalysisResult {
     private String language;
     
     /**
-     * Processing timestamp
+     * Analysis timestamp
      */
     @JsonFormat(pattern = DateUtils.STANDARD_JSON_FORMAT, timezone = DateUtils.STANDARD_TIMEZONE)
-    private Instant timestamp;
+    private Instant analyzedAt;
     
     /**
      * Processing time in milliseconds
@@ -301,5 +301,19 @@ public class IntentAnalysisResult {
                 ", language='" + language + '\'' +
                 ", entitiesCount=" + (entities != null ? entities.size() : 0) +
                 '}';
+    }
+    
+    /**
+     * Get primary intent (alias for getPrimaryIntent)
+     */
+    public String getIntent() {
+        return primaryIntent;
+    }
+    
+    /**
+     * Get confidence score
+     */
+    public Double getConfidence() {
+        return confidence;
     }
 }

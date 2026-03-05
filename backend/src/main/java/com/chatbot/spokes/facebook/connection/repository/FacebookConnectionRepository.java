@@ -58,6 +58,13 @@ public interface FacebookConnectionRepository extends JpaRepository<FacebookConn
     @Query("SELECT fc FROM FacebookConnection fc WHERE fc.tenantId = :tenantId AND fc.pageId = :pageId AND fc.isActive = true")
     Optional<FacebookConnection> findByTenantIdAndPageIdAndIsActiveTrue(@Param("tenantId") Long tenantId, @Param("pageId") String pageId);
     
+    // Tìm theo botId, ownerId và tenantId
+    @Query("SELECT fc FROM FacebookConnection fc WHERE fc.botId = :botId AND fc.ownerId = :ownerId AND fc.tenantId = :tenantId")
+    Page<FacebookConnection> findByBotIdAndOwnerIdAndTenantId(@Param("botId") String botId, @Param("ownerId") String ownerId, @Param("tenantId") Long tenantId, Pageable pageable);
+    
+    @Query("SELECT fc FROM FacebookConnection fc WHERE fc.botId = :botId AND fc.ownerId = :ownerId AND fc.tenantId = :tenantId")
+    List<FacebookConnection> findByBotIdAndOwnerIdAndTenantId(@Param("botId") String botId, @Param("ownerId") String ownerId, @Param("tenantId") Long tenantId);
+    
     @Deprecated
     @Query("SELECT fc FROM FacebookConnection fc WHERE fc.pageId = :pageId AND fc.isActive = true AND fc.tenantId = :#{@tenantContext.tenantId}")
     Optional<FacebookConnection> findByPageIdAndIsActiveTrue(@Param("pageId") String pageId);

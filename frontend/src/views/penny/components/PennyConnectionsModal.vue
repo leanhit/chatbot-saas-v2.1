@@ -91,10 +91,12 @@
               <div class="table-actions">
                 <select v-model="filterType" class="filter-select">
                   <option value="">{{ $t('All Types') }}</option>
-                  <option value="FACEBOOK">{{ $t('Facebook Messenger') }}</option>
-                  <option value="WEBHOOK">{{ $t('Webhook') }}</option>
-                  <option value="API">{{ $t('REST API') }}</option>
-                  <option value="DATABASE">{{ $t('Database') }}</option>
+                  <option :value="ConnectionType.FACEBOOK">{{ $t('Facebook Messenger') }}</option>
+                  <option :value="ConnectionType.ZALO">{{ $t('Zalo') }}</option>
+                  <option :value="ConnectionType.WEBSITE">{{ $t('Website Chat') }}</option>
+                  <option :value="ConnectionType.WEBHOOK">{{ $t('Webhook') }}</option>
+                  <option :value="ConnectionType.API">{{ $t('REST API') }}</option>
+                  <option :value="ConnectionType.DATABASE">{{ $t('Database') }}</option>
                 </select>
                 <button @click="refreshConnections" class="refresh-btn">
                   <Icon icon="mdi:refresh" class="h-4 w-4" />
@@ -131,6 +133,7 @@
                     </td>
                     <td>
                       <span class="connection-type-badge" :class="connection.connectionType.toLowerCase()">
+                        <Icon :icon="getConnectionIcon(connection.connectionType)" class="h-4 w-4 mr-1" />
                         {{ getConnectionTypeDisplayName(connection.connectionType) }}
                       </span>
                     </td>
@@ -157,20 +160,40 @@
                           :class="getHealthClass(connection.healthStatus)"
                         ></div>
                         <span class="health-text">{{ getHealthText(connection.healthStatus) }}</span>
+                        <span v-if="connection.responseTime" class="response-time">
+                          ({{ connection.responseTime }}ms)
+                        </span>
                       </div>
                     </td>
                     <td>
-                      <span class="priority-badge" :class="getPriorityClass(connection.priority)">
-                        {{ connection.priority }}
-                      </span>
+                      <div class="priority-indicator">
+                        <span class="priority-badge" :class="getPriorityClass(connection.priority)">
+                          {{ connection.priority }}
+                        </span>
+                        <span class="priority-text">
+                          {{ getPriorityText(connection.priority) }}
+                        </span>
+                      </div>
                     </td>
                     <td>
-                      <span class="last-used">
-                        {{ formatDateTime(connection.lastUsedAt) }}
-                      </span>
+                      <div class="last-used-info">
+                        <span class="last-used">
+                          {{ formatDateTime(connection.lastUsedAt) }}
+                        </span>
+                        <span v-if="connection.usageCount" class="usage-count">
+                          ({{ connection.usageCount }} uses)
+                        </span>
+                      </div>
                     </td>
                     <td class="actions-cell">
                       <div class="action-buttons">
+                        <button
+                          @click="viewDetails(connection)"
+                          class="action-btn details"
+                          :title="$t('View Details')"
+                        >
+                          <Icon icon="mdi:information" class="h-4 w-4" />
+                        </button>
                         <button
                           @click="testConnection(connection)"
                           :disabled="testingConnection"
@@ -230,6 +253,11 @@ import { useI18n } from 'vue-i18n'
 import { formatDateTime } from '@/utils/dateUtils'
 import { usePennyConnectionStore } from '@/stores/pennyConnectionStore'
 import PennyConnectionModal from './PennyConnectionModal.vue'
+import {
+  ConnectionType,
+  ConnectionStatus,
+  HealthStatus
+} from '@/types/penny'
 
 export default {
   name: 'PennyConnectionsModal',
@@ -243,7 +271,7 @@ export default {
       required: true
     }
   },
-  emits: ['close'],
+  emits: ['close', 'createConnection'],
   setup(props, { emit }) {
     const { t } = useI18n()
     const pennyConnectionStore = usePennyConnectionStore()
@@ -280,8 +308,7 @@ export default {
     }
 
     const createNewConnection = () => {
-      editingConnection.value = null
-      showConnectionModal.value = true
+      emit('createConnection', props.bot)
     }
 
     const editConnection = (connection) => {
@@ -362,22 +389,26 @@ export default {
 
     const getConnectionTypeDisplayName = (type) => {
       const names = {
-        'FACEBOOK': 'Facebook',
-        'WEBHOOK': 'Webhook',
-        'API': 'API',
-        'DATABASE': 'Database'
+        [ConnectionType.FACEBOOK]: 'Facebook Messenger',
+        [ConnectionType.WEBHOOK]: 'Webhook',
+        [ConnectionType.API]: 'REST API',
+        [ConnectionType.DATABASE]: 'Database',
+        [ConnectionType.ZALO]: 'Zalo',
+        [ConnectionType.WEBSITE]: 'Website Chat'
       }
       return names[type] || type
     }
 
     const getHealthClass = (status) => {
       switch (status) {
-        case 'HEALTHY':
+        case HealthStatus.HEALTHY:
           return 'healthy'
-        case 'WARNING':
+        case HealthStatus.WARNING:
           return 'warning'
-        case 'ERROR':
+        case HealthStatus.ERROR:
           return 'error'
+        case HealthStatus.UNKNOWN:
+          return 'unknown'
         default:
           return 'unknown'
       }
@@ -385,21 +416,47 @@ export default {
 
     const getHealthText = (status) => {
       switch (status) {
-        case 'HEALTHY':
+        case HealthStatus.HEALTHY:
           return t('Healthy')
-        case 'WARNING':
+        case HealthStatus.WARNING:
           return t('Warning')
-        case 'ERROR':
+        case HealthStatus.ERROR:
           return t('Error')
+        case HealthStatus.UNKNOWN:
+          return t('Unknown')
         default:
           return t('Unknown')
       }
+    }
+
+    const getConnectionIcon = (type) => {
+      const icons = {
+        [ConnectionType.FACEBOOK]: 'mdi:facebook',
+        [ConnectionType.ZALO]: 'mdi:message-text',
+        [ConnectionType.WEBSITE]: 'mdi:web',
+        [ConnectionType.WEBHOOK]: 'mdi:webhook',
+        [ConnectionType.API]: 'mdi:api',
+        [ConnectionType.DATABASE]: 'mdi:database'
+      };
+      return icons[type] || 'mdi:connection';
     }
 
     const getPriorityClass = (priority) => {
       if (priority >= 80) return 'high'
       if (priority >= 50) return 'medium'
       return 'low'
+    }
+
+    const getPriorityText = (priority) => {
+      if (priority >= 80) return t('High');
+      if (priority >= 50) return t('Medium');
+      return t('Low');
+    }
+
+    const viewDetails = (connection) => {
+      // Show connection details modal or expand details
+      console.log('View details for connection:', connection);
+      // TODO: Implement details view
     }
 
     const closeOnBackdrop = (event) => {
@@ -446,9 +503,12 @@ export default {
       checkHealth,
       getConnectionConfig,
       getConnectionTypeDisplayName,
+      getConnectionIcon,
       getHealthClass,
       getHealthText,
       getPriorityClass,
+      getPriorityText,
+      viewDetails,
       formatDateTime,
       closeOnBackdrop,
       onConnectionSaved
@@ -636,6 +696,19 @@ export default {
   50% {
     opacity: 0.5;
   }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
 }
 
 .no-connections {
@@ -902,123 +975,73 @@ export default {
 }
 
 .connection-type-badge {
+  display: inline-flex;
+  align-items: center;
   padding: 4px 8px;
-  border-radius: 4px;
+  border-radius: 12px;
   font-size: 12px;
   font-weight: 500;
   text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .connection-type-badge.facebook {
-  background: #1877f2;
+  background-color: #1877f2;
+  color: white;
+}
+
+.connection-type-badge.zalo {
+  background-color: #0084ff;
+  color: white;
+}
+
+.connection-type-badge.website {
+  background-color: #6366f1;
   color: white;
 }
 
 .connection-type-badge.webhook {
-  background: #10b981;
+  background-color: #8b5cf6;
   color: white;
 }
 
 .connection-type-badge.api {
-  background: #f59e0b;
+  background-color: #06b6d4;
   color: white;
 }
 
 .connection-type-badge.database {
-  background: #8b5cf6;
+  background-color: #10b981;
   color: white;
-}
-
-.status-toggle {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.switch {
-  position: relative;
-  display: inline-block;
-  width: 44px;
-  height: 24px;
-}
-
-.switch-input {
-  opacity: 0;
-  width: 0;
-  height: 0;
-}
-
-.switch-slider {
-  position: absolute;
-  cursor: pointer;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: #ccc;
-  transition: 0.4s;
-  border-radius: 24px;
-}
-
-.switch-slider:before {
-  position: absolute;
-  content: "";
-  height: 18px;
-  width: 18px;
-  left: 3px;
-  bottom: 3px;
-  background-color: white;
-  transition: 0.4s;
-  border-radius: 50%;
-}
-
-.switch-input:checked + .switch-slider {
-  background-color: #3b82f6;
-}
-
-.switch-input:checked + .switch-slider:before {
-  transform: translateX(20px);
-}
-
-.status-text {
-  font-size: 12px;
-  font-weight: 500;
-}
-
-.status-text.active {
-  color: #10b981;
-}
-
-.status-text:not(.active) {
-  color: #6b7280;
 }
 
 .health-indicator {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
 }
 
 .health-dot {
   width: 8px;
   height: 8px;
   border-radius: 50%;
+  animation: pulse 2s infinite;
 }
 
 .health-dot.healthy {
-  background: #10b981;
+  background-color: #10b981;
 }
 
 .health-dot.warning {
-  background: #f59e0b;
+  background-color: #f59e0b;
 }
 
 .health-dot.error {
-  background: #ef4444;
+  background-color: #ef4444;
 }
 
 .health-dot.unknown {
-  background: #6b7280;
+  background-color: #6b7280;
 }
 
 .health-text {
@@ -1031,34 +1054,79 @@ export default {
   color: #d1d5db;
 }
 
+.response-time {
+  font-size: 11px;
+  color: #6b7280;
+  font-weight: 400;
+}
+
+.dark .response-time {
+  color: #9ca3af;
+}
+
+.priority-indicator {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
 .priority-badge {
-  padding: 2px 8px;
-  border-radius: 4px;
-  font-size: 12px;
-  font-weight: 500;
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
 }
 
 .priority-badge.high {
-  background: #fecaca;
-  color: #dc2626;
+  background-color: #dc2626;
+  color: white;
 }
 
 .priority-badge.medium {
-  background: #fed7aa;
-  color: #d97706;
+  background-color: #f59e0b;
+  color: white;
 }
 
 .priority-badge.low {
-  background: #dbeafe;
-  color: #2563eb;
+  background-color: #6b7280;
+  color: white;
+}
+
+.priority-text {
+  font-size: 11px;
+  color: #6b7280;
+  font-weight: 400;
+}
+
+.dark .priority-text {
+  color: #9ca3af;
+}
+
+.last-used-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
 .last-used {
   font-size: 12px;
-  color: #6b7280;
+  color: #374151;
+  font-weight: 500;
 }
 
 .dark .last-used {
+  color: #d1d5db;
+}
+
+.usage-count {
+  font-size: 11px;
+  color: #6b7280;
+  font-weight: 400;
+}
+
+.dark .usage-count {
   color: #9ca3af;
 }
 

@@ -143,6 +143,16 @@ public class TenantService {
     }
 
     /**
+     * Lấy tenant ID theo tenant key (cho tenant context).
+     */
+    @Transactional(readOnly = true)
+    public Long getTenantIdByKey(String tenantKey) {
+        return tenantRepository.findByTenantKey(tenantKey)
+                .map(Tenant::getId)
+                .orElse(null);
+    }
+
+    /**
      * Suspend tenant.
      */
     @Transactional

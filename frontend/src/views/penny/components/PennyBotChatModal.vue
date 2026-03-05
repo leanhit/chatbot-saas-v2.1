@@ -11,10 +11,10 @@
             </div>
           </div>
           <div class="header-actions">
-            <div class="status-indicator" :class="{ online: bot.isActive && bot.isEnabled }">
+            <div class="status-indicator" :class="{ online: bot.isFullyActive() }">
               <div class="status-dot"></div>
               <span class="status-text">
-                {{ bot.isActive && bot.isEnabled ? $t('Online') : $t('Offline') }}
+                {{ bot.isFullyActive() ? $t('Online') : $t('Offline') }}
               </span>
             </div>
             <button @click="$emit('close')" class="close-button">
@@ -80,12 +80,12 @@
                 type="text"
                 :placeholder="$t('Type your message...')"
                 class="message-input"
-                :disabled="!bot.isActive || !bot.isEnabled || chatLoading"
+                :disabled="!bot.isFullyActive() || chatLoading"
                 @keydown.enter.prevent="sendMessage"
               />
               <button
                 type="submit"
-                :disabled="!newMessage.trim() || !bot.isActive || !bot.isEnabled || chatLoading"
+                :disabled="!newMessage.trim() || !bot.isFullyActive() || chatLoading"
                 class="send-button"
               >
                 <Icon
@@ -121,11 +121,16 @@
 </template>
 
 <script>
-import { ref, computed, onMounted, nextTick, watch } from 'vue'
+import { ref, computed, nextTick, onMounted, onUnmounted } from 'vue'
 import { Icon } from '@iconify/vue'
 import { useI18n } from 'vue-i18n'
-import { getRelativeTime, formatTime } from '@/utils/dateUtils'
 import { usePennyBotStore } from '@/stores/pennyBotStore'
+import {
+  PennyBotType,
+  PennyBotTypeDisplay,
+  MiddlewareRequest,
+  MiddlewareResponse
+} from '@/types/penny'
 
 export default {
   name: 'PennyBotChatModal',
@@ -148,6 +153,7 @@ export default {
     const isTyping = ref(false)
     const chatContainer = ref(null)
     const chatLoading = computed(() => pennyBotStore.chatLoading)
+    const quickReplies = ref([])
 
     const quickActions = [
       { text: 'Hello' },
@@ -165,45 +171,80 @@ export default {
       })
     }
 
-    const addMessage = (text, type = 'user') => {
-      messages.value.push({
-        text,
-        type,
-        timestamp: new Date()
-      })
+    const addMessage = (message) => {
+      messages.value.push(message)
       scrollToBottom()
     }
 
     const sendMessage = async () => {
-      if (!newMessage.value.trim() || !props.bot.isActive || !props.bot.isEnabled) {
-        return
-      }
+      if (!newMessage.value.trim() || chatLoading.value) return
 
       const userMessage = newMessage.value.trim()
       newMessage.value = ''
 
-      // Add user message
-      addMessage(userMessage, 'user')
+      // Add user message to chat
+      const userChatMessage = {
+        type: 'user',
+        text: userMessage,
+        timestamp: new Date()
+      }
+      addMessage(userChatMessage)
 
       // Show typing indicator
       isTyping.value = true
-      scrollToBottom()
 
       try {
-        // Get bot response
-        const response = await pennyBotStore.chatWithPennyBot(props.bot.botId, userMessage)
-        
-        // Hide typing indicator
-        isTyping.value = false
+        // Create middleware request
+        const middlewareRequest = new MiddlewareRequest({
+          userId: 'current-user', // Will be set by backend from auth context
+          platform: 'web',
+          message: userMessage,
+          botId: props.bot.id,
+          messageType: 'text',
+          language: 'vi' // Detect Vietnamese or use default
+        })
 
-        // Add bot response
-        addMessage(response.response, 'bot')
+        // Send message to Penny bot
+        const response = await pennyBotStore.chatWithPennyBot(props.bot.id, middlewareRequest.toApiRequest())
+        
+        // Convert to MiddlewareResponse if needed
+        const middlewareResponse = response instanceof MiddlewareResponse 
+          ? response 
+          : new MiddlewareResponse(response)
+
+        // Add bot response to chat
+        const botChatMessage = {
+          type: 'bot',
+          text: middlewareResponse.response || 'Xin lỗi, tôi không hiểu yêu cầu của bạn.',
+          timestamp: new Date(),
+          metadata: {
+            providerUsed: middlewareResponse.providerUsed,
+            confidence: middlewareResponse.confidence,
+            intentAnalysis: middlewareResponse.intentAnalysis,
+            processingMetrics: middlewareResponse.processingMetrics
+          }
+        }
+        addMessage(botChatMessage)
+
+        // Add quick replies if available
+        if (middlewareResponse.quickReplies && middlewareResponse.quickReplies.length > 0) {
+          quickReplies.value = middlewareResponse.quickReplies
+        }
+
       } catch (error) {
-        isTyping.value = false
         console.error('Failed to send message:', error)
         
         // Add error message
-        addMessage('Sorry, I encountered an error. Please try again.', 'bot')
+        const errorMessage = {
+          type: 'bot',
+          text: 'Xin lỗi, đã xảy ra lỗi khi xử lý tin nhắn của bạn. Vui lòng thử lại sau.',
+          timestamp: new Date(),
+          isError: true
+        }
+        addMessage(errorMessage)
+      } finally {
+        isTyping.value = false
+        scrollToBottom()
       }
     }
 
@@ -232,22 +273,18 @@ export default {
     }
 
     const getBotTypeDisplayName = (botType) => {
-      const names = {
-        'CUSTOMER_SERVICE': 'Customer Service',
-        'SALES': 'Sales',
-        'SUPPORT': 'Technical Support',
-        'MARKETING': 'Marketing',
-        'HR': 'Human Resources',
-        'FINANCE': 'Finance',
-        'GENERAL': 'General Purpose'
-      }
-      return names[botType] || botType
+      return PennyBotTypeDisplay[botType] || botType
     }
 
     // Add welcome message when modal opens
     onMounted(() => {
-      if (props.bot.isActive && props.bot.isEnabled) {
-        addMessage(`Hello! I'm ${props.bot.botName}, your ${getBotTypeDisplayName(props.bot.botType)} assistant. How can I help you today?`, 'bot')
+      if (props.bot.isFullyActive()) {
+        const welcomeMessage = {
+          type: 'bot',
+          text: `Hello! I'm ${props.bot.botName}, your ${getBotTypeDisplayName(props.bot.botType)} assistant. How can I help you today?`,
+          timestamp: new Date()
+        }
+        addMessage(welcomeMessage)
       }
     })
 

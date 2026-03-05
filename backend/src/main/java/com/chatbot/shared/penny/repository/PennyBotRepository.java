@@ -57,9 +57,9 @@ public interface PennyBotRepository extends JpaRepository<PennyBot, UUID> {
     long countActiveBotsByTenant(@Param("tenantId") Long tenantId);
 
     /**
-     * Find bots by botpress bot ID
+     * Find bots by penny bot ID
      */
-    List<PennyBot> findByBotpressBotIdAndIsActiveTrue(String botpressBotId);
+    List<PennyBot> findByPennyBotIdAndIsActiveTrue(String pennyBotId);
 
     /**
      * Hard delete bot (xóa vĩnh viễn)

@@ -39,8 +39,8 @@ public class PennyBot {
     @Column(name = "owner_id", nullable = false)
     private String ownerId;
 
-    @Column(name = "botpress_bot_id", nullable = false)
-    private String botpressBotId;
+    @Column(name = "penny_bot_id", nullable = false)
+    private String pennyBotId;
 
     @Column(name = "description")
     private String description;
@@ -83,10 +83,25 @@ public class PennyBot {
     }
 
     /**
-     * Get the Botpress bot ID based on bot type
+     * Get the Penny bot ID based on bot type
      */
+    public String getPennyBotId() {
+        return pennyBotId;
+    }
+
+    /**
+     * Set the Penny bot ID
+     */
+    public void setPennyBotId(String pennyBotId) {
+        this.pennyBotId = pennyBotId;
+    }
+
+    /**
+     * Get the target bot ID (for compatibility)
+     */
+    @Deprecated
     public String getTargetBotpressBotId() {
-        return botType.getBotpressBotId();
+        return pennyBotId;
     }
 
     /**

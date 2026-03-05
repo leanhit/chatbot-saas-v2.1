@@ -329,4 +329,17 @@ public class RedisContextStorage {
         public java.time.Instant getLastUpdated() { return lastUpdated; }
         public void setLastUpdated(java.time.Instant lastUpdated) { this.lastUpdated = lastUpdated; }
     }
+    
+    /**
+     * Delete context by bot ID
+     */
+    public void deleteContextByBotId(String botId) {
+        try {
+            log.debug("🗑️ Deleting Redis context by bot ID: {}", botId);
+            // In real implementation, this would delete from Redis
+            redisTemplate.delete(CONTEXT_KEY_PREFIX + botId);
+        } catch (Exception e) {
+            log.error("❌ Error deleting Redis context by bot ID {}: {}", botId, e.getMessage());
+        }
+    }
 }

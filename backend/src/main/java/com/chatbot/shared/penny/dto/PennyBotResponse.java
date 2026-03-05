@@ -23,9 +23,9 @@ public class PennyBotResponse {
     private UUID id;
     private String botName;
     private PennyBotType botType;
-    private Long tenantId;
+    private String tenantKey;
     private String ownerId;
-    private String botpressBotId;
+    private String pennyBotId;
     private String description;
     private Boolean isActive;
     private Boolean isEnabled;

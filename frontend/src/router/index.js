@@ -15,6 +15,8 @@ import TenantOverview from "../views/tenant/overview/TenantOverview.vue";
 import TenantMember from "../views/tenant/member/TenantMember.vue";
 import TenantSettings from "../views/tenant/settings/TenantSettings.vue";
 import PennyBotManagement from "../views/penny/PennyBotManagement.vue";
+import PennyConnections from "../views/penny/PennyConnections.vue";
+import PennyRules from "../views/penny/PennyRules.vue";
 // Component Pages
 import Valert from "../views/components/alert.vue";
 import Vaccrodion from "../views/components/accordion.vue";
@@ -100,6 +102,18 @@ const routes = [
     name: "penny-bots",
     component: PennyBotManagement,
     meta: { requiresAuth: true, title: "Penny Bot Management" + appname, skipTenantCheck: true },
+  },
+  {
+    path: "/penny-connections",
+    name: "penny-connections",
+    component: PennyConnections,
+    meta: { requiresAuth: true, title: "Penny Connections" + appname, skipTenantCheck: true },
+  },
+  {
+    path: "/penny-rules",
+    name: "penny-rules",
+    component: PennyRules,
+    meta: { requiresAuth: true, title: "Penny Rules" + appname, skipTenantCheck: true },
   },
   // Error pages (No auth required)
   {

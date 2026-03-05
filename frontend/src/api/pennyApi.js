@@ -1,5 +1,12 @@
 import axios from '@/plugins/axios';
 import router from '@/router';
+import {
+  PennyBotDto,
+  PennyBotRequest,
+  PennyBotResponse,
+  MiddlewareRequest,
+  MiddlewareResponse
+} from '@/types/penny';
 
 // Hàm xử lý lỗi chung cho các request
 const handleApiError = (error) => {
@@ -16,6 +23,11 @@ export const pennyApi = {
      */
     getMyPennyBots() {
         return axios.get('/penny/bots')
+            .then(response => {
+                // Convert API responses to DTOs
+                response.data = response.data.map(bot => new PennyBotDto(bot));
+                return response;
+            })
             .catch(handleApiError);
     },
 
@@ -24,6 +36,11 @@ export const pennyApi = {
      */
     getPennyBotById(botId) {
         return axios.get(`/penny/bots/${botId}`)
+            .then(response => {
+                // Convert API response to DTO
+                response.data = new PennyBotDto(response.data);
+                return response;
+            })
             .catch(handleApiError);
     },
 
@@ -31,7 +48,14 @@ export const pennyApi = {
      * Tạo một Penny bot mới
      */
     createPennyBot(botData) {
+        // Backend expects Map<String, String>, not PennyBotRequest
+        // Remove validation and DTO conversion for now
         return axios.post('/penny/bots', botData)
+            .then(response => {
+                // Convert API response to DTO
+                response.data = new PennyBotDto(response.data);
+                return response;
+            })
             .catch(handleApiError);
     },
 
@@ -39,7 +63,13 @@ export const pennyApi = {
      * Cập nhật thông tin Penny bot
      */
     updatePennyBot(botId, botData) {
+        // Backend expects Map<String, String>, not PennyBotRequest
         return axios.put(`/penny/bots/${botId}`, botData)
+            .then(response => {
+                // Convert API response to DTO
+                response.data = new PennyBotDto(response.data);
+                return response;
+            })
             .catch(handleApiError);
     },
 
@@ -58,6 +88,11 @@ export const pennyApi = {
         return axios.put(`/penny/bots/${botId}/toggle`, null, {
             params: { enabled }
         })
+            .then(response => {
+                // Convert API response to DTO
+                response.data = new PennyBotDto(response.data);
+                return response;
+            })
             .catch(handleApiError);
     },
 
@@ -83,7 +118,20 @@ export const pennyApi = {
      * Chat với Penny bot (cần authentication)
      */
     chatWithPennyBot(botId, message) {
-        return axios.post(`/penny/bots/${botId}/chat`, { message })
+        // Create middleware request
+        const middlewareRequest = new MiddlewareRequest({
+            userId: 'current-user', // Will be set by backend from auth context
+            platform: 'web',
+            message: message,
+            botId: botId
+        });
+        
+        return axios.post(`/penny/bots/${botId}/chat`, middlewareRequest.toApiRequest())
+            .then(response => {
+                // Convert API response to DTO
+                response.data = new MiddlewareResponse(response.data);
+                return response;
+            })
             .catch(handleApiError);
     },
 
@@ -91,7 +139,20 @@ export const pennyApi = {
      * Chat với Penny bot (public, không cần authentication)
      */
     chatWithPennyBotPublic(botId, message) {
-        return axios.post(`/penny/bots/${botId}/chat/public`, { message })
+        // Create middleware request
+        const middlewareRequest = new MiddlewareRequest({
+            userId: 'public-user',
+            platform: 'web',
+            message: message,
+            botId: botId
+        });
+        
+        return axios.post(`/penny/bots/${botId}/chat/public`, middlewareRequest.toApiRequest())
+            .then(response => {
+                // Convert API response to DTO
+                response.data = new MiddlewareResponse(response.data);
+                return response;
+            })
             .catch(handleApiError);
     },
 
@@ -100,6 +161,11 @@ export const pennyApi = {
      */
     autoCreatePennyBot(pageId) {
         return axios.post('/penny/bots/auto', { pageId })
+            .then(response => {
+                // Convert API response to DTO
+                response.data = new PennyBotResponse(response.data);
+                return response;
+            })
             .catch(handleApiError);
     }
 };

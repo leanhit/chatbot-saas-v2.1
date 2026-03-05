@@ -115,11 +115,12 @@
     <div v-else class="bot-grid">
       <div
         v-for="bot in pennyBots"
-        :key="bot.botId"
+        :key="bot.id"
+        v-show="bot && bot.id"
         class="bg-white dark:bg-gray-800 rounded-lg shadow-md border border-gray-200 dark:border-gray-700 hover:shadow-lg transition-shadow duration-200 p-6"
       >
         <div class="card-header">
-          <div class="bot-avatar" :class="{ 'is-inactive': !bot.isActive || !bot.isEnabled }">
+          <div class="bot-avatar" :class="{ 'is-inactive': !bot.isFullyActive() }">
             <div class="avatar-content">
               <Icon :icon="getBotTypeIcon(bot.botType)" class="h-8 w-8" />
             </div>
@@ -132,12 +133,12 @@
               <span
                 :class="[
                   'text-xs py-1 px-2 rounded-md',
-                  bot.isActive && bot.isEnabled
+                  bot.isFullyActive()
                     ? 'bg-green-600 text-white' 
                     : 'bg-red-600 text-white'
                 ]"
               >
-                {{ bot.isActive && bot.isEnabled ? $t('Active') : $t('Inactive') }}
+                {{ bot.isFullyActive() ? $t('Active') : $t('Inactive') }}
               </span>
               <span class="text-xs py-1 px-2 rounded-md bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200">
                 {{ getBotTypeDisplayName(bot.botType) }}
@@ -161,13 +162,44 @@
           </div>
           <div class="info-item">
             <span class="label">{{ $t('Botpress ID') }}:</span>
-            <span class="value text-truncate">{{ bot.botpressBotId }}</span>
+            <span class="value text-truncate">{{ bot.getBotpressBotId() }}</span>
           </div>
         </div>
 
         <div class="card-footer">
           <div class="action-buttons">
-            <div class="flex space-x-2">
+            <div class="grid grid-cols-2 gap-2">
+              <!-- Connection Button -->
+              <button
+                @click="goToConnections(bot)"
+                class="flex items-center justify-center px-3 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 transition-colors"
+              >
+                <Icon icon="mdi:link-variant" class="h-4 w-4 mr-1" />
+                {{ $t('Connection') }}
+              </button>
+              
+              <!-- Rules Management Button -->
+              <button
+                @click="goToRules(bot)"
+                class="flex items-center justify-center px-3 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 transition-colors"
+              >
+                <Icon icon="mdi:book-open-variant" class="h-4 w-4 mr-1" />
+                {{ $t('Manage Rules') }}
+              </button>
+              
+              <!-- Test Rule Button -->
+              <button
+                @click="testRule(bot)"
+                :disabled="!bot.isFullyActive()"
+                class="flex items-center justify-center px-3 py-2 bg-orange-600 text-white text-sm font-medium rounded-md hover:bg-orange-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed col-span-2"
+              >
+                <Icon icon="mdi:test-tube" class="h-4 w-4 mr-1" />
+                {{ $t('Test Rule (Chat)') }}
+              </button>
+            </div>
+            
+            <!-- Additional Actions -->
+            <div class="flex space-x-2 mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
               <button
                 @click="toggleBotStatus(bot)"
                 :disabled="updatingBot"
@@ -184,7 +216,7 @@
                 @click="editBot(bot)"
                 class="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 text-sm font-medium"
               >
-                {{ $t('Edit') }}
+                {{ $t('Edit Bot') }}
               </button>
               <button
                 @click="viewAnalytics(bot)"
@@ -193,27 +225,7 @@
                 {{ $t('Analytics') }}
               </button>
               <button
-                @click="chatWithBot(bot)"
-                :disabled="!bot.isActive || !bot.isEnabled"
-                class="text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {{ $t('Chat') }}
-              </button>
-              <button
-                @click="createConnection(bot)"
-                class="text-orange-600 dark:text-orange-400 hover:text-orange-700 dark:hover:text-orange-300 text-sm font-medium"
-              >
-                {{ $t('Connection') }}
-              </button>
-              <button
-                @click="createRule(bot)"
-                class="text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 text-sm font-medium"
-              >
-                {{ $t('Rule') }}
-              </button>
-              <button
                 @click="deleteBot(bot)"
-                :disabled="deletingBot"
                 class="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 text-sm font-medium"
               >
                 {{ $t('Delete') }}
@@ -262,20 +274,22 @@
       @close="showRulesModal = false"
     />
 
-    <!-- Connection Modal -->
+    <!-- Connections Modal -->
+    <PennyConnectionsModal
+      v-if="showConnectionsModal && selectedBot"
+      :bot="selectedBot"
+      @close="showConnectionsModal = false"
+      @createConnection="createConnection"
+      @saved="onConnectionSaved"
+    />
+
+    <!-- Connection Modal (for creating new connections) -->
     <PennyConnectionModal
       v-if="showConnectionModal && selectedBot"
       :bot="selectedBot"
       :connection="editingConnection"
       @close="showConnectionModal = false"
       @saved="onConnectionSaved"
-    />
-
-    <!-- Connections Management Modal -->
-    <PennyConnectionsModal
-      v-if="showConnectionsModal && selectedBot"
-      :bot="selectedBot"
-      @close="showConnectionsModal = false"
     />
 
     <!-- Auto Connect Modal -->
@@ -289,13 +303,19 @@
 </template>
 
 <script>
-import { computed, ref, onMounted } from 'vue'
-import { Icon } from '@iconify/vue'
+import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { formatDate, formatDateTime } from '@/utils/dateUtils'
 import { usePennyBotStore } from '@/stores/pennyBotStore'
 import { usePennyRuleStore } from '@/stores/pennyRuleStore'
 import { usePennyConnectionStore } from '@/stores/pennyConnectionStore'
+import {
+  PennyBotDto,
+  PennyBotType,
+  PennyBotTypeDisplay,
+  PennyBotTypeBotpressId
+} from '@/types/penny'
 import PennyBotModal from './components/PennyBotModal.vue'
 import PennyBotAnalyticsModal from './components/PennyBotAnalyticsModal.vue'
 import PennyBotChatModal from './components/PennyBotChatModal.vue'
@@ -308,7 +328,6 @@ import PennyAutoConnectModal from './components/PennyAutoConnectModal.vue'
 export default {
   name: 'PennyBotManagement',
   components: {
-    Icon,
     PennyBotModal,
     PennyBotAnalyticsModal,
     PennyBotChatModal,
@@ -319,15 +338,22 @@ export default {
     PennyAutoConnectModal
   },
   setup() {
+    const router = useRouter()
     const { t } = useI18n()
     const pennyBotStore = usePennyBotStore()
     const pennyRuleStore = usePennyRuleStore()
     const pennyConnectionStore = usePennyConnectionStore()
 
-    // Computed
-    const pennyBots = computed(() => pennyBotStore.pennyBots)
-    const activeBots = computed(() => pennyBotStore.activeBots)
-    const inactiveBots = computed(() => pennyBotStore.inactiveBots)
+    // Computed - Use DTOs directly from store and filter invalid bots
+    const pennyBots = computed(() => 
+      pennyBotStore.pennyBots.filter(bot => bot && bot.id && bot.id !== undefined)
+    )
+    const activeBots = computed(() => 
+      pennyBots.value.filter(bot => bot.isFullyActive())
+    )
+    const inactiveBots = computed(() => 
+      pennyBots.value.filter(bot => !bot.isFullyActive())
+    )
     const loadingBots = computed(() => pennyBotStore.loadingBots)
     const updatingBot = computed(() => pennyBotStore.updatingBot)
     const deletingBot = computed(() => pennyBotStore.deletingBot)
@@ -346,8 +372,8 @@ export default {
     const showChatModal = ref(false)
     const showRuleModal = ref(false)
     const showRulesModal = ref(false)
-    const showConnectionModal = ref(false)
     const showConnectionsModal = ref(false)
+    const showConnectionModal = ref(false)
     const showAutoConnectModal = ref(false)
     const showRulesList = ref(false)
     const editingBot = ref(null)
@@ -366,7 +392,7 @@ export default {
 
     const toggleBotStatus = async (bot) => {
       try {
-        await pennyBotStore.togglePennyBotStatus(bot.botId, !bot.isEnabled)
+        await pennyBotStore.togglePennyBotStatus(bot.id, !bot.isEnabled)
       } catch (error) {
         console.error('Failed to toggle bot status:', error)
       }
@@ -379,7 +405,7 @@ export default {
     const deleteBot = async (bot) => {
       if (confirm(`Are you sure you want to delete "${bot.botName}"?`)) {
         try {
-          await pennyBotStore.deletePennyBot(bot.botId)
+          await pennyBotStore.deletePennyBot(bot.id)
         } catch (error) {
           console.error('Failed to delete bot:', error)
         }
@@ -399,10 +425,89 @@ export default {
       console.log('showChatModal set to true, selectedBot:', selectedBot.value)
     }
 
-    const createConnection = (bot) => {
-      console.log('createConnection called with:', bot)
+    const openConnections = (bot) => {
+      console.log('openConnections called with bot:', bot)
+      if (!bot || !bot.id) {
+        console.warn('Invalid bot for connection:', bot)
+        return
+      }
       selectedBot.value = bot
-      showAutoConnectModal.value = true
+      showConnectionsModal.value = true
+      console.log('showConnectionsModal set to true, selectedBot:', selectedBot.value)
+    }
+
+    const goToConnections = (bot) => {
+      console.log('goToConnections called with bot:', bot)
+      if (!bot || !bot.id) {
+        console.warn('Invalid bot for connections:', bot)
+        return
+      }
+      // Set current bot in store
+      pennyBotStore.setCurrentBotId(bot.id)
+      // Redirect without botId parameter
+      router.push({ name: 'penny-connections' })
+    }
+
+    const goToRules = (bot) => {
+      console.log('goToRules called with bot:', bot)
+      if (!bot || !bot.id) {
+        console.warn('Invalid bot for rules:', bot)
+        return
+      }
+      // Set current bot in store
+      pennyBotStore.setCurrentBotId(bot.id)
+      // Redirect without botId parameter
+      router.push({ name: 'penny-rules' })
+    }
+
+    const createConnection = (bot) => {
+      console.log('createConnection called with bot:', bot)
+      if (!bot || !bot.id) {
+        console.warn('Invalid bot for connection:', bot)
+        return
+      }
+      selectedBot.value = bot
+      showConnectionModal.value = true
+      console.log('showConnectionModal set to true, selectedBot:', selectedBot.value)
+    }
+
+    const createRule = (bot) => {
+      selectedBot.value = bot
+      showRulesModal.value = true  // Open rules management modal
+    }
+
+    const editRules = (bot) => {
+      if (!bot || !bot.id || bot.id === undefined) {
+        console.warn('Invalid bot selected for editing rules:', bot)
+        return
+      }
+      selectedBot.value = bot
+      showRulesModal.value = true
+    }
+
+    const deleteRules = (bot) => {
+      if (!bot || !bot.id || bot.id === undefined) {
+        console.warn('Invalid bot selected for deleting rules:', bot)
+        return
+      }
+      selectedBot.value = bot
+      showRulesModal.value = true
+      // Note: The actual deletion will be handled in the rules modal
+    }
+
+    const testRule = (rule) => {
+      if (!rule || !rule.id || rule.id === undefined) {
+        console.warn('Invalid rule selected for testing rule:', rule)
+        return
+      }
+      if (!rule.id) {
+        console.warn('Invalid rule ID for testing rule:', rule)
+        return
+      }
+      selectedBot.value = rule.bot
+      editingRule.value = rule
+      showChatModal.value = true
+      // This opens chat modal for testing rules
     }
 
     const handleAutoConnect = (results) => {
@@ -412,12 +517,6 @@ export default {
       if (selectedBot.value) {
         pennyConnectionStore.fetchConnections(selectedBot.value.id)
       }
-    }
-
-    const createRule = (bot) => {
-      console.log('createRule called with:', bot)
-      selectedBot.value = bot
-      showRulesModal.value = true
     }
 
     const editRule = (rule) => {
@@ -460,6 +559,7 @@ export default {
 
     const onConnectionSaved = () => {
       showConnectionModal.value = false
+      showConnectionsModal.value = false  // Also close connections modal after creating
       editingConnection.value = null
       // TODO: Refresh connections list if needed
     }
@@ -487,16 +587,25 @@ export default {
     }
 
     const getBotTypeDisplayName = (botType) => {
-      const names = {
-        'CUSTOMER_SERVICE': 'Customer Service',
-        'SALES': 'Sales',
-        'SUPPORT': 'Technical Support',
-        'MARKETING': 'Marketing',
-        'HR': 'Human Resources',
-        'FINANCE': 'Finance',
-        'GENERAL': 'General Purpose'
+      return PennyBotTypeDisplay[botType] || botType
+    }
+
+    const copyToClipboard = async (text, fieldName) => {
+      try {
+        await navigator.clipboard.writeText(text)
+        // You could add a toast notification here if needed
+        console.log(`Copied ${fieldName} to clipboard`)
+      } catch (error) {
+        console.error('Failed to copy to clipboard:', error)
+        // Fallback for older browsers
+        const textArea = document.createElement('textarea')
+        textArea.value = text
+        document.body.appendChild(textArea)
+        textArea.select()
+        document.execCommand('copy')
+        document.body.removeChild(textArea)
+        console.log(`Copied ${fieldName} to clipboard (fallback)`)
       }
-      return names[botType] || botType
     }
 
     // Lifecycle
@@ -521,8 +630,8 @@ export default {
       showChatModal,
       showRuleModal,
       showRulesModal,
-      showConnectionModal,
       showConnectionsModal,
+      showConnectionModal,
       showAutoConnectModal,
       showRulesList,
       editingBot,
@@ -537,11 +646,17 @@ export default {
       deleteBot,
       viewAnalytics,
       chatWithBot,
+      openConnections,
+      goToConnections,
+      goToRules,
       createConnection,
       handleAutoConnect,
       createRule,
       editRule,
+      editRules,
+      deleteRules,
       deleteRuleConfirm,
+      copyToClipboard,
       closeModal,
       onBotSaved,
       onRuleSaved,
@@ -666,8 +781,9 @@ export default {
 }
 
 .card-footer {
-  border-top: 1px solid #f3f4f6;
-  padding-top: 15px;
+  border-top: 1px solid #e5e7eb;
+  padding-top: 16px;
+  margin-top: 16px;
 }
 
 .dark .card-footer {
@@ -676,9 +792,56 @@ export default {
 
 .action-buttons {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  flex-direction: column;
+  gap: 12px;
 }
+
+.action-buttons .grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.action-buttons button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  border: none;
+  cursor: pointer;
+}
+
+.action-buttons button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.action-buttons button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.action-buttons button.col-span-2 {
+  grid-column: span 2;
+}
+
+.bg-indigo-600 { background-color: #4f46e5; }
+.bg-indigo-600:hover { background-color: #4338ca; }
+.bg-blue-600 { background-color: #2563eb; }
+.bg-blue-600:hover { background-color: #1d4ed8; }
+.bg-green-600 { background-color: #16a34a; }
+.bg-green-600:hover { background-color: #15803d; }
+.bg-purple-600 { background-color: #9333ea; }
+.bg-purple-600:hover { background-color: #7c3aed; }
+.bg-red-600 { background-color: #dc2626; }
+.bg-red-600:hover { background-color: #b91c1c; }
+.bg-orange-600 { background-color: #ea580c; }
+.bg-orange-600:hover { background-color: #c2410c; }
 
 .skeleton-card {
   background: white;

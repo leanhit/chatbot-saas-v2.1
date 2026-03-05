@@ -41,18 +41,11 @@ import java.util.List;
 public class PennyConfig {
     
     /**
-     * Main Penny Middleware Engine
+     * Penny Middleware Engine
      */
     @Bean
     @ConditionalOnMissingBean
     public PennyMiddlewareEngine pennyMiddlewareEngine(
-            // Existing services from current system
-            ChatbotProviderFactory existingProviderFactory,
-            ConversationService existingConversationService,
-            FacebookConnectionService existingFacebookConnectionService,
-            MessageService existingMessageService,
-            
-            // New Penny services
             ContextManager contextManager,
             IntentAnalyzer intentAnalyzer,
             ProviderSelector providerSelector,
@@ -63,10 +56,6 @@ public class PennyConfig {
         log.info("🚀 Initializing Penny Middleware Engine...");
         
         PennyMiddlewareEngine engine = new PennyMiddlewareEngine(
-            existingProviderFactory,
-            existingConversationService,
-            existingFacebookConnectionService,
-            existingMessageService,
             contextManager,
             intentAnalyzer,
             providerSelector,

@@ -266,4 +266,30 @@ public class DatabaseContextStorage {
         public Instant getLastUpdated() { return lastUpdated; }
         public void setLastUpdated(Instant lastUpdated) { this.lastUpdated = lastUpdated; }
     }
+    
+    /**
+     * Load context by bot ID
+     */
+    public ConversationContext loadContextByBotId(UUID botId) {
+        try {
+            log.debug("🔍 Loading context by bot ID: {}", botId);
+            // In real implementation, this would query database by bot ID
+            return null; // Placeholder
+        } catch (Exception e) {
+            log.error("❌ Error loading context by bot ID {}: {}", botId, e.getMessage());
+            return null;
+        }
+    }
+    
+    /**
+     * Delete context by bot ID
+     */
+    public void deleteContextByBotId(UUID botId) {
+        try {
+            log.debug("🗑️ Deleting context by bot ID: {}", botId);
+            // In real implementation, this would delete from database
+        } catch (Exception e) {
+            log.error("❌ Error deleting context by bot ID {}: {}", botId, e.getMessage());
+        }
+    }
 }

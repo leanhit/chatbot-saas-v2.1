@@ -13,6 +13,7 @@ import vClickOutside from "click-outside-vue3";
 import i18n from './locales';
 import axios from './plugins/axios';
 import ToastPlugin from './plugins/toast';
+import { Icon } from '@iconify/vue';
 const app = createApp(App);
 app.use(router);
 app.use(createPinia());
@@ -21,6 +22,7 @@ app.use(PerfectScrollbar);
 app.use(vClickOutside);
 app.use(i18n);
 app.use(ToastPlugin);
+app.component('Icon', Icon);
 // Initialize auth store
 import { useAuthStore } from './stores/authStore'
 import { useGatewayTenantStore } from './stores/tenant/gateway/myTenantStore'

@@ -192,7 +192,7 @@ public class CustomLogicDemo implements CommandLineRunner {
             .platform("demo")
             .message(message)
             .botId(botId.toString())
-            .tenantId(1L)
+            .tenantKey("demo-tenant")
             .ownerId("demo-owner")
             .language("vi")
             .build();

@@ -1,9 +1,9 @@
 package com.chatbot.shared.penny.controller;
 
+import com.chatbot.core.tenant.infra.TenantContext;
 import com.chatbot.shared.penny.service.PennyBotManager;
 import com.chatbot.shared.penny.model.PennyBot;
 import com.chatbot.shared.penny.model.PennyBotType;
-import com.chatbot.core.tenant.infra.TenantContext;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -60,6 +60,7 @@ public class PennyBotController {
                 "botId", createdBot.getId().toString(),
                 "botName", createdBot.getBotName(),
                 "botType", createdBot.getBotType().name(),
+                "pennyBotId", createdBot.getPennyBotId(),
                 "tenantId", tenantId,
                 "ownerId", ownerId,
                 "status", "created",
@@ -120,7 +121,7 @@ public class PennyBotController {
                 botMap.put("botId", bot.getId().toString());
                 botMap.put("botName", bot.getBotName());
                 botMap.put("botType", bot.getBotType().name());
-                botMap.put("botpressBotId", bot.getBotpressBotId());
+                botMap.put("pennyBotId", bot.getPennyBotId());
                 botMap.put("isActive", bot.isActive());
                 botMap.put("isEnabled", bot.isEnabled());
                 botMap.put("createdAt", bot.getCreatedAt().toString());

@@ -97,10 +97,30 @@ public class ConversationContext {
     private Instant createdAt;
     
     /**
-     * Last activity timestamp
+     * Last updated timestamp
      */
     @JsonFormat(pattern = DateUtils.STANDARD_JSON_FORMAT, timezone = DateUtils.STANDARD_TIMEZONE)
-    private Instant lastActivity;
+    private Instant lastUpdated;
+    
+    /**
+     * Current intent
+     */
+    private String currentIntent;
+    
+    /**
+     * Intent confidence score
+     */
+    private Double intentConfidence;
+    
+    /**
+     * Message history
+     */
+    private List<Map<String, String>> messageHistory;
+    
+    /**
+     * Bot type
+     */
+    private String botType;
     
     /**
      * Message count in current session
@@ -441,6 +461,7 @@ public class ConversationContext {
      * Get idle time in minutes
      */
     public long getIdleTimeInMinutes() {
+        Instant lastActivity = getLastActivity();
         if (lastActivity == null) {
             return 0;
         }
@@ -502,6 +523,48 @@ public class ConversationContext {
                 ", lastProvider=" + lastProvider +
                 ", ageMinutes=" + getAgeInMinutes() +
                 '}';
+    }
+    
+    /**
+     * Add message to history
+     */
+    public void addMessageToHistory(String userMessage, String botResponse) {
+        if (messageHistory == null) {
+            messageHistory = new ArrayList<>();
+        }
+        Map<String, String> message = new HashMap<>();
+        message.put("user", userMessage);
+        message.put("bot", botResponse);
+        message.put("timestamp", Instant.now().toString());
+        messageHistory.add(message);
+    }
+    
+    /**
+     * Get last activity timestamp (alias for lastUpdated)
+     */
+    public Instant getLastActivity() {
+        return lastUpdated != null ? lastUpdated : createdAt;
+    }
+    
+    /**
+     * Set last updated timestamp
+     */
+    public void setLastUpdated(Instant lastUpdated) {
+        this.lastUpdated = lastUpdated;
+    }
+    
+    /**
+     * Set current intent
+     */
+    public void setCurrentIntent(String currentIntent) {
+        this.currentIntent = currentIntent;
+    }
+    
+    /**
+     * Set intent confidence
+     */
+    public void setIntentConfidence(Double intentConfidence) {
+        this.intentConfidence = intentConfidence;
     }
     
     // Provider type enum

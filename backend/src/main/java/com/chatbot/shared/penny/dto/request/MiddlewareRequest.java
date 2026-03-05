@@ -51,9 +51,9 @@ public class MiddlewareRequest {
     private String botId;
     
     /**
-     * Tenant ID for multi-tenant support
+     * Tenant key for multi-tenant support
      */
-    private Long tenantId;
+    private String tenantKey;
     
     /**
      * Owner ID of the connection
@@ -251,7 +251,7 @@ public class MiddlewareRequest {
                 ", userId='" + userId + '\'' +
                 ", platform='" + platform + '\'' +
                 ", message='" + (message != null ? message.substring(0, Math.min(50, message.length())) + "..." : "null") + '\'' +
-                ", tenantId=" + tenantId +
+                ", tenantKey='" + tenantKey + '\'' +
                 ", timestamp=" + timestamp +
                 '}';
     }

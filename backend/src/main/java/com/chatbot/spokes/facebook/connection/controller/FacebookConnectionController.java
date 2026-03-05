@@ -17,6 +17,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.security.Principal;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -97,6 +99,44 @@ public class FacebookConnectionController {
             @RequestParam(defaultValue = "10") int size) {
         String ownerId = principal.getName();
         Page<FacebookConnectionResponse> connections = facebookConnectionService.getConnectionsByOwnerIdAll(ownerId, page, size);
+        return ResponseEntity.ok(connections);
+    }
+
+    @GetMapping("/bot/{botId}")
+    @Operation(
+        summary = "Get Facebook connections by bot ID",
+        description = "Retrieve all Facebook connections for a specific bot",
+        responses = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Connections retrieved successfully"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "Unauthorized"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Bot not found")
+        }
+    )
+    public ResponseEntity<Page<FacebookConnectionResponse>> getConnectionsByBotId(
+            @PathVariable String botId,
+            Principal principal,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        String ownerId = principal.getName();
+        Page<FacebookConnectionResponse> connections = facebookConnectionService.getConnectionsByBotId(botId, ownerId, page, size);
+        return ResponseEntity.ok(connections);
+    }
+
+    @GetMapping("/bot/{botId}/list")
+    @Operation(
+        summary = "Get Facebook connections by bot ID (List format)",
+        description = "Retrieve all Facebook connections for a specific bot in list format for frontend compatibility",
+        responses = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Connections retrieved successfully"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "Unauthorized"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Bot not found")
+        }
+    )
+    public ResponseEntity<List<Map<String, Object>>> getConnectionsByBotIdList(
+            @PathVariable String botId,
+            Principal principal) {
+        String ownerId = principal.getName();
+        List<Map<String, Object>> connections = facebookConnectionService.getConnectionsByBotIdList(botId, ownerId);
         return ResponseEntity.ok(connections);
     }    
 

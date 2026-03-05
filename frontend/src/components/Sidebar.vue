@@ -92,14 +92,35 @@
             </menu-accordion>
           </div>
           <div class="item mt-3">
-            <router-link
-              to="/penny-bots"
-              exact
-              class="w-full flex text-left rounded-md box-border p-3 hover:bg-gray-200 dark:hover:bg-gray-700"
-            >
-              <span class="mr-3 text-xl"><Icon icon="mdi:robot" /></span>
-              <span class="w-full"> Penny Bots </span>
-            </router-link>
+            <menu-accordion>
+              <template v-slot:icon>
+                <Icon icon="mdi:robot" />
+              </template>
+              <template v-slot:title> Penny Bots </template>
+              <template v-slot:content>
+                <router-link
+                  to="/penny-bots"
+                  @click.stop
+                  class="w-full text-left block rounded-md p-3 hover:bg-gray-200 dark:hover:bg-gray-700"
+                >
+                  Bots
+                </router-link>
+                <router-link
+                  to="/penny-connections"
+                  @click.stop
+                  class="w-full text-left block rounded-md p-3 hover:bg-gray-200 dark:hover:bg-gray-700"
+                >
+                  Connections
+                </router-link>
+                <router-link
+                  to="/penny-rules"
+                  @click.stop
+                  class="w-full text-left block rounded-md p-3 hover:bg-gray-200 dark:hover:bg-gray-700"
+                >
+                  Rules
+                </router-link>
+              </template>
+            </menu-accordion>
           </div>
           <div class="item mt-3">
             <menu-accordion>

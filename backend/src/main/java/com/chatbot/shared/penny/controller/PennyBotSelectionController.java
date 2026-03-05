@@ -52,7 +52,7 @@ public class PennyBotSelectionController {
                 botMap.put("botName", bot.getBotName());
                 botMap.put("botType", bot.getBotType().name());
                 botMap.put("botTypeDisplay", bot.getBotType().getDisplayName());
-                botMap.put("botpressBotId", bot.getBotpressBotId());
+                botMap.put("pennyBotId", bot.getPennyBotId());
                 botMap.put("isActive", bot.isActive());
                 botMap.put("isEnabled", bot.isEnabled());
                 botMap.put("createdAt", bot.getCreatedAt().toString());
@@ -74,7 +74,7 @@ public class PennyBotSelectionController {
                 Map<String, Object> typeMap = new java.util.HashMap<>();
                 typeMap.put("type", type.name());
                 typeMap.put("displayName", type.getDisplayName());
-                typeMap.put("botpressBotId", type.getBotpressBotId());
+                typeMap.put("pennyBotId", type.getPennyBotId());
                 return typeMap;
             })
             .collect(Collectors.toList());

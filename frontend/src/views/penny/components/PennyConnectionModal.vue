@@ -22,6 +22,35 @@
           <div class="form-section">
             <h3 class="section-title">{{ $t('Basic Information') }}</h3>
             <div class="form-grid">
+              <!-- Bot Selection -->
+              <div class="form-group full-width">
+                <label for="botId" class="form-label">
+                  {{ $t('Select Bot') }} <span class="required">*</span>
+                </label>
+                <select
+                  id="botId"
+                  v-model="formData.botId"
+                  class="form-select"
+                  :disabled="!!bot"
+                  required
+                >
+                  <option value="" disabled>{{ $t('Select a bot') }}</option>
+                  <option
+                    v-for="bot in availableBots"
+                    :key="bot.id"
+                    :value="bot.id"
+                  >
+                    {{ bot.botName }} - {{ getBotTypeDisplayName(bot.botType) }}
+                  </option>
+                </select>
+                <p v-if="!bot" class="form-help">
+                  {{ $t('Connections must be linked to a specific bot') }}
+                </p>
+                <p v-else class="form-help">
+                  {{ $t('Connection is linked to: {botName}', { botName: bot.botName }) }}
+                </p>
+              </div>
+              
               <div class="form-group full-width">
                 <label for="connectionName" class="form-label">
                   {{ $t('Connection Name') }} <span class="required">*</span>
@@ -35,6 +64,7 @@
                   required
                 />
               </div>
+              
               <div class="form-group">
                 <label for="connectionType" class="form-label">
                   {{ $t('Connection Type') }} <span class="required">*</span>
@@ -56,21 +86,30 @@
                   </option>
                 </select>
               </div>
+              
               <div class="form-group">
                 <label for="priority" class="form-label">
                   {{ $t('Priority') }}
                 </label>
-                <input
+                <select
                   id="priority"
                   v-model.number="formData.priority"
-                  type="number"
-                  min="0"
-                  max="100"
-                  class="form-input"
-                />
-                <p class="form-help">{{ $t('Higher priority connections are checked first') }}</p>
+                  class="form-select"
+                >
+                  <option
+                    v-for="level in priorityLevels"
+                    :key="level.value"
+                    :value="level.value"
+                  >
+                    {{ level.label }}
+                  </option>
+                </select>
+                <p class="form-help">
+                  {{ getPriorityDescription(formData.priority) }}
+                </p>
               </div>
             </div>
+            
             <div class="form-group full-width">
               <label for="description" class="form-label">
                 {{ $t('Description') }}
@@ -90,7 +129,7 @@
             <h3 class="section-title">{{ $t('Connection Configuration') }}</h3>
             
             <!-- Facebook Configuration -->
-            <div v-if="formData.connectionType === 'FACEBOOK'" class="connection-config">
+            <div v-if="formData.connectionType === ConnectionType.FACEBOOK" class="connection-config">
               <div class="form-grid">
                 <div class="form-group">
                   <label for="pageId" class="form-label">
@@ -177,7 +216,7 @@
             </div>
 
             <!-- Webhook Configuration -->
-            <div v-else-if="formData.connectionType === 'WEBHOOK'" class="connection-config">
+            <div v-else-if="formData.connectionType === ConnectionType.WEBHOOK" class="connection-config">
               <div class="form-group full-width">
                 <label for="webhookUrl" class="form-label">
                   {{ $t('Webhook URL') }} <span class="required">*</span>
@@ -237,7 +276,7 @@
             </div>
 
             <!-- API Configuration -->
-            <div v-else-if="formData.connectionType === 'API'" class="connection-config">
+            <div v-else-if="formData.connectionType === ConnectionType.API" class="connection-config">
               <div class="form-group full-width">
                 <label for="apiUrl" class="form-label">
                   {{ $t('API URL') }} <span class="required">*</span>
@@ -289,7 +328,7 @@
             </div>
 
             <!-- Database Configuration -->
-            <div v-else-if="formData.connectionType === 'DATABASE'" class="connection-config">
+            <div v-else-if="formData.connectionType === ConnectionType.DATABASE" class="connection-config">
               <div class="form-grid">
                 <div class="form-group">
                   <label for="dbHost" class="form-label">
@@ -426,6 +465,12 @@ import { ref, computed, onMounted } from 'vue'
 import { Icon } from '@iconify/vue'
 import { useI18n } from 'vue-i18n'
 import { pennyConnectionApi } from '@/api/pennyConnectionApi'
+import { usePennyBotStore } from '@/stores/pennyBotStore'
+import {
+  ConnectionType,
+  ConnectionRequest,
+  ConnectionDto
+} from '@/types/penny'
 
 export default {
   name: 'PennyConnectionModal',
@@ -435,7 +480,7 @@ export default {
   props: {
     bot: {
       type: Object,
-      required: true
+      default: null
     },
     connection: {
       type: Object,
@@ -445,14 +490,17 @@ export default {
   emits: ['close', 'saved'],
   setup(props, { emit }) {
     const { t } = useI18n()
+    const pennyBotStore = usePennyBotStore()
     const submitting = ref(false)
     const copiedKey = ref(null)
+    const availableBots = ref([])
 
     const formData = ref({
+      botId: props.bot?.id || '',
       connectionName: '',
       description: '',
       connectionType: '',
-      priority: 0,
+      priority: 50,
       isEnabled: true,
       // Facebook fields
       pageId: '',
@@ -479,10 +527,15 @@ export default {
     })
 
     const connectionTypes = [
-      { value: 'FACEBOOK', label: 'Facebook Messenger' },
-      { value: 'WEBHOOK', label: 'Webhook' },
-      { value: 'API', label: 'REST API' },
-      { value: 'DATABASE', label: 'Database' }
+      { value: ConnectionType.FACEBOOK, label: 'Facebook Messenger' }
+    ]
+
+    const priorityLevels = [
+      { value: 90, label: 'Critical (90)', description: 'Highest priority, checked first' },
+      { value: 70, label: 'High (70)', description: 'High priority connections' },
+      { value: 50, label: 'Medium (50)', description: 'Normal priority connections' },
+      { value: 30, label: 'Low (30)', description: 'Low priority connections' },
+      { value: 10, label: 'Very Low (10)', description: 'Lowest priority, checked last' }
     ]
 
     const isEditMode = computed(() => !!props.connection)
@@ -495,34 +548,68 @@ export default {
 
     const isConnectionConfigValid = () => {
       switch (formData.value.connectionType) {
-        case 'FACEBOOK':
+        case ConnectionType.FACEBOOK:
           return formData.value.pageId && formData.value.appSecret && formData.value.pageAccessToken
-        case 'WEBHOOK':
+        case ConnectionType.WEBHOOK:
           return formData.value.webhookUrl
-        case 'API':
+        case ConnectionType.API:
           return formData.value.apiUrl
-        case 'DATABASE':
-          return formData.value.dbHost && formData.value.dbName && formData.value.dbUsername && formData.value.dbPassword
+        case ConnectionType.DATABASE:
+          return formData.value.dbHost && formData.value.dbName && formData.value.dbUsername
         default:
           return false
       }
     }
 
+    const getBotTypeDisplayName = (botType) => {
+      const names = {
+        'CUSTOMER_SERVICE': 'Customer Service',
+        'SALES': 'Sales',
+        'SUPPORT': 'Support',
+        'MARKETING': 'Marketing',
+        'HR': 'HR',
+        'FINANCE': 'Finance',
+        'GENERAL': 'General'
+      }
+      return names[botType] || botType
+    }
+
+    const getPriorityDescription = (priority) => {
+      const level = priorityLevels.find(l => l.value === priority)
+      return level ? level.description : ''
+    }
+
+    const loadAvailableBots = async () => {
+      try {
+        console.log('PennyConnectionModal: Loading available bots...')
+        await pennyBotStore.fetchPennyBots()
+        console.log('PennyConnectionModal: Fetched bots:', pennyBotStore.pennyBots)
+        availableBots.value = pennyBotStore.pennyBots.filter(bot => bot.isFullyActive())
+        console.log('PennyConnectionModal: Available bots:', availableBots.value)
+      } catch (error) {
+        console.error('Failed to load bots:', error)
+      }
+    }
+
     const onConnectionTypeChange = () => {
       // Reset connection-specific fields when type changes
-      Object.keys(formData.value).forEach(key => {
-        if (key.startsWith('fb') || key.startsWith('webhook') || key.startsWith('api') || key.startsWith('db')) {
-          formData.value[key] = ''
-        }
-      })
-      
-      // Set defaults for specific types
-      if (formData.value.connectionType === 'WEBHOOK') {
-        formData.value.webhookMethod = 'POST'
-        formData.value.webhookTimeout = 30
-      } else if (formData.value.connectionType === 'DATABASE') {
-        formData.value.dbPort = 5432
-      }
+      formData.value.pageId = ''
+      formData.value.fanpageUrl = ''
+      formData.value.appSecret = ''
+      formData.value.pageAccessToken = ''
+      formData.value.verifyToken = ''
+      formData.value.webhookUrl = ''
+      formData.value.webhookMethod = 'POST'
+      formData.value.webhookTimeout = 30
+      formData.value.webhookHeaders = ''
+      formData.value.apiUrl = ''
+      formData.value.apiKey = ''
+      formData.value.apiVersion = ''
+      formData.value.dbHost = ''
+      formData.value.dbPort = 5432
+      formData.value.dbName = ''
+      formData.value.dbUsername = ''
+      formData.value.dbPassword = ''
     }
 
     const copyToClipboard = async (text, fieldName) => {
@@ -538,82 +625,71 @@ export default {
     }
 
     const handleSubmit = async () => {
+      // Validate required fields
+      if (!formData.value.botId) {
+        alert('Please select a bot for this connection')
+        return
+      }
+
       if (!formData.value.connectionName || !formData.value.connectionType) {
+        alert('Please fill in all required fields')
+        return
+      }
+
+      if (!isConnectionConfigValid()) {
+        alert('Please complete the connection configuration')
         return
       }
 
       submitting.value = true
       try {
-        // For Facebook connections, use the old structure from frontend-old
-        if (formData.value.connectionType === 'FACEBOOK') {
-          const connectionData = {
-            connectionName: formData.value.connectionName,
-            connectionType: formData.value.connectionType,
-            description: formData.value.description,
-            priority: formData.value.priority || 0,
-            isEnabled: formData.value.isEnabled,
-            // Facebook specific fields (matching frontend-old)
-            pageId: formData.value.pageId,
+        // Create connection request object
+        const connectionRequest = new ConnectionRequest({
+          connectionName: formData.value.connectionName,
+          connectionType: formData.value.connectionType,
+          botId: formData.value.botId,
+          description: formData.value.description,
+          priority: formData.value.priority,
+          pageId: formData.value.pageId,
+          webhookUrl: formData.value.webhookUrl,
+          apiUrl: formData.value.apiUrl,
+          dbHost: formData.value.dbHost,
+          config: {
             fanpageUrl: formData.value.fanpageUrl,
             appSecret: formData.value.appSecret,
             pageAccessToken: formData.value.pageAccessToken,
             verifyToken: formData.value.verifyToken,
-            urlCallback: formData.value.urlCallback || 'https://chat.truyenthongviet.vn/webhooks/facebook/botpress'
+            urlCallback: formData.value.urlCallback,
+            webhookMethod: formData.value.webhookMethod,
+            webhookTimeout: formData.value.webhookTimeout,
+            webhookHeaders: formData.value.webhookHeaders,
+            apiKey: formData.value.apiKey,
+            apiVersion: formData.value.apiVersion,
+            dbPort: formData.value.dbPort,
+            dbName: formData.value.dbName,
+            dbUsername: formData.value.dbUsername,
+            dbPassword: formData.value.dbPassword
           }
+        })
 
-          if (isEditMode.value) {
-            // Update existing Facebook connection
-            await pennyConnectionApi.updateConnection(props.bot.id, props.connection.id, connectionData)
-            console.log('Facebook connection updated successfully')
-          } else {
-            // Create new Facebook connection
-            await pennyConnectionApi.createConnection(props.bot.id, connectionData)
-            console.log('Facebook connection created successfully')
-          }
-        } else {
-          // For other connection types, use generic structure
-          const connectionData = {
-            connectionName: formData.value.connectionName,
-            connectionType: formData.value.connectionType,
-            description: formData.value.description,
-            priority: formData.value.priority || 0,
-            isEnabled: formData.value.isEnabled,
-            // Type-specific fields
-            ...(formData.value.connectionType === 'WEBHOOK' && {
-              webhookUrl: formData.value.webhookUrl,
-              webhookMethod: formData.value.webhookMethod,
-              webhookTimeout: formData.value.webhookTimeout,
-              webhookHeaders: formData.value.webhookHeaders
-            }),
-            ...(formData.value.connectionType === 'API' && {
-              apiUrl: formData.value.apiUrl,
-              apiKey: formData.value.apiKey,
-              apiVersion: formData.value.apiVersion
-            }),
-            ...(formData.value.connectionType === 'DATABASE' && {
-              dbHost: formData.value.dbHost,
-              dbPort: formData.value.dbPort,
-              dbName: formData.value.dbName,
-              dbUsername: formData.value.dbUsername,
-              dbPassword: formData.value.dbPassword
-            })
-          }
-
-          if (isEditMode.value) {
-            // Update existing connection
-            await pennyConnectionApi.updateConnection(props.bot.id, props.connection.id, connectionData)
-            console.log('Connection updated successfully')
-          } else {
-            // Create new connection
-            await pennyConnectionApi.createConnection(props.bot.id, connectionData)
-            console.log('Connection created successfully')
-          }
+        // Validate request
+        const validation = connectionRequest.validate()
+        if (!validation.isValid) {
+          alert('Validation errors: ' + validation.errors.join(', '))
+          return
         }
-        
+
+        if (props.connection) {
+          // Update existing connection
+          await pennyConnectionApi.updateConnection(props.connection.id, connectionRequest.toApiRequest())
+        } else {
+          // Create new connection
+          await pennyConnectionApi.createConnection(connectionRequest.toApiRequest())
+        }
         emit('saved')
       } catch (error) {
         console.error('Failed to save connection:', error)
-        alert('Failed to save connection: ' + (error.response?.data?.error || error.message))
+        alert('Failed to save connection: ' + error.message)
       } finally {
         submitting.value = false
       }
@@ -624,7 +700,7 @@ export default {
       
       try {
         // For Facebook connections, use the old testing method from frontend-old
-        if (formData.value.connectionType === 'FACEBOOK') {
+        if (formData.value.connectionType === ConnectionType.FACEBOOK) {
           const testData = {
             pageId: formData.value.pageId,
             pageAccessToken: formData.value.pageAccessToken
@@ -638,7 +714,7 @@ export default {
             // For new connections, create a temporary connection for testing
             const tempConnectionData = {
               connectionName: `TEST_${Date.now()}`,
-              connectionType: 'FACEBOOK',
+              connectionType: ConnectionType.FACEBOOK,
               pageId: formData.value.pageId,
               pageAccessToken: formData.value.pageAccessToken,
               appSecret: formData.value.appSecret,
@@ -669,7 +745,7 @@ export default {
           let response
           if (isEditMode.value && props.connection) {
             // Test existing connection
-            response = await pennyConnectionApi.testConnection(props.bot.id, props.connection.id, testData)
+            response = await pennyConnectionApi.testConnection(props.bot?.id, props.connection.id, testData)
           } else {
             // For new connections, create a temporary connection for testing
             const tempConnectionData = {
@@ -678,9 +754,9 @@ export default {
               ...getConnectionConfig()
             }
             
-            const createdConnection = await pennyConnectionApi.createConnection(props.bot.id, tempConnectionData)
-            response = await pennyConnectionApi.testConnection(props.bot.id, createdConnection.data.connectionId, testData)
-            await pennyConnectionApi.deleteConnection(props.bot.id, createdConnection.data.connectionId)
+            const createdConnection = await pennyConnectionApi.createConnection(props.bot?.id, tempConnectionData)
+            response = await pennyConnectionApi.testConnection(props.bot?.id, createdConnection.data.connectionId, testData)
+            await pennyConnectionApi.deleteConnection(props.bot?.id, createdConnection.data.connectionId)
           }
 
           console.log('Connection test result:', response.data)
@@ -700,7 +776,7 @@ export default {
     const getConnectionConfig = () => {
       const config = {}
       switch (formData.value.connectionType) {
-        case 'FACEBOOK':
+        case ConnectionType.FACEBOOK:
           return {
             pageId: formData.value.pageId,
             appSecret: formData.value.appSecret,
@@ -740,38 +816,23 @@ export default {
       }
     }
 
-    // Initialize form data
-    onMounted(() => {
-      if (props.connection) {
-        // Edit mode - populate with existing data
-        Object.assign(formData.value, props.connection)
-      } else {
-        // Create mode - set defaults
-        formData.value = {
-          connectionName: '',
-          description: '',
-          connectionType: '',
-          priority: 0,
-          isEnabled: true,
-          pageId: '',
-          fanpageUrl: '',
-          appSecret: '',
-          pageAccessToken: '',
-          verifyToken: '',
-          urlCallback: 'https://chat.truyenthongviet.vn/webhooks/facebook/botpress',
-          webhookUrl: '',
-          webhookMethod: 'POST',
-          webhookTimeout: 30,
-          webhookHeaders: '',
-          apiUrl: '',
-          apiKey: '',
-          apiVersion: '',
-          dbHost: '',
-          dbPort: 5432,
-          dbName: '',
-          dbUsername: '',
-          dbPassword: ''
+    // Lifecycle
+    onMounted(async () => {
+      console.log('PennyConnectionModal onMounted called!')
+      console.log('PennyConnectionModal props:', props)
+      try {
+        await loadAvailableBots()
+        
+        if (props.connection) {
+          // Populate form with existing connection data
+          Object.assign(formData.value, props.connection)
+        } else if (props.bot) {
+          // Set bot ID if bot is provided
+          formData.value.botId = props.bot?.id || ''
         }
+        console.log('PennyConnectionModal onMounted completed successfully')
+      } catch (error) {
+        console.error('Error in PennyConnectionModal onMounted:', error)
       }
     })
 
@@ -779,14 +840,19 @@ export default {
       formData,
       submitting,
       copiedKey,
+      availableBots,
       isEditMode,
       canTestConnection,
       connectionTypes,
+      priorityLevels,
       onConnectionTypeChange,
       copyToClipboard,
       handleSubmit,
       testConnection,
-      closeOnBackdrop
+      getBotTypeDisplayName,
+      getPriorityDescription,
+      closeOnBackdrop,
+      ConnectionType
     }
   }
 }

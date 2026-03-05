@@ -14,8 +14,9 @@ public class LocationCacheConfig {
     public CacheManager cacheManager() {
         return new ConcurrentMapCacheManager(
                 "provinces",
-                "districts",
-                "wards"
+                "districts", 
+                "wards",
+                "tenant-key-to-id"
         );
     }
 }

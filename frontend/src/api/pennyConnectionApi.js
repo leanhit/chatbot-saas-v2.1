@@ -12,19 +12,23 @@ const handleApiError = (error) => {
 export const pennyConnectionApi = {
   // Get all connections for a bot
   getConnections(botId) {
-    return axios.get(`/penny/bots/${botId}/connections`).catch(handleApiError)
+    return axios.get(`/connection/facebook/bot/${botId}/list`).catch(handleApiError)
   },
 
   // Get connections by type
   getConnectionsByType(botId, connectionType) {
+    if (connectionType === 'facebook') {
+      return axios.get(`/connection/facebook/bot/${botId}/list`).catch(handleApiError)
+    }
     return axios.get(`/penny/bots/${botId}/connections/by-type/${connectionType}`).catch(handleApiError)
   },
 
   // Create new connection (Facebook style - matches frontend-old)
   createConnection(botId, connectionData) {
-    // For Facebook connections, use the old structure
+    // For Facebook connections, use the existing Facebook connection API
     if (connectionData.connectionType === 'FACEBOOK') {
       const fbData = {
+        botId: botId,
         botName: connectionData.connectionName,
         pageId: connectionData.pageId,
         fanpageUrl: connectionData.fanpageUrl,
@@ -34,7 +38,7 @@ export const pennyConnectionApi = {
         urlCallback: connectionData.urlCallback || 'https://chat.truyenthongviet.vn/webhooks/facebook/botpress',
         isEnabled: true
       }
-      return axios.post(`/penny/bots/${botId}/connections/facebook`, fbData).catch(handleApiError)
+      return axios.post(`/connection/facebook`, fbData).catch(handleApiError)
     }
     
     // For other connection types, use generic structure
@@ -43,9 +47,10 @@ export const pennyConnectionApi = {
 
   // Update existing connection
   updateConnection(botId, connectionId, connectionData) {
-    // For Facebook connections, use the old structure
+    // For Facebook connections, use the existing Facebook connection API
     if (connectionData.connectionType === 'FACEBOOK') {
       const fbData = {
+        botId: botId,
         botName: connectionData.connectionName,
         pageId: connectionData.pageId,
         fanpageUrl: connectionData.fanpageUrl,
@@ -55,7 +60,7 @@ export const pennyConnectionApi = {
         urlCallback: connectionData.urlCallback,
         isEnabled: connectionData.isEnabled
       }
-      return axios.put(`/penny/bots/${botId}/connections/facebook/${connectionId}`, fbData).catch(handleApiError)
+      return axios.put(`/connection/facebook/${connectionId}`, fbData).catch(handleApiError)
     }
     
     // For other connection types, use generic structure
@@ -64,7 +69,7 @@ export const pennyConnectionApi = {
 
   // Delete connection
   deleteConnection(botId, connectionId) {
-    return axios.delete(`/penny/bots/${botId}/connections/${connectionId}`).catch(handleApiError)
+    return axios.delete(`/connection/facebook/${connectionId}`).catch(handleApiError)
   },
 
   // Test connection

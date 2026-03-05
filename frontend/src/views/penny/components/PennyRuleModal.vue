@@ -22,35 +22,72 @@
           <div class="form-section">
             <h3 class="section-title">{{ $t('Basic Information') }}</h3>
             <div class="form-grid">
-              <div class="form-group">
+              <!-- Bot Selection -->
+              <div class="form-group full-width">
+                <label for="botId" class="form-label">
+                  {{ $t('Select Bot') }} <span class="required">*</span>
+                </label>
+                <select
+                  id="botId"
+                  v-model="formData.botId"
+                  class="form-select"
+                  :disabled="!!props.bot"
+                  required
+                >
+                  <option value="" disabled>{{ $t('Select a bot') }}</option>
+                  <option
+                    v-for="bot in availableBots"
+                    :key="bot.id"
+                    :value="bot.id"
+                  >
+                    {{ bot.botName }} - {{ getBotTypeDisplayName(bot.botType) }}
+                  </option>
+                </select>
+                <p v-if="!props.bot" class="form-help">
+                  {{ $t('Rules must be linked to a specific bot') }}
+                </p>
+                <p v-else class="form-help">
+                  {{ $t('Rule is linked to: {botName}', { botName: props.bot.botName }) }}
+                </p>
+              </div>
+              
+              <div class="form-group full-width">
                 <label for="ruleName" class="form-label">
                   {{ $t('Rule Name') }} <span class="required">*</span>
                 </label>
                 <input
                   id="ruleName"
-                  v-model="formData.name"
+                  v-model="formData.ruleName"
                   type="text"
                   class="form-input"
                   :placeholder="$t('Enter rule name')"
                   required
                 />
               </div>
+              
               <div class="form-group">
                 <label for="priority" class="form-label">
-                  {{ $t('Priority') }} <span class="required">*</span>
+                  {{ $t('Priority') }}
                 </label>
-                <input
+                <select
                   id="priority"
                   v-model.number="formData.priority"
-                  type="number"
-                  min="0"
-                  max="100"
-                  class="form-input"
-                  required
-                />
-                <p class="form-help">{{ $t('Higher priority rules are executed first') }}</p>
+                  class="form-select"
+                >
+                  <option
+                    v-for="level in priorityLevels"
+                    :key="level.value"
+                    :value="level.value"
+                  >
+                    {{ level.label }}
+                  </option>
+                </select>
+                <p class="form-help">
+                  {{ getPriorityDescription(formData.priority) }}
+                </p>
               </div>
             </div>
+            
             <div class="form-group full-width">
               <label for="description" class="form-label">
                 {{ $t('Description') }}
@@ -90,7 +127,7 @@
                   </option>
                 </select>
               </div>
-              <div v-if="formData.triggerType !== 'ALWAYS'" class="form-group">
+              <div v-if="formData.triggerType !== RuleTriggerType.ALWAYS" class="form-group">
                 <label for="triggerValue" class="form-label">
                   {{ $t('Trigger Value') }} <span class="required">*</span>
                 </label>
@@ -107,7 +144,7 @@
             </div>
             
             <!-- Condition (for CONDITION trigger type) -->
-            <div v-if="formData.triggerType === 'CONDITION'" class="form-group full-width">
+            <div v-if="formData.triggerType === RuleTriggerType.CONDITION" class="form-group full-width">
               <label for="condition" class="form-label">
                 {{ $t('Condition') }} <span class="required">*</span>
               </label>
@@ -119,7 +156,7 @@
                 :placeholder="$t('Enter condition expression')"
                 required
               ></textarea>
-              <p class="form-help">{{ $t('conditionHelp') }}</p>
+              <p class="form-help">{{ $t('Example: message.text.includes(\"hello\")') }}</p>
             </div>
           </div>
 
@@ -218,6 +255,13 @@ import { ref, computed, onMounted } from 'vue'
 import { Icon } from '@iconify/vue'
 import { useI18n } from 'vue-i18n'
 import { pennyRuleApi } from '@/api/pennyRuleApi'
+import { usePennyBotStore } from '@/stores/pennyBotStore'
+import {
+  RuleType,
+  RuleTriggerType,
+  RuleRequest,
+  RuleDto
+} from '@/types/penny'
 
 export default {
   name: 'PennyRuleModal',
@@ -237,46 +281,60 @@ export default {
   emits: ['close', 'saved'],
   setup(props, { emit }) {
     const { t } = useI18n()
+    const pennyBotStore = usePennyBotStore()
     const submitting = ref(false)
+    const availableBots = ref([])
 
     const formData = ref({
-      name: '',
+      botId: props.bot?.id || '',
+      ruleName: '',
       description: '',
       condition: '',
       action: '',
-      ruleType: 'RESPONSE',
-      triggerType: 'INTENT',
+      ruleType: RuleType.RESPONSE,
+      triggerType: RuleTriggerType.INTENT,
       triggerValue: '',
-      priority: 0,
+      priority: 50,
       isActive: true
     })
 
     const triggerTypes = [
-      { value: 'INTENT', label: 'Intent Based' },
-      { value: 'KEYWORD', label: 'Keyword Based' },
-      { value: 'REGEX', label: 'Regex Pattern' },
-      { value: 'CONDITION', label: 'Custom Condition' },
-      { value: 'ALWAYS', label: 'Always Trigger' }
+      { value: RuleTriggerType.INTENT, label: 'Intent Based' },
+      { value: RuleTriggerType.KEYWORD, label: 'Keyword Based' },
+      { value: RuleTriggerType.REGEX, label: 'Regex Pattern' },
+      { value: RuleTriggerType.CONDITION, label: 'Custom Condition' },
+      { value: RuleTriggerType.ALWAYS, label: 'Always Trigger' }
     ]
 
     const ruleTypes = [
-      { value: 'RESPONSE', label: 'Direct Response' },
-      { value: 'REDIRECT', label: 'Redirect to Flow' },
-      { value: 'WEBHOOK', label: 'Call Webhook' },
-      { value: 'SCRIPT', label: 'Execute Script' }
+      { value: RuleType.RESPONSE, label: 'Direct Response' },
+      { value: RuleType.REDIRECT, label: 'Redirect to Flow' },
+      { value: RuleType.WEBHOOK, label: 'Call Webhook' },
+      { value: RuleType.SCRIPT, label: 'Execute Script' },
+      { value: RuleType.AI, label: 'AI Rule' },
+      { value: RuleType.KEYWORD, label: 'Keyword Rule' },
+      { value: RuleType.INTENT, label: 'Intent Rule' }
+    ]
+
+    const priorityLevels = [
+      { value: 90, label: 'Critical (90)', description: 'Highest priority, executed first' },
+      { value: 70, label: 'High (70)', description: 'High priority rules' },
+      { value: 50, label: 'Medium (50)', description: 'Normal priority rules' },
+      { value: 30, label: 'Low (30)', description: 'Low priority rules' },
+      { value: 10, label: 'Very Low (10)', description: 'Lowest priority, executed last' }
     ]
 
     const isEditMode = computed(() => !!props.rule)
 
     const canTestRule = computed(() => {
-      return formData.value.name && 
+      return formData.value.ruleName && 
              formData.value.action && 
-             (formData.value.triggerType === 'ALWAYS' || formData.value.triggerValue)
+             (formData.value.triggerType === RuleTriggerType.ALWAYS || formData.value.triggerValue)
     })
 
     const onTriggerTypeChange = () => {
       // Reset trigger value when type changes
-      if (formData.value.triggerType === 'ALWAYS') {
+      if (formData.value.triggerType === RuleTriggerType.ALWAYS) {
         formData.value.triggerValue = ''
       }
     }
@@ -288,32 +346,49 @@ export default {
 
     const getTriggerValuePlaceholder = () => {
       const placeholders = {
-        'INTENT': 'Enter intent name (e.g., greeting)',
-        'KEYWORD': 'Enter keyword (e.g., hello)',
-        'REGEX': 'Enter regex pattern (e.g., ^hello.*$)',
-        'CONDITION': 'Enter condition expression'
+        [RuleTriggerType.INTENT]: 'Enter intent name (e.g., greeting)',
+        [RuleTriggerType.KEYWORD]: 'Enter keyword (e.g., hello)',
+        [RuleTriggerType.REGEX]: 'Enter regex pattern (e.g., ^hello.*$)',
+        [RuleTriggerType.CONDITION]: 'Enter condition expression'
       }
       return placeholders[formData.value.triggerType] || ''
     }
 
     const getTriggerValueHelp = () => {
       const helps = {
-        'INTENT': 'The intent that will trigger this rule',
-        'KEYWORD': 'The keyword that will trigger this rule',
-        'REGEX': 'The regex pattern that will trigger this rule',
-        'CONDITION': 'The custom condition expression'
+        [RuleTriggerType.INTENT]: 'The intent that will trigger this rule',
+        [RuleTriggerType.KEYWORD]: 'The keyword that will trigger this rule',
+        [RuleTriggerType.REGEX]: 'The regex pattern that will trigger this rule',
+        [RuleTriggerType.CONDITION]: 'The condition expression that will trigger this rule'
       }
       return helps[formData.value.triggerType] || ''
     }
 
-    const getActionLabel = () => {
-      const labels = {
-        'RESPONSE': 'Response',
-        'REDIRECT': 'Flow ID',
-        'WEBHOOK': 'Webhook URL',
-        'SCRIPT': 'Script Code'
+    const getBotTypeDisplayName = (botType) => {
+      const names = {
+        'CUSTOMER_SERVICE': 'Customer Service',
+        'SALES': 'Sales',
+        'SUPPORT': 'Support',
+        'MARKETING': 'Marketing',
+        'HR': 'HR',
+        'FINANCE': 'Finance',
+        'GENERAL': 'General'
       }
-      return labels[formData.value.ruleType] || 'Action'
+      return names[botType] || botType
+    }
+
+    const getPriorityDescription = (priority) => {
+      const level = priorityLevels.find(l => l.value === priority)
+      return level ? level.description : ''
+    }
+
+    const loadAvailableBots = async () => {
+      try {
+        await pennyBotStore.fetchPennyBots()
+        availableBots.value = pennyBotStore.pennyBots.filter(bot => bot.isFullyActive())
+      } catch (error) {
+        console.error('Failed to load bots:', error)
+      }
     }
 
     const getActionPlaceholder = () => {
@@ -337,37 +412,63 @@ export default {
     }
 
     const handleSubmit = async () => {
-      if (!formData.value.name || !formData.value.action) {
+      // Validate required fields
+      if (!formData.value.botId) {
+        alert('Please select a bot for this rule')
+        return
+      }
+
+      if (!formData.value.ruleName || !formData.value.ruleType || !formData.value.triggerType) {
+        alert('Please fill in all required fields')
+        return
+      }
+
+      if (formData.value.triggerType !== RuleTriggerType.ALWAYS && !formData.value.triggerValue) {
+        alert('Please provide trigger value')
+        return
+      }
+
+      if (!formData.value.action) {
+        alert('Please provide rule action')
         return
       }
 
       submitting.value = true
       try {
-        const ruleData = {
-          name: formData.value.name,
-          description: formData.value.description,
-          condition: formData.value.condition,
-          action: formData.value.action,
+        // Create rule request object
+        const ruleRequest = new RuleRequest({
+          ruleName: formData.value.ruleName,
           ruleType: formData.value.ruleType,
           triggerType: formData.value.triggerType,
           triggerValue: formData.value.triggerValue,
-          priority: formData.value.priority
+          condition: formData.value.condition,
+          action: formData.value.action,
+          botId: formData.value.botId,
+          description: formData.value.description,
+          priority: formData.value.priority,
+          config: {
+            // Add any additional config here
+          }
+        })
+
+        // Validate request
+        const validation = ruleRequest.validate()
+        if (!validation.isValid) {
+          alert('Validation errors: ' + validation.errors.join(', '))
+          return
         }
 
-        if (isEditMode.value) {
+        if (props.rule) {
           // Update existing rule
-          await pennyRuleApi.updateRule(props.bot.id, props.rule.id, ruleData)
-          console.log('Rule updated successfully')
+          await pennyRuleApi.updateRule(props.rule.id, ruleRequest.toApiRequest())
         } else {
           // Create new rule
-          await pennyRuleApi.createRule(props.bot.id, ruleData)
-          console.log('Rule created successfully')
+          await pennyRuleApi.createRule(ruleRequest.toApiRequest())
         }
-        
         emit('saved')
       } catch (error) {
         console.error('Failed to save rule:', error)
-        alert('Failed to save rule: ' + (error.response?.data?.error || error.message))
+        alert('Failed to save rule: ' + error.message)
       } finally {
         submitting.value = false
       }
@@ -395,7 +496,7 @@ export default {
         } else {
           // For new rules, create a temporary rule for testing
           const tempRuleData = {
-            name: formData.value.name,
+            name: formData.value.ruleName,
             description: formData.value.description,
             condition: formData.value.condition,
             action: formData.value.action,
@@ -430,43 +531,37 @@ export default {
       }
     }
 
-    // Initialize form data
+    // Lifecycle
     onMounted(() => {
+      loadAvailableBots()
+      
       if (props.rule) {
-        // Edit mode - populate with existing data
+        // Populate form with existing rule data
         Object.assign(formData.value, props.rule)
-      } else {
-        // Create mode - set defaults
-        formData.value = {
-          name: '',
-          description: '',
-          condition: '',
-          action: '',
-          ruleType: 'RESPONSE',
-          triggerType: 'INTENT',
-          triggerValue: '',
-          priority: 0,
-          isActive: true
-        }
+      } else if (props.bot) {
+        // Set bot ID if bot is provided
+        formData.value.botId = props.bot.id
       }
     })
 
     return {
       formData,
       submitting,
+      availableBots,
       isEditMode,
       canTestRule,
       triggerTypes,
       ruleTypes,
+      priorityLevels,
       onTriggerTypeChange,
       onRuleTypeChange,
-      getTriggerValuePlaceholder,
-      getTriggerValueHelp,
-      getActionLabel,
-      getActionPlaceholder,
-      getActionHelp,
+      copyToClipboard,
       handleSubmit,
       testRule,
+      getBotTypeDisplayName,
+      getPriorityDescription,
+      getTriggerValuePlaceholder,
+      getTriggerValueHelp,
       closeOnBackdrop
     }
   }

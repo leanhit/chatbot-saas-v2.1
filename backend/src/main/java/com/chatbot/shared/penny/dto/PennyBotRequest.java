@@ -24,12 +24,12 @@ public class PennyBotRequest {
     private PennyBotType botType;
     
     @NotNull(message = "Tenant ID is required")
-    private Long tenantId;
+    private String tenantKey;
     
     @NotBlank(message = "Owner ID is required")
     private String ownerId;
     
-    private String botpressBotId;
+    private String pennyBotId;
     
     private String description;
 }

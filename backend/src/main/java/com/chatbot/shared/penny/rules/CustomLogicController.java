@@ -155,7 +155,7 @@ public class CustomLogicController {
                     .platform((String) testData.getOrDefault("platform", "test"))
                     .message((String) testData.getOrDefault("message", ""))
                     .botId(botId)
-                    .tenantId(1L)
+                    .tenantKey("test-tenant")
                     .ownerId("test-owner")
                     .language((String) testData.getOrDefault("language", "vi"))
                     .build();

@@ -1,11 +1,17 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { pennyApi } from '@/api/pennyApi'
+import {
+  PennyBotDto,
+  PennyBotRequest,
+  PennyBotResponse
+} from '@/types/penny'
 
 export const usePennyBotStore = defineStore('penny-bot', () => {
     // State
     const pennyBots = ref([])
     const currentPennyBot = ref(null)
+    const currentBotId = ref(null)
     const loadingBots = ref(false)
     const creatingBot = ref(false)
     const updatingBot = ref(false)
@@ -23,6 +29,11 @@ export const usePennyBotStore = defineStore('penny-bot', () => {
         pennyBots.value.filter(bot => !bot.isActive || !bot.isEnabled)
     )
     
+    const currentBot = computed(() => {
+        if (!currentBotId.value) return null
+        return pennyBots.value.find(bot => bot.id === currentBotId.value)
+    })
+    
     const botsByType = computed(() => {
         const grouped = {}
         pennyBots.value.forEach(bot => {
@@ -39,7 +50,8 @@ export const usePennyBotStore = defineStore('penny-bot', () => {
         loadingBots.value = true
         try {
             const { data } = await pennyApi.getMyPennyBots()
-            pennyBots.value = data
+            // Convert API responses to DTOs
+            pennyBots.value = data.map(bot => new PennyBotDto(bot))
         } catch (error) {
             console.error('Failed to fetch Penny bots:', error)
             throw error
@@ -51,8 +63,10 @@ export const usePennyBotStore = defineStore('penny-bot', () => {
     const createPennyBot = async (botData) => {
         creatingBot.value = true
         try {
+            // Backend expects Map<String, String>, not PennyBotRequest
+            // Remove validation and DTO conversion for now
             const { data } = await pennyApi.createPennyBot(botData)
-            pennyBots.value.push(data)
+            pennyBots.value.push(new PennyBotDto(data))
             return data
         } catch (error) {
             console.error('Failed to create Penny bot:', error)
@@ -65,13 +79,15 @@ export const usePennyBotStore = defineStore('penny-bot', () => {
     const updatePennyBot = async (botId, botData) => {
         updatingBot.value = true
         try {
+            // Backend expects Map<String, String>, not PennyBotRequest
             const { data } = await pennyApi.updatePennyBot(botId, botData)
-            const index = pennyBots.value.findIndex(bot => bot.botId === botId)
+            const botDto = new PennyBotDto(data)
+            const index = pennyBots.value.findIndex(bot => bot.id === botId)
             if (index !== -1) {
-                pennyBots.value[index] = data
+                pennyBots.value[index] = botDto
             }
-            if (currentPennyBot.value?.botId === botId) {
-                currentPennyBot.value = data
+            if (currentPennyBot.value?.id === botId) {
+                currentPennyBot.value = botDto
             }
             return data
         } catch (error) {
@@ -86,8 +102,8 @@ export const usePennyBotStore = defineStore('penny-bot', () => {
         deletingBot.value = true
         try {
             await pennyApi.deletePennyBot(botId)
-            pennyBots.value = pennyBots.value.filter(bot => bot.botId !== botId)
-            if (currentPennyBot.value?.botId === botId) {
+            pennyBots.value = pennyBots.value.filter(bot => bot.id !== botId)
+            if (currentPennyBot.value?.id === botId) {
                 currentPennyBot.value = null
             }
             return true
@@ -102,12 +118,13 @@ export const usePennyBotStore = defineStore('penny-bot', () => {
     const togglePennyBotStatus = async (botId, enabled) => {
         try {
             const { data } = await pennyApi.togglePennyBotStatus(botId, enabled)
-            const index = pennyBots.value.findIndex(bot => bot.botId === botId)
+            const botDto = new PennyBotDto(data)
+            const index = pennyBots.value.findIndex(bot => bot.id === botId)
             if (index !== -1) {
-                pennyBots.value[index] = data
+                pennyBots.value[index] = botDto
             }
-            if (currentPennyBot.value?.botId === botId) {
-                currentPennyBot.value = data
+            if (currentPennyBot.value?.id === botId) {
+                currentPennyBot.value = botDto
             }
             return data
         } catch (error) {
@@ -172,7 +189,7 @@ export const usePennyBotStore = defineStore('penny-bot', () => {
         creatingBot.value = true
         try {
             const { data } = await pennyApi.autoCreatePennyBot(pageId)
-            pennyBots.value.push(data)
+            pennyBots.value.push(new PennyBotDto(data))
             return data
         } catch (error) {
             console.error('Failed to auto-create Penny bot:', error)
@@ -186,13 +203,24 @@ export const usePennyBotStore = defineStore('penny-bot', () => {
         currentPennyBot.value = bot
     }
 
+    const setCurrentBotId = (botId) => {
+        currentBotId.value = botId
+        // Also set currentPennyBot if bot exists
+        const bot = pennyBots.value.find(b => b.id === botId)
+        if (bot) {
+            currentPennyBot.value = bot
+        }
+    }
+
     const clearCurrentPennyBot = () => {
         currentPennyBot.value = null
+        currentBotId.value = null
     }
 
     const resetStore = () => {
         pennyBots.value = []
         currentPennyBot.value = null
+        currentBotId.value = null
         loadingBots.value = false
         creatingBot.value = false
         updatingBot.value = false
@@ -206,6 +234,8 @@ export const usePennyBotStore = defineStore('penny-bot', () => {
         // State
         pennyBots,
         currentPennyBot,
+        currentBotId,
+        currentBot,
         loadingBots,
         creatingBot,
         updatingBot,
@@ -231,6 +261,7 @@ export const usePennyBotStore = defineStore('penny-bot', () => {
         chatWithPennyBotPublic,
         autoCreatePennyBot,
         setCurrentPennyBot,
+        setCurrentBotId,
         clearCurrentPennyBot,
         resetStore
     }

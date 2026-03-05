@@ -4,28 +4,34 @@ package com.chatbot.shared.penny.model;
  * Enum định nghĩa các loại bot trong Penny Middleware
  */
 public enum PennyBotType {
-    CUSTOMER_SERVICE("Customer Service", "botpress-customer-service-001"),
-    SALES("Sales", "botpress-sales-001"),
-    SUPPORT("Technical Support", "botpress-support-001"),
-    MARKETING("Marketing", "botpress-marketing-001"),
-    HR("Human Resources", "botpress-hr-001"),
-    FINANCE("Finance", "botpress-finance-001"),
-    GENERAL("General Purpose", "botpress-general-001");
+    CUSTOMER_SERVICE("Customer Service", "penny-customer-service-001"),
+    SALES("Sales", "penny-sales-001"),
+    SUPPORT("Technical Support", "penny-support-001"),
+    MARKETING("Marketing", "penny-marketing-001"),
+    HR("Human Resources", "penny-hr-001"),
+    FINANCE("Finance", "penny-finance-001"),
+    GENERAL("General Purpose", "penny-general-001");
 
     private final String displayName;
-    private final String botpressBotId;
+    private final String pennyBotId;
 
-    PennyBotType(String displayName, String botpressBotId) {
+    PennyBotType(String displayName, String pennyBotId) {
         this.displayName = displayName;
-        this.botpressBotId = botpressBotId;
+        this.pennyBotId = pennyBotId;
     }
 
     public String getDisplayName() {
         return displayName;
     }
 
+    public String getPennyBotId() {
+        return pennyBotId;
+    }
+
+    // Keep for backward compatibility
+    @Deprecated
     public String getBotpressBotId() {
-        return botpressBotId;
+        return pennyBotId;
     }
 
     public static PennyBotType fromString(String type) {

@@ -107,6 +107,14 @@ import { ref, computed, watch } from 'vue'
 import { Icon } from '@iconify/vue'
 import { useI18n } from 'vue-i18n'
 import { usePennyBotStore } from '@/stores/pennyBotStore'
+import { useAuthStore } from '@/stores/authStore'
+import { useGatewayTenantStore } from '@/stores/tenant/gateway/myTenantStore'
+import {
+  PennyBotType,
+  PennyBotTypeDisplay,
+  PennyBotTypeBotpressId,
+  PennyBotRequest
+} from '@/types/penny'
 
 export default {
   name: 'PennyBotModal',
@@ -123,6 +131,8 @@ export default {
   setup(props, { emit }) {
     const { t } = useI18n()
     const pennyBotStore = usePennyBotStore()
+    const authStore = useAuthStore()
+    const tenantStore = useGatewayTenantStore()
 
     const submitting = ref(false)
     const formData = ref({
@@ -131,15 +141,10 @@ export default {
       description: ''
     })
 
-    const botTypes = [
-      { value: 'CUSTOMER_SERVICE', label: 'Customer Service' },
-      { value: 'SALES', label: 'Sales' },
-      { value: 'SUPPORT', label: 'Technical Support' },
-      { value: 'MARKETING', label: 'Marketing' },
-      { value: 'HR', label: 'Human Resources' },
-      { value: 'FINANCE', label: 'Finance' },
-      { value: 'GENERAL', label: 'General Purpose' }
-    ]
+    const botTypes = Object.values(PennyBotType).map(type => ({
+      value: type,
+      label: PennyBotTypeDisplay[type]
+    }))
 
     // Initialize form data when bot prop changes
     watch(() => props.bot, (newBot) => {
@@ -159,31 +164,45 @@ export default {
     }, { immediate: true })
 
     const handleSubmit = async () => {
-      if (!formData.value.botName || !formData.value.botType) {
+      // Get current user info from auth store
+      const currentUser = authStore.user
+      const currentTenant = tenantStore.currentTenant
+
+      console.log('Debug - User:', currentUser)
+      console.log('Debug - Tenant:', currentTenant)
+
+      if (!currentUser || !currentTenant) {
+        console.error('User or tenant information not available')
+        console.log('currentUser:', currentUser)
+        console.log('currentTenant:', currentTenant)
+        // Show error message to user
+        alert('Unable to get user or tenant information. Please try again.')
         return
       }
 
       submitting.value = true
       try {
+        // Backend expects Map<String, String> and gets tenantKey from request
+        const apiRequest = {
+          botName: formData.value.botName,
+          botType: formData.value.botType,
+          botDescription: formData.value.description || '',
+          tenantKey: currentTenant.tenantKey // Gửi tenantKey thay vì tenantId
+        }
+        
+        console.log('Debug - API Request:', apiRequest)
+        
         if (props.bot) {
           // Update existing bot
-          await pennyBotStore.updatePennyBot(props.bot.botId, {
-            botName: formData.value.botName,
-            botType: formData.value.botType,
-            description: formData.value.description
-          })
+          await pennyBotStore.updatePennyBot(props.bot.id, apiRequest)
         } else {
           // Create new bot
-          await pennyBotStore.createPennyBot({
-            botName: formData.value.botName,
-            botType: formData.value.botType,
-            botDescription: formData.value.description
-          })
+          await pennyBotStore.createPennyBot(apiRequest)
         }
         emit('saved')
       } catch (error) {
         console.error('Failed to save bot:', error)
-        // You could show an error message here
+        alert('Failed to save bot: ' + error.message)
       } finally {
         submitting.value = false
       }
@@ -209,16 +228,7 @@ export default {
     }
 
     const getBotTypeDisplayName = (botType) => {
-      const names = {
-        'CUSTOMER_SERVICE': 'Customer Service',
-        'SALES': 'Sales',
-        'SUPPORT': 'Technical Support',
-        'MARKETING': 'Marketing',
-        'HR': 'Human Resources',
-        'FINANCE': 'Finance',
-        'GENERAL': 'General Purpose'
-      }
-      return names[botType] || botType
+      return PennyBotTypeDisplay[botType] || botType
     }
 
     const getBotTypeDescription = (botType) => {
@@ -235,16 +245,7 @@ export default {
     }
 
     const getBotpressBotId = (botType) => {
-      const botpressIds = {
-        'CUSTOMER_SERVICE': 'botpress-customer-service-001',
-        'SALES': 'botpress-sales-001',
-        'SUPPORT': 'botpress-support-001',
-        'MARKETING': 'botpress-marketing-001',
-        'HR': 'botpress-hr-001',
-        'FINANCE': 'botpress-finance-001',
-        'GENERAL': 'botpress-general-001'
-      }
-      return botpressIds[botType] || 'botpress-general-001'
+      return PennyBotTypeBotpressId[botType] || 'botpress-general-001'
     }
 
     return {

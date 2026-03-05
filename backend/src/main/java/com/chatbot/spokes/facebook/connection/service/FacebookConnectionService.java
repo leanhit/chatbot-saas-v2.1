@@ -18,7 +18,9 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.HashMap;
 import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import lombok.extern.slf4j.Slf4j;
@@ -133,6 +135,34 @@ public class FacebookConnectionService {
         return new PageImpl<>(dtoList, pageable, connectionsPage.getTotalElements());
     }
 
+    public Page<FacebookConnectionResponse> getConnectionsByBotId(String botId, String ownerId, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        Long tenantId = TenantContext.getTenantId();
+        if (tenantId == null) {
+            throw new RuntimeException("Không tìm thấy tenant ID trong context");
+        }
+        
+        // Get connections by botId and verify ownership
+        Page<FacebookConnection> connectionsPage = connectionRepository.findByBotIdAndOwnerIdAndTenantId(botId, ownerId, tenantId, pageable);
+        List<FacebookConnectionResponse> dtoList = connectionsPage.getContent().stream()
+                .map(this::convertToDto)
+                .collect(Collectors.toList());
+        return new PageImpl<>(dtoList, pageable, connectionsPage.getTotalElements());
+    }
+
+    public List<Map<String, Object>> getConnectionsByBotIdList(String botId, String ownerId) {
+        Long tenantId = TenantContext.getTenantId();
+        if (tenantId == null) {
+            throw new RuntimeException("Không tìm thấy tenant ID trong context");
+        }
+        
+        // Get connections by botId and verify ownership
+        List<FacebookConnection> connections = connectionRepository.findByBotIdAndOwnerIdAndTenantId(botId, ownerId, tenantId);
+        return connections.stream()
+                .map(this::convertToMap)
+                .collect(Collectors.toList());
+    }
+
 
     private FacebookConnectionResponse convertToDto(FacebookConnection connection) {
         FacebookConnectionResponse dto = new FacebookConnectionResponse();
@@ -147,6 +177,26 @@ public class FacebookConnectionService {
         dto.setCreatedAt(connection.getCreatedAt());
         dto.setUpdatedAt(connection.getUpdatedAt());
         return dto;
+    }
+
+    // Convert to Map format for frontend compatibility
+    private Map<String, Object> convertToMap(FacebookConnection connection) {
+        Map<String, Object> map = new HashMap<>();
+        map.put("id", connection.getId().toString());
+        map.put("botId", connection.getBotId());
+        map.put("name", connection.getBotName());
+        map.put("platform", "facebook");
+        map.put("connectionType", "FACEBOOK");
+        map.put("pageId", connection.getPageId());
+        map.put("fanpageUrl", connection.getFanpageUrl());
+        map.put("isActive", connection.isActive());
+        map.put("isHealthy", connection.isActive() && connection.isEnabled()); // Mock health status
+        map.put("isEnabled", connection.isEnabled());
+        map.put("createdAt", connection.getCreatedAt().toString());
+        map.put("updatedAt", connection.getUpdatedAt().toString());
+        map.put("lastUsedAt", null); // Mock - not tracked in current model
+        map.put("description", "Facebook connection for page: " + connection.getPageId());
+        return map;
     }
 
     public void updateConnection(UUID connectionId, String ownerId, UpdateFacebookConnectionRequest request) {

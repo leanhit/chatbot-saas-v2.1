@@ -62,7 +62,7 @@ public class PennyBotManager {
             .botType(botType)
             .tenantId(tenantId)
             .ownerId(ownerId)
-            .botpressBotId(botType.getBotpressBotId()) // Get from enum mapping
+            .pennyBotId(botType.getPennyBotId()) // Get from enum mapping
             .description(description)
             .isActive(true)
             .isEnabled(true)
@@ -260,7 +260,7 @@ public class PennyBotManager {
         // Bot status
         health.put("botStatus", bot.isActive() && bot.isEnabled() ? "healthy" : "unhealthy");
         health.put("botType", bot.getBotType().name());
-        health.put("botpressBotId", bot.getBotpressBotId());
+        health.put("pennyBotId", bot.getPennyBotId());
         
         // Penny context health
         boolean contextHealthy = contextManager.isBotContextHealthy(botId.toString());
