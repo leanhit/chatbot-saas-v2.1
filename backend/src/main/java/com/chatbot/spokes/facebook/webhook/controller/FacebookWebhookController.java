@@ -1,5 +1,6 @@
 package com.chatbot.spokes.facebook.webhook.controller;
 
+import com.chatbot.spokes.facebook.webhook.dto.WebhookRequest;
 import com.chatbot.spokes.facebook.webhook.service.FacebookWebhookService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -11,67 +12,36 @@ import lombok.extern.slf4j.Slf4j;
  * Handles incoming webhook events from Facebook
  */
 @RestController
-@RequestMapping("/api/v1/facebook/webhook")
+@RequestMapping("/webhooks/facebook/botpress")
 @RequiredArgsConstructor
 @Slf4j
 public class FacebookWebhookController {
 
     private final FacebookWebhookService webhookService;
 
+    // Endpoint cho xác thực webhook của Facebook
     @GetMapping
-    public ResponseEntity<String> verifyWebhook(
-            @RequestParam("hub.mode") String mode,
-            @RequestParam("hub.verify_token") String verifyToken,
-            @RequestParam("hub.challenge") String challenge) {
-        
-        log.info("Facebook webhook verification request: mode={}, verifyToken={}", mode, verifyToken);
-        
-        if (webhookService.verifyWebhook(mode, verifyToken)) {
-            log.info("Facebook webhook verification successful");
+    public ResponseEntity<String> verifyWebhook(@RequestParam("hub.mode") String mode,
+                                              @RequestParam("hub.challenge") String challenge,
+                                              @RequestParam("hub.verify_token") String verifyToken) {
+
+        log.info("Received webhook verification request.");
+        log.info("Mode: " + mode);
+        log.info("Challenge: " + challenge);
+        log.info("Verify Token: " + verifyToken);
+                                            
+        // Logic xác thực token sẽ ở trong service
+        if (webhookService.verifyWebhook(mode, challenge, verifyToken)) {
             return ResponseEntity.ok(challenge);
+        } else {
+            return ResponseEntity.badRequest().body("Verification failed.");
         }
-        
-        log.warn("Facebook webhook verification failed");
-        return ResponseEntity.badRequest().body("Verification failed");
     }
 
+    // Endpoint để nhận các sự kiện tin nhắn từ Facebook
     @PostMapping
-    public ResponseEntity<String> handleWebhookEvent(@RequestBody String payload) {
-        log.info("Received Facebook webhook event");
-        
-        try {
-            webhookService.processWebhookEvent(payload);
-            return ResponseEntity.ok("EVENT_RECEIVED");
-        } catch (Exception e) {
-            log.error("Error processing Facebook webhook event", e);
-            return ResponseEntity.internalServerError().body("Error processing event");
-        }
-    }
-    
-    @PostMapping("/webhooks/facebook/botpress")
-    public ResponseEntity<String> handleBotpressWebhookEvent(@RequestBody String payload) {
-        log.info("Received Facebook webhook event for botpress endpoint");
-        
-        try {
-            // Route to PennyBot instead of Botpress
-            webhookService.processWebhookEvent(payload);
-            return ResponseEntity.ok("EVENT_RECEIVED");
-        } catch (Exception e) {
-            log.error("Error processing Facebook webhook event for botpress endpoint", e);
-            return ResponseEntity.internalServerError().body("Error processing event");
-        }
-    }
-    
-    @PostMapping("/webhooks/facebook/pennybot")
-    public ResponseEntity<String> handlePennybotWebhookEvent(@RequestBody String payload) {
-        log.info("Received Facebook webhook event for pennybot endpoint");
-        
-        try {
-            webhookService.processWebhookEvent(payload);
-            return ResponseEntity.ok("EVENT_RECEIVED");
-        } catch (Exception e) {
-            log.error("Error processing Facebook webhook event for pennybot endpoint", e);
-            return ResponseEntity.internalServerError().body("Error processing event");
-        }
+    public ResponseEntity<Void> handleWebhookEvent(@RequestBody WebhookRequest request) {
+        webhookService.handleWebhookEvent(request);
+        return ResponseEntity.ok().build();
     }
 }

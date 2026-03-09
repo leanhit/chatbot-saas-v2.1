@@ -284,6 +284,99 @@ public class ConversationController {
         }
     }
 
+    // --------------------------------------------------------------------------
+    // ENDPOINT MỚI: GET CONVERSATION BY ID
+    // --------------------------------------------------------------------------
+    @GetMapping("/{conversationId}")
+    @Operation(
+        summary = "Get conversation by ID",
+        description = "Retrieve a specific conversation by its ID",
+        responses = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Conversation retrieved successfully",
+                content = @Content(schema = @Schema(implementation = ConversationDTO.class))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Conversation not found")
+        }
+    )
+    public ResponseEntity<ConversationDTO> getConversationById(@PathVariable Long conversationId) {
+        try {
+            Conversation conversation = conversationService.getConversationById(conversationId);
+            return ResponseEntity.ok(conversationMapper.toDTO(conversation));
+        } catch (RuntimeException e) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Conversation not found", e);
+        }
+    }
+
+    // --------------------------------------------------------------------------
+    // ENDPOINT MỚI: UPDATE CONVERSATION
+    // --------------------------------------------------------------------------
+    @PutMapping("/{conversationId}")
+    @Operation(
+        summary = "Update conversation",
+        description = "Update conversation details",
+        responses = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Conversation updated successfully",
+                content = @Content(schema = @Schema(implementation = ConversationDTO.class))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Conversation not found")
+        }
+    )
+    public ResponseEntity<ConversationDTO> updateConversation(
+            @PathVariable Long conversationId,
+            @RequestBody ConversationDTO conversationDTO,
+            Principal principal) {
+        try {
+            String ownerId = principal.getName();
+            Conversation updatedConversation = conversationService.updateConversation(conversationId, conversationDTO, ownerId);
+            return ResponseEntity.ok(conversationMapper.toDTO(updatedConversation));
+        } catch (RuntimeException e) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Conversation not found or cannot be updated", e);
+        }
+    }
+
+    // --------------------------------------------------------------------------
+    // ENDPOINT MỚI: SEARCH CONVERSATIONS
+    // --------------------------------------------------------------------------
+    @GetMapping("/search")
+    @Operation(
+        summary = "Search conversations",
+        description = "Search conversations by various criteria",
+        responses = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Conversations found",
+                content = @Content(schema = @Schema(implementation = Page.class)))
+        }
+    )
+    public Page<ConversationDTO> searchConversations(
+            @RequestParam(required = false) String query,
+            @RequestParam(required = false) String channel,
+            @RequestParam(required = false) String dateRange,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            Principal principal) {
+        String ownerId = principal.getName();
+        return conversationService.searchConversations(ownerId, query, channel, dateRange, page, size)
+                .map(conversationMapper::toDTO);
+    }
+
+    // --------------------------------------------------------------------------
+    // ENDPOINT MỚI: GET CONVERSATION STATISTICS
+    // --------------------------------------------------------------------------
+    @GetMapping("/statistics")
+    @Operation(
+        summary = "Get conversation statistics",
+        description = "Retrieve statistics about conversations",
+        responses = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Statistics retrieved successfully")
+        }
+    )
+    public ResponseEntity<?> getConversationStatistics(Principal principal) {
+        try {
+            String ownerId = principal.getName();
+            var statistics = conversationService.getConversationStatistics(ownerId);
+            return ResponseEntity.ok(statistics);
+        } catch (Exception e) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to retrieve statistics", e);
+        }
+    }
+
    // --------------------------------------------------------------------------
    // ENDPOINT MỚI: XÓA NHIỀU CONVERSATIONS
    // --------------------------------------------------------------------------

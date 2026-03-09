@@ -290,6 +290,12 @@ export const tenantApi = {
    */
   async reactivateMember(tenantKey, memberId) {
     return axios.patch(`/tenants/key/${tenantKey}/members/${memberId}/reactivate`);
+  },
+  /**
+   * Get join requests for a tenant
+   */
+  async getJoinRequests(tenantKey) {
+    return axios.get(`/tenants/key/${tenantKey}/members/join-requests`);
   }
 };
 

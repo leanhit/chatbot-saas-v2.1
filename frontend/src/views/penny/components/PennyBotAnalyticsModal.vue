@@ -237,9 +237,13 @@ export default {
     const fetchAnalytics = async () => {
       if (!props.bot) return
 
+      console.log('🔍 Fetching analytics for bot:', props.bot)
+      console.log('🔍 Bot ID:', props.bot.id)
+      console.log('🔍 Bot botId:', props.bot.botId)
+
       analyticsLoading.value = true
       try {
-        const data = await pennyBotStore.getPennyBotAnalytics(props.bot.botId, selectedTimeRange.value)
+        const data = await pennyBotStore.getPennyBotAnalytics(props.bot.id, selectedTimeRange.value)
         analytics.value = data
       } catch (error) {
         console.error('Failed to fetch analytics:', error)

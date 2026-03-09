@@ -416,8 +416,18 @@ export default {
     }
 
     const viewAnalytics = (bot) => {
+      console.log('viewAnalytics called with bot:', bot)
+      console.log('bot.id:', bot?.id)
+      console.log('bot.botId:', bot?.botId)
+      
+      if (!bot || !bot.id) {
+        console.warn('Invalid bot for analytics:', bot)
+        return
+      }
+      
       selectedBot.value = bot
       showAnalyticsModal.value = true
+      console.log('Opening analytics modal for bot:', bot.botName, 'ID:', bot.id)
     }
 
     const openChatModal = (bot) => {

@@ -1,745 +1,402 @@
 <template>
   <div class="dashboard p-4">
-    <!-- end nav -->
+    <!-- Header -->
     <div class="mt-2 w-full">
-      <div
-        class="lg:flex grid-cols-1 lg:space-y-0 space-y-3 gap-5 justify-between"
-      >
+      <div class="lg:flex grid-cols-1 lg:space-y-0 space-y-3 gap-5 justify-between">
         <div>
           <p class="uppercase text-xs text-gray-700 font-semibold">overview</p>
           <h1 class="text-2xl text-gray-900 dark:text-gray-200 font-medium">
-            Dashboard
+            Chatbot Dashboard
           </h1>
         </div>
         <div class="flex gap-2">
           <button
-            class="bg-white dark:bg-gray-800 hover:border-gray-200 dark:hover:bg-gray-700 dark:text-white dark:border-gray-700 border rounded py-2 px-5"
+            @click="refreshData"
+            :disabled="loading"
+            class="bg-white dark:bg-gray-800 hover:border-gray-200 dark:hover:bg-gray-700 dark:text-white dark:border-gray-700 border rounded py-2 px-5 flex items-center gap-2"
           >
-            New view
+            <Icon icon="mdi:refresh" :class="{'animate-spin': loading}" class="text-lg" />
+            Refresh
           </button>
           <button
+            @click="openSettings"
             class="bg-primary border flex gap-2 text-white hover:bg-primary/80 dark:border-gray-700 rounded py-3 px-5"
           >
             <span class="icon text-2xl"><Icon icon="ic:twotone-plus" /></span>
-            <span class="text"> Create New Report</span>
+            <span class="text"> Configure Bot</span>
           </button>
         </div>
       </div>
     </div>
-    <!-- grid wrapper card -->
-    <div
-      class="wrapper-card grid lg:grid-cols-4 grid-cols-1 md:grid-cols-2 gap-2 mt-5"
-    >
-      <!-- card  -->
-      <div
-        class="card bg-white dark:bg-gray-800 w-full rounded-md p-5 border dark:border-gray-700 flex"
-      >
+
+    <!-- Statistics Cards -->
+    <div class="wrapper-card grid lg:grid-cols-4 grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+      <!-- Total Conversations -->
+      <div class="card bg-white dark:bg-gray-800 w-full rounded-md p-5 border dark:border-gray-700 flex">
         <div class="p-2 max-w-sm">
-          <div
-            class="bg-orange-200 rounded-full w-14 h-14 text-lg p-3 text-orange-600 mx-auto"
-          >
-            <span class="">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                aria-hidden="true"
-                role="img"
-                width="30px"
-                height="30px"
-                preserveAspectRatio="xMidYMid meet"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  fill="currentColor"
-                  d="M10 16V8a2 2 0 0 1 2-2h9V5c0-1.1-.9-2-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14c1.1 0 2-.9 2-2v-1h-9a2 2 0 0 1-2-2zm3-8c-.55 0-1 .45-1 1v6c0 .55.45 1 1 1h9V8h-9zm3 5.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5s1.5.67 1.5 1.5s-.67 1.5-1.5 1.5z"
-                />
-              </svg>
-            </span>
+          <div class="bg-blue-200 rounded-full w-14 h-14 text-lg p-3 text-blue-600 mx-auto">
+            <Icon icon="mdi:chat" class="text-2xl" />
           </div>
         </div>
         <div class="block p-2 w-full">
           <p class="font-semibold text-gray-900 dark:text-gray-200 text-xl">
-            Rp.23.423.009
+            {{ stats.totalConversations }}
           </p>
-          <h2 class="font-normal text-gray-400 text-md mt-1">Total Payouts</h2>
+          <h2 class="font-normal text-gray-400 text-md mt-1">Total Conversations</h2>
+          <div class="flex items-center mt-2">
+            <span :class="stats.conversationGrowth >= 0 ? 'text-green-500' : 'text-red-500'" class="text-sm flex items-center">
+              <Icon :icon="stats.conversationGrowth >= 0 ? 'mdi:arrow-up' : 'mdi:arrow-down'" class="mr-1" />
+              {{ Math.abs(stats.conversationGrowth) }}%
+            </span>
+            <span class="text-gray-400 text-sm ml-2">vs last month</span>
+          </div>
         </div>
       </div>
-      <!-- end card -->
-      <div
-        class="card bg-white dark:bg-gray-800 w-full rounded-md p-5 border dark:border-gray-700 flex"
-      >
+
+      <!-- Active Users -->
+      <div class="card bg-white dark:bg-gray-800 w-full rounded-md p-5 border dark:border-gray-700 flex">
         <div class="p-2 max-w-sm">
-          <div
-            class="bg-green-200 rounded-full w-14 h-14 text-lg p-3 text-green-600 mx-auto"
-          >
-            <span class="">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                aria-hidden="true"
-                role="img"
-                width="30px"
-                height="30px"
-                preserveAspectRatio="xMidYMid meet"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  fill="currentColor"
-                  d="M5 22h14a2 2 0 0 0 2-2V9a1 1 0 0 0-1-1h-3v-.777c0-2.609-1.903-4.945-4.5-5.198A5.005 5.005 0 0 0 7 7v1H4a1 1 0 0 0-1 1v11a2 2 0 0 0 2 2zm12-12v2h-2v-2h2zM9 7c0-1.654 1.346-3 3-3s3 1.346 3 3v1H9V7zm-2 3h2v2H7v-2z"
-                />
-              </svg>
-            </span>
+          <div class="bg-green-200 rounded-full w-14 h-14 text-lg p-3 text-green-600 mx-auto">
+            <Icon icon="mdi:account-multiple" class="text-2xl" />
           </div>
         </div>
         <div class="block p-2 w-full">
           <p class="font-semibold text-gray-900 dark:text-gray-200 text-xl">
-            256
+            {{ stats.activeUsers }}
           </p>
-          <h2 class="font-normal text-gray-400 text-md mt-1">Total Sales</h2>
+          <h2 class="font-normal text-gray-400 text-md mt-1">Active Users</h2>
+          <div class="flex items-center mt-2">
+            <span :class="stats.userGrowth >= 0 ? 'text-green-500' : 'text-red-500'" class="text-sm flex items-center">
+              <Icon :icon="stats.userGrowth >= 0 ? 'mdi:arrow-up' : 'mdi:arrow-down'" class="mr-1" />
+              {{ Math.abs(stats.userGrowth) }}%
+            </span>
+            <span class="text-gray-400 text-sm ml-2">vs last month</span>
+          </div>
         </div>
       </div>
-      <!-- end card -->
-      <div
-        class="card bg-white dark:bg-gray-800 w-full rounded-md p-5 border dark:border-gray-700 flex"
-      >
+
+      <!-- Bot Responses -->
+      <div class="card bg-white dark:bg-gray-800 w-full rounded-md p-5 border dark:border-gray-700 flex">
         <div class="p-2 max-w-sm">
-          <div
-            class="bg-red-200 rounded-full w-14 h-14 text-lg p-3 text-red-600 mx-auto"
-          >
-            <span class="">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                aria-hidden="true"
-                role="img"
-                width="30px"
-                height="30px"
-                preserveAspectRatio="xMidYMid meet"
-                viewBox="0 0 32 32"
-              >
-                <path
-                  fill="none"
-                  d="M8.007 24.93A4.996 4.996 0 0 1 13 20h6a4.996 4.996 0 0 1 4.993 4.93a11.94 11.94 0 0 1-15.986 0ZM20.5 12.5A4.5 4.5 0 1 1 16 8a4.5 4.5 0 0 1 4.5 4.5Z"
-                />
-                <path
-                  fill="currentColor"
-                  d="M26.749 24.93A13.99 13.99 0 1 0 2 16a13.899 13.899 0 0 0 3.251 8.93l-.02.017c.07.084.15.156.222.239c.09.103.187.2.28.3c.28.304.568.596.87.87c.092.084.187.162.28.242c.32.276.649.538.99.782c.044.03.084.069.128.1v-.012a13.901 13.901 0 0 0 16 0v.012c.044-.031.083-.07.128-.1c.34-.245.67-.506.99-.782c.093-.08.188-.159.28-.242c.302-.275.59-.566.87-.87c.093-.1.189-.197.28-.3c.071-.083.152-.155.222-.24ZM16 8a4.5 4.5 0 1 1-4.5 4.5A4.5 4.5 0 0 1 16 8ZM8.007 24.93A4.996 4.996 0 0 1 13 20h6a4.996 4.996 0 0 1 4.993 4.93a11.94 11.94 0 0 1-15.986 0Z"
-                />
-              </svg>
-            </span>
+          <div class="bg-purple-200 rounded-full w-14 h-14 text-lg p-3 text-purple-600 mx-auto">
+            <Icon icon="mdi:robot" class="text-2xl" />
           </div>
         </div>
         <div class="block p-2 w-full">
           <p class="font-semibold text-gray-900 dark:text-gray-200 text-xl">
-            3569
+            {{ stats.botResponses }}
           </p>
-          <h2 class="font-normal text-gray-400 text-md mt-1">
-            Total Customers
-          </h2>
+          <h2 class="font-normal text-gray-400 text-md mt-1">Bot Responses</h2>
+          <div class="flex items-center mt-2">
+            <span class="text-blue-500 text-sm flex items-center">
+              <Icon icon="mdi:check-circle" class="mr-1" />
+              {{ stats.responseRate }}% success
+            </span>
+          </div>
         </div>
       </div>
-      <!-- end card -->
-      <div
-        class="card bg-white dark:bg-gray-800 w-full rounded-md p-5 border dark:border-gray-700 flex"
-      >
+
+      <!-- Active Connections -->
+      <div class="card bg-white dark:bg-gray-800 w-full rounded-md p-5 border dark:border-gray-700 flex">
         <div class="p-2 max-w-sm">
-          <div
-            class="bg-purple-200 rounded-full w-14 h-14 text-lg p-3 text-purple-600 mx-auto"
-          >
-            <span class="">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                aria-hidden="true"
-                role="img"
-                width="30px"
-                height="30px"
-                preserveAspectRatio="xMidYMid meet"
-                viewBox="0 0 16 16"
-              >
-                <g fill="currentColor">
-                  <path d="M15 13v1H1.5l-.5-.5V0h1v13h13Z" />
-                  <path
-                    d="M13 3.207L7.854 8.354h-.708L5.5 6.707l-3.646 3.647l-.708-.708l4-4h.708L7.5 7.293l5.146-5.147h.707l2 2l-.707.708L13 3.207Z"
-                  />
-                </g>
-              </svg>
-            </span>
+          <div class="bg-orange-200 rounded-full w-14 h-14 text-lg p-3 text-orange-600 mx-auto">
+            <Icon icon="mdi:connection" class="text-2xl" />
           </div>
         </div>
         <div class="block p-2 w-full">
           <p class="font-semibold text-gray-900 dark:text-gray-200 text-xl">
-            7230
+            {{ stats.activeConnections }}
           </p>
-          <h2 class="font-normal text-gray-400 text-md mt-1">Total Visit</h2>
+          <h2 class="font-normal text-gray-400 text-md mt-1">Active Connections</h2>
+          <div class="flex items-center mt-2">
+            <span class="text-green-500 text-sm flex items-center">
+              <Icon icon="mdi:check-circle" class="mr-1" />
+              All systems online
+            </span>
+          </div>
         </div>
       </div>
-      <!-- end card -->
     </div>
-    <!-- end wrapper card -->
-    <div class="mt-2 lg:flex block lg:gap-2 relative">
-      <div
-        class="bg-white dark:bg-gray-800 p-0 lg:w-3/4 w-full rounded-md box-border border dark:border-gray-700"
-      >
-        <div class="p-5 flex justify-between">
+
+    <!-- Charts Section -->
+    <div class="mt-6 lg:flex block lg:gap-6">
+      <!-- Conversation Chart -->
+      <div class="bg-white dark:bg-gray-800 p-6 lg:w-2/3 w-full rounded-md border dark:border-gray-700">
+        <div class="flex justify-between items-center mb-4">
           <div>
-            <h2 class="font-medium text-sm text-gray-800 dark:text-gray-200">
-              SALES
-            </h2>
-            <h1 class="font-semibold text-4xl text-gray-800 dark:text-gray-200">
-              72%
+            <h2 class="font-medium text-sm text-gray-800 dark:text-gray-200">CONVERSATION TRENDS</h2>
+            <h1 class="font-semibold text-2xl text-gray-800 dark:text-gray-200">
+              {{ stats.totalConversations }}
             </h1>
-            <p class="text-gray-400 font-lexend font-normal">
-              your sales chart per-years
-            </p>
+            <p class="text-gray-400 font-normal">Last 7 days activity</p>
           </div>
-          <div class="flex gap-5">
-            <span class="">
-              <h2 class="text-red-500 flex">
-                <span class="mr-2"> 15.9% </span
-                ><span>
-                  <Icon icon="akar-icons:arrow-down" />
-                </span>
-              </h2>
-            </span>
-            <span class="">
-              <h2 class="text-green-500 flex">
-                <span class="mr-2"> 87.9% </span
-                ><span>
-                  <Icon icon="akar-icons:arrow-up" />
-                </span>
-              </h2>
-            </span>
+          <div class="flex gap-2">
+            <button
+              v-for="period in periods"
+              :key="period.value"
+              @click="selectedPeriod = period.value"
+              :class="[
+                'px-3 py-1 rounded text-sm',
+                selectedPeriod === period.value
+                  ? 'bg-primary text-white'
+                  : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
+              ]"
+            >
+              {{ period.label }}
+            </button>
           </div>
         </div>
-        <apexchart
-          width="100%"
-          height="260"
-          type="area"
-          :options="optionsArea"
-          :series="seriesArea"
-          :sparkline="{
-            enabled: true,
-          }"
-        ></apexchart>
-        <br />
-        <hr />
-        <div class="wrapper-button p-5 flex justify-between mt-3">
-          <select
-            name=""
-            id=""
-            class="dark:bg-gray-800 dark:hover:bg-gray-700 dark:border-gray-700 border max-w-lg px-4 py-3 block rounded-md text-gray-500 dark:text-gray-400"
+        
+        <!-- Simple Chart Placeholder -->
+        <div class="h-64 flex items-center justify-center bg-gray-50 dark:bg-gray-700 rounded">
+          <div class="text-center">
+            <Icon icon="mdi:chart-line" class="text-6xl text-gray-300" />
+            <p class="mt-2 text-gray-500">Chart visualization coming soon</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Actions -->
+      <div class="bg-white dark:bg-gray-800 p-6 lg:w-1/3 w-full rounded-md border dark:border-gray-700 mt-6 lg:mt-0">
+        <h2 class="font-medium text-sm text-gray-800 dark:text-gray-200 mb-4">QUICK ACTIONS</h2>
+        
+        <div class="space-y-3">
+          <router-link
+            to="/messages"
+            class="flex items-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors"
           >
-            <option value="">Last 7 years</option>
-          </select>
-          <button class="uppercase border-b border-red-600 text-red-600">
-            Sales Report
+            <Icon icon="mdi:message-text" class="text-blue-600 text-xl mr-3" />
+            <div>
+              <p class="font-medium text-gray-900 dark:text-gray-200">View Messages</p>
+              <p class="text-sm text-gray-500">Manage conversations</p>
+            </div>
+          </router-link>
+
+          <router-link
+            to="/penny-rules"
+            class="flex items-center p-3 bg-green-50 dark:bg-green-900/20 rounded-lg hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors"
+          >
+            <Icon icon="mdi:robot" class="text-green-600 text-xl mr-3" />
+            <div>
+              <p class="font-medium text-gray-900 dark:text-gray-200">Bot Rules</p>
+              <p class="text-sm text-gray-500">Configure responses</p>
+            </div>
+          </router-link>
+
+          <router-link
+            to="/penny-connections"
+            class="flex items-center p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg hover:bg-purple-100 dark:hover:bg-purple-900/30 transition-colors"
+          >
+            <Icon icon="mdi:facebook" class="text-purple-600 text-xl mr-3" />
+            <div>
+              <p class="font-medium text-gray-900 dark:text-gray-200">Connections</p>
+              <p class="text-sm text-gray-500">Manage platforms</p>
+            </div>
+          </router-link>
+
+          <button
+            @click="testBot"
+            class="w-full flex items-center p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg hover:bg-orange-100 dark:hover:bg-orange-900/30 transition-colors"
+          >
+            <Icon icon="mdi:play-circle" class="text-orange-600 text-xl mr-3" />
+            <div class="text-left">
+              <p class="font-medium text-gray-900 dark:text-gray-200">Test Bot</p>
+              <p class="text-sm text-gray-500">Run test conversation</p>
+            </div>
           </button>
         </div>
       </div>
-      <div
-        class="bg-white dark:bg-gray-800 p-5 lg:mt-0 mt-4 lg:w-2/4 border dark:border-gray-700 rounded-md w-full"
-      >
-        <div class="">
-          <h2 class="text-lg font-semibold dark:text-gray-200">
-            PARTNER SALES
-          </h2>
-          <p class="text-gray-400">This is list if your partner online.</p>
-        </div>
-        <perfect-scrollbar class="divide-y h-96 mt-5 dark:divide-gray-700">
-          <div class="p-3 w-full">
-            <div class="flex gap-5">
-              <div>
-                <img
-                  class="w-14 rounded-md"
-                  src="../assets/img/user1.png"
-                  alt=""
-                />
-              </div>
-              <div class="mt-1">
-                <h2 class="dark:text-gray-200">Elizabeth Begum</h2>
-                <p class="text-sm dark:text-gray-500 text-gray-400">
-                  Active now
-                </p>
-              </div>
-            </div>
-          </div>
-          <div class="p-3 w-full">
-            <div class="flex gap-5">
-              <div>
-                <img
-                  class="w-14 rounded-md"
-                  src="../assets/img/user2.png"
-                  alt=""
-                />
-              </div>
-              <div class="mt-1">
-                <h2 class="dark:text-gray-200">Ethan Roger</h2>
-                <p class="text-sm dark:text-gray-500 text-gray-400">
-                  Active now
-                </p>
-              </div>
-            </div>
-          </div>
-          <div class="p-3 w-full">
-            <div class="flex gap-5">
-              <div>
-                <img
-                  class="w-14 rounded-md"
-                  src="../assets/img/user3.png"
-                  alt=""
-                />
-              </div>
-              <div class="mt-1">
-                <h2 class="dark:text-gray-200">Tobi Ferreira</h2>
-                <p class="text-sm dark:text-gray-500 text-gray-400">
-                  last online 2 hours ago
-                </p>
-              </div>
-            </div>
-          </div>
-          <div class="p-3 w-full">
-            <div class="flex gap-5">
-              <div>
-                <img
-                  class="w-14 rounded-md"
-                  src="../assets/img/user4.png"
-                  alt=""
-                />
-              </div>
-              <div class="mt-1">
-                <h2 class="dark:text-gray-200">Taylor neal</h2>
-                <p class="text-sm dark:text-gray-500 text-gray-400">
-                  last online 2 minutes ago
-                </p>
-              </div>
-            </div>
-          </div>
-          <div class="p-3 w-full">
-            <div class="flex gap-5">
-              <div>
-                <img
-                  class="w-14 rounded-md"
-                  src="../assets/img/user5.png"
-                  alt=""
-                />
-              </div>
-              <div class="mt-1">
-                <h2 class="dark:text-gray-200">Bruno Barron</h2>
-                <p class="text-sm dark:text-gray-500 text-gray-400">
-                  last online 2 hours ago
-                </p>
-              </div>
-            </div>
-          </div>
-        </perfect-scrollbar>
-      </div>
     </div>
-    <div class="mt-2 lg:flex block lg:gap-2">
-      <div
-        class="mt-2 bg-white dark:bg-gray-800 p-0 w-full rounded-md box-border border dark:border-gray-700"
-      >
-        <div class="head p-5">
-          <h2 class="font-bold text-lg text-gray-800 dark:text-gray-200">
-            1,780
-          </h2>
-          <p class="text-gray-400 font-lexend font-normal">
-            New products this week
-          </p>
-          <span class="float-right">
-            <h2 class="text-green-500 -mt-12 flex">
-              <span class="mr-2"> 27.9% </span
-              ><span>
-                <Icon icon="akar-icons:arrow-up" />
-              </span>
-            </h2>
-          </span>
-        </div>
-        <div class="wrapper-chart mt-5 pr-2 pl-2">
-          <apexchart
-            width="100%"
-            height="380"
-            type="bar"
-            :options="optionsBar"
-            :series="seriesBar"
-          ></apexchart>
-          <br />
-          <hr />
-          <div class="footer p-5">
-            <div class="wrapper-button flex justify-between mt-3">
-              <select
-                name=""
-                id=""
-                class="dark:bg-gray-800 dark:hover:bg-gray-700 dark:border-gray-700 border max-w-lg px-4 py-3 block rounded-md text-gray-500 dark:text-gray-400"
-              >
-                <option value="">Last 7 days</option>
-              </select>
-              <button class="uppercase border-b border-red-600 text-red-600">
-                Product Report
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div
-        class="mt-2 bg-white dark:bg-gray-800 p-0 w-full rounded-md box-border border dark:border-gray-700"
-      >
-        <div class="head p-5">
-          <h2 class="font-bold text-lg text-gray-800 dark:text-gray-200">
-            5,355
-          </h2>
-          <p class="text-gray-400 font-lexend font-normal">Visitor this week</p>
-          <span class="float-right">
-            <h2 class="text-green-500 -mt-12 flex">
-              <span class="mr-2"> 47.9% </span
-              ><span>
-                <Icon icon="akar-icons:arrow-up" />
-              </span>
-            </h2>
-          </span>
-        </div>
-        <div class="wrapper-chart mt-5">
-          <apexchart
-            width="100%"
-            height="380"
-            type="area"
-            :options="optionsVisitor"
-            :series="seriesVisitor"
-          ></apexchart>
-          <br />
-          <hr />
-          <div class="footer p-5">
-            <div class="wrapper-button flex justify-between mt-3">
-              <select
-                name=""
-                id=""
-                class="dark:bg-gray-800 dark:hover:bg-gray-700 dark:border-gray-700 border max-w-lg px-4 py-3 block rounded-md text-gray-500 dark:text-gray-400"
-              >
-                <option value="">Last 7 days</option>
-              </select>
-              <button class="uppercase border-b border-red-600 text-red-600">
-                Vistor Report
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div
-        class="mt-2 bg-white dark:bg-gray-800 p-0 w-full rounded-md box-border border dark:border-gray-700"
-      >
-        <div class="head p-5">
-          <h2 class="font-bold text-lg text-gray-800 dark:text-gray-200">
-            475
-          </h2>
-          <p class="text-gray-400 font-lexend font-normal">
-            User signups this week
-          </p>
-        </div>
-        <div class="wrapper-chart mt-5">
-          <apexchart
-            width="100%"
-            height="380"
-            type="pie"
-            :options="optionsDonut"
-            :series="seriesDonut"
-          ></apexchart>
-          <div class="p-3"></div>
-          <br />
-          <hr />
-          <div class="footer p-5">
-            <div class="wrapper-button flex justify-between mt-3">
-              <select
-                name=""
-                id=""
-                class="dark:bg-gray-800 dark:hover:bg-gray-700 border dark:border-gray-700 max-w-lg px-4 py-3 block rounded-md text-gray-500 dark:text-gray-400"
-              >
-                <option value="">Last 7 years</option>
-              </select>
-              <button class="uppercase border-b border-red-600 text-red-600">
-                User Report
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div
-      class="mt-2 bg-white dark:bg-gray-800 p-5 w-full rounded-md box-border border dark:border-gray-700"
-    >
-      <h2 class="font-bold text-lg text-gray-800 dark:text-gray-200">
-        Latest Transactions
-      </h2>
-      <p class="text-gray-400 font-lexend font-normal">
-        This is a list of latest transactions
-      </p>
-      <div class="wrapping-table mt-10">
-        <table
-          class="w-full text-sm text-left text-gray-500 dark:text-gray-400 lg:overflow-auto overflow-x-scroll"
-        >
-          <thead
-            class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400"
-          >
-            <tr>
-              <th
-                scope="col"
-                class="uppercase px-6 py-3"
-              >
-                Transaction
-              </th>
-              <th
-                scope="col"
-                class="uppercase px-6 py-3"
-              >
-                Date & Time
-              </th>
-              <th
-                scope="col"
-                class="uppercase px-6 py-3"
-              >
-                Amount
-              </th>
-              <th
-                scope="col"
-                class="uppercase px-6 py-3"
-              >
-                Status
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr
-              class="bg-white border-b dark:bg-gray-800 dark:border-gray-700 odd:bg-white even:bg-gray-50"
-              v-for="items in tableTransaction"
-              :key="items.transaction"
-            >
-              <td class="px-6 py-4">
-                {{ items.transaction }}
-              </td>
-              <td class="px-6 py-4">
-                {{ items.datetime }}
-              </td>
-              <td class="px-6 py-4">
-                {{ items.amount }}
-              </td>
-              <td class="px-6 py-4">
-                <span
-                  class="text-green-800 bg-green-300 px-3 py-1 rounded-md"
-                  v-if="items.statusTransaction == 'completed'"
-                >
-                  {{ items.statusTransaction }}
-                </span>
-                <span
-                  class="text-purple-800 bg-purple-300 px-3 py-1 rounded-md"
-                  v-else-if="items.statusTransaction == 'progress'"
-                >
-                  {{ items.statusTransaction }}
-                </span>
-                <span
-                  class="text-red-800 bg-red-300 px-3 py-1 rounded-md"
-                  v-else
-                >
-                  {{ items.statusTransaction }}
-                </span>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-      <div class="wrapper-button flex justify-between mt-3">
-        <select
-          name=""
-          id=""
-          class="dark:bg-gray-800 dark:hover:bg-gray-700 border dark:border-gray-700 max-w-lg px-4 py-3 block rounded-md text-gray-500 dark:text-gray-400"
-        >
-          <option value="">Last 7 years</option>
-        </select>
-        <button class="uppercase border-b border-red-600 text-red-600">
-          Transaction Report
+
+    <!-- Recent Activity -->
+    <div class="mt-6 bg-white dark:bg-gray-800 p-6 rounded-md border dark:border-gray-700">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="font-medium text-sm text-gray-800 dark:text-gray-200">RECENT ACTIVITY</h2>
+        <button @click="viewAllActivity" class="text-primary text-sm hover:underline">
+          View All
         </button>
+      </div>
+      
+      <div class="space-y-3">
+        <div
+          v-for="activity in recentActivity"
+          :key="activity.id"
+          class="flex items-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg"
+        >
+          <div :class="`p-2 rounded-full ${getActivityColor(activity.type)}`">
+            <Icon :icon="getActivityIcon(activity.type)" class="text-white" />
+          </div>
+          <div class="ml-3 flex-1">
+            <p class="font-medium text-gray-900 dark:text-gray-200">{{ activity.title }}</p>
+            <p class="text-sm text-gray-500">{{ activity.description }}</p>
+          </div>
+          <span class="text-sm text-gray-400">{{ formatTime(activity.timestamp) }}</span>
+        </div>
       </div>
     </div>
   </div>
 </template>
-<script>
-  // @ is an alias to /src
-  import { Icon } from "@iconify/vue";
-  export default {
-    name: "Dashboard",
-    data() {
-      return {
-        // for more guide apexchart.js
-        // https://apexcharts.com/docs/chart-types/line-chart/
-        // chart data area
-        optionsArea: {
-          xaxis: {
-            categories: [2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022],
-          },
-          fontFamily: "Segoe UI, sans-serif",
-          stroke: {
-            curve: "straight",
-          },
-          chart: {
-            toolbar: {
-              show: true,
-            },
-            zoom: {
-              enabled: false,
-            },
-            sparkline: {
-              enabled: true,
-            },
-          },
-          markers: {
-            size: 0,
-          },
-          yaxis: {
-            show: false,
-          },
-          fill: {
-            type: "gradient",
-            gradient: {
-              shadeIntensity: 0,
-              opacityFrom: 0.2,
-              opacityTo: 0.5,
-              stops: [0, 90, 100],
-            },
-          },
-        },
-        chart: {
-          fontFamily: "lexend, sans-serif",
-        },
-        seriesArea: [
-          {
-            name: "Revenue",
-            data: [30, 40, 45, 50, 49, 60, 70, 91],
-          },
-          {
-            name: "Revenue (Previous period)",
-            data: [20, 34, 45, 55, 79, 87, 90, 98],
-          },
-        ],
-        optionsBar: {
-          chart: {
-            toolbar: {
-              show: false,
-            },
-            zoom: {
-              enabled: false,
-            },
-            sparkline: {
-              enabled: true,
-            },
-          },
-          legend: {
-            show: false,
-          },
-          xaxis: {
-            show: false,
-          },
-          yaxis: {
-            show: false,
-          },
-          colors: ["#4f46e5", "#DC2626"],
-          dataLabels: {
-            enabled: false,
-          },
-          stroke: {
-            curve: "straight",
-          },
-        },
-        seriesBar: [
-          {
-            name: "Product 1",
-            data: [30, 40, 45, 50, 49, 60, 70, 91],
-          },
-          {
-            name: "Product 2",
-            data: [20, 34, 45, 55, 79, 87, 90, 98],
-          },
-        ],
-        optionsVisitor: {
-          chart: {
-            toolbar: {
-              show: false,
-            },
-            zoom: {
-              enabled: false,
-            },
-            sparkline: {
-              enabled: true,
-            },
-          },
-          legend: {
-            show: false,
-          },
-          xaxis: {
-            show: false,
-          },
-          yaxis: {
-            show: false,
-          },
-          colors: ["#4f46e5"],
-          dataLabels: {
-            enabled: false,
-          },
-          fill: {
-            type: "gradient",
-            gradient: {
-              shadeIntensity: 0,
-              opacityFrom: 0,
-              opacityTo: 0.3,
-              stops: [0, 90, 100],
-            },
-          },
-          stroke: {
-            curve: "smooth",
-          },
-        },
-        seriesVisitor: [
-          {
-            name: "Visitor ",
-            data: [30, 40, 45, 50, 49, 60, 70, 91],
-          },
-        ],
-        optionsDonut: {
-          chart: {
-            type: "donut",
-          },
-          legend: false,
-          dataLabels: {
-            enabled: false,
-          },
-          labels: ["admin", "SuperAdmin", "User", "Costumer"],
-        },
-        seriesDonut: [20, 15, 63, 83],
-        tableTransaction: [
-          {
-            transaction: "Payment from Ethan Roger",
-            datetime: "Apr 22, 2022",
-            amount: "Rp.450.000",
-            statusTransaction: "completed",
-          },
-          {
-            transaction: "Payment from Taylor neal",
-            datetime: "May 2, 2022",
-            amount: "Rp.250.000",
-            statusTransaction: "completed",
-          },
-          {
-            transaction: "Payment from Tobi Ferreira",
-            datetime: "May 5, 2022",
-            amount: "Rp.150.000",
-            statusTransaction: "progress",
-          },
-          {
-            transaction: "Payment failed from #046577",
-            datetime: "May 5, 2022",
-            amount: "Rp.180.000",
-            statusTransaction: "cancelled",
-          },
-        ],
-      };
-      // end chart data line
-    },
-    components: {
-      Icon,
-    },
-    mounted() {},
-  };
+
+<script setup>
+import { ref, onMounted } from 'vue'
+import { Icon } from '@iconify/vue'
+import { useRouter } from 'vue-router'
+
+const router = useRouter()
+
+// State
+const selectedPeriod = ref('7d')
+const loading = ref(false)
+
+const periods = [
+  { label: '7D', value: '7d' },
+  { label: '1M', value: '1m' },
+  { label: '3M', value: '3m' },
+  { label: '1Y', value: '1y' }
+]
+
+const stats = ref({
+  totalConversations: 0,
+  conversationGrowth: 0,
+  activeUsers: 0,
+  userGrowth: 0,
+  botResponses: 0,
+  responseRate: 0,
+  activeConnections: 0
+})
+
+const recentActivity = ref([
+  {
+    id: 1,
+    type: 'conversation',
+    title: 'New conversation started',
+    description: 'User from Facebook Messenger started new chat',
+    timestamp: new Date(Date.now() - 5 * 60000)
+  },
+  {
+    id: 2,
+    type: 'bot_response',
+    title: 'Bot responded successfully',
+    description: 'PennyBot answered user query about pricing',
+    timestamp: new Date(Date.now() - 15 * 60000)
+  },
+  {
+    id: 3,
+    type: 'connection',
+    title: 'Facebook connection active',
+    description: 'Page "Customer Support" is online',
+    timestamp: new Date(Date.now() - 30 * 60000)
+  },
+  {
+    id: 4,
+    type: 'takeover',
+    title: 'Agent took over conversation',
+    description: 'Agent John assumed control of conversation #1234',
+    timestamp: new Date(Date.now() - 45 * 60000)
+  }
+])
+
+// Methods
+const refreshData = async () => {
+  loading.value = true
+  try {
+    // Fetch real statistics from API
+    const [conversationStats, takeoverStats] = await Promise.all([
+      fetch('/api/conversations/statistics').then(res => {
+        if (!res.ok) throw new Error('Failed to fetch conversation stats')
+        return res.json()
+      }).catch(() => ({ totalConversations: 0, growthRate: 0, activeUsers: 0, userGrowth: 0, botResponses: 0, responseRate: 0, activeConnections: 0 })),
+      
+      fetch('/api/takeover/active').then(res => {
+        if (!res.ok) throw new Error('Failed to fetch takeover stats')
+        return res.json()
+      }).catch(() => [])
+    ])
+    
+    // Update stats with real data
+    stats.value = {
+      totalConversations: conversationStats.totalConversations || 0,
+      conversationGrowth: conversationStats.growthRate || 0,
+      activeUsers: conversationStats.activeUsers || 0,
+      userGrowth: conversationStats.userGrowth || 0,
+      botResponses: conversationStats.botResponses || 0,
+      responseRate: conversationStats.responseRate || 0,
+      activeConnections: conversationStats.activeConnections || 0
+    }
+    
+    console.log('Dashboard data refreshed with real API data')
+  } catch (error) {
+    console.error('Failed to fetch dashboard data:', error)
+  } finally {
+    loading.value = false
+  }
+}
+
+const openSettings = () => {
+  router.push('/penny-rules')
+}
+
+const testBot = () => {
+  // TODO: Open bot test modal or navigate to test page
+  console.log('Test bot functionality')
+}
+
+const viewAllActivity = () => {
+  router.push('/messages')
+}
+
+const getActivityIcon = (type) => {
+  const icons = {
+    conversation: 'mdi:chat',
+    bot_response: 'mdi:robot',
+    connection: 'mdi:connection',
+    takeover: 'mdi:hand-right'
+  }
+  return icons[type] || 'mdi:information'
+}
+
+const getActivityColor = (type) => {
+  const colors = {
+    conversation: 'bg-blue-500',
+    bot_response: 'bg-green-500',
+    connection: 'bg-purple-500',
+    takeover: 'bg-orange-500'
+  }
+  return colors[type] || 'bg-gray-500'
+}
+
+const formatTime = (timestamp) => {
+  const now = new Date()
+  const diff = now - timestamp
+  const minutes = Math.floor(diff / 60000)
+  
+  if (minutes < 1) return 'Just now'
+  if (minutes < 60) return `${minutes}m ago`
+  
+  const hours = Math.floor(minutes / 60)
+  if (hours < 24) return `${hours}h ago`
+  
+  const days = Math.floor(hours / 24)
+  return `${days}d ago`
+}
+
+// Lifecycle
+onMounted(() => {
+  refreshData()
+})
 </script>
+
+<style scoped>
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+</style>

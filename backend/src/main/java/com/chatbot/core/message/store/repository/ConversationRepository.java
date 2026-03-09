@@ -88,4 +88,11 @@ public interface ConversationRepository extends JpaRepository<Conversation, Long
         @Param("tenantId") Long tenantId,
         Pageable pageable
     );
+
+    // 8. Tìm conversation theo ID và tenant
+    @Query("SELECT c FROM Conversation c WHERE c.id = :id AND c.tenantId = :tenantId")
+    Optional<Conversation> findByIdAndTenantId(
+        @Param("id") Long id,
+        @Param("tenantId") Long tenantId
+    );
 }

@@ -52,7 +52,7 @@
         <div class="wrap-item mt-4 dark:text-gray-500">
           <div class="item">
             <router-link
-              to="/"
+              to="/dashboard"
               exact
               class="w-full flex text-left rounded-md box-border p-3 hover:bg-gray-200 dark:hover:bg-gray-700"
             >
@@ -118,6 +118,23 @@
                   class="w-full text-left block rounded-md p-3 hover:bg-gray-200 dark:hover:bg-gray-700"
                 >
                   Rules
+                </router-link>
+              </template>
+            </menu-accordion>
+          </div>
+          <div class="item mt-3">
+            <menu-accordion>
+              <template v-slot:icon>
+                <Icon icon="mdi:message-text" />
+              </template>
+              <template v-slot:title> Messages </template>
+              <template v-slot:content>
+                <router-link
+                  to="/messages"
+                  @click.stop
+                  class="w-full text-left block rounded-md p-3 hover:bg-gray-200 dark:hover:bg-gray-700"
+                >
+                  Conversations
                 </router-link>
               </template>
             </menu-accordion>

@@ -378,4 +378,52 @@ public class ConversationService {
         );
     }
 
+    // --------------------------------------------------------------------------
+    // MISSING METHODS FOR FRONTEND API
+    // --------------------------------------------------------------------------
+
+    /**
+     * Get conversation by ID
+     */
+    public Conversation getConversationById(Long conversationId) {
+        Long tenantId = TenantContext.getTenantId();
+        return conversationRepo.findByIdAndTenantId(conversationId, tenantId)
+                .orElseThrow(() -> new RuntimeException("Conversation not found"));
+    }
+
+    /**
+     * Update conversation
+     */
+    public Conversation updateConversation(Long conversationId, Object conversationDTO, String ownerId) {
+        Conversation conversation = getConversationById(conversationId);
+        // TODO: Implement update logic based on DTO fields
+        return conversationRepo.save(conversation);
+    }
+
+    /**
+     * Search conversations
+     */
+    public Page<Conversation> searchConversations(String ownerId, String query, String channel, String dateRange, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("updatedAt").descending());
+        Long tenantId = TenantContext.getTenantId();
+        
+        // TODO: Implement search logic based on query parameters
+        return conversationRepo.findByOwnerIdAndTenantIdOrderByUpdatedAtDesc(ownerId, tenantId, pageable);
+    }
+
+    /**
+     * Get conversation statistics
+     */
+    public Object getConversationStatistics(String ownerId) {
+        Long tenantId = TenantContext.getTenantId();
+        
+        // TODO: Implement statistics calculation
+        return java.util.Map.of(
+            "totalConversations", 0,
+            "activeTakeovers", 0,
+            "pendingMessages", 0,
+            "todayMessages", 0
+        );
+    }
+
 }

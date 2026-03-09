@@ -48,7 +48,7 @@
             {{ $t('Select a Bot to View Rules') }}
           </h3>
           <p class="text-yellow-700 dark:text-yellow-300 mt-1">
-            {{ $t('Please select a bot from the dropdown above to view and manage its rules.') }}
+            {{ $t('selectBotToManageRules') }}
           </p>
         </div>
       </div>
