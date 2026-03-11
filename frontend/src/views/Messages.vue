@@ -216,6 +216,12 @@
           
           <!-- Messages Area -->
           <div ref="messagesContainer" class="flex-1 overflow-y-auto p-4 space-y-4">
+            <!-- Real-time Message Indicator -->
+            <RealTimeMessageIndicator
+              v-if="selectedConversation"
+              :conversation-id="String(selectedConversation.id)"
+            />
+            
             <div v-if="loadingMessages" class="text-center py-8">
               <Icon icon="mdi:loading" class="animate-spin text-2xl text-gray-400" />
               <p class="mt-2 text-gray-500">Loading messages...</p>
@@ -227,8 +233,15 @@
             </div>
             
             <div v-else>
-              <MessageBubble
+              <!-- Use RealTimeMessageBubble for messages with real-time features -->
+              <RealTimeMessageBubble
                 v-for="message in messages"
+                :key="message.id || `${message.timestamp}-${message.content}`"
+                :message="message"
+              />
+              <!-- Fallback to original MessageBubble for compatibility -->
+              <MessageBubble
+                v-for="message in messages.filter(m => !m.isRealtime)"
                 :key="message.id"
                 :message="message"
               />
@@ -240,19 +253,22 @@
             <div class="flex items-center gap-2">
               <input
                 v-model="newMessage"
-                @keydown.enter="sendMessage"
+                @input="startTyping"
+                @keydown.enter="sendRealTimeMessage"
+                @blur="stopTyping"
                 type="text"
                 placeholder="Type your message..."
-                :disabled="sendingMessage"
+                :disabled="sendingMessage || connectionStatus !== 'connected'"
                 class="flex-1 px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
               />
               <button
-                @click="sendMessage"
-                :disabled="!newMessage.trim() || sendingMessage"
-                class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg disabled:opacity-50"
+                @click="sendRealTimeMessage(newMessage)"
+                :disabled="sendingMessage || !newMessage.trim() || connectionStatus !== 'connected'"
+                class="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg flex items-center gap-2"
               >
                 <Icon v-if="sendingMessage" icon="mdi:loading" class="animate-spin" />
                 <Icon v-else icon="mdi:send" />
+                Send
               </button>
             </div>
           </div>
@@ -320,18 +336,24 @@
 </template>
 
 <script setup>
-import { ref, onMounted, nextTick, computed, watch } from 'vue'
+import { ref, onMounted, nextTick, computed, watch, onUnmounted } from 'vue'
 import { Icon } from '@iconify/vue'
 import { appApi as takeoverApi } from '@/api/takeoverApi'
 import { usePennyBotStore } from '@/stores/pennyBotStore'
 import { usePennyConnectionStore } from '@/stores/pennyConnectionStore'
 import { getRelativeTime } from '@/utils/dateUtils'
+import takeoverWebSocketService from '@/services/takeoverWebSocketService'
 import ConversationItem from './messages/ConversationItem.vue'
 import MessageBubble from './messages/MessageBubble.vue'
+import RealTimeMessageIndicator from '@/components/RealTimeMessageIndicator.vue'
+import RealTimeMessageBubble from '@/components/RealTimeMessageBubble.vue'
 
 // Stores
 const pennyBotStore = usePennyBotStore()
 const pennyConnectionStore = usePennyConnectionStore()
+
+// WebSocket Service
+const wsService = takeoverWebSocketService
 
 // State
 const conversations = ref([])
@@ -349,6 +371,15 @@ const filterConnection = ref('all')
 const newMessage = ref('')
 const showSearchModal = ref(false)
 const messagesContainer = ref(null)
+const searchTimeout = ref(null)
+
+// Real-time state
+const connectionStatus = ref('disconnected')
+const activeAgents = ref([])
+const typingAgents = ref([])
+const newMessageCount = ref(0)
+const isTyping = ref(false)
+const typingTimeout = ref(null)
 
 // Search modal state
 const searchModal = ref({
@@ -366,10 +397,9 @@ const stats = ref({
 })
 
 // Debounced search
-let searchTimeout
 const debouncedSearch = () => {
-  clearTimeout(searchTimeout)
-  searchTimeout = setTimeout(() => {
+  clearTimeout(searchTimeout.value)
+  searchTimeout.value = setTimeout(() => {
     loadConversations()
   }, 500)
 }
@@ -445,9 +475,19 @@ const loadMessages = async (conversationId) => {
   }
 }
 
-const selectConversation = (conversation) => {
+const selectConversation = async (conversation) => {
   selectedConversation.value = conversation
-  loadMessages(conversation.id)
+  
+  // Disconnect from previous conversation if any
+  if (wsService.currentConversationId.value) {
+    wsService.disconnect()
+  }
+  
+  // Connect to WebSocket for real-time updates
+  await wsService.connect(conversation.id)
+  
+  // Load messages
+  await loadMessages(conversation.id)
 }
 
 const takeOverConversation = async () => {
@@ -640,8 +680,136 @@ watch(filterConnection, () => {
   loadConversations()
 })
 
+// Real-time WebSocket event handlers
+const setupWebSocketHandlers = () => {
+  // Handle real-time messages
+  wsService.onMessageReceived = (message) => {
+    if (message.conversationId === selectedConversation.value?.id) {
+      // Add message to current conversation
+      messages.value.push(message)
+      
+      // Scroll to bottom
+      nextTick(() => {
+        scrollToBottom()
+      })
+      
+      // Mark message as read
+      if (message.id) {
+        wsService.markMessageRead(message.id)
+      }
+    }
+    
+    // Update conversation in list
+    const conversationIndex = conversations.value.findIndex(c => c.id === message.conversationId)
+    if (conversationIndex !== -1) {
+      conversations.value[conversationIndex].lastMessageAt = message.timestamp
+      conversations.value[conversationIndex].lastMessage = message.content
+    }
+    
+    // Update stats
+    loadStats()
+  }
+  
+  // Handle connection status changes
+  wsService.onConnectionStatusChanged = (status) => {
+    connectionStatus.value = status
+  }
+  
+  // Handle agent joining/leaving
+  wsService.onAgentJoined = (conversationId, agent) => {
+    if (conversationId === selectedConversation.value?.id) {
+      activeAgents.value = wsService.getActiveAgents(conversationId)
+    }
+  }
+  
+  wsService.onAgentLeft = (conversationId, agent) => {
+    if (conversationId === selectedConversation.value?.id) {
+      activeAgents.value = wsService.getActiveAgents(conversationId)
+    }
+  }
+  
+  // Handle typing indicators
+  wsService.onTypingStarted = (conversationId, agent) => {
+    if (conversationId === selectedConversation.value?.id) {
+      typingAgents.value = wsService.getTypingAgents(conversationId)
+    }
+  }
+  
+  wsService.onTypingStopped = (conversationId, agent) => {
+    if (conversationId === selectedConversation.value?.id) {
+      typingAgents.value = wsService.getTypingAgents(conversationId)
+    }
+  }
+}
+
+// Real-time message sending
+const sendRealTimeMessage = async (content) => {
+  if (!content.trim() || !selectedConversation.value) return
+  
+  try {
+    sendingMessage.value = true
+    
+    const message = {
+      conversationId: selectedConversation.value.id,
+      content: content.trim(),
+      sender: 'agent'
+    }
+    
+    const sentMessage = wsService.sendMessage(message)
+    if (sentMessage) {
+      // Add to local messages immediately for better UX
+      messages.value.push(sentMessage)
+      
+      // Clear input
+      newMessage.value = ''
+      
+      // Scroll to bottom
+      nextTick(() => {
+        scrollToBottom()
+      })
+    }
+  } catch (error) {
+    console.error('Error sending message:', error)
+  } finally {
+    sendingMessage.value = false
+  }
+}
+
+// Typing indicator handlers
+const startTyping = () => {
+  if (!isTyping.value && selectedConversation.value) {
+    isTyping.value = true
+    wsService.sendTypingStart(selectedConversation.value.id)
+  }
+  
+  // Clear existing timeout
+  if (typingTimeout.value) {
+    clearTimeout(typingTimeout.value)
+  }
+  
+  // Set new timeout to stop typing after 3 seconds
+  typingTimeout.value = setTimeout(() => {
+    stopTyping()
+  }, 3000)
+}
+
+const stopTyping = () => {
+  if (isTyping.value && selectedConversation.value) {
+    isTyping.value = false
+    wsService.sendTypingStop(selectedConversation.value.id)
+  }
+  
+  if (typingTimeout.value) {
+    clearTimeout(typingTimeout.value)
+    typingTimeout.value = null
+  }
+}
+
 // Lifecycle
 onMounted(async () => {
+  // Setup WebSocket handlers
+  setupWebSocketHandlers()
+  
   // Fetch bots data first
   await pennyBotStore.fetchPennyBots()
   // Fetch connections data (we'll fetch for all bots or first available bot)
@@ -655,6 +823,11 @@ onMounted(async () => {
   }
   // Load conversations with initial filters
   loadConversations()
+})
+
+onUnmounted(() => {
+  // Cleanup WebSocket connection
+  wsService.disconnect()
 })
 </script>
 
