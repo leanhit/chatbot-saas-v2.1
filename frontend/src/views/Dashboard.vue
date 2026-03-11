@@ -230,7 +230,7 @@
             <p class="font-medium text-gray-900 dark:text-gray-200">{{ activity.title }}</p>
             <p class="text-sm text-gray-500">{{ activity.description }}</p>
           </div>
-          <span class="text-sm text-gray-400">{{ formatTime(activity.timestamp) }}</span>
+          <span class="text-sm text-gray-400">{{ getRelativeTime(activity.timestamp) }}</span>
         </div>
       </div>
     </div>
@@ -241,6 +241,7 @@
 import { ref, onMounted } from 'vue'
 import { Icon } from '@iconify/vue'
 import { useRouter } from 'vue-router'
+import { getRelativeTime } from '@/utils/dateUtils'
 
 const router = useRouter()
 
@@ -363,21 +364,6 @@ const getActivityColor = (type) => {
     takeover: 'bg-orange-500'
   }
   return colors[type] || 'bg-gray-500'
-}
-
-const formatTime = (timestamp) => {
-  const now = new Date()
-  const diff = now - timestamp
-  const minutes = Math.floor(diff / 60000)
-  
-  if (minutes < 1) return 'Just now'
-  if (minutes < 60) return `${minutes}m ago`
-  
-  const hours = Math.floor(minutes / 60)
-  if (hours < 24) return `${hours}h ago`
-  
-  const days = Math.floor(hours / 24)
-  return `${days}d ago`
 }
 
 // Lifecycle

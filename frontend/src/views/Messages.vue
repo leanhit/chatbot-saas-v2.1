@@ -89,12 +89,19 @@
           <div class="flex items-center justify-between mb-4">
             <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-200">Conversations</h2>
             <div class="flex items-center gap-2">
-              <select v-model="filterStatus" @change="loadConversations" 
+              <select v-model="filterBot" @change="loadConversations" 
                 class="text-sm border rounded px-2 py-1 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-                <option value="all">All</option>
-                <option value="active">Active</option>
-                <option value="taken_over">Taken Over</option>
-                <option value="bot">Bot Only</option>
+                <option value="all">All Bots</option>
+                <option v-for="bot in pennyBotStore.activeBots" :key="bot.id" :value="bot.id">
+                  {{ bot.name || bot.botName || `Bot ${bot.id}` }}
+                </option>
+              </select>
+              <select v-model="filterConnection" @change="loadConversations" 
+                class="text-sm border rounded px-2 py-1 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                <option value="all">All Connections</option>
+                <option v-for="connection in pennyConnectionStore.activeConnections" :key="connection.id" :value="connection.id">
+                  {{ connection.name || connection.connectionName || `${connection.connectionType} - ${connection.id}` }}
+                </option>
               </select>
             </div>
           </div>
@@ -149,15 +156,29 @@
           <!-- Chat Header -->
           <div class="p-4 border-b dark:border-gray-700 flex items-center justify-between">
             <div class="flex items-center gap-3">
-              <div class="bg-gray-200 dark:bg-gray-600 rounded-full p-2">
-                <Icon :icon="getChannelIcon(selectedConversation.channel)" class="text-gray-600 dark:text-gray-300" />
+              <!-- User Avatar -->
+              <div class="flex-shrink-0">
+                <img 
+                  v-if="selectedConversation.userAvatar"
+                  :src="selectedConversation.userAvatar" 
+                  :alt="selectedConversation.userName || selectedConversation.externalUserId"
+                  class="w-12 h-12 rounded-full object-cover"
+                  @error="handleImageError"
+                />
+                <div 
+                  v-else
+                  class="w-12 h-12 rounded-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center"
+                >
+                  <Icon icon="mdi:account" class="text-gray-600 dark:text-gray-300 text-2xl" />
+                </div>
               </div>
+              
               <div>
                 <h3 class="font-semibold text-gray-900 dark:text-gray-200">
-                  {{ selectedConversation.externalUserId || 'Unknown User' }}
+                  {{ selectedConversation.userName || selectedConversation.externalUserId || 'Unknown User' }}
                 </h3>
                 <p class="text-sm text-gray-500">
-                  {{ selectedConversation.channel }} • {{ formatTime(selectedConversation.lastMessageAt) }}
+                  {{ selectedConversation.channel }} • {{ getRelativeTime(selectedConversation.lastMessageAt) }}
                 </p>
               </div>
             </div>
@@ -299,11 +320,18 @@
 </template>
 
 <script setup>
-import { ref, onMounted, nextTick, computed } from 'vue'
+import { ref, onMounted, nextTick, computed, watch } from 'vue'
 import { Icon } from '@iconify/vue'
 import { appApi as takeoverApi } from '@/api/takeoverApi'
+import { usePennyBotStore } from '@/stores/pennyBotStore'
+import { usePennyConnectionStore } from '@/stores/pennyConnectionStore'
+import { getRelativeTime } from '@/utils/dateUtils'
 import ConversationItem from './messages/ConversationItem.vue'
 import MessageBubble from './messages/MessageBubble.vue'
+
+// Stores
+const pennyBotStore = usePennyBotStore()
+const pennyConnectionStore = usePennyConnectionStore()
 
 // State
 const conversations = ref([])
@@ -316,7 +344,8 @@ const takingOver = ref(false)
 const releasing = ref(false)
 const sendingMessage = ref(false)
 const searchQuery = ref('')
-const filterStatus = ref('all')
+const filterBot = ref('all')
+const filterConnection = ref('all')
 const newMessage = ref('')
 const showSearchModal = ref(false)
 const messagesContainer = ref(null)
@@ -349,15 +378,45 @@ const debouncedSearch = () => {
 const loadConversations = async () => {
   try {
     loadingConversations.value = true
-    const params = {
-      page: 1,
-      limit: 50,
-      status: filterStatus.value !== 'all' ? filterStatus.value : undefined,
-      search: searchQuery.value || undefined
+    
+    console.log('Filter values - Bot:', filterBot.value, 'Connection:', filterConnection.value, 'Search:', searchQuery.value)
+    
+    let response
+    
+    // Use different endpoints based on filters
+    if (filterConnection.value !== 'all' && filterConnection.value !== undefined && filterConnection.value !== null) {
+      // Use connection-specific endpoint
+      const params = {
+        page: 0,
+        limit: 50,
+        search: searchQuery.value || undefined
+      }
+      console.log('Using connection-specific endpoint with params:', params)
+      response = await takeoverApi.getConversationsByConnectionId(filterConnection.value, params)
+    } else if (filterBot.value !== 'all' && filterBot.value !== undefined && filterBot.value !== null) {
+      // Use bot-specific endpoint
+      const params = {
+        ownerId: filterBot.value,
+        page: 0,
+        limit: 50,
+        search: searchQuery.value || undefined
+      }
+      console.log('Using bot-specific endpoint with params:', params)
+      response = await takeoverApi.getConversationsByOwnerId(params)
+    } else {
+      // Use general endpoint
+      const params = {
+        page: 0,
+        limit: 50,
+        search: searchQuery.value || undefined
+      }
+      console.log('Using general endpoint with params:', params)
+      response = await takeoverApi.getConversations(params)
     }
     
-    const response = await takeoverApi.getConversations(params)
     conversations.value = response.data.content || response.data || []
+    console.log('Loaded conversations:', conversations.value.length, 'items')
+    
   } catch (error) {
     console.error('Error loading conversations:', error)
     conversations.value = []
@@ -370,7 +429,7 @@ const loadMessages = async (conversationId) => {
   try {
     loadingMessages.value = true
     const response = await takeoverApi.getMessagesByConversationId(conversationId, {
-      page: 1,
+      page: 0,
       limit: 100
     })
     messages.value = response.data.content || response.data || []
@@ -517,7 +576,9 @@ const performSearch = async () => {
 
 const scrollToBottom = () => {
   if (messagesContainer.value) {
-    messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight
+    setTimeout(() => {
+      messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight
+    }, 100)
   }
 }
 
@@ -534,9 +595,66 @@ const getChannelIcon = (channel) => {
   }
 }
 
+const handleImageError = (event) => {
+  // Fallback to default avatar if image fails to load
+  event.target.style.display = 'none'
+  const parent = event.target.parentElement
+  if (parent) {
+    const fallback = parent.querySelector('.bg-gray-300, .dark\\:bg-gray-600')
+    if (fallback) {
+      fallback.style.display = 'flex'
+    }
+  }
+}
+
+// Watchers
+watch(filterBot, async (newBotId) => {
+  // Reset connection filter when bot changes
+  filterConnection.value = 'all'
+  
+  // Fetch connections for the selected bot
+  if (newBotId !== 'all') {
+    try {
+      await pennyConnectionStore.fetchConnections(newBotId)
+    } catch (error) {
+      console.warn('Failed to fetch connections for bot:', newBotId, error)
+    }
+  } else {
+    // If "all bots" selected, try to fetch connections for first active bot
+    const activeBots = pennyBotStore.activeBots
+    if (activeBots.length > 0) {
+      try {
+        await pennyConnectionStore.fetchConnections(activeBots[0].id)
+      } catch (error) {
+        console.warn('Failed to fetch connections:', error)
+      }
+    }
+  }
+  
+  // Reload conversations with new filters
+  loadConversations()
+})
+
+watch(filterConnection, () => {
+  // Reload conversations when connection filter changes
+  loadConversations()
+})
+
 // Lifecycle
-onMounted(() => {
-  refreshConversations()
+onMounted(async () => {
+  // Fetch bots data first
+  await pennyBotStore.fetchPennyBots()
+  // Fetch connections data (we'll fetch for all bots or first available bot)
+  try {
+    const activeBots = pennyBotStore.activeBots
+    if (activeBots.length > 0) {
+      await pennyConnectionStore.fetchConnections(activeBots[0].id)
+    }
+  } catch (error) {
+    console.warn('Failed to fetch connections:', error)
+  }
+  // Load conversations with initial filters
+  loadConversations()
 })
 </script>
 

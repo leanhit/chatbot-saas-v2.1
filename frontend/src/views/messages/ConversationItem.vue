@@ -7,27 +7,47 @@
     ]"
   >
     <div class="flex items-start justify-between">
-      <div class="flex-1 min-w-0">
-        <div class="flex items-center gap-2 mb-1">
-          <h3 class="font-medium text-gray-900 dark:text-gray-200 truncate">
-            {{ conversation.externalUserId || 'Unknown User' }}
-          </h3>
-          <span v-if="conversation.isTakenOver" 
-            class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">
-            <Icon icon="mdi:hand-right" class="inline mr-1" />
-            Taken Over
-          </span>
+      <div class="flex items-start gap-3 flex-1 min-w-0">
+        <!-- User Avatar -->
+        <div class="flex-shrink-0">
+          <img 
+            v-if="conversation.userAvatar"
+            :src="conversation.userAvatar" 
+            :alt="conversation.userName || conversation.externalUserId"
+            class="w-10 h-10 rounded-full object-cover"
+            @error="handleImageError"
+          />
+          <div 
+            v-else
+            class="w-10 h-10 rounded-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center"
+          >
+            <Icon icon="mdi:account" class="text-gray-600 dark:text-gray-300 text-xl" />
+          </div>
         </div>
-        <p class="text-sm text-gray-600 dark:text-gray-400 truncate">
-          {{ conversation.lastMessage || 'No messages yet' }}
-        </p>
-        <div class="flex items-center gap-2 mt-1">
-          <span class="text-xs text-gray-500">
-            {{ formatTime(conversation.lastMessageAt) }}
-          </span>
-          <span class="text-xs text-gray-400">
-            {{ conversation.channel }}
-          </span>
+        
+        <!-- Message Content -->
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center gap-2 mb-1">
+            <h3 class="font-medium text-gray-900 dark:text-gray-200 truncate">
+              {{ conversation.userName || conversation.externalUserId || 'Unknown User' }}
+            </h3>
+            <span v-if="conversation.isTakenOver" 
+              class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">
+              <Icon icon="mdi:hand-right" class="inline mr-1" />
+              Taken Over
+            </span>
+          </div>
+          <p class="text-sm text-gray-600 dark:text-gray-400 truncate">
+            {{ conversation.lastMessage || 'No messages yet' }}
+          </p>
+          <div class="flex items-center gap-2 mt-1">
+            <span class="text-xs text-gray-500">
+              {{ getRelativeTime(conversation.lastMessageAt) }}
+            </span>
+            <span class="text-xs text-gray-400">
+              {{ conversation.channel }}
+            </span>
+          </div>
         </div>
       </div>
       <div class="flex flex-col items-end gap-1">
@@ -44,6 +64,7 @@
 
 <script setup>
 import { Icon } from '@iconify/vue'
+import { getRelativeTime } from '@/utils/dateUtils'
 
 const props = defineProps({
   conversation: {
@@ -58,23 +79,6 @@ const props = defineProps({
 
 defineEmits(['select'])
 
-const formatTime = (dateString) => {
-  if (!dateString) return 'Unknown'
-  const date = new Date(dateString)
-  const now = new Date()
-  const diffMs = now - date
-  const diffMins = Math.floor(diffMs / 60000)
-  const diffHours = Math.floor(diffMs / 3600000)
-  const diffDays = Math.floor(diffMs / 86400000)
-  
-  if (diffMins < 1) return 'Just now'
-  if (diffMins < 60) return `${diffMins}m ago`
-  if (diffHours < 24) return `${diffHours}h ago`
-  if (diffDays < 7) return `${diffDays}d ago`
-  
-  return date.toLocaleDateString()
-}
-
 const getChannelIcon = (channel) => {
   switch (channel) {
     case 'FACEBOOK':
@@ -85,6 +89,18 @@ const getChannelIcon = (channel) => {
       return 'mdi:message-text'
     default:
       return 'mdi:chat'
+  }
+}
+
+const handleImageError = (event) => {
+  // Fallback to default avatar if image fails to load
+  event.target.style.display = 'none'
+  const parent = event.target.parentElement
+  if (parent) {
+    const fallback = parent.querySelector('.bg-gray-300, .dark\\:bg-gray-600')
+    if (fallback) {
+      fallback.style.display = 'flex'
+    }
   }
 }
 </script>

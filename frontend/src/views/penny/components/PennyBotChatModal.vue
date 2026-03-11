@@ -68,7 +68,7 @@
                 </div>
                 <div class="message-bubble">
                   <p class="message-text">{{ message.text }}</p>
-                  <p class="message-time">{{ formatTime(message.timestamp) }}</p>
+                  <p class="message-time">{{ getRelativeTime(message.timestamp) }}</p>
                 </div>
               </div>
             </div>
@@ -141,9 +141,10 @@
 </template>
 
 <script>
-import { ref, computed, nextTick, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import { Icon } from '@iconify/vue'
 import { useI18n } from 'vue-i18n'
+import { getRelativeTime } from '@/utils/dateUtils'
 import { usePennyBotStore } from '@/stores/pennyBotStore'
 import {
   PennyBotType,
@@ -293,16 +294,6 @@ export default {
       return PennyBotTypeDisplay[botType] || botType
     }
 
-    const formatTime = (timestamp) => {
-      if (!timestamp) return ''
-      const date = new Date(timestamp)
-      return date.toLocaleTimeString('en-US', { 
-        hour: '2-digit', 
-        minute: '2-digit',
-        hour12: false 
-      })
-    }
-
     const switchMode = (testMode) => {
       emit('modeChanged', testMode)
     }
@@ -333,7 +324,7 @@ export default {
       closeOnBackdrop,
       getBotTypeIcon,
       getBotTypeDisplayName,
-      formatTime,
+      getRelativeTime,
       switchMode
     }
   }
