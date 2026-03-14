@@ -8,6 +8,17 @@
   >
     <div class="flex items-start justify-between">
       <div class="flex items-start gap-3 flex-1 min-w-0">
+        <!-- Selection Checkbox -->
+        <div class="flex-shrink-0 mt-1">
+          <input
+            type="checkbox"
+            :checked="isSelectedForDeletion"
+            @change="$emit('toggle-select')"
+            @click.stop
+            class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+          />
+        </div>
+        
         <!-- User Avatar -->
         <div class="flex-shrink-0">
           <img 
@@ -74,10 +85,14 @@ const props = defineProps({
   isSelected: {
     type: Boolean,
     default: false
+  },
+  isSelectedForDeletion: {
+    type: Boolean,
+    default: false
   }
 })
 
-defineEmits(['select'])
+defineEmits(['select', 'toggle-select'])
 
 const getChannelIcon = (channel) => {
   switch (channel) {

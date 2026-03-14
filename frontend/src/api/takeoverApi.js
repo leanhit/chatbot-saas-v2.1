@@ -70,7 +70,14 @@ export const appApi = {
         return axios.get('/takeover/active');
     },
     // -------------------------
-    // 8. Get Conversation Statistics
+    // 8. Delete Conversation
+    // ENDPOINT: DELETE /api/conversations/{conversationId}
+    // -------------------------
+    deleteConversation(conversationId) {
+        return axios.delete(`/conversations/${conversationId}`);
+    },
+    // -------------------------
+    // 9. Get Conversation Statistics
     // ENDPOINT: GET /api/conversations/statistics
     // -------------------------
     getConversationStatistics(params) {

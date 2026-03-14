@@ -30,57 +30,6 @@
       </div>
     </div>
 
-    <!-- Statistics Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-      <div class="bg-white dark:bg-gray-800 p-4 rounded-lg border dark:border-gray-700">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-sm text-gray-600 dark:text-gray-400">Total Conversations</p>
-            <p class="text-2xl font-bold text-gray-900 dark:text-gray-200">{{ stats.totalConversations }}</p>
-          </div>
-          <div class="bg-blue-100 dark:bg-blue-900 p-3 rounded-full">
-            <Icon icon="mdi:chat" class="text-blue-600 dark:text-blue-400 text-xl" />
-          </div>
-        </div>
-      </div>
-      
-      <div class="bg-white dark:bg-gray-800 p-4 rounded-lg border dark:border-gray-700">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-sm text-gray-600 dark:text-gray-400">Active Takeovers</p>
-            <p class="text-2xl font-bold text-gray-900 dark:text-gray-200">{{ stats.activeTakeovers }}</p>
-          </div>
-          <div class="bg-green-100 dark:bg-green-900 p-3 rounded-full">
-            <Icon icon="mdi:hand-right" class="text-green-600 dark:text-green-400 text-xl" />
-          </div>
-        </div>
-      </div>
-      
-      <div class="bg-white dark:bg-gray-800 p-4 rounded-lg border dark:border-gray-700">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-sm text-gray-600 dark:text-gray-400">Pending Messages</p>
-            <p class="text-2xl font-bold text-gray-900 dark:text-gray-200">{{ stats.pendingMessages }}</p>
-          </div>
-          <div class="bg-yellow-100 dark:bg-yellow-900 p-3 rounded-full">
-            <Icon icon="mdi:clock" class="text-yellow-600 dark:text-yellow-400 text-xl" />
-          </div>
-        </div>
-      </div>
-      
-      <div class="bg-white dark:bg-gray-800 p-4 rounded-lg border dark:border-gray-700">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-sm text-gray-600 dark:text-gray-400">Today's Messages</p>
-            <p class="text-2xl font-bold text-gray-900 dark:text-gray-200">{{ stats.todayMessages }}</p>
-          </div>
-          <div class="bg-purple-100 dark:bg-purple-900 p-3 rounded-full">
-            <Icon icon="mdi:message" class="text-purple-600 dark:text-purple-400 text-xl" />
-          </div>
-        </div>
-      </div>
-    </div>
-
     <!-- Main Content -->
     <div class="flex gap-4" style="min-height: 600px;">
       <!-- Conversations List -->
@@ -89,6 +38,7 @@
           <div class="flex items-center justify-between mb-4">
             <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-200">Conversations</h2>
             <div class="flex items-center gap-2">
+              <!-- Filter Controls -->
               <select v-model="filterBot" @change="loadConversations" 
                 class="text-sm border rounded px-2 py-1 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
                 <option value="all">All Bots</option>
@@ -106,16 +56,37 @@
             </div>
           </div>
           
-          <!-- Search -->
-          <div class="relative">
-            <input
-              v-model="searchQuery"
-              @input="debouncedSearch"
-              type="text"
-              placeholder="Search conversations..."
-              class="w-full pl-10 pr-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-            />
-            <Icon icon="mdi:magnify" class="absolute left-3 top-2.5 text-gray-400" />
+          <!-- Selection Controls -->
+          <div v-if="conversations.length > 0" class="flex items-center justify-between">
+            <!-- Select All -->
+            <div class="flex items-center gap-2">
+              <input
+                type="checkbox"
+                :checked="allSelected"
+                @change="toggleSelectAll"
+                class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              />
+              <label 
+                @click="toggleSelectAll"
+                class="text-sm text-gray-600 dark:text-gray-400 cursor-pointer hover:text-gray-800 dark:hover:text-gray-200"
+              >
+                select all
+              </label>
+            </div>
+            
+            <!-- Delete with Count -->
+            <div v-if="selectedConversations.size > 0" class="flex items-center gap-2">
+              <button
+                @click="deleteSelectedConversations"
+                class="text-sm bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded flex items-center gap-1"
+              >
+                <Icon icon="mdi:delete" />
+                delete
+              </button>
+              <span class="text-sm text-gray-600 dark:text-gray-400">
+                - {{ selectedConversations.size }} conversations selected
+              </span>
+            </div>
           </div>
         </div>
         
@@ -137,8 +108,65 @@
               :key="conversation.id"
               :conversation="conversation"
               :is-selected="selectedConversation?.id === conversation.id"
+              :is-selected-for-deletion="isConversationSelected(conversation.id)"
               @select="selectConversation(conversation)"
+              @toggle-select="toggleConversationSelection(conversation.id)"
             />
+          </div>
+          
+          <!-- Pagination -->
+          <div v-if="totalPages > 1" class="p-4 border-t dark:border-gray-700 bg-gray-50 dark:bg-gray-700">
+            <div class="flex items-center justify-between">
+              <div class="text-sm text-gray-600 dark:text-gray-400">
+                Showing {{ conversations.length }} of {{ totalElements }} conversations
+              </div>
+              <div class="flex items-center gap-2">
+                <!-- First Page -->
+                <button
+                  @click="firstPage"
+                  :disabled="currentPage === 0"
+                  class="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="First page"
+                >
+                  <Icon icon="mdi:page-first" class="text-gray-600 dark:text-gray-400" />
+                </button>
+                
+                <!-- Previous Page -->
+                <button
+                  @click="prevPage"
+                  :disabled="currentPage === 0"
+                  class="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="Previous page"
+                >
+                  <Icon icon="mdi:chevron-left" class="text-gray-600 dark:text-gray-400" />
+                </button>
+                
+                <!-- Page Info -->
+                <span class="text-sm text-gray-600 dark:text-gray-400 px-2">
+                  Page {{ currentPage + 1 }} of {{ totalPages }}
+                </span>
+                
+                <!-- Next Page -->
+                <button
+                  @click="nextPage"
+                  :disabled="currentPage >= totalPages - 1"
+                  class="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="Next page"
+                >
+                  <Icon icon="mdi:chevron-right" class="text-gray-600 dark:text-gray-400" />
+                </button>
+                
+                <!-- Last Page -->
+                <button
+                  @click="lastPage"
+                  :disabled="currentPage >= totalPages - 1"
+                  class="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="Last page"
+                >
+                  <Icon icon="mdi:page-last" class="text-gray-600 dark:text-gray-400" />
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -351,6 +379,7 @@ const wsService = takeoverWebSocketService
 // State
 const conversations = ref([])
 const selectedConversation = ref(null)
+const selectedConversations = ref(new Set()) // For multi-selection
 const messages = ref([])
 const loading = ref(false)
 const loadingConversations = ref(false)
@@ -358,13 +387,80 @@ const loadingMessages = ref(false)
 const takingOver = ref(false)
 const releasing = ref(false)
 const sendingMessage = ref(false)
-const searchQuery = ref('')
 const filterBot = ref('all')
 const filterConnection = ref('all')
+
+// Pagination
+const currentPage = ref(0)
+const totalPages = ref(0)
+const pageSize = ref(20)
+const totalElements = ref(0)
+
+// Computed properties for selection
+const allSelected = computed(() => {
+  return conversations.value.length > 0 && selectedConversations.value.size === conversations.value.length
+})
+
+// Selection methods
+const toggleSelectAll = () => {
+  if (allSelected.value) {
+    selectedConversations.value.clear()
+  } else {
+    conversations.value.forEach(conv => selectedConversations.value.add(conv.id))
+  }
+}
+
+const toggleConversationSelection = (conversationId) => {
+  if (selectedConversations.value.has(conversationId)) {
+    selectedConversations.value.delete(conversationId)
+  } else {
+    selectedConversations.value.add(conversationId)
+  }
+}
+
+const isConversationSelected = (conversationId) => {
+  return selectedConversations.value.has(conversationId)
+}
+
+const deleteSelectedConversations = async () => {
+  if (selectedConversations.value.size === 0) return
+  
+  if (!confirm(`Are you sure you want to delete ${selectedConversations.value.size} conversation(s)?`)) {
+    return
+  }
+  
+  try {
+    loading.value = true
+    
+    // Store current selected conversation ID before clearing
+    const currentSelectedId = selectedConversation.value?.id
+    const deletedIds = Array.from(selectedConversations.value)
+    
+    // Delete each selected conversation
+    for (const conversationId of selectedConversations.value) {
+      await takeoverApi.deleteConversation(conversationId)
+    }
+    
+    // Clear selection and reload
+    selectedConversations.value.clear()
+    await loadConversations()
+    
+    // Clear selected conversation if it was deleted
+    if (currentSelectedId && deletedIds.includes(currentSelectedId)) {
+      selectedConversation.value = null
+      messages.value = []
+    }
+    
+  } catch (error) {
+    console.error('Error deleting conversations:', error)
+    alert('Failed to delete conversations. Please try again.')
+  } finally {
+    loading.value = false
+  }
+}
 const newMessage = ref('')
 const showSearchModal = ref(false)
 const messagesContainer = ref(null)
-const searchTimeout = ref(null)
 
 // Real-time state
 const connectionStatus = ref('disconnected')
@@ -407,14 +503,6 @@ const isDuplicateMessage = (newMessage, existingMessages) => {
   })
 }
 
-// Debounced search
-const debouncedSearch = () => {
-  clearTimeout(searchTimeout.value)
-  searchTimeout.value = setTimeout(() => {
-    loadConversations()
-  }, 500)
-}
-
 // Computed properties
 const sortedMessages = computed(() => {
   if (!messages.value) return []
@@ -432,43 +520,54 @@ const loadConversations = async () => {
   try {
     loadingConversations.value = true
     
-    console.log('Filter values - Bot:', filterBot.value, 'Connection:', filterConnection.value, 'Search:', searchQuery.value)
+    console.log('Filter values - Bot:', filterBot.value, 'Connection:', filterConnection.value)
     
     let response
     
     // Use different endpoints based on filters
-    if (filterConnection.value !== 'all' && filterConnection.value !== undefined && filterConnection.value !== null) {
-      // Use connection-specific endpoint
+    if (filterConnection.value !== 'all') {
       const params = {
-        page: 0,
-        limit: 50,
-        search: searchQuery.value || undefined
+        page: currentPage.value,
+        limit: pageSize.value
       }
       console.log('Using connection-specific endpoint with params:', params)
       response = await takeoverApi.getConversationsByConnectionId(filterConnection.value, params)
-    } else if (filterBot.value !== 'all' && filterBot.value !== undefined && filterBot.value !== null) {
-      // Use bot-specific endpoint
+    } else if (filterBot.value !== 'all') {
       const params = {
         ownerId: filterBot.value,
-        page: 0,
-        limit: 50,
-        search: searchQuery.value || undefined
+        page: currentPage.value,
+        limit: pageSize.value
       }
       console.log('Using bot-specific endpoint with params:', params)
       response = await takeoverApi.getConversationsByOwnerId(params)
     } else {
-      // Use general endpoint
       const params = {
-        page: 0,
-        limit: 50,
-        search: searchQuery.value || undefined
+        page: currentPage.value,
+        limit: pageSize.value
       }
       console.log('Using general endpoint with params:', params)
       response = await takeoverApi.getConversations(params)
     }
     
     conversations.value = response.data.content || response.data || []
+    
+    // Update pagination info
+    if (response.data.totalElements !== undefined) {
+      totalElements.value = response.data.totalElements
+      totalPages.value = Math.ceil(totalElements.value / pageSize.value)
+    } else {
+      // Fallback for non-paginated responses
+      totalElements.value = conversations.value.length
+      totalPages.value = 1
+    }
+    
     console.log('Loaded conversations:', conversations.value.length, 'items')
+    console.log('Pagination info:', {
+      page: currentPage.value,
+      totalPages: totalPages.value,
+      totalElements: totalElements.value,
+      pageSize: pageSize.value
+    })
     
     // Auto-select first conversation if none selected and conversations exist
     if (!selectedConversation.value && conversations.value.length > 0) {
@@ -625,6 +724,42 @@ const loadStats = async () => {
     }
   } catch (error) {
     console.error('Error loading stats:', error)
+  }
+}
+
+// Pagination methods
+const goToPage = (page) => {
+  if (page >= 0 && page < totalPages.value) {
+    currentPage.value = page
+    loadConversations()
+  }
+}
+
+const nextPage = () => {
+  if (currentPage.value < totalPages.value - 1) {
+    currentPage.value++
+    loadConversations()
+  }
+}
+
+const prevPage = () => {
+  if (currentPage.value > 0) {
+    currentPage.value--
+    loadConversations()
+  }
+}
+
+const firstPage = () => {
+  if (currentPage.value !== 0) {
+    currentPage.value = 0
+    loadConversations()
+  }
+}
+
+const lastPage = () => {
+  if (currentPage.value !== totalPages.value - 1) {
+    currentPage.value = totalPages.value - 1
+    loadConversations()
   }
 }
 

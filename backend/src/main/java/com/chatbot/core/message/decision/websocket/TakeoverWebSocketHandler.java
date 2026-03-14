@@ -7,6 +7,7 @@ import com.chatbot.spokes.facebook.connection.repository.FacebookConnectionRepos
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.TextMessage;
@@ -45,10 +46,18 @@ public class TakeoverWebSocketHandler extends TextWebSocketHandler {
     private final ConcurrentMap<String, String> sessionToConversationMap = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, LocalDateTime> sessionLastActivity = new ConcurrentHashMap<>();
     
-    // Connection health monitoring
+    // Connection health monitoring with configuration
     private final ScheduledExecutorService heartbeatExecutor = new ScheduledThreadPoolExecutor(1);
-    private static final long CONNECTION_TIMEOUT_MS = 300000; // 5 minutes
-    private static final long HEARTBEAT_INTERVAL_MS = 30000; // 30 seconds
+    
+    @Value("${websocket.health-check.enabled:false}")
+    private boolean healthCheckEnabled;
+    
+    @Value("${websocket.health-check.interval:120000}")
+    private long healthCheckInterval;
+    
+    @Value("${websocket.connection.timeout:300000}")
+    private long connectionTimeoutMs;
+    
     private static final int MAX_CONNECTIONS_PER_CONVERSATION = 10;
 
     @Override
@@ -202,12 +211,20 @@ public class TakeoverWebSocketHandler extends TextWebSocketHandler {
         }
     }
 
-    // Scheduled heartbeat and cleanup tasks
-    @Scheduled(fixedRate = 30000) // Every 30 seconds
+    // Scheduled heartbeat and cleanup tasks - CONDITIONAL EXECUTION
+    @Scheduled(fixedRateString = "${websocket.health-check.interval:120000}")
     public void performConnectionHealthCheck() {
+        // Skip if health check is disabled
+        if (!healthCheckEnabled) {
+            log.debug("🔧 WebSocket health check is disabled");
+            return;
+        }
+        
         try {
+            log.debug("🔍 Performing WebSocket health check (interval: {}ms)", healthCheckInterval);
+            
             // Remove inactive sessions
-            LocalDateTime cutoff = LocalDateTime.now().minus(CONNECTION_TIMEOUT_MS, ChronoUnit.MILLIS);
+            LocalDateTime cutoff = LocalDateTime.now().minus(connectionTimeoutMs, ChronoUnit.MILLIS);
             
             sessionLastActivity.entrySet().removeIf(entry -> {
                 if (entry.getValue().isBefore(cutoff)) {
@@ -232,7 +249,8 @@ public class TakeoverWebSocketHandler extends TextWebSocketHandler {
                 return false;
             });
 
-            // Send heartbeat to active sessions
+            // Send heartbeat ONLY to sessions that haven't received messages recently
+            // This reduces network overhead significantly
             Map<String, Object> heartbeatMessage = Map.of(
                 "type", "HEARTBEAT",
                 "timestamp", System.currentTimeMillis()
@@ -241,20 +259,29 @@ public class TakeoverWebSocketHandler extends TextWebSocketHandler {
             TextMessage heartbeatTextMessage = new TextMessage(heartbeatPayload);
             
             int activeSessions = 0;
+            int heartbeatSent = 0;
             for (Set<WebSocketSession> sessions : conversationSessions.values()) {
                 for (WebSocketSession session : sessions) {
                     if (session.isOpen()) {
-                        try {
-                            session.sendMessage(heartbeatTextMessage);
-                            activeSessions++;
-                        } catch (Exception e) {
-                            log.warn("⚠️ WebSocket: Failed to send heartbeat to session {}: {}", session.getId(), e.getMessage());
+                        activeSessions++;
+                        
+                        // Only send heartbeat if session hasn't been active recently
+                        LocalDateTime lastActivity = sessionLastActivity.get(session.getId());
+                        if (lastActivity != null && lastActivity.isBefore(LocalDateTime.now().minus(healthCheckInterval / 2, ChronoUnit.MILLIS))) {
+                            try {
+                                session.sendMessage(heartbeatTextMessage);
+                                heartbeatSent++;
+                            } catch (Exception e) {
+                                log.warn("⚠️ WebSocket: Failed to send heartbeat to session {}: {}", session.getId(), e.getMessage());
+                            }
                         }
                     }
                 }
             }
             
-            log.debug("💓 WebSocket: Heartbeat sent to {} active sessions", activeSessions);
+            if (heartbeatSent > 0) {
+                log.debug("💓 WebSocket: Heartbeat sent to {} of {} active sessions", heartbeatSent, activeSessions);
+            }
             
         } catch (Exception e) {
             log.error("❌ WebSocket: Error during health check: {}", e.getMessage());
