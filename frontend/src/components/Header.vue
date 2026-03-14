@@ -1,235 +1,247 @@
 <template>
-  <!-- this header -->
-  <header class="bg-white dark:bg-gray-800 p-2 border-b-2 dark:border-gray-700">
-    <div class="wrap-header flex items-center gap-5 justify-between flex-wrap">
-      <div class="flex flex-no-shrink items-center">
-        <!-- Sidebar Toggle Button (Desktop) -->
-        <button
-          @click="handleSidebarToggle"
-          class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 mr-3 transition-colors p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
-          title="Toggle Sidebar"
-        >
-          <Icon :icon="sidebarOpen ? 'mdi:chevron-left' : 'mdi:chevron-right'" class="text-xl" />
-        </button>
-        <!-- Sidebar Toggle Button (Mobile) -->
-        <button
-          class="text-gray-500 lg:hidden ml-3 block"
-          @click="$emit('sidebarToggle', true)"
-        >
-          <Icon :icon="sidebarOpen ? 'mdi:chevron-left' : 'mdi:chevron-right'" class="text-xl" />
-        </button>
-        <div
-          class="input-box border dark:bg-gray-900 lg:ml-0 ml-5 dark:border-gray-700 rounded-md hidden lg:w-search w-full box-border lg:flex md:flex focus-within:bg-gray-100 dark:focus-within:bg-gray-700 relative"
-        >
-          <span class="text-3xl p-2 text-gray-400"
-            ><Icon icon="ei:search"
-          /></span>
-          <input
-            type="text"
-            v-model="searchStore.searchQuery"
-            :placeholder="searchPlaceholder"
-            class="p-3 w-full bg-white dark:bg-gray-900 dark:text-gray-400 rounded-md outline-none focus:bg-gray-100 dark:focus:bg-gray-700 pr-10"
-          />
-          <!-- Clear button -->
+  <!-- Modern Header -->
+  <header class="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 shadow-sm">
+    <div class="px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16">
+        <!-- Left Section -->
+        <div class="flex items-center">
+          <!-- Sidebar Toggle Button -->
           <button
-            v-if="searchStore.hasQuery"
-            @click="searchStore.clearSearch"
-            class="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-1"
+            @click="handleSidebarToggle"
+            class="p-2 rounded-lg text-gray-500 hover:text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-800 transition-all duration-200"
+            title="Toggle Sidebar"
           >
-            <Icon icon="mdi:close" class="h-4 w-4" />
+            <Icon :icon="sidebarOpen ? 'mdi:menu-open' : 'mdi:menu'" class="text-xl" />
           </button>
-        </div>
-        <!-- Search Context Indicator -->
-        <SearchContextIndicator />
-      </div>
-      <div class="mr-5 flex gap-3" v-if="authStore.isLoggedIn">
-        <!-- Language Switcher -->
-        <LanguageSwitcher />
-        <!-- btn dark mode -->
-        <button class="lg:hidden block mr-5 text-2xl text-gray-500 relative">
-          <i>
-            <Icon icon="ic:outline-search" />
-          </i>
-        </button>
-        <button
-          @click="fullscreenToggle"
-          class="mr-5 text-2xl text-gray-500 relative"
-        >
-          <i v-if="!fullscreenMode">
-            <Icon icon="ic:outline-fullscreen" />
-          </i>
-          <i v-else>
-            <Icon icon="ic:outline-fullscreen-exit" />
-          </i>
-        </button>
-        <button
-          @click="setTheme(true)"
-          class="mr-5 text-2xl text-gray-500"
-          v-if="!darkMode"
-        >
-          <Icon icon="ph:sun-dim" />
-        </button>
-        <button
-          @click="setTheme(false)"
-          v-else
-          class="mr-5 text-2xl text-gray-500"
-        >
-          <Icon icon="ri:moon-fill" />
-        </button>
-        <!-- btn notification -->
-        <button
-          @click="notifToggle"
-          class="mr-5 text-2xl text-gray-500 relative"
-        >
-          <i
-            class="bg-red-500 rounded-full p-1.5 border border-white dark:border-gray-700 -mt-1 absolute"
-          ></i>
-          <Icon icon="clarity:notification-line" />
-        </button>
-        <transition name="fade">
-          <div
-            id="notificaitons"
-            v-show="notification"
-            class="block absolute lg:right-56 right-28 mt-12 z-50 w-96 border dark:border-gray-700 bg-white dark:bg-gray-800 rounded divide-y dark:divide-gray-700 divide-gray-100 shadow"
-          >
-            <!-- head notification -->
-            <div
-              class="flex justify-between p-3 text-gray-800 dark:text-gray-300"
-            >
-              <h2>{{ $t('navbar.notifications') }}</h2>
-              <button class="text-blue-500 text-sm">{{ $t('navbar.markAllAsRead') }}</button>
-            </div>
-            <div
-              class="p-5 text-center"
-              v-if="!notifList.length"
-            >
-              <p class="text-gray-800 dark:text-gray-300">
-                {{ $t('profile.noData') || 'No notifications yet.' }}
-              </p>
-            </div>
-            <div
-              class="p-2 pl-3 w-full"
-              v-for="(item, index) in notifList"
-              :key="index"
-            >
-              <div class="flex gap-5">
-                <div>
-                  <img
-                    class="w-9 rounded-full"
-                    :src="imageAssets(item.image)"
-                    alt=""
-                  />
-                </div>
-                <div class="mt-1">
-                  <div class="flex gap-3">
-                    <h2 class="dark:text-gray-200">{{ item.name }}</h2>
-                    <p class="dark:text-gray-500 text-gray-400 text-xs">
-                      {{ limitText(item.message) }}
-                    </p>
-                  </div>
-                  <p class="text-sm dark:text-gray-500 text-gray-400">
-                    {{ item.hours }}
-                  </p>
-                </div>
+          
+          <!-- Search Bar -->
+          <div class="ml-4 flex-1 max-w-lg">
+            <div class="relative">
+              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <Icon icon="ei:search" class="h-5 w-5 text-gray-400" />
+              </div>
+              <input
+                type="text"
+                v-model="searchStore.searchQuery"
+                :placeholder="searchPlaceholder"
+                class="block w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-800 dark:border-gray-600 dark:text-white dark:placeholder-gray-400 dark:focus:ring-blue-400"
+              />
+              <div v-if="searchStore.hasQuery" class="absolute inset-y-0 right-0 pr-3 flex items-center">
+                <button
+                  @click="searchStore.clearSearch"
+                  class="p-1 rounded-md text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                >
+                  <Icon icon="mdi:close" class="h-4 w-4" />
+                </button>
               </div>
             </div>
-            <div class="p-2">
-              <button class="w-full p-2 text-gray-800 dark:text-gray-300">
-                {{ $t('navbar.viewAll') }}
-              </button>
+            <!-- Search Context Indicator -->
+            <div class="mt-2">
+              <SearchContextIndicator />
             </div>
           </div>
-        </transition>
-        <button
-          @blur="menuToggleBlur"
-          @click="menuToggle"
-        >
-          <div class="user-avatar flex p-1 cursor-pointer rounded-md">
-            <div>
-              <img
-                :src="userAvatar"
-                class="rounded-full mr-4 w-10 h-10 p-1 ring-1 ring-gray-300 dark:ring-gray-500 object-cover"
-                alt="User Avatar"
-              />
-            </div>
-            <div class="text-left lg:block md:block hidden">
-              <h2 class="dark:text-white text-gray-800">Hi, {{ userName }}</h2>
-              <p class="text-xs text-gray-400 dark:text-gray-500">
-                {{ userRole || 'User' }}
-              </p>
-            </div>
-            <!-- <span class="text-md mt-4 text-gray-300"
-              ><Icon icon="bi:caret-down-fill"
-            /></span> -->
-          </div>
-        </button>
-        <transition name="fade">
-          <div
-            id="dropdownSmall"
-            v-show="menu"
-            class="block absolute right-10 mt-12 z-50 w-52 border dark:border-gray-700 bg-white dark:bg-gray-800 rounded divide-y dark:divide-gray-700 divide-gray-100 shadow"
+        </div>
+
+        <!-- Right Section -->
+        <div class="flex items-center space-x-2" v-if="authStore.isLoggedIn">
+          <!-- Language Switcher -->
+          <LanguageSwitcher />
+          
+          <!-- Fullscreen Toggle -->
+          <button
+            @click="fullscreenToggle"
+            class="p-2 rounded-lg text-gray-500 hover:text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-800 transition-all duration-200"
+            title="Toggle Fullscreen"
           >
-            <div class="py-3 px-4 text-sm text-gray-900 dark:text-gray-200">
-              <div>{{ $t('navbar.loggedInAs') }}</div>
-              <div class="font-medium truncate">{{ userEmail || 'Unknown User' }}</div>
-            </div>
-            <ul
-              class="py-1 text-sm text-gray-700 dark:text-gray-200"
-              aria-labelledby="dropdownSmallButton"
+            <Icon :icon="!fullscreenMode ? 'mdi:fullscreen' : 'mdi:fullscreen-exit'" class="text-xl" />
+          </button>
+          
+          <!-- Theme Toggle -->
+          <button
+            @click="setTheme(!darkMode)"
+            class="p-2 rounded-lg text-gray-500 hover:text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-800 transition-all duration-200"
+            :title="darkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'"
+          >
+            <Icon :icon="darkMode ? 'ri:sun-fill' : 'ri:moon-fill'" class="text-xl" />
+          </button>
+          
+          <!-- Notifications -->
+          <div class="relative">
+            <button
+              @click="notifToggle"
+              class="p-2 rounded-lg text-gray-500 hover:text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-800 transition-all duration-200 relative"
+              title="Notifications"
             >
-              <li>
-                <router-link
-                  to="/profile"
-                  class="block py-2 px-4 hover:bg-primary hover:text-white text-gray-700 dark:text-gray-200"
-                  @click="menu = false"
-                >
-                  <Icon icon="mdi:account-circle" class="h-4 w-4 mr-2 inline" />
-                  {{ $t('navbar.userProfile') }}
-                </router-link>
-              </li>
-              <li>
-                <a
-                  href="#"
-                  class="block py-2 px-4 hover:bg-primary hover:text-white"
-                >
-                  <Icon icon="mdi:cog" class="h-4 w-4 mr-2 inline" />
-                  {{ $t('navbar.settings') }}
-                </a>
-              </li>
-              <li>
-                <a
-                  href="#"
-                  @click.prevent="handleTenantGateway"
-                  class="block py-2 px-4 hover:bg-primary hover:text-white"
-                >
-                  <Icon icon="mdi:office-building" class="h-4 w-4 mr-2 inline" />
-                  {{ $t('navbar.tenantGateway') }}
-                </a>
-              </li>
-            </ul>
-            <div class="py-1">
-              <a
-                href="#"
-                @click.prevent="handleLogout"
-                class="block py-2 px-4 text-sm text-gray-700 dark:text-gray-200 hover:bg-primary hover:text-white"
+              <Icon icon="clarity:notification-line" class="text-xl" />
+              <!-- Notification Counter -->
+              <span 
+                v-if="notificationStore.unreadCount > 0"
+                class="absolute -top-1 -right-1 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white bg-red-500 rounded-full min-w-[20px] h-5"
               >
-                <Icon icon="mdi:logout" class="h-4 w-4 mr-2 inline" />
-                {{ $t('navbar.signOut') }}
-              </a>
-            </div>
+                {{ notificationStore.unreadCount > 99 ? '99+' : notificationStore.unreadCount }}
+              </span>
+            </button>
+            
+            <!-- Notification Dropdown -->
+            <transition
+              enter-active-class="transition ease-out duration-200"
+              enter-from-class="transform opacity-0 scale-95"
+              enter-to-class="transform opacity-100 scale-100"
+              leave-active-class="transition ease-in duration-75"
+              leave-from-class="transform opacity-100 scale-100"
+              leave-to-class="transform opacity-0 scale-95"
+            >
+              <div
+                v-show="notification"
+                class="absolute right-0 mt-2 w-80 bg-white dark:bg-gray-800 rounded-lg shadow-lg ring-1 ring-black ring-opacity-5 z-50"
+              >
+                <div class="p-4 border-b border-gray-200 dark:border-gray-700">
+                  <div class="flex items-center justify-between">
+                    <h3 class="text-sm font-medium text-gray-900 dark:text-white">Notifications</h3>
+                    <button
+                      @click="notificationStore.markAllAsRead()"
+                      class="text-xs text-blue-600 hover:text-blue-500 dark:text-blue-400"
+                    >
+                      Mark all as read
+                    </button>
+                  </div>
+                </div>
+                
+                <div class="max-h-96 overflow-y-auto">
+                  <div v-if="!notificationStore.notifications.length" class="p-8 text-center">
+                    <Icon icon="mdi:bell-off" class="mx-auto h-12 w-12 text-gray-400" />
+                    <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">No notifications yet</p>
+                  </div>
+                  
+                  <div v-else class="divide-y divide-gray-200 dark:divide-gray-700">
+                    <div
+                      v-for="(item, index) in notificationStore.notifications.slice(0, 5)"
+                      :key="index"
+                      class="p-4 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-colors"
+                      @click="markAsRead(item.id)"
+                    >
+                      <div class="flex items-start">
+                        <div class="flex-shrink-0">
+                          <div class="h-8 w-8 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center">
+                            <Icon :icon="getNotificationIcon(item.type)" class="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                          </div>
+                        </div>
+                        <div class="ml-3 flex-1">
+                          <p class="text-sm font-medium text-gray-900 dark:text-white">{{ item.title }}</p>
+                          <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">{{ item.message }}</p>
+                          <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">{{ formatTime(item.timestamp) }}</p>
+                        </div>
+                        <div v-if="!item.read" class="flex-shrink-0 ml-2">
+                          <div class="h-2 w-2 bg-blue-600 rounded-full"></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div v-if="notificationStore.notifications.length > 5" class="p-4 border-t border-gray-200 dark:border-gray-700">
+                  <button class="w-full text-center text-sm text-blue-600 hover:text-blue-500 dark:text-blue-400">
+                    View all notifications
+                  </button>
+                </div>
+              </div>
+            </transition>
           </div>
-        </transition>
-      </div>
-      <!-- Show login button when not logged in -->
-      <div class="mr-5 flex gap-3" v-else>
-        <LanguageSwitcher />
-        <router-link 
-          to="/login" 
-          class="bg-primary border flex gap-2 text-white hover:bg-primary/80 dark:border-gray-700 rounded py-2 px-4"
-        >
-          <Icon icon="mdi:login" class="h-4 w-4" />
-          <span class="text">{{ $t('navbar.login') }}</span>
-        </router-link>
+          
+          <!-- User Menu -->
+          <div class="relative">
+            <button
+              @click="menuToggle"
+              class="flex items-center p-2 rounded-lg text-gray-500 hover:text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-800 transition-all duration-200"
+            >
+              <div class="flex items-center space-x-3">
+                <img
+                  :src="userAvatar"
+                  class="h-8 w-8 rounded-full object-cover ring-2 ring-gray-300 dark:ring-gray-600"
+                  alt="User Avatar"
+                  @error="handleAvatarError"
+                />
+                <div class="hidden lg:block text-left">
+                  <p class="text-sm font-medium text-gray-900 dark:text-white">{{ userName }}</p>
+                  <p class="text-xs text-gray-500 dark:text-gray-400">{{ userRole || 'User' }}</p>
+                </div>
+                <Icon icon="mdi:chevron-down" class="h-4 w-4" />
+              </div>
+            </button>
+            
+            <!-- User Dropdown -->
+            <transition
+              enter-active-class="transition ease-out duration-200"
+              enter-from-class="transform opacity-0 scale-95"
+              enter-to-class="transform opacity-100 scale-100"
+              leave-active-class="transition ease-in duration-75"
+              leave-from-class="transform opacity-100 scale-100"
+              leave-to-class="transform opacity-0 scale-95"
+            >
+              <div
+                v-show="menu"
+                class="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg ring-1 ring-black ring-opacity-5 z-50"
+                @blur="menuToggleBlur"
+              >
+                <div class="p-4 border-b border-gray-200 dark:border-gray-700">
+                  <p class="text-sm font-medium text-gray-900 dark:text-white">{{ userName }}</p>
+                  <p class="text-sm text-gray-500 dark:text-gray-400">{{ userEmail || 'Unknown User' }}</p>
+                </div>
+                
+                <div class="py-2">
+                  <router-link
+                    to="/profile"
+                    @click="menu = false"
+                    class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
+                  >
+                    <Icon icon="mdi:account-circle" class="mr-3 h-4 w-4" />
+                    Profile
+                  </router-link>
+                  
+                  <a
+                    href="#"
+                    @click.prevent="handleTenantGateway"
+                    class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
+                  >
+                    <Icon icon="mdi:office-building" class="mr-3 h-4 w-4" />
+                    Tenant Gateway
+                  </a>
+                  
+                  <a
+                    href="#"
+                    class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
+                  >
+                    <Icon icon="mdi:cog" class="mr-3 h-4 w-4" />
+                    Settings
+                  </a>
+                </div>
+                
+                <div class="border-t border-gray-200 dark:border-gray-700 py-2">
+                  <a
+                    href="#"
+                    @click.prevent="handleLogout"
+                    class="flex items-center px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
+                  >
+                    <Icon icon="mdi:logout" class="mr-3 h-4 w-4" />
+                    Sign out
+                  </a>
+                </div>
+              </div>
+            </transition>
+          </div>
+        </div>
+        
+        <!-- Login Button (when not logged in) -->
+        <div v-else class="flex items-center space-x-2">
+          <LanguageSwitcher />
+          <router-link 
+            to="/login" 
+            class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200"
+          >
+            <Icon icon="mdi:login" class="mr-2 h-4 w-4" />
+            Sign in
+          </router-link>
+        </div>
       </div>
     </div>
   </header>
@@ -246,6 +258,7 @@
   import SearchContextIndicator from "./common/SearchContextIndicator.vue";
   import { useAuthStore } from '@/stores/authStore';
   import { useSearchStore } from '@/stores/searchStore';
+  import { useNotificationStore } from '@/stores/notification/notificationStore';
   import { usersApi } from '@/api/usersApi';
   import { secureImageUrl } from '@/utils/imageUtils';
   export default {
@@ -260,30 +273,7 @@
         menu: false,
         darkMode: false,
         notification: false,
-        fullscreenMode: false,
-        notifList: [
-          {
-            name: "Elizabeth Begum",
-            image: "user1.png",
-            message:
-              "Lorem ipsum dolor, sit amet consectetur adipisicing elit. Tempora culpa blanditiis neque animi sequi sunt incidunt beatae? Aperiam facilis consectetur,",
-            hours: "12 hours ago",
-          },
-          {
-            name: "Ethan Roger",
-            image: "user2.png",
-            message:
-              "Lorem ipsum dolor, sit amet consectetur adipisicing elit. Tempora culpa blanditiis neque animi sequi sunt incidunt beatae? Aperiam facilis consectetur,",
-            hours: "12 hours ago",
-          },
-          {
-            name: "Taylor neal",
-            image: "user4.png",
-            message:
-              "Lorem ipsum dolor, sit amet consectetur adipisicing elit. Tempora culpa blanditiis neque animi sequi sunt incidunt beatae? Aperiam facilis consectetur,",
-            hours: "2 days hours ago",
-          },
-        ],
+        fullscreenMode: false
       };
     },
     components: {
@@ -295,6 +285,7 @@
       const { t } = useI18n()
       const authStore = useAuthStore();
       const searchStore = useSearchStore();
+      const notificationStore = useNotificationStore();
       const router = useRouter();
       const avatarTimestamp = ref(Date.now());
       
@@ -324,6 +315,7 @@
       return {
         authStore,
         searchStore,
+        notificationStore,
         router,
         t,
         avatarTimestamp,
@@ -450,6 +442,53 @@
       imageAssets(url) {
         return require("@/assets/img/" + url);
       },
+      // Get notification icon based on type
+      getNotificationIcon(type) {
+        const icons = {
+          'info': 'mdi:information',
+          'success': 'mdi:check-circle',
+          'warning': 'mdi:alert',
+          'error': 'mdi:alert-circle',
+          'system_alert': 'mdi:alert',
+          'tenant_invitation': 'mdi:account-plus',
+          'join_request': 'mdi:account-question',
+          'agent_takeover': 'mdi:account-switch'
+        };
+        return icons[type] || 'mdi:bell';
+      },
+      // Format timestamp
+      formatTime(timestamp) {
+        if (!timestamp) return '';
+        
+        const date = new Date(timestamp);
+        const now = new Date();
+        const diff = now - date;
+        
+        // Less than 1 minute
+        if (diff < 60000) {
+          return 'Just now';
+        }
+        
+        // Less than 1 hour
+        if (diff < 3600000) {
+          const minutes = Math.floor(diff / 60000);
+          return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
+        }
+        
+        // Less than 24 hours
+        if (diff < 86400000) {
+          const hours = Math.floor(diff / 3600000);
+          return `${hours} hour${hours > 1 ? 's' : ''} ago`;
+        }
+        
+        // More than 24 hours
+        const days = Math.floor(diff / 86400000);
+        return `${days} day${days > 1 ? 's' : ''} ago`;
+      },
+      // Mark notification as read
+      markAsRead(id) {
+        this.notificationStore.markAsRead(id);
+      }
     },
     mounted() {
       // get theme dark or light with loadDarkMode()

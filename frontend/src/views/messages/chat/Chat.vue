@@ -363,6 +363,7 @@ import { Icon } from '@iconify/vue'
 import { appApi as takeoverApi } from '@/api/takeoverApi'
 import { usePennyBotStore } from '@/stores/pennyBotStore'
 import { usePennyConnectionStore } from '@/stores/pennyConnectionStore'
+import { useNotificationStore } from '@/stores/notification/notificationStore'
 import { getRelativeTime } from '@/utils/dateUtils'
 import takeoverWebSocketService from '@/services/takeoverWebSocketService'
 import ConversationItem from '../conversations/components/ConversationItem.vue'
@@ -372,6 +373,103 @@ import RealTimeMessageBubble from './components/RealTimeMessageBubble.vue'
 // Stores
 const pennyBotStore = usePennyBotStore()
 const pennyConnectionStore = usePennyConnectionStore()
+const notificationStore = useNotificationStore()
+
+// Real-time state
+const realTimeNotifications = ref([])
+const isRealTimeConnected = ref(false)
+
+// Listen for real-time events
+const setupRealTimeListeners = () => {
+  // Listen for conversation messages
+  window.addEventListener('conversationMessage', (event) => {
+    const { conversationId, sender, message, timestamp } = event.detail
+    console.log('📡 Real-time conversation message received:', { conversationId, sender, message })
+    
+    // Add to real-time notifications only if not current conversation
+    if (shouldShowNotification({ conversationId, sender, message }, selectedConversation.value)) {
+      const notification = {
+        id: Date.now() + Math.random(),
+        type: 'info',
+        title: `${sender === 'user' ? 'User' : 'Bot'} Message`,
+        message: message,
+        timestamp: timestamp,
+        read: false,
+        data: { conversationId }
+      }
+      realTimeNotifications.value.unshift(notification)
+      
+      // Update notification store
+      notificationStore.addNotification(notification)
+    }
+  })
+  
+  // Listen for system alerts
+  window.addEventListener('systemAlert', (event) => {
+    console.log('🚨 System alert received:', event.detail)
+    
+    const notification = {
+      id: Date.now() + Math.random(),
+      type: 'system_alert',
+      title: 'System Alert',
+      message: event.detail.message,
+      timestamp: new Date(),
+      read: false
+    }
+    
+    notificationStore.addNotification(notification)
+  })
+  
+  // Listen for takeover events
+  window.addEventListener('agentJoined', (event) => {
+    console.log('👤 Agent joined conversation:', event.detail)
+    
+    const notification = {
+      id: Date.now() + Math.random(),
+      type: 'info',
+      title: 'Agent Takeover',
+      message: `Agent ${event.detail.agentName} joined conversation ${event.detail.conversationId}`,
+      timestamp: new Date(),
+      read: false,
+      data: event.detail
+    }
+    
+    notificationStore.addNotification(notification)
+  })
+  
+  // Listen for new conversations
+  window.addEventListener('newConversation', (event) => {
+    console.log('🆕 New conversation created:', event.detail)
+    
+    const notification = {
+      id: Date.now() + Math.random(),
+      type: 'info',
+      title: 'New Conversation',
+      message: `New conversation from ${event.detail.source || 'Unknown'}`,
+      timestamp: new Date(),
+      read: false,
+      data: event.detail
+    }
+    
+    notificationStore.addNotification(notification)
+  })
+}
+
+// Helper function to check if message should trigger notification
+const shouldShowNotification = (message, currentConversationId) => {
+  // Don't show notification for current conversation
+  if (currentConversationId && String(message.conversationId) === String(currentConversationId)) {
+    return false
+  }
+  
+  // Don't show notification for own messages
+  if (message.sender === 'agent') {
+    return false
+  }
+  
+  // Only show for user/bot messages in other conversations
+  return true
+}
 
 // WebSocket Service
 const wsService = takeoverWebSocketService
@@ -1018,6 +1116,9 @@ const handleConversationMessage = (event) => {
 onMounted(async () => {
   // Setup WebSocket handlers
   setupWebSocketHandlers()
+  
+  // Setup real-time listeners
+  setupRealTimeListeners()
   
   // Add global event listener for conversation messages
   window.addEventListener('conversationMessage', handleConversationMessage)
