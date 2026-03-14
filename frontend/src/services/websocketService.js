@@ -65,6 +65,9 @@ class WebSocketService {
         case 'TENANT_JOIN_REQUEST_APPROVED':
           this.notificationStore.handleJoinRequestApproved(message.data)
           break
+        case 'CONVERSATION_MESSAGE':
+          this.notificationStore.handleConversationMessage(message.data)
+          break
         default:
           console.log('Unknown notification type:', message.type)
           this.notificationStore.addNotification({

@@ -321,11 +321,11 @@ import {
 import PennyBotModal from './components/PennyBotModal.vue'
 import PennyBotAnalyticsModal from './components/PennyBotAnalyticsModal.vue'
 import PennyBotChatModal from './components/PennyBotChatModal.vue'
-import PennyRuleModal from './components/PennyRuleModal.vue'
-import PennyRulesModal from './components/PennyRulesModal.vue'
-import PennyConnectionModal from './components/PennyConnectionModal.vue'
-import PennyConnectionsModal from './components/PennyConnectionsModal.vue'
-import PennyAutoConnectModal from './components/PennyAutoConnectModal.vue'
+import PennyRuleModal from '../rules/components/PennyRuleModal.vue'
+import PennyRulesModal from '../rules/components/PennyRulesModal.vue'
+import PennyConnectionModal from '../connections/components/PennyConnectionModal.vue'
+import PennyConnectionsModal from '../connections/components/PennyConnectionsModal.vue'
+import PennyAutoConnectModal from '../connections/components/PennyAutoConnectModal.vue'
 
 export default {
   name: 'PennyBotManagement',

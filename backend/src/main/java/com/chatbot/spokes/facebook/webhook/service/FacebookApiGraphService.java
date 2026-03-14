@@ -1,11 +1,12 @@
-// src/main/java/com/chatbot/spokes/facebook/webhook/service/FacebookApiGraphService.java
 package com.chatbot.spokes.facebook.webhook.service;
-import lombok.extern.slf4j.Slf4j;
 
+import com.chatbot.spokes.facebook.handler.FacebookErrorHandler;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
@@ -17,6 +18,7 @@ import java.util.Map;
 public class FacebookApiGraphService {
 
     private final WebClient webClient;
+    private final FacebookErrorHandler facebookErrorHandler;
 
     @Value("${facebook.autoConnect.appId}")
     private String appId;
@@ -24,12 +26,13 @@ public class FacebookApiGraphService {
     @Value("${facebook.autoConnect.appSecret}")
     private String appSecret;
 
-    public FacebookApiGraphService(WebClient.Builder webClientBuilder) {
+    public FacebookApiGraphService(WebClient.Builder webClientBuilder, FacebookErrorHandler facebookErrorHandler) {
         this.webClient = webClientBuilder.baseUrl("https://graph.facebook.com/v18.0").build();
+        this.facebookErrorHandler = facebookErrorHandler;
     }
 
     /**
-     * Lấy user ID từ access token
+     * Lấy user ID từ access token với unified error handling
      */
     public String getUserIdFromToken(String userAccessToken) {
         try {
@@ -41,21 +44,24 @@ public class FacebookApiGraphService {
                     .block();
 
             return (String) response.get("id");
+        } catch (WebClientResponseException e) {
+            logFacebookApiError("Failed to get user ID from token", e);
+            return null;
         } catch (Exception e) {
-            log.error("Lỗi khi lấy user ID từ token: {}", e.getMessage());
+            log.error("Unexpected error getting user ID from token: {}", e.getMessage(), e);
             return null;
         }
     }
 
     /**
-     * Lấy danh sách pages của user
+     * Lấy danh sách pages của user với unified error handling
      */
     public List<Map<String, Object>> getUserPages(String userAccessToken) {
         try {
             String longLivedToken = getLongLivedUserToken(userAccessToken);
             if (longLivedToken == null) {
                 log.error("❌ Không thể convert user token dài hạn");
-                return null;
+                return List.of();
             }
 
             Map<String, Object> response = webClient.get()
@@ -71,15 +77,16 @@ public class FacebookApiGraphService {
                 log.info("✅ Lấy danh sách fanpage thành công");
                 return (List<Map<String, Object>>) response.get("data");
             }
+        } catch (WebClientResponseException e) {
+            logFacebookApiError("Failed to get user pages", e);
         } catch (Exception e) {
-            log.error("Lỗi khi lấy danh sách pages: {}", e.getMessage());
-            return null;
+            log.error("Unexpected error getting user pages: {}", e.getMessage(), e);
         }
-        return null;
+        return List.of();
     }
 
     /**
-     * Convert user token short term to long term
+     * Convert user token short term to long term với unified error handling
      */
     private String getLongLivedUserToken(String shortLivedToken) {
         try {
@@ -99,8 +106,10 @@ public class FacebookApiGraphService {
                 log.info("Convert user token long term success");
                 return (String) response.get("access_token");
             }
+        } catch (WebClientResponseException e) {
+            logFacebookApiError("Failed to convert user token to long-lived", e);
         } catch (Exception e) {
-            log.error("Error converting user token long term: " + e.getMessage());
+            log.error("Unexpected error converting user token: {}", e.getMessage(), e);
         }
         return null;
     }
@@ -120,16 +129,37 @@ public class FacebookApiGraphService {
     }
 
     /**
-     * Hủy đăng ký page khỏi webhook
+     * Hủy đăng ký page khỏi webhook với unified error handling
      */
     public boolean unsubscribePageFromWebhook(String pageId, String pageAccessToken) {
         try {
-            // TODO: Implement webhook unsubscription logic
-            log.info("Hủy đăng ký webhook cho page: {}", pageId);
+            webClient.delete()
+                    .uri(uriBuilder -> uriBuilder.path("/{pageId}/subscribed_apps")
+                            .queryParam("access_token", pageAccessToken)
+                            .build(pageId))
+                    .retrieve()
+                    .bodyToMono(Void.class)
+                    .block();
+
+            log.info("✅ Đã hủy webhook cho page: {}", pageId);
             return true;
-        } catch (Exception e) {
-            log.error("Lỗi khi hủy đăng ký webhook: {}", e.getMessage());
+        } catch (WebClientResponseException e) {
+            logFacebookApiError("Failed to unsubscribe page from webhook", e);
             return false;
+        } catch (Exception e) {
+            log.error("Unexpected error unsubscribing webhook for page {}: {}", pageId, e.getMessage(), e);
+            return false;
+        }
+    }
+
+    /**
+     * Helper method for unified Facebook API error logging
+     */
+    private void logFacebookApiError(String operation, WebClientResponseException e) {
+        if (facebookErrorHandler.isTokenError(e)) {
+            log.warn("🔑 Token error during {}: {}", operation, facebookErrorHandler.extractErrorMessage(e.getResponseBodyAsString()));
+        } else {
+            log.error("❌ Facebook API error during {}: {}", operation, e.getResponseBodyAsString(), e);
         }
     }
 }

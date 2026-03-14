@@ -8,6 +8,7 @@ import org.springframework.data.domain.Pageable; // Thêm dòng này
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import java.time.LocalDateTime;
 import java.util.List; 
 import java.util.Optional;
 import java.util.UUID;
@@ -65,8 +66,26 @@ public interface FacebookConnectionRepository extends JpaRepository<FacebookConn
     @Query("SELECT fc FROM FacebookConnection fc WHERE fc.botId = :botId AND fc.ownerId = :ownerId AND fc.tenantId = :tenantId")
     List<FacebookConnection> findByBotIdAndOwnerIdAndTenantId(@Param("botId") String botId, @Param("ownerId") String ownerId, @Param("tenantId") Long tenantId);
     
-    @Deprecated
-    @Query("SELECT fc FROM FacebookConnection fc WHERE fc.pageId = :pageId AND fc.isActive = true AND fc.tenantId = :#{@tenantContext.tenantId}")
+    // Simple query like traloitudongV2 - no tenant context needed
+    @Query("SELECT fc FROM FacebookConnection fc WHERE fc.pageId = :pageId AND fc.isActive = true")
     Optional<FacebookConnection> findByPageIdAndIsActiveTrue(@Param("pageId") String pageId);
+
+    // Token expiry related queries
+    @Query("SELECT fc FROM FacebookConnection fc WHERE fc.tokenExpiresAt <= :expiry AND fc.isActive = true")
+    List<FacebookConnection> findTokensExpiringBefore(@Param("expiry") LocalDateTime expiry);
+    
+    @Query("SELECT fc FROM FacebookConnection fc WHERE fc.tenantId = :tenantId AND fc.isActive = true")
+    List<FacebookConnection> findByTenantIdAndIsActiveTrue(@Param("tenantId") Long tenantId);
+    
+    // Tìm theo botId và isActive (cho agent messages)
+    Optional<FacebookConnection> findByBotIdAndIsActiveTrue(@Param("botId") String botId);
+    
+    // Tìm theo botId, tenantId và isActive (phiên bản cũ style)
+    @Query("SELECT fc FROM FacebookConnection fc WHERE fc.botId = :botId AND fc.tenantId = :tenantId AND fc.isActive = true")
+    Optional<FacebookConnection> findByBotIdAndTenantIdAndIsActiveTrue(@Param("botId") String botId, @Param("tenantId") Long tenantId);
+    
+    // Tìm theo botId, tenantId và isActive (return List cho nhiều pages per bot)
+    @Query("SELECT fc FROM FacebookConnection fc WHERE fc.botId = :botId AND fc.tenantId = :tenantId AND fc.isActive = true")
+    List<FacebookConnection> findAllByBotIdAndTenantIdAndIsActiveTrue(@Param("botId") String botId, @Param("tenantId") Long tenantId);
 
 }

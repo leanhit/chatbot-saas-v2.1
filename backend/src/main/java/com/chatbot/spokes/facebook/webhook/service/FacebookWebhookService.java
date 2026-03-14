@@ -7,9 +7,14 @@ import com.chatbot.shared.penny.service.PennyBotManager;
 import com.chatbot.spokes.facebook.webhook.model.FacebookMessageType;
 import com.chatbot.spokes.facebook.messenger.service.FacebookMessengerService;
 import com.chatbot.core.message.store.service.ConversationService;
+import com.chatbot.core.message.store.model.Conversation;
 import com.chatbot.core.message.store.service.MessageService;
+import com.chatbot.core.message.decision.service.TakeoverService;
+import com.chatbot.core.message.decision.model.TakeoverMessage;
 import com.chatbot.core.message.store.model.Channel;
 import com.chatbot.core.tenant.infra.TenantContext;
+import com.chatbot.spokes.facebook.webhook.service.ChatbotServiceWrapper;
+import com.chatbot.spokes.botpress.service.BotpressServiceFb;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -31,6 +36,9 @@ public class FacebookWebhookService {
     private final FacebookMessengerService facebookMessengerService;
     private final ConversationService conversationService;
     private final MessageService messageService;
+    private final TakeoverService takeoverService;
+    private final ChatbotServiceWrapper chatbotServiceWrapper;
+    private final BotpressServiceFb botpressServiceFb;
 
     @Value("${facebook.webhook.verify-token:your_facebook_verify_token}")
     private String verifyToken;
@@ -45,12 +53,18 @@ public class FacebookWebhookService {
                                   PennyBotManager pennyBotManager,
                                   FacebookMessengerService facebookMessengerService,
                                   ConversationService conversationService,
-                                  MessageService messageService) {
+                                  MessageService messageService,
+                                  TakeoverService takeoverService,
+                                  ChatbotServiceWrapper chatbotServiceWrapper,
+                                  BotpressServiceFb botpressServiceFb) {
         this.connectionRepository = connectionRepository;
         this.pennyBotManager = pennyBotManager;
         this.facebookMessengerService = facebookMessengerService;
         this.conversationService = conversationService;
         this.messageService = messageService;
+        this.takeoverService = takeoverService;
+        this.chatbotServiceWrapper = chatbotServiceWrapper;
+        this.botpressServiceFb = botpressServiceFb;
     }
 
     /**
@@ -247,6 +261,20 @@ public class FacebookWebhookService {
             log.error("❌ Lỗi khi lưu Message vào DB: " + e.getMessage());
         }
 
+        // Gửi user message qua WebSocket để hiện trên UX
+        try {
+            TakeoverMessage userMessage = new TakeoverMessage(
+                String.valueOf(conversationId), 
+                "user", 
+                text, 
+                System.currentTimeMillis()
+            );
+            takeoverService.sendToConversation(userMessage);
+            log.info("📡 [Facebook] User message sent via WebSocket. Conversation ID: {}", conversationId);
+        } catch (Exception e) {
+            log.error("❌ [Facebook] Error sending user message via WebSocket: {}", e.getMessage());
+        }
+
         // Route to PennyBot for processing
         routeToPennyBot(connection, senderId, text, "text", conversationId);
     }
@@ -384,53 +412,163 @@ public class FacebookWebhookService {
      * Following traloitudongV2 pattern but using PennyBotManager
      */
     private void routeToPennyBot(FacebookConnection connection, String senderId, String messageText, String messageType, Long conversationId) {
+        log.info("🤖 [Penny] Starting message processing...");
+        
+        // Declare conversation variable at method scope and initialize it early
+        var conversation = (Conversation) null;
+        
         try {
-            log.info("🔄 Routing message from sender {} (page: {}) to PennyBot: {}", senderId, connection.getPageId(), messageText);
+            // 1️⃣ LƯU TẠM VÀO REDIS (cho luồng Agent/Takeover)
+            TakeoverMessage takeoverMessage = new TakeoverMessage(
+                String.valueOf(conversationId), 
+                "user", 
+                messageText, 
+                System.currentTimeMillis()
+            );
+            takeoverService.saveMessage(takeoverMessage);
+            log.info("💾 Saved message to Redis for Takeover.");
             
-            // Get botId from connection
-            String botId = connection.getBotId();
-            if (botId == null) {
-                log.warn("❌ No botId found in connection for page: {}", connection.getPageId());
-                return;
+            // 2️⃣ KIỂM TRA LUỒNG: TAKEOVER vs PENNY BOT vs BOTPRESS
+            UUID connectionId = connection.getId();
+            conversation = conversationService.findOrCreate(connectionId, senderId, Channel.FACEBOOK);
+            boolean isTakenOver = conversation.getIsTakenOverByAgent();
+            log.info("🔍 [DEBUG] Checking takeover status for conversation {}: {}", conversation.getId(), isTakenOver);
+            
+            if (isTakenOver) {
+                log.info("🛑 Conversation {} is taken over by Agent. Skipping Penny/Botpress processing.", conversationId);
+                
+                // 3️⃣ Push WebSocket cho Agent đang xem conversation này
+                try {
+                    takeoverService.sendToConversation(takeoverMessage);
+                    log.info("📢 Sent message to Agent via WebSocket.");
+                } catch (Exception e) {
+                    log.error("❌ Error sending WebSocket to Agent: {}", e.getMessage());
+                }
+                return; // KHÔNG chuyển đến bot
             }
             
-            // Convert botId to UUID for PennyBotManager
-            UUID botUuid = UUID.fromString(botId);
+            // 4️⃣ XỬ LÝ QUA PENNY BOT TRƯỚC
+            log.info("🤖 [Penny] Routing message to Penny Bot...");
+            UUID botId = UUID.fromString(connection.getBotId());
+            String pennyResponse = pennyBotManager.processMessage(botId, messageText, connection.getOwnerId(), false);
             
-            // Process message with PennyBotManager
-            String response = pennyBotManager.processMessage(botUuid, messageText, connection.getOwnerId(), false);
+            boolean pennyHandled = pennyResponse != null && !pennyResponse.trim().isEmpty();
             
-            log.info("✅ PennyBot response: {}", response);
-            
-            // Send response back to Facebook via Graph API
-            if (response != null && !response.trim().isEmpty()) {
-                facebookMessengerService.sendMessageToUser(
-                    connection.getPageId(), 
-                    senderId, 
-                    response, 
-                    connection.getPageAccessToken()
-                );
-                log.info("📤 Response sent to Facebook user: {}", senderId);
+            if (pennyHandled) {
+                log.info("✅ [Penny] Bot handled message. Sending response to Facebook...");
                 
-                // 3️⃣ LƯU TRỮ TIN NHẮN ĐI (OUTGOING) VÀO DB (following traloitudongV2 pattern)
+                // Lưu message từ bot vào database
                 try {
                     messageService.saveMessage(
-                        conversationId, 
+                        conversation.getId(), 
                         "bot", 
-                        response, 
+                        pennyResponse, 
                         FacebookMessageType.TEXT.name(), 
-                        Map.of("botId", botId, "botName", connection.getBotName())
+                        null
                     );
-                    log.info("✅ Đã lưu outgoing Message vào DB. Conversation ID: " + conversationId);
+                    log.info("💾 [Penny] Saved bot response to DB. Conversation ID: {}", conversation.getId());
                 } catch (Exception e) {
-                    log.error("❌ Lỗi khi lưu outgoing Message vào DB: " + e.getMessage());
+                    log.error("❌ [Penny] Error saving bot message to DB: {}", e.getMessage());
                 }
-            } else {
-                log.warn("⚠️ Empty response from PennyBot, not sending to Facebook");
+                
+                // Gửi bot message qua WebSocket để hiện trên UX
+                try {
+                    TakeoverMessage botMessage = new TakeoverMessage(
+                        String.valueOf(conversation.getId()), 
+                        "bot", 
+                        pennyResponse, 
+                        System.currentTimeMillis()
+                    );
+                    takeoverService.sendToConversation(botMessage);
+                    log.info("📡 [Penny] Bot message sent via WebSocket. Conversation ID: {}", conversation.getId());
+                } catch (Exception e) {
+                    log.error("❌ [Penny] Error sending bot message via WebSocket: {}", e.getMessage());
+                }
+                
+                // Gửi response từ Penny Bot đến Facebook user
+                facebookMessengerService.sendMessageToUser(connection.getPageId(), senderId, pennyResponse, connection.getPageAccessToken());
+                log.info("📤 [Penny] Response sent to Facebook user: {}", pennyResponse);
+                return; // Penny xử lý xong, kết thúc luồng
             }
             
+            log.info("⏭️ [Penny] Bot didn't handle message. Routing to Botpress...");
+            
         } catch (Exception e) {
-            log.error("❌ Error routing message to PennyBot: {}", e.getMessage(), e);
+            log.error("❌ [Penny] Error processing message: {}", e.getMessage(), e);
+            log.info("⏭️ [Penny] Error occurred, routing to Botpress as fallback...");
+            
+            // Ensure conversation is initialized even if Penny processing fails
+            if (conversation == null) {
+                try {
+                    UUID connectionId = connection.getId();
+                    conversation = conversationService.findOrCreate(connectionId, senderId, Channel.FACEBOOK);
+                    log.info("🔄 [Fallback] Initialized conversation after Penny error: {}", conversation.getId());
+                } catch (Exception convEx) {
+                    log.error("❌ [Fallback] Failed to initialize conversation: {}", convEx.getMessage());
+                    return; // Cannot proceed without conversation
+                }
+            }
+        }
+
+        // 5️⃣ CHUYỂN TIẾP TỚI BOTPRESS (FALLBACK) - CHỈ KHI PROVIDER LÀ BOTPRESS
+        if ("BOTPRESS".equals(connection.getChatbotProvider())) {
+            log.info("🤖 [Botpress] Routing message to Botpress (fallback)...");
+            try {
+                log.info("➡️ Routing to {} provider...", connection.getChatbotProvider());
+                
+                Map<String, Object> chatbotResponse = chatbotServiceWrapper.sendMessage(
+                    connection, senderId, messageText
+                );
+                
+                if (chatbotResponse != null) {
+                    log.info("🚀 [{}] Received response from bot, sending back to user...", connection.getChatbotProvider());
+                    
+                    // 💾 Lưu bot response vào database (CHO CẢ BOTPRESS FALLBACK)
+                    try {
+                        if (conversation != null) {
+                            messageService.saveMessage(
+                                conversation.getId(), 
+                                "bot", 
+                                chatbotResponse.toString(), 
+                                FacebookMessageType.TEXT.name(), 
+                                null
+                            );
+                            log.info("💾 [{}] Saved bot response to DB. Conversation ID: {}", connection.getChatbotProvider(), conversation.getId());
+                        } else {
+                            log.warn("⚠️ [{}] Conversation is null, skipping database save", connection.getChatbotProvider());
+                        }
+                    } catch (Exception e) {
+                        log.error("❌ [{}] Error saving bot message to DB: {}", connection.getChatbotProvider(), e.getMessage());
+                    }
+                    
+                    // 📡 Gửi bot response qua WebSocket để hiện trên UX (CHO CẢ BOTPRESS FALLBACK)
+                    try {
+                        if (conversation != null) {
+                            TakeoverMessage botMessage = new TakeoverMessage(
+                                String.valueOf(conversation.getId()), 
+                                "bot", 
+                                chatbotResponse.toString(), 
+                                System.currentTimeMillis()
+                            );
+                            takeoverService.sendToConversation(botMessage);
+                            log.info("📡 [{}] Bot message sent via WebSocket. Conversation ID: {}", connection.getChatbotProvider(), conversation.getId());
+                        } else {
+                            log.warn("⚠️ [{}] Conversation is null, skipping WebSocket send", connection.getChatbotProvider());
+                        }
+                    } catch (Exception e) {
+                        log.error("❌ [{}] Error sending bot message via WebSocket: {}", connection.getChatbotProvider(), e.getMessage());
+                    }
+                    
+                    // Gửi response qua BotpressServiceFb
+                    botpressServiceFb.sendMessage(connection.getBotId(), senderId, chatbotResponse.toString());
+                } else {
+                    log.warn("⚠️ [{}] No response from bot", connection.getChatbotProvider());
+                }
+            } catch (Exception e) {
+                log.error("❌ [{}] Error routing to bot: {}", connection.getChatbotProvider(), e.getMessage());
+            }
+        } else {
+            log.info("⚠️ [Penny] Bot didn't handle message and provider is not BOTPRESS ({}). No fallback available.", connection.getChatbotProvider());
         }
     }
     

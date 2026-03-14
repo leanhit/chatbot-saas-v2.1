@@ -45,107 +45,29 @@
       </div>
 
       <div class="modal-body">
-        <!-- Chat Messages -->
-        <div ref="chatContainer" class="chat-container">
-          <div v-if="messages.length === 0" class="empty-chat">
-            <Icon icon="mdi:chat-outline" class="h-12 w-12 text-gray-400 mb-4" />
-            <p class="empty-chat-text">{{ $t('Start a conversation with') }} {{ bot.botName }}</p>
-            <p class="empty-chat-hint">{{ $t('Type a message below to begin chatting') }}</p>
-          </div>
-
-          <div v-else class="messages-list">
-            <div
-              v-for="(message, index) in messages"
-              :key="index"
-              :class="['message', message.type]"
-            >
-              <div class="message-content">
-                <div class="message-avatar">
-                  <Icon
-                    :icon="message.type === 'user' ? 'mdi:account' : getBotTypeIcon(bot.botType)"
-                    class="h-5 w-5"
-                  />
-                </div>
-                <div class="message-bubble">
-                  <p class="message-text">{{ message.text }}</p>
-                  <p class="message-time">{{ getRelativeTime(message.timestamp) }}</p>
-                </div>
-              </div>
-            </div>
-
-            <!-- Typing Indicator -->
-            <div v-if="isTyping" class="message bot">
-              <div class="message-content">
-                <div class="message-avatar">
-                  <Icon :icon="getBotTypeIcon(bot.botType)" class="h-5 w-5" />
-                </div>
-                <div class="message-bubble typing-bubble">
-                  <div class="typing-indicator">
-                    <div class="typing-dot"></div>
-                    <div class="typing-dot"></div>
-                    <div class="typing-dot"></div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Message Input -->
-        <div class="message-input-container">
-          <form @submit.prevent="sendMessage" class="message-form">
-            <div class="input-wrapper">
-              <input
-                v-model="newMessage"
-                type="text"
-                :placeholder="$t('Type your message...')"
-                class="message-input"
-                :disabled="!bot.isFullyActive() || chatLoading"
-                @keydown.enter.prevent="sendMessage"
-              />
-              <button
-                type="submit"
-                :disabled="!newMessage.trim() || !bot.isFullyActive() || chatLoading"
-                class="send-button"
-              >
-                <Icon
-                  v-if="chatLoading"
-                  icon="mdi:loading"
-                  class="animate-spin h-5 w-5"
-                />
-                <Icon
-                  v-else
-                  icon="mdi:send"
-                  class="h-5 w-5"
-                />
-              </button>
-            </div>
-          </form>
-
-          <!-- Quick Actions -->
-          <div class="quick-actions">
-            <button
-              v-for="action in quickActions"
-              :key="action.text"
-              @click="sendQuickMessage(action.text)"
-              :disabled="!bot.isActive || !bot.isEnabled || chatLoading"
-              class="quick-action-button"
-            >
-              {{ action.text }}
-            </button>
-          </div>
-        </div>
+        <!-- Chat Container Component -->
+        <ChatContainer
+          ref="chatContainerRef"
+          :messages="messages"
+          :is-typing="isTyping"
+          :bot-name="bot.botName"
+          :disabled="!bot.isFullyActive() || chatLoading"
+          :loading="chatLoading"
+          @send-message="handleSendMessage"
+          @scroll-to-bottom="handleScrollToBottom"
+        />
       </div>
     </div>
   </div>
 </template>
 
 <script>
-import { ref, computed, onMounted, watch, nextTick } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { Icon } from '@iconify/vue'
 import { useI18n } from 'vue-i18n'
 import { getRelativeTime } from '@/utils/dateUtils'
 import { usePennyBotStore } from '@/stores/pennyBotStore'
+import ChatContainer from './ChatContainer.vue'
 import {
   PennyBotType,
   PennyBotTypeDisplay,
@@ -156,7 +78,8 @@ import {
 export default {
   name: 'PennyBotChatModal',
   components: {
-    Icon
+    Icon,
+    ChatContainer
   },
   props: {
     bot: {
@@ -176,7 +99,7 @@ export default {
     const messages = ref([])
     const newMessage = ref('')
     const isTyping = ref(false)
-    const chatContainer = ref(null)
+    const chatContainerRef = ref(null)
     const chatLoading = computed(() => pennyBotStore.chatLoading)
     const quickReplies = ref([])
 
@@ -190,8 +113,8 @@ export default {
 
     const scrollToBottom = () => {
       nextTick(() => {
-        if (chatContainer.value) {
-          chatContainer.value.scrollTop = chatContainer.value.scrollHeight
+        if (chatContainerRef.value) {
+          chatContainerRef.value.scrollToBottom()
         }
       })
     }
@@ -200,6 +123,104 @@ export default {
       messages.value.push(message)
       scrollToBottom()
     }
+
+    // Handle events from ChatContainer
+    const handleSendMessage = (message) => {
+      // Add user message to chat
+      const userChatMessage = {
+        type: 'user',
+        text: message,
+        timestamp: new Date()
+      }
+      addMessage(userChatMessage)
+
+      // Show typing indicator
+      isTyping.value = true
+
+      // Send message to Penny bot
+      sendToPennyBot(message)
+    }
+
+    const handleScrollToBottom = () => {
+      // Handle scroll events if needed
+    }
+
+    const sendToPennyBot = async (message) => {
+      try {
+        // Send message to Penny bot
+        const response = await pennyBotStore.chatWithPennyBot(props.bot.id, message, props.isTestMode)
+        
+        console.log('🔍 Full API response:', response)
+        console.log('🔍 Response data:', response.data)
+        
+        // Backend returns data directly in response, not in response.data
+        const responseData = response.data || response || {}
+        console.log('🔍 Parsed response data:', responseData)
+        console.log('🔍 Response text:', responseData.response)
+        
+        // Add bot response to chat
+        const botChatMessage = {
+          type: 'bot',
+          text: responseData.response || responseData.message || 'Xin lỗi, tôi không hiểu yêu cầu của bạn.',
+          timestamp: new Date(),
+          metadata: {
+            providerUsed: responseData.providerUsed || 'PENNYBOT',
+            confidence: responseData.confidence || 0.8,
+            intentAnalysis: responseData.intentAnalysis || {},
+            processingMetrics: responseData.processingMetrics || {}
+          }
+        }
+        addMessage(botChatMessage)
+
+        // Add quick replies if available
+        if (responseData.quickReplies && responseData.quickReplies.length > 0) {
+          quickReplies.value = responseData.quickReplies
+        }
+
+      } catch (error) {
+        console.error('Failed to send message:', error)
+        
+        // Add error message
+        const errorMessage = {
+          type: 'bot',
+          text: 'Xin lỗi, đã xảy ra lỗi khi xử lý tin nhắn của bạn. Vui lòng thử lại sau.',
+          timestamp: new Date(),
+          isError: true
+        }
+        addMessage(errorMessage)
+      } finally {
+        isTyping.value = false
+        scrollToBottom()
+      }
+    }
+
+    // Listen for WebSocket conversation messages
+    const handleConversationMessage = (event) => {
+      const { conversationId, sender, message, timestamp } = event.detail
+      
+      // Add WebSocket message to chat if it belongs to current conversation
+      // (Assuming bot.id represents the conversation context)
+      if (sender && message) {
+        const websocketMessage = {
+          type: sender === 'user' ? 'user' : 'bot',
+          text: message,
+          timestamp: new Date(timestamp),
+          isRealtime: true
+        }
+        addMessage(websocketMessage)
+      }
+    }
+
+    // Setup WebSocket listener
+    onMounted(() => {
+      window.addEventListener('conversationMessage', handleConversationMessage)
+      scrollToBottom() // Initial scroll to bottom
+    })
+
+    // Cleanup WebSocket listener
+    onUnmounted(() => {
+      window.removeEventListener('conversationMessage', handleConversationMessage)
+    })
 
     const sendMessage = async () => {
       if (!newMessage.value.trim() || chatLoading.value) return
@@ -340,10 +361,12 @@ export default {
   bottom: 0;
   background-color: rgba(0, 0, 0, 0.5);
   display: flex;
-  align-items: flex-start;
+  align-items: center; /* ← THAY ĐỔI: Center vertical thay vì flex-start */
   justify-content: center;
   z-index: 1000;
-  padding: 40px 20px 20px;
+  padding: 20px;
+  overflow: auto;
+  max-height: 100vh;
 }
 
 .penny-bot-chat-modal {
@@ -352,12 +375,10 @@ export default {
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
   width: 100%;
   max-width: 600px;
-  height: 600px;
-  max-height: 90vh;
+  max-height: 80vh;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
-  margin-top: 20px;
+  margin: 20px 0; /* ← THAY ĐỔI: Thay vì chỉ margin-top */
 }
 
 .dark .penny-bot-chat-modal {
@@ -492,45 +513,7 @@ export default {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-}
-
-.chat-container {
-  flex: 1;
-  overflow-y: auto;
-  padding: 20px;
-  background: #f8fafc;
-}
-
-.dark .chat-container {
-  background: #111827;
-}
-
-.empty-chat {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 100%;
-  text-align: center;
-}
-
-.empty-chat-text {
-  font-size: 16px;
-  color: #374151;
-  margin-bottom: 8px;
-}
-
-.dark .empty-chat-text {
-  color: #d1d5db;
-}
-
-.empty-chat-hint {
-  font-size: 14px;
-  color: #6b7280;
-}
-
-.dark .empty-chat-hint {
-  color: #9ca3af;
+  max-height: 70vh;
 }
 
 .messages-list {
@@ -612,6 +595,37 @@ export default {
   margin: 4px 0 0 0;
   font-size: 11px;
   opacity: 0.7;
+}
+
+/* Real-time message styling */
+.message.realtime .message-bubble {
+  position: relative;
+  border: 2px solid #10b981;
+  box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2);
+}
+
+.message.realtime .message-bubble::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 8px;
+  height: 8px;
+  background: #10b981;
+  border-radius: 50%;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(16, 185, 129, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+  }
 }
 
 .typing-bubble {

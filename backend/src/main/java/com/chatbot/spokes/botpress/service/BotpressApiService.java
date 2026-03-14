@@ -7,8 +7,10 @@ import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
-import java.util.HashMap;
+import java.util.List;
+import java.util.ArrayList;
 import java.util.Map;
+import java.util.HashMap;
 import lombok.extern.slf4j.Slf4j;
 
 @Service
@@ -52,6 +54,37 @@ public class BotpressApiService {
     }
 
     // ======================== MESSAGING ========================
+
+    // Lấy danh sách available bots
+    public List<BotInfo> getAvailableBots() {
+        String url = String.format("%s/api/v1/admin/bots", botpressApiUrl);
+        log.info("📦 [DEBUG] Get available bots API invoked: " + url);
+
+        try {
+            ResponseEntity<JsonNode> response = restTemplate.exchange(
+                    url,
+                    HttpMethod.GET,
+                    new HttpEntity<>(createHeaders()),
+                    JsonNode.class
+            );
+            
+            JsonNode botsNode = response.getBody();
+            List<BotInfo> bots = new java.util.ArrayList<>();
+            
+            if (botsNode != null && botsNode.isArray()) {
+                for (JsonNode botNode : botsNode) {
+                    String id = botNode.get("id").asText();
+                    String name = botNode.get("name").asText();
+                    bots.add(new BotInfo(id, name));
+                }
+            }
+            
+            return bots;
+        } catch (Exception e) {
+            log.info(" [DEBUG] Error getting available bots: " + e);
+            return new java.util.ArrayList<>();
+        }
+    }
 
     // Gửi tin nhắn đến Botpress
     public Map<String, Object> sendMessage(String botId, String senderId, String message) {

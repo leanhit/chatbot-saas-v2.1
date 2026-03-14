@@ -14,10 +14,10 @@ import Tenant from "../views/tenant/gateway/Gateway.vue";
 import TenantOverview from "../views/tenant/overview/TenantOverview.vue";
 import TenantMember from "../views/tenant/member/TenantMember.vue";
 import TenantSettings from "../views/tenant/settings/TenantSettings.vue";
-import PennyBotManagement from "../views/penny/PennyBotManagement.vue";
-import PennyConnections from "../views/penny/PennyConnections.vue";
-import PennyRules from "../views/penny/PennyRules.vue";
-import Messages from "../views/Messages.vue";
+import BotManagement from "../views/penny/bots/BotManagement.vue";
+import Connections from "../views/penny/connections/Connections.vue";
+import Rules from "../views/penny/rules/Rules.vue";
+import Messages from "../views/messages/chat/Chat.vue";
 // Component Pages
 import Valert from "../views/components/alert.vue";
 import Vaccrodion from "../views/components/accordion.vue";
@@ -101,19 +101,19 @@ const routes = [
   {
     path: "/penny-bots",
     name: "penny-bots",
-    component: PennyBotManagement,
+    component: BotManagement,
     meta: { requiresAuth: true, title: "Penny Bot Management" + appname, skipTenantCheck: true },
   },
   {
     path: "/penny-connections",
     name: "penny-connections",
-    component: PennyConnections,
+    component: Connections,
     meta: { requiresAuth: true, title: "Penny Connections" + appname, skipTenantCheck: true },
   },
   {
     path: "/penny-rules",
     name: "penny-rules",
-    component: PennyRules,
+    component: Rules,
     meta: { requiresAuth: true, title: "Penny Rules" + appname, skipTenantCheck: true },
   },
   {

@@ -2,6 +2,9 @@ package com.chatbot.spokes.facebook.user.service;
 
 import com.chatbot.spokes.facebook.connection.model.FacebookConnection;
 import com.chatbot.spokes.facebook.connection.repository.FacebookConnectionRepository;
+import com.chatbot.spokes.facebook.exception.FacebookTokenException;
+import com.chatbot.spokes.facebook.handler.FacebookErrorHandler;
+import com.chatbot.spokes.facebook.service.FacebookTokenRefreshService;
 import com.chatbot.core.tenant.infra.TenantContext;
 import com.chatbot.spokes.facebook.user.dto.FacebookUserInfo;
 import com.chatbot.spokes.facebook.user.model.FacebookUser;
@@ -29,59 +32,84 @@ public class FacebookUserService {
     private final WebClient webClient;
     private final FacebookConnectionRepository connectionRepository;
     private final FacebookUserRepository facebookUserRepository;
+    private final FacebookErrorHandler facebookErrorHandler;
+    private final FacebookTokenRefreshService tokenRefreshService;
 
     /**
-     * Lấy thông tin người dùng Facebook thông qua PSID và pageId
+     * Lấy thông tin người dùng Facebook thông qua PSID và pageId với unified token handling
      * @param psid PSID của người dùng
      * @param pageId ID của page mà người dùng đang tương tác
      * @return Thông tin người dùng hoặc null nếu không tìm thấy
      */
     public FacebookUserInfo getUserInfo(String psid, String pageId) {
-        try {
-            // 1. Lấy thông tin kết nối Facebook từ database
-            Long tenantId = TenantContext.getTenantId();
-            if (tenantId == null) {
-                log.warn("Không tìm thấy tenant ID trong context");
-                return null;
-            }
-            Optional<FacebookConnection> connectionOpt = connectionRepository.findByTenantIdAndPageId(tenantId, pageId);
-            if (connectionOpt.isEmpty()) {
-                log.warn("Không tìm thấy kết nối Facebook cho page: {}", pageId);
-                return null;
-            }
-            FacebookConnection connection = connectionOpt.get();
-            
-            // 2. Gọi API Facebook Graph để lấy thông tin người dùng
-            Map<String, Object> response = webClient.get()
-                .uri(uriBuilder -> uriBuilder
-                    .path("/{psid}")
-                    .queryParam("fields", USER_FIELDS)
-                    .queryParam("access_token", connection.getPageAccessToken())
-                    .build(psid))
-                .retrieve()
-                .bodyToMono(new org.springframework.core.ParameterizedTypeReference<Map<String, Object>>() {})
-                .block();
-
-            // 3. Ánh xạ dữ liệu trả về thành đối tượng FacebookUserInfo
-            if (response != null && response.containsKey("name")) {
-                return FacebookUserInfo.builder()
-                    .psid(psid)
-                    .pageId(pageId)
-                    .name((String) response.get("name"))
-                    .profilePic((String) response.get("profile_pic"))
-                    .build();
-            }
-            
-            log.warn("Không tìm thấy thông tin người dùng cho PSID: {} trên page: {}", psid, pageId);
-            return null;
-            
-        } catch (WebClientResponseException e) {
-            log.error("Lỗi khi gọi Facebook Graph API: {}", e.getResponseBodyAsString(), e);
-            return null;
-        } catch (Exception e) {
-            log.error("Lỗi khi lấy thông tin người dùng Facebook", e);
+        // 1. Lấy thông tin kết nối Facebook từ database
+        Long tenantId = TenantContext.getTenantId();
+        if (tenantId == null) {
+            log.warn("Không tìm thấy tenant ID trong context");
             return null;
         }
+        Optional<FacebookConnection> connectionOpt = connectionRepository.findByTenantIdAndPageId(tenantId, pageId);
+        if (connectionOpt.isEmpty()) {
+            log.warn("Không tìm thấy kết nối Facebook cho page: {}", pageId);
+            return null;
+        }
+        FacebookConnection connection = connectionOpt.get();
+        
+        // 2. Try to get user info with token error handling
+        try {
+            return getUserInfoWithToken(psid, connection);
+        } catch (WebClientResponseException e) {
+            if (facebookErrorHandler.isTokenError(e)) {
+                FacebookTokenException tokenException = facebookErrorHandler.convertToTokenException(e, pageId);
+                if (tokenException != null) {
+                    facebookErrorHandler.logTokenError(tokenException);
+                    
+                    // Attempt token refresh and retry
+                    String newToken = tokenRefreshService.refreshTokenOnError(tokenException);
+                    if (newToken != null) {
+                        log.info("🔄 Retrying getUserInfo with refreshed token for page: {}", pageId);
+                        connection.setPageAccessToken(newToken);
+                        return getUserInfoWithToken(psid, connection);
+                    } else {
+                        log.error("❌ Token refresh failed for page: {}, cannot get user info", pageId);
+                        return null;
+                    }
+                }
+            }
+            log.error("Facebook API error getting user info for psid {} on page {}: {}", psid, pageId, e.getResponseBodyAsString(), e);
+            return null;
+        } catch (Exception e) {
+            log.error("Unexpected error getting user info for psid {} on page {}", psid, pageId, e);
+            return null;
+        }
+    }
+    
+    /**
+     * Helper method to get user info with specific token
+     */
+    private FacebookUserInfo getUserInfoWithToken(String psid, FacebookConnection connection) {
+        Map<String, Object> response = webClient.get()
+            .uri(uriBuilder -> uriBuilder
+                .path("/{psid}")
+                .queryParam("fields", USER_FIELDS)
+                .queryParam("access_token", connection.getPageAccessToken())
+                .build(psid))
+            .retrieve()
+            .bodyToMono(new org.springframework.core.ParameterizedTypeReference<Map<String, Object>>() {})
+            .block();
+
+        // Ánh xạ dữ liệu trả về thành đối tượng FacebookUserInfo
+        if (response != null && response.containsKey("name")) {
+            return FacebookUserInfo.builder()
+                .psid(psid)
+                .pageId(connection.getPageId())
+                .name((String) response.get("name"))
+                .profilePic((String) response.get("profile_pic"))
+                .build();
+        }
+        
+        log.warn("Không tìm thấy thông tin người dùng cho PSID: {} trên page: {}", psid, connection.getPageId());
+        return null;
     }
     
     /**

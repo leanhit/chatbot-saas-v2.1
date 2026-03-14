@@ -30,14 +30,15 @@ public class MessageService {
      */
     @Transactional // Đảm bảo việc lưu message và cập nhật conversation là 1 transaction
     public Message saveMessage(Long conversationId, String sender, String content, String messageType, Map<String, Object> raw) {
-        // Kiểm tra nếu người gửi là agent, đảm bảo họ đã take over conversation
+        // Kiểm tra nếu người gửi là agent, cho phép gửi message mà không cần takeover
+        // Agent có thể gửi message bất cứ lúc nào để hỗ trợ user
         if ("agent".equals(sender)) {
             Conversation conversation = conversationRepo.findById(conversationId)
                 .orElseThrow(() -> new RuntimeException("Conversation not found with id: " + conversationId));
             
-            if (!Boolean.TRUE.equals(conversation.getIsTakenOverByAgent())) {
-                throw new IllegalStateException("Agent must take over the conversation before sending messages");
-            }
+            // Agent có thể gửi message mà không cần takeover
+            // Điều này cho phép agent hỗ trợ user mà không cần takeover conversation
+            log.info("🤖 [MessageService] Agent sending message to conversation {} without takeover requirement", conversationId);
         }
         
         String rawJson = null;

@@ -2,13 +2,14 @@
 
 package com.chatbot.spokes.facebook.connection.service;
 
+import com.chatbot.spokes.facebook.api.service.FacebookApiService;
 import com.chatbot.spokes.facebook.connection.dto.CreateFacebookConnectionRequest;
 import com.chatbot.spokes.facebook.connection.dto.FacebookConnectionResponse;
 import com.chatbot.spokes.facebook.connection.dto.UpdateFacebookConnectionRequest;
 import com.chatbot.core.tenant.infra.TenantContext;
 import com.chatbot.spokes.facebook.connection.model.FacebookConnection;
 import com.chatbot.spokes.facebook.connection.repository.FacebookConnectionRepository;
-import com.chatbot.shared.penny.service.PennyBotManager;
+import com.chatbot.spokes.botpress.service.BotpressManager;
 import com.chatbot.shared.penny.model.PennyBot;
 import com.chatbot.spokes.facebook.connection.exception.*;
 
@@ -26,6 +27,7 @@ import org.springframework.data.domain.Pageable;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.HashMap;
 import java.util.stream.Collectors;
@@ -37,18 +39,21 @@ import lombok.extern.slf4j.Slf4j;
 public class FacebookConnectionService {
 
     private final FacebookConnectionRepository connectionRepository;
-    private final PennyBotManager pennyBotManager;
+    private final BotpressManager botpressManager;
     private final UserRepository userRepository;
     private final TenantMemberRepository tenantMemberRepository;
+    private final FacebookApiService facebookApiService;
 
     public FacebookConnectionService(FacebookConnectionRepository connectionRepository, 
-                                PennyBotManager pennyBotManager,
+                                BotpressManager botpressManager,
                                 UserRepository userRepository,
-                                TenantMemberRepository tenantMemberRepository) {
+                                TenantMemberRepository tenantMemberRepository,
+                                FacebookApiService facebookApiService) {
         this.connectionRepository = connectionRepository;
-        this.pennyBotManager = pennyBotManager;
+        this.botpressManager = botpressManager;
         this.userRepository = userRepository;
         this.tenantMemberRepository = tenantMemberRepository;
+        this.facebookApiService = facebookApiService;
     }
 
     public String createConnection(String ownerId, CreateFacebookConnectionRequest request) {
@@ -57,16 +62,16 @@ public class FacebookConnectionService {
             throw new RuntimeException("Insufficient privileges to create connections.");
         }
         
-        // 1. AUTO-CREATE BOT nếu chưa có botId
+        // 1. AUTO-CREATE BOTPRESS BOT nếu chưa có botId
         String botId = request.getBotId();
         if (botId == null || botId.isEmpty()) {
-            log.info("🤖 Auto-creating Penny bot for connection");
-            PennyBot newBot = pennyBotManager.autoCreateBotForConnection(ownerId, request.getPageId());
+            log.info("🤖 Auto-creating Botpress bot for connection");
+            PennyBot newBot = botpressManager.autoCreateBotForConnection(ownerId, request.getPageId());
             if (newBot == null) {
-                throw new RuntimeException("Failed to auto-create Penny bot for connection");
+                throw new RuntimeException("Failed to auto-create Botpress bot for connection");
             }
             botId = newBot.getId().toString();
-            log.info("✅ Auto-created Penny bot: {}", botId);
+            log.info("✅ Auto-created Botpress bot: {}", botId);
         } else {
             // TODO: Validate bot ownership if needed
             log.info("🔍 Using existing bot: {}", botId);
@@ -83,8 +88,8 @@ public class FacebookConnectionService {
                 "Fanpage with ID " + request.getPageId() + " is already connected to an active bot. Please disconnect the existing bot first."
             );
         }
-
-        // 3. TẠO KẾT NỐI MỚI
+        
+        // 3. TẠO KẾT NỐI MỚI (exact traloitudongV2 logic)
         FacebookConnection newConnection = new FacebookConnection();
         newConnection.setId(UUID.randomUUID());
         newConnection.setBotId(botId);
@@ -102,6 +107,72 @@ public class FacebookConnectionService {
         connectionRepository.save(newConnection);
         
         return newConnection.getId().toString();
+    }
+
+    /**
+     * Create connection with long-lived page access token (from traloitudongV2 logic)
+     * @param ownerId Owner ID
+     * @param userAccessToken Short-lived user access token from Facebook Login
+     * @param pageId Facebook Page ID
+     * @param botName Bot name
+     * @return Connection ID
+     */
+    public String createConnectionWithLongLivedToken(String ownerId, String userAccessToken, String pageId, String botName) {
+        log.info("🔗 Creating Facebook connection with long-lived token conversion");
+        
+        try {
+            // 1. Get user's Facebook pages using long-lived token conversion
+            List<Map<String, Object>> userPages = facebookApiService.getUserPages(userAccessToken);
+            
+            // 2. Find the specific page
+            Map<String, Object> targetPage = null;
+            for (Map<String, Object> page : userPages) {
+                if (pageId.equals(page.get("id"))) {
+                    targetPage = page;
+                    break;
+                }
+            }
+            
+            if (targetPage == null) {
+                throw new RuntimeException("Page ID " + pageId + " not found in user's managed pages");
+            }
+            
+            // 3. Extract long-lived page access token
+            String pageAccessToken = (String) targetPage.get("access_token");
+            if (pageAccessToken == null || pageAccessToken.isEmpty()) {
+                throw new RuntimeException("No access token found for page " + pageId);
+            }
+            
+            log.info("✅ Obtained long-lived page access token for page: {}", pageId);
+            
+            // 4. Auto-create bot if needed
+            String botId = null;
+            try {
+                PennyBot newBot = botpressManager.autoCreateBotForConnection(ownerId, pageId);
+                if (newBot != null) {
+                    botId = newBot.getId().toString();
+                    log.info("✅ Auto-created bot: {}", botId);
+                }
+            } catch (Exception e) {
+                log.warn("⚠️ Failed to auto-create bot: {}", e.getMessage());
+            }
+            
+            // 5. Create connection request
+            CreateFacebookConnectionRequest request = new CreateFacebookConnectionRequest();
+            request.setBotId(botId);
+            request.setBotName(botName);
+            request.setPageId(pageId);
+            request.setPageAccessToken(pageAccessToken);
+            request.setFanpageUrl("https://facebook.com/" + pageId);
+            request.setEnabled(true);
+            
+            // 6. Create connection using existing method
+            return createConnection(ownerId, request);
+            
+        } catch (Exception e) {
+            log.error("❌ Failed to create connection with long-lived token: {}", e.getMessage(), e);
+            throw new RuntimeException("Failed to create Facebook connection: " + e.getMessage(), e);
+        }
     }
 
     public List<FacebookConnectionResponse> getConnectionsByOwnerId(String ownerId) {

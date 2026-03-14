@@ -82,7 +82,7 @@
     </div>
 
     <!-- Main Content -->
-    <div class="flex gap-4">
+    <div class="flex gap-4" style="min-height: 600px;">
       <!-- Conversations List -->
       <div class="w-full lg:w-1/3 bg-white dark:bg-gray-800 rounded-lg border dark:border-gray-700">
         <div class="p-4 border-b dark:border-gray-700">
@@ -144,7 +144,7 @@
       </div>
 
       <!-- Chat Area -->
-      <div class="flex-1 bg-white dark:bg-gray-800 rounded-lg border dark:border-gray-700">
+      <div class="flex-1 bg-white dark:bg-gray-800 rounded-lg border dark:border-gray-700 flex flex-col" style="min-height: 600px;">
         <div v-if="!selectedConversation" class="h-full flex items-center justify-center">
           <div class="text-center">
             <Icon icon="mdi:chat" class="text-6xl text-gray-300" />
@@ -215,7 +215,7 @@
           </div>
           
           <!-- Messages Area -->
-          <div ref="messagesContainer" class="flex-1 overflow-y-auto p-4 space-y-4">
+          <div ref="messagesContainer" class="messages-area flex-1 overflow-y-auto p-4 bg-white dark:bg-gray-800 flex flex-col">
             <!-- Real-time Message Indicator -->
             <RealTimeMessageIndicator
               v-if="selectedConversation"
@@ -232,17 +232,11 @@
               <p class="mt-2 text-gray-500">No messages in this conversation</p>
             </div>
             
-            <div v-else>
-              <!-- Use RealTimeMessageBubble for messages with real-time features -->
+            <div v-else class="flex-1 flex flex-col justify-end">
+              <!-- Render all messages with RealTimeMessageBubble for consistency -->
               <RealTimeMessageBubble
-                v-for="message in messages"
+                v-for="message in sortedMessages"
                 :key="message.id || `${message.timestamp}-${message.content}`"
-                :message="message"
-              />
-              <!-- Fallback to original MessageBubble for compatibility -->
-              <MessageBubble
-                v-for="message in messages.filter(m => !m.isRealtime)"
-                :key="message.id"
                 :message="message"
               />
             </div>
@@ -254,15 +248,15 @@
               <input
                 v-model="newMessage"
                 @input="startTyping"
-                @keydown.enter="sendRealTimeMessage"
+                @keydown.enter.prevent="sendMessage"
                 @blur="stopTyping"
                 type="text"
                 placeholder="Type your message..."
                 :disabled="sendingMessage || connectionStatus !== 'connected'"
-                class="flex-1 px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                class="flex-1 px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white disabled:opacity-50"
               />
               <button
-                @click="sendRealTimeMessage(newMessage)"
+                @click="sendMessage"
                 :disabled="sendingMessage || !newMessage.trim() || connectionStatus !== 'connected'"
                 class="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg flex items-center gap-2"
               >
@@ -343,10 +337,9 @@ import { usePennyBotStore } from '@/stores/pennyBotStore'
 import { usePennyConnectionStore } from '@/stores/pennyConnectionStore'
 import { getRelativeTime } from '@/utils/dateUtils'
 import takeoverWebSocketService from '@/services/takeoverWebSocketService'
-import ConversationItem from './messages/ConversationItem.vue'
-import MessageBubble from './messages/MessageBubble.vue'
-import RealTimeMessageIndicator from '@/components/RealTimeMessageIndicator.vue'
-import RealTimeMessageBubble from '@/components/RealTimeMessageBubble.vue'
+import ConversationItem from '../conversations/components/ConversationItem.vue'
+import RealTimeMessageIndicator from './components/RealTimeMessageIndicator.vue'
+import RealTimeMessageBubble from './components/RealTimeMessageBubble.vue'
 
 // Stores
 const pennyBotStore = usePennyBotStore()
@@ -396,6 +389,24 @@ const stats = ref({
   todayMessages: 0
 })
 
+// Helper functions
+const isDuplicateMessage = (newMessage, existingMessages) => {
+  return existingMessages.some(existing => {
+    // Check by ID if available
+    if (existing.id && newMessage.id && existing.id === newMessage.id) {
+      return true
+    }
+    
+    // Check by timestamp and content as fallback
+    const timeMatch = existing.timestamp === newMessage.timestamp || 
+                     existing.createdAt === newMessage.createdAt
+    const contentMatch = existing.content === newMessage.content
+    const senderMatch = existing.sender === newMessage.sender
+    
+    return timeMatch && contentMatch && senderMatch
+  })
+}
+
 // Debounced search
 const debouncedSearch = () => {
   clearTimeout(searchTimeout.value)
@@ -403,6 +414,18 @@ const debouncedSearch = () => {
     loadConversations()
   }, 500)
 }
+
+// Computed properties
+const sortedMessages = computed(() => {
+  if (!messages.value) return []
+  
+  return [...messages.value].sort((a, b) => {
+    // Sort by timestamp (oldest first, newest last)
+    const timeA = new Date(a.timestamp || a.createdAt)
+    const timeB = new Date(b.timestamp || b.createdAt)
+    return timeA - timeB
+  })
+})
 
 // Methods
 const loadConversations = async () => {
@@ -447,6 +470,12 @@ const loadConversations = async () => {
     conversations.value = response.data.content || response.data || []
     console.log('Loaded conversations:', conversations.value.length, 'items')
     
+    // Auto-select first conversation if none selected and conversations exist
+    if (!selectedConversation.value && conversations.value.length > 0) {
+      await selectConversation(conversations.value[0])
+      console.log('Auto-selected first conversation:', conversations.value[0].id)
+    }
+    
   } catch (error) {
     console.error('Error loading conversations:', error)
     conversations.value = []
@@ -462,7 +491,10 @@ const loadMessages = async (conversationId) => {
       page: 0,
       limit: 100
     })
-    messages.value = response.data.content || response.data || []
+    const newMessages = response.data.content || response.data || []
+    
+    // Clear and reload messages for fresh conversation
+    messages.value = newMessages
     
     // Scroll to bottom
     await nextTick()
@@ -477,6 +509,9 @@ const loadMessages = async (conversationId) => {
 
 const selectConversation = async (conversation) => {
   selectedConversation.value = conversation
+  
+  // Clear current messages when switching conversations
+  messages.value = []
   
   // Disconnect from previous conversation if any
   if (wsService.currentConversationId.value) {
@@ -552,7 +587,8 @@ const sendMessage = async () => {
       sender: 'agent'
     }
     
-    await takeoverApi.sendMessage(payload)
+    const response = await takeoverApi.sendMessage(payload)
+    console.log('Message sent successfully:', response.data)
     
     // Add message to local state
     const message = {
@@ -568,8 +604,11 @@ const sendMessage = async () => {
     // Scroll to bottom
     await nextTick()
     scrollToBottom()
+    
   } catch (error) {
     console.error('Error sending message:', error)
+    // Show error to user
+    alert('Failed to send message: ' + (error.response?.data?.error || error.message))
   } finally {
     sendingMessage.value = false
   }
@@ -684,26 +723,53 @@ watch(filterConnection, () => {
 const setupWebSocketHandlers = () => {
   // Handle real-time messages
   wsService.onMessageReceived = (message) => {
-    if (message.conversationId === selectedConversation.value?.id) {
-      // Add message to current conversation
-      messages.value.push(message)
-      
-      // Scroll to bottom
-      nextTick(() => {
-        scrollToBottom()
-      })
-      
-      // Mark message as read
-      if (message.id) {
-        wsService.markMessageRead(message.id)
+    console.log('📡 WebSocket message received:', message)
+    
+    if (String(message.conversationId) === String(selectedConversation.value?.id)) {
+      // Format message for RealTimeMessageBubble component
+      const formattedMessage = {
+        id: message.id || `ws-${Date.now()}`,
+        content: message.content || message.text || message.message || '',
+        sender: message.sender || 'bot',
+        timestamp: message.timestamp || new Date(),
+        isRealtime: true, // Mark as real-time
+        read: false
       }
+      
+      console.log('📝 WebSocket formatted message:', formattedMessage)
+      
+      // Check for duplicates before adding
+      const isDuplicate = messages.value.some(existing => 
+        existing.id === formattedMessage.id || 
+        (existing.content === formattedMessage.content && 
+         Math.abs(new Date(existing.timestamp) - new Date(formattedMessage.timestamp)) < 1000)
+      )
+      
+      if (!isDuplicate) {
+        console.log('➕ Adding WebSocket message to chat')
+        messages.value.push(formattedMessage)
+        
+        // Scroll to bottom
+        nextTick(() => {
+          scrollToBottom()
+        })
+        
+        // Mark message as read
+        if (formattedMessage.id) {
+          wsService.markMessageRead(formattedMessage.id)
+        }
+      } else {
+        console.log('🚫 Duplicate WebSocket message detected, skipping')
+      }
+    } else {
+      console.log('⚠️ WebSocket message for different conversation, ignoring')
     }
     
     // Update conversation in list
-    const conversationIndex = conversations.value.findIndex(c => c.id === message.conversationId)
+    const conversationIndex = conversations.value.findIndex(c => String(c.id) === String(message.conversationId))
     if (conversationIndex !== -1) {
       conversations.value[conversationIndex].lastMessageAt = message.timestamp
-      conversations.value[conversationIndex].lastMessage = message.content
+      conversations.value[conversationIndex].lastMessage = message.content || message.message
     }
     
     // Update stats
@@ -742,39 +808,6 @@ const setupWebSocketHandlers = () => {
   }
 }
 
-// Real-time message sending
-const sendRealTimeMessage = async (content) => {
-  if (!content.trim() || !selectedConversation.value) return
-  
-  try {
-    sendingMessage.value = true
-    
-    const message = {
-      conversationId: selectedConversation.value.id,
-      content: content.trim(),
-      sender: 'agent'
-    }
-    
-    const sentMessage = wsService.sendMessage(message)
-    if (sentMessage) {
-      // Add to local messages immediately for better UX
-      messages.value.push(sentMessage)
-      
-      // Clear input
-      newMessage.value = ''
-      
-      // Scroll to bottom
-      nextTick(() => {
-        scrollToBottom()
-      })
-    }
-  } catch (error) {
-    console.error('Error sending message:', error)
-  } finally {
-    sendingMessage.value = false
-  }
-}
-
 // Typing indicator handlers
 const startTyping = () => {
   if (!isTyping.value && selectedConversation.value) {
@@ -805,10 +838,54 @@ const stopTyping = () => {
   }
 }
 
+// Global event listener for conversation messages
+const handleConversationMessage = (event) => {
+  const { conversationId, sender, message, timestamp } = event.detail
+  
+  console.log('📡 Global conversation message received:', { conversationId, sender, message, timestamp })
+  
+  if (conversationId === selectedConversation.value?.id) {
+    // Format message for RealTimeMessageBubble component
+    const formattedMessage = {
+      id: `global-${Date.now()}`,
+      content: message || '',
+      sender: sender === 'user' ? 'user' : 'bot',
+      timestamp: new Date(timestamp),
+      isRealtime: true, // Mark as real-time
+      read: false
+    }
+    
+    console.log('📝 Formatted message:', formattedMessage)
+    
+    // Check for duplicates before adding
+    const isDuplicate = messages.value.some(existing => 
+      existing.content === formattedMessage.content && 
+      Math.abs(new Date(existing.timestamp) - new Date(formattedMessage.timestamp)) < 1000
+    )
+    
+    if (!isDuplicate) {
+      console.log('➕ Adding real-time message to chat')
+      messages.value.push(formattedMessage)
+      
+      // Scroll to bottom
+      nextTick(() => {
+        scrollToBottom()
+      })
+    } else {
+      console.log('🚫 Duplicate message detected, skipping')
+    }
+  } else {
+    console.log('⚠️ Message for different conversation, ignoring')
+  }
+}
+
 // Lifecycle
 onMounted(async () => {
   // Setup WebSocket handlers
   setupWebSocketHandlers()
+  
+  // Add global event listener for conversation messages
+  window.addEventListener('conversationMessage', handleConversationMessage)
   
   // Fetch bots data first
   await pennyBotStore.fetchPennyBots()
@@ -826,12 +903,64 @@ onMounted(async () => {
 })
 
 onUnmounted(() => {
+  // Remove global event listener
+  window.removeEventListener('conversationMessage', handleConversationMessage)
+  
   // Cleanup WebSocket connection
   wsService.disconnect()
 })
 </script>
 
 <style scoped>
+/* Messages container */
+.messages-container {
+  @apply flex-1 flex flex-col h-full;
+}
+
+/* Message area with proper scrolling and height constraints */
+.messages-area {
+  @apply flex-1 overflow-y-auto p-4 flex flex-col;
+  max-height: 600px; /* Fixed max height */
+  overscroll-behavior-y: contain; /* Prevent page scroll */
+  scroll-behavior: smooth; /* Smooth scrolling */
+  background-color: #ffffff; /* Light mode */
+}
+
+.dark .messages-area {
+  background-color: #1f2937; /* Dark mode - gray-800 */
+}
+
+/* Custom scrollbar styling */
+.messages-area::-webkit-scrollbar {
+  width: 6px;
+}
+
+.messages-area::-webkit-scrollbar-track {
+  background: #f1f5f9; /* Light mode track */
+  border-radius: 3px;
+}
+
+.dark .messages-area::-webkit-scrollbar-track {
+  background: #374151; /* Dark mode track - gray-700 */
+}
+
+.messages-area::-webkit-scrollbar-thumb {
+  background: #cbd5e1; /* Light mode thumb */
+  border-radius: 3px;
+}
+
+.messages-area::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8; /* Light mode thumb hover */
+}
+
+.dark .messages-area::-webkit-scrollbar-thumb {
+  background: #4b5563; /* Dark mode thumb - gray-600 */
+}
+
+.dark .messages-area::-webkit-scrollbar-thumb:hover {
+  background: #6b7280; /* Dark mode thumb hover - gray-500 */
+}
+
 .animate-spin {
   animation: spin 1s linear infinite;
 }
@@ -839,5 +968,15 @@ onUnmounted(() => {
 @keyframes spin {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
+}
+
+/* Global override for all message indicators */
+.message-bubble.unread::after,
+.message-bubble.realtime::before,
+.realtime-badge {
+  display: none !important;
+  content: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
 }
 </style>

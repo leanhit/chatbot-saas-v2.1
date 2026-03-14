@@ -3,58 +3,77 @@ package com.chatbot.core.message.decision.controller;
 import com.chatbot.core.message.decision.model.TakeoverMessage;
 import com.chatbot.core.message.decision.service.TakeoverService;
 import com.chatbot.core.message.decision.websocket.TakeoverWebSocketHandler;
-import com.chatbot.core.message.store.service.MessageService; // Import Service từ gói messStore
-import com.chatbot.core.message.router.service.AgentMessageService; //Server gửi tin nhắn cho fb
+import com.chatbot.core.message.store.service.MessageService;
+import com.chatbot.core.message.store.service.ConversationService;
+import com.chatbot.core.message.store.model.Conversation;
+import com.chatbot.core.message.store.repository.ConversationRepository;
+import com.chatbot.core.message.router.service.AgentMessageService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
-import org.springframework.http.HttpStatus;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/takeover")
 @RequiredArgsConstructor
+@Slf4j
 public class TakeoverController {
 
     private final TakeoverService takeoverService;
     private final TakeoverWebSocketHandler websocketHandler;
     private final ObjectMapper objectMapper;
-    private final MessageService messageService; // Inject MessageService để lưu DB
+    private final MessageService messageService;
     private final AgentMessageService agentMessageService;
+    private final ConversationService conversationService;
+    private final ConversationRepository conversationRepo;
 
-    // UI gửi tin nhắn → lưu DB (lâu dài) → lưu Redis (cache) → push WebSocket (real-time)
+    // UI gửi tin nhắn → lưu DB (lâu dài) → push WebSocket (real-time)
     @PostMapping("/send")
-    public void sendMessage(@RequestBody TakeoverMessage message) {
-        message.setTimestamp(System.currentTimeMillis());
-        
-        String conversationIdStr = message.getConversationId();
-        Long conversationIdLong = Long.parseLong(conversationIdStr); // Sử dụng String để gọi sendToConversation
+    public ResponseEntity<?> sendMessage(@RequestBody TakeoverMessage message) {
+        try {
+            message.setTimestamp(System.currentTimeMillis());
+            
+            String conversationIdStr = message.getConversationId();
+            Long conversationIdLong = Long.parseLong(conversationIdStr);
 
-        agentMessageService.sendAgentTextMessage(
-            conversationIdLong, 
-            message.getContent(), 
-            null // agentId đang là null, có thể cần lấy từ context sau này
-        );
-        // // 1. Lưu vào DB dài hạn (Persistence Layer - messStore)
-        // // Tin nhắn gửi từ UI/Agent thường là text
-        // messageService.saveMessage(
-        //         conversationIdLong, 
-        //         message.getSender(), 
-        //         message.getContent(), 
-        //         "text", 
-        //         null 
-        // );
-        
-        // // 2. Lưu vào Redis tạm thời
-        // takeoverService.saveMessage(message);
-        
-        // // 3. Push WebSocket cho real-time
-        // // SỬA LỖI: Thay thế sendToAll bằng sendToConversation
-        // websocketHandler.sendToConversation(conversationIdStr, message);
+            // 1. Lưu message từ agent vào database (trước khi gửi)
+            try {
+                messageService.saveMessage(
+                    conversationIdLong, 
+                    "agent", 
+                    message.getContent(), 
+                    "TEXT", 
+                    null
+                );
+                log.info("💾 [Takeover] Saved agent message to DB. Conversation ID: {}", conversationIdLong);
+            } catch (Exception e) {
+                log.error("❌ [Takeover] Error saving agent message to DB: {}", e.getMessage(), e);
+            }
+
+            // 2. Gửi tin nhắn qua AgentMessageService (sẽ xử lý gửi đến Facebook)
+            agentMessageService.sendAgentTextMessage(
+                conversationIdLong, 
+                message.getContent(), 
+                null // agentId đang là null, có thể cần lấy từ context sau này
+            );
+            
+            // 3. Push WebSocket cho real-time (hiển thị cho các agent khác)
+            websocketHandler.sendToConversation(conversationIdStr, message);
+            
+            return ResponseEntity.ok().body("{\"message\": \"Message sent successfully\"}");
+            
+        } catch (Exception e) {
+            log.error("Error sending message: {}", e.getMessage(), e);
+            return ResponseEntity.badRequest().body("{\"error\": \"Failed to send message: " + e.getMessage() + "\"}");
+        }
     }
 
     // Lấy lịch sử tin nhắn
@@ -80,10 +99,31 @@ public class TakeoverController {
     @PostMapping("/take/{conversationId}")
     public ResponseEntity<?> takeOverConversation(@PathVariable Long conversationId) {
         try {
-            // Logic để takeover conversation
-            // Cần implement takeover logic trong service
-            return ResponseEntity.ok().body("{\"message\": \"Conversation taken over successfully\"}");
+            // 1. Use updateTakenOverStatus method which exists and works
+            // We need to get the conversation first to get the ownerId for permission check
+            Conversation conversation = conversationRepo.findById(conversationId)
+                .orElseThrow(() -> new RuntimeException("Conversation not found"));
+            
+            conversationService.updateTakenOverStatus(conversationId, true, conversation.getOwnerId());
+            
+            // 2. Gửi thông báo qua WebSocket về tất cả sessions
+            TakeoverMessage takeoverNotification = new TakeoverMessage(
+                String.valueOf(conversationId),
+                "system",
+                "🔒 Conversation has been taken over by agent",
+                System.currentTimeMillis()
+            );
+            websocketHandler.sendToConversation(String.valueOf(conversationId), takeoverNotification);
+            
+            log.info("🔒 Conversation {} taken over successfully", conversationId);
+            return ResponseEntity.ok().body(Map.of(
+                "message", "Conversation taken over successfully",
+                "conversationId", conversationId,
+                "isTakenOver", true,
+                "takenAt", System.currentTimeMillis()
+            ));
         } catch (Exception e) {
+            log.error("❌ Cannot takeover conversation: {}", e.getMessage());
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot takeover conversation", e);
         }
     }

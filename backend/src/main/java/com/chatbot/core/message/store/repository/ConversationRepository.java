@@ -95,4 +95,10 @@ public interface ConversationRepository extends JpaRepository<Conversation, Long
         @Param("id") Long id,
         @Param("tenantId") Long tenantId
     );
+    
+    // 9. Tìm conversation theo externalUserId và connectionId (cho agent messages)
+    Optional<Conversation> findByExternalUserIdAndConnectionId(
+        @Param("externalUserId") String externalUserId,
+        @Param("connectionId") UUID connectionId
+    );
 }

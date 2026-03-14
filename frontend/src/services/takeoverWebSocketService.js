@@ -139,6 +139,9 @@ class TakeoverWebSocketService {
       
       // Handle different message types
       switch (message.type) {
+        case 'CONVERSATION_MESSAGE':
+          this.handleConversationMessage(message.data)
+          break
         case 'TAKEOVER_MESSAGE':
           this.handleTakeoverMessage(message.data)
           break
@@ -164,11 +167,52 @@ class TakeoverWebSocketService {
           // Respond to heartbeat
           this.send({ type: 'HEARTBEAT_PONG', timestamp: Date.now() })
           break
+        case 'HEARTBEAT_PONG':
+          // Handle heartbeat response from server
+          console.log('💓 Received heartbeat PONG from server')
+          break
         default:
           console.log('📨 Unknown message type:', message.type)
       }
     } catch (error) {
       console.error('🚨 Error handling WebSocket message:', error)
+    }
+  }
+
+  /**
+   * Handle real-time conversation messages from Facebook/Bot
+   */
+  handleConversationMessage(message) {
+    console.log(`📨 New conversation message:`, message)
+    
+    // Add message to queue
+    this.messageQueue.value.push({
+      ...message,
+      receivedAt: Date.now(),
+      isRealtime: true
+    })
+    
+    // Add delivery confirmation
+    if (message.id) {
+      this.deliveryConfirmations.set(message.id, {
+        status: 'delivered',
+        timestamp: Date.now()
+      })
+    }
+    
+    // Notify message received
+    if (this.onMessageReceived) {
+      this.onMessageReceived(message)
+    }
+    
+    // Show notification for new messages
+    if (message.sender === 'user' && this.currentConversationId.value === message.conversationId) {
+      this.notificationStore.addNotification({
+        type: 'info',
+        title: 'New Message',
+        message: `New message from ${message.sender === 'user' ? 'User' : message.sender}`,
+        duration: 3000
+      })
     }
   }
 

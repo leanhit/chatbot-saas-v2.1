@@ -2,6 +2,12 @@ package com.chatbot.spokes.pennybot.service;
 
 import com.chatbot.spokes.facebook.webhook.service.ChatbotProviderService;
 import com.chatbot.spokes.pennybot.config.DefaultMessageConfig;
+import com.chatbot.core.message.store.service.MessageService;
+import com.chatbot.core.message.store.model.Conversation;
+import com.chatbot.core.message.store.repository.ConversationRepository;
+import com.chatbot.spokes.facebook.connection.model.FacebookConnection;
+import com.chatbot.spokes.facebook.connection.repository.FacebookConnectionRepository;
+import com.chatbot.spokes.facebook.messenger.service.FacebookMessengerService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -10,6 +16,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * PennyBot Provider Service Implementation for Facebook integration
@@ -28,6 +35,18 @@ public class PennyBotProviderService implements ChatbotProviderService {
     
     @Autowired
     private DefaultMessageConfig messageConfig;
+    
+    @Autowired
+    private MessageService messageService;
+    
+    @Autowired
+    private ConversationRepository conversationRepository;
+    
+    @Autowired
+    private FacebookConnectionRepository facebookConnectionRepository;
+    
+    @Autowired
+    private FacebookMessengerService facebookMessengerService;
 
     @Override
     public Map<String, Object> sendMessage(String botId, String senderId, String messageText) {
@@ -36,6 +55,12 @@ public class PennyBotProviderService implements ChatbotProviderService {
         try {
             // Check if message requires default response
             String responseMessage = generateDefaultResponse(messageText);
+            
+            // Save agent message to database
+            saveAgentMessageToDatabase(botId, senderId, messageText);
+            
+            // Send message to Facebook
+            sendMessageToFacebook(botId, senderId, messageText);
             
             Map<String, Object> response = new HashMap<>();
             response.put("status", "success");
@@ -54,6 +79,63 @@ public class PennyBotProviderService implements ChatbotProviderService {
             errorResponse.put("message", "Failed to process message");
             errorResponse.put("error", e.getMessage());
             return errorResponse;
+        }
+    }
+    
+    /**
+     * Save agent message to database
+     */
+    private void saveAgentMessageToDatabase(String botId, String senderId, String messageText) {
+        try {
+            // Find Facebook connection by botId (botId is String)
+            FacebookConnection connection = facebookConnectionRepository.findByBotIdAndIsActiveTrue(botId)
+                .orElseThrow(() -> new RuntimeException("Facebook connection not found for botId: " + botId));
+            
+            // Find conversation by externalUserId and connectionId
+            Conversation conversation = conversationRepository.findByExternalUserIdAndConnectionId(senderId, connection.getId())
+                .orElseThrow(() -> new RuntimeException("Conversation not found for senderId: " + senderId));
+            
+            // Save agent message
+            messageService.saveMessage(
+                conversation.getId(),
+                "agent",
+                messageText,
+                "TEXT",
+                Map.of("botId", botId, "sentVia", "agent_ui")
+            );
+            
+            log.info("✅ Saved agent message to database. ConversationId: {}, SenderId: {}", conversation.getId(), senderId);
+            
+        } catch (Exception e) {
+            log.error("❌ Failed to save agent message to database: {}", e.getMessage(), e);
+            // Don't throw exception to avoid blocking message flow
+        }
+    }
+    
+    /**
+     * Send message to Facebook user
+     */
+    private void sendMessageToFacebook(String botId, String senderId, String messageText) {
+        try {
+            // Find Facebook connection by botId
+            FacebookConnection connection = facebookConnectionRepository.findByBotIdAndIsActiveTrue(botId)
+                .orElseThrow(() -> new RuntimeException("Facebook connection not found for botId: " + botId));
+            
+            // Get page access token from connection
+            String pageAccessToken = connection.getPageAccessToken();
+            
+            // Send message via FacebookMessengerService
+            facebookMessengerService.sendTextMessage(
+                pageAccessToken,
+                senderId,
+                messageText
+            );
+            
+            log.info("✅ Sent agent message to Facebook. PageId: {}, RecipientId: {}", connection.getPageId(), senderId);
+            
+        } catch (Exception e) {
+            log.error("❌ Failed to send agent message to Facebook: {}", e.getMessage(), e);
+            // Don't throw exception to avoid blocking message flow
         }
     }
     

@@ -1,6 +1,6 @@
 package com.chatbot.shared.security;
 
-import com.chatbot.shared.dto.TenantContext;
+import com.chatbot.core.tenant.infra.TenantContext;
 import com.chatbot.shared.exceptions.UnauthorizedException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;

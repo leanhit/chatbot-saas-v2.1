@@ -2,9 +2,10 @@ package com.chatbot.core.message.router.service;
 
 import com.chatbot.spokes.facebook.connection.model.FacebookConnection;
 import com.chatbot.spokes.facebook.connection.repository.FacebookConnectionRepository;
-import com.chatbot.spokes.facebook.webhook.service.ChatbotServiceWrapper;
+import com.chatbot.spokes.facebook.messenger.service.FacebookMessengerService;
 import com.chatbot.core.message.store.model.Conversation;
 import com.chatbot.core.message.store.repository.ConversationRepository;
+import com.chatbot.core.message.store.service.MessageService;
 import com.chatbot.core.tenant.infra.TenantContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,10 +21,10 @@ import java.util.UUID;
 @Slf4j
 public class AgentMessageService {
 
-    private final ChatbotServiceWrapper chatbotServiceWrapper;
+    private final FacebookMessengerService facebookMessengerService;
     private final ConversationRepository conversationRepository;
-    private final FacebookConnectionRepository connectionRepository; // Cần thiết để lấy pageId
-    private final FacebookConnectionRepository facebookConnectionRepository;
+    private final FacebookConnectionRepository connectionRepository;
+    private final MessageService messageService;
 
     /**
      * Gửi tin nhắn TEXT từ Agent tới người dùng và xử lý việc lưu trữ.
@@ -43,26 +44,17 @@ public class AgentMessageService {
         // 2. Lấy thông tin cần thiết để gửi Facebook
         String pageId = connection.getPageId();
         String recipientId = conversation.getExternalUserId(); // ID người nhận trên Facebook
+        String pageAccessToken = connection.getPageAccessToken();
 
         log.info("🤖 [AgentMsg] Bắt đầu gửi tin nhắn Agent ra Facebook. Page ID: {}", pageId);
         
-        // 3. Gọi hàm gửi tin nhắn (Hàm này đã có logic gửi Facebook VÀ lưu trữ)
-        // Lưu ý: Chúng ta phải sử dụng hàm sendMessageToUser/sendImageToUser có sẵn. 
-        // Logic saveBotMessage trong FacebookMessengerService cần được tách ra để dùng chung, 
-        // nhưng tạm thời, ta vẫn gọi nó vì nó thực hiện cả 2 việc: Gửi và Lưu trữ.
-        // Cần chỉnh sửa: Hàm saveBotMessage trong FacebookMessengerService phải được sửa tên
-        // thành saveOutgoingMessage và chấp nhận sender là 'agent' hoặc 'bot'.
-        
-        // Tìm FacebookConnection từ pageId
-        FacebookConnection fbConnection = facebookConnectionRepository
-                .findByTenantIdAndPageIdAndIsActiveTrue(TenantContext.getTenantId(), pageId)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy Facebook connection"));
-        
-        // Gửi tin nhắn qua ChatbotServiceWrapper
-        chatbotServiceWrapper.sendMessageToUser(fbConnection, recipientId, content);
-        
-        // LƯU Ý QUAN TRỌNG: Hàm sendMessageToUser hiện tại dùng sender="bot" trong hàm saveBotMessage. 
-        // Bạn cần sửa lại như hướng dẫn ở mục 3 để dùng sender="agent" cho tin nhắn này.
+        // 3. Gửi trực tiếp đến Facebook (traloitudongV2 logic)
+        try {
+            facebookMessengerService.sendMessageToUser(pageId, recipientId, content, "agent");
+            log.info("📤 [AgentMsg] Agent message sent to Facebook user: {}", content);
+        } catch (Exception e) {
+            log.error("❌ [AgentMsg] Error sending agent message to Facebook: {}", e.getMessage());
+        }
 
         log.info("✅ [AgentMsg] Hoàn tất luồng gửi tin nhắn Agent.");
     }

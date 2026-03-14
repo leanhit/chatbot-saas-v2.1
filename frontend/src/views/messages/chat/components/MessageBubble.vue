@@ -7,7 +7,7 @@
   >
     <div
       :class="[
-        'max-w-md px-4 py-2 rounded-lg',
+        'max-w-md px-4 py-2 rounded-lg max-h-32 overflow-y-auto',
         (message.sender === 'agent' || message.sender === 'bot')
           ? 'bg-blue-600 text-white'
           : 'bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white'
@@ -23,6 +23,9 @@
         </span>
         <span v-else-if="message.sender === 'agent'" class="text-xs opacity-60">
           Agent
+        </span>
+        <span v-else-if="message.sender === 'user' || message.sender === 'customer'" class="text-xs opacity-60">
+          User
         </span>
       </div>
     </div>

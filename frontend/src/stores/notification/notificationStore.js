@@ -104,6 +104,23 @@ export const useNotificationStore = defineStore('notification', () => {
     })
   }
 
+  // Handle conversation message (real-time chat messages)
+  const handleConversationMessage = (data) => {
+    // This will be handled by chat component that listens for conversation updates
+    // We just emit a custom event that chat components can listen to
+    const event = new CustomEvent('conversationMessage', {
+      detail: {
+        conversationId: data.conversationId,
+        sender: data.sender,
+        message: data.message,
+        timestamp: data.timestamp
+      }
+    })
+    window.dispatchEvent(event)
+    
+    console.log('📡 Conversation message received:', data)
+  }
+
   return {
     notifications,
     unreadCount,
@@ -115,6 +132,7 @@ export const useNotificationStore = defineStore('notification', () => {
     handleTenantInvitation,
     handleJoinRequest,
     handleInvitationAccepted,
-    handleJoinRequestApproved
+    handleJoinRequestApproved,
+    handleConversationMessage
   }
 })

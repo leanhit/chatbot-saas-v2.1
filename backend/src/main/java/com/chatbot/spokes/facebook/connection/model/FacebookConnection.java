@@ -35,6 +35,15 @@ public class FacebookConnection extends BaseTenantEntity {
     @Column(name = "page_access_token")
     private String pageAccessToken;
     
+    @Column(name = "user_access_token")
+    private String userAccessToken;
+    
+    @Column(name = "token_updated_at")
+    private LocalDateTime tokenUpdatedAt;
+    
+    @Column(name = "token_expires_at")
+    private LocalDateTime tokenExpiresAt;
+    
     // Getters and setters for Lombok compatibility
     public String getOwnerId() { return ownerId; }
     public void setOwnerId(String ownerId) { this.ownerId = ownerId; }

@@ -1,5 +1,8 @@
 package com.chatbot.spokes.facebook.messenger.service;
 
+import com.chatbot.spokes.facebook.connection.model.FacebookConnection;
+import com.chatbot.spokes.facebook.connection.repository.FacebookConnectionRepository;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
@@ -7,31 +10,26 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import java.util.Map;
-import java.util.Set;
-import java.util.HashSet;
-import java.util.List;
+import java.util.Optional;
 
 /**
  * Facebook Messenger Service
  * Sends messages back to Facebook users via Graph API
- * Following traloitudongV2 pattern with WebClient and retry logic
+ * Simplified version like traloitudongV2 - no token refresh
  */
 @Service
+@RequiredArgsConstructor
 @Slf4j
 public class FacebookMessengerService {
 
     private final WebClient webClient;
+    private final FacebookConnectionRepository connectionRepository;
 
     @Value("${facebook.graph.api.url:https://graph.facebook.com}")
     private String graphApiUrl;
 
-    public FacebookMessengerService(WebClient.Builder webClientBuilder) {
-        this.webClient = webClientBuilder.build();
-    }
-
     /**
      * Send text message to Facebook user
-     * Following traloitudongV2 pattern with retry logic
      */
     public void sendTextMessage(String pageAccessToken, String recipientId, String text) {
         String url = graphApiUrl + "/v18.0/me/messages?access_token=" + pageAccessToken;
@@ -42,40 +40,24 @@ public class FacebookMessengerService {
             "message", Map.of("text", text)
         );
 
-        // Retry logic following traloitudongV2 pattern
-        for (int attempt = 1; attempt <= 3; attempt++) {
-            try {
-                webClient.post()
-                        .uri(url)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .bodyValue(payload)
-                        .retrieve()
-                        .toBodilessEntity()
-                        .block();
+        try {
+            webClient.post()
+                    .uri(url)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .bodyValue(payload)
+                    .retrieve()
+                    .toBodilessEntity()
+                    .block();
 
-                log.info("✅ Gửi text message thành công (attempt {}). recipientId={}", attempt, recipientId);
-                return;
+            log.info("✅ Gửi text message thành công. recipientId={}", recipientId);
 
-            } catch (Exception e) {
-                log.warn("⚠️ Gửi message thất bại (attempt {}): {}", attempt, e.getMessage());
-                if (attempt < 3) {
-                    try {
-                        Thread.sleep(1000L * attempt); // Exponential backoff
-                    } catch (InterruptedException ie) {
-                        Thread.currentThread().interrupt();
-                        log.error("❌ Thread interrupted during retry sleep");
-                        return;
-                    }
-                } else {
-                    log.error("❌ Failed to send message after 3 attempts to recipient: {}", recipientId);
-                }
-            }
+        } catch (Exception e) {
+            log.error("❌ Lỗi gửi text message: {}", e.getMessage(), e);
         }
     }
 
     /**
-     * Send image message to Facebook user
-     * Following traloitudongV2 pattern
+     * Send image message to Facebook user with unified error handling
      */
     public void sendImageToUser(String pageAccessToken, String recipientId, String imageUrl) {
         String url = graphApiUrl + "/v18.0/me/messages?access_token=" + pageAccessToken;
@@ -111,14 +93,56 @@ public class FacebookMessengerService {
     }
 
     /**
-     * Send message using connection details
-     * Following traloitudongV2 pattern
+     * Send message to Facebook user (exact traloitudongV2 logic)
      */
-    public void sendMessageToUser(String pageId, String recipientId, String text, String pageAccessToken) {
-        log.info("📤 Sending message to Facebook user {} from page {}: {}", recipientId, pageId, text);
-        sendTextMessage(pageAccessToken, recipientId, text);
+    public void sendMessageToUser(String pageId, String recipientId, String messageText, String sender) {
+        log.info("📤 Sending message to Facebook user {} from page {}: {}", recipientId, pageId, messageText);
+        
+        // Find connection by pageId (traloitudongV2 logic)
+        Optional<FacebookConnection> connectionOpt = connectionRepository.findByPageIdAndIsActiveTrue(pageId);
+        
+        if (connectionOpt.isEmpty()) {
+            log.error("❌ Không tìm thấy FacebookConnection pageId={}", pageId);
+            return;
+        }
+        
+        FacebookConnection connection = connectionOpt.get();
+        if (!connection.isEnabled()) {
+            log.warn("⚠️ FacebookConnection bị disable. pageId={}", pageId);
+            return;
+        }
+        
+        String accessToken = connection.getPageAccessToken();
+        String url = "https://graph.facebook.com/v18.0/me/messages?access_token=" + accessToken;
+        
+        Map<String, Object> payload = Map.of(
+            "recipient", Map.of("id", recipientId),
+            "message", Map.of("text", messageText)
+        );
+        
+        // Send with retry logic (traloitudongV2 style)
+        for (int attempt = 1; attempt <= 3; attempt++) {
+            try {
+                webClient.post()
+                    .uri(url)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .bodyValue(payload)
+                    .retrieve()
+                    .bodyToMono(String.class)
+                    .block();
+                
+                log.info("✅ Message sent successfully to Facebook user {}", recipientId);
+                return;
+                
+            } catch (Exception e) {
+                log.error("❌ Attempt {} failed to send message: {}", attempt, e.getMessage());
+                if (attempt == 3) {
+                    log.error("❌ All attempts failed. Could not send message to Facebook user {}", recipientId);
+                }
+            }
+        }
     }
-
+    
     /**
      * Send complex responses (following traloitudongV2 pattern for Botpress responses)
      * Adapted for PennyBot responses

@@ -10,7 +10,8 @@ public enum PennyBotType {
     MARKETING("Marketing", "penny-marketing-001"),
     HR("Human Resources", "penny-hr-001"),
     FINANCE("Finance", "penny-finance-001"),
-    GENERAL("General Purpose", "penny-general-001");
+    GENERAL("General Purpose", "penny-general-001"),
+    BOTPRESS("Botpress Integration", null); // Botpress type with dynamic botId
 
     private final String displayName;
     private final String pennyBotId;

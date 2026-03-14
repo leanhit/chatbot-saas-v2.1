@@ -4,8 +4,8 @@
       :class="[
         'message-bubble',
         {
-          'sent': message.sender === 'agent',
-          'received': message.sender !== 'agent',
+          'sent': message.sender === 'agent' || message.sender === 'bot',
+          'received': message.sender === 'user' || message.sender === 'customer',
           'realtime': message.isRealtime,
           'unread': !message.read
         }
@@ -18,7 +18,7 @@
         <!-- Message Timestamp -->
         <div class="message-timestamp">
           {{ formatTime(message.timestamp) }}
-          <span v-if="message.isRealtime" class="realtime-badge">Live</span>
+          <!-- <span v-if="message.isRealtime" class="realtime-badge">Live</span> -->
         </div>
       </div>
 
@@ -140,8 +140,8 @@ const formatTime = (timestamp) => {
 }
 
 .message-bubble.realtime::before {
-  content: '';
-  @apply absolute -top-1 -right-1 w-2 h-2 bg-green-500 rounded-full animate-pulse;
+  display: none !important;
+  content: none !important;
 }
 
 .message-bubble.unread {
@@ -149,18 +149,20 @@ const formatTime = (timestamp) => {
 }
 
 .message-bubble.unread::after {
-  content: '';
-  @apply absolute -top-1 -left-1 w-2 h-2 bg-blue-500 rounded-full;
+  display: none !important;
+  content: none !important;
 }
 
 .message-content {
-  @apply rounded-lg px-4 py-2;
+  @apply rounded-lg px-4 py-2 max-h-32 overflow-y-auto;
 }
 
+/* Agent/Bot messages (right side) */
 .message-bubble.sent .message-content {
   @apply bg-blue-600 text-white;
 }
 
+/* User/Customer messages (left side) */
 .message-bubble.received .message-content {
   @apply bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white;
 }

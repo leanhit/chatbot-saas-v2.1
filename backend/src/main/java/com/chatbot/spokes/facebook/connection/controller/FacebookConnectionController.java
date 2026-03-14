@@ -20,10 +20,12 @@ import java.security.Principal;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import lombok.extern.slf4j.Slf4j;
 
 @RestController
 @RequestMapping("/api/connection/facebook")
 @Tag(name = "Facebook Connection", description = "Facebook platform connection management")
+@Slf4j
 public class FacebookConnectionController {
 
     private final FacebookConnectionService facebookConnectionService;
@@ -52,6 +54,43 @@ public class FacebookConnectionController {
         String ownerId = principal.getName();
         String connectionId = facebookConnectionService.createConnection(ownerId, request);
         return ResponseEntity.ok("Connection created with ID: " + connectionId);
+    }
+
+    @PostMapping("/auto-connect")
+    @Operation(
+        summary = "Auto-connect Facebook with long-lived token (from traloitudongV2)",
+        description = "Create Facebook connection using short-lived user token and convert to long-lived page token",
+        responses = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Connection created successfully with long-lived token"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Invalid user token or page access"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "Unauthorized")
+        }
+    )
+    public ResponseEntity<String> createConnectionWithLongLivedToken(
+            @RequestParam String userAccessToken,
+            @RequestParam String pageId,
+            @RequestParam(required = false, defaultValue = "Auto-generated Bot") String botName,
+            Principal principal) {
+        
+        // ✅ Validate tenant context
+        Long tenantId = TenantContext.getTenantId();
+        if (tenantId == null) {
+            return ResponseEntity.badRequest().body("Tenant context not found. Please provide X-Tenant-Key header");
+        }
+
+        String ownerId = principal.getName();
+        
+        try {
+            String connectionId = facebookConnectionService.createConnectionWithLongLivedToken(
+                ownerId, userAccessToken, pageId, botName);
+            
+            log.info("✅ Created Facebook connection with long-lived token for page: {}", pageId);
+            return ResponseEntity.ok(connectionId);
+            
+        } catch (Exception e) {
+            log.error("❌ Failed to create Facebook connection with long-lived token: {}", e.getMessage());
+            return ResponseEntity.badRequest().body("Failed to create connection: " + e.getMessage());
+        }
     }
 
     @PutMapping("/{connectionId}")

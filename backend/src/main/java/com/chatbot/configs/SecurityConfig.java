@@ -117,6 +117,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/v1/facebook/webhook/**").permitAll()
                 .requestMatchers("/images/public/**", "/api/images/public/**").permitAll()
                 .requestMatchers("/ws/takeover/**").permitAll()
+                .requestMatchers("/api/takeover/**").permitAll() // Temporarily allow all takeover endpoints
                 
                 // ================= LOCATION APIs (PUBLIC) =================
                 .requestMatchers("/api/locations/**").permitAll()
