@@ -42,8 +42,12 @@ public class AutoConnectClientRequest {
         @NotNull(message = "Fanpage URL is required")
         private String fanpageUrl;
         
-        @NotNull(message = "Page access token is required")
+        // Page access token (optional if userAccessToken is provided)
         private String pageAccessToken;
+        
+        // User access token for token exchange (like traloitudongV2)
+        @NotNull(message = "User access token is required")
+        private String userAccessToken;
         
         @Builder.Default
         private Boolean isEnabled = true;

@@ -57,14 +57,16 @@ public class Conversation extends BaseTenantEntity {
     private Long agentAssignedId; // Có thể null khi chưa phân công
 
     @Column(nullable = false)
-    private Boolean isClosedByAgent; // Mặc định là false
+    @Builder.Default
+    private Boolean isClosedByAgent = false; // Mặc định là false
 
     /**
      * True nếu Agent đã tiếp quản conversation và Botpress nên im lặng (Bot Flow bị ngắt).
      * False nếu Conversation đang được Botpress xử lý (Bot Flow đang hoạt động).
      */
     @Column(nullable = false)
-    private Boolean isTakenOverByAgent; // Mặc định là Botpress đang hoạt động
+    @Builder.Default
+    private Boolean isTakenOverByAgent = false; // Mặc định là Botpress đang hoạt động
 
     @JdbcTypeCode(SqlTypes.JSON)
     private String tags; // Có thể null

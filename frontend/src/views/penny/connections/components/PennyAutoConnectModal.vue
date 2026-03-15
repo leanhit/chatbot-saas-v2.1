@@ -415,6 +415,7 @@ export default {
         }, 200)
 
         // Prepare selected pages data for client-side API
+        // Send userAccessToken instead of pageAccessToken (like traloitudongV2)
         const selectedPagesData = availablePages.value
           .filter(page => selectedPages.value.includes(page.id))
           .map(page => ({
@@ -422,7 +423,7 @@ export default {
             botName: page.name,
             pageId: page.id,
             fanpageUrl: page.fanpageUrl || `https://www.facebook.com/${page.id}`,
-            pageAccessToken: page.access_token,
+            userAccessToken: userAccessToken.value, // ✅ Send user access token for backend conversion
             isEnabled: true
           }))
 

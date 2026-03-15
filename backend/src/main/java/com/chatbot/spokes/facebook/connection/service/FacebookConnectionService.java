@@ -89,20 +89,62 @@ public class FacebookConnectionService {
             );
         }
         
-        // 3. TẠO KẾT NỐI MỚI (exact traloitudongV2 logic)
+        // 3. TẠO KẾT NỐI MỚI (traloitudongV2 logic with token exchange)
         FacebookConnection newConnection = new FacebookConnection();
         newConnection.setId(UUID.randomUUID());
         newConnection.setBotId(botId);
         newConnection.setBotName(request.getBotName());
         newConnection.setPageId(request.getPageId());
         newConnection.setFanpageUrl(request.getFanpageUrl());
-        newConnection.setPageAccessToken(request.getPageAccessToken());
         newConnection.setOwnerId(ownerId);
         newConnection.setFbUserId("");
         newConnection.setCreatedAt(LocalDateTime.now());
         newConnection.setUpdatedAt(LocalDateTime.now());
         newConnection.setEnabled(request.isEnabled());
         newConnection.setActive(true);
+
+        // 3.1 TOKEN EXCHANGE LOGIC (like traloitudongV2)
+        String pageAccessToken = request.getPageAccessToken();
+        
+        // Nếu có userAccessToken, convert sang long-lived token và lấy page access token
+        if (request.getUserAccessToken() != null && !request.getUserAccessToken().isEmpty()) {
+            log.info("🔄 Converting user access token to long-lived token for page exchange");
+            
+            try {
+                // Convert user token to long-lived token
+                String longLivedUserToken = facebookApiService.getLongLivedUserToken(request.getUserAccessToken());
+                if (longLivedUserToken == null) {
+                    throw new RuntimeException("Failed to convert user access token to long-lived token");
+                }
+                
+                // Get pages with long-lived token to find the correct page access token
+                List<Map<String, Object>> userPages = facebookApiService.getUserPages(longLivedUserToken);
+                if (userPages == null || userPages.isEmpty()) {
+                    throw new RuntimeException("No pages found for user token");
+                }
+                
+                // Find the specific page that matches the requested pageId
+                Map<String, Object> targetPage = userPages.stream()
+                    .filter(page -> page.get("id").equals(request.getPageId()))
+                    .findFirst()
+                    .orElse(null);
+                
+                if (targetPage == null) {
+                    throw new RuntimeException("Page ID " + request.getPageId() + " not found in user's pages");
+                }
+                
+                // Extract page access token from the page data
+                pageAccessToken = (String) targetPage.get("access_token");
+                log.info("✅ Successfully retrieved page access token for page: {}", request.getPageId());
+                
+            } catch (Exception e) {
+                log.error("❌ Failed to exchange token for page {}: {}", request.getPageId(), e.getMessage());
+                throw new RuntimeException("Token exchange failed: " + e.getMessage(), e);
+            }
+        }
+        
+        // Set the page access token (either from request or from token exchange)
+        newConnection.setPageAccessToken(pageAccessToken);
 
         connectionRepository.save(newConnection);
         

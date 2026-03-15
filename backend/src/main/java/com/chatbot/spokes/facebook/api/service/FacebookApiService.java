@@ -33,7 +33,7 @@ public class FacebookApiService {
 
     public FacebookApiService(WebClient.Builder webClientBuilder) {
         this.webClient = webClientBuilder
-            .baseUrl(facebookApiBaseUrl)
+            .baseUrl("https://graph.facebook.com/v18.0")
             .build();
     }
 
@@ -66,7 +66,7 @@ public class FacebookApiService {
     }
 
     // ✅ Convert user token ngắn hạn thành dài hạn (from traloitudongV2)
-    private String getLongLivedUserToken(String shortLivedToken) {
+    public String getLongLivedUserToken(String shortLivedToken) {
         try {
             Map<String, Object> response = webClient.get()
                     .uri(uriBuilder -> uriBuilder

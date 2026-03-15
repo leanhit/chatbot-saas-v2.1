@@ -64,7 +64,7 @@ public class FbAutoConnectController {
         fbRequest.setBotName(connectionData.getBotName());
         fbRequest.setPageId(connectionData.getPageId());
         fbRequest.setFanpageUrl(connectionData.getFanpageUrl());
-        fbRequest.setPageAccessToken(connectionData.getPageAccessToken());
+        fbRequest.setUserAccessToken(connectionData.getUserAccessToken()); // ✅ Use userAccessToken for token exchange
         fbRequest.setEnabled(connectionData.getIsEnabled() != null ? connectionData.getIsEnabled() : true);
         
         // Use FacebookConnectionService to create connection

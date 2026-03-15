@@ -18,8 +18,11 @@ public class CreateFacebookConnectionRequest {
     
     private String fanpageUrl;
     
-    @NotBlank(message = "Page Access Token is required")
+    // Page access token (optional if userAccessToken is provided)
     private String pageAccessToken;
+    
+    // User access token for token exchange (like traloitudongV2)
+    private String userAccessToken;
     
     private String appSecret;
     private String verifyToken;
