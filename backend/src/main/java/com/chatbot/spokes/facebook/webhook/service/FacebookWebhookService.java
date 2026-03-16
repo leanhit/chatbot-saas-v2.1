@@ -15,6 +15,7 @@ import com.chatbot.core.message.store.model.Channel;
 import com.chatbot.core.tenant.infra.TenantContext;
 import com.chatbot.spokes.facebook.webhook.service.ChatbotServiceWrapper;
 import com.chatbot.spokes.botpress.service.BotpressServiceFb;
+import com.chatbot.spokes.odoo.service.CustomerDataService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -26,6 +27,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * Facebook Webhook Service
  * Processes webhook events from Facebook and routes to PennyBot
  * Following traloitudongV2 pattern but using PennyBot instead of Botpress
+ * NOW INCLUDES ODOO INTEGRATION for customer data extraction and CRM sync
  */
 @Service
 @Slf4j
@@ -39,6 +41,7 @@ public class FacebookWebhookService {
     private final TakeoverService takeoverService;
     private final ChatbotServiceWrapper chatbotServiceWrapper;
     private final BotpressServiceFb botpressServiceFb;
+    private final CustomerDataService customerDataService;
 
     @Value("${facebook.webhook.verify-token:your_facebook_verify_token}")
     private String verifyToken;
@@ -56,7 +59,8 @@ public class FacebookWebhookService {
                                   MessageService messageService,
                                   TakeoverService takeoverService,
                                   ChatbotServiceWrapper chatbotServiceWrapper,
-                                  BotpressServiceFb botpressServiceFb) {
+                                  BotpressServiceFb botpressServiceFb,
+                                  CustomerDataService customerDataService) {
         this.connectionRepository = connectionRepository;
         this.pennyBotManager = pennyBotManager;
         this.facebookMessengerService = facebookMessengerService;
@@ -65,6 +69,7 @@ public class FacebookWebhookService {
         this.takeoverService = takeoverService;
         this.chatbotServiceWrapper = chatbotServiceWrapper;
         this.botpressServiceFb = botpressServiceFb;
+        this.customerDataService = customerDataService;
     }
 
     /**
@@ -275,6 +280,18 @@ public class FacebookWebhookService {
             log.error("❌ [Facebook] Error sending user message via WebSocket: {}", e.getMessage());
         }
 
+        // 4️⃣ GỌI DỊCH VỤ ODOO: BẮT NGẦM DỮ LIỆU KHÁCH HÀNG (like traloitudongV2)
+        try {
+            log.info("🔍 [OdooMiddleware] Gọi processAndAccumulate...");
+            customerDataService.processAndAccumulate(
+                    connection.getPageId(),
+                    senderId,
+                    text
+            );
+        } catch (Exception e) {
+            log.error("❌ [OdooMiddleware] Lỗi khi gọi processAndAccumulate: {}", e.getMessage());
+        }
+
         // Route to PennyBot for processing
         routeToPennyBot(connection, senderId, text, "text", conversationId);
     }
@@ -347,6 +364,18 @@ public class FacebookWebhookService {
             log.error("❌ Lỗi khi lưu QuickReply Message vào DB: " + e.getMessage());
         }
         
+        // 4️⃣ GỌI DỊCH VỤ ODOO: BẮT NGẦM DỮ LIỆU KHÁCH HÀNG (like traloitudongV2)
+        try {
+            log.info("🔍 [OdooMiddleware] Gọi processAndAccumulate cho QuickReply...");
+            customerDataService.processAndAccumulate(
+                    connection.getPageId(),
+                    senderId,
+                    messageContent
+            );
+        } catch (Exception e) {
+            log.error("❌ [OdooMiddleware] Lỗi khi gọi processAndAccumulate cho QuickReply: {}", e.getMessage());
+        }
+        
         log.info("⚡ Processing QUICK_REPLY: " + messageContent);
         routeToPennyBot(connection, senderId, "[QuickReply] " + payload, "quick_reply", conversationId);
     }
@@ -374,6 +403,18 @@ public class FacebookWebhookService {
             log.info("✅ Đã lưu Postback Message vào DB. Conversation ID: " + conversationId);
         } catch (Exception e) {
             log.error("❌ Lỗi khi lưu Postback Message vào DB: " + e.getMessage());
+        }
+        
+        // 4️⃣ GỌI DỊCH VỤ ODOO: BẮT NGẦM DỮ LIỆU KHÁCH HÀNG (like traloitudongV2)
+        try {
+            log.info("🔍 [OdooMiddleware] Gọi processAndAccumulate cho Postback...");
+            customerDataService.processAndAccumulate(
+                    connection.getPageId(),
+                    senderId,
+                    text
+            );
+        } catch (Exception e) {
+            log.error("❌ [OdooMiddleware] Lỗi khi gọi processAndAccumulate cho Postback: {}", e.getMessage());
         }
         
         log.info("🔘 Processing POSTBACK: " + text + " (Payload: " + payload + ")");
