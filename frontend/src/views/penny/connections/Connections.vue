@@ -6,10 +6,10 @@
         <div class="flex items-center justify-between">
           <div>
             <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
-              {{ $t('Penny Connections') }}
+              {{ $t('penny.connections.title') }}
             </h1>
             <p class="text-gray-600 dark:text-gray-400 mt-1">
-              {{ $t('Manage your bot connections') }}
+              {{ $t('penny.connections.subtitle') }}
               <span v-if="currentBot" class="ml-2 text-blue-600 dark:text-blue-400">
                 - {{ currentBot.botName }}
               </span>
@@ -19,14 +19,14 @@
             <!-- Bot Selection -->
             <div v-if="availableBots && availableBots.length > 0" class="flex items-center space-x-2">
               <label class="text-sm font-medium text-gray-700 dark:text-gray-300">
-                {{ $t('Select Bot:') }}
+                {{ $t('penny.connections.selectBot') }}
               </label>
               <select
                 v-model="selectedBot"
                 @change="selectBot(selectedBot)"
                 class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
               >
-                <option value="" disabled>{{ $t('Select a bot') }}</option>
+                <option value="" disabled>{{ $t('penny.connections.selectBotPlaceholder') }}</option>
                 <option
                   v-for="bot in availableBots"
                   :key="bot.id"
@@ -45,7 +45,7 @@
               class="inline-flex items-center px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 transition-colors"
             >
               <Icon icon="mdi:facebook" class="mr-2" />
-              {{ $t('Auto Connect') }}
+              {{ $t('penny.connections.autoConnect') }}
             </button>
           </div>
         </div>

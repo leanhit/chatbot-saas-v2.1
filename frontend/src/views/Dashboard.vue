@@ -4,9 +4,9 @@
     <div class="mt-2 w-full">
       <div class="lg:flex grid-cols-1 lg:space-y-0 space-y-3 gap-5 justify-between">
         <div>
-          <p class="uppercase text-xs text-gray-700 font-semibold">overview</p>
+          <p class="uppercase text-xs text-gray-700 font-semibold">{{ $t('dashboard.overview') }}</p>
           <h1 class="text-2xl text-gray-900 dark:text-gray-200 font-medium">
-            Chatbot Dashboard
+            {{ $t('dashboard.title') }}
           </h1>
         </div>
         <div class="flex gap-2">
@@ -16,14 +16,14 @@
             class="bg-white dark:bg-gray-800 hover:border-gray-200 dark:hover:bg-gray-700 dark:text-white dark:border-gray-700 border rounded py-2 px-5 flex items-center gap-2"
           >
             <Icon icon="mdi:refresh" :class="{'animate-spin': loading}" class="text-lg" />
-            Refresh
+            {{ $t('dashboard.refresh') }}
           </button>
           <button
             @click="openSettings"
             class="bg-primary border flex gap-2 text-white hover:bg-primary/80 dark:border-gray-700 rounded py-3 px-5"
           >
             <span class="icon text-2xl"><Icon icon="ic:twotone-plus" /></span>
-            <span class="text"> Configure Bot</span>
+            <span class="text">{{ $t('dashboard.configureBot') }}</span>
           </button>
         </div>
       </div>
@@ -42,13 +42,13 @@
           <p class="font-semibold text-gray-900 dark:text-gray-200 text-xl">
             {{ stats.totalConversations }}
           </p>
-          <h2 class="font-normal text-gray-400 text-md mt-1">Total Conversations</h2>
+          <h2 class="font-normal text-gray-400 text-md mt-1">{{ $t('dashboard.totalConversations') }}</h2>
           <div class="flex items-center mt-2">
             <span :class="stats.conversationGrowth >= 0 ? 'text-green-500' : 'text-red-500'" class="text-sm flex items-center">
               <Icon :icon="stats.conversationGrowth >= 0 ? 'mdi:arrow-up' : 'mdi:arrow-down'" class="mr-1" />
               {{ Math.abs(stats.conversationGrowth) }}%
             </span>
-            <span class="text-gray-400 text-sm ml-2">vs last month</span>
+            <span class="text-gray-400 text-sm ml-2">{{ $t('dashboard.vsLastMonth') }}</span>
           </div>
         </div>
       </div>
@@ -64,13 +64,13 @@
           <p class="font-semibold text-gray-900 dark:text-gray-200 text-xl">
             {{ stats.activeUsers }}
           </p>
-          <h2 class="font-normal text-gray-400 text-md mt-1">Active Users</h2>
+          <h2 class="font-normal text-gray-400 text-md mt-1">{{ $t('dashboard.activeUsers') }}</h2>
           <div class="flex items-center mt-2">
             <span :class="stats.userGrowth >= 0 ? 'text-green-500' : 'text-red-500'" class="text-sm flex items-center">
               <Icon :icon="stats.userGrowth >= 0 ? 'mdi:arrow-up' : 'mdi:arrow-down'" class="mr-1" />
               {{ Math.abs(stats.userGrowth) }}%
             </span>
-            <span class="text-gray-400 text-sm ml-2">vs last month</span>
+            <span class="text-gray-400 text-sm ml-2">{{ $t('dashboard.vsLastMonth') }}</span>
           </div>
         </div>
       </div>
@@ -86,11 +86,11 @@
           <p class="font-semibold text-gray-900 dark:text-gray-200 text-xl">
             {{ stats.botResponses }}
           </p>
-          <h2 class="font-normal text-gray-400 text-md mt-1">Bot Responses</h2>
+          <h2 class="font-normal text-gray-400 text-md mt-1">{{ $t('dashboard.botResponses') }}</h2>
           <div class="flex items-center mt-2">
             <span class="text-blue-500 text-sm flex items-center">
               <Icon icon="mdi:check-circle" class="mr-1" />
-              {{ stats.responseRate }}% success
+              {{ $t('dashboard.successRate') }}%
             </span>
           </div>
         </div>
@@ -107,11 +107,11 @@
           <p class="font-semibold text-gray-900 dark:text-gray-200 text-xl">
             {{ stats.activeConnections }}
           </p>
-          <h2 class="font-normal text-gray-400 text-md mt-1">Active Connections</h2>
+          <h2 class="font-normal text-gray-400 text-md mt-1">{{ $t('dashboard.activeConnections') }}</h2>
           <div class="flex items-center mt-2">
             <span class="text-green-500 text-sm flex items-center">
               <Icon icon="mdi:check-circle" class="mr-1" />
-              All systems online
+              {{ $t('dashboard.allSystemsOnline') }}
             </span>
           </div>
         </div>
@@ -124,11 +124,11 @@
       <div class="bg-white dark:bg-gray-800 p-6 lg:w-2/3 w-full rounded-md border dark:border-gray-700">
         <div class="flex justify-between items-center mb-4">
           <div>
-            <h2 class="font-medium text-sm text-gray-800 dark:text-gray-200">CONVERSATION TRENDS</h2>
+            <h2 class="font-medium text-sm text-gray-800 dark:text-gray-200">{{ $t('dashboard.conversationTrends') }}</h2>
             <h1 class="font-semibold text-2xl text-gray-800 dark:text-gray-200">
               {{ stats.totalConversations }}
             </h1>
-            <p class="text-gray-400 font-normal">Last 7 days activity</p>
+            <p class="text-gray-400 font-normal">{{ $t('dashboard.last7Days') }}</p>
           </div>
           <div class="flex gap-2">
             <button
@@ -158,7 +158,7 @@
 
       <!-- Quick Actions -->
       <div class="bg-white dark:bg-gray-800 p-6 lg:w-1/3 w-full rounded-md border dark:border-gray-700 mt-6 lg:mt-0">
-        <h2 class="font-medium text-sm text-gray-800 dark:text-gray-200 mb-4">QUICK ACTIONS</h2>
+        <h2 class="font-medium text-sm text-gray-800 dark:text-gray-200">{{ $t('dashboard.quickActions') }}</h2>
         
         <div class="space-y-3">
           <router-link
@@ -167,8 +167,8 @@
           >
             <Icon icon="mdi:message-text" class="text-blue-600 text-xl mr-3" />
             <div>
-              <p class="font-medium text-gray-900 dark:text-gray-200">View Messages</p>
-              <p class="text-sm text-gray-500">Manage conversations</p>
+              <p class="font-medium text-gray-900 dark:text-gray-200">{{ $t('dashboard.viewMessages') }}</p>
+              <p class="text-sm text-gray-500">{{ $t('dashboard.manageConversations') }}</p>
             </div>
           </router-link>
 
@@ -178,8 +178,8 @@
           >
             <Icon icon="mdi:robot" class="text-green-600 text-xl mr-3" />
             <div>
-              <p class="font-medium text-gray-900 dark:text-gray-200">Bot Rules</p>
-              <p class="text-sm text-gray-500">Configure responses</p>
+              <p class="font-medium text-gray-900 dark:text-gray-200">{{ $t('dashboard.botRules') }}</p>
+              <p class="text-sm text-gray-500">{{ $t('dashboard.configureResponses') }}</p>
             </div>
           </router-link>
 
@@ -189,8 +189,8 @@
           >
             <Icon icon="mdi:facebook" class="text-purple-600 text-xl mr-3" />
             <div>
-              <p class="font-medium text-gray-900 dark:text-gray-200">Connections</p>
-              <p class="text-sm text-gray-500">Manage platforms</p>
+              <p class="font-medium text-gray-900 dark:text-gray-200">{{ $t('dashboard.connections') }}</p>
+              <p class="text-sm text-gray-500">{{ $t('dashboard.managePlatforms') }}</p>
             </div>
           </router-link>
 
@@ -200,8 +200,8 @@
           >
             <Icon icon="mdi:play-circle" class="text-orange-600 text-xl mr-3" />
             <div class="text-left">
-              <p class="font-medium text-gray-900 dark:text-gray-200">Test Bot</p>
-              <p class="text-sm text-gray-500">Run test conversation</p>
+              <p class="font-medium text-gray-900 dark:text-gray-200">{{ $t('dashboard.testBot') }}</p>
+              <p class="text-sm text-gray-500">{{ $t('dashboard.runTestConversation') }}</p>
             </div>
           </button>
         </div>
@@ -211,9 +211,9 @@
     <!-- Recent Activity -->
     <div class="mt-6 bg-white dark:bg-gray-800 p-6 rounded-md border dark:border-gray-700">
       <div class="flex justify-between items-center mb-4">
-        <h2 class="font-medium text-sm text-gray-800 dark:text-gray-200">RECENT ACTIVITY</h2>
+        <h2 class="font-medium text-sm text-gray-800 dark:text-gray-200">{{ $t('dashboard.recentActivity') }}</h2>
         <button @click="viewAllActivity" class="text-primary text-sm hover:underline">
-          View All
+          {{ $t('dashboard.viewAll') }}
         </button>
       </div>
       

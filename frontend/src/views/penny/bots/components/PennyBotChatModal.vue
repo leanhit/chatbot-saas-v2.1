@@ -8,7 +8,7 @@
             <div>
               <h2 class="modal-title">
                 {{ bot.botName }}
-                <span v-if="isTestMode" class="test-mode-badge">TEST MODE</span>
+                <span v-if="isTestMode" class="test-mode-badge">{{ $t('penny.testMode') }}</span>
               </h2>
               <p class="bot-type">{{ getBotTypeDisplayName(bot.botType) }}</p>
             </div>
@@ -21,20 +21,20 @@
                 :class="['mode-btn', { active: !isTestMode }]"
                 class="text-xs"
               >
-                {{ $t('Chat') }}
+                {{ $t('penny.chat') }}
               </button>
               <button
                 @click="switchMode(true)"
                 :class="['mode-btn', { active: isTestMode }]"
                 class="text-xs"
               >
-                {{ $t('Test') }}
+                {{ $t('penny.test') }}
               </button>
             </div>
             <div class="status-indicator" :class="{ online: bot.isFullyActive() }">
               <div class="status-dot"></div>
               <span class="status-text">
-                {{ bot.isFullyActive() ? $t('Online') : $t('Offline') }}
+                {{ bot.isFullyActive() ? $t('penny.online') : $t('penny.offline') }}
               </span>
             </div>
             <button @click="$emit('close')" class="close-button">
@@ -322,7 +322,7 @@ export default {
     // Add welcome message when modal opens
     onMounted(() => {
       if (props.bot.isFullyActive()) {
-        const welcomeMessage = {
+          const welcomeMessage = {
           type: 'bot',
           text: props.isTestMode 
             ? `🧪 Test Mode: I'm ${props.bot.botName}, your ${getBotTypeDisplayName(props.bot.botType)} assistant. Send test messages to verify functionality!`

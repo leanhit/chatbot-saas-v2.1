@@ -4,7 +4,7 @@
     <div v-if="loading" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div class="bg-white dark:bg-gray-800 rounded-lg p-6 flex items-center space-x-3">
         <Icon icon="mdi:loading" class="h-6 w-6 animate-spin text-primary" />
-        <span class="text-gray-900 dark:text-white">Loading...</span>
+        <span class="text-gray-900 dark:text-white">{{ $t('common.loading') }}</span>
       </div>
     </div>
     
@@ -12,8 +12,8 @@
     <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
       <!-- Header -->
       <div class="mb-8">
-        <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Tenant Overview</h1>
-        <p class="mt-2 text-gray-600 dark:text-gray-400">Manage your tenant information and settings</p>
+        <h1 class="text-3xl font-bold text-gray-900 dark:text-white">{{ $t('tenant.overview.title') }}</h1>
+        <p class="mt-2 text-gray-600 dark:text-gray-400">{{ $t('tenant.overview.subtitle') }}</p>
       </div>
       
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">

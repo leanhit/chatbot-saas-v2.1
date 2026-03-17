@@ -4,9 +4,9 @@
       <!-- Header -->
       <div class="header-row">
         <div class="header-text">
-          <h2>{{ $t('Title') }}</h2>
+          <h2>{{ $t('gateway.title') }}</h2>
           <p class="header-subtitle">
-            {{ $t('Subtitle') }}
+            {{ $t('gateway.subtitle') }}
           </p>
         </div>
         <div class="button-group">
@@ -15,14 +15,14 @@
             class="inline-flex items-center px-5 py-2.5 text-sm font-medium text-white bg-blue-700 rounded-lg hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
           >
             <Icon icon="mdi:plus" class="h-4 w-4 mr-2" />
-            {{ $t('Create') }}
+            {{ $t('gateway.create') }}
           </button>
           <button
             @click="handleLogout"
             class="inline-flex items-center px-5 py-2.5 text-sm font-medium text-gray-900 bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-4 focus:outline-none focus:ring-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700"
           >
             <Icon icon="mdi:logout" class="h-4 w-4 mr-2" />
-            {{ $t('Logout') }}
+            {{ $t('gateway.logout') }}
           </button>
         </div>
       </div>
@@ -100,10 +100,10 @@ export default {
     const activeTab = ref('my')
     const showCreateModal = ref(false)
     const tabs = [
-      { name: 'my', label: t('My Workspaces'), icon: 'mdi:office-building' },
-      { name: 'search', label: t('Search'), icon: 'mdi:search' },
-      { name: 'pending', label: t('Pending'), icon: 'mdi:clock' },
-      { name: 'my-invitations', label: t('My Invitations'), icon: 'mdi:email' }
+      { name: 'my', label: t('gateway.myTenants'), icon: 'mdi:office-building' },
+      { name: 'search', label: t('gateway.search'), icon: 'mdi:search' },
+      { name: 'pending', label: t('gateway.pending'), icon: 'mdi:clock' },
+      { name: 'my-invitations', label: t('gateway.myInvitations'), icon: 'mdi:email' }
     ]
     const onTenantEntered = () => {
       // Tenant entered successfully, can add any additional logic here

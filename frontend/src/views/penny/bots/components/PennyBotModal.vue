@@ -3,7 +3,7 @@
     <div class="penny-bot-modal" @click.stop>
       <div class="modal-header">
         <h2 class="modal-title">
-          {{ bot ? $t('Edit Penny Bot') : $t('Create Penny Bot') }}
+          {{ bot ? $t('penny.editBot') : $t('penny.createBot') }}
         </h2>
         <button @click="$emit('close')" class="close-button">
           <Icon icon="mdi:close" class="h-5 w-5" />
@@ -14,14 +14,14 @@
         <!-- Bot Name -->
         <div class="form-group">
           <label for="botName" class="form-label">
-            {{ $t('Bot Name') }} <span class="required">*</span>
+            {{ $t('penny.botName') }} <span class="required">*</span>
           </label>
           <input
             id="botName"
             v-model="formData.botName"
             type="text"
             class="form-input"
-            :placeholder="$t('Enter bot name')"
+            :placeholder="$t('penny.enterBotName')"
             required
           />
         </div>
@@ -29,7 +29,7 @@
         <!-- Bot Type -->
         <div class="form-group">
           <label for="botType" class="form-label">
-            {{ $t('Bot Type') }} <span class="required">*</span>
+            {{ $t('penny.botType') }} <span class="required">*</span>
           </label>
           <select
             id="botType"
@@ -37,7 +37,7 @@
             class="form-select"
             required
           >
-            <option value="" disabled>{{ $t('Select bot type') }}</option>
+            <option value="" disabled>{{ $t('penny.selectBotType') }}</option>
             <option
               v-for="type in botTypes"
               :key="type.value"
@@ -51,14 +51,14 @@
         <!-- Description -->
         <div class="form-group">
           <label for="description" class="form-label">
-            {{ $t('Description') }}
+            {{ $t('penny.description') }}
           </label>
           <textarea
             id="description"
             v-model="formData.description"
             rows="3"
             class="form-textarea"
-            :placeholder="$t('Enter bot description (optional)')"
+            :placeholder="$t('penny.enterBotDescription')"
           ></textarea>
         </div>
 
@@ -73,7 +73,7 @@
           </div>
           <div class="info-details">
             <div class="detail-item">
-              <span class="detail-label">{{ $t('Botpress ID') }}:</span>
+              <span class="detail-label">{{ $t('penny.botpressId') }}:</span>
               <span class="detail-value">{{ getBotpressBotId(formData.botType) }}</span>
             </div>
           </div>
@@ -86,7 +86,7 @@
           @click="$emit('close')"
           class="btn btn-secondary"
         >
-          {{ $t('Cancel') }}
+          {{ $t('common.cancel') }}
         </button>
         <button
           type="submit"
@@ -95,7 +95,7 @@
           class="btn btn-primary"
         >
           <Icon v-if="submitting" icon="mdi:loading" class="animate-spin h-4 w-4 mr-2" />
-          {{ bot ? $t('Update Bot') : $t('Create Bot') }}
+          {{ bot ? $t('penny.updateBot') : $t('penny.createBot') }}
         </button>
       </div>
     </div>

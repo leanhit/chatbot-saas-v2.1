@@ -19,7 +19,7 @@
       <div class="modal-body">
         <!-- Time Range Selector -->
         <div class="time-range-selector">
-          <label class="time-label">{{ $t('Time Range') }}:</label>
+          <label class="time-label">{{ $t('penny.timeRange') }}:</label>
           <div class="time-buttons">
             <button
               v-for="range in timeRanges"
@@ -53,7 +53,7 @@
                 <Icon icon="mdi:chat" class="h-6 w-6" />
               </div>
               <div class="metric-content">
-                <p class="metric-label">{{ $t('Total Conversations') }}</p>
+                <p class="metric-label">{{ $t('penny.totalConversations') }}</p>
                 <p class="metric-value">{{ formatNumber(analytics.totalConversations) }}</p>
               </div>
             </div>
@@ -63,7 +63,7 @@
                 <Icon icon="mdi:message" class="h-6 w-6" />
               </div>
               <div class="metric-content">
-                <p class="metric-label">{{ $t('Total Messages') }}</p>
+                <p class="metric-label">{{ $t('penny.totalMessages') }}</p>
                 <p class="metric-value">{{ formatNumber(analytics.totalMessages) }}</p>
               </div>
             </div>
@@ -73,7 +73,7 @@
                 <Icon icon="mdi:clock" class="h-6 w-6" />
               </div>
               <div class="metric-content">
-                <p class="metric-label">{{ $t('Avg Response Time') }}</p>
+                <p class="metric-label">{{ $t('penny.avgResponseTime') }}</p>
                 <p class="metric-value">{{ formatTime(analytics.averageResponseTime) }}</p>
               </div>
             </div>
@@ -83,7 +83,7 @@
                 <Icon icon="mdi:emoticon-happy" class="h-6 w-6" />
               </div>
               <div class="metric-content">
-                <p class="metric-label">{{ $t('Satisfaction Rate') }}</p>
+                <p class="metric-label">{{ $t('penny.satisfactionRate') }}</p>
                 <p class="metric-value">{{ analytics.satisfactionRate }}%</p>
               </div>
             </div>
@@ -93,7 +93,7 @@
                 <Icon icon="mdi:check-circle" class="h-6 w-6" />
               </div>
               <div class="metric-content">
-                <p class="metric-label">{{ $t('Resolution Rate') }}</p>
+                <p class="metric-label">{{ $t('penny.resolutionRate') }}</p>
                 <p class="metric-value">{{ analytics.resolutionRate }}%</p>
               </div>
             </div>
@@ -103,7 +103,7 @@
                 <Icon icon="mdi:server" class="h-6 w-6" />
               </div>
               <div class="metric-content">
-                <p class="metric-label">{{ $t('Uptime') }}</p>
+                <p class="metric-label">{{ $t('penny.uptime') }}</p>
                 <p class="metric-value">{{ analytics.uptime }}%</p>
               </div>
             </div>
@@ -112,31 +112,31 @@
           <!-- Performance Charts -->
           <div class="charts-section">
             <div class="chart-container">
-              <h3 class="chart-title">{{ $t('Conversation Trend') }}</h3>
+              <h3 class="chart-title">{{ $t('penny.conversationTrend') }}</h3>
               <div class="chart-placeholder">
                 <Icon icon="mdi:chart-line" class="h-12 w-12 text-gray-400" />
-                <p class="chart-placeholder-text">{{ $t('Chart visualization would go here') }}</p>
+                <p class="chart-placeholder-text">{{ $t('penny.chartPlaceholder') }}</p>
               </div>
             </div>
 
             <div class="chart-container">
-              <h3 class="chart-title">{{ $t('Response Time Distribution') }}</h3>
+              <h3 class="chart-title">{{ $t('penny.responseTimeDistribution') }}</h3>
               <div class="chart-placeholder">
                 <Icon icon="mdi:chart-bar" class="h-12 w-12 text-gray-400" />
-                <p class="chart-placeholder-text">{{ $t('Chart visualization would go here') }}</p>
+                <p class="chart-placeholder-text">{{ $t('penny.chartPlaceholder') }}</p>
               </div>
             </div>
           </div>
 
           <!-- Bot Health -->
           <div class="health-section">
-            <h3 class="section-title">{{ $t('Bot Health Status') }}</h3>
+            <h3 class="section-title">{{ $t('penny.botHealthStatus') }}</h3>
             <div class="health-grid">
               <div class="health-item">
                 <div class="health-indicator" :class="getHealthClass(analytics.overall)">
                   <Icon :icon="getHealthIcon(analytics.overall)" class="h-4 w-4" />
                 </div>
-                <span class="health-label">{{ $t('Overall Status') }}</span>
+                <span class="health-label">{{ $t('penny.overallStatus') }}</span>
                 <span class="health-value">{{ analytics.overall }}</span>
               </div>
 
@@ -144,46 +144,46 @@
                 <div class="health-indicator" :class="getHealthClass(analytics.context)">
                   <Icon :icon="getHealthIcon(analytics.context)" class="h-4 w-4" />
                 </div>
-                <span class="health-label">{{ $t('Context Engine') }}</span>
+                <span class="health-label">{{ $t('penny.contextEngine') }}</span>
                 <span class="health-value">{{ analytics.context }}</span>
               </div>
 
               <div class="health-item">
-                <div class="health-indicator" :class="getHealthClass(analytics.analytics)">
-                  <Icon :icon="getHealthIcon(analytics.analytics)" class="h-4 w-4" />
+                <div class="health-indicator" :class="getHealthClass(analytics.database)">
+                  <Icon :icon="getHealthIcon(analytics.database)" class="h-4 w-4" />
                 </div>
-                <span class="health-label">{{ $t('Analytics System') }}</span>
-                <span class="health-value">{{ analytics.analytics }}</span>
+                <span class="health-label">{{ $t('penny.databaseSystem') }}</span>
+                <span class="health-value">{{ analytics.database }}</span>
               </div>
             </div>
           </div>
 
           <!-- Bot Info -->
           <div class="info-section">
-            <h3 class="section-title">{{ $t('Bot Information') }}</h3>
+            <h3 class="section-title">{{ $t('penny.botInformation') }}</h3>
             <div class="info-grid">
               <div class="info-item">
-                <span class="info-label">{{ $t('Bot ID') }}:</span>
+                <span class="info-label">{{ $t('penny.botId') }}:</span>
                 <span class="info-value">{{ analytics.botId }}</span>
               </div>
               <div class="info-item">
-                <span class="info-label">{{ $t('Bot Type') }}:</span>
+                <span class="info-label">{{ $t('penny.apiSystem') }}:</span>
                 <span class="info-value">{{ analytics.botType }}</span>
               </div>
               <div class="info-item">
-                <span class="info-label">{{ $t('Status') }}:</span>
+                <span class="info-label">{{ $t('penny.status') }}:</span>
                 <span class="info-value">
                   <span :class="['status-badge', analytics.isActive ? 'active' : 'inactive']">
-                    {{ analytics.isActive ? $t('Active') : $t('Inactive') }}
+                    {{ analytics.isActive ? $t('penny.active') : $t('penny.inactive') }}
                   </span>
                 </span>
               </div>
               <div class="info-item">
-                <span class="info-label">{{ $t('Created') }}:</span>
+                <span class="info-label">{{ $t('penny.created') }}:</span>
                 <span class="info-value">{{ formatDateTime(analytics.createdAt) }}</span>
               </div>
               <div v-if="analytics.lastUsedAt" class="info-item">
-                <span class="info-label">{{ $t('Last Used') }}:</span>
+                <span class="info-label">{{ $t('penny.lastUsed') }}:</span>
                 <span class="info-value">{{ formatDateTime(analytics.lastUsedAt) }}</span>
               </div>
             </div>
@@ -193,7 +193,7 @@
         <!-- Error State -->
         <div v-else class="error-state">
           <Icon icon="mdi:alert-circle" class="h-12 w-12 text-red-500 mb-4" />
-          <p class="error-message">{{ $t('Failed to load analytics data') }}</p>
+          <p class="error-message">{{ $t('penny.failedToLoadAnalytics') }}</p>
         </div>
       </div>
     </div>

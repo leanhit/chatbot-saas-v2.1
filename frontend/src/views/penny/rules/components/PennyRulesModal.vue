@@ -6,7 +6,7 @@
           <div class="rules-info">
             <Icon icon="mdi:script-text" class="h-6 w-6 mr-3" />
             <div>
-              <h2 class="modal-title">{{ $t('Rules Management') }}</h2>
+              <h2 class="modal-title">{{ $t('penny.rulesManagement') }}</h2>
               <p class="bot-name">{{ bot?.botName }}</p>
             </div>
           </div>
@@ -16,7 +16,7 @@
               class="create-rule-btn"
             >
               <Icon icon="mdi:plus" class="h-4 w-4 mr-2" />
-              {{ $t('Create Rule') }}
+              {{ $t('penny.createRule') }}
             </button>
             <button @click="$emit('close')" class="close-button">
               <Icon icon="mdi:close" class="h-5 w-5" />
@@ -44,11 +44,11 @@
 
         <div v-else-if="rules.length === 0" class="no-rules">
           <Icon icon="mdi:script-text-outline" class="h-16 w-16 text-gray-400 mb-4" />
-          <h3 class="no-rules-title">{{ $t('No Rules Yet') }}</h3>
-          <p class="no-rules-text">{{ $t('Create your first rule to get started') }}</p>
+          <h3 class="no-rules-title">{{ $t('penny.noRulesYet') }}</h3>
+          <p class="no-rules-text">{{ $t('penny.createFirstRule') }}</p>
           <button @click="createNewRule" class="create-first-rule-btn">
             <Icon icon="mdi:plus" class="h-5 w-5 mr-2" />
-            {{ $t('Create Your First Rule') }}
+            {{ $t('penny.createYourFirstRule') }}
           </button>
         </div>
 
@@ -61,7 +61,7 @@
               </div>
               <div class="stat-content">
                 <div class="stat-number">{{ rules.length }}</div>
-                <div class="stat-label">{{ $t('Total Rules') }}</div>
+                <div class="stat-label">{{ $t('penny.totalRules') }}</div>
               </div>
             </div>
             <div class="stat-card">
@@ -70,7 +70,7 @@
               </div>
               <div class="stat-content">
                 <div class="stat-number">{{ activeRules.length }}</div>
-                <div class="stat-label">{{ $t('Active Rules') }}</div>
+                <div class="stat-label">{{ $t('penny.activeRules') }}</div>
               </div>
             </div>
             <div class="stat-card">
@@ -79,7 +79,7 @@
               </div>
               <div class="stat-content">
                 <div class="stat-number">{{ totalExecutions }}</div>
-                <div class="stat-label">{{ $t('Total Executions') }}</div>
+                <div class="stat-label">{{ $t('penny.totalExecutions') }}</div>
               </div>
             </div>
           </div>
@@ -87,15 +87,15 @@
           <!-- Rules Table -->
           <div class="rules-table">
             <div class="table-header">
-              <h3 class="table-title">{{ $t('Rules List') }}</h3>
+              <h3 class="table-title">{{ $t('penny.rulesList') }}</h3>
               <div class="table-actions">
                 <select v-model="filterType" class="filter-select">
-                  <option value="">{{ $t('All Types') }}</option>
-                  <option value="INTENT">{{ $t('Intent Based') }}</option>
-                  <option value="KEYWORD">{{ $t('Keyword Based') }}</option>
-                  <option value="REGEX">{{ $t('Regex Pattern') }}</option>
-                  <option value="CONDITION">{{ $t('Custom Condition') }}</option>
-                  <option value="ALWAYS">{{ $t('Always Trigger') }}</option>
+                  <option value="">{{ $t('penny.allTypes') }}</option>
+                  <option value="INTENT">{{ $t('penny.intentBased') }}</option>
+                  <option value="KEYWORD">{{ $t('penny.keywordBased') }}</option>
+                  <option value="REGEX">{{ $t('penny.regexPattern') }}</option>
+                  <option value="CONDITION">{{ $t('penny.customCondition') }}</option>
+                  <option value="ALWAYS">{{ $t('penny.alwaysTrigger') }}</option>
                 </select>
                 <button @click="refreshRules" class="refresh-btn">
                   <Icon icon="mdi:refresh" class="h-4 w-4" />
@@ -107,13 +107,13 @@
               <table class="rules-table-content">
                 <thead>
                   <tr>
-                    <th>{{ $t('Name') }}</th>
-                    <th>{{ $t('Type') }}</th>
-                    <th>{{ $t('Trigger') }}</th>
-                    <th>{{ $t('Priority') }}</th>
-                    <th>{{ $t('Status') }}</th>
-                    <th>{{ $t('Executions') }}</th>
-                    <th>{{ $t('Actions') }}</th>
+                    <th>{{ $t('penny.name') }}</th>
+                    <th>{{ $t('penny.type') }}</th>
+                    <th>{{ $t('penny.trigger') }}</th>
+                    <th>{{ $t('penny.priority') }}</th>
+                    <th>{{ $t('penny.status') }}</th>
+                    <th>{{ $t('penny.executions') }}</th>
+                    <th>{{ $t('penny.actions') }}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -160,7 +160,7 @@
                           <span class="switch-slider"></span>
                         </label>
                         <span class="status-text" :class="{ active: rule.isActive }">
-                          {{ rule.isActive ? $t('Active') : $t('Inactive') }}
+                          {{ rule.isActive ? $t('penny.active') : $t('penny.inactive') }}
                         </span>
                       </div>
                     </td>
@@ -173,21 +173,21 @@
                           @click="testRule(rule)"
                           :disabled="testingRule"
                           class="action-btn test"
-                          :title="$t('Test Rule')"
+                          :title="$t('penny.testRule')"
                         >
                           <Icon icon="mdi:test-tube" class="h-4 w-4" />
                         </button>
                         <button
                           @click="editRule(rule)"
                           class="action-btn edit"
-                          :title="$t('Edit Rule')"
+                          :title="$t('penny.editRule')"
                         >
                           <Icon icon="mdi:pencil" class="h-4 w-4" />
                         </button>
                         <button
                           @click="deleteRuleConfirm(rule)"
                           class="action-btn delete"
-                          :title="$t('Delete Rule')"
+                          :title="$t('penny.deleteRule')"
                         >
                           <Icon icon="mdi:delete" class="h-4 w-4" />
                         </button>

@@ -4,10 +4,10 @@
     <div class="flex justify-between items-center mb-6">
       <div>
         <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
-          {{ $t('Penny Bot Rules') }}
+          {{ $t('penny.rules.title') }}
         </h1>
         <p class="text-gray-600 dark:text-gray-400 mt-1">
-          {{ $t('Manage custom rules and logic for your Penny bots') }}
+          {{ $t('penny.rules.subtitle') }}
         </p>
       </div>
       <div class="flex items-center space-x-4">
@@ -18,7 +18,7 @@
             @change="selectBot(selectedBot)"
             class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
           >
-            <option value="" disabled>{{ $t('Select a bot') }}</option>
+            <option value="" disabled>{{ $t('penny.rules.selectBotPlaceholder') }}</option>
             <option
               v-for="bot in availableBots"
               :key="bot.id"
@@ -34,7 +34,7 @@
           class="inline-flex items-center px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <Icon icon="mdi:plus" class="mr-2" />
-          {{ $t('Create Rule') }}
+          {{ $t('penny.rules.createRule') }}
         </button>
       </div>
     </div>
@@ -45,7 +45,7 @@
         <Icon icon="mdi:information" class="h-5 w-5 text-yellow-600 dark:text-yellow-400 mr-3" />
         <div>
           <h3 class="text-lg font-medium text-yellow-800 dark:text-yellow-200">
-            {{ $t('Select a Bot to View Rules') }}
+            {{ $t('penny.rules.selectBotMessage') }}
           </h3>
           <p class="text-yellow-700 dark:text-yellow-300 mt-1">
             {{ $t('selectBotToManageRules') }}

@@ -4,9 +4,9 @@
     <div class="mb-6">
       <div class="flex justify-between items-center">
         <div>
-          <p class="uppercase text-xs text-gray-700 dark:text-gray-300 font-semibold">messages</p>
+          <p class="uppercase text-xs text-gray-700 dark:text-gray-300 font-semibold">{{ $t('messages.overview') }}</p>
           <h1 class="text-2xl text-gray-900 dark:text-gray-200 font-medium">
-            Conversation Management
+            {{ $t('messages.title') }}
           </h1>
         </div>
         <div class="flex gap-2">
@@ -17,14 +17,14 @@
           >
             <Icon v-if="loading" icon="mdi:loading" class="animate-spin" />
             <Icon v-else icon="mdi:refresh" />
-            Refresh
+            {{ $t('common.refresh') }}
           </button>
           <button
             @click="showSearchModal = true"
             class="bg-primary border flex gap-2 text-white hover:bg-primary/80 dark:border-gray-700 rounded py-3 px-5"
           >
             <Icon icon="mdi:magnify" />
-            Search
+            {{ $t('common.search') }}
           </button>
         </div>
       </div>
@@ -36,19 +36,19 @@
       <div class="w-full lg:w-1/3 bg-white dark:bg-gray-800 rounded-lg border dark:border-gray-700">
         <div class="p-4 border-b dark:border-gray-700">
           <div class="flex items-center justify-between mb-4">
-            <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-200">Conversations</h2>
+            <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-200">{{ $t('messages.conversations') }}</h2>
             <div class="flex items-center gap-2">
               <!-- Filter Controls -->
               <select v-model="filterBot" @change="loadConversations" 
                 class="text-sm border rounded px-2 py-1 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-                <option value="all">All Bots</option>
+                <option value="all">{{ $t('messages.allBots') }}</option>
                 <option v-for="bot in pennyBotStore.activeBots" :key="bot.id" :value="bot.id">
                   {{ bot.name || bot.botName || `Bot ${bot.id}` }}
                 </option>
               </select>
               <select v-model="filterConnection" @change="loadConversations" 
                 class="text-sm border rounded px-2 py-1 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-                <option value="all">All Connections</option>
+                <option value="all">{{ $t('messages.allConnections') }}</option>
                 <option v-for="connection in pennyConnectionStore.activeConnections" :key="connection.id" :value="connection.id">
                   {{ connection.name || connection.connectionName || `${connection.connectionType} - ${connection.id}` }}
                 </option>
@@ -94,12 +94,12 @@
         <div class="overflow-y-auto" style="max-height: 600px;">
           <div v-if="loadingConversations" class="p-8 text-center">
             <Icon icon="mdi:loading" class="animate-spin text-2xl text-gray-400" />
-            <p class="mt-2 text-gray-500">Loading conversations...</p>
+            <p class="mt-2 text-gray-500">{{ $t('messages.loadingConversations') }}</p>
           </div>
           
           <div v-else-if="conversations.length === 0" class="p-8 text-center">
             <Icon icon="mdi:chat-off" class="text-4xl text-gray-300" />
-            <p class="mt-2 text-gray-500">No conversations found</p>
+            <p class="mt-2 text-gray-500">{{ $t('messages.noConversationsFound') }}</p>
           </div>
           
           <div v-else>

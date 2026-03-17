@@ -4,10 +4,10 @@
     <div class="flex justify-between items-center mb-6">
       <div>
         <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
-          {{ $t('Penny Bot Management') }}
+          {{ $t('penny.title') }}
         </h1>
         <p class="text-gray-600 dark:text-gray-400 mt-1">
-          {{ $t('Manage your intelligent Penny bots') }}
+          {{ $t('penny.subtitle') }}
         </p>
       </div>
       <button
@@ -15,7 +15,7 @@
         class="inline-flex items-center px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/80 transition-colors"
       >
         <Icon icon="mdi:plus" class="mr-2" />
-        {{ $t('Create Penny Bot') }}
+        {{ $t('penny.createBot') }}
       </button>
     </div>
 
@@ -28,7 +28,7 @@
           </div>
           <div class="ml-4">
             <p class="text-sm font-medium text-gray-600 dark:text-gray-400">
-              {{ $t('Active Bots') }}
+              {{ $t('penny.activeBots') }}
             </p>
             <p class="text-2xl font-bold text-gray-900 dark:text-white">
               {{ activeBots.length }}
@@ -44,7 +44,7 @@
           </div>
           <div class="ml-4">
             <p class="text-sm font-medium text-gray-600 dark:text-gray-400">
-              {{ $t('Inactive Bots') }}
+              {{ $t('penny.inactiveBots') }}
             </p>
             <p class="text-2xl font-bold text-gray-900 dark:text-white">
               {{ inactiveBots.length }}
@@ -60,7 +60,7 @@
           </div>
           <div class="ml-4">
             <p class="text-sm font-medium text-gray-600 dark:text-gray-400">
-              {{ $t('Total Bots') }}
+              {{ $t('penny.totalBots') }}
             </p>
             <p class="text-2xl font-bold text-gray-900 dark:text-white">
               {{ pennyBots.length }}
@@ -96,17 +96,17 @@
       <div class="text-center py-12">
         <Icon icon="mdi:robot-outline" class="h-16 w-16 text-gray-400 mx-auto mb-4" />
         <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">
-          {{ $t('No Penny Bots Yet') }}
+          {{ $t('penny.noBotsYet') }}
         </h3>
         <p class="text-gray-600 dark:text-gray-400 mb-4">
-          {{ $t('Create your first intelligent Penny bot to get started') }}
+          {{ $t('penny.createFirstBot') }}
         </p>
         <button
           @click="showCreateModal = true"
           class="inline-flex items-center px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/80 transition-colors"
         >
           <Icon icon="mdi:plus" class="mr-2" />
-          {{ $t('Create Your First Penny Bot') }}
+          {{ $t('penny.createFirstBotButton') }}
         </button>
       </div>
     </div>
@@ -138,7 +138,7 @@
                     : 'bg-red-600 text-white'
                 ]"
               >
-                {{ bot.isFullyActive() ? $t('Active') : $t('Inactive') }}
+                {{ bot.isFullyActive() ? $t('penny.active') : $t('penny.inactive') }}
               </span>
               <span class="text-xs py-1 px-2 rounded-md bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200">
                 {{ getBotTypeDisplayName(bot.botType) }}
@@ -149,19 +149,19 @@
 
         <div class="card-content">
           <div class="info-item">
-            <span class="label">{{ $t('Type') }}:</span>
+            <span class="label">{{ $t('penny.type') }}:</span>
             <span class="value">{{ getBotTypeDisplayName(bot.botType) }}</span>
           </div>
           <div class="info-item">
-            <span class="label">{{ $t('Created') }}:</span>
+            <span class="label">{{ $t('penny.created') }}:</span>
             <span class="value">{{ formatDateTime(bot.createdAt) }}</span>
           </div>
           <div v-if="bot.description" class="info-item">
-            <span class="label">{{ $t('Description') }}:</span>
+            <span class="label">{{ $t('penny.description') }}:</span>
             <span class="value text-truncate">{{ bot.description }}</span>
           </div>
           <div class="info-item">
-            <span class="label">{{ $t('Botpress ID') }}:</span>
+            <span class="label">{{ $t('penny.botpressId') }}:</span>
             <span class="value text-truncate">{{ bot.getBotpressBotId() }}</span>
           </div>
         </div>
@@ -175,7 +175,7 @@
                 class="flex items-center justify-center px-3 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 transition-colors"
               >
                 <Icon icon="mdi:link-variant" class="h-4 w-4 mr-1" />
-                {{ $t('Connection') }}
+                {{ $t('penny.connection') }}
               </button>
               
               <!-- Rules Management Button -->
@@ -184,7 +184,7 @@
                 class="flex items-center justify-center px-3 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 transition-colors"
               >
                 <Icon icon="mdi:book-open-variant" class="h-4 w-4 mr-1" />
-                {{ $t('Manage Rules') }}
+                {{ $t('penny.manageRules') }}
               </button>
               
               <!-- Chat/Test Button -->
@@ -194,7 +194,7 @@
                 class="flex items-center justify-center px-3 py-2 bg-purple-600 text-white text-sm font-medium rounded-md hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed col-span-2"
               >
                 <Icon icon="mdi:chat" class="h-4 w-4 mr-1" />
-                {{ $t('Chat') }}
+                {{ $t('penny.chat') }}
               </button>
             </div>
             
@@ -210,25 +210,25 @@
                     : 'text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300'
                 ]"
               >
-                {{ bot.isActive && bot.isEnabled ? $t('Disable') : $t('Enable') }}
+                {{ bot.isActive && bot.isEnabled ? $t('penny.disable') : $t('penny.enable') }}
               </button>
               <button
                 @click="editBot(bot)"
                 class="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 text-sm font-medium"
               >
-                {{ $t('Edit Bot') }}
+                {{ $t('penny.editBot') }}
               </button>
               <button
                 @click="viewAnalytics(bot)"
                 class="text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 text-sm font-medium"
               >
-                {{ $t('Analytics') }}
+                {{ $t('penny.analytics') }}
               </button>
               <button
                 @click="deleteBot(bot)"
                 class="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 text-sm font-medium"
               >
-                {{ $t('Delete') }}
+                {{ $t('penny.delete') }}
               </button>
             </div>
           </div>

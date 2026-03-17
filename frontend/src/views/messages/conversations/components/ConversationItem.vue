@@ -40,16 +40,16 @@
         <div class="flex-1 min-w-0">
           <div class="flex items-center gap-2 mb-1">
             <h3 class="font-medium text-gray-900 dark:text-gray-200 truncate">
-              {{ conversation.userName || conversation.externalUserId || 'Unknown User' }}
+              {{ conversation.userName || conversation.externalUserId || $t('messages.unknownUser') }}
             </h3>
             <span v-if="conversation.isTakenOver" 
               class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">
               <Icon icon="mdi:hand-right" class="inline mr-1" />
-              Taken Over
+              {{ $t('messages.takenOver') }}
             </span>
           </div>
           <p class="text-sm text-gray-600 dark:text-gray-400 truncate">
-            {{ conversation.lastMessage || 'No messages yet' }}
+            {{ conversation.lastMessage || $t('messages.noMessagesYet') }}
           </p>
           <div class="flex items-center gap-2 mt-1">
             <span class="text-xs text-gray-500">

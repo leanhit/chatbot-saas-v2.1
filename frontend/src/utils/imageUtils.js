@@ -15,7 +15,7 @@ export function secureImageUrl(url) {
     // Extract filename from URL
     const urlObj = new URL(url);
     const filename = urlObj.pathname.split('/').pop();
-    const apiUrl = process.env.VITE_API_URL || 'http://localhost:8080/api';
+    const apiUrl = process.env.VITE_API_URL || 'https://cwsv.truyenthongviet.vn/api';
     const baseUrl = apiUrl.endsWith('/') ? apiUrl.slice(0, -1) : apiUrl;
     return `${baseUrl}/images/public/filename/${filename}/content`;
   }
@@ -24,7 +24,7 @@ export function secureImageUrl(url) {
   if (url.includes('chatbot-files/')) {
     // Extract filename from URL
     const filename = url.split('chatbot-files/').pop().split('?')[0];
-    const apiUrl = process.env.VITE_API_URL || 'http://localhost:8080/api';
+    const apiUrl = process.env.VITE_API_URL || 'https://cwsv.truyenthongviet.vn/api';
     const baseUrl = apiUrl.endsWith('/') ? apiUrl.slice(0, -1) : apiUrl;
     return `${baseUrl}/images/public/filename/${filename}/content`;
   }
@@ -36,11 +36,11 @@ export function secureImageUrl(url) {
       // Check if we're in development or production
       const isDevelopment = process.env.NODE_ENV === 'development' || window.location.hostname === 'localhost';
       if (isDevelopment) {
-        // Development: use local proxy
-        return `http://localhost:3004/files${urlObj.pathname}${urlObj.search}`;
+        // Development: use local proxy with HTTPS
+        return `https://localhost:3004/files${urlObj.pathname}${urlObj.search}`;
       } else {
-        // Production: use production proxy on same domain
-        return `/files${urlObj.pathname}${urlObj.search}`;
+        // Production: use production proxy on same domain with HTTPS
+        return `https://cwsv.truyenthongviet.vn/files${urlObj.pathname}${urlObj.search}`;
       }
     } catch (e) {
       return url;

@@ -24,7 +24,7 @@ module.exports = defineConfig({
     },
     proxy: {
       '/files': {
-        target: 'http://cwsv.truyenthongviet.vn:9000',
+        target: 'https://cwsv.truyenthongviet.vn:9000',
         changeOrigin: true,
         secure: false,
         pathRewrite: {
@@ -50,10 +50,10 @@ module.exports = defineConfig({
       }
       
       // Fix double slash issue - remove trailing slash from API URL
-      const apiUrl = process.env.VITE_API_URL || 'http://localhost:8080/api'
+      const apiUrl = process.env.VITE_API_URL || 'https://cwsv.truyenthongviet.vn/api'
       definitions['process.env'].VITE_API_URL = JSON.stringify(apiUrl.replace(/\/$/, ''))
       
-      definitions['process.env'].VITE_WS_URL = JSON.stringify(process.env.VITE_WS_URL || 'ws://localhost:8080/ws/takeover')
+      definitions['process.env'].VITE_WS_URL = JSON.stringify(process.env.VITE_WS_URL || 'wss://cwsv.truyenthongviet.vn/ws/takeover')
       definitions['process.env'].FACEBOOK_APP_ID = JSON.stringify(process.env.FACEBOOK_APP_ID || '')
       definitions['process.env'].FACEBOOK_APP_SECRET = JSON.stringify(process.env.FACEBOOK_APP_SECRET || '')
       definitions['process.env'].FACEBOOK_CONFIG_ID = JSON.stringify(process.env.FACEBOOK_CONFIG_ID || '')

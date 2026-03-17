@@ -4,8 +4,8 @@
     <div ref="messagesContainer" class="flex-1 overflow-y-auto space-y-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg mb-4">
       <div v-if="messages.length === 0" class="empty-chat text-center">
         <Icon icon="mdi:chat-outline" class="h-12 w-12 text-gray-400 mb-4 mx-auto" />
-        <p class="empty-chat-text">{{ $t('Start a conversation with') }} {{ botName }}</p>
-        <p class="empty-chat-hint">{{ $t('Type your message below to begin chatting') }}</p>
+        <p class="empty-chat-text">{{ $t('penny.startConversation') }} {{ botName }}</p>
+        <p class="empty-chat-hint">{{ $t('penny.typeMessageHint') }}</p>
       </div>
 
       <div v-else>
@@ -41,7 +41,7 @@
                 <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 0.1s"></div>
                 <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
               </div>
-              <span class="text-sm ml-2">{{ botName }} is typing...</span>
+              <span class="text-sm ml-2">{{ botName }} {{ $t('penny.isTyping') }}...</span>
             </div>
           </div>
         </div>
@@ -51,7 +51,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, nextTick } from 'vue'
+import { ref, onMounted, nextTick, watch } from 'vue'
 import { Icon } from '@iconify/vue'
 import { getRelativeTime } from '@/utils/dateUtils'
 
