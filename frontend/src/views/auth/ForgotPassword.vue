@@ -103,6 +103,7 @@
 <script>
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { Icon } from '@iconify/vue'
 export default {
   name: 'ForgotPassword',
@@ -111,6 +112,7 @@ export default {
   },
   setup() {
     const router = useRouter()
+    const { t } = useI18n()
     const form = reactive({
       email: ''
     })
@@ -133,14 +135,14 @@ export default {
         return
       }
       if (!isValidEmail(form.email)) {
-        errorMessage.value = 'Please enter a valid email address'
+        errorMessage.value = t('auth.forgotPassword.invalidEmail')
         return
       }
       isLoading.value = true
       try {
         // Simulate API call - replace with actual API call
         await new Promise(resolve => setTimeout(resolve, 2000))
-        successMessage.value = 'Password reset link has been sent to your email address.'
+        successMessage.value = t('auth.forgotPassword.resetLinkSent')
         // Clear form
         form.email = ''
         // Redirect to login after 3 seconds
@@ -148,7 +150,7 @@ export default {
           router.push('/login')
         }, 3000)
       } catch (error) {
-        errorMessage.value = 'Failed to send reset link. Please try again.'
+        errorMessage.value = t('auth.forgotPassword.failedToSend')
       } finally {
         isLoading.value = false
       }
@@ -160,7 +162,8 @@ export default {
       successMessage,
       errorMessage,
       handleForgotPassword,
-      isValidEmail
+      isValidEmail,
+      t
     }
   }
 }

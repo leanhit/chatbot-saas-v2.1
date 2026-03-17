@@ -18,6 +18,7 @@ import BotManagement from "../views/penny/bots/BotManagement.vue";
 import Connections from "../views/penny/connections/Connections.vue";
 import Rules from "../views/penny/rules/Rules.vue";
 import Messages from "../views/messages/chat/Chat.vue";
+import CustomerData from "../views/customers/CustomerData.vue";
 // Component Pages
 import Valert from "../views/components/alert.vue";
 import Vaccrodion from "../views/components/accordion.vue";
@@ -121,6 +122,12 @@ const routes = [
     name: "messages",
     component: Messages,
     meta: { requiresAuth: true, title: "Messages" + appname, skipTenantCheck: true },
+  },
+  {
+    path: "/customers",
+    name: "customers",
+    component: CustomerData,
+    meta: { requiresAuth: true, title: "Customer Data" + appname, skipTenantCheck: true },
   },
   // Error pages (No auth required)
   {

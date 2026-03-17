@@ -23,7 +23,8 @@ const EXCLUDED_PATHS = [
     '/tenants/members/pending-tenants', // User's own pending requests
     '/tenants/members/my-invitations', // User's own invitations
     '/tenants/members/join-requests', // Join requests - user doesn't have active tenant yet
-    '/images' // Image API không cần tenant ID
+    '/images', // Image API không cần tenant ID
+    '/api/odoo/customers' // Customer Data API - KHÔNG CẦN tenant context vì đã được xử lý trong axios.js
 ];
 instance.interceptors.request.use(
     (config) => {

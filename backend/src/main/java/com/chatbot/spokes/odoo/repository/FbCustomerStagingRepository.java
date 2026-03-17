@@ -2,6 +2,8 @@ package com.chatbot.spokes.odoo.repository;
 
 import com.chatbot.spokes.odoo.model.CustomerStatus;
 import com.chatbot.spokes.odoo.model.FbCustomerStaging;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -11,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 
 @Repository
@@ -58,4 +61,28 @@ public interface FbCustomerStagingRepository extends JpaRepository<FbCustomerSta
     @Deprecated
     @Transactional
     void deleteByPsidAndOwnerId(String psid, String ownerId);
+    
+    // ===== NEW METHODS FOR CUSTOMER DATA QUERY =====
+    
+    // Lấy theo tenantId với pagination
+    Page<FbCustomerStaging> findByTenantIdOrderByUpdatedAtDesc(Long tenantId, Pageable pageable);
+    
+    // Lấy theo tenantId và status với pagination
+    Page<FbCustomerStaging> findByTenantIdAndStatusOrderByUpdatedAtDesc(Long tenantId, CustomerStatus status, Pageable pageable);
+    
+    // Lấy theo psid và tenantId
+    Optional<FbCustomerStaging> findByPsidAndTenantId(String psid, Long tenantId);
+    
+    // Lấy theo danh sách psid và tenantId
+    List<FbCustomerStaging> findByPsidInAndTenantId(Set<String> psids, Long tenantId);
+    
+    // Tìm theo phone chứa keyword và tenantId
+    @Query("SELECT fcs FROM FbCustomerStaging fcs WHERE fcs.phones LIKE %:keyword% AND fcs.tenantId = :tenantId")
+    List<FbCustomerStaging> findByPhonesContainingAndTenantId(@Param("keyword") String keyword, @Param("tenantId") Long tenantId);
+    
+    // Đếm theo tenantId
+    long countByTenantId(Long tenantId);
+    
+    // Đếm theo tenantId và status
+    long countByTenantIdAndStatus(Long tenantId, CustomerStatus status);
 }

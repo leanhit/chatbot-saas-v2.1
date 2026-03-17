@@ -142,6 +142,23 @@
           <div class="item mt-3">
             <menu-accordion>
               <template v-slot:icon>
+                <Icon icon="mdi:account-multiple" />
+              </template>
+              <template v-slot:title> {{ $t('customers.title') }} </template>
+              <template v-slot:content>
+                <router-link
+                  to="/customers"
+                  @click.stop
+                  class="w-full text-left block rounded-md p-3 hover:bg-gray-200 dark:hover:bg-gray-700"
+                >
+                  {{ $t('customers.title') }}
+                </router-link>
+              </template>
+            </menu-accordion>
+          </div>
+          <div class="item mt-3">
+            <menu-accordion>
+              <template v-slot:icon>
                 <Icon icon="ri:layout-2-fill" />
               </template>
               <template v-slot:title> Layouts </template>

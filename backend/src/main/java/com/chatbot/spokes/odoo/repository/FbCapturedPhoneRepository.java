@@ -7,6 +7,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @Repository
 public interface FbCapturedPhoneRepository extends JpaRepository<FbCapturedPhone, Long> {
@@ -35,4 +36,12 @@ public interface FbCapturedPhoneRepository extends JpaRepository<FbCapturedPhone
     
     @Deprecated
     List<FbCapturedPhone> findByOwnerId(String ownerId);
+    
+    // ===== NEW METHODS FOR CUSTOMER DATA QUERY =====
+    
+    // Lấy theo danh sách ownerId và tenantId
+    List<FbCapturedPhone> findByOwnerIdInAndTenantId(Set<String> ownerIds, Long tenantId);
+    
+    // Đếm theo tenantId
+    long countByTenantId(Long tenantId);
 }

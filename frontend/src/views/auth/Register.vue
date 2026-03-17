@@ -184,6 +184,7 @@
 import { ref, reactive, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
+import { useI18n } from 'vue-i18n'
 import { Icon } from '@iconify/vue'
 export default {
   name: 'Register',
@@ -193,6 +194,7 @@ export default {
   setup() {
     const router = useRouter()
     const authStore = useAuthStore()
+    const { t } = useI18n()
     const form = reactive({
       email: '',
       password: '',
@@ -219,15 +221,15 @@ export default {
         return
       }
       if (!isValidEmail(form.email)) {
-        authStore.error = 'Please enter a valid email address'
+        authStore.error = t('auth.register.invalidEmail')
         return
       }
       if (passwordMismatch.value) {
-        authStore.error = 'Passwords do not match'
+        authStore.error = t('auth.register.passwordsDoNotMatch')
         return
       }
       if (!form.agreeTerms) {
-        authStore.error = 'You must agree to the terms and conditions'
+        authStore.error = t('auth.register.mustAgreeTerms')
         return
       }
       // Attempt registration
@@ -248,7 +250,8 @@ export default {
       emptyFields,
       authStore,
       handleRegister,
-      isValidEmail
+      isValidEmail,
+      t
     }
   }
 }

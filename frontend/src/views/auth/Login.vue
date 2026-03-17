@@ -139,6 +139,7 @@
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
+import { useI18n } from 'vue-i18n'
 import { Icon } from '@iconify/vue'
 export default {
   name: 'Login',
@@ -148,6 +149,7 @@ export default {
   setup() {
     const router = useRouter()
     const authStore = useAuthStore()
+    const { t } = useI18n()
     const form = reactive({
       email: '',
       password: '',
@@ -169,7 +171,7 @@ export default {
         return
       }
       if (!isValidEmail(form.email)) {
-        authStore.error = 'Please enter a valid email address'
+        authStore.error = $t('auth.login.invalidEmail')
         return
       }
       // Attempt login
@@ -186,7 +188,8 @@ export default {
       emptyFields,
       authStore,
       handleLogin,
-      isValidEmail
+      isValidEmail,
+      t
     }
   }
 }

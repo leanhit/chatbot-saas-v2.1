@@ -8,7 +8,9 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @Repository
 public interface FacebookUserRepository extends JpaRepository<FacebookUser, Long> {
@@ -83,4 +85,19 @@ public interface FacebookUserRepository extends JpaRepository<FacebookUser, Long
         @Param("pageId") String pageId,
         Pageable pageable
     );
+    
+    // ===== NEW METHODS FOR CUSTOMER DATA QUERY =====
+    
+    // Lấy theo psid và tenantId
+    Optional<FacebookUser> findByPsidAndTenantId(String psid, Long tenantId);
+    
+    // Lấy theo danh sách psid và tenantId
+    List<FacebookUser> findByPsidInAndTenantId(Set<String> psids, Long tenantId);
+    
+    // Tìm kiếm theo tên và tenantId
+    @Query("SELECT fu FROM FacebookUser fu WHERE LOWER(fu.name) LIKE LOWER(concat('%', :keyword, '%')) AND fu.tenantId = :tenantId")
+    List<FacebookUser> findByNameContainingIgnoreCaseAndTenantId(@Param("keyword") String keyword, @Param("tenantId") Long tenantId);
+    
+    // Đếm theo tenantId
+    long countByTenantId(Long tenantId);
 }
