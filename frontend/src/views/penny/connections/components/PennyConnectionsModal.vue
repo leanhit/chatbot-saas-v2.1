@@ -6,7 +6,7 @@
           <div class="connections-info">
             <Icon icon="mdi:connection" class="h-6 w-6 mr-3" />
             <div>
-              <h2 class="modal-title">{{ $t('Connections Management') }}</h2>
+              <h2 class="modal-title">{{ $t('penny.connections.connectionsManagement') }}</h2>
               <p class="bot-name">{{ bot?.botName }}</p>
             </div>
           </div>
@@ -16,7 +16,7 @@
               class="create-connection-btn"
             >
               <Icon icon="mdi:plus" class="h-4 w-4 mr-2" />
-              {{ $t('Create Connection') }}
+              {{ $t('penny.connections.createConnection') }}
             </button>
             <button @click="$emit('close')" class="close-button">
               <Icon icon="mdi:close" class="h-5 w-5" />
@@ -44,11 +44,11 @@
 
         <div v-else-if="connections.length === 0" class="no-connections">
           <Icon icon="mdi:connection" class="h-16 w-16 text-gray-400 mb-4" />
-          <h3 class="no-connections-title">{{ $t('No Connections Yet') }}</h3>
-          <p class="no-connections-text">{{ $t('Create your first connection to get started') }}</p>
+          <h3 class="no-connections-title">{{ $t('penny.connections.noConnectionsYet') }}</h3>
+          <p class="no-connections-text">{{ $t('penny.connections.createYourFirstConnection') }}</p>
           <button @click="createNewConnection" class="create-first-connection-btn">
             <Icon icon="mdi:plus" class="h-5 w-5 mr-2" />
-            {{ $t('Create Your First Connection') }}
+            {{ $t('penny.connections.createYourFirstConnection') }}
           </button>
         </div>
 
@@ -61,7 +61,7 @@
               </div>
               <div class="stat-content">
                 <div class="stat-number">{{ connections.length }}</div>
-                <div class="stat-label">{{ $t('Total Connections') }}</div>
+                <div class="stat-label">{{ $t('penny.connections.totalConnections') }}</div>
               </div>
             </div>
             <div class="stat-card">
@@ -70,7 +70,7 @@
               </div>
               <div class="stat-content">
                 <div class="stat-number">{{ activeConnections.length }}</div>
-                <div class="stat-label">{{ $t('Active Connections') }}</div>
+                <div class="stat-label">{{ $t('penny.connections.activeConnections') }}</div>
               </div>
             </div>
             <div class="stat-card">
@@ -79,7 +79,7 @@
               </div>
               <div class="stat-content">
                 <div class="stat-number">{{ healthyConnections.length }}</div>
-                <div class="stat-label">{{ $t('Healthy Connections') }}</div>
+                <div class="stat-label">{{ $t('penny.connections.healthyConnections') }}</div>
               </div>
             </div>
           </div>
@@ -87,16 +87,16 @@
           <!-- Connections Table -->
           <div class="connections-table">
             <div class="table-header">
-              <h3 class="table-title">{{ $t('Connections List') }}</h3>
+              <h3 class="table-title">{{ $t('penny.connections.connectionsList') }}</h3>
               <div class="table-actions">
                 <select v-model="filterType" class="filter-select">
-                  <option value="">{{ $t('All Types') }}</option>
-                  <option :value="ConnectionType.FACEBOOK">{{ $t('Facebook Messenger') }}</option>
-                  <option :value="ConnectionType.ZALO">{{ $t('Zalo') }}</option>
-                  <option :value="ConnectionType.WEBSITE">{{ $t('Website Chat') }}</option>
-                  <option :value="ConnectionType.WEBHOOK">{{ $t('Webhook') }}</option>
-                  <option :value="ConnectionType.API">{{ $t('REST API') }}</option>
-                  <option :value="ConnectionType.DATABASE">{{ $t('Database') }}</option>
+                  <option value="">{{ $t('penny.connections.allTypes') }}</option>
+                  <option :value="ConnectionType.FACEBOOK">{{ $t('penny.connections.facebookMessenger') }}</option>
+                  <option :value="ConnectionType.ZALO">{{ $t('penny.connections.zalo') }}</option>
+                  <option :value="ConnectionType.WEBSITE">{{ $t('penny.connections.websiteChat') }}</option>
+                  <option :value="ConnectionType.WEBHOOK">{{ $t('penny.connections.webhook') }}</option>
+                  <option :value="ConnectionType.API">{{ $t('penny.connections.restApi') }}</option>
+                  <option :value="ConnectionType.DATABASE">{{ $t('penny.connections.database') }}</option>
                 </select>
                 <button @click="refreshConnections" class="refresh-btn">
                   <Icon icon="mdi:refresh" class="h-4 w-4" />

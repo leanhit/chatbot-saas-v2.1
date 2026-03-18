@@ -110,6 +110,7 @@ public class FileMetadataController {
                 return ResponseEntity.notFound().build();
             }
         } catch (Exception e) {
+            // Return 404 without triggering GlobalExceptionHandler to avoid content-type conflict
             return ResponseEntity.notFound().build();
         }
     }
@@ -132,6 +133,7 @@ public class FileMetadataController {
                 return ResponseEntity.notFound().build();
             }
         } catch (Exception e) {
+            // Return 404 without triggering GlobalExceptionHandler to avoid content-type conflict
             return ResponseEntity.notFound().build();
         }
     }
@@ -154,6 +156,7 @@ public class FileMetadataController {
                 return ResponseEntity.notFound().build();
             }
         } catch (Exception e) {
+            // Return 404 without triggering GlobalExceptionHandler to avoid content-type conflict
             return ResponseEntity.notFound().build();
         }
     }

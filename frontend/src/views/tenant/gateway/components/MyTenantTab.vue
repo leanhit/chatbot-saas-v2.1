@@ -24,7 +24,7 @@
         <div class="text-center py-12">
           <Icon icon="mdi:office-building" class="h-16 w-16 text-gray-400 mx-auto mb-4" />
           <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">
-            {{ $t('Empty') }}
+            {{ $t('tenant.gateway.empty') }}
           </h3>
           <p class="text-gray-600 dark:text-gray-400">
             You don't have any workspaces yet.
@@ -56,7 +56,7 @@
                     : 'bg-red-600 text-white'
                 ]"
               >
-                {{ tenant.status === TenantStatus.ACTIVE ? $t('Active') : $t('Inactive') }}
+                {{ tenant.status === TenantStatus.ACTIVE ? $t('tenant.gateway.active') : $t('tenant.gateway.inactive') }}
               </span>
             </div>
           </div>
@@ -76,7 +76,7 @@
               </span>
             </div>
             <div class="info-item">
-              <span class="label">{{ $t('Expire') }}:</span>
+              <span class="label">{{ $t('tenant.gateway.expire') }}:</span>
               <span class="value">
                 {{ formatDateTime(tenant.expiresAt) }}
               </span>
@@ -89,21 +89,21 @@
                 @click="suspendTenant(tenant.tenantKey)"
                 class="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 text-sm font-medium"
               >
-                {{ $t('Suspend') }}
+                {{ $t('tenant.gateway.suspend') }}
               </button>
               <button
                 v-else
                 @click="activateTenant(tenant.tenantKey)"
                 class="text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300 text-sm font-medium"
               >
-                {{ $t('Activate') }}
+                {{ $t('tenant.gateway.activate') }}
               </button>
               <button
                 @click="enterWorkspace(tenant)"
                 :disabled="tenant.status !== TenantStatus.ACTIVE"
                 class="inline-flex items-center px-3 py-1.5 bg-primary text-white text-sm font-medium rounded-md hover:bg-primary/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {{ $t('Enter') }}
+                {{ $t('tenant.gateway.enter') }}
               </button>
             </div>
           </div>

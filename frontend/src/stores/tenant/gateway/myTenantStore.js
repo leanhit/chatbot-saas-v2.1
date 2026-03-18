@@ -15,6 +15,7 @@ export const useGatewayTenantStore = defineStore('gateway-tenant', () => {
       storedTenant = localStorage.getItem(TENANT_DATA)
     }
   } catch (error) {
+    console.error('Error reading from localStorage:', error);
   }
   // state
   const userTenants = ref([])
@@ -48,12 +49,6 @@ export const useGatewayTenantStore = defineStore('gateway-tenant', () => {
     try {
       // Use new endpoint with tenantKey
       const { data } = await tenantApi.getTenant(tenantKey)
-      console.log({
-        tenantKey: typeof tenantKey,
-        dataId: typeof data.id,
-        dataTenantKey: typeof data.tenantKey,
-        dataTenantKeyType: typeof data.tenantKey
-      })
       currentTenant.value = data
       // Fetch user profile now that tenant context is set
       try {
@@ -71,8 +66,10 @@ export const useGatewayTenantStore = defineStore('gateway-tenant', () => {
           localStorage.setItem(ACTIVE_TENANT_ID, data.tenantKey) // ✅ Lưu tenantKey
         }
       } catch (storageError) {
+        console.error('Error saving tenant data:', storageError);
       }
     } catch (error) {
+      console.error('Error switching tenant:', error);
       throw error
     } finally {
       switchingTenant.value = false

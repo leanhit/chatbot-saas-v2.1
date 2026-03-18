@@ -10,7 +10,7 @@
       <div class="text-center py-12">
         <Icon icon="mdi:email" class="h-16 w-16 text-gray-400 mx-auto mb-4" />
         <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">
-          {{ $t('My Invitations') }}
+          {{ $t('tenant.gateway.myInvitations') }}
         </h3>
         <p class="text-gray-600 dark:text-gray-400">
           No invitations available.
@@ -41,13 +41,13 @@
               @click="acceptInvitation(invitation.id, invitation.token)"
               class="px-3 py-1 bg-green-600 text-white text-sm rounded hover:bg-green-700"
             >
-              {{ $t('Accept') }}
+              {{ $t('tenant.gateway.accept') }}
             </button>
             <button
               @click="rejectInvitation(invitation.id, invitation.token)"
               class="px-3 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700"
             >
-              {{ $t('Reject') }}
+              {{ $t('tenant.gateway.reject') }}
             </button>
           </div>
         </div>

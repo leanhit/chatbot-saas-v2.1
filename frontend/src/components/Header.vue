@@ -97,12 +97,12 @@
               >
                 <div class="p-4 border-b border-gray-200 dark:border-gray-700">
                   <div class="flex items-center justify-between">
-                    <h3 class="text-sm font-medium text-gray-900 dark:text-white">Notifications</h3>
+                    <h3 class="text-sm font-medium text-gray-900 dark:text-white">{{ $t('header.notifications') }}</h3>
                     <button
                       @click="notificationStore.markAllAsRead()"
                       class="text-xs text-blue-600 hover:text-blue-500 dark:text-blue-400"
                     >
-                      Mark all as read
+                      {{ $t('header.markAllAsRead') }}
                     </button>
                   </div>
                 </div>
@@ -110,7 +110,7 @@
                 <div class="max-h-96 overflow-y-auto">
                   <div v-if="!notificationStore.notifications.length" class="p-8 text-center">
                     <Icon icon="mdi:bell-off" class="mx-auto h-12 w-12 text-gray-400" />
-                    <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">No notifications yet</p>
+                    <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">{{ $t('header.noNotificationsYet') }}</p>
                   </div>
                   
                   <div v-else class="divide-y divide-gray-200 dark:divide-gray-700">
@@ -141,7 +141,7 @@
                 
                 <div v-if="notificationStore.notifications.length > 5" class="p-4 border-t border-gray-200 dark:border-gray-700">
                   <button class="w-full text-center text-sm text-blue-600 hover:text-blue-500 dark:text-blue-400">
-                    View all notifications
+                    {{ $t('header.viewAllNotifications') }}
                   </button>
                 </div>
               </div>
@@ -195,7 +195,7 @@
                     class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
                   >
                     <Icon icon="mdi:account-circle" class="mr-3 h-4 w-4" />
-                    Profile
+                    {{ $t('header.profile') }}
                   </router-link>
                   
                   <a
@@ -204,7 +204,7 @@
                     class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
                   >
                     <Icon icon="mdi:office-building" class="mr-3 h-4 w-4" />
-                    Tenant Gateway
+                    {{ $t('header.tenantGateway') }}
                   </a>
                   
                   <a
@@ -212,7 +212,7 @@
                     class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
                   >
                     <Icon icon="mdi:cog" class="mr-3 h-4 w-4" />
-                    Settings
+                    {{ $t('header.settings') }}
                   </a>
                 </div>
                 
@@ -223,7 +223,7 @@
                     class="flex items-center px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
                   >
                     <Icon icon="mdi:logout" class="mr-3 h-4 w-4" />
-                    Sign out
+                    {{ $t('header.signOut') }}
                   </a>
                 </div>
               </div>
@@ -239,7 +239,7 @@
             class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200"
           >
             <Icon icon="mdi:login" class="mr-2 h-4 w-4" />
-            Sign in
+            {{ $t('header.signIn') }}
           </router-link>
         </div>
       </div>

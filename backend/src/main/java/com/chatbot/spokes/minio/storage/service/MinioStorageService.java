@@ -1,9 +1,6 @@
 package com.chatbot.spokes.minio.storage.service;
 
-import io.minio.MinioClient;
-import io.minio.PutObjectArgs;
-import io.minio.GetObjectArgs;
-import io.minio.RemoveObjectArgs;
+import io.minio.*;
 import io.minio.errors.MinioException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -17,6 +14,7 @@ import java.security.NoSuchAlgorithmException;
 /**
  * MinIO Storage Service
  * Handles file storage operations with MinIO
+ * Buckets are automatically created on startup by MinioBucketInitializer
  */
 @Service
 @Slf4j
@@ -89,6 +87,36 @@ public class MinioStorageService {
     }
 
     public String getFileUrl(String objectName) {
+        return String.format("%s/%s/%s", 
+            endpoint, bucketName, objectName);
+    }
+
+    /**
+     * Upload file to a specific bucket (useful for different types of files)
+     */
+    public String uploadFileToBucket(String bucketName, String objectName, MultipartFile file) {
+        try {
+            minioClient.putObject(
+                PutObjectArgs.builder()
+                    .bucket(bucketName)
+                    .object(objectName)
+                    .stream(file.getInputStream(), file.getSize(), -1)
+                    .contentType(file.getContentType())
+                    .build()
+            );
+            
+            log.info("File uploaded successfully to bucket {}: {}", bucketName, objectName);
+            return objectName;
+        } catch (Exception e) {
+            log.error("Error uploading file to MinIO bucket {}: {}", bucketName, objectName, e);
+            throw new RuntimeException("Failed to upload file", e);
+        }
+    }
+
+    /**
+     * Get file URL from specific bucket
+     */
+    public String getFileUrlFromBucket(String bucketName, String objectName) {
         return String.format("%s/%s/%s", 
             endpoint, bucketName, objectName);
     }

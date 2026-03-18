@@ -10,7 +10,7 @@
       <div class="text-center py-12">
         <Icon icon="mdi:clock" class="h-16 w-16 text-gray-400 mx-auto mb-4" />
         <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">
-          {{ $t('Pending Requests') }}
+          {{ $t('tenant.gateway.pendingRequests') }}
         </h3>
         <p class="text-gray-600 dark:text-gray-400">
           No pending requests at the moment.
@@ -43,7 +43,7 @@
               class="px-3 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Icon v-if="cancelling === request.id" icon="mdi:loading" class="animate-spin h-4 w-4 mr-1" />
-              {{ $t('Cancel Request') }}
+              {{ $t('tenant.gateway.cancelRequest') }}
             </button>
           </div>
         </div>

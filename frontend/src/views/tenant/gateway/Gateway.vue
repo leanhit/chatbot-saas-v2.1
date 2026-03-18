@@ -100,10 +100,10 @@ export default {
     const activeTab = ref('my')
     const showCreateModal = ref(false)
     const tabs = [
-      { name: 'my', label: t('gateway.myTenants'), icon: 'mdi:office-building' },
-      { name: 'search', label: t('gateway.search'), icon: 'mdi:search' },
-      { name: 'pending', label: t('gateway.pending'), icon: 'mdi:clock' },
-      { name: 'my-invitations', label: t('gateway.myInvitations'), icon: 'mdi:email' }
+      { name: 'my', label: t('gateway.tabs.myTenants'), icon: 'mdi:office-building' },
+      { name: 'search', label: t('gateway.tabs.search'), icon: 'mdi:search' },
+      { name: 'pending', label: t('gateway.tabs.pending'), icon: 'mdi:clock' },
+      { name: 'my-invitations', label: t('gateway.tabs.myInvitations'), icon: 'mdi:email' }
     ]
     const onTenantEntered = () => {
       // Tenant entered successfully, can add any additional logic here

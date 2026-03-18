@@ -2,25 +2,25 @@
   <div v-if="visible" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50" @click="handleOverlayClick">
     <div class="relative top-20 mx-auto p-4 border w-96 shadow-lg rounded-md bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700" @click.stop>
       <div class="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 pb-4">
-        <h3 class="text-lg font-medium text-gray-900 dark:text-white">{{ $t('Create New Workspace') }}</h3>
+        <h3 class="text-lg font-medium text-gray-900 dark:text-white">{{ $t('gateway.createModal.title') }}</h3>
         <button @click="handleClose" class="text-gray-400 hover:text-gray-500">
           <Icon icon="mdi:close" class="h-6 w-6" />
         </button>
       </div>
       <form @submit.prevent="handleSubmit" class="mt-4">
         <div class="mb-4">
-          <label for="name" class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ $t('Workspace Name') }} *</label>
+          <label for="name" class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ $t('gateway.createModal.workspaceName') }} *</label>
           <input
             id="name"
             v-model="formData.name"
             type="text"
             class="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-            :placeholder="$t('Enter workspace name')"
+            :placeholder="$t('gateway.createModal.enterWorkspaceName')"
             required
           />
         </div>
         <div class="form-group">
-          <label class="form-label">{{ $t('Visibility') }} *</label>
+          <label class="form-label">{{ $t('gateway.createModal.visibility') }} *</label>
           <div class="radio-group">
             <label class="radio-label">
               <input
@@ -29,8 +29,8 @@
                 :value="TenantVisibility.PUBLIC"
                 class="radio-input"
               />
-              <span class="radio-text">{{ $t('Public') }}</span>
-              <span class="radio-description">{{ $t('Anyone can find and join') }}</span>
+              <span class="radio-text">{{ $t('gateway.createModal.options.public') }}</span>
+              <span class="radio-description">{{ $t('gateway.createModal.options.publicDescription') }}</span>
             </label>
             <label class="radio-label">
               <input
@@ -39,8 +39,8 @@
                 :value="TenantVisibility.PRIVATE"
                 class="radio-input"
               />
-              <span class="radio-text">{{ $t('Private') }}</span>
-              <span class="radio-description">{{ $t('Invite only') }}</span>
+              <span class="radio-text">{{ $t('gateway.createModal.options.private') }}</span>
+              <span class="radio-description">{{ $t('gateway.createModal.options.privateDescription') }}</span>
             </label>
           </div>
         </div>
@@ -52,7 +52,7 @@
           class="btn btn-secondary"
           :disabled="loading"
         >
-          {{ $t('Cancel') }}
+          {{ $t('gateway.createModal.cancel') }}
         </button>
         <button
           type="submit"
@@ -61,7 +61,7 @@
           :disabled="loading || !isFormValid"
         >
           <Icon v-if="loading" icon="mdi:loading" class="animate-spin h-4 w-4 mr-2" />
-          {{ $t('Create') }}
+          {{ $t('gateway.createModal.submit') }}
         </button>
       </div>
     </div>

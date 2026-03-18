@@ -1,229 +1,302 @@
 <template>
-  <div class="customer-data-page">
+  <div class="customer-data-page p-4">
     <!-- Header -->
-    <div class="page-header">
+    <div class="mb-6">
       <div class="flex justify-between items-center">
         <div>
-          <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
+          <p class="uppercase text-xs text-gray-700 dark:text-gray-300 font-semibold">{{ $t('customers.overview') }}</p>
+          <h1 class="text-2xl text-gray-900 dark:text-gray-200 font-medium">
             {{ $t('customers.title') }}
           </h1>
-          <p class="text-gray-600 dark:text-gray-400 mt-1">
-            {{ $t('customers.subtitle') }}
-          </p>
+        </div>
+        <div class="flex gap-2">
+          <button
+            @click="refreshData"
+            :disabled="loading"
+            class="bg-white dark:bg-gray-800 hover:border-gray-200 dark:hover:bg-gray-700 dark:text-white dark:border-gray-700 border rounded py-2 px-5 flex items-center gap-2"
+          >
+            <Icon v-if="loading" icon="mdi:loading" class="animate-spin" />
+            <Icon v-else icon="mdi:refresh" />
+            {{ $t('common.refresh') }}
+          </button>
+          <button
+            @click="showSearchModal = true"
+            class="bg-primary border flex gap-2 text-white hover:bg-primary/80 dark:border-gray-700 rounded py-3 px-5"
+          >
+            <Icon icon="mdi:magnify" />
+            {{ $t('common.search') }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="flex gap-4" style="min-height: 600px;">
+      <!-- Customers List -->
+      <div class="w-full lg:w-1/3 bg-white dark:bg-gray-800 rounded-lg border dark:border-gray-700">
+        <div class="p-4 border-b dark:border-gray-700">
+          <div class="flex items-center justify-between mb-4">
+            <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-200">{{ $t('customers.list') }}</h2>
+            <div class="flex items-center gap-2">
+              <!-- Status Filter -->
+              <select v-model="selectedStatus" @change="onStatusChange" 
+                class="text-sm border rounded px-2 py-1 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                <option value="">{{ $t('customers.allStatuses') }}</option>
+                <option v-for="status in availableStatuses" :key="status" :value="status">
+                  {{ $t(`customers.status.${status}`) }}
+                </option>
+              </select>
+            </div>
+          </div>
+          
+          <!-- Selection Controls -->
+          <div v-if="customers.length > 0" class="flex items-center justify-between">
+            <!-- Select All -->
+            <div class="flex items-center gap-2">
+              <input
+                type="checkbox"
+                :checked="allSelected"
+                @change="toggleSelectAll"
+                class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              />
+              <label 
+                @click="toggleSelectAll"
+                class="text-sm text-gray-600 dark:text-gray-400 cursor-pointer hover:text-gray-800 dark:hover:text-gray-200"
+              >
+                select all
+              </label>
+            </div>
+            
+            <!-- Process with Count -->
+            <div v-if="selectedCustomers.size > 0" class="flex items-center gap-2">
+              <button
+                @click="processSelectedCustomers"
+                class="text-sm bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded flex items-center gap-1"
+              >
+                <Icon icon="mdi:check" />
+                process
+              </button>
+              <span class="text-sm text-gray-600 dark:text-gray-400">
+                - {{ selectedCustomers.size }} customers selected
+              </span>
+            </div>
+          </div>
         </div>
         
-        <!-- Stats Cards -->
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
-          <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
-            <div class="text-sm text-gray-600 dark:text-gray-400">{{ $t('customers.stats.total') }}</div>
-            <div class="text-2xl font-bold text-blue-600">{{ stats.totalCustomers || 0 }}</div>
+        <!-- Customers List -->
+        <div class="overflow-y-auto" style="max-height: 600px;">
+          <div v-if="loading" class="p-8 text-center">
+            <Icon icon="mdi:loading" class="animate-spin text-2xl text-gray-400" />
+            <p class="mt-2 text-gray-500">{{ $t('customers.loadingCustomers') }}</p>
           </div>
-          <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
-            <div class="text-sm text-gray-600 dark:text-gray-400">{{ $t('customers.stats.pending') }}</div>
-            <div class="text-2xl font-bold text-yellow-600">{{ stats.pendingCustomers || 0 }}</div>
+          
+          <div v-else-if="customers.length === 0" class="p-8 text-center">
+            <Icon icon="mdi:account-search" class="text-4xl text-gray-300" />
+            <p class="mt-2 text-gray-500">{{ $t('customers.noCustomersFound') }}</p>
           </div>
-          <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
-            <div class="text-sm text-gray-600 dark:text-gray-400">{{ $t('customers.stats.completed') }}</div>
-            <div class="text-2xl font-bold text-green-600">{{ stats.completedCustomers || 0 }}</div>
-          </div>
-          <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
-            <div class="text-sm text-gray-600 dark:text-gray-400">{{ $t('customers.stats.synced') }}</div>
-            <div class="text-2xl font-bold text-purple-600">{{ stats.syncedCustomers || 0 }}</div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Filters and Search -->
-    <div class="filters-section bg-white dark:bg-gray-800 p-4 rounded-lg shadow mb-6">
-      <div class="flex flex-col md:flex-row gap-4">
-        <!-- Search -->
-        <div class="flex-1">
-          <div class="relative">
-            <Icon icon="mdi:magnify" class="absolute left-3 top-3 text-gray-400" />
-            <input
-              v-model="searchKeyword"
-              type="text"
-              :placeholder="$t('customers.searchPlaceholder')"
-              class="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-              @input="onSearch"
+          
+          <div v-else>
+            <CustomerItem
+              v-for="customer in customers"
+              :key="customer.psid"
+              :customer="customer"
+              :is-selected="selectedCustomer?.psid === customer.psid"
+              :is-selected-for-processing="isCustomerSelected(customer.psid)"
+              @select="selectCustomer(customer)"
+              @toggle-select="toggleCustomerSelection(customer.psid)"
             />
           </div>
+          
+          <!-- Pagination -->
+          <div v-if="totalPages > 1" class="p-4 border-t dark:border-gray-700 bg-gray-50 dark:bg-gray-700">
+            <div class="flex items-center justify-between">
+              <div class="text-sm text-gray-600 dark:text-gray-400">
+                Showing {{ customers.length }} of {{ totalElements }} customers
+              </div>
+              <div class="flex items-center gap-2">
+                <!-- First Page -->
+                <button
+                  @click="firstPage"
+                  :disabled="currentPage === 0"
+                  class="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="First page"
+                >
+                  <Icon icon="mdi:page-first" class="text-gray-600 dark:text-gray-400" />
+                </button>
+                
+                <!-- Previous Page -->
+                <button
+                  @click="prevPage"
+                  :disabled="currentPage === 0"
+                  class="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="Previous page"
+                >
+                  <Icon icon="mdi:chevron-left" class="text-gray-600 dark:text-gray-400" />
+                </button>
+                
+                <!-- Page Info -->
+                <span class="text-sm text-gray-600 dark:text-gray-400 px-2">
+                  Page {{ currentPage + 1 }} of {{ totalPages }}
+                </span>
+                
+                <!-- Next Page -->
+                <button
+                  @click="nextPage"
+                  :disabled="currentPage >= totalPages - 1"
+                  class="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="Next page"
+                >
+                  <Icon icon="mdi:chevron-right" class="text-gray-600 dark:text-gray-400" />
+                </button>
+                
+                <!-- Last Page -->
+                <button
+                  @click="lastPage"
+                  :disabled="currentPage >= totalPages - 1"
+                  class="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="Last page"
+                >
+                  <Icon icon="mdi:page-last" class="text-gray-600 dark:text-gray-400" />
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
+      </div>
 
-        <!-- Status Filter -->
-        <div class="w-full md:w-48">
-          <select
-            v-model="selectedStatus"
-            class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-            @change="onStatusChange"
-          >
-            <option value="">{{ $t('customers.allStatuses') }}</option>
-            <option v-for="status in availableStatuses" :key="status" :value="status">
-              {{ $t(`customers.status.${status}`) }}
-            </option>
-          </select>
+      <!-- Customer Details -->
+      <div class="flex-1 bg-white dark:bg-gray-800 rounded-lg border dark:border-gray-700 flex flex-col" style="min-height: 600px;">
+        <div v-if="!selectedCustomer" class="h-full flex items-center justify-center">
+          <div class="text-center">
+            <Icon icon="mdi:account" class="text-6xl text-gray-300" />
+            <p class="mt-4 text-gray-500">Select a customer to view details</p>
+          </div>
         </div>
-
-        <!-- Refresh Button -->
-        <button
-          @click="refreshData"
-          :disabled="loading"
-          class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2"
-        >
-          <Icon icon="mdi:refresh" :class="{ 'animate-spin': loading }" />
-          {{ $t('common.refresh') }}
-        </button>
-      </div>
-    </div>
-
-    <!-- Customer List -->
-    <div class="customer-list bg-white dark:bg-gray-800 rounded-lg shadow">
-      <!-- Loading State -->
-      <div v-if="loading" class="p-8 text-center">
-        <Icon icon="mdi:loading" class="animate-spin text-4xl text-blue-600 mb-4" />
-        <p class="text-gray-600 dark:text-gray-400">{{ $t('common.loading') }}</p>
-      </div>
-
-      <!-- Empty State -->
-      <div v-else-if="customers.length === 0" class="p-8 text-center">
-        <Icon icon="mdi:account-search" class="text-4xl text-gray-400 mb-4" />
-        <p class="text-gray-600 dark:text-gray-400">{{ $t('customers.noData') }}</p>
-      </div>
-
-      <!-- Customer Table -->
-      <div v-else class="overflow-x-auto">
-        <table class="w-full">
-          <thead class="bg-gray-50 dark:bg-gray-700">
-            <tr>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                {{ $t('customers.headers.customer') }}
-              </th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                {{ $t('customers.headers.contact') }}
-              </th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                {{ $t('customers.headers.status') }}
-              </th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                {{ $t('customers.headers.lastUpdated') }}
-              </th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                {{ $t('customers.headers.actions') }}
-              </th>
-            </tr>
-          </thead>
-          <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-            <tr v-for="customer in customers" :key="customer.psid" class="hover:bg-gray-50 dark:hover:bg-gray-700">
-              <!-- Customer Info -->
-              <td class="px-6 py-4 whitespace-nowrap">
-                <div class="flex items-center">
-                  <div class="flex-shrink-0 h-10 w-10">
-                    <img
-                      v-if="customer.displayAvatar"
-                      :src="customer.displayAvatar"
-                      :alt="customer.displayName"
-                      class="h-10 w-10 rounded-full object-cover"
-                    />
-                    <div
-                      v-else
-                      class="h-10 w-10 rounded-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center"
-                    >
-                      <Icon icon="mdi:account" class="text-gray-500" />
-                    </div>
-                  </div>
-                  <div class="ml-4">
-                    <div class="text-sm font-medium text-gray-900 dark:text-white">
-                      {{ customer.displayName }}
-                    </div>
-                    <div class="text-sm text-gray-500 dark:text-gray-400">
-                      PSID: {{ customer.psid.substring(0, 8) }}...
-                    </div>
-                  </div>
+        
+        <div v-else class="h-full flex flex-col">
+          <!-- Customer Header -->
+          <div class="p-4 border-b dark:border-gray-700 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <!-- Customer Avatar -->
+              <div class="flex-shrink-0">
+                <img 
+                  v-if="selectedCustomer.displayAvatar"
+                  :src="selectedCustomer.displayAvatar" 
+                  :alt="selectedCustomer.displayName || selectedCustomer.psid"
+                  class="w-12 h-12 rounded-full object-cover"
+                  @error="handleImageError"
+                />
+                <div 
+                  v-else
+                  class="w-12 h-12 rounded-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center"
+                >
+                  <Icon icon="mdi:account" class="text-gray-600 dark:text-gray-300 text-2xl" />
                 </div>
-              </td>
+              </div>
+              
+              <div>
+                <h3 class="font-semibold text-gray-900 dark:text-gray-200">
+                  {{ selectedCustomer.displayName || selectedCustomer.psid || 'Unknown Customer' }}
+                </h3>
+                <p class="text-sm text-gray-500">
+                  PSID: {{ selectedCustomer.psid.substring(0, 8) }}... • {{ formatDate(selectedCustomer.updatedAt) }}
+                </p>
+              </div>
+            </div>
+            
+            <div class="flex items-center gap-2">
+              <span 
+                :class="getStatusClass(selectedCustomer.status)"
+                class="px-3 py-1 rounded-full text-sm"
+              >
+                {{ $t(`customers.status.${selectedCustomer.status}`) }}
+              </span>
+              
+              <button
+                v-if="selectedCustomer.status === 'PENDING'"
+                @click="processCustomer"
+                :disabled="processing"
+                class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 disabled:opacity-50"
+              >
+                <Icon v-if="processing" icon="mdi:loading" class="animate-spin" />
+                <Icon v-else icon="mdi:check" />
+                Process
+              </button>
+            </div>
+          </div>
+          
+          <!-- Customer Details Area -->
+          <div class="flex-1 overflow-y-auto p-4 bg-white dark:bg-gray-800">
+            <!-- Stats Cards -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+              <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                <div class="text-sm text-gray-600 dark:text-gray-400">{{ $t('customers.stats.total') }}</div>
+                <div class="text-2xl font-bold text-blue-600">{{ stats.totalCustomers || 0 }}</div>
+              </div>
+              <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                <div class="text-sm text-gray-600 dark:text-gray-400">{{ $t('customers.stats.pending') }}</div>
+                <div class="text-2xl font-bold text-yellow-600">{{ stats.pendingCustomers || 0 }}</div>
+              </div>
+              <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                <div class="text-sm text-gray-600 dark:text-gray-400">{{ $t('customers.stats.completed') }}</div>
+                <div class="text-2xl font-bold text-green-600">{{ stats.completedCustomers || 0 }}</div>
+              </div>
+              <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                <div class="text-sm text-gray-600 dark:text-gray-400">{{ $t('customers.stats.synced') }}</div>
+                <div class="text-2xl font-bold text-purple-600">{{ stats.syncedCustomers || 0 }}</div>
+              </div>
+            </div>
 
-              <!-- Contact Info -->
-              <td class="px-6 py-4 whitespace-nowrap">
-                <div class="text-sm text-gray-900 dark:text-white">
-                  <div v-if="customer.primaryPhone" class="flex items-center gap-1">
+            <!-- Customer Information -->
+            <div class="space-y-6">
+              <!-- Contact Information -->
+              <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                <h4 class="font-medium text-gray-900 dark:text-gray-200 mb-3">{{ $t('customers.contactInfo') }}</h4>
+                <div class="space-y-2">
+                  <div v-if="selectedCustomer.primaryPhone" class="flex items-center gap-2">
                     <Icon icon="mdi:phone" class="text-gray-400" />
-                    {{ customer.primaryPhone }}
+                    <span class="text-gray-900 dark:text-gray-200">{{ selectedCustomer.primaryPhone }}</span>
                   </div>
-                  <div v-if="customer.totalPhones > 1" class="text-xs text-gray-500">
-                    +{{ customer.totalPhones - 1 }} {{ $t('customers.morePhones') }}
+                  <div v-if="selectedCustomer.totalPhones > 1" class="text-sm text-gray-500">
+                    +{{ selectedCustomer.totalPhones - 1 }} {{ $t('customers.morePhones') }}
                   </div>
-                  <div v-if="!customer.primaryPhone" class="text-gray-400">
+                  <div v-if="!selectedCustomer.primaryPhone" class="text-gray-400">
                     {{ $t('customers.noPhone') }}
                   </div>
                 </div>
-              </td>
+              </div>
 
-              <!-- Status -->
-              <td class="px-6 py-4 whitespace-nowrap">
-                <span
-                  :class="getStatusClass(customer.status)"
-                  class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full"
-                >
-                  {{ $t(`customers.status.${customer.status}`) }}
-                </span>
-                <div v-if="customer.isSyncedWithOdoo" class="text-xs text-green-600 mt-1">
-                  <Icon icon="mdi:check-circle" class="inline" />
-                  {{ $t('customers.syncedWithOdoo') }}
+              <!-- Status Information -->
+              <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                <h4 class="font-medium text-gray-900 dark:text-gray-200 mb-3">{{ $t('customers.statusInfo') }}</h4>
+                <div class="space-y-2">
+                  <div class="flex items-center justify-between">
+                    <span class="text-gray-600 dark:text-gray-400">{{ $t('customers.currentStatus') }}:</span>
+                    <span 
+                      :class="getStatusClass(selectedCustomer.status)"
+                      class="px-2 py-1 rounded-full text-xs"
+                    >
+                      {{ $t(`customers.status.${selectedCustomer.status}`) }}
+                    </span>
+                  </div>
+                  <div v-if="selectedCustomer.isSyncedWithOdoo" class="flex items-center gap-2 text-green-600">
+                    <Icon icon="mdi:check-circle" />
+                    <span>{{ $t('customers.syncedWithOdoo') }}</span>
+                  </div>
                 </div>
-              </td>
+              </div>
 
-              <!-- Last Updated -->
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                {{ formatDate(customer.updatedAt) }}
-              </td>
-
-              <!-- Actions -->
-              <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                <button
-                  @click="viewCustomerDetails(customer)"
-                  class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 mr-3"
-                >
-                  {{ $t('common.view') }}
-                </button>
-                <button
-                  v-if="customer.status === 'PENDING'"
-                  @click="processCustomer(customer)"
-                  class="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300"
-                >
-                  {{ $t('customers.process') }}
-                </button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <!-- Pagination -->
-      <div v-if="totalPages > 1" class="px-6 py-4 border-t border-gray-200 dark:border-gray-700">
-        <div class="flex items-center justify-between">
-          <div class="text-sm text-gray-700 dark:text-gray-300">
-            {{ $t('customers.showing', { 
-              start: currentPage * pageSize + 1, 
-              end: Math.min((currentPage + 1) * pageSize, totalElements), 
-              total: totalElements 
-            }) }}
-          </div>
-          <div class="flex gap-2">
-            <button
-              @click="previousPage"
-              :disabled="currentPage === 0"
-              class="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded disabled:opacity-50"
-            >
-              {{ $t('common.previous') }}
-            </button>
-            <button
-              @click="nextPage"
-              :disabled="currentPage >= totalPages - 1"
-              class="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded disabled:opacity-50"
-            >
-              {{ $t('common.next') }}
-            </button>
+              <!-- Timestamp Information -->
+              <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                <h4 class="font-medium text-gray-900 dark:text-gray-200 mb-3">{{ $t('customers.timestamps') }}</h4>
+                <div class="space-y-2">
+                  <div class="flex items-center justify-between">
+                    <span class="text-gray-600 dark:text-gray-400">{{ $t('customers.lastUpdated') }}:</span>
+                    <span class="text-gray-900 dark:text-gray-200">{{ formatDate(selectedCustomer.updatedAt) }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -239,17 +312,19 @@
 </template>
 
 <script>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { Icon } from '@iconify/vue'
 import CustomerDetailsModal from './components/CustomerDetailsModal.vue'
+import CustomerItem from './components/CustomerItem.vue'
 import { useI18n } from 'vue-i18n'
-import axios from 'axios'
+import customerApi from '@/api/customerApi'
 
 export default {
   name: 'CustomerData',
   components: {
     Icon,
-    CustomerDetailsModal
+    CustomerDetailsModal,
+    CustomerItem
   },
   setup() {
     const { t } = useI18n()
@@ -259,7 +334,6 @@ export default {
     const customers = ref([])
     const stats = ref({})
     const availableStatuses = ref([])
-    const searchKeyword = ref('')
     const selectedStatus = ref('')
     const currentPage = ref(0)
     const pageSize = ref(20)
@@ -267,24 +341,13 @@ export default {
     const totalPages = ref(0)
     const showDetailsModal = ref(false)
     const selectedCustomer = ref(null)
+    const selectedCustomers = ref(new Set())
+    const processing = ref(false)
+    const showSearchModal = ref(false)
 
     // Computed properties
-    const searchParams = computed(() => {
-      const params = {
-        page: currentPage.value,
-        size: pageSize.value
-      }
-      
-      if (searchKeyword.value.trim()) {
-        params.keyword = searchKeyword.value.trim()
-      }
-      
-      if (selectedStatus.value) {
-        // Use status filter endpoint instead of search
-        return null // Will be handled in onStatusChange
-      }
-      
-      return params
+    const allSelected = computed(() => {
+      return customers.value.length > 0 && selectedCustomers.value.size === customers.value.length
     })
 
     // Methods
@@ -295,34 +358,17 @@ export default {
         
         if (selectedStatus.value) {
           // Use status filter
-          response = await axios.get(`/api/odoo/customers/status/${selectedStatus.value}`, {
-            params: { page: currentPage.value, size: pageSize.value }
-          })
-        } else if (searchKeyword.value.trim()) {
-          // Use search
-          response = await axios.get('/api/odoo/customers/search', {
-            params: { 
-              keyword: searchKeyword.value.trim(),
-              page: currentPage.value, 
-              size: pageSize.value 
-            }
-          })
+          response = await customerApi.getCustomersByStatus(selectedStatus.value, currentPage.value, pageSize.value)
         } else {
           // Get all
-          response = await axios.get('/api/odoo/customers', {
-            params: { 
-              page: currentPage.value, 
-              size: pageSize.value 
-            }
-          })
+          response = await customerApi.getCustomers({ page: currentPage.value, size: pageSize.value })
         }
 
-        customers.value = response.data.content || []
-        totalElements.value = response.data.totalElements || 0
-        totalPages.value = response.data.totalPages || 0
+        customers.value = response.content || []
+        totalElements.value = response.totalElements || 0
+        totalPages.value = response.totalPages || 0
       } catch (error) {
         console.error('Error fetching customers:', error)
-        // Show error notification
       } finally {
         loading.value = false
       }
@@ -330,8 +376,7 @@ export default {
 
     const fetchStats = async () => {
       try {
-        const response = await axios.get('/api/odoo/customers/stats')
-        stats.value = response.data
+        stats.value = await customerApi.getCustomerStats()
       } catch (error) {
         console.error('Error fetching stats:', error)
       }
@@ -339,8 +384,7 @@ export default {
 
     const fetchStatuses = async () => {
       try {
-        const response = await axios.get('/api/odoo/customers/statuses')
-        availableStatuses.value = response.data
+        availableStatuses.value = await customerApi.getAvailableStatuses()
       } catch (error) {
         console.error('Error fetching statuses:', error)
       }
@@ -354,17 +398,58 @@ export default {
       ])
     }
 
-    const onSearch = () => {
-      currentPage.value = 0
-      fetchCustomers()
-    }
-
     const onStatusChange = () => {
       currentPage.value = 0
       fetchCustomers()
     }
 
-    const previousPage = () => {
+    const selectCustomer = (customer) => {
+      selectedCustomer.value = customer
+    }
+
+    const toggleCustomerSelection = (psid) => {
+      if (selectedCustomers.value.has(psid)) {
+        selectedCustomers.value.delete(psid)
+      } else {
+        selectedCustomers.value.add(psid)
+      }
+    }
+
+    const isCustomerSelected = (psid) => {
+      return selectedCustomers.value.has(psid)
+    }
+
+    const toggleSelectAll = () => {
+      if (allSelected.value) {
+        selectedCustomers.value.clear()
+      } else {
+        customers.value.forEach(customer => {
+          selectedCustomers.value.add(customer.psid)
+        })
+      }
+    }
+
+    const processSelectedCustomers = async () => {
+      // TODO: Implement bulk processing when backend endpoint is available
+      console.log('Processing selected customers:', Array.from(selectedCustomers.value))
+      // For now, just show a message
+      alert('Customer processing feature will be available soon')
+    }
+
+    const processCustomer = async () => {
+      // TODO: Implement customer processing when backend endpoint is available
+      console.log('Processing customer:', selectedCustomer.value)
+      // For now, just show a message
+      alert('Customer processing feature will be available soon')
+    }
+
+    // Pagination methods
+    const firstPage = () => {
+      currentPage.value = 0
+      fetchCustomers()
+    }
+
+    const prevPage = () => {
       if (currentPage.value > 0) {
         currentPage.value--
         fetchCustomers()
@@ -378,14 +463,9 @@ export default {
       }
     }
 
-    const viewCustomerDetails = (customer) => {
-      selectedCustomer.value = customer
-      showDetailsModal.value = true
-    }
-
-    const processCustomer = (customer) => {
-      // TODO: Implement customer processing logic
-      console.log('Processing customer:', customer)
+    const lastPage = () => {
+      currentPage.value = totalPages.value - 1
+      fetchCustomers()
     }
 
     const getStatusClass = (status) => {
@@ -404,6 +484,18 @@ export default {
       return date.toLocaleDateString() + ' ' + date.toLocaleTimeString()
     }
 
+    const handleImageError = (event) => {
+      // Fallback to default avatar if image fails to load
+      event.target.style.display = 'none'
+      const parent = event.target.parentElement
+      if (parent) {
+        const fallback = parent.querySelector('.bg-gray-300, .dark\\:bg-gray-600')
+        if (fallback) {
+          fallback.style.display = 'flex'
+        }
+      }
+    }
+
     // Lifecycle
     onMounted(() => {
       refreshData()
@@ -415,7 +507,6 @@ export default {
       customers,
       stats,
       availableStatuses,
-      searchKeyword,
       selectedStatus,
       currentPage,
       pageSize,
@@ -423,17 +514,29 @@ export default {
       totalPages,
       showDetailsModal,
       selectedCustomer,
+      selectedCustomers,
+      processing,
+      showSearchModal,
+      
+      // Computed
+      allSelected,
       
       // Methods
       refreshData,
-      onSearch,
       onStatusChange,
-      previousPage,
-      nextPage,
-      viewCustomerDetails,
+      selectCustomer,
+      toggleCustomerSelection,
+      isCustomerSelected,
+      toggleSelectAll,
+      processSelectedCustomers,
       processCustomer,
+      firstPage,
+      prevPage,
+      nextPage,
+      lastPage,
       getStatusClass,
       formatDate,
+      handleImageError,
       
       // i18n
       t
@@ -444,17 +547,8 @@ export default {
 
 <style scoped>
 .customer-data-page {
-  padding: 1.5rem;
   max-width: 100%;
   margin: 0 auto;
-}
-
-.page-header {
-  margin-bottom: 2rem;
-}
-
-.filters-section {
-  margin-bottom: 1.5rem;
 }
 
 .animate-spin {

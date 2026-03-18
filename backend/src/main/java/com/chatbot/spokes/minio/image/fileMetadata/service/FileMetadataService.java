@@ -9,10 +9,11 @@ import com.chatbot.spokes.minio.image.fileMetadata.dto.FileRequestDTO;
 import com.chatbot.spokes.minio.image.fileMetadata.dto.FileResponseDTO;
 import com.chatbot.spokes.minio.image.fileMetadata.model.FileMetadata;
 import com.chatbot.spokes.minio.image.fileMetadata.repository.FileMetadataRepository;
-import io.minio.MinioClient;
-import io.minio.PutObjectArgs;
+import io.minio.*;
 import io.minio.errors.MinioException;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -49,6 +50,8 @@ public class FileMetadataService {
 
     private final long MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
     private final String[] ALLOWED_CONTENT_TYPES = {"image/jpeg", "image/png", "image/webp", "image/gif"};
+
+    private static final Logger log = LoggerFactory.getLogger(FileMetadataService.class);
 
     @Transactional
     public List<FileResponseDTO> processUploadRequest(FileRequestDTO request, String email) throws Exception {

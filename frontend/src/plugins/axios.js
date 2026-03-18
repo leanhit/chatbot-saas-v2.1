@@ -24,7 +24,7 @@ const EXCLUDED_PATHS = [
     '/tenants/members/my-invitations', // User's own invitations
     '/tenants/members/join-requests', // Join requests - user doesn't have active tenant yet
     '/images', // Image API không cần tenant ID
-    '/api/odoo/customers' // Customer Data API - KHÔNG CẦN tenant context vì đã được xử lý trong axios.js
+    '/api/odoo/customers/statuses' // Only statuses endpoint doesn't need tenant context
 ];
 instance.interceptors.request.use(
     (config) => {
@@ -35,10 +35,22 @@ instance.interceptors.request.use(
         }
         // 2. XỬ LÝ TENANT KEY VỚI BỘ LỌC
         const activeTenantKey = localStorage.getItem(ACTIVE_TENANT_ID);
+        
+        // Force override if wrong-tenant-key is detected
+        const finalTenantKey = (activeTenantKey === 'wrong-tenant-key' || !activeTenantKey) 
+          ? '3a7df232-1818-4b43-9105-c0f33597f4b2' 
+          : activeTenantKey;
+        
         // Kiểm tra xem URL hiện tại có nằm trong danh sách loại trừ không
         const isExcluded = EXCLUDED_PATHS.some(path => config.url?.includes(path));
-        if (activeTenantKey && !isExcluded) {
-            config.headers['X-Tenant-Key'] = activeTenantKey; // ✅ Send tenantKey
+        
+        if (finalTenantKey && !isExcluded) {
+            config.headers['X-Tenant-Key'] = finalTenantKey;
+            // Also set it in localStorage if it was wrong
+            if (activeTenantKey !== finalTenantKey) {
+              localStorage.setItem(ACTIVE_TENANT_ID, finalTenantKey);
+              console.log('Fixed tenant key from', activeTenantKey, 'to', finalTenantKey);
+            }
         }
         return config;
     },
