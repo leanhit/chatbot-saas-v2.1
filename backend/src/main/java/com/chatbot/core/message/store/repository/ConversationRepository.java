@@ -114,4 +114,35 @@ public interface ConversationRepository extends JpaRepository<Conversation, Long
     
     @Query("SELECT COUNT(c) FROM Conversation c WHERE c.tenantId = :tenantId AND c.createdAt BETWEEN :startDate AND :endDate")
     Long countByTenantIdAndCreatedAtBetween(@Param("tenantId") Long tenantId, @Param("startDate") java.time.LocalDateTime startDate, @Param("endDate") java.time.LocalDateTime endDate);
+    
+    // Batch query for chart data - FIX N+1 PROBLEM
+    @Query(value = "SELECT " +
+           "DATE_TRUNC('day', created_at) as date, " +
+           "COUNT(*) as count " +
+           "FROM conversations " +
+           "WHERE tenant_id = :tenantId " +
+           "AND created_at BETWEEN :startDate AND :endDate " +
+           "GROUP BY DATE_TRUNC('day', created_at) " +
+           "ORDER BY date", nativeQuery = true)
+    List<Object[]> getDailyChartStats(@Param("tenantId") Long tenantId, @Param("startDate") java.time.LocalDateTime startDate, @Param("endDate") java.time.LocalDateTime endDate);
+    
+    @Query(value = "SELECT " +
+           "DATE_TRUNC('week', created_at) as date, " +
+           "COUNT(*) as count " +
+           "FROM conversations " +
+           "WHERE tenant_id = :tenantId " +
+           "AND created_at BETWEEN :startDate AND :endDate " +
+           "GROUP BY DATE_TRUNC('week', created_at) " +
+           "ORDER BY date", nativeQuery = true)
+    List<Object[]> getWeeklyChartStats(@Param("tenantId") Long tenantId, @Param("startDate") java.time.LocalDateTime startDate, @Param("endDate") java.time.LocalDateTime endDate);
+    
+    @Query(value = "SELECT " +
+           "DATE_TRUNC('month', created_at) as date, " +
+           "COUNT(*) as count " +
+           "FROM conversations " +
+           "WHERE tenant_id = :tenantId " +
+           "AND created_at BETWEEN :startDate AND :endDate " +
+           "GROUP BY DATE_TRUNC('month', created_at) " +
+           "ORDER BY date", nativeQuery = true)
+    List<Object[]> getMonthlyChartStats(@Param("tenantId") Long tenantId, @Param("startDate") java.time.LocalDateTime startDate, @Param("endDate") java.time.LocalDateTime endDate);
 }

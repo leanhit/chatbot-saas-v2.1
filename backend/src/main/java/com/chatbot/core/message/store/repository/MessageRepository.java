@@ -76,10 +76,14 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
         @Param("tenantId") Long tenantId
     );
     
-    // Count methods for dashboard statistics
-    @Query("SELECT COUNT(m) FROM Message m WHERE m.conversationId IN (SELECT c.id FROM Conversation c WHERE c.tenantId = :tenantId)")
+    // Count methods for dashboard statistics - OPTIMIZED
+    @Query(value = "SELECT COUNT(m.id) FROM messages m " +
+           "INNER JOIN conversations c ON m.conversation_id = c.id " +
+           "WHERE c.tenant_id = :tenantId", nativeQuery = true)
     Long countByConversationTenantId(@Param("tenantId") Long tenantId);
     
-    @Query("SELECT COUNT(m) FROM Message m WHERE m.conversationId IN (SELECT c.id FROM Conversation c WHERE c.tenantId = :tenantId) AND m.createdAt >= :startDate")
+    @Query(value = "SELECT COUNT(m.id) FROM messages m " +
+           "INNER JOIN conversations c ON m.conversation_id = c.id " +
+           "WHERE c.tenant_id = :tenantId AND m.created_at >= :startDate", nativeQuery = true)
     Long countByConversationTenantIdAndCreatedAtAfter(@Param("tenantId") Long tenantId, @Param("startDate") java.time.LocalDateTime startDate);
 }

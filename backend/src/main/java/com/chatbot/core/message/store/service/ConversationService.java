@@ -526,22 +526,21 @@ public class ConversationService {
     
     private List<ChartDataPointDTO> generateDailyChartData(Long tenantId, java.time.LocalDateTime startDate, java.time.LocalDateTime endDate, String dateFormat) {
         List<ChartDataPointDTO> chartData = new java.util.ArrayList<>();
-        java.time.LocalDate current = startDate.toLocalDate();
-        java.time.LocalDate end = endDate.toLocalDate();
         
-        while (!current.isAfter(end)) {
-            java.time.LocalDateTime dayStart = current.atStartOfDay();
-            java.time.LocalDateTime dayEnd = current.atTime(23, 59, 59);
-            
-            Long count = conversationRepo.countByTenantIdAndCreatedAtBetween(tenantId, dayStart, dayEnd);
+        // ✅ OPTIMIZED: Single batch query instead of N+1
+        List<Object[]> results = conversationRepo.getDailyChartStats(tenantId, startDate, endDate);
+        
+        // Convert results to ChartDataPointDTO
+        for (Object[] result : results) {
+            java.sql.Timestamp date = (java.sql.Timestamp) result[0];
+            Long count = ((Number) result[1]).longValue();
             
             ChartDataPointDTO dataPoint = new ChartDataPointDTO();
-            dataPoint.setLabel(current.format(java.time.format.DateTimeFormatter.ofPattern(dateFormat)));
+            dataPoint.setLabel(date.toLocalDateTime().format(java.time.format.DateTimeFormatter.ofPattern(dateFormat)));
             dataPoint.setValue(count);
-            dataPoint.setDate(current.toString());
+            dataPoint.setDate(date.toLocalDateTime().toString());
             
             chartData.add(dataPoint);
-            current = current.plusDays(1);
         }
         
         return chartData;
@@ -550,23 +549,20 @@ public class ConversationService {
     private List<ChartDataPointDTO> generateWeeklyChartData(Long tenantId, java.time.LocalDateTime startDate, java.time.LocalDateTime endDate) {
         List<ChartDataPointDTO> chartData = new java.util.ArrayList<>();
         
-        java.time.LocalDate current = startDate.toLocalDate().with(java.time.temporal.TemporalAdjusters.previousOrSame(java.time.DayOfWeek.MONDAY));
-        java.time.LocalDate end = endDate.toLocalDate();
+        // ✅ OPTIMIZED: Single batch query
+        List<Object[]> results = conversationRepo.getWeeklyChartStats(tenantId, startDate, endDate);
         
         int weekNum = 1;
-        while (!current.isAfter(end)) {
-            java.time.LocalDateTime weekStart = current.atStartOfDay();
-            java.time.LocalDateTime weekEnd = current.plusDays(6).atTime(23, 59, 59);
-            
-            Long count = conversationRepo.countByTenantIdAndCreatedAtBetween(tenantId, weekStart, weekEnd);
+        for (Object[] result : results) {
+            java.sql.Timestamp date = (java.sql.Timestamp) result[0];
+            Long count = ((Number) result[1]).longValue();
             
             ChartDataPointDTO dataPoint = new ChartDataPointDTO();
             dataPoint.setLabel(String.format("Week %d", weekNum++));
             dataPoint.setValue(count);
-            dataPoint.setDate(current.toString());
+            dataPoint.setDate(date.toLocalDateTime().toString());
             
             chartData.add(dataPoint);
-            current = current.plusWeeks(1);
         }
         
         return chartData;
@@ -575,22 +571,19 @@ public class ConversationService {
     private List<ChartDataPointDTO> generateMonthlyChartData(Long tenantId, java.time.LocalDateTime startDate, java.time.LocalDateTime endDate) {
         List<ChartDataPointDTO> chartData = new java.util.ArrayList<>();
         
-        java.time.LocalDate current = startDate.toLocalDate().withDayOfMonth(1);
-        java.time.LocalDate end = endDate.toLocalDate().withDayOfMonth(1);
+        // ✅ OPTIMIZED: Single batch query
+        List<Object[]> results = conversationRepo.getMonthlyChartStats(tenantId, startDate, endDate);
         
-        while (!current.isAfter(end)) {
-            java.time.LocalDateTime monthStart = current.atStartOfDay();
-            java.time.LocalDateTime monthEnd = current.withDayOfMonth(current.lengthOfMonth()).atTime(23, 59, 59);
-            
-            Long count = conversationRepo.countByTenantIdAndCreatedAtBetween(tenantId, monthStart, monthEnd);
+        for (Object[] result : results) {
+            java.sql.Timestamp date = (java.sql.Timestamp) result[0];
+            Long count = ((Number) result[1]).longValue();
             
             ChartDataPointDTO dataPoint = new ChartDataPointDTO();
-            dataPoint.setLabel(current.format(java.time.format.DateTimeFormatter.ofPattern("MMM")));
+            dataPoint.setLabel(date.toLocalDateTime().format(java.time.format.DateTimeFormatter.ofPattern("MMM")));
             dataPoint.setValue(count);
-            dataPoint.setDate(current.toString());
+            dataPoint.setDate(date.toLocalDateTime().toString());
             
             chartData.add(dataPoint);
-            current = current.plusMonths(1);
         }
         
         return chartData;
