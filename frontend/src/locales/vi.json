@@ -63,7 +63,8 @@
     "tenantGateway": "Cổng Tenant",
     "settings": "Cài đặt",
     "signOut": "Đăng xuất",
-    "signIn": "Đăng nhập"
+    "signIn": "Đăng nhập",
+    "help": "Trợ giúp"
   },
   "common": {
     "refresh": "Làm mới",
@@ -597,5 +598,68 @@
     "deleteAccount": "Xóa tài khoản",
     "exportData": "Xuất dữ liệu",
     "importData": "Nhập dữ liệu"
+  },
+  "help": {
+    "title": "Trung tâm Trợ giúp",
+    "quickStart": {
+      "title": "Hướng dẫn Bắt đầu Nhanh",
+      "steps": {
+        "selectTenant": {
+          "title": "1. Chọn Tenant",
+          "description": "Chọn không gian làm việc của bạn từ Tenant Gateway để truy cập dữ liệu."
+        },
+        "dashboard": {
+          "title": "2. Tổng quan Dashboard",
+          "description": "Xem các chỉ số quan trọng và tóm tắt hoạt động trên dashboard chính."
+        },
+        "pennyBots": {
+          "title": "3. Quản lý Penny Bots",
+          "description": "Tạo và cấu hình chatbot của bạn trong phần Penny Bots."
+        }
+      }
+    },
+    "features": {
+      "title": "Hướng dẫn Tính năng",
+      "tenant": {
+        "title": "Quản lý Tenant",
+        "description": "Quản lý cài đặt không gian làm việc, thành viên và cấu hình."
+      },
+      "pennyBots": {
+        "title": "Penny Bots",
+        "description": "Tạo, cấu hình và triển khai chatbot thông minh."
+      },
+      "messages": {
+        "title": "Tin nhắn",
+        "description": "Theo dõi và quản lý cuộc trò chuyện với khách hàng."
+      },
+      "customers": {
+        "title": "Khách hàng",
+        "description": "Xem và quản lý dữ liệu khách hàng và tương tác."
+      }
+    },
+    "faq": {
+      "title": "Câu hỏi thường gặp",
+      "questions": {
+        "switchTenant": {
+          "question": "Làm thế nào để chuyển đổi giữa các tenant?",
+          "answer": "Nhấp vào hồ sơ của bạn trong header và chọn \"Tenant Gateway\" để chuyển đổi không gian làm việc."
+        },
+        "pennyBots": {
+          "question": "Penny Bots là gì?",
+          "answer": "Penny Bots là các chatbot được hỗ trợ bởi AI có thể xử lý tương tác với khách hàng tự động."
+        },
+        "messageHistory": {
+          "question": "Làm thế nào để xem lịch sử tin nhắn?",
+          "answer": "Điều hướng đến phần Tin nhắn để xem tất cả các cuộc trò chuyện và tương tác của khách hàng."
+        }
+      }
+    },
+    "support": {
+      "title": "Liên hệ Hỗ trợ",
+      "email": "Hỗ trợ Email",
+      "emailAddress": "support@pennybots.com",
+      "documentation": "Tài liệu",
+      "viewFullDoc": "Xem Tài liệu đầy đủ →"
+    }
   }
 }

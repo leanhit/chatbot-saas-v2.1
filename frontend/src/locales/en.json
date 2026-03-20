@@ -63,12 +63,15 @@
     "tenantGateway": "Tenant Gateway",
     "settings": "Settings",
     "signOut": "Sign out",
-    "signIn": "Sign in"
+    "signIn": "Sign in",
+    "help": "Help"
   },
   "common": {
     "refresh": "Refresh",
     "search": "Search",
-    "loading": "Loading"
+    "loading": "Loading",
+    "cancel": "Cancel",
+    "save": "Save"
   },
   "auth": {
     "login": {
@@ -184,6 +187,7 @@
       "title": "Tenant Members",
       "subtitle": "Manage workspace members and permissions",
       "inviteMember": "Invite Member",
+      "inviteNewMember": "Invite New Member",
       "refresh": "Refresh",
       "loading": "Loading members...",
       "allRoles": "All Roles",
@@ -197,8 +201,22 @@
       "allStatuses": "All Statuses",
       "noPendingRequests": "No pending requests",
       "noPendingRequestsDescription": "There are no pending member requests",
+      "noPendingInvitations": "No pending invitations",
+      "noPendingInvitationsDescription": "There are no pending member invitations",
       "requester": "Requester",
       "email": "Email",
+      "emailAddress": "Email Address",
+      "emailPlaceholder": "Enter email address",
+      "assignRole": "Assign Role",
+      "admin": "Admin",
+      "editor": "Editor",
+      "member": "Member",
+      "invitationExpiry": "Invitation Expiry",
+      "days": "days",
+      "expiryDescription": "Invitation will expire after this period",
+      "personalMessage": "Personal Message",
+      "messagePlaceholder": "Add a personal message (optional)",
+      "sendInvitation": "Send Invitation",
       "requestedRole": "Requested Role",
       "requestedAt": "Requested At",
       "actions": "Actions",
@@ -557,6 +575,15 @@
     "certifications": "Certifications",
     "languages": "Languages",
     "linkedinUrl": "LinkedIn URL",
+    "website": "Website",
+    "portfolioUrl": "Portfolio URL",
+    "houseNumber": "House Number",
+    "street": "Street",
+    "ward": "Ward",
+    "district": "District",
+    "province": "Province",
+    "fullAddress": "Full Address",
+    "updateExistingAddress": "Update Existing Address",
     "editBasicInfo": "Edit Basic Information",
     "updateBasicInfo": "Update your basic information",
     "addBasicInfo": "Add Basic Information",
@@ -602,5 +629,68 @@
     "deleteAccount": "Delete Account",
     "exportData": "Export Data",
     "importData": "Import Data"
+  },
+  "help": {
+    "title": "Help Center",
+    "quickStart": {
+      "title": "Quick Start Guide",
+      "steps": {
+        "selectTenant": {
+          "title": "1. Select Tenant",
+          "description": "Choose your workspace from the Tenant Gateway to access your data."
+        },
+        "dashboard": {
+          "title": "2. Dashboard Overview",
+          "description": "View your key metrics and activity summary on the main dashboard."
+        },
+        "pennyBots": {
+          "title": "3. Manage Penny Bots",
+          "description": "Create and configure your chatbots in the Penny Bots section."
+        }
+      }
+    },
+    "features": {
+      "title": "Features Guide",
+      "tenant": {
+        "title": "Tenant Management",
+        "description": "Manage your workspace settings, members, and configurations."
+      },
+      "pennyBots": {
+        "title": "Penny Bots",
+        "description": "Create, configure, and deploy intelligent chatbots."
+      },
+      "messages": {
+        "title": "Messages",
+        "description": "Monitor and manage customer conversations."
+      },
+      "customers": {
+        "title": "Customers",
+        "description": "View and manage customer data and interactions."
+      }
+    },
+    "faq": {
+      "title": "Frequently Asked Questions",
+      "questions": {
+        "switchTenant": {
+          "question": "How do I switch between tenants?",
+          "answer": "Click on your profile in the header and select \"Tenant Gateway\" to switch workspaces."
+        },
+        "pennyBots": {
+          "question": "What are Penny Bots?",
+          "answer": "Penny Bots are AI-powered chatbots that can handle customer interactions automatically."
+        },
+        "messageHistory": {
+          "question": "How can I view message history?",
+          "answer": "Navigate to the Messages section to view all customer conversations and interactions."
+        }
+      }
+    },
+    "support": {
+      "title": "Contact Support",
+      "email": "Email Support",
+      "emailAddress": "support@pennybots.com",
+      "documentation": "Documentation",
+      "viewFullDoc": "View Full Documentation →"
+    }
   }
 }

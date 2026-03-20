@@ -198,6 +198,15 @@
                     {{ $t('header.profile') }}
                   </router-link>
                   
+                  <router-link
+                    to="/help"
+                    @click="menu = false"
+                    class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
+                  >
+                    <Icon icon="mdi:help-circle" class="mr-3 h-4 w-4" />
+                    {{ $t('header.help') }}
+                  </router-link>
+                  
                   <a
                     href="#"
                     @click.prevent="handleTenantGateway"
@@ -205,14 +214,6 @@
                   >
                     <Icon icon="mdi:office-building" class="mr-3 h-4 w-4" />
                     {{ $t('header.tenantGateway') }}
-                  </a>
-                  
-                  <a
-                    href="#"
-                    class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
-                  >
-                    <Icon icon="mdi:cog" class="mr-3 h-4 w-4" />
-                    {{ $t('header.settings') }}
                   </a>
                 </div>
                 
