@@ -75,4 +75,11 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
         @Param("conversationIds") List<Long> conversationIds, 
         @Param("tenantId") Long tenantId
     );
+    
+    // Count methods for dashboard statistics
+    @Query("SELECT COUNT(m) FROM Message m WHERE m.conversationId IN (SELECT c.id FROM Conversation c WHERE c.tenantId = :tenantId)")
+    Long countByConversationTenantId(@Param("tenantId") Long tenantId);
+    
+    @Query("SELECT COUNT(m) FROM Message m WHERE m.conversationId IN (SELECT c.id FROM Conversation c WHERE c.tenantId = :tenantId) AND m.createdAt >= :startDate")
+    Long countByConversationTenantIdAndCreatedAtAfter(@Param("tenantId") Long tenantId, @Param("startDate") java.time.LocalDateTime startDate);
 }

@@ -87,5 +87,9 @@ public interface FacebookConnectionRepository extends JpaRepository<FacebookConn
     // Tìm theo botId, tenantId và isActive (return List cho nhiều pages per bot)
     @Query("SELECT fc FROM FacebookConnection fc WHERE fc.botId = :botId AND fc.tenantId = :tenantId AND fc.isActive = true")
     List<FacebookConnection> findAllByBotIdAndTenantIdAndIsActiveTrue(@Param("botId") String botId, @Param("tenantId") Long tenantId);
+    
+    // Count method for dashboard statistics
+    @Query("SELECT COUNT(fc) FROM FacebookConnection fc WHERE fc.tenantId = :tenantId AND fc.isActive = true")
+    Long countByTenantIdAndIsActiveTrue(@Param("tenantId") Long tenantId);
 
 }

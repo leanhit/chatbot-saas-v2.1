@@ -20,12 +20,12 @@
         <form @submit.prevent="handleSubmit" class="connection-form">
           <!-- Basic Information -->
           <div class="form-section">
-            <h3 class="section-title">{{ $t('Basic Information') }}</h3>
+            <h3 class="section-title">{{ $t('penny.basicInformation') }}</h3>
             <div class="form-grid">
               <!-- Bot Selection -->
               <div class="form-group full-width">
                 <label for="botId" class="form-label">
-                  {{ $t('Select Bot') }} <span class="required">*</span>
+                  {{ $t('penny.rules.selectBot') }} <span class="required">*</span>
                 </label>
                 <select
                   id="botId"
@@ -34,7 +34,7 @@
                   :disabled="!!bot"
                   required
                 >
-                  <option value="" disabled>{{ $t('Select a bot') }}</option>
+                  <option value="" disabled>{{ $t('penny.rules.selectBotPlaceholder') }}</option>
                   <option
                     v-for="bot in availableBots"
                     :key="bot.id"
@@ -76,7 +76,7 @@
                   @change="onConnectionTypeChange"
                   required
                 >
-                  <option value="" disabled>{{ $t('Select connection type') }}</option>
+                  <option value="" disabled>{{ $t('penny.connections.selectConnectionType') }}</option>
                   <option
                     v-for="type in connectionTypes"
                     :key="type.value"
@@ -112,14 +112,14 @@
             
             <div class="form-group full-width">
               <label for="description" class="form-label">
-                {{ $t('Description') }}
+                {{ $t('penny.rules.description') }}
               </label>
               <textarea
                 id="description"
                 v-model="formData.description"
                 rows="2"
                 class="form-textarea"
-                :placeholder="$t('Describe what this connection does')"
+                :placeholder="$t('penny.rules.describeRule')"
               ></textarea>
             </div>
           </div>
@@ -146,7 +146,7 @@
                 </div>
                 <div class="form-group">
                   <label for="fanpageUrl" class="form-label">
-                    {{ $t('Fanpage URL') }}
+                    {{ $t('penny.connections.fanpageUrl') }}
                   </label>
                   <input
                     id="fanpageUrl"
@@ -162,7 +162,7 @@
                       class="external-link"
                     >
                       <Icon icon="mdi:external-link" class="h-4 w-4 mr-1" />
-                      {{ $t('Go to page') }}
+                      {{ $t('penny.connections.goToPage') }}
                     </a>
                   </div>
                 </div>
@@ -170,7 +170,7 @@
               <div class="form-grid">
                 <div class="form-group">
                   <label for="appSecret" class="form-label">
-                    {{ $t('App Secret') }} <span class="required">*</span>
+                    {{ $t('penny.connections.appSecret') }} <span class="required">*</span>
                   </label>
                   <div class="input-with-copy">
                     <input
@@ -219,7 +219,7 @@
             <div v-else-if="formData.connectionType === ConnectionType.WEBHOOK" class="connection-config">
               <div class="form-group full-width">
                 <label for="webhookUrl" class="form-label">
-                  {{ $t('Webhook URL') }} <span class="required">*</span>
+                  {{ $t('penny.connections.webhookUrl') }} <span class="required">*</span>
                 </label>
                 <input
                   id="webhookUrl"
@@ -233,7 +233,7 @@
               <div class="form-grid">
                 <div class="form-group">
                   <label for="webhookMethod" class="form-label">
-                    {{ $t('HTTP Method') }}
+                    {{ $t('penny.connections.httpMethod') }}
                   </label>
                   <select
                     id="webhookMethod"
@@ -248,7 +248,7 @@
                 </div>
                 <div class="form-group">
                   <label for="webhookTimeout" class="form-label">
-                    {{ $t('Timeout (seconds)') }}
+                    {{ $t('penny.connections.timeoutSeconds') }}
                   </label>
                   <input
                     id="webhookTimeout"
@@ -262,7 +262,7 @@
               </div>
               <div class="form-group full-width">
                 <label for="webhookHeaders" class="form-label">
-                  {{ $t('Headers (JSON)') }}
+                  {{ $t('penny.connections.headers') }}
                 </label>
                 <textarea
                   id="webhookHeaders"
@@ -279,7 +279,7 @@
             <div v-else-if="formData.connectionType === ConnectionType.API" class="connection-config">
               <div class="form-group full-width">
                 <label for="apiUrl" class="form-label">
-                  {{ $t('API URL') }} <span class="required">*</span>
+                  {{ $t('penny.connections.apiUrl') }} <span class="required">*</span>
                 </label>
                 <input
                   id="apiUrl"
@@ -293,7 +293,7 @@
               <div class="form-grid">
                 <div class="form-group">
                   <label for="apiKey" class="form-label">
-                    {{ $t('API Key') }}
+                    {{ $t('penny.connections.apiKey') }}
                   </label>
                   <div class="input-with-copy">
                     <input
@@ -314,7 +314,7 @@
                 </div>
                 <div class="form-group">
                   <label for="apiVersion" class="form-label">
-                    {{ $t('API Version') }}
+                    {{ $t('penny.connections.apiVersion') }}
                   </label>
                   <input
                     id="apiVersion"
@@ -332,7 +332,7 @@
               <div class="form-grid">
                 <div class="form-group">
                   <label for="dbHost" class="form-label">
-                    {{ $t('Database Host') }} <span class="required">*</span>
+                    {{ $t('penny.connections.databaseHost') }} <span class="required">*</span>
                   </label>
                   <input
                     id="dbHost"
@@ -345,7 +345,7 @@
                 </div>
                 <div class="form-group">
                   <label for="dbPort" class="form-label">
-                    {{ $t('Database Port') }}
+                    {{ $t('penny.connections.databasePort') }}
                   </label>
                   <input
                     id="dbPort"
@@ -361,7 +361,7 @@
               <div class="form-grid">
                 <div class="form-group">
                   <label for="dbName" class="form-label">
-                    {{ $t('Database Name') }} <span class="required">*</span>
+                    {{ $t('penny.connections.databaseName') }} <span class="required">*</span>
                   </label>
                   <input
                     id="dbName"
@@ -374,7 +374,7 @@
                 </div>
                 <div class="form-group">
                   <label for="dbUsername" class="form-label">
-                    {{ $t('Username') }} <span class="required">*</span>
+                    {{ $t('penny.connections.username') }} <span class="required">*</span>
                   </label>
                   <input
                     id="dbUsername"
@@ -413,7 +413,7 @@
 
           <!-- Status (edit mode only) -->
           <div v-if="isEditMode" class="form-section">
-            <h3 class="section-title">{{ $t('Status') }}</h3>
+            <h3 class="section-title">{{ $t('penny.rules.status') }}</h3>
             <div class="form-group">
               <label class="checkbox-label">
                 <input
@@ -421,7 +421,7 @@
                   v-model="formData.isEnabled"
                   class="checkbox-input"
                 />
-                <span class="checkbox-text">{{ formData.isEnabled ? $t('Enabled') : $t('Disabled') }}</span>
+                <span class="checkbox-text">{{ formData.isEnabled ? $t('penny.connections.enabled') : $t('penny.connections.disabled') }}</span>
               </label>
             </div>
           </div>
@@ -443,7 +443,7 @@
           class="btn btn-outline"
         >
           <Icon icon="mdi:test-tube" class="h-4 w-4 mr-2" />
-          {{ $t('Test Connection') }}
+          {{ $t('penny.connections.testConnection') }}
         </button>
         <button
           type="submit"
@@ -453,7 +453,7 @@
         >
           <Icon v-if="submitting" icon="mdi:loading" class="animate-spin h-4 w-4 mr-2" />
           <Icon v-else icon="mdi:plus" class="h-4 w-4 mr-2" />
-          {{ isEditMode ? $t('Update Connection') : $t('Create Connection') }}
+          {{ isEditMode ? $t('penny.connections.updateConnection') : $t('penny.connections.createConnection') }}
         </button>
       </div>
     </div>

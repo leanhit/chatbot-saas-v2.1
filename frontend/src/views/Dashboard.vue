@@ -147,11 +147,31 @@
           </div>
         </div>
         
-        <!-- Simple Chart Placeholder -->
+        <!-- Chart Area -->
         <div class="h-64 flex items-center justify-center bg-gray-50 dark:bg-gray-700 rounded">
-          <div class="text-center">
+          <div v-if="chartLoading" class="text-center">
+            <Icon icon="mdi:loading" class="text-6xl text-gray-300 animate-spin" />
+            <p class="mt-2 text-gray-500">Loading chart data...</p>
+          </div>
+          <div v-else-if="chartData.length === 0" class="text-center">
             <Icon icon="mdi:chart-line" class="text-6xl text-gray-300" />
-            <p class="mt-2 text-gray-500">Chart visualization coming soon</p>
+            <p class="mt-2 text-gray-500">No data available for {{ periods.find(p => p.value === selectedPeriod)?.label }}</p>
+          </div>
+          <div v-else class="w-full">
+            <!-- Simple chart visualization -->
+            <div class="flex items-end justify-between h-full px-4 pb-4">
+              <div 
+                v-for="(point, index) in chartData" 
+                :key="index"
+                class="flex flex-col items-center flex-1"
+              >
+                <div 
+                  class="w-full bg-primary rounded-t"
+                  :style="{ height: `${(point.value / Math.max(...chartData.map(d => d.value))) * 100}%` }"
+                ></div>
+                <span class="text-xs text-gray-500 mt-2">{{ point.label }}</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -238,16 +258,19 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { Icon } from '@iconify/vue'
 import { useRouter } from 'vue-router'
 import { getRelativeTime } from '@/utils/dateUtils'
+import axios from '@/plugins/axios'
 
 const router = useRouter()
 
 // State
 const selectedPeriod = ref('7d')
 const loading = ref(false)
+const chartData = ref([])
+const chartLoading = ref(false)
 
 const periods = [
   { label: '7D', value: '7d' },
@@ -303,14 +326,12 @@ const refreshData = async () => {
   try {
     // Fetch real statistics from API
     const [conversationStats, takeoverStats] = await Promise.all([
-      fetch('/api/conversations/statistics').then(res => {
-        if (!res.ok) throw new Error('Failed to fetch conversation stats')
-        return res.json()
+      axios.get('/conversations/statistics').then(res => {
+        return res.data
       }).catch(() => ({ totalConversations: 0, growthRate: 0, activeUsers: 0, userGrowth: 0, botResponses: 0, responseRate: 0, activeConnections: 0 })),
       
-      fetch('/api/takeover/active').then(res => {
-        if (!res.ok) throw new Error('Failed to fetch takeover stats')
-        return res.json()
+      axios.get('/takeover/active').then(res => {
+        return res.data
       }).catch(() => [])
     ])
     
@@ -366,9 +387,29 @@ const getActivityColor = (type) => {
   return colors[type] || 'bg-gray-500'
 }
 
+// Load chart data based on selected period
+const loadChartData = async () => {
+  chartLoading.value = true
+  try {
+    const { data } = await axios.get(`/conversations/chart?period=${selectedPeriod.value}`)
+    chartData.value = data
+  } catch (error) {
+    console.error('Failed to load chart data:', error)
+    chartData.value = []
+  } finally {
+    chartLoading.value = false
+  }
+}
+
+// Watch for period changes
+watch(selectedPeriod, () => {
+  loadChartData()
+})
+
 // Lifecycle
 onMounted(() => {
   refreshData()
+  loadChartData()
 })
 </script>
 

@@ -6,7 +6,7 @@
           <div class="rule-info">
             <Icon icon="mdi:script-text" class="h-6 w-6 mr-3" />
             <div>
-              <h2 class="modal-title">{{ isEditMode ? $t('penny.editRule') : $t('penny.createRule') }}</h2>
+              <h2 class="modal-title">{{ isEditMode ? $t('penny.rules.editRule') : $t('penny.rules.createRule') }}</h2>
               <p class="bot-name">{{ bot?.botName }}</p>
             </div>
           </div>
@@ -25,7 +25,7 @@
               <!-- Bot Selection -->
               <div class="form-group full-width">
                 <label for="botId" class="form-label">
-                  {{ $t('penny.selectBot') }} <span class="required">*</span>
+                  {{ $t('penny.rules.selectBot') }} <span class="required">*</span>
                 </label>
                 <select
                   id="botId"
@@ -34,7 +34,7 @@
                   :disabled="!!props.bot"
                   required
                 >
-                  <option value="" disabled>{{ $t('penny.selectBotPlaceholder') }}</option>
+                  <option value="" disabled>{{ $t('penny.rules.selectBotPlaceholder') }}</option>
                   <option
                     v-for="bot in availableBots"
                     :key="bot.id"
@@ -44,30 +44,30 @@
                   </option>
                 </select>
                 <p v-if="!props.bot" class="form-help">
-                  {{ $t('penny.rulesMustBeLinked') }}
+                  {{ $t('penny.connections.connectionsMustBeLinked') }}
                 </p>
                 <p v-else class="form-help">
-                  {{ $t('penny.ruleLinkedTo', { botName: props.bot.botName }) }}
+                  {{ $t('penny.connections.connectionIsLinkedTo', { botName: props.bot.botName }) }}
                 </p>
               </div>
               
               <div class="form-group full-width">
                 <label for="ruleName" class="form-label">
-                  {{ $t('penny.ruleName') }} <span class="required">*</span>
+                  {{ $t('penny.rules.ruleName') }} <span class="required">*</span>
                 </label>
                 <input
                   id="ruleName"
                   v-model="formData.ruleName"
                   type="text"
                   class="form-input"
-                  :placeholder="$t('penny.enterRuleName')"
+                  :placeholder="$t('penny.rules.enterRuleName')"
                   required
                 />
               </div>
               
               <div class="form-group">
                 <label for="priority" class="form-label">
-                  {{ $t('penny.priority') }}
+                  {{ $t('penny.rules.priority') }}
                 </label>
                 <select
                   id="priority"
@@ -90,25 +90,25 @@
             
             <div class="form-group full-width">
               <label for="description" class="form-label">
-                {{ $t('penny.description') }}
+                {{ $t('penny.rules.description') }}
               </label>
               <textarea
                 id="description"
                 v-model="formData.description"
                 rows="2"
                 class="form-textarea"
-                :placeholder="$t('penny.describeRule')"
+                :placeholder="$t('penny.rules.describeRule')"
               ></textarea>
             </div>
           </div>
 
           <!-- Trigger Configuration -->
           <div class="form-section">
-            <h3 class="section-title">{{ $t('penny.triggerConfiguration') }}</h3>
+            <h3 class="section-title">{{ $t('penny.rules.triggerConfiguration') }}</h3>
             <div class="form-grid">
               <div class="form-group">
                 <label for="triggerType" class="form-label">
-                  {{ $t('penny.triggerType') }} <span class="required">*</span>
+                  {{ $t('penny.rules.triggerType') }} <span class="required">*</span>
                 </label>
                 <select
                   id="triggerType"
@@ -117,7 +117,7 @@
                   @change="onTriggerTypeChange"
                   required
                 >
-                  <option value="" disabled>{{ $t('penny.selectTriggerType') }}</option>
+                  <option value="" disabled>{{ $t('penny.rules.selectTriggerType') }}</option>
                   <option
                     v-for="type in triggerTypes"
                     :key="type.value"
@@ -129,7 +129,7 @@
               </div>
               <div v-if="formData.triggerType !== RuleTriggerType.ALWAYS" class="form-group">
                 <label for="triggerValue" class="form-label">
-                  {{ $t('penny.triggerValue') }} <span class="required">*</span>
+                  {{ $t('penny.rules.triggerValue') }} <span class="required">*</span>
                 </label>
                 <input
                   id="triggerValue"
@@ -146,26 +146,26 @@
             <!-- Condition (for CONDITION trigger type) -->
             <div v-if="formData.triggerType === RuleTriggerType.CONDITION" class="form-group full-width">
               <label for="condition" class="form-label">
-                {{ $t('penny.condition') }} <span class="required">*</span>
+                {{ $t('penny.rules.condition.label') }} <span class="required">*</span>
               </label>
               <textarea
                 id="condition"
                 v-model="formData.condition"
                 rows="3"
                 class="form-textarea"
-                :placeholder="$t('penny.enterConditionExpression')"
+                :placeholder="$t('penny.rules.condition.placeholder')"
                 required
               ></textarea>
-              <p class="form-help">{{ $t('penny.conditionExample') }}</p>
+              <p class="form-help">{{ $t('penny.rules.condition.help') }}</p>
             </div>
           </div>
 
           <!-- Rule Configuration -->
           <div class="form-section">
-            <h3 class="section-title">{{ $t('penny.ruleConfiguration') }}</h3>
+            <h3 class="section-title">{{ $t('penny.rules.ruleConfiguration') }}</h3>
             <div class="form-group">
               <label for="ruleType" class="form-label">
-                {{ $t('penny.ruleType') }} <span class="required">*</span>
+                {{ $t('penny.rules.ruleType.label') }} <span class="required">*</span>
               </label>
               <select
                 id="ruleType"
@@ -174,7 +174,7 @@
                 @change="onRuleTypeChange"
                 required
               >
-                <option value="" disabled>{{ $t('penny.selectRuleType') }}</option>
+                <option value="" disabled>{{ $t('penny.rules.selectRuleType') }}</option>
                 <option
                   v-for="type in ruleTypes"
                   :key="type.value"
@@ -203,7 +203,7 @@
 
           <!-- Status (edit mode only) -->
           <div v-if="isEditMode" class="form-section">
-            <h3 class="section-title">{{ $t('penny.status') }}</h3>
+            <h3 class="section-title">{{ $t('penny.rules.status') }}</h3>
             <div class="form-group">
               <label class="checkbox-label">
                 <input
@@ -211,7 +211,7 @@
                   v-model="formData.isActive"
                   class="checkbox-input"
                 />
-                <span class="checkbox-text">{{ formData.isActive ? $t('penny.active') : $t('penny.inactive') }}</span>
+                <span class="checkbox-text">{{ formData.isActive ? $t('penny.rules.active') : $t('penny.rules.inactive') }}</span>
               </label>
             </div>
           </div>
@@ -230,11 +230,11 @@
           type="button"
           @click="testRule"
           :disabled="!canTestRule"
-          :title="$t('penny.testBeforeSave')"
+          :title="$t('penny.rules.testBeforeSave')"
           class="btn btn-outline"
         >
           <Icon icon="mdi:test-tube" class="h-4 w-4 mr-2" />
-          {{ $t('penny.testBeforeSave') }}
+          {{ $t('penny.rules.testBeforeSave') }}
         </button>
         <button
           type="submit"
@@ -244,7 +244,7 @@
         >
           <Icon v-if="submitting" icon="mdi:loading" class="animate-spin h-4 w-4 mr-2" />
           <Icon v-else icon="mdi:plus" class="h-4 w-4 mr-2" />
-          {{ isEditMode ? $t('penny.updateRule') : $t('penny.createRule') }}
+          {{ isEditMode ? $t('penny.rules.updateRule') : $t('penny.rules.createRule') }}
         </button>
       </div>
     </div>
@@ -392,6 +392,16 @@ export default {
       }
     }
 
+    const getActionLabel = () => {
+      const labels = {
+        'RESPONSE': 'Action',
+        'REDIRECT': 'Action', 
+        'WEBHOOK': 'Action',
+        'SCRIPT': 'Action'
+      }
+      return labels[formData.value.ruleType] || 'Action'
+    }
+
     const getActionPlaceholder = () => {
       const placeholders = {
         'RESPONSE': 'Enter the response message',
@@ -532,6 +542,23 @@ export default {
       }
     }
 
+    const copyToClipboard = async (text) => {
+      try {
+        await navigator.clipboard.writeText(text)
+        // Optional: Show success message
+        console.log('Copied to clipboard')
+      } catch (err) {
+        console.error('Failed to copy text: ', err)
+        // Fallback for older browsers
+        const textArea = document.createElement('textarea')
+        textArea.value = text
+        document.body.appendChild(textArea)
+        textArea.select()
+        document.execCommand('copy')
+        document.body.removeChild(textArea)
+      }
+    }
+
     // Lifecycle
     onMounted(() => {
       loadAvailableBots()
@@ -546,6 +573,9 @@ export default {
     })
 
     return {
+      props,
+      RuleType,
+      RuleTriggerType,
       formData,
       submitting,
       availableBots,
@@ -563,6 +593,9 @@ export default {
       getPriorityDescription,
       getTriggerValuePlaceholder,
       getTriggerValueHelp,
+      getActionLabel,
+      getActionPlaceholder,
+      getActionHelp,
       closeOnBackdrop
     }
   }

@@ -6,7 +6,7 @@
           <div class="auto-connect-info">
             <Icon icon="mdi:facebook" class="h-6 w-6 mr-3 text-blue-600" />
             <div>
-              <h2 class="modal-title">{{ $t('Auto Connect Facebook Pages') }}</h2>
+              <h2 class="modal-title">{{ $t('penny.connections.autoConnectFacebookPages') }}</h2>
               <p class="bot-name">{{ bot?.botName }}</p>
             </div>
           </div>
@@ -23,24 +23,24 @@
             <div class="login-icon">
               <Icon icon="mdi:facebook" class="h-16 w-16 text-blue-600" />
             </div>
-            <h3 class="login-title">{{ $t('Connect to Facebook') }}</h3>
+            <h3 class="login-title">{{ $t('penny.connections.connectToFacebook') }}</h3>
             <p class="login-description">
-              {{ $t('We need to connect to your Facebook account to get your fanpages. This will allow us to automatically set up connections for your bot.') }}
+              {{ $t('penny.connections.weNeedToConnect') }}
             </p>
             <div class="permissions-info">
-              <h4>{{ $t('Permissions Required:') }}</h4>
+              <h4>{{ $t('penny.connections.permissionsRequired') }}</h4>
               <ul class="permissions-list">
                 <li class="permission-item">
                   <Icon icon="mdi:check-circle" class="h-4 w-4 text-green-500 mr-2" />
-                  {{ $t('View your Facebook pages') }}
+                  {{ $t('penny.connections.viewYourFacebookPages') }}
                 </li>
                 <li class="permission-item">
                   <Icon icon="mdi:check-circle" class="h-4 w-4 text-green-500 mr-2" />
-                  {{ $t('Manage pages and messaging') }}
+                  {{ $t('penny.connections.managePagesAndMessaging') }}
                 </li>
                 <li class="permission-item">
                   <Icon icon="mdi:check-circle" class="h-4 w-4 text-green-500 mr-2" />
-                  {{ $t('Read page engagement') }}
+                  {{ $t('penny.connections.readPageEngagement') }}
                 </li>
               </ul>
             </div>
@@ -51,7 +51,7 @@
             >
               <Icon v-if="loggingIn" icon="mdi:loading" class="animate-spin h-5 w-5 mr-2" />
               <Icon v-else icon="mdi:facebook" class="h-5 w-5 mr-2" />
-              {{ loggingIn ? $t('Connecting...') : $t('Connect to Facebook') }}
+              {{ loggingIn ? $t('penny.connections.connecting') : $t('penny.connections.connectToFacebook') }}
             </button>
           </div>
         </div>
@@ -59,27 +59,27 @@
         <!-- Step 2: Select Pages -->
         <div v-else-if="step === 'select'" class="select-step">
           <div class="select-header">
-            <h3 class="select-title">{{ $t('Select Fanpages to Connect') }}</h3>
+            <h3 class="select-title">{{ $t('penny.connections.selectFanpagesToConnect') }}</h3>
             <p class="select-description">
-              {{ $t('We found {count} fanpages. Select which ones you want to connect to your bot.', { count: availablePages.length }) }}
+              {{ $t('penny.connections.foundFanpagesDescription', { count: availablePages.length }) }}
             </p>
           </div>
 
           <div v-if="loadingPages" class="loading-pages">
             <div class="loading-spinner">
               <Icon icon="mdi:loading" class="animate-spin h-8 w-8 text-blue-600" />
-              <p>{{ $t('Loading your fanpages...') }}</p>
+              <p>{{ $t('penny.connections.loadingFanpages') }}</p>
             </div>
           </div>
 
           <div v-else-if="availablePages.length === 0" class="no-pages">
             <div class="empty-state">
               <Icon icon="mdi:facebook-off" class="h-12 w-12 text-gray-400 mb-4" />
-              <h4>{{ $t('No Fanpages Found') }}</h4>
-              <p>{{ $t('We couldn\'t find any fanpages for your account. Make sure you have admin access to Facebook pages.') }}</p>
+              <h4>{{ $t('penny.connections.noFanpagesFound') }}</h4>
+              <p>{{ $t('penny.connections.weCouldntFindAnyFanpages') }}</p>
               <button @click="handleRetry" class="retry-button">
                 <Icon icon="mdi:refresh" class="h-4 w-4 mr-2" />
-                {{ $t('Retry') }}
+                {{ $t('penny.connections.retry') }}
               </button>
             </div>
           </div>
@@ -94,7 +94,7 @@
                   class="checkbox-input"
                 />
                 <span class="checkbox-text">
-                  {{ $t('Select All ({count} pages)', { count: availablePages.length }) }}
+                  {{ $t('penny.connections.selectAll', { count: availablePages.length }) }}
                 </span>
               </label>
             </div>
@@ -146,9 +146,9 @@
             <div class="processing-icon">
               <Icon icon="mdi:loading" class="animate-spin h-12 w-12 text-blue-600" />
             </div>
-            <h3 class="processing-title">{{ $t('Auto-Connecting Pages') }}</h3>
+            <h3 class="processing-title">{{ $t('penny.connections.autoConnectingPages') }}</h3>
             <p class="processing-description">
-              {{ $t('We are connecting {count} selected fanpages to your bot. This may take a moment...', { count: selectedPages.length }) }}
+              {{ $t('penny.connections.connectingDescription', { count: selectedPages.length }) }}
             </p>
             <div class="processing-progress">
               <div class="progress-bar">
@@ -157,7 +157,7 @@
                   :style="{ width: `${processingProgress}%` }"
                 ></div>
               </div>
-              <p class="progress-text">{{ processingProgress }}% {{ $t('Complete') }}</p>
+              <p class="progress-text">{{ processingProgress }}% {{ $t('penny.connections.complete') }}</p>
             </div>
           </div>
         </div>
@@ -169,7 +169,7 @@
               <Icon :icon="results.success ? 'mdi:check-circle' : 'mdi:alert-circle'" class="h-12 w-12" />
             </div>
             <h3 class="results-title">
-              {{ results.success ? $t('Auto-Connect Completed!') : $t('Auto-Connect Completed with Issues') }}
+              {{ results.success ? $t('penny.connections.autoConnectCompleted') : $t('penny.connections.autoConnectCompletedWithIssues') }}
             </h3>
             <p class="results-message">{{ results.message }}</p>
 
@@ -177,7 +177,7 @@
               <div v-if="results.connectedPages?.length > 0" class="result-section success">
                 <h4 class="result-title">
                   <Icon icon="mdi:check-circle" class="h-5 w-5 text-green-500 mr-2" />
-                  {{ $t('Connected Pages ({count})', { count: results.connectedPages.length }) }}
+                  {{ $t('penny.connections.connectedPages', { count: results.connectedPages.length }) }}
                 </h4>
                 <ul class="result-list">
                   <li v-for="page in results.connectedPages" :key="page" class="result-item">
@@ -189,7 +189,7 @@
               <div v-if="results.reactivatedPages?.length > 0" class="result-section warning">
                 <h4 class="result-title">
                   <Icon icon="mdi:refresh" class="h-5 w-5 text-yellow-500 mr-2" />
-                  {{ $t('Reactivated Pages ({count})', { count: results.reactivatedPages.length }) }}
+                  {{ $t('penny.connections.reactivatedPages', { count: results.reactivatedPages.length }) }}
                 </h4>
                 <ul class="result-list">
                   <li v-for="page in results.reactivatedPages" :key="page" class="result-item">
@@ -201,7 +201,7 @@
               <div v-if="results.inactivePages?.length > 0" class="result-section info">
                 <h4 class="result-title">
                   <Icon icon="mdi:pause-circle" class="h-5 w-5 text-gray-500 mr-2" />
-                  {{ $t('Inactive Pages ({count})', { count: results.inactivePages.length }) }}
+                  {{ $t('penny.connections.inactivePages', { count: results.inactivePages.length }) }}
                 </h4>
                 <ul class="result-list">
                   <li v-for="page in results.inactivePages" :key="page" class="result-item">
@@ -213,7 +213,7 @@
               <div v-if="results.errors?.length > 0" class="result-section error">
                 <h4 class="result-title">
                   <Icon icon="mdi:alert-circle" class="h-5 w-5 text-red-500 mr-2" />
-                  {{ $t('Errors ({count})', { count: results.errors.length }) }}
+                  {{ $t('penny.connections.errors', { count: results.errors.length }) }}
                 </h4>
                 <ul class="result-list">
                   <li v-for="error in results.errors" :key="error.pageName" class="result-item error-item">
@@ -233,7 +233,7 @@
           @click="$emit('close')"
           class="btn btn-secondary"
         >
-          {{ $t('Cancel') }}
+          {{ $t('common.cancel') }}
         </button>
 
         <button
@@ -242,7 +242,7 @@
           @click="handleBack"
           class="btn btn-secondary"
         >
-          {{ $t('Back') }}
+          {{ $t('penny.connections.back') }}
         </button>
 
         <button
@@ -253,7 +253,7 @@
           class="btn btn-primary"
         >
           <Icon v-if="processing" icon="mdi:loading" class="animate-spin h-4 w-4 mr-2" />
-          {{ processing ? $t('Processing...') : $t('Connect {count} Pages', { count: selectedPages.length }) }}
+          {{ processing ? $t('penny.connections.processing') : $t('penny.connections.connectPages', { count: selectedPages.length }) }}
         </button>
 
         <button
@@ -262,7 +262,7 @@
           @click="$emit('close')"
           class="btn btn-primary"
         >
-          {{ $t('Done') }}
+          {{ $t('penny.connections.done') }}
         </button>
       </div>
     </div>

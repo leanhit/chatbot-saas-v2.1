@@ -48,7 +48,7 @@
             {{ $t('penny.rules.selectBotMessage') }}
           </h3>
           <p class="text-yellow-700 dark:text-yellow-300 mt-1">
-            {{ $t('selectBotToManageRules') }}
+            {{ $t('penny.rules.selectBotToManageRules') }}
           </p>
         </div>
       </div>
@@ -58,17 +58,17 @@
     <div v-else-if="availableBots.length === 0" class="text-center py-12">
       <Icon icon="mdi:robot-outline" class="h-16 w-16 text-gray-400 mx-auto mb-4" />
       <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">
-        {{ $t('No Bots Available') }}
+            {{ $t('penny.rules.noBotsAvailable') }}
       </h3>
       <p class="text-gray-600 dark:text-gray-400 mb-4">
-        {{ $t('Create a bot first to manage rules') }}
+        {{ $t('penny.rules.createBotFirst') }}
       </p>
       <button
         @click="$router.push('/penny-bots')"
         class="inline-flex items-center px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/80 transition-colors"
       >
         <Icon icon="mdi:robot" class="mr-2" />
-        {{ $t('Go to Bot Management') }}
+        {{ $t('penny.rules.goToBotManagement') }}
       </button>
     </div>
 
@@ -84,7 +84,7 @@
           </div>
           <div class="ml-4">
             <p class="text-sm font-medium text-gray-600 dark:text-gray-400">
-              {{ $t('Active Rules') }}
+              {{ $t('penny.rules.activeRulesDisplay') }}
             </p>
             <p class="text-2xl font-bold text-gray-900 dark:text-white">
               {{ activeRules.length }}
@@ -100,7 +100,7 @@
           </div>
           <div class="ml-4">
             <p class="text-sm font-medium text-gray-600 dark:text-gray-400">
-              {{ $t('AI Rules') }}
+              {{ $t('penny.rules.aiRules') }}
             </p>
             <p class="text-2xl font-bold text-gray-900 dark:text-white">
               {{ aiRules.length }}
@@ -116,7 +116,7 @@
           </div>
           <div class="ml-4">
             <p class="text-sm font-medium text-gray-600 dark:text-gray-400">
-              {{ $t('Total Rules') }}
+              {{ $t('penny.rules.totalRules') }}
             </p>
             <p class="text-2xl font-bold text-gray-900 dark:text-white">
               {{ rules.length }}
@@ -152,17 +152,17 @@
       <div class="text-center py-12">
         <Icon icon="mdi:lightning-bolt-outline" class="h-16 w-16 text-gray-400 mx-auto mb-4" />
         <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">
-          {{ $t('No Rules Yet') }}
+          {{ $t('penny.rules.noRulesYet') }}
         </h3>
         <p class="text-gray-600 dark:text-gray-400 mb-4">
-          {{ $t('Create your first custom rule to enhance your bot\'s capabilities') }}
+          {{ $t('penny.rules.createYourFirstRule') }}
         </p>
         <button
           @click="showCreateModal = true"
           class="inline-flex items-center px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/80 transition-colors"
         >
           <Icon icon="mdi:plus" class="mr-2" />
-          {{ $t('Create Your First Rule') }}
+          {{ $t('penny.rules.createYourFirstRule') }}
         </button>
       </div>
     </div>
@@ -193,7 +193,7 @@
                     : 'bg-red-600 text-white'
                 ]"
               >
-                {{ rule.isActive ? $t('Active') : $t('Inactive') }}
+                {{ rule.isActive ? $t('penny.rules.active') : $t('penny.rules.inactive') }}
               </span>
               <span class="text-xs py-1 px-2 rounded-md bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200">
                 {{ getRuleTypeDisplayName(rule.type) }}
@@ -204,23 +204,23 @@
 
         <div class="card-content">
           <div class="info-item">
-            <span class="label">{{ $t('Type') }}:</span>
+            <span class="label">{{ $t('penny.rules.type') }}:</span>
             <span class="value">{{ getRuleTypeDisplayName(rule.type) }}</span>
           </div>
           <div class="info-item">
-            <span class="label">{{ $t('Bot') }}:</span>
+            <span class="label">{{ $t('penny.rules.bot') }}:</span>
             <span class="value">{{ rule.botName }}</span>
           </div>
           <div v-if="rule.description" class="info-item">
-            <span class="label">{{ $t('Description') }}:</span>
+            <span class="label">{{ $t('penny.rules.description') }}:</span>
             <span class="value text-truncate">{{ rule.description }}</span>
           </div>
           <div class="info-item">
-            <span class="label">{{ $t('Priority') }}:</span>
+            <span class="label">{{ $t('penny.rules.priority') }}:</span>
             <span class="value">{{ rule.priority }}</span>
           </div>
           <div class="info-item">
-            <span class="label">{{ $t('Created') }}:</span>
+            <span class="label">{{ $t('penny.rules.created') }}:</span>
             <span class="value">{{ formatDateTime(rule.createdAt) }}</span>
           </div>
         </div>
@@ -238,33 +238,33 @@
                     : 'text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300'
                 ]"
               >
-                {{ rule.isActive ? $t('Disable') : $t('Enable') }}
+                {{ rule.isActive ? $t('penny.rules.disable') : $t('penny.rules.enable') }}
               </button>
               <button
                 @click="editRule(rule)"
                 class="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 text-sm font-medium"
               >
-                {{ $t('Edit') }}
+                {{ $t('penny.rules.editRule') }}
               </button>
               <button
                 @click="testRule(rule)"
-                :title="$t('Test this existing rule')"
+                :title="$t('penny.rules.testExistingRule')"
                 class="text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 text-sm font-medium"
               >
-                {{ $t('Test Rule') }}
+                {{ $t('penny.rules.testRule') }}
               </button>
               <button
                 @click="duplicateRule(rule)"
                 class="text-orange-600 dark:text-orange-400 hover:text-orange-700 dark:hover:text-orange-300 text-sm font-medium"
               >
-                {{ $t('Duplicate') }}
+                {{ $t('penny.rules.duplicate') }}
               </button>
               <button
                 @click="deleteRule(rule)"
                 :disabled="deletingRule"
                 class="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 text-sm font-medium"
               >
-                {{ $t('Delete') }}
+                {{ $t('penny.rules.deleteRule') }}
               </button>
             </div>
           </div>

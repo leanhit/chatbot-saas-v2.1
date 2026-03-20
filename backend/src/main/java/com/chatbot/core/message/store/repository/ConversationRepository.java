@@ -101,4 +101,17 @@ public interface ConversationRepository extends JpaRepository<Conversation, Long
         @Param("externalUserId") String externalUserId,
         @Param("connectionId") UUID connectionId
     );
+    
+    // 10. Count methods for dashboard statistics
+    @Query("SELECT COUNT(c) FROM Conversation c WHERE c.tenantId = :tenantId")
+    Long countByTenantId(@Param("tenantId") Long tenantId);
+    
+    @Query("SELECT COUNT(c) FROM Conversation c WHERE c.tenantId = :tenantId AND c.createdAt >= :startDate")
+    Long countByTenantIdAndCreatedAtAfter(@Param("tenantId") Long tenantId, @Param("startDate") java.time.LocalDateTime startDate);
+    
+    @Query("SELECT COUNT(c) FROM Conversation c WHERE c.tenantId = :tenantId AND c.isTakenOverByAgent = :isTakenOverByAgent")
+    Long countByTenantIdAndIsTakenOverByAgent(@Param("tenantId") Long tenantId, @Param("isTakenOverByAgent") Boolean isTakenOverByAgent);
+    
+    @Query("SELECT COUNT(c) FROM Conversation c WHERE c.tenantId = :tenantId AND c.createdAt BETWEEN :startDate AND :endDate")
+    Long countByTenantIdAndCreatedAtBetween(@Param("tenantId") Long tenantId, @Param("startDate") java.time.LocalDateTime startDate, @Param("endDate") java.time.LocalDateTime endDate);
 }

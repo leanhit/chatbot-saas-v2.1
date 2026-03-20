@@ -2,6 +2,8 @@ package com.chatbot.core.message.store.service;
 
 import com.chatbot.core.message.store.model.Conversation;
 import com.chatbot.core.message.store.model.Message;
+import com.chatbot.core.message.store.dto.ConversationStatisticsDTO;
+import com.chatbot.core.message.store.dto.ChartDataPointDTO;
 import com.chatbot.core.message.store.repository.ConversationRepository;
 import com.chatbot.core.message.store.repository.MessageRepository;
 import com.chatbot.spokes.facebook.connection.model.FacebookConnection;
@@ -414,16 +416,212 @@ public class ConversationService {
     /**
      * Get conversation statistics
      */
-    public Object getConversationStatistics(String ownerId) {
+    public ConversationStatisticsDTO getConversationStatistics(String ownerId) {
         Long tenantId = TenantContext.getTenantId();
         
-        // TODO: Implement statistics calculation
-        return java.util.Map.of(
-            "totalConversations", 0,
-            "activeTakeovers", 0,
-            "pendingMessages", 0,
-            "todayMessages", 0
-        );
+        try {
+            // Get total conversations count
+            Long totalConversations = conversationRepo.countByTenantId(tenantId);
+            
+            // Get today's conversations
+            java.time.LocalDateTime todayStart = java.time.LocalDateTime.now().withHour(0).withMinute(0).withSecond(0);
+            Long todayConversations = conversationRepo.countByTenantIdAndCreatedAtAfter(tenantId, todayStart);
+            
+            // Get active takeovers (conversations taken over by agents)
+            Long activeTakeovers = conversationRepo.countByTenantIdAndIsTakenOverByAgent(tenantId, true);
+            
+            // Get total messages count
+            Long totalMessages = messageRepo.countByConversationTenantId(tenantId);
+            
+            // Get today's messages
+            Long todayMessages = messageRepo.countByConversationTenantIdAndCreatedAtAfter(tenantId, todayStart);
+            
+            // Calculate mock growth rates (TODO: Implement real growth calculations)
+            Double growthRate = totalConversations > 0 ? (todayConversations * 100.0 / totalConversations) : 0.0;
+            
+            // Get active connections (from Facebook connections as example)
+            Long activeConnections = facebookConnectionRepo.countByTenantIdAndIsActiveTrue(tenantId);
+            
+            // Build statistics DTO
+            ConversationStatisticsDTO statistics = new ConversationStatisticsDTO();
+            statistics.setTotalConversations(totalConversations);
+            statistics.setActiveTakeovers(activeTakeovers);
+            statistics.setPendingMessages(0L); // TODO: Implement pending messages logic
+            statistics.setTodayMessages(todayMessages);
+            statistics.setGrowthRate(growthRate);
+            statistics.setActiveUsers(0L); // TODO: Implement active users logic
+            statistics.setUserGrowth(0.0); // TODO: Implement user growth logic
+            statistics.setBotResponses(0L); // TODO: Implement bot responses logic
+            statistics.setResponseRate(0.0); // TODO: Implement response rate logic
+            statistics.setActiveConnections(activeConnections);
+            statistics.setTotalMessages(totalMessages);
+            
+            return statistics;
+            
+        } catch (Exception e) {
+            log.error("Error calculating conversation statistics for tenant {}: {}", tenantId, e.getMessage(), e);
+            
+            // Return default values on error
+            ConversationStatisticsDTO defaultStats = new ConversationStatisticsDTO();
+            defaultStats.setTotalConversations(0L);
+            defaultStats.setActiveTakeovers(0L);
+            defaultStats.setPendingMessages(0L);
+            defaultStats.setTodayMessages(0L);
+            defaultStats.setGrowthRate(0.0);
+            defaultStats.setActiveUsers(0L);
+            defaultStats.setUserGrowth(0.0);
+            defaultStats.setBotResponses(0L);
+            defaultStats.setResponseRate(0.0);
+            defaultStats.setActiveConnections(0L);
+            defaultStats.setTotalMessages(0L);
+            
+            return defaultStats;
+        }
+    }
+
+    /**
+     * Get conversation chart data based on time period
+     */
+    public List<ChartDataPointDTO> getConversationChartData(String ownerId, String period) {
+        Long tenantId = TenantContext.getTenantId();
+        
+        try {
+            java.time.LocalDateTime now = java.time.LocalDateTime.now();
+            java.time.LocalDateTime startDate;
+            String dateFormat;
+            
+            switch (period.toLowerCase()) {
+                case "7d":
+                    startDate = now.minusDays(7);
+                    dateFormat = "EEE";
+                    return generateDailyChartData(tenantId, startDate, now, dateFormat);
+                    
+                case "1m":
+                    startDate = now.minusMonths(1);
+                    dateFormat = "Week %d";
+                    return generateWeeklyChartData(tenantId, startDate, now);
+                    
+                case "3m":
+                    startDate = now.minusMonths(3);
+                    return generateMonthlyChartData(tenantId, startDate, now);
+                    
+                case "1y":
+                    startDate = now.minusYears(1);
+                    return generateQuarterlyChartData(tenantId, startDate, now);
+                    
+                default:
+                    // Default to 7 days
+                    startDate = now.minusDays(7);
+                    dateFormat = "EEE";
+                    return generateDailyChartData(tenantId, startDate, now, dateFormat);
+            }
+            
+        } catch (Exception e) {
+            log.error("Error generating chart data for tenant {} with period {}: {}", tenantId, period, e.getMessage(), e);
+            
+            // Return empty list on error
+            return java.util.Collections.emptyList();
+        }
+    }
+    
+    private List<ChartDataPointDTO> generateDailyChartData(Long tenantId, java.time.LocalDateTime startDate, java.time.LocalDateTime endDate, String dateFormat) {
+        List<ChartDataPointDTO> chartData = new java.util.ArrayList<>();
+        java.time.LocalDate current = startDate.toLocalDate();
+        java.time.LocalDate end = endDate.toLocalDate();
+        
+        while (!current.isAfter(end)) {
+            java.time.LocalDateTime dayStart = current.atStartOfDay();
+            java.time.LocalDateTime dayEnd = current.atTime(23, 59, 59);
+            
+            Long count = conversationRepo.countByTenantIdAndCreatedAtBetween(tenantId, dayStart, dayEnd);
+            
+            ChartDataPointDTO dataPoint = new ChartDataPointDTO();
+            dataPoint.setLabel(current.format(java.time.format.DateTimeFormatter.ofPattern(dateFormat)));
+            dataPoint.setValue(count);
+            dataPoint.setDate(current.toString());
+            
+            chartData.add(dataPoint);
+            current = current.plusDays(1);
+        }
+        
+        return chartData;
+    }
+    
+    private List<ChartDataPointDTO> generateWeeklyChartData(Long tenantId, java.time.LocalDateTime startDate, java.time.LocalDateTime endDate) {
+        List<ChartDataPointDTO> chartData = new java.util.ArrayList<>();
+        
+        java.time.LocalDate current = startDate.toLocalDate().with(java.time.temporal.TemporalAdjusters.previousOrSame(java.time.DayOfWeek.MONDAY));
+        java.time.LocalDate end = endDate.toLocalDate();
+        
+        int weekNum = 1;
+        while (!current.isAfter(end)) {
+            java.time.LocalDateTime weekStart = current.atStartOfDay();
+            java.time.LocalDateTime weekEnd = current.plusDays(6).atTime(23, 59, 59);
+            
+            Long count = conversationRepo.countByTenantIdAndCreatedAtBetween(tenantId, weekStart, weekEnd);
+            
+            ChartDataPointDTO dataPoint = new ChartDataPointDTO();
+            dataPoint.setLabel(String.format("Week %d", weekNum++));
+            dataPoint.setValue(count);
+            dataPoint.setDate(current.toString());
+            
+            chartData.add(dataPoint);
+            current = current.plusWeeks(1);
+        }
+        
+        return chartData;
+    }
+    
+    private List<ChartDataPointDTO> generateMonthlyChartData(Long tenantId, java.time.LocalDateTime startDate, java.time.LocalDateTime endDate) {
+        List<ChartDataPointDTO> chartData = new java.util.ArrayList<>();
+        
+        java.time.LocalDate current = startDate.toLocalDate().withDayOfMonth(1);
+        java.time.LocalDate end = endDate.toLocalDate().withDayOfMonth(1);
+        
+        while (!current.isAfter(end)) {
+            java.time.LocalDateTime monthStart = current.atStartOfDay();
+            java.time.LocalDateTime monthEnd = current.withDayOfMonth(current.lengthOfMonth()).atTime(23, 59, 59);
+            
+            Long count = conversationRepo.countByTenantIdAndCreatedAtBetween(tenantId, monthStart, monthEnd);
+            
+            ChartDataPointDTO dataPoint = new ChartDataPointDTO();
+            dataPoint.setLabel(current.format(java.time.format.DateTimeFormatter.ofPattern("MMM")));
+            dataPoint.setValue(count);
+            dataPoint.setDate(current.toString());
+            
+            chartData.add(dataPoint);
+            current = current.plusMonths(1);
+        }
+        
+        return chartData;
+    }
+    
+    private List<ChartDataPointDTO> generateQuarterlyChartData(Long tenantId, java.time.LocalDateTime startDate, java.time.LocalDateTime endDate) {
+        List<ChartDataPointDTO> chartData = new java.util.ArrayList<>();
+        
+        java.time.LocalDate current = startDate.toLocalDate()
+                .withMonth(((startDate.getMonthValue() - 1) / 3) * 3 + 1)
+                .withDayOfMonth(1);
+        java.time.LocalDate end = endDate.toLocalDate();
+        
+        int quarterNum = 1;
+        while (!current.isAfter(end)) {
+            java.time.LocalDateTime quarterStart = current.atStartOfDay();
+            java.time.LocalDateTime quarterEnd = current.plusMonths(2).withDayOfMonth(current.plusMonths(2).lengthOfMonth()).atTime(23, 59, 59);
+            
+            Long count = conversationRepo.countByTenantIdAndCreatedAtBetween(tenantId, quarterStart, quarterEnd);
+            
+            ChartDataPointDTO dataPoint = new ChartDataPointDTO();
+            dataPoint.setLabel(String.format("Q%d", quarterNum++));
+            dataPoint.setValue(count);
+            dataPoint.setDate(current.toString());
+            
+            chartData.add(dataPoint);
+            current = current.plusMonths(3);
+            if (quarterNum > 4) quarterNum = 1;
+        }
+        
+        return chartData;
     }
 
 }

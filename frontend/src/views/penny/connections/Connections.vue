@@ -61,7 +61,7 @@
           </div>
           <div class="ml-4">
             <p class="text-sm font-medium text-gray-500 dark:text-gray-400">
-              {{ $t('Total Connections') }}
+              {{ $t('penny.connections.totalConnections') }}
             </p>
             <p class="text-2xl font-semibold text-gray-900 dark:text-white">
               {{ connections?.length || 0 }}
@@ -77,7 +77,7 @@
           </div>
           <div class="ml-4">
             <p class="text-sm font-medium text-gray-500 dark:text-gray-400">
-              {{ $t('Active Connections') }}
+              {{ $t('penny.connections.activeConnections') }}
             </p>
             <p class="text-2xl font-semibold text-gray-900 dark:text-white">
               {{ activeConnections?.length || 0 }}
@@ -93,7 +93,7 @@
           </div>
           <div class="ml-4">
             <p class="text-sm font-medium text-gray-500 dark:text-gray-400">
-              {{ $t('Healthy Connections') }}
+              {{ $t('penny.connections.healthyConnections') }}
             </p>
             <p class="text-2xl font-semibold text-gray-900 dark:text-white">
               {{ healthyConnections?.length || 0 }}
@@ -108,10 +108,10 @@
       <div class="px-4 py-8 text-center">
         <Icon icon="mdi:robot-off" class="h-16 w-16 text-gray-400 mx-auto mb-4" />
         <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">
-          {{ $t('Select a Bot to View Connections') }}
+          {{ $t('penny.connections.selectBotToView') }}
         </h3>
         <p class="text-gray-500 dark:text-gray-400">
-          {{ $t('Please select a bot from the dropdown above to view and manage its connections.') }}
+          {{ $t('penny.connections.selectBotDescription') }}
         </p>
       </div>
     </div>
@@ -120,24 +120,24 @@
     <div v-else class="bg-white dark:bg-gray-800 shadow rounded-lg">
       <div class="px-4 py-5 sm:px-6">
         <h3 class="text-lg leading-6 font-medium text-gray-900 dark:text-white">
-          {{ $t('Connections List') }}
+          {{ $t('penny.connections.connectionsList') }}
         </h3>
       </div>
       <div class="border-t border-gray-200 dark:border-gray-700">
         <div v-if="loadingConnections" class="px-4 py-8 text-center">
           <div class="inline-flex items-center">
             <Icon icon="mdi:loading" class="animate-spin h-5 w-5 mr-3" />
-            {{ $t('Loading...') }}
+            {{ $t('penny.connections.loading') }}
           </div>
         </div>
         
         <div v-else-if="filteredConnections && filteredConnections.length === 0" class="px-4 py-8 text-center">
           <Icon icon="mdi:link-off" class="h-12 w-12 text-gray-400 mx-auto mb-4" />
           <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">
-            {{ $t('No Facebook Connections Yet') }}
+            {{ $t('penny.connections.noConnectionsYet') }}
           </h3>
           <p class="text-gray-500 dark:text-gray-400">
-            {{ $t('Use the Auto Connect button to automatically connect your Facebook pages') }}
+            {{ $t('penny.connections.useAutoConnect') }}
           </p>
         </div>
 
@@ -165,11 +165,11 @@
                         connection.isActive ? 'bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100' : 'bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-100'
                       ]"
                     >
-                      {{ connection.isActive ? $t('Active') : $t('Inactive') }}
+                      {{ connection.isActive ? $t('penny.connections.active') : $t('penny.connections.inactive') }}
                     </span>
                   </div>
                   <p class="text-sm text-gray-500 dark:text-gray-400">
-                    {{ connection.description || $t('No description available') }}
+                    {{ connection.description || $t('penny.connections.noDescriptionAvailable') }}
                   </p>
                   <div class="flex items-center mt-1 space-x-4 text-sm text-gray-500 dark:text-gray-400">
                     <span>
@@ -189,7 +189,7 @@
                   @click="editConnection(connection)"
                   class="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 text-sm font-medium"
                 >
-                  {{ $t('Edit') }}
+                  {{ $t('penny.connections.edit') }}
                 </button>
                 <button
                   @click="toggleConnectionStatus(connection)"
@@ -200,7 +200,7 @@
                       : 'text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300'
                   ]"
                 >
-                  {{ connection.isActive ? $t('Disable') : $t('Enable') }}
+                  {{ connection.isActive ? $t('penny.connections.disable') : $t('penny.connections.enable') }}
                 </button>
                 <button
                   @click="deleteConnection(connection)"
@@ -208,7 +208,7 @@
                   title="Admin only - Requires admin privileges"
                 >
                   <Icon icon="mdi:shield-account" class="h-3 w-3" />
-                  {{ $t('Delete') }}
+                  {{ $t('penny.connections.delete') }}
                 </button>
               </div>
             </div>

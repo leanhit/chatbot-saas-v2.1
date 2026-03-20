@@ -108,13 +108,13 @@
               <table class="connections-table-content">
                 <thead>
                   <tr>
-                    <th>{{ $t('Name') }}</th>
-                    <th>{{ $t('Type') }}</th>
-                    <th>{{ $t('Status') }}</th>
-                    <th>{{ $t('Health') }}</th>
-                    <th>{{ $t('Priority') }}</th>
-                    <th>{{ $t('Last Used') }}</th>
-                    <th>{{ $t('Actions') }}</th>
+                    <th>{{ $t('penny.connections.name') }}</th>
+                    <th>{{ $t('penny.connections.type') }}</th>
+                    <th>{{ $t('penny.connections.status') }}</th>
+                    <th>{{ $t('penny.connections.health') }}</th>
+                    <th>{{ $t('penny.connections.priority') }}</th>
+                    <th>{{ $t('penny.connections.lastUsed') }}</th>
+                    <th>{{ $t('penny.connections.actions') }}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -149,7 +149,7 @@
                           <span class="switch-slider"></span>
                         </label>
                         <span class="status-text" :class="{ active: connection.isEnabled }">
-                          {{ connection.isEnabled ? $t('Enabled') : $t('Disabled') }}
+                          {{ connection.isEnabled ? $t('penny.connections.enabled') : $t('penny.connections.disabled') }}
                         </span>
                       </div>
                     </td>
@@ -190,7 +190,7 @@
                         <button
                           @click="viewDetails(connection)"
                           class="action-btn details"
-                          :title="$t('View Details')"
+                          :title="$t('penny.connections.viewDetails')"
                         >
                           <Icon icon="mdi:information" class="h-4 w-4" />
                         </button>
@@ -198,7 +198,7 @@
                           @click="testConnection(connection)"
                           :disabled="testingConnection"
                           class="action-btn test"
-                          :title="$t('Test Connection')"
+                          :title="$t('penny.connections.testConnection')"
                         >
                           <Icon icon="mdi:test-tube" class="h-4 w-4" />
                         </button>
@@ -206,21 +206,21 @@
                           @click="checkHealth(connection)"
                           :disabled="checkingHealth"
                           class="action-btn health"
-                          :title="$t('Check Health')"
+                          :title="$t('penny.connections.checkHealth')"
                         >
                           <Icon icon="mdi:heart-pulse" class="h-4 w-4" />
                         </button>
                         <button
                           @click="editConnection(connection)"
                           class="action-btn edit"
-                          :title="$t('Edit Connection')"
+                          :title="$t('penny.connections.edit')"
                         >
                           <Icon icon="mdi:pencil" class="h-4 w-4" />
                         </button>
                         <button
                           @click="deleteConnectionConfirm(connection)"
                           class="action-btn delete"
-                          :title="$t('Delete Connection')"
+                          :title="$t('penny.connections.deleteConnection')"
                         >
                           <Icon icon="mdi:delete" class="h-4 w-4" />
                         </button>

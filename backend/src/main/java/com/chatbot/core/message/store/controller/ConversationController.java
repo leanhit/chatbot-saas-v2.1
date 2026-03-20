@@ -1,6 +1,8 @@
 package com.chatbot.core.message.store.controller;
 
 import com.chatbot.core.message.store.dto.ConversationDTO;
+import com.chatbot.core.message.store.dto.ConversationStatisticsDTO;
+import com.chatbot.core.message.store.dto.ChartDataPointDTO;
 import com.chatbot.core.message.store.model.Conversation;
 import com.chatbot.core.message.store.model.Channel;
 import com.chatbot.core.message.store.mapper.ConversationMapper;
@@ -374,6 +376,30 @@ public class ConversationController {
             return ResponseEntity.ok(statistics);
         } catch (Exception e) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to retrieve statistics", e);
+        }
+    }
+
+    // --------------------------------------------------------------------------
+    // ENDPOINT MỚI: GET CONVERSATION CHART DATA
+    // --------------------------------------------------------------------------
+    @GetMapping("/chart")
+    @Operation(
+        summary = "Get conversation chart data",
+        description = "Retrieve chart data for conversations based on time period",
+        responses = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Chart data retrieved successfully")
+        }
+    )
+    public ResponseEntity<List<ChartDataPointDTO>> getConversationChart(
+            @Parameter(description = "Time period for chart data (7d, 1m, 3m, 1y)")
+            @RequestParam(defaultValue = "7d") String period,
+            Principal principal) {
+        try {
+            String ownerId = principal.getName();
+            List<ChartDataPointDTO> chartData = conversationService.getConversationChartData(ownerId, period);
+            return ResponseEntity.ok(chartData);
+        } catch (Exception e) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to retrieve chart data", e);
         }
     }
 
