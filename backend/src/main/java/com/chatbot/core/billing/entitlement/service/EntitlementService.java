@@ -21,6 +21,7 @@ import java.util.stream.Collectors;
 public class EntitlementService {
 
     private final EntitlementRepository entitlementRepository;
+    private final com.chatbot.core.tenant.service.TenantService tenantService;
 
     /**
      * Create new entitlement
@@ -40,6 +41,17 @@ public class EntitlementService {
      */
     public List<Entitlement> getEntitlementsByTenant(Long tenantId) {
         return entitlementRepository.findByTenantId(tenantId);
+    }
+
+    /**
+     * Get entitlements by tenant key (converts tenantKey to tenantId)
+     */
+    public List<Entitlement> getEntitlementsByTenantKey(String tenantKey) {
+        Long tenantId = tenantService.getTenantIdByKey(tenantKey);
+        if (tenantId == null) {
+            throw new ResourceNotFoundException("Tenant not found for tenant key: " + tenantKey);
+        }
+        return getEntitlementsByTenant(tenantId);
     }
 
     /**

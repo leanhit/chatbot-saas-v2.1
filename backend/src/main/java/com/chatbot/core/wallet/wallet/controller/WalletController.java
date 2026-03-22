@@ -4,6 +4,7 @@ import com.chatbot.core.wallet.wallet.dto.BalanceDto;
 import com.chatbot.core.wallet.wallet.dto.CreateWalletRequest;
 import com.chatbot.core.wallet.wallet.dto.WalletResponse;
 import com.chatbot.core.wallet.wallet.service.WalletService;
+import com.chatbot.core.tenant.service.TenantService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -27,6 +28,7 @@ import java.util.List;
 public class WalletController {
 
     private final WalletService walletService;
+    private final TenantService tenantService;
 
     @PostMapping
     @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
@@ -46,7 +48,7 @@ public class WalletController {
         return ResponseEntity.ok(response);
     }
 
-    @GetMapping("/user/{userId}/tenant/{tenantId}")
+    @GetMapping("/user/{userId}/tenant/{tenantKey}")
     @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
     @Operation(
         summary = "Get user wallets",
@@ -60,7 +62,13 @@ public class WalletController {
     )
     public ResponseEntity<List<WalletResponse>> getUserWallets(
             @PathVariable Long userId,
-            @PathVariable Long tenantId) {
+            @PathVariable String tenantKey) {
+        // Convert tenant key to tenant ID
+        Long tenantId = tenantService.getTenantIdByKey(tenantKey);
+        if (tenantId == null) {
+            throw new RuntimeException("Tenant not found with key: " + tenantKey);
+        }
+        
         List<WalletResponse> wallets = walletService.getUserWallets(userId, tenantId);
         return ResponseEntity.ok(wallets);
     }
@@ -82,7 +90,7 @@ public class WalletController {
         return ResponseEntity.ok(balance);
     }
 
-    @GetMapping("/user/{userId}/tenant/{tenantId}/balances")
+    @GetMapping("/user/{userId}/tenant/{tenantKey}/balances")
     @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
     @Operation(
         summary = "Get all user balances",
@@ -96,7 +104,13 @@ public class WalletController {
     )
     public ResponseEntity<List<BalanceDto>> getAllBalances(
             @PathVariable Long userId,
-            @PathVariable Long tenantId) {
+            @PathVariable String tenantKey) {
+        // Convert tenant key to tenant ID
+        Long tenantId = tenantService.getTenantIdByKey(tenantKey);
+        if (tenantId == null) {
+            throw new RuntimeException("Tenant not found with key: " + tenantKey);
+        }
+        
         List<BalanceDto> balances = walletService.getAllBalances(userId, tenantId);
         return ResponseEntity.ok(balances);
     }

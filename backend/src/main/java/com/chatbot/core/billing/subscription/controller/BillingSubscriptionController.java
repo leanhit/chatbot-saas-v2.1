@@ -50,6 +50,16 @@ public class BillingSubscriptionController {
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
+    @Operation(summary = "Get subscription by tenant key", description = "Retrieve subscription information by tenant key")
+    @GetMapping("/subscription/{tenantKey}")
+    @PreAuthorize("hasRole('ADMIN') or @tenantSecurity.isTenantMemberByKey(#tenantKey)")
+    public ResponseEntity<ApiResponse<SubscriptionResponse>> getSubscriptionByTenantKey(
+            @Parameter(description = "Tenant Key") @PathVariable String tenantKey) {
+        
+        SubscriptionResponse response = subscriptionService.getSubscriptionByTenantKey(tenantKey);
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
     @Operation(summary = "Get subscription by ID", description = "Retrieve subscription information by subscription ID")
     @GetMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN') or @billingSecurity.canAccessSubscription(#id)")

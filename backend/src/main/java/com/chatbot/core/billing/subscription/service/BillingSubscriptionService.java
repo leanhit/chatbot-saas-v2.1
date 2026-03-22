@@ -27,6 +27,7 @@ public class BillingSubscriptionService {
 
     private final BillingSubscriptionRepository subscriptionRepository;
     private final BillingAccountService billingAccountService;
+    private final com.chatbot.core.tenant.service.TenantService tenantService;
 
     /**
      * Create new subscription for tenant
@@ -97,6 +98,17 @@ public class BillingSubscriptionService {
         BillingSubscription subscription = subscriptionRepository.findByTenantId(tenantId)
                 .orElseThrow(() -> new ResourceNotFoundException("Subscription not found for tenant: " + tenantId));
         return mapToResponse(subscription);
+    }
+
+    /**
+     * Get subscription by tenant key (converts tenantKey to tenantId)
+     */
+    public SubscriptionResponse getSubscriptionByTenantKey(String tenantKey) {
+        Long tenantId = tenantService.getTenantIdByKey(tenantKey);
+        if (tenantId == null) {
+            throw new ResourceNotFoundException("Tenant not found for tenant key: " + tenantKey);
+        }
+        return getSubscriptionByTenant(tenantId);
     }
 
     /**

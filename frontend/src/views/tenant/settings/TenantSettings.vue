@@ -17,51 +17,58 @@
       </div>
       
       <div class="space-y-6">
-        <!-- Cài đặt chung -->
+        <!-- Currency Settings -->
         <div class="bg-white dark:bg-gray-800 shadow rounded-lg">
           <div class="p-6 border-b border-gray-200 dark:border-gray-700">
-            <h2 class="text-lg font-medium text-gray-900 dark:text-white">{{ $t('tenant.settings.generalSettings') }}</h2>
+            <h2 class="text-lg font-medium text-gray-900 dark:text-white">{{ $t('tenant.settings.currencySettings') }}</h2>
+            <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">{{ $t('tenant.settings.currencySettingsSubtitle') }}</p>
           </div>
           <div class="p-6 space-y-6">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{{ $t('tenant.settings.tenantName') }}</label>
-                <input
-                  v-model="settings.name"
-                  type="text"
-                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                />
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{{ $t('tenant.settings.status') }}</label>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{{ $t('tenant.settings.defaultCurrency') }}</label>
                 <select
-                  v-model="settings.status"
+                  v-model="settings.defaultCurrency"
                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                 >
-                  <option value="ACTIVE">{{ $t('tenant.settings.active') }}</option>
-                  <option value="INACTIVE">{{ $t('tenant.settings.inactive') }}</option>
-                  <option value="SUSPENDED">{{ $t('tenant.settings.suspended') }}</option>
+                  <option value="USD">USD - US Dollar ($)</option>
+                  <option value="VND">VND - Vietnamese Đồng (₫)</option>
+                  <option value="EUR">EUR - Euro (€)</option>
+                  <option value="GBP">GBP - British Pound (£)</option>
+                  <option value="JPY">JPY - Japanese Yen (¥)</option>
                 </select>
               </div>
               <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{{ $t('tenant.settings.visibility') }}</label>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{{ $t('tenant.settings.displayCurrency') }}</label>
                 <select
-                  v-model="settings.visibility"
+                  v-model="settings.displayCurrency"
                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                 >
-                  <option value="PUBLIC">{{ $t('tenant.settings.public') }}</option>
-                  <option value="PRIVATE">{{ $t('tenant.settings.private') }}</option>
+                  <option value="USD">USD - US Dollar ($)</option>
+                  <option value="VND">VND - Vietnamese Đồng (₫)</option>
+                  <option value="EUR">EUR - Euro (€)</option>
+                  <option value="GBP">GBP - British Pound (£)</option>
+                  <option value="JPY">JPY - Japanese Yen (¥)</option>
                 </select>
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{{ $t('tenant.settings.expiresAt') }}</label>
-                <input
-                  v-model="settings.expiresAt"
-                  type="datetime-local"
-                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                />
               </div>
             </div>
+            
+            <!-- Currency Conversion Info -->
+            <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+              <div class="flex items-start">
+                <Icon icon="mdi:information" class="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5 mr-3" />
+                <div class="text-sm text-blue-800 dark:text-blue-200">
+                  <p class="font-medium mb-1">{{ $t('tenant.settings.currencyInfo') }}</p>
+                  <ul class="list-disc list-inside space-y-1 text-blue-700 dark:text-blue-300">
+                    <li>{{ $t('tenant.settings.currencyInfo1') }}</li>
+                    <li>{{ $t('tenant.settings.currencyInfo2') }}</li>
+                    <li>{{ $t('tenant.settings.currencyInfo3') }}</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Save Button -->
             <div class="flex justify-end">
               <button
                 @click="saveSettings"
@@ -72,97 +79,6 @@
                 <Icon v-else icon="mdi:loading" class="h-4 w-4 mr-2 animate-spin" />
                 {{ loading ? $t('tenant.settings.saving') : $t('tenant.settings.saveSettings') }}
               </button>
-            </div>
-          </div>
-        </div>
-
-        <!-- Quản lý trạng thái -->
-        <div class="bg-white dark:bg-gray-800 shadow rounded-lg">
-          <div class="p-6 border-b border-gray-200 dark:border-gray-700">
-            <h2 class="text-lg font-medium text-gray-900 dark:text-white">{{ $t('tenant.settings.statusManagement') }}</h2>
-          </div>
-          <div class="p-6">
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <button
-                @click="suspendTenant"
-                :disabled="loading || settings.status === 'SUSPENDED'"
-                class="px-4 py-2 text-yellow-700 bg-yellow-100 rounded-md hover:bg-yellow-200 dark:bg-yellow-900 dark:text-yellow-200 disabled:opacity-50"
-              >
-                <Icon icon="mdi:pause" class="h-4 w-4 mr-2" />
-                {{ $t('tenant.settings.suspend') }}
-              </button>
-              <button
-                @click="activateTenant"
-                :disabled="loading || settings.status === 'ACTIVE'"
-                class="px-4 py-2 text-green-700 bg-green-100 rounded-md hover:bg-green-200 dark:bg-green-900 dark:text-green-200 disabled:opacity-50"
-              >
-                <Icon icon="mdi:play" class="h-4 w-4 mr-2" />
-                {{ $t('tenant.settings.activate') }}
-              </button>
-              <button
-                @click="deactivateTenant"
-                :disabled="loading || settings.status === 'INACTIVE'"
-                class="px-4 py-2 text-red-700 bg-red-100 rounded-md hover:bg-red-200 dark:bg-red-900 dark:text-red-200 disabled:opacity-50"
-              >
-                <Icon icon="mdi:stop" class="h-4 w-4 mr-2" />
-                {{ $t('tenant.settings.deactivate') }}
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <!-- Thông tin tenant -->
-        <div class="bg-white dark:bg-gray-800 shadow rounded-lg">
-          <div class="p-6 border-b border-gray-200 dark:border-gray-700">
-            <h2 class="text-lg font-medium text-gray-900 dark:text-white">{{ $t('tenant.settings.tenantInfo') }}</h2>
-          </div>
-          <div class="p-6">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{{ $t('tenant.settings.tenantKey') }}</label>
-                <div class="flex items-center">
-                  <input
-                    :value="settings.tenantKey"
-                    type="text"
-                    readonly
-                    class="flex-1 px-3 py-2 border border-gray-300 rounded-md bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-400"
-                  />
-                  <button
-                    @click="copyTenantKey"
-                    class="ml-2 p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-                    :title="$t('tenant.settings.copy')"
-                  >
-                    <Icon icon="mdi:content-copy" class="h-4 w-4" />
-                  </button>
-                </div>
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{{ $t('tenant.settings.createdAt') }}</label>
-                <input
-                  :value="formatDate(settings.createdAt)"
-                  type="text"
-                  readonly
-                  class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-400"
-                />
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{{ $t('tenant.settings.updatedAt') }}</label>
-                <input
-                  :value="formatDate(settings.updatedAt)"
-                  type="text"
-                  readonly
-                  class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-400"
-                />
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{{ $t('tenant.settings.memberCount') }}</label>
-                <input
-                  :value="memberCount"
-                  type="text"
-                  readonly
-                  class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-400"
-                />
-              </div>
             </div>
           </div>
         </div>
@@ -198,13 +114,8 @@ export default {
     const memberCount = ref(0)
     
     const settings = ref({
-      name: '',
-      status: 'ACTIVE',
-      visibility: 'PUBLIC',
-      expiresAt: '',
-      tenantKey: '',
-      createdAt: '',
-      updatedAt: ''
+      defaultCurrency: 'USD',
+      displayCurrency: 'USD'
     })
     
     // Methods
@@ -215,17 +126,8 @@ export default {
         
         if (tenant) {
           settings.value = {
-            name: tenant.name || '',
-            status: tenant.status || 'ACTIVE',
-            visibility: tenant.visibility || 'PUBLIC',
-            expiresAt: (() => {
-            const formatted = formatDateTimeLocal(tenant.expiresAt);
-            console.log('expiresAt value:', tenant.expiresAt, typeof tenant.expiresAt, 'formatted:', formatted);
-            return formatted || '';
-          })(),
-            tenantKey: tenant.tenantKey || '',
-            createdAt: tenant.createdAt || '',
-            updatedAt: tenant.updatedAt || ''
+            defaultCurrency: tenant.defaultCurrency || 'USD',
+            displayCurrency: tenant.displayCurrency || 'USD'
           }
         }
       } catch (error) {
@@ -240,10 +142,8 @@ export default {
         loading.value = true
         
         const updateData = {
-          name: settings.value.name,
-          status: settings.value.status,
-          visibility: settings.value.visibility,
-          expiresAt: dateTimeLocalToIso(settings.value.expiresAt)
+          defaultCurrency: settings.value.defaultCurrency,
+          displayCurrency: settings.value.displayCurrency
         }
         
         const response = await tenantApi.updateTenant(tenantStore.activeTenantId, updateData)
@@ -328,13 +228,8 @@ export default {
     return {
       loading,
       settings,
-      memberCount,
       saveSettings,
-      suspendTenant,
-      activateTenant,
-      deactivateTenant,
-      copyTenantKey,
-      formatDate
+      loadTenantData
     }
   }
 }

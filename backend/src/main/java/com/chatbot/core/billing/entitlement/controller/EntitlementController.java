@@ -46,6 +46,16 @@ public class EntitlementController {
         return ResponseEntity.ok(ApiResponse.success(entitlements));
     }
 
+    @Operation(summary = "Get entitlements by tenant key", description = "Retrieve all entitlements by tenant key")
+    @GetMapping("/{tenantKey}")
+    @PreAuthorize("hasRole('ADMIN') or @tenantSecurity.isTenantMemberByKey(#tenantKey)")
+    public ResponseEntity<ApiResponse<List<Entitlement>>> getEntitlementsByTenantKey(
+            @Parameter(description = "Tenant Key") @PathVariable String tenantKey) {
+        
+        List<Entitlement> entitlements = entitlementService.getEntitlementsByTenantKey(tenantKey);
+        return ResponseEntity.ok(ApiResponse.success(entitlements));
+    }
+
     @Operation(summary = "Get enabled entitlements by tenant", description = "Retrieve enabled entitlements for a specific tenant")
     @GetMapping("/tenant/{tenantId}/enabled")
     @PreAuthorize("hasRole('ADMIN') or @tenantSecurity.isTenantMember(#tenantId)")

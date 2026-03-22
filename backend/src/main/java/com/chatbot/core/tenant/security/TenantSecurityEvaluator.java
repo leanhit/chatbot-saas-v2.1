@@ -13,6 +13,7 @@ import org.springframework.stereotype.Component;
 public class TenantSecurityEvaluator {
 
     private final TenantMemberRepository tenantMemberRepository;
+    private final com.chatbot.core.tenant.service.TenantService tenantService;
 
     /**
      * Check if current user is member of tenant
@@ -30,6 +31,22 @@ public class TenantSecurityEvaluator {
             ).isPresent();
         } catch (Exception e) {
             log.error("Error checking tenant membership", e);
+            return false;
+        }
+    }
+
+    /**
+     * Check if current user is member of tenant by tenant key
+     */
+    public boolean isTenantMemberByKey(String tenantKey) {
+        try {
+            Long tenantId = tenantService.getTenantIdByKey(tenantKey);
+            if (tenantId == null) {
+                return false;
+            }
+            return isTenantMember(tenantId);
+        } catch (Exception e) {
+            log.error("Error checking tenant membership by key", e);
             return false;
         }
     }

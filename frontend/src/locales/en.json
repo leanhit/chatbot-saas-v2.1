@@ -92,7 +92,26 @@
     },
     "register": {
       "title": "Create your account",
-      "subtitle": "Or sign in to your existing account"
+      "subtitle": "Or sign in to your existing account",
+      "email": "Email address",
+      "emailPlaceholder": "Enter your email",
+      "password": "Password",
+      "passwordPlaceholder": "Enter your password",
+      "confirmPassword": "Confirm Password",
+      "confirmPasswordPlaceholder": "Confirm your password",
+      "agreeTerms": "I agree to the",
+      "termsOfService": "Terms of Service",
+      "and": "and",
+      "privacyPolicy": "Privacy Policy",
+      "error": "Registration failed",
+      "passwordMismatch": "Passwords do not match",
+      "signingUp": "Creating account...",
+      "signUp": "Create Account",
+      "hasAccount": "Already have an account?",
+      "signIn": "Sign in",
+      "creatingAccount": "Creating account...",
+      "createAccount": "Create Account",
+      "alreadyHaveAccount": "Already have an account?"
     }
   },
   "dashboard": {
@@ -181,7 +200,15 @@
       "copy": "Copy",
       "createdAt": "Created At",
       "updatedAt": "Updated At",
-      "memberCount": "Member Count"
+      "memberCount": "Member Count",
+      "currencySettings": "Currency Settings",
+      "currencySettingsSubtitle": "Configure currency preferences for your workspace",
+      "defaultCurrency": "Default Currency",
+      "displayCurrency": "Display Currency",
+      "currencyInfo": "Currency Configuration Information",
+      "currencyInfo1": "Default currency is used for billing and wallet calculations",
+      "currencyInfo2": "Display currency affects how prices are shown in the interface",
+      "currencyInfo3": "Exchange rates are updated automatically every hour"
     },
     "member": {
       "title": "Tenant Members",

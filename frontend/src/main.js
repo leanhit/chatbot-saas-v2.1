@@ -26,9 +26,13 @@ app.component('Icon', Icon);
 // Initialize auth store
 import { useAuthStore } from './stores/authStore'
 import { useGatewayTenantStore } from './stores/tenant/gateway/myTenantStore'
+import { useWalletStore } from './stores/walletStore'
+import { useBillingStore } from './stores/billingStore'
 import websocketService from './services/websocketService'
 const authStore = useAuthStore()
 const tenantStore = useGatewayTenantStore()
+const walletStore = useWalletStore()
+const billingStore = useBillingStore()
 authStore.initialize()
 
 // Initialize WebSocket when user is authenticated

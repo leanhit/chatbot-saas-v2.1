@@ -156,6 +156,89 @@
               </template>
             </menu-accordion>
           </div>
+          <div class="item mt-3">
+            <menu-accordion>
+              <template v-slot:icon>
+                <Icon icon="mdi:wallet" />
+              </template>
+              <template v-slot:title> Wallet </template>
+              <template v-slot:content>
+                <router-link
+                  to="/wallet/dashboard"
+                  @click.stop
+                  class="w-full text-left block rounded-md p-3 hover:bg-gray-200 dark:hover:bg-gray-700"
+                >
+                  Dashboard
+                </router-link>
+                <router-link
+                  to="/wallet/transactions"
+                  @click.stop
+                  class="w-full text-left block rounded-md p-3 hover:bg-gray-200 dark:hover:bg-gray-700"
+                >
+                  Transactions
+                </router-link>
+                <router-link
+                  to="/wallet/topup"
+                  @click.stop
+                  class="w-full text-left block rounded-md p-3 hover:bg-gray-200 dark:hover:bg-gray-700"
+                >
+                  Top Up
+                </router-link>
+                <router-link
+                  to="/wallet/transfer"
+                  @click.stop
+                  class="w-full text-left block rounded-md p-3 hover:bg-gray-200 dark:hover:bg-gray-700"
+                >
+                  Transfer
+                </router-link>
+              </template>
+            </menu-accordion>
+          </div>
+          <div class="item mt-3">
+            <menu-accordion>
+              <template v-slot:icon>
+                <Icon icon="mdi:credit-card-outline" />
+              </template>
+              <template v-slot:title> Billing </template>
+              <template v-slot:content>
+                <router-link
+                  to="/billing/overview"
+                  @click.stop
+                  class="w-full text-left block rounded-md p-3 hover:bg-gray-200 dark:hover:bg-gray-700"
+                >
+                  Overview
+                </router-link>
+                <router-link
+                  to="/billing/subscription"
+                  @click.stop
+                  class="w-full text-left block rounded-md p-3 hover:bg-gray-200 dark:hover:bg-gray-700"
+                >
+                  Subscription
+                </router-link>
+                <router-link
+                  to="/billing/payment-methods"
+                  @click.stop
+                  class="w-full text-left block rounded-md p-3 hover:bg-gray-200 dark:hover:bg-gray-700"
+                >
+                  Payment Methods
+                </router-link>
+                <router-link
+                  to="/billing/invoices"
+                  @click.stop
+                  class="w-full text-left block rounded-md p-3 hover:bg-gray-200 dark:hover:bg-gray-700"
+                >
+                  Invoices
+                </router-link>
+                <router-link
+                  to="/billing/entitlements"
+                  @click.stop
+                  class="w-full text-left block rounded-md p-3 hover:bg-gray-200 dark:hover:bg-gray-700"
+                >
+                  Entitlements
+                </router-link>
+              </template>
+            </menu-accordion>
+          </div>
         </div>
       </div>
     </div>

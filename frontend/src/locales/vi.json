@@ -90,7 +90,26 @@
     },
     "register": {
       "title": "Tạo tài khoản của bạn",
-      "subtitle": "Hoặc đăng nhập vào tài khoản hiện có"
+      "subtitle": "Hoặc đăng nhập vào tài khoản hiện có",
+      "email": "Địa chỉ email",
+      "emailPlaceholder": "Nhập email của bạn",
+      "password": "Mật khẩu",
+      "passwordPlaceholder": "Nhập mật khẩu của bạn",
+      "confirmPassword": "Xác nhận mật khẩu",
+      "confirmPasswordPlaceholder": "Xác nhận lại mật khẩu của bạn",
+      "agreeTerms": "Tôi đồng ý với",
+      "termsOfService": "Điều khoản Dịch vụ",
+      "and": "và",
+      "privacyPolicy": "Chính sách Quyền riêng tư",
+      "error": "Đăng ký thất bại",
+      "passwordMismatch": "Mật khẩu không khớp",
+      "signingUp": "Đang tạo tài khoản...",
+      "signUp": "Tạo Tài khoản",
+      "hasAccount": "Đã có tài khoản?",
+      "signIn": "Đăng nhập",
+      "creatingAccount": "Đang tạo tài khoản...",
+      "createAccount": "Tạo Tài khoản",
+      "alreadyHaveAccount": "Đã có tài khoản?"
     }
   },
   "dashboard": {
@@ -178,7 +197,15 @@
       "copy": "Sao chép",
       "createdAt": "Ngày tạo",
       "updatedAt": "Ngày cập nhật",
-      "memberCount": "Số thành viên"
+      "memberCount": "Số thành viên",
+      "currencySettings": "Cài đặt Tiền tệ",
+      "currencySettingsSubtitle": "Cấu hình tùy chọn tiền tệ cho không gian làm việc của bạn",
+      "defaultCurrency": "Tiền tệ Mặc định",
+      "displayCurrency": "Tiền tệ Hiển thị",
+      "currencyInfo": "Thông tin Cấu hình Tiền tệ",
+      "currencyInfo1": "Tiền tệ mặc định được sử dụng cho tính toán billing và ví",
+      "currencyInfo2": "Tiền tệ hiển thị ảnh hưởng đến cách giá cả được hiển thị trong giao diện",
+      "currencyInfo3": "Tỷ giá hối đoái được cập nhật tự động mỗi giờ"
     },
     "member": {
       "title": "Thành viên Tenant",
