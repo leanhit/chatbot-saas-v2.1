@@ -44,7 +44,7 @@
                 ]"
               >
                 <Icon :icon="tab.icon" class="h-4 w-4 mr-2" />
-                {{ $t(tab.label) }}
+                {{ tab.label }}
               </button>
             </nav>
           </div>

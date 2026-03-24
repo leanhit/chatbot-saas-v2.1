@@ -8,13 +8,19 @@ export const useGatewaySearchTenantStore = defineStore('gateway-search-tenant', 
   const error = ref(null)
   
   const searchTenants = async (searchParams) => {
+    // Handle case where searchParams is a string (keyword)
+    const keywordParam = typeof searchParams === 'string' ? searchParams : searchParams?.keyword || searchParams;
+    
     // Create search request with defaults
     const searchRequest = {
       ...createDefaultTenantSearchRequest(),
-      ...searchParams
+      keyword: keywordParam
     }
     
+    console.log('🔍 Search Debug - searchRequest:', searchRequest)
+    
     if (!searchRequest.keyword?.trim()) {
+      console.log('🔍 Search Debug - Empty keyword, clearing results')
       searchResults.value = []
       return
     }
@@ -22,10 +28,14 @@ export const useGatewaySearchTenantStore = defineStore('gateway-search-tenant', 
     loading.value = true
     error.value = null
     try {
+      console.log('🔍 Search Debug - Calling API with:', searchRequest)
       const { data } = await tenantApi.searchTenants(searchRequest)
+      console.log('🔍 Search Debug - API Response:', data)
       // Backend returns Page<TenantSearchResponse> with content field
       searchResults.value = data.content || []
+      console.log('🔍 Search Debug - Final results:', searchResults.value)
     } catch (error) {
+      console.error('🔍 Search Debug - Error:', error)
       error.value = error.response?.data?.message || 'Không thể tìm kiếm tenant'
       searchResults.value = []
     } finally {

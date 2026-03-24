@@ -149,6 +149,46 @@ public class TenantGrpcClient {
         }
     }
 
+    public SearchTenantsResponse searchTenants(SearchTenantsRequest request) {
+        try {
+            log.info("gRPC Client: Bắt đầu search tenants - query: {}, page: {}, size: {}", 
+                    request.getQuery(), request.getPage(), request.getSize());
+            SearchTenantsResponse response = blockingStub.searchTenants(request);
+            log.info("gRPC Client: Search thành công, trả về {} tenants", response.getTenantsCount());
+            return response;
+        } catch (Exception e) {
+            log.error("Lỗi khi search tenants qua gRPC", e);
+            return null;
+        }
+    }
+
+    public TenantResponse suspendTenant(SuspendTenantRequest request) {
+        try {
+            return blockingStub.suspendTenant(request);
+        } catch (Exception e) {
+            log.error("Lỗi khi suspend tenant qua gRPC", e);
+            return null;
+        }
+    }
+
+    public TenantResponse activateTenant(ActivateTenantRequest request) {
+        try {
+            return blockingStub.activateTenant(request);
+        } catch (Exception e) {
+            log.error("Lỗi khi activate tenant qua gRPC", e);
+            return null;
+        }
+    }
+
+    public TenantStatusResponse getTenantStatus(GetTenantStatusRequest request) {
+        try {
+            return blockingStub.getTenantStatus(request);
+        } catch (Exception e) {
+            log.error("Lỗi khi get tenant status qua gRPC", e);
+            return null;
+        }
+    }
+
     @PreDestroy
     public void shutdown() {
         if (channel != null) {

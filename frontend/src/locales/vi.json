@@ -23,6 +23,38 @@
       },
       "cancel": "Hủy",
       "submit": "Tạo"
+    },
+    "search": {
+      "placeholder": "Tìm kiếm Tenant",
+      "noResults": "Không tìm thấy kết quả",
+      "searchForWorkspaces": "Tìm kiếm không gian làm việc",
+      "enterAtLeastOneChar": "Nhập ít nhất 1 ký tự để tìm kiếm",
+      "tryDifferentKeywords": "Thử từ khóa khác",
+      "sending": "Đang gửi..."
+    },
+    "myTenants": {
+      "empty": "Không gian làm việc trống",
+      "noWorkspaces": "Bạn chưa có không gian làm việc nào."
+    },
+    "pending": {
+      "loading": "Đang tải yêu cầu đang chờ...",
+      "noRequests": "Không có yêu cầu nào đang chờ vào lúc này."
+    },
+    "invitations": {
+      "loading": "Đang tải lời mời...",
+      "noInvitations": "Không có lời mời nào."
+    },
+    "actions": {
+      "accept": "Chấp nhận",
+      "reject": "Từ chối",
+      "cancelRequest": "Hủy yêu cầu",
+      "enter": "Vào không gian",
+      "suspend": "Tạm dừng",
+      "activate": "Kích hoạt",
+      "join": "Tham gia"
+    },
+    "errors": {
+      "failedJoinRequest": "Không thể gửi yêu cầu tham gia. Vui lòng thử lại."
     }
   },
   "customers": {

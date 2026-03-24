@@ -3,7 +3,7 @@
     <div v-if="loading" class="loading-state">
       <div class="text-center py-12">
         <Icon icon="mdi:loading" class="animate-spin h-8 w-8 text-gray-400 mx-auto mb-4" />
-        <p class="text-gray-600 dark:text-gray-400">Loading invitations...</p>
+        <p class="text-gray-600 dark:text-gray-400">{{ $t('gateway.invitations.loading') }}</p>
       </div>
     </div>
     <div v-else-if="invitations.length === 0" class="empty-state">
@@ -13,7 +13,7 @@
           {{ $t('tenant.gateway.myInvitations') }}
         </h3>
         <p class="text-gray-600 dark:text-gray-400">
-          No invitations available.
+          {{ $t('gateway.invitations.noInvitations') }}
         </p>
       </div>
     </div>

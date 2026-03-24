@@ -10,7 +10,7 @@
           <input
             v-model="keyword"
             type="text"
-            placeholder="Search Tenant"
+            :placeholder="$t('gateway.search.placeholder')"
             class="block w-full pl-10 pr-10 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-blue-500 focus:border-blue-500"
             @keyup.enter="handleManualSearch"
           />
@@ -55,10 +55,10 @@
         <div class="text-center py-12">
           <Icon icon="mdi:search" class="h-16 w-16 text-gray-400 mx-auto mb-4" />
           <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">
-            {{ keyword ? 'No results found' : 'Search for workspaces' }}
+            {{ keyword ? $t('gateway.search.noResults') : $t('gateway.search.searchForWorkspaces') }}
           </h3>
           <p class="text-gray-600 dark:text-gray-400">
-            {{ keyword ? 'Try different keywords' : 'Enter at least 2 characters to search' }}
+            {{ keyword ? $t('gateway.search.tryDifferentKeywords') : $t('gateway.search.enterAtLeastOneChar') }}
           </p>
         </div>
       </div>
@@ -95,10 +95,6 @@
               </div>
               <!-- RIGHT -->
               <div class="action-side">
-                <!-- Debug: Show membership status -->
-                <div style="font-size: 10px; color: red; margin-bottom: 5px;">
-                  Status: {{ tenant.membershipStatus }} | ID: {{ tenant.id }} | Can Join: {{ canJoinTenant(tenant.membershipStatus) }}
-                </div>
                 <button
                   v-if="canJoinTenant(tenant.membershipStatus)"
                   @click="onJoinClick(tenant.tenantKey)"
@@ -106,7 +102,7 @@
                   :class="getJoinButtonClass(tenant.membershipStatus)"
                 >
                   <Icon v-if="joinLoading" icon="mdi:loading" class="animate-spin" />
-                  {{ joinLoading ? 'Sending...' : getJoinButtonText(tenant.membershipStatus, t) }}
+                  {{ joinLoading ? $t('gateway.search.sending') : getJoinButtonText(tenant.membershipStatus, t) }}
                 </button>
                 <span
                   v-else
@@ -162,7 +158,7 @@ export default {
         await executeSearch()
       } catch (error) {
         console.error('Failed to join tenant:', error)
-        alert('Failed to send join request. Please try again.')
+        alert($t('gateway.errors.failedJoinRequest'))
       } finally {
         joinLoading.value = false
       }
@@ -179,10 +175,11 @@ export default {
         searchStore.clearResults()
         return
       }
-      if (newVal.trim().length >= 2) {
+      // Changed from >= 2 to >= 1 for immediate testing
+      if (newVal.trim().length >= 1) {
         debounceTimer = setTimeout(() => {
           executeSearch()
-        }, 500)
+        }, 200) // Changed from 500ms to 200ms for faster response
       }
     })
     onUnmounted(() => {

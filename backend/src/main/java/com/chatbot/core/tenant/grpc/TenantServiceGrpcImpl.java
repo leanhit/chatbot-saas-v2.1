@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -28,18 +29,36 @@ public class TenantServiceGrpcImpl extends TenantServiceGrpc.TenantServiceImplBa
 
     // Helper method để convert Tenant sang TenantResponse
     private com.chatbot.core.tenant.grpc.TenantServiceProto.TenantResponse toGrpcTenantResponse(Tenant tenant) {
-        return com.chatbot.core.tenant.grpc.TenantServiceProto.TenantResponse.newBuilder()
-                .setId(tenant.getId().toString())
-                .setTenantKey(tenant.getTenantKey())
-                .setName(tenant.getName())
-                .setDescription("") // Tenant không có description field
-                .setStatus(tenant.getStatus().name())
-                .setVisibility(tenant.getVisibility().name())
-                .setCreatedAt(tenant.getCreatedAt().atZone(ZoneId.systemDefault()).toInstant().toString())
-                .setUpdatedAt(tenant.getUpdatedAt().atZone(ZoneId.systemDefault()).toInstant().toString())
-                .setExpiresAt(tenant.getExpiresAt() != null ? 
-                    tenant.getExpiresAt().atZone(ZoneId.systemDefault()).toInstant().toString() : "")
-                .build();
+        try {
+            return com.chatbot.core.tenant.grpc.TenantServiceProto.TenantResponse.newBuilder()
+                    .setId(tenant.getId().toString())
+                    .setTenantKey(tenant.getTenantKey())
+                    .setName(tenant.getName())
+                    .setDescription("") // Tenant không có description field
+                    .setStatus(tenant.getStatus() != null ? tenant.getStatus().name() : "UNKNOWN")
+                    .setVisibility(tenant.getVisibility() != null ? tenant.getVisibility().name() : "UNKNOWN")
+                    .setCreatedAt(tenant.getCreatedAt() != null ? 
+                        tenant.getCreatedAt().atZone(ZoneId.systemDefault()).toInstant().toString() : "")
+                    .setUpdatedAt(tenant.getUpdatedAt() != null ? 
+                        tenant.getUpdatedAt().atZone(ZoneId.systemDefault()).toInstant().toString() : "")
+                    .setExpiresAt(tenant.getExpiresAt() != null ? 
+                        tenant.getExpiresAt().atZone(ZoneId.systemDefault()).toInstant().toString() : "")
+                    .build();
+        } catch (Exception e) {
+            log.error("Lỗi khi convert tenant sang gRPC response", e);
+            // Return empty response on error
+            return com.chatbot.core.tenant.grpc.TenantServiceProto.TenantResponse.newBuilder()
+                    .setId("")
+                    .setTenantKey("")
+                    .setName("")
+                    .setDescription("")
+                    .setStatus("ERROR")
+                    .setVisibility("UNKNOWN")
+                    .setCreatedAt("")
+                    .setUpdatedAt("")
+                    .setExpiresAt("")
+                    .build();
+        }
     }
 
     @Override
@@ -132,26 +151,62 @@ public class TenantServiceGrpcImpl extends TenantServiceGrpc.TenantServiceImplBa
         try {
             log.info("gRPC: Liệt kê tenants - trang: {}, kích thước: {}", request.getPage(), request.getSize());
             
-            List<Tenant> tenants = tenantRepository.findAll();
+            // Get all tenants with detailed logging
+            log.info("gRPC: Bắt đầu lấy tất cả tenants từ repository");
+            List<Tenant> allTenants = tenantRepository.findAll();
+            log.info("gRPC: Đã lấy được {} tenants từ database", allTenants.size());
             
-            List<TenantResponse> tenantResponses = tenants.stream()
-                    .map(this::toGrpcTenantResponse)
+            // Apply pagination with bounds checking
+            int page = request.getPage();
+            int size = request.getSize();
+            int startIndex = page * size;
+            int endIndex = Math.min(startIndex + size, allTenants.size());
+            
+            log.info("gRPC: Pagination - page: {}, size: {}, startIndex: {}, endIndex: {}", page, size, startIndex, endIndex);
+            
+            List<Tenant> pagedTenants = new ArrayList<>();
+            if (startIndex < allTenants.size() && startIndex >= 0) {
+                pagedTenants = allTenants.subList(startIndex, endIndex);
+                log.info("gRPC: Đã lấy {} tenants cho trang {}", pagedTenants.size(), page);
+            } else {
+                log.warn("gRPC: Page {} is out of range, returning empty list", page);
+            }
+            
+            // Convert to gRPC response with individual error handling
+            List<com.chatbot.core.tenant.grpc.TenantServiceProto.TenantResponse> tenantResponses = 
+                pagedTenants.stream()
+                    .map(tenant -> {
+                        try {
+                            return toGrpcTenantResponse(tenant);
+                        } catch (Exception e) {
+                            log.error("gRPC: Lỗi khi convert tenant ID: {}", tenant.getId(), e);
+                            return null;
+                        }
+                    })
+                    .filter(response -> response != null)
                     .collect(Collectors.toList());
+            
+            log.info("gRPC: Đã convert {} tenants thành gRPC response", tenantResponses.size());
+            
+            // Calculate pagination info
+            int totalPages = (int) Math.ceil((double) allTenants.size() / size);
+            log.info("gRPC: Pagination info - totalElements: {}, totalPages: {}", allTenants.size(), totalPages);
             
             ListTenantsResponse response = ListTenantsResponse.newBuilder()
                     .addAllTenants(tenantResponses)
-                    .setTotalElements(tenants.size())
-                    .setTotalPages(1)
-                    .setCurrentPage(request.getPage())
+                    .setTotalElements(allTenants.size())
+                    .setTotalPages(totalPages)
+                    .setCurrentPage(page)
                     .build();
             
+            log.info("gRPC: Gửi response với {} tenants", tenantResponses.size());
             responseObserver.onNext(response);
             responseObserver.onCompleted();
             
         } catch (Exception e) {
-            log.error("Lỗi khi liệt kê tenants qua gRPC", e);
+            log.error("gRPC: Lỗi khi liệt kê tenants qua gRPC", e);
             responseObserver.onError(io.grpc.Status.INTERNAL
-                    .withDescription(e.getMessage())
+                    .withDescription("Lỗi khi liệt kê tenants: " + e.getMessage())
                     .asRuntimeException());
         }
     }
@@ -274,30 +329,46 @@ public class TenantServiceGrpcImpl extends TenantServiceGrpc.TenantServiceImplBa
             log.info("gRPC: Searching tenants with query: {}, page: {}, size: {}", 
                     request.getQuery(), request.getPage(), request.getSize());
             
-            // Get all tenants and filter by query (simple implementation)
+            // Get all tenants
             List<Tenant> allTenants = tenantRepository.findAll();
             
+            // Filter by query
+            String query = request.getQuery() != null ? request.getQuery().toLowerCase().trim() : "";
             List<Tenant> filteredTenants = allTenants.stream()
                     .filter(tenant -> {
-                        String query = request.getQuery().toLowerCase();
-                        return tenant.getName().toLowerCase().contains(query) ||
-                               tenant.getTenantKey().toLowerCase().contains(query);
+                        if (query.isEmpty()) {
+                            return true; // Return all if query is empty
+                        }
+                        return (tenant.getName() != null && tenant.getName().toLowerCase().contains(query)) ||
+                               (tenant.getTenantKey() != null && tenant.getTenantKey().toLowerCase().contains(query));
                     })
-                    .skip(request.getPage() * request.getSize())
-                    .limit(request.getSize())
                     .collect(Collectors.toList());
+            
+            // Apply pagination
+            int page = request.getPage();
+            int size = request.getSize();
+            int startIndex = page * size;
+            int endIndex = Math.min(startIndex + size, filteredTenants.size());
+            
+            List<Tenant> pagedTenants = new ArrayList<>();
+            if (startIndex < filteredTenants.size()) {
+                pagedTenants = filteredTenants.subList(startIndex, endIndex);
+            }
             
             // Convert to gRPC response
             List<com.chatbot.core.tenant.grpc.TenantServiceProto.TenantResponse> tenantResponses = 
-                filteredTenants.stream()
+                pagedTenants.stream()
                     .map(this::toGrpcTenantResponse)
                     .collect(Collectors.toList());
+            
+            // Calculate pagination info
+            int totalPages = (int) Math.ceil((double) filteredTenants.size() / size);
             
             SearchTenantsResponse response = SearchTenantsResponse.newBuilder()
                     .addAllTenants(tenantResponses)
                     .setTotalElements(filteredTenants.size())
-                    .setTotalPages((int) Math.ceil((double) allTenants.size() / request.getSize()))
-                    .setCurrentPage(request.getPage())
+                    .setTotalPages(totalPages)
+                    .setCurrentPage(page)
                     .build();
             
             responseObserver.onNext(response);

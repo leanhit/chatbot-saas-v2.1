@@ -27,7 +27,7 @@
             {{ $t('tenant.gateway.empty') }}
           </h3>
           <p class="text-gray-600 dark:text-gray-400">
-            You don't have any workspaces yet.
+            {{ $t('gateway.myTenants.noWorkspaces') }}
           </p>
         </div>
       </div>

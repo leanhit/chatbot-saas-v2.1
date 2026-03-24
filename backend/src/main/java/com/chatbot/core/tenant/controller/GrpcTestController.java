@@ -93,6 +93,161 @@ public class GrpcTestController {
         }
     }
 
+    @GetMapping("/list")
+    public ResponseEntity<Map<String, Object>> listTenants(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        try {
+            log.info("REST: Bắt đầu list tenants - page: {}, size: {}", page, size);
+            ListTenantsResponse response = grpcClient.listTenants(page, size);
+            
+            Map<String, Object> result = new HashMap<>();
+            result.put("success", response != null);
+            if (response != null) {
+                result.put("tenants", response.getTenantsList());
+                result.put("totalElements", response.getTotalElements());
+                result.put("totalPages", response.getTotalPages());
+                result.put("currentPage", response.getCurrentPage());
+                log.info("REST: List tenants thành công, trả về {} tenants", response.getTenantsCount());
+            } else {
+                log.warn("REST: listTenants response là null");
+            }
+            
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            log.error("Lỗi khi liệt kê tenants qua gRPC", e);
+            return ResponseEntity.badRequest().body(Map.of(
+                "success", false,
+                "error", e.getMessage()
+            ));
+        }
+    }
+
+    @GetMapping("/search")
+    public ResponseEntity<Map<String, Object>> searchTenants(
+            @RequestParam String query,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        try {
+            log.info("REST: Bắt đầu search tenants - query: {}, page: {}, size: {}", query, page, size);
+            SearchTenantsRequest request = SearchTenantsRequest.newBuilder()
+                    .setQuery(query)
+                    .setPage(page)
+                    .setSize(size)
+                    .build();
+            
+            SearchTenantsResponse response = grpcClient.searchTenants(request);
+            
+            Map<String, Object> result = new HashMap<>();
+            result.put("success", response != null);
+            if (response != null) {
+                result.put("tenants", response.getTenantsList());
+                result.put("totalElements", response.getTotalElements());
+                result.put("totalPages", response.getTotalPages());
+                result.put("currentPage", response.getCurrentPage());
+                log.info("REST: Search tenants thành công, trả về {} tenants", response.getTenantsCount());
+            } else {
+                log.warn("REST: searchTenants response là null");
+            }
+            
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            log.error("Lỗi khi search tenants qua gRPC", e);
+            return ResponseEntity.badRequest().body(Map.of(
+                "success", false,
+                "error", e.getMessage()
+            ));
+        }
+    }
+
+    @PostMapping("/suspend/{tenantKey}")
+    public ResponseEntity<Map<String, Object>> suspendTenant(@PathVariable String tenantKey) {
+        try {
+            SuspendTenantRequest request = SuspendTenantRequest.newBuilder()
+                    .setTenantKey(tenantKey)
+                    .setReason("Test suspend")
+                    .build();
+            
+            com.chatbot.core.tenant.grpc.TenantServiceProto.TenantResponse response = 
+                grpcClient.suspendTenant(request);
+            
+            Map<String, Object> result = new HashMap<>();
+            result.put("success", response != null);
+            if (response != null) {
+                result.put("id", response.getId());
+                result.put("tenantKey", response.getTenantKey());
+                result.put("name", response.getName());
+                result.put("status", response.getStatus());
+                result.put("message", "Tenant suspended successfully");
+            }
+            
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            log.error("Lỗi khi suspend tenant qua gRPC", e);
+            return ResponseEntity.badRequest().body(Map.of(
+                "success", false,
+                "error", e.getMessage()
+            ));
+        }
+    }
+
+    @PostMapping("/activate/{tenantKey}")
+    public ResponseEntity<Map<String, Object>> activateTenant(@PathVariable String tenantKey) {
+        try {
+            ActivateTenantRequest request = ActivateTenantRequest.newBuilder()
+                    .setTenantKey(tenantKey)
+                    .build();
+            
+            com.chatbot.core.tenant.grpc.TenantServiceProto.TenantResponse response = 
+                grpcClient.activateTenant(request);
+            
+            Map<String, Object> result = new HashMap<>();
+            result.put("success", response != null);
+            if (response != null) {
+                result.put("id", response.getId());
+                result.put("tenantKey", response.getTenantKey());
+                result.put("name", response.getName());
+                result.put("status", response.getStatus());
+                result.put("message", "Tenant activated successfully");
+            }
+            
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            log.error("Lỗi khi activate tenant qua gRPC", e);
+            return ResponseEntity.badRequest().body(Map.of(
+                "success", false,
+                "error", e.getMessage()
+            ));
+        }
+    }
+
+    @GetMapping("/status/{tenantKey}")
+    public ResponseEntity<Map<String, Object>> getTenantStatus(@PathVariable String tenantKey) {
+        try {
+            GetTenantStatusRequest request = GetTenantStatusRequest.newBuilder()
+                    .setTenantKey(tenantKey)
+                    .build();
+            
+            TenantStatusResponse response = grpcClient.getTenantStatus(request);
+            
+            Map<String, Object> result = new HashMap<>();
+            result.put("success", response != null);
+            if (response != null) {
+                result.put("tenantKey", response.getTenantKey());
+                result.put("status", response.getStatus());
+                result.put("message", response.getMessage());
+            }
+            
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            log.error("Lỗi khi get tenant status qua gRPC", e);
+            return ResponseEntity.badRequest().body(Map.of(
+                "success", false,
+                "error", e.getMessage()
+            ));
+        }
+    }
+
     @GetMapping("/test")
     public ResponseEntity<Map<String, Object>> testGrpcConnection() {
         try {

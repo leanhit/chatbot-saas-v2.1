@@ -124,6 +124,7 @@ export const tenantApi = {
     // Validate search request
     const errors = validateTenantSearchRequest(searchRequest);
     if (errors.length > 0) {
+      console.log('🔍 API Debug - Validation errors:', errors)
       throw new Error(errors.join(', '));
     }
     
@@ -135,9 +136,14 @@ export const tenantApi = {
       params.append('sortBy', searchRequest.sortBy);
       params.append('sortDirection', searchRequest.sortDirection);
       
-      const response = await axios.get(`/tenants/search?${params.toString()}`);
+      const url = `/tenants/search?${params.toString()}`;
+      console.log('🔍 API Debug - Final URL:', url)
+      
+      const response = await axios.get(url);
+      console.log('🔍 API Debug - Response:', response.data)
       return response;
     } catch (error) {
+      console.error('🔍 API Debug - Error:', error)
       handleTenantError(error);
       throw error;
     }

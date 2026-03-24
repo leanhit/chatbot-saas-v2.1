@@ -23,6 +23,38 @@
       },
       "cancel": "Cancel",
       "submit": "Create"
+    },
+    "search": {
+      "placeholder": "Search Tenant",
+      "noResults": "No results found",
+      "searchForWorkspaces": "Search for workspaces",
+      "enterAtLeastOneChar": "Enter at least 1 character to search",
+      "tryDifferentKeywords": "Try different keywords",
+      "sending": "Sending..."
+    },
+    "myTenants": {
+      "empty": "Empty workspace",
+      "noWorkspaces": "You don't have any workspaces yet."
+    },
+    "pending": {
+      "loading": "Loading pending requests...",
+      "noRequests": "No pending requests at the moment."
+    },
+    "invitations": {
+      "loading": "Loading invitations...",
+      "noInvitations": "No invitations available."
+    },
+    "actions": {
+      "accept": "Accept",
+      "reject": "Reject",
+      "cancelRequest": "Cancel Request",
+      "enter": "Enter Workspace",
+      "suspend": "Suspend",
+      "activate": "Activate",
+      "join": "Join"
+    },
+    "errors": {
+      "failedJoinRequest": "Failed to send join request. Please try again."
     }
   },
   "customers": {
