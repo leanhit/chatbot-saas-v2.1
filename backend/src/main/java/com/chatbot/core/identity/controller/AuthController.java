@@ -9,7 +9,11 @@ import org.springframework.web.bind.annotation.*;
 import com.chatbot.core.identity.dto.*;
 import com.chatbot.core.identity.security.CustomUserDetails;
 import com.chatbot.core.identity.service.AuthService;
+import com.chatbot.core.identity.service.JwtService;
 import com.chatbot.shared.dto.ApiResponse;
+
+import jakarta.servlet.http.HttpServletRequest;
+import java.util.Map;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -32,6 +36,7 @@ import lombok.extern.slf4j.Slf4j;
 public class AuthController {
 
     private final AuthService authService;
+    private final JwtService jwtService;
 
     @PostMapping("/register")
     @Transactional
@@ -133,7 +138,7 @@ public class AuthController {
     )
     public ResponseEntity<TokenRefreshResponse> refreshToken(
             @Parameter(description = "Refresh token", required = true)
-            @RequestBody TokenRefreshRequest request) {
+            @RequestBody RefreshTokenRequest request) {
         TokenRefreshResponse response = authService.refreshToken(request.getRefreshToken());
         return ResponseEntity.ok(response);
     }
@@ -145,8 +150,48 @@ public class AuthController {
     )
     public ResponseEntity<String> logout(
             @Parameter(hidden = true) @AuthenticationPrincipal(expression = "user") CustomUserDetails currentUser) {
-        authService.logout(currentUser.getUser().getEmail());
-        return ResponseEntity.ok("Logout successful");
+        try {
+            authService.logout(currentUser.getUser().getEmail());
+            return ResponseEntity.ok("Logout successful");
+        } catch (Exception e) {
+            log.error("Logout failed for user: {}", currentUser != null ? currentUser.getUser().getEmail() : "unknown", e);
+            return ResponseEntity.badRequest().body("Logout failed: " + e.getMessage());
+        }
+    }
+
+    @PostMapping("/logout-simple")
+    @Operation(
+        summary = "Logout user (alternative)",
+        description = "Logout user using token from Authorization header"
+    )
+    public ResponseEntity<String> logoutSimple(HttpServletRequest request) {
+        try {
+            String authHeader = request.getHeader("Authorization");
+            if (authHeader != null && authHeader.startsWith("Bearer ")) {
+                String token = authHeader.substring(7);
+                String email = jwtService.extractEmail(token);
+                authService.logout(email);
+                return ResponseEntity.ok("Logout successful");
+            } else {
+                return ResponseEntity.badRequest().body("Invalid authorization header");
+            }
+        } catch (Exception e) {
+            log.error("Simple logout failed", e);
+            return ResponseEntity.badRequest().body("Logout failed: " + e.getMessage());
+        }
+    }
+
+    @PostMapping("/logout-by-token")
+    @Operation(
+        summary = "Logout by access token",
+        description = "Revoke specific access token"
+    )
+    public ResponseEntity<String> logoutByToken(
+            @Parameter(description = "Access token to revoke", required = true)
+            @RequestBody Map<String, String> request) {
+        String token = request.get("token");
+        authService.logoutByToken(token);
+        return ResponseEntity.ok("Token revoked successfully");
     }
 
 }
