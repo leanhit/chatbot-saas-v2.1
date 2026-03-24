@@ -2,8 +2,10 @@ package com.chatbot.core.tenant.grpc;
 
 import com.chatbot.core.tenant.model.Tenant;
 import com.chatbot.core.tenant.repository.TenantRepository;
+import com.chatbot.core.tenant.service.TenantService;
 import com.chatbot.core.tenant.grpc.TenantServiceProto.*;
 import com.chatbot.core.tenant.grpc.TenantServiceGrpc;
+import com.chatbot.core.tenant.dto.CreateTenantRequest;
 import io.grpc.stub.StreamObserver;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,6 +22,9 @@ public class TenantServiceGrpcImpl extends TenantServiceGrpc.TenantServiceImplBa
 
     @Autowired
     private TenantRepository tenantRepository;
+    
+    @Autowired
+    private TenantService tenantService;
 
     // Helper method để convert Tenant sang TenantResponse
     private com.chatbot.core.tenant.grpc.TenantServiceProto.TenantResponse toGrpcTenantResponse(Tenant tenant) {
@@ -153,51 +158,235 @@ public class TenantServiceGrpcImpl extends TenantServiceGrpc.TenantServiceImplBa
 
     // Các method khác sẽ được implement sau
     @Override
-    public void createTenant(CreateTenantRequest request, StreamObserver<com.chatbot.core.tenant.grpc.TenantServiceProto.TenantResponse> responseObserver) {
-        responseObserver.onError(io.grpc.Status.UNIMPLEMENTED
-                .withDescription("Method chưa được implement")
-                .asRuntimeException());
+    public void createTenant(com.chatbot.core.tenant.grpc.TenantServiceProto.CreateTenantRequest request, StreamObserver<com.chatbot.core.tenant.grpc.TenantServiceProto.TenantResponse> responseObserver) {
+        try {
+            log.info("gRPC: Creating tenant with key: {}, name: {}", request.getTenantKey(), request.getName());
+            
+            // Convert gRPC request to DTO
+            CreateTenantRequest dtoRequest = new CreateTenantRequest();
+            dtoRequest.setName(request.getName());
+            dtoRequest.setVisibility(com.chatbot.core.tenant.model.TenantVisibility.valueOf(request.getVisibility()));
+            
+            // Call existing service
+            com.chatbot.core.tenant.dto.TenantResponse response = tenantService.createTenant(dtoRequest);
+            
+            // Convert DTO to gRPC response
+            com.chatbot.core.tenant.grpc.TenantServiceProto.TenantResponse grpcResponse = 
+                com.chatbot.core.tenant.grpc.TenantServiceProto.TenantResponse.newBuilder()
+                    .setId(response.getId().toString())
+                    .setTenantKey(response.getTenantKey())
+                    .setName(response.getName())
+                    .setDescription("") // Empty description
+                    .setStatus(response.getStatus().toString())
+                    .setVisibility(response.getVisibility().toString())
+                    .setCreatedAt(response.getCreatedAt().toString())
+                    .setUpdatedAt(response.getCreatedAt().toString()) // Use createdAt as updatedAt
+                    .setExpiresAt(response.getExpiresAt() != null ? response.getExpiresAt().toString() : "")
+                    .build();
+            
+            responseObserver.onNext(grpcResponse);
+            responseObserver.onCompleted();
+            
+        } catch (Exception e) {
+            log.error("Lỗi khi create tenant qua gRPC", e);
+            responseObserver.onError(io.grpc.Status.INTERNAL
+                    .withDescription(e.getMessage())
+                    .asRuntimeException());
+        }
     }
 
     @Override
     public void updateTenant(UpdateTenantRequest request, StreamObserver<com.chatbot.core.tenant.grpc.TenantServiceProto.TenantResponse> responseObserver) {
-        responseObserver.onError(io.grpc.Status.UNIMPLEMENTED
-                .withDescription("Method chưa được implement")
-                .asRuntimeException());
+        try {
+            log.info("gRPC: Updating tenant with key: {}, name: {}", request.getTenantKey(), request.getName());
+            
+            // Find tenant by tenantKey first
+            Tenant tenant = tenantRepository.findByTenantKey(request.getTenantKey())
+                    .orElseThrow(() -> new RuntimeException("Không tìm thấy tenant với key: " + request.getTenantKey()));
+            
+            // Update tenant entity
+            if (request.getName() != null && !request.getName().isEmpty()) {
+                tenant.setName(request.getName());
+            }
+            if (request.getDescription() != null && !request.getDescription().isEmpty()) {
+                // Note: Tenant entity doesn't have description field, you might need to add it
+            }
+            if (request.getVisibility() != null && !request.getVisibility().isEmpty()) {
+                tenant.setVisibility(com.chatbot.core.tenant.model.TenantVisibility.valueOf(request.getVisibility()));
+            }
+            
+            tenant.setUpdatedAt(LocalDateTime.now());
+            
+            // Save the updated tenant
+            Tenant updatedTenant = tenantRepository.save(tenant);
+            
+            // Convert to gRPC response
+            com.chatbot.core.tenant.grpc.TenantServiceProto.TenantResponse grpcResponse = 
+                toGrpcTenantResponse(updatedTenant);
+            
+            responseObserver.onNext(grpcResponse);
+            responseObserver.onCompleted();
+            
+        } catch (Exception e) {
+            log.error("Lỗi khi update tenant qua gRPC", e);
+            responseObserver.onError(io.grpc.Status.INTERNAL
+                    .withDescription(e.getMessage())
+                    .asRuntimeException());
+        }
     }
 
     @Override
     public void deleteTenant(DeleteTenantRequest request, StreamObserver<DeleteTenantResponse> responseObserver) {
-        responseObserver.onError(io.grpc.Status.UNIMPLEMENTED
-                .withDescription("Method chưa được implement")
-                .asRuntimeException());
+        try {
+            log.info("gRPC: Deleting tenant with key: {}", request.getTenantKey());
+            
+            // Find tenant by tenantKey
+            Tenant tenant = tenantRepository.findByTenantKey(request.getTenantKey())
+                    .orElseThrow(() -> new RuntimeException("Không tìm thấy tenant với key: " + request.getTenantKey()));
+            
+            // Soft delete by changing status to INACTIVE or DELETED
+            tenant.setStatus(com.chatbot.core.tenant.model.TenantStatus.INACTIVE);
+            tenant.setUpdatedAt(LocalDateTime.now());
+            
+            // Save the change
+            tenantRepository.save(tenant);
+            
+            // Create response
+            DeleteTenantResponse response = DeleteTenantResponse.newBuilder()
+                    .setSuccess(true)
+                    .setMessage("Tenant đã được xóa thành công")
+                    .build();
+            
+            responseObserver.onNext(response);
+            responseObserver.onCompleted();
+            
+        } catch (Exception e) {
+            log.error("Lỗi khi delete tenant qua gRPC", e);
+            responseObserver.onError(io.grpc.Status.INTERNAL
+                    .withDescription(e.getMessage())
+                    .asRuntimeException());
+        }
     }
 
     @Override
     public void searchTenants(SearchTenantsRequest request, StreamObserver<SearchTenantsResponse> responseObserver) {
-        responseObserver.onError(io.grpc.Status.UNIMPLEMENTED
-                .withDescription("Method chưa được implement")
-                .asRuntimeException());
+        try {
+            log.info("gRPC: Searching tenants with query: {}, page: {}, size: {}", 
+                    request.getQuery(), request.getPage(), request.getSize());
+            
+            // Get all tenants and filter by query (simple implementation)
+            List<Tenant> allTenants = tenantRepository.findAll();
+            
+            List<Tenant> filteredTenants = allTenants.stream()
+                    .filter(tenant -> {
+                        String query = request.getQuery().toLowerCase();
+                        return tenant.getName().toLowerCase().contains(query) ||
+                               tenant.getTenantKey().toLowerCase().contains(query);
+                    })
+                    .skip(request.getPage() * request.getSize())
+                    .limit(request.getSize())
+                    .collect(Collectors.toList());
+            
+            // Convert to gRPC response
+            List<com.chatbot.core.tenant.grpc.TenantServiceProto.TenantResponse> tenantResponses = 
+                filteredTenants.stream()
+                    .map(this::toGrpcTenantResponse)
+                    .collect(Collectors.toList());
+            
+            SearchTenantsResponse response = SearchTenantsResponse.newBuilder()
+                    .addAllTenants(tenantResponses)
+                    .setTotalElements(filteredTenants.size())
+                    .setTotalPages((int) Math.ceil((double) allTenants.size() / request.getSize()))
+                    .setCurrentPage(request.getPage())
+                    .build();
+            
+            responseObserver.onNext(response);
+            responseObserver.onCompleted();
+            
+        } catch (Exception e) {
+            log.error("Lỗi khi search tenants qua gRPC", e);
+            responseObserver.onError(io.grpc.Status.INTERNAL
+                    .withDescription(e.getMessage())
+                    .asRuntimeException());
+        }
     }
 
     @Override
     public void activateTenant(ActivateTenantRequest request, StreamObserver<com.chatbot.core.tenant.grpc.TenantServiceProto.TenantResponse> responseObserver) {
-        responseObserver.onError(io.grpc.Status.UNIMPLEMENTED
-                .withDescription("Method chưa được implement")
-                .asRuntimeException());
+        try {
+            log.info("gRPC: Activating tenant with key: {}", request.getTenantKey());
+            
+            Tenant tenant = tenantRepository.findByTenantKey(request.getTenantKey())
+                    .orElseThrow(() -> new RuntimeException("Không tìm thấy tenant với key: " + request.getTenantKey()));
+            
+            tenant.setStatus(com.chatbot.core.tenant.model.TenantStatus.ACTIVE);
+            tenant.setUpdatedAt(LocalDateTime.now());
+            
+            Tenant updatedTenant = tenantRepository.save(tenant);
+            
+            com.chatbot.core.tenant.grpc.TenantServiceProto.TenantResponse grpcResponse = 
+                toGrpcTenantResponse(updatedTenant);
+            
+            responseObserver.onNext(grpcResponse);
+            responseObserver.onCompleted();
+            
+        } catch (Exception e) {
+            log.error("Lỗi khi activate tenant qua gRPC", e);
+            responseObserver.onError(io.grpc.Status.INTERNAL
+                    .withDescription(e.getMessage())
+                    .asRuntimeException());
+        }
     }
 
     @Override
     public void suspendTenant(SuspendTenantRequest request, StreamObserver<com.chatbot.core.tenant.grpc.TenantServiceProto.TenantResponse> responseObserver) {
-        responseObserver.onError(io.grpc.Status.UNIMPLEMENTED
-                .withDescription("Method chưa được implement")
-                .asRuntimeException());
+        try {
+            log.info("gRPC: Suspending tenant with key: {}", request.getTenantKey());
+            
+            Tenant tenant = tenantRepository.findByTenantKey(request.getTenantKey())
+                    .orElseThrow(() -> new RuntimeException("Không tìm thấy tenant với key: " + request.getTenantKey()));
+            
+            tenant.setStatus(com.chatbot.core.tenant.model.TenantStatus.SUSPENDED);
+            tenant.setUpdatedAt(LocalDateTime.now());
+            
+            Tenant updatedTenant = tenantRepository.save(tenant);
+            
+            com.chatbot.core.tenant.grpc.TenantServiceProto.TenantResponse grpcResponse = 
+                toGrpcTenantResponse(updatedTenant);
+            
+            responseObserver.onNext(grpcResponse);
+            responseObserver.onCompleted();
+            
+        } catch (Exception e) {
+            log.error("Lỗi khi suspend tenant qua gRPC", e);
+            responseObserver.onError(io.grpc.Status.INTERNAL
+                    .withDescription(e.getMessage())
+                    .asRuntimeException());
+        }
     }
 
     @Override
     public void getTenantStatus(GetTenantStatusRequest request, StreamObserver<TenantStatusResponse> responseObserver) {
-        responseObserver.onError(io.grpc.Status.UNIMPLEMENTED
-                .withDescription("Method chưa được implement")
-                .asRuntimeException());
+        try {
+            log.info("gRPC: Getting status for tenant with key: {}", request.getTenantKey());
+            
+            Tenant tenant = tenantRepository.findByTenantKey(request.getTenantKey())
+                    .orElseThrow(() -> new RuntimeException("Không tìm thấy tenant với key: " + request.getTenantKey()));
+            
+            TenantStatusResponse response = TenantStatusResponse.newBuilder()
+                    .setTenantKey(request.getTenantKey())
+                    .setStatus(tenant.getStatus().name())
+                    .setMessage("Tenant status retrieved successfully")
+                    .build();
+            
+            responseObserver.onNext(response);
+            responseObserver.onCompleted();
+            
+        } catch (Exception e) {
+            log.error("Lỗi khi get tenant status qua gRPC", e);
+            responseObserver.onError(io.grpc.Status.INTERNAL
+                    .withDescription(e.getMessage())
+                    .asRuntimeException());
+        }
     }
 }
