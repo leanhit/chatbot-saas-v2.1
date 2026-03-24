@@ -235,7 +235,8 @@ export default {
       // Attempt registration
       const result = await authStore.register({
         email: form.email,
-        password: form.password
+        password: form.password,
+        confirmPassword: form.confirmPassword
       })
       if (result.success) {
         // Navigate to login after successful registration

@@ -9,6 +9,12 @@ export const usersApi = {
     register(params) {
         return axios.post('/auth/register', params);
     },
+    refreshToken(params) {
+        return axios.post('/auth/refresh-token', params);
+    },
+    logout() {
+        return axios.post('/auth/logout');
+    },
     getProfile() {
         // Get current user ID from auth store
         const authStore = useAuthStore();

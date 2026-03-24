@@ -11,8 +11,10 @@ export const useAuthStore = defineStore('auth', () => {
   // State
   const user = ref(null)
   const token = ref(localStorage.getItem('accessToken') || null)
+  const refreshToken = ref(localStorage.getItem('refreshToken') || null)
   const isLoading = ref(false)
   const error = ref(null)
+  const isRefreshing = ref(false)
   // Getters
   const isLoggedIn = computed(() => !!token.value)
   const isAdmin = computed(() => user.value?.systemRole === 'ADMIN')
@@ -25,9 +27,13 @@ export const useAuthStore = defineStore('auth', () => {
    */
   const initialize = () => {
     const savedToken = localStorage.getItem('accessToken')
+    const savedRefreshToken = localStorage.getItem('refreshToken')
     const savedUser = localStorage.getItem('user')
     if (savedToken) {
       token.value = savedToken
+    }
+    if (savedRefreshToken) {
+      refreshToken.value = savedRefreshToken
     }
     if (savedUser) {
       try {
@@ -42,8 +48,10 @@ export const useAuthStore = defineStore('auth', () => {
    */
   const login = async (authData) => {
     token.value = authData.token
+    refreshToken.value = authData.refreshToken
     user.value = authData.user
     localStorage.setItem('accessToken', authData.token)
+    localStorage.setItem('refreshToken', authData.refreshToken)
     localStorage.setItem('user', JSON.stringify(authData.user))
   }
   /**
@@ -113,18 +121,59 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
   /**
+   * Refresh access token
+   */
+  const refreshAccessToken = async () => {
+    if (!refreshToken.value || isRefreshing.value) {
+      return false
+    }
+
+    isRefreshing.value = true
+    try {
+      const response = await usersApi.refreshToken({ refreshToken: refreshToken.value })
+      const authData = response.data
+      
+      // Update tokens
+      token.value = authData.accessToken
+      refreshToken.value = authData.refreshToken
+      localStorage.setItem('accessToken', authData.accessToken)
+      localStorage.setItem('refreshToken', authData.refreshToken)
+      
+      return true
+    } catch (error) {
+      console.error('Refresh token failed:', error)
+      // Refresh token expired or invalid - logout
+      logout()
+      return false
+    } finally {
+      isRefreshing.value = false
+    }
+  }
+
+  /**
    * Đăng xuất và dọn dẹp dữ liệu
    */
-  const logout = () => {
-    const tenantStore = useGatewayTenantStore()
-    // Xóa sạch context của Tenant và Auth
-    tenantStore.clearTenant()
-    token.value = null
-    user.value = null
-    localStorage.removeItem('accessToken')
-    localStorage.removeItem('user')
-    localStorage.removeItem(ACTIVE_TENANT_ID) // Use constant
-    router.push({ name: 'login' })
+  const logout = async () => {
+    try {
+      // Call backend logout if we have a token
+      if (token.value) {
+        await usersApi.logout()
+      }
+    } catch (error) {
+      console.error('Logout API call failed:', error)
+    } finally {
+      const tenantStore = useGatewayTenantStore()
+      // Xóa sạch context của Tenant và Auth
+      tenantStore.clearTenant()
+      token.value = null
+      refreshToken.value = null
+      user.value = null
+      localStorage.removeItem('accessToken')
+      localStorage.removeItem('refreshToken')
+      localStorage.removeItem('user')
+      localStorage.removeItem(ACTIVE_TENANT_ID) // Use constant
+      router.push({ name: 'login' })
+    }
   }
   /**
    * Lấy lại thông tin user profile từ Backend
@@ -160,8 +209,10 @@ export const useAuthStore = defineStore('auth', () => {
     // State
     user,
     token,
+    refreshToken,
     isLoading,
     error,
+    isRefreshing,
     // Getters
     isLoggedIn,
     isAdmin,
@@ -172,6 +223,7 @@ export const useAuthStore = defineStore('auth', () => {
     login,
     loginWithCredentials,
     register,
+    refreshAccessToken,
     logout,
     fetchUser,
     updateAuthUser

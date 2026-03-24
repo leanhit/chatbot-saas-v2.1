@@ -1,5 +1,7 @@
 // JwtService.java
 package com.chatbot.core.identity.service;
+import com.chatbot.core.identity.constants.IdentityConstants;
+import com.chatbot.core.identity.exception.InvalidTokenException;
 import com.chatbot.core.user.model.User;
 import lombok.extern.slf4j.Slf4j;
 
@@ -8,6 +10,7 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
 import jakarta.annotation.PostConstruct;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
@@ -27,6 +30,9 @@ public class JwtService {
     private long expirationTime;
 
     private Key key;
+    
+    @Autowired(required = false)
+    private TokenBlacklistService tokenBlacklistService;
 
     @PostConstruct
     public void init() {
@@ -44,7 +50,12 @@ public class JwtService {
 
     public boolean validateToken(String token, UserDetails userDetails) {
         try {
-            String emailFromToken = getEmailFromToken(token);
+            if (tokenBlacklistService != null && tokenBlacklistService.isTokenBlacklisted(token)) {
+                log.warn("Token is blacklisted: {}", token.substring(0, Math.min(10, token.length())));
+                return false;
+            }
+            
+            String emailFromToken = extractEmail(token);
             return (emailFromToken.equals(userDetails.getUsername()) && !isTokenExpired(token));
         } catch (Exception e) {
             log.error("Token validation failed: " + e.getMessage());
@@ -56,17 +67,34 @@ public class JwtService {
         return getClaim(token, Claims::getExpiration).before(new Date());
     }
 
-    public String getEmailFromToken(String token) {
+    public String extractEmail(String token) {
         return getClaim(token, Claims::getSubject);
     }
 
+    /**
+     * @deprecated Use extractEmail instead
+     */
+    @Deprecated
+    public String getEmailFromToken(String token) {
+        return extractEmail(token);
+    }
+
+    /**
+     * @deprecated Use extractEmail instead
+     */
+    @Deprecated
     public String extractUsername(String token) {
-        return getEmailFromToken(token);
+        return extractEmail(token);
     }
 
     public boolean isTokenValid(String token, User user) {
         try {
-            String emailFromToken = getEmailFromToken(token);
+            if (tokenBlacklistService != null && tokenBlacklistService.isTokenBlacklisted(token)) {
+                log.warn("Token is blacklisted for user: {}", user.getEmail());
+                return false;
+            }
+            
+            String emailFromToken = extractEmail(token);
             return (emailFromToken.equals(user.getEmail()) && !isTokenExpired(token));
         } catch (Exception e) {
             log.error("Token validation failed: " + e.getMessage());
@@ -74,12 +102,42 @@ public class JwtService {
         }
     }
 
+    public void revokeToken(String token) {
+        if (tokenBlacklistService != null) {
+            tokenBlacklistService.blacklistToken(token);
+        }
+    }
+
+    public void revokeAllUserTokens(String userEmail) {
+        if (tokenBlacklistService != null) {
+            tokenBlacklistService.blacklistAllUserTokens(userEmail);
+        }
+    }
+
+    public Date getExpirationDate(String token) {
+        return getClaim(token, Claims::getExpiration);
+    }
+
+    public boolean isTokenExpiredSoon(String token, long thresholdMinutes) {
+        try {
+            Date expiration = getExpirationDate(token);
+            long timeUntilExpiration = expiration.getTime() - System.currentTimeMillis();
+            return timeUntilExpiration <= (thresholdMinutes * 60 * 1000);
+        } catch (Exception e) {
+            return true; // Consider expired if we can't parse
+        }
+    }
+
     private Claims getClaims(String token) {
-        return Jwts.parserBuilder()
-                .setSigningKey(key)
-                .build()
-                .parseClaimsJws(token)
-                .getBody();
+        try {
+            return Jwts.parserBuilder()
+                    .setSigningKey(key)
+                    .build()
+                    .parseClaimsJws(token)
+                    .getBody();
+        } catch (Exception e) {
+            throw new InvalidTokenException("Token không hợp lệ hoặc đã hết hạn", e);
+        }
     }
 
     private <T> T getClaim(String token, Function<Claims, T> claimsResolver) {

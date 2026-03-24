@@ -122,4 +122,31 @@ public class AuthController {
         return ResponseEntity.ok(updatedUser);
     }
 
+    @PostMapping("/refresh-token")
+    @Operation(
+        summary = "Refresh access token",
+        description = "Generate new access token using refresh token",
+        responses = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Token refreshed successfully"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "Invalid or expired refresh token")
+        }
+    )
+    public ResponseEntity<TokenRefreshResponse> refreshToken(
+            @Parameter(description = "Refresh token", required = true)
+            @RequestBody TokenRefreshRequest request) {
+        TokenRefreshResponse response = authService.refreshToken(request.getRefreshToken());
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/logout")
+    @Operation(
+        summary = "Logout user",
+        description = "Revoke refresh token and logout user"
+    )
+    public ResponseEntity<String> logout(
+            @Parameter(hidden = true) @AuthenticationPrincipal(expression = "user") CustomUserDetails currentUser) {
+        authService.logout(currentUser.getUser().getEmail());
+        return ResponseEntity.ok("Logout successful");
+    }
+
 }

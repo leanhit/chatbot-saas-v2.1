@@ -13,6 +13,8 @@ const instance = axios.create({
 const EXCLUDED_PATHS = [
     '/auth/login',
     '/auth/register',
+    '/auth/refresh-token',
+    '/auth/logout',
     '/auth/forgot-password', // Loại trừ quên mật khẩu
     '/auth/reset-password',  // Loại trừ đặt lại mật khẩu
     '/users/change-password',// Loại trừ đổi mật khẩu khi đã login
@@ -60,16 +62,37 @@ instance.interceptors.response.use(
     (response) => {
         return response;
     },
-    (error) => {
+    async (error) => {
         // Log chi tiết lỗi CORS
         if (error.message.includes('CORS') || error.message.includes('Network Error')) {
             // CORS error detected
         }
+        
+        // Handle 401 - Unauthorized
         if (error.response?.status === 401) {
             const authStore = useAuthStore();
+            
+            // Don't retry if it's a refresh token request or auth endpoints
+            const isAuthRequest = error.config.url?.includes('/auth/') || 
+                                error.config.url?.includes('/refresh-token') ||
+                                error.config.url?.includes('/logout');
+            
+            if (!isAuthRequest && !authStore.isRefreshing) {
+                // Try to refresh the token
+                const refreshed = await authStore.refreshAccessToken();
+                if (refreshed) {
+                    // Retry the original request with new token
+                    const newToken = localStorage.getItem('accessToken');
+                    error.config.headers.Authorization = `Bearer ${newToken}`;
+                    return instance.request(error.config);
+                }
+            }
+            
+            // If refresh failed or it's an auth request, logout
             authStore.logout();
             router.push({ name: 'login' });
         }
+        
         return Promise.reject(error);
     }
 );

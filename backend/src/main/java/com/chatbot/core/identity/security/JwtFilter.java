@@ -1,5 +1,7 @@
 package com.chatbot.core.identity.security;
 
+import com.chatbot.core.identity.constants.IdentityConstants;
+import com.chatbot.core.identity.exception.InvalidTokenException;
 import com.chatbot.core.identity.security.CustomUserDetails;
 import com.chatbot.core.identity.service.AuthService;
 import com.chatbot.core.identity.service.JwtService;
@@ -11,6 +13,7 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -23,6 +26,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @Component
+@Slf4j
 public class JwtFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
@@ -41,21 +45,22 @@ public class JwtFilter extends OncePerRequestFilter {
                                   FilterChain filterChain)
             throws ServletException, IOException {
 
-        String authHeader = request.getHeader("Authorization");
+        String authHeader = request.getHeader(IdentityConstants.TOKEN_HEADER);
         String token = null;
         String email = null;
 
-        if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            token = authHeader.substring(7);
+        if (authHeader != null && authHeader.startsWith(IdentityConstants.BEARER_PREFIX)) {
+            token = authHeader.substring(IdentityConstants.BEARER_PREFIX_LENGTH);
             try {
-                email = jwtService.getEmailFromToken(token);
+                email = jwtService.extractEmail(token);
             } catch (ExpiredJwtException e) {
-                sendErrorResponse(response, "Token đã hết hạn");
+                sendErrorResponse(response, IdentityConstants.TOKEN_EXPIRED);
                 return;
-            } catch (SignatureException | MalformedJwtException e) {
-                sendErrorResponse(response, "Token không hợp lệ");
+            } catch (SignatureException | MalformedJwtException | InvalidTokenException e) {
+                sendErrorResponse(response, IdentityConstants.TOKEN_INVALID);
                 return;
             } catch (Exception e) {
+                logger.error("Unexpected error processing token", e);
                 sendErrorResponse(response, "Lỗi khi xử lý token");
                 return;
             }
@@ -80,15 +85,16 @@ public class JwtFilter extends OncePerRequestFilter {
                     SecurityContextHolder.getContext().setAuthentication(authenticationToken);
                     
                     // Log thông tin xác thực
-                    logger.info("Đã xác thực user: " + email + ", roles: " + 
-                              userDetails.getAuthorities());
+                    log.info("Đã xác thực user: " + email + 
+                             ", roles: " + userDetails.getAuthorities().toString() + 
+                             ", IP: " + getClientIpAddress(request));
                 }
             } catch (ClassCastException e) {
-                logger.error("Lỗi khi ép kiểu UserDetails sang CustomUserDetails", e);
+                log.error("Lỗi khi ép kiểu UserDetails sang CustomUserDetails", e);
                 sendErrorResponse(response, "Lỗi xác thực người dùng");
                 return;
             } catch (Exception e) {
-                logger.error("Lỗi khi xác thực người dùng", e);
+                log.error("Lỗi khi xác thực người dùng", e);
                 sendErrorResponse(response, "Lỗi xác thực người dùng");
                 return;
             }
@@ -106,7 +112,25 @@ public class JwtFilter extends OncePerRequestFilter {
         errorDetails.put("error", "Unauthorized");
         errorDetails.put("message", message);
         errorDetails.put("status", HttpServletResponse.SC_UNAUTHORIZED);
+        errorDetails.put("timestamp", System.currentTimeMillis());
 
         objectMapper.writeValue(response.getWriter(), errorDetails);
+    }
+    
+    /**
+     * Get client IP address for audit logging
+     */
+    private String getClientIpAddress(HttpServletRequest request) {
+        String xForwardedFor = request.getHeader("X-Forwarded-For");
+        if (xForwardedFor != null && !xForwardedFor.isEmpty() && !"unknown".equalsIgnoreCase(xForwardedFor)) {
+            return xForwardedFor.split(",")[0].trim();
+        }
+        
+        String xRealIp = request.getHeader("X-Real-IP");
+        if (xRealIp != null && !xRealIp.isEmpty() && !"unknown".equalsIgnoreCase(xRealIp)) {
+            return xRealIp;
+        }
+        
+        return request.getRemoteAddr();
     }
 }
