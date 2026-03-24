@@ -2,6 +2,7 @@ package com.chatbot.core.tenant.service;
 
 import com.chatbot.shared.address.model.OwnerType;
 import com.chatbot.shared.address.service.AddressService;
+import com.chatbot.core.tenant.exception.*;
 
 import java.util.stream.Collectors;
 import java.util.Map;
@@ -57,7 +58,7 @@ public class TenantService {
     private String getCurrentUserEmail() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth == null || !auth.isAuthenticated()) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not authenticated");
+            throw new InsufficientPermissionException("User not authenticated");
         }
         return auth.getName();
     }
@@ -110,8 +111,7 @@ public class TenantService {
         } catch (Exception e) {
             log.error("❌ [TenantService] Failed to create tenant profile for tenant {}: {}", savedTenant.getId(), e.getMessage(), e);
             // Rollback transaction để đảm bảo data consistency
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, 
-                "Không thể tạo tenant profile: " + e.getMessage(), e);
+            throw new TenantProfileException("Không thể tạo tenant profile: " + e.getMessage(), e);
         }
 
         // Create empty address
@@ -122,8 +122,7 @@ public class TenantService {
         } catch (Exception e) {
             log.error("❌ [TenantService] Failed to create address for tenant {}: {}", savedTenant.getId(), e.getMessage(), e);
             // Rollback transaction để đảm bảo data consistency
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, 
-                "Không thể tạo địa chỉ tenant: " + e.getMessage(), e);
+            throw new TenantProfileException("Không thể tạo địa chỉ tenant: " + e.getMessage(), e);
         }
 
         TenantResponse response = TenantMapper.toResponse(savedTenant);
@@ -139,7 +138,7 @@ public class TenantService {
     @Transactional(readOnly = true)
     public Tenant getTenant(Long tenantId) {
         return tenantRepository.findById(tenantId)
-                .orElseThrow(() -> new IllegalArgumentException("Tenant not found"));
+                .orElseThrow(() -> new TenantNotFoundException("Tenant not found with ID: " + tenantId));
     }
 
     /**
@@ -167,7 +166,7 @@ public class TenantService {
                 .orElse(false);
                 
         if (!isAdmin) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Chỉ admin mới có quyền tạm dừng tenant");
+            throw new InsufficientPermissionException("Chỉ admin mới có quyền tạm dừng tenant");
         }
         
         // Validate và thực hiện chuyển trạng thái
@@ -198,7 +197,7 @@ public class TenantService {
         .orElse(false);
         
         if (!isOwner) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Chỉ chủ sở hữu mới có quyền vô hiệu hóa tenant");
+            throw new InsufficientPermissionException("Chỉ chủ sở hữu mới có quyền vô hiệu hóa tenant");
         }
         
         // Validate và thực hiện chuyển trạng thái
@@ -226,7 +225,7 @@ public class TenantService {
                 .orElse(false);
                 
         if (!isAdmin) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Chỉ admin mới có quyền kích hoạt tenant");
+            throw new InsufficientPermissionException("Chỉ admin mới có quyền kích hoạt tenant");
         }
         
         // Validate và thực hiện chuyển trạng thái
@@ -483,11 +482,11 @@ public class TenantService {
     public TenantResponse updateBasicInfo(String tenantKey, TenantBasicInfoRequest req) {
         // Validate tenantKey
         if (tenantKey == null || tenantKey.trim().isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Tenant key không được để trống");
+            throw new InvalidTenantKeyException("Tenant key không được để trống");
         }
         
         Tenant tenant = tenantRepository.findByTenantKey(tenantKey)
-        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Tenant không tồn tại với key: " + tenantKey));
+        .orElseThrow(() -> new TenantNotFoundException("Tenant không tồn tại với key: " + tenantKey));
 
         // Kiểm tra quyền truy cập
         String currentUserEmail = getCurrentUserEmail();
@@ -505,7 +504,7 @@ public class TenantService {
         .orElse(false);
         
         if (!isAdmin && !isOwner) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Bạn không có quyền cập nhật thông tin tenant này");
+            throw new InsufficientPermissionException("Bạn không có quyền cập nhật thông tin tenant này");
         }
 
         // Chỉ cập nhật các trường không null và không empty
@@ -532,11 +531,11 @@ public class TenantService {
     public TenantResponse updateContactInfo(String tenantKey, Map<String, Object> contactData) {
         // Validate tenantKey
         if (tenantKey == null || tenantKey.trim().isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Tenant key không được để trống");
+            throw new InvalidTenantKeyException("Tenant key không được để trống");
         }
         
         Tenant tenant = tenantRepository.findByTenantKey(tenantKey)
-        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Tenant không tồn tại với key: " + tenantKey));
+        .orElseThrow(() -> new TenantNotFoundException("Tenant không tồn tại với key: " + tenantKey));
 
         // Kiểm tra quyền truy cập
         String currentUserEmail = getCurrentUserEmail();
@@ -554,7 +553,7 @@ public class TenantService {
         .orElse(false);
         
         if (!isAdmin && !isOwner) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Bạn không có quyền cập nhật thông tin liên hệ tenant này");
+            throw new InsufficientPermissionException("Bạn không có quyền cập nhật thông tin liên hệ tenant này");
         }
 
         // Update contact fields in tenant profile
@@ -620,7 +619,7 @@ public class TenantService {
                 break;
         }
 
-        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, 
+        throw new TenantStatusTransitionException(
             "Không thể chuyển từ trạng thái " + currentStatus + " sang " + newStatus);
     }
 }

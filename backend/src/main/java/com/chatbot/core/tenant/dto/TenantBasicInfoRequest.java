@@ -1,5 +1,7 @@
 package com.chatbot.core.tenant.dto;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import lombok.Data;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -12,7 +14,11 @@ import com.fasterxml.jackson.annotation.JsonSetter;
 
 @Data
 public class TenantBasicInfoRequest {
+    
+    @NotBlank(message = "Tenant name không được để trống")
+    @Size(min = 2, max = 100, message = "Tenant name phải từ 2-100 ký tự")
     private String name;
+    
     private TenantStatus status; // Enum hoặc String tùy logic của bạn
     private TenantVisibility visibility;
     
