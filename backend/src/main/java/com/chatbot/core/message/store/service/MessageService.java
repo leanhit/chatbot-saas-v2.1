@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Map;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -158,5 +159,44 @@ public class MessageService {
         int count = messages.size();
         messageRepo.deleteAll(messages);
         return count;
+    }
+
+    /**
+     * Lấy message theo ID
+     * @param messageId ID của message
+     * @return Optional<Message>
+     */
+    @Transactional(readOnly = true)
+    public Optional<Message> getMessageById(Long messageId) {
+        Long tenantId = TenantContext.getTenantId();
+        if (tenantId == null) {
+            throw new RuntimeException("Không tìm thấy tenant ID trong context");
+        }
+        return messageRepo.findByIdAndTenantId(messageId, tenantId);
+    }
+
+    /**
+     * Cập nhật message
+     * @param message Message cần cập nhật
+     * @return Message đã được cập nhật
+     */
+    @Transactional
+    public Message updateMessage(Message message) {
+        Long tenantId = TenantContext.getTenantId();
+        if (tenantId == null) {
+            throw new RuntimeException("Không tìm thấy tenant ID trong context");
+        }
+        
+        // Validate message exists và thuộc tenant
+        Message existingMessage = messageRepo.findByIdAndTenantId(message.getId(), tenantId)
+            .orElseThrow(() -> new RuntimeException("Message not found with id: " + message.getId()));
+        
+        // Cập nhật các trường cho phép
+        existingMessage.setContent(message.getContent());
+        existingMessage.setMessageType(message.getMessageType());
+        existingMessage.setExternalMessageId(message.getExternalMessageId());
+        // Không update sender, conversationId, createdAt để maintain data integrity
+        
+        return messageRepo.save(existingMessage);
     }
 }

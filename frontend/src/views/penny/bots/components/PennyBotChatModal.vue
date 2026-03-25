@@ -516,7 +516,7 @@ export default {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  max-height: 70vh;
+  min-height: 0; /* Important for flex child */
 }
 
 .messages-list {

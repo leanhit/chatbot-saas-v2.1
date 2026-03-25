@@ -1,6 +1,7 @@
 <template>
-  <div class="flex items-center space-x-2">
+  <div class="flex items-center space-x-2 bg-white dark:bg-gray-800">
     <input
+      ref="inputRef"
       v-model="inputMessage"
       @keydown.enter="sendMessage"
       type="text"
@@ -11,7 +12,7 @@
     <button
       @click="sendMessage"
       :disabled="!inputMessage.trim() || disabled"
-      class="inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+      class="inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
     >
       <Icon v-if="loading" icon="mdi:loading" class="animate-spin h-4 w-4 mr-2" />
       <Icon v-else icon="mdi:send" class="h-4 w-4" />
@@ -41,6 +42,7 @@ const props = defineProps({
 const emit = defineEmits(['send-message'])
 
 const inputMessage = ref('')
+const inputRef = ref(null)
 
 const sendMessage = () => {
   if (!inputMessage.value.trim() || props.disabled) return
@@ -50,13 +52,15 @@ const sendMessage = () => {
   emit('send-message', message)
 }
 
-// Expose method to clear input
+// Expose methods
 defineExpose({
   clearInput: () => {
     inputMessage.value = ''
   },
   focus: () => {
-    // Focus logic if needed
+    if (inputRef.value) {
+      inputRef.value.focus()
+    }
   }
 })
 </script>

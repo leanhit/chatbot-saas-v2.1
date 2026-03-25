@@ -86,4 +86,7 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
            "INNER JOIN conversations c ON m.conversation_id = c.id " +
            "WHERE c.tenant_id = :tenantId AND m.created_at >= :startDate", nativeQuery = true)
     Long countByConversationTenantIdAndCreatedAtAfter(@Param("tenantId") Long tenantId, @Param("startDate") java.time.LocalDateTime startDate);
+    
+    // Tìm message theo ID và tenantId
+    Optional<Message> findByIdAndTenantId(Long messageId, Long tenantId);
 }

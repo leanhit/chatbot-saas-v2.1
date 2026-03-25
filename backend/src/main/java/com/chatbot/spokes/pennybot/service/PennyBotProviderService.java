@@ -152,6 +152,10 @@ public class PennyBotProviderService implements ChatbotProviderService {
                lowerMessage.equals("tạm biệt") || lowerMessage.equals("bye") ||
                lowerMessage.contains("bạn là ai") || lowerMessage.contains("who are you") ||
                lowerMessage.contains("bạn làm gì") || lowerMessage.contains("what do you do") ||
+               lowerMessage.contains("giúp đỡ") || lowerMessage.contains("help") ||
+               lowerMessage.contains("hỗ trợ") || lowerMessage.contains("support") ||
+               lowerMessage.contains("lỗi") || lowerMessage.contains("error") ||
+               lowerMessage.contains("vấn đề") || lowerMessage.contains("problem") ||
                !containsBusinessKeywords(lowerMessage) && !containsSupportKeywords(lowerMessage);
     }
     
@@ -186,6 +190,18 @@ public class PennyBotProviderService implements ChatbotProviderService {
         // Capability questions
         if (lowerMessage.contains("bạn làm gì") || lowerMessage.contains("what do you do")) {
             return messageConfig.getMessage("capabilities", language);
+        }
+        
+        // Help requests
+        if (lowerMessage.contains("giúp đỡ") || lowerMessage.contains("help") ||
+            lowerMessage.contains("hỗ trợ") || lowerMessage.contains("support")) {
+            return "Tôi có thể giúp bạn với các vấn đề sau:\n• 📞 Hỗ trợ kỹ thuật\n• 📦 Theo dõi đơn hàng\n• 🛍️ Tư vấn sản phẩm\n• 💬 Hỗ trợ khách hàng\n• 📊 Báo cáo và thống kê\n\nBạn cần hỗ trợ vấn đề gì ạ?";
+        }
+        
+        // Error reports
+        if (lowerMessage.contains("lỗi") || lowerMessage.contains("error") ||
+            lowerMessage.contains("vấn đề") || lowerMessage.contains("problem")) {
+            return "Tôi rất tiếc khi bạn gặp sự cố. Vui lòng cung cấp thông tin chi tiết:\n• 🐛 Loại lỗi: [mô tả lỗi]\n• 📱 Thiết bị: [browser/device]\n• ⏰ Thời gian xảy ra: [thời gian]\n\nTôi sẽ chuyển đến đội ngũ kỹ thuật để xử lý sớm nhất!";
         }
         
         // Default fallback

@@ -394,6 +394,44 @@ public class ConversationService {
     }
 
     /**
+     * Get conversation by ID - trả về Optional
+     */
+    public Optional<Conversation> findConversationById(Long conversationId) {
+        Long tenantId = TenantContext.getTenantId();
+        if (tenantId == null) {
+            throw new RuntimeException("Không tìm thấy tenant ID trong context");
+        }
+        return conversationRepo.findByIdAndTenantId(conversationId, tenantId);
+    }
+
+    /**
+     * Create new conversation
+     */
+    @Transactional
+    public Conversation createConversation(Conversation conversation) {
+        Long tenantId = TenantContext.getTenantId();
+        if (tenantId == null) {
+            throw new RuntimeException("Không tìm thấy tenant ID trong context");
+        }
+        
+        // Set tenant ID
+        conversation.setTenantId(tenantId);
+        
+        // Set default values
+        if (conversation.getStatus() == null) {
+            conversation.setStatus("open");
+        }
+        if (conversation.getIsTakenOverByAgent() == null) {
+            conversation.setIsTakenOverByAgent(false);
+        }
+        if (conversation.getIsClosedByAgent() == null) {
+            conversation.setIsClosedByAgent(false);
+        }
+        
+        return conversationRepo.save(conversation);
+    }
+
+    /**
      * Update conversation
      */
     public Conversation updateConversation(Long conversationId, Object conversationDTO, String ownerId) {

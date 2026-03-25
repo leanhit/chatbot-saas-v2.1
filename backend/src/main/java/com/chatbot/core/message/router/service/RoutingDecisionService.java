@@ -4,6 +4,7 @@ import com.chatbot.core.message.router.model.Route;
 import com.chatbot.core.message.router.model.RoutingRule;
 import com.chatbot.core.message.router.model.Destination;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -17,12 +18,6 @@ import java.util.HashMap;
 @Service
 @Slf4j
 public class RoutingDecisionService {
-    
-    private final MessageRouterService messageRouterService;
-    
-    public RoutingDecisionService(MessageRouterService messageRouterService) {
-        this.messageRouterService = messageRouterService;
-    }
     
     /**
      * Make routing decision for message

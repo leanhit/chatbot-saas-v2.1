@@ -1,17 +1,19 @@
 <template>
-  <div class="bg-white dark:bg-gray-800 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-    <div class="flex flex-col h-96">
-      <!-- Messages Area -->
-      <ChatMessages
-        ref="chatMessagesRef"
-        :messages="messages"
-        :is-typing="isTyping"
-        :bot-name="botName"
-        @scroll-to-bottom="handleScrollToBottom"
-      />
-      
-      <!-- Message Input -->
+  <div class="bg-white dark:bg-gray-800 px-4 pt-5 pb-4 sm:p-6 sm:pb-4 flex flex-col h-[500px] max-h-[70vh]">
+    <!-- Messages Area -->
+    <ChatMessages
+      ref="chatMessagesRef"
+      :messages="messages"
+      :is-typing="isTyping"
+      :bot-name="botName"
+      @scroll-to-bottom="handleScrollToBottom"
+      class="flex-1 min-h-0"
+    />
+    
+    <!-- Message Input - Fixed at bottom -->
+    <div class="flex-shrink-0 mt-4 pt-4 border-t border-gray-200 dark:border-gray-600">
       <ChatInput
+        ref="chatInputRef"
         :disabled="disabled"
         :loading="loading"
         @send-message="handleSendMessage"
@@ -51,6 +53,7 @@ const props = defineProps({
 const emit = defineEmits(['send-message', 'scroll-to-bottom'])
 
 const chatMessagesRef = ref(null)
+const chatInputRef = ref(null)
 
 const handleSendMessage = (message) => {
   emit('send-message', message)
@@ -68,7 +71,9 @@ defineExpose({
     }
   },
   focusInput: () => {
-    // Focus input logic if needed
+    if (chatInputRef.value) {
+      chatInputRef.value.focus()
+    }
   }
 })
 </script>

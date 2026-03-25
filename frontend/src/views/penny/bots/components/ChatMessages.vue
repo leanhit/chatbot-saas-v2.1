@@ -1,7 +1,7 @@
 <template>
-  <div class="flex flex-col h-96">
+  <div class="flex flex-col h-full">
     <!-- Messages Area -->
-    <div ref="messagesContainer" class="flex-1 overflow-y-auto space-y-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg mb-4">
+    <div ref="messagesContainer" class="flex-1 overflow-y-auto space-y-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
       <div v-if="messages.length === 0" class="empty-chat text-center">
         <Icon icon="mdi:chat-outline" class="h-12 w-12 text-gray-400 mb-4 mx-auto" />
         <p class="empty-chat-text">{{ $t('penny.startConversation') }} {{ botName }}</p>
