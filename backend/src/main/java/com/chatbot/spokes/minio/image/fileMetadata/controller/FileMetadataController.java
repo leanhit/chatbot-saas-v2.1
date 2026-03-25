@@ -110,6 +110,8 @@ public class FileMetadataController {
                 return ResponseEntity.notFound().build();
             }
         } catch (Exception e) {
+            // Log the error for debugging
+            System.err.println("Error serving file by ID: " + id + ", error: " + e.getMessage());
             // Return 404 without triggering GlobalExceptionHandler to avoid content-type conflict
             return ResponseEntity.notFound().build();
         }
@@ -133,6 +135,8 @@ public class FileMetadataController {
                 return ResponseEntity.notFound().build();
             }
         } catch (Exception e) {
+            // Log the error for debugging
+            System.err.println("Error serving public file by filename: " + filename + ", error: " + e.getMessage());
             // Return 404 without triggering GlobalExceptionHandler to avoid content-type conflict
             return ResponseEntity.notFound().build();
         }
@@ -156,6 +160,8 @@ public class FileMetadataController {
                 return ResponseEntity.notFound().build();
             }
         } catch (Exception e) {
+            // Log the error for debugging
+            System.err.println("Error serving public file by ID: " + id + ", error: " + e.getMessage());
             // Return 404 without triggering GlobalExceptionHandler to avoid content-type conflict
             return ResponseEntity.notFound().build();
         }

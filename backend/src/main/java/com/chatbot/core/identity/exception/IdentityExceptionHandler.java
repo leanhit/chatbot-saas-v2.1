@@ -7,7 +7,9 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.servlet.HandlerMapping;
 
+import jakarta.servlet.http.HttpServletRequest;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
@@ -63,14 +65,24 @@ public class IdentityExceptionHandler {
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<Map<String, Object>> handleGlobalException(
-            Exception ex, WebRequest request) {
+    public ResponseEntity<?> handleGlobalException(
+            Exception ex, WebRequest request, HttpServletRequest httpRequest) {
+        
+        // Check if this is an image endpoint request
+        String requestURI = request.getDescription(false).replace("uri=", "");
+        if (requestURI.contains("/api/images/") && requestURI.contains("/content")) {
+            // For image endpoints, return empty response with appropriate status
+            // to avoid content-type conflicts
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+        
+        // For non-image endpoints, return JSON error response
         Map<String, Object> response = new HashMap<>();
         response.put("timestamp", LocalDateTime.now());
         response.put("status", HttpStatus.INTERNAL_SERVER_ERROR.value());
         response.put("error", "Internal Server Error");
         response.put("message", "Đã xảy ra lỗi hệ thống");
-        response.put("path", request.getDescription(false).replace("uri=", ""));
+        response.put("path", requestURI);
         
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
     }

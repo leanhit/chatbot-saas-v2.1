@@ -19,7 +19,7 @@ import java.util.UUID;
 @AllArgsConstructor
 @Builder
 @Entity
-@Table(name = "conversation",
+@Table(name = "conversations",
     indexes = {
         @Index(name = "idx_conversation_tenant", columnList = "tenant_id"),
         @Index(name = "idx_conversation_tenant_connection", columnList = "tenant_id, connection_id"),

@@ -16,7 +16,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Builder
 @Entity
-@Table(name = "message",
+@Table(name = "messages",
     indexes = {
         @Index(name = "idx_message_tenant", columnList = "tenant_id"),
         @Index(name = "idx_message_tenant_conversation", columnList = "tenant_id, conversation_id")
