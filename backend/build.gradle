@@ -8,6 +8,10 @@ plugins {
 group = 'com.chatbot'
 version = '0.0.1-SNAPSHOT'
 
+ext {
+    set('testcontainersVersion', "1.19.3")
+}
+
 java {
     toolchain {
         languageVersion = JavaLanguageVersion.of(21)
@@ -49,6 +53,9 @@ dependencies {
     // -------------------------------
     implementation 'org.postgresql:postgresql:42.7.1'
     implementation 'com.zaxxer:HikariCP:5.1.0'
+    
+    // H2 Database for Testing
+    testImplementation 'com.h2database:h2:2.2.224'
 
     // -------------------------------
     // JWT
@@ -73,6 +80,11 @@ dependencies {
     // -------------------------------
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.security:spring-security-test'
+    
+    // Testcontainers for integration testing
+    testImplementation 'org.testcontainers:junit-jupiter'
+    testImplementation 'org.testcontainers:postgresql'
+    testImplementation 'org.testcontainers:r2dbc'
 
     // -------------------------------
     // MapStruct
@@ -105,7 +117,7 @@ dependencies {
 }
 
 tasks.named('test') {
-    enabled = false
+    enabled = true
     useJUnitPlatform()
     systemProperties([
         'http.nonProxyHosts': 'localhost|127.0.0.1',
@@ -113,6 +125,15 @@ tasks.named('test') {
         'file.encoding': 'UTF-8',
         'sun.jnu.encoding': 'UTF-8'
     ])
+    
+    // Configure test task for multi-database setup
+    testLogging {
+        events "passed", "skipped", "failed"
+        exceptionFormat "full"
+    }
+    
+    // Set test environment variables
+    environment "SPRING_PROFILES_ACTIVE", "test"
 }
 
 springBoot {

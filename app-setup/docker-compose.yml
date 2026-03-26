@@ -4,7 +4,7 @@ services:
   # ----------------------------------------
   db:
     image: ankane/pgvector:latest
-    container_name: traloitudong_postgres
+    container_name: chatbot_saas_postgres
     restart: always
     environment:
       POSTGRES_DB: traloitudong_db
@@ -29,7 +29,7 @@ services:
   # ----------------------------------------
   minio:
     image: quay.io/minio/minio
-    container_name: minio
+    container_name: chatbot_saas_minio
     restart: always
     environment:
       MINIO_ROOT_USER: minioadmin
@@ -48,7 +48,7 @@ services:
   # ----------------------------------------
   botpress:
     image: botpress/server:v12_28_0
-    container_name: botpress
+    container_name: chatbot_saas_botpress
     restart: always
     user: root
     ports:
@@ -68,7 +68,7 @@ services:
   # ----------------------------------------
   odoo:
     image: odoo:17
-    container_name: odoo
+    container_name: chatbot_saas_odoo
     restart: always
     depends_on:
       - db
@@ -91,7 +91,7 @@ services:
   # ----------------------------------------
   rabbitmq:
     image: rabbitmq:3.12-management
-    container_name: rabbitmq
+    container_name: chatbot_saas_rabbitmq
     restart: always
     environment:
       RABBITMQ_DEFAULT_USER: admin
@@ -110,7 +110,7 @@ services:
   # ----------------------------------------
   redis:
     image: redis:7-alpine
-    container_name: redis
+    container_name: chatbot_saas_redis
     restart: always
     ports:
       - "6380:6379"
@@ -121,11 +121,22 @@ services:
 
 volumes:
   postgres_data:
+    driver: local
+    name: chatbot_saas_postgres_data
   odoo_data:
+    driver: local
+    name: chatbot_saas_odoo_data
   minio_data:
+    driver: local
+    name: chatbot_saas_minio_data
   rabbitmq_data:
+    driver: local
+    name: chatbot_saas_rabbitmq_data
   redis_data:
+    driver: local
+    name: chatbot_saas_redis_data
 
 networks:
   internal:
     driver: bridge
+    name: chatbot_saas_internal

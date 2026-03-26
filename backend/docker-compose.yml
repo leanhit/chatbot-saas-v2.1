@@ -239,8 +239,8 @@ services:
     ports:
       - "3001:3000"
     environment:
-      - DATABASE: postgres
-      - DATABASE_URL: postgres://chatbot_user:chatbot_Admin_2025@db:5432/chatbot_identity_db
+      DATABASE: postgres
+      DATABASE_URL: postgres://chatbot_user:chatbot_Admin_2025@identity-db:5432/chatbot_identity_db
     volumes:
       - ./data:/botpress/data
     depends_on:

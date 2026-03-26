@@ -1,0 +1,289 @@
+version: '3.8'
+
+services:
+  # ========================================
+  # PostgreSQL Shared (pgvector)
+  # ========================================
+  db:
+    image: ankane/pgvector:latest
+    container_name: traloitudong_postgres
+    restart: always
+    environment:
+      POSTGRES_DB: traloitudong_db
+      POSTGRES_USER: traloitudong_user
+      POSTGRES_PASSWORD: traloitudong_Admin_2025
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./app-setup/postgres-init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "5432:5432"
+    networks:
+      - internal
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U traloitudong_user -d traloitudong_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  # ========================================
+  # Identity Hub Database
+  # ========================================
+  identity-db:
+    image: postgres:15-alpine
+    container_name: postgres-identity
+    restart: always
+    environment:
+      POSTGRES_DB: chatbot_identity_db
+      POSTGRES_USER: chatbot_user
+      POSTGRES_PASSWORD: chatbot_Admin_2025
+    volumes:
+      - identity_postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    networks:
+      - internal
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U chatbot_user -d chatbot_identity_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  # ========================================
+  # User Hub Database
+  # ========================================
+  user-db:
+    image: postgres:15-alpine
+    container_name: postgres-user
+    restart: always
+    environment:
+      POSTGRES_DB: chatbot_user_db
+      POSTGRES_USER: chatbot_user
+      POSTGRES_PASSWORD: chatbot_Admin_2025
+    volumes:
+      - user_postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5434:5432"
+    networks:
+      - internal
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U chatbot_user -d chatbot_user_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  # ========================================
+  # Tenant Hub Database
+  # ========================================
+  tenant-db:
+    image: postgres:15-alpine
+    container_name: postgres-tenant
+    restart: always
+    environment:
+      POSTGRES_DB: chatbot_tenant_db
+      POSTGRES_USER: chatbot_user
+      POSTGRES_PASSWORD: chatbot_Admin_2025
+    volumes:
+      - tenant_postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5435:5432"
+    networks:
+      - internal
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U chatbot_user -d chatbot_tenant_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  # ========================================
+  # App Hub Database
+  # ========================================
+  app-db:
+    image: postgres:15-alpine
+    container_name: postgres-app
+    restart: always
+    environment:
+      POSTGRES_DB: chatbot_app_db
+      POSTGRES_USER: chatbot_user
+      POSTGRES_PASSWORD: chatbot_Admin_2025
+    volumes:
+      - app_postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5436:5432"
+    networks:
+      - internal
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U chatbot_user -d chatbot_app_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  # ========================================
+  # Billing Hub Database (READ-ONLY)
+  # ========================================
+  billing-db:
+    image: postgres:15-alpine
+    container_name: postgres-billing
+    restart: always
+    environment:
+      POSTGRES_DB: chatbot_billing_db
+      POSTGRES_USER: chatbot_user
+      POSTGRES_PASSWORD: chatbot_Admin_2025
+    volumes:
+      - billing_postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5437:5432"
+    networks:
+      - internal
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U chatbot_user -d chatbot_billing_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  # ========================================
+  # Wallet Hub Database
+  # ========================================
+  wallet-db:
+    image: postgres:15-alpine
+    container_name: postgres-wallet
+    restart: always
+    environment:
+      POSTGRES_DB: chatbot_wallet_db
+      POSTGRES_USER: chatbot_user
+      POSTGRES_PASSWORD: chatbot_Admin_2025
+    volumes:
+      - wallet_postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5438:5432"
+    networks:
+      - internal
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U chatbot_user -d chatbot_wallet_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  # ========================================
+  # Config Hub Database
+  # ========================================
+  config-db:
+    image: postgres:15-alpine
+    container_name: postgres-config
+    restart: always
+    environment:
+      POSTGRES_DB: chatbot_config_db
+      POSTGRES_USER: chatbot_user
+      POSTGRES_PASSWORD: chatbot_Admin_2025
+    volumes:
+      - config_postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5439:5432"
+    networks:
+      - internal
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U chatbot_user -d chatbot_config_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  # ========================================
+  # Message Hub Database
+  # ========================================
+  message-db:
+    image: postgres:15-alpine
+    container_name: postgres-message
+    restart: always
+    environment:
+      POSTGRES_DB: chatbot_message_db
+      POSTGRES_USER: chatbot_user
+      POSTGRES_PASSWORD: chatbot_Admin_2025
+    volumes:
+      - message_postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5440:5432"
+    networks:
+      - internal
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U chatbot_user -d chatbot_message_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  # ========================================
+  # MinIO
+  # ========================================
+  minio:
+    image: quay.io/minio/minio
+    container_name: minio
+    restart: always
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    command: server /data --console-address ":9090"
+    ports:
+      - "9000:9000"
+      - "9090:9090"
+    volumes:
+      - minio_data:/data
+    networks:
+      - internal
+
+  # ========================================
+  # Botpress
+  # ========================================
+  botpress:
+    image: botpress/server:v12_28_0
+    container_name: botpress
+    restart: always
+    user: root
+    ports:
+      - "3001:3000"
+    environment:
+      - DATABASE: postgres
+      - DATABASE_URL: postgres://chatbot_user:chatbot_Admin_2025@db:5432/chatbot_identity_db
+    volumes:
+      - ./data:/botpress/data
+    depends_on:
+      - identity-db
+    networks:
+      - internal
+
+  # ========================================
+  # Odoo
+  # ========================================
+  odoo:
+    image: odoo:17
+    container_name: odoo
+    restart: always
+    depends_on:
+      - db
+    environment:
+      POSTGRES_HOST: db
+      POSTGRES_USER: traloitudong_user
+      POSTGRES_PASSWORD: traloitudong_Admin_2025
+      POSTGRES_DB: traloitudong_db
+    ports:
+      - "3005:8069"
+    volumes:
+      - odoo_data:/var/lib/odoo
+      - ./app-setup/odoo-init.sh:/usr/local/bin/odoo-init.sh
+    command: ["/usr/local/bin/odoo-init.sh"]
+    networks:
+      - internal
+
+volumes:
+  postgres_data:
+  identity_postgres_data:
+  user_postgres_data:
+  tenant_postgres_data:
+  app_postgres_data:
+  billing_postgres_data:
+  wallet_postgres_data:
+  config_postgres_data:
+  message_postgres_data:
+  odoo_data:
+  minio_data:
+
+networks:
+  internal:
+    driver: bridge
