@@ -54,7 +54,8 @@ import java.util.Properties;
         "com.chatbot.spokes.botpress.repository",
         "com.chatbot.spokes.minio.repository",
         "com.chatbot.spokes.minio.image.fileMetadata.repository",
-        "com.chatbot.spokes.minio.image.category.repository"
+        "com.chatbot.spokes.minio.image.category.repository",
+        "com.chatbot.core.simplepayment.repository"
     },
     entityManagerFactoryRef = "primaryEntityManagerFactory",
     transactionManagerRef = "primaryTransactionManager"
@@ -115,7 +116,8 @@ public class PrimaryDatabaseConfig {
             "com.chatbot.spokes.botpress.model",
             "com.chatbot.spokes.minio.model",
             "com.chatbot.spokes.minio.image.fileMetadata.model",
-            "com.chatbot.spokes.minio.image.category.model"
+            "com.chatbot.spokes.minio.image.category.model",
+            "com.chatbot.core.simplepayment.model"
         );
 
         HibernateJpaVendorAdapter vendorAdapter = new HibernateJpaVendorAdapter();

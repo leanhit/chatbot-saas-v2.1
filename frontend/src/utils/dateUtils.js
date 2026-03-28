@@ -1,6 +1,5 @@
 /**
- * Date utility functions for consistent date formatting across the application
- * Matches backend DateUtils constants - ISO 8601 UTC Standard
+ * Date utility functions for consistent date formatting across the application - Matches backend DateUtils constants - ISO 8601 UTC Standard
  */
 
 // Backend constants from DateUtils.java - Updated for consistency

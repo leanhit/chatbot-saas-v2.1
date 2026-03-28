@@ -20,6 +20,9 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.util.List;
+import java.util.Map;
+
 /**
  * User Controller - REST API cho Frontend
  */
@@ -233,5 +236,33 @@ public class UserController {
         log.info("Cancelled join request: {} for user: {}", requestId, currentUser.getUsername());
         
         return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * Get current user's package information
+     */
+    @GetMapping("/current-package")
+    @Operation(
+        summary = "Get current user package",
+        description = "Retrieve the current package information for the authenticated user."
+    )
+    public ResponseEntity<Map<String, Object>> getCurrentPackage(
+            @AuthenticationPrincipal CustomUserDetails currentUser) {
+        
+        User user = currentUser.getUser();
+        
+        // TODO: Implement actual package logic
+        // For now, return mock data
+        Map<String, Object> response = Map.of(
+            "currentPackage", Map.of(
+                "id", "free",
+                "name", "Free",
+                "price", 0,
+                "duration", "Vĩnh viễn"
+            ),
+            "packageHistory", List.of()
+        );
+        
+        return ResponseEntity.ok(response);
     }
 }

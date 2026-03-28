@@ -48,6 +48,11 @@ public class User {
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private UserProfile profile;
 
+    // --- Simple Payment Balance ---
+    @Builder.Default
+    @Column(name = "balance", precision = 15, scale = 2)
+    private java.math.BigDecimal balance = java.math.BigDecimal.ZERO;
+
     @PrePersist
     void prePersist() {
         createdAt = LocalDateTime.now();

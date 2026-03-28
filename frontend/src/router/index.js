@@ -32,6 +32,9 @@ import BillingSubscription from "../views/billing/Subscription.vue";
 import BillingPaymentMethods from "../views/billing/PaymentMethods.vue";
 import BillingInvoices from "../views/billing/Invoices.vue";
 import BillingEntitlements from "../views/billing/Entitlements.vue";
+// Payment Pages
+import PaymentDeposit from "../views/payment/Deposit.vue";
+import PaymentHistory from "../views/payment/History.vue";
 var appname = " - Windzo Dashboard Admin Template";
 const routes = [
   // Root route - redirect to login
@@ -188,6 +191,19 @@ const routes = [
     name: "billing-entitlements",
     component: BillingEntitlements,
     meta: { requiresAuth: true, title: "Billing Entitlements" + appname, skipTenantCheck: true },
+  },
+  // Payment Routes
+  {
+    path: "/payment/deposit",
+    name: "payment-deposit",
+    component: PaymentDeposit,
+    meta: { requiresAuth: true, title: "Payment Deposit" + appname, skipTenantCheck: true },
+  },
+  {
+    path: "/payment/history",
+    name: "payment-history",
+    component: PaymentHistory,
+    meta: { requiresAuth: true, title: "Payment History" + appname, skipTenantCheck: true },
   },
 ];
 const router = createRouter({
