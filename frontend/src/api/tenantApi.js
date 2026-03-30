@@ -24,10 +24,22 @@ export const tenantApi = {
       throw error;
     }
   },
+
   async switchTenant(tenantKey) {
     try {
       const response = await axios.post(`/tenants/key/${tenantKey}/switch`);
       return response;
+    } catch (error) {
+      handleTenantError(error);
+      throw error;
+    }
+  },
+
+  // Get current tenant package
+  async getCurrentTenantPackage() {
+    try {
+      const response = await axios.get('/v1/tenant-packages/current');
+      return response.data;
     } catch (error) {
       handleTenantError(error);
       throw error;

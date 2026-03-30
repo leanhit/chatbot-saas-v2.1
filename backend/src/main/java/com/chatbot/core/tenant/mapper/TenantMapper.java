@@ -33,6 +33,9 @@ public class TenantMapper {
                 .visibility(tenant.getVisibility())
                 .expiresAt(toInstant(tenant.getExpiresAt()))
                 .createdAt(toInstant(tenant.getCreatedAt()))
+                .currentPackageId(tenant.getCurrentPackageId())
+                .currentPackageName(getPackageName(tenant.getCurrentPackageId()))
+                .packageActivatedAt(toInstant(tenant.getPackageActivatedAt()))
                 .build();
     }
 
@@ -54,6 +57,11 @@ public class TenantMapper {
                     .contactPhone(profile.getContactPhone());
         }
 
+        // Add package fields
+        builder.currentPackageId(tenant.getCurrentPackageId())
+                .currentPackageName(getPackageName(tenant.getCurrentPackageId()))
+                .packageActivatedAt(toInstant(tenant.getPackageActivatedAt()));
+
         return builder.build();
     }
 
@@ -61,5 +69,23 @@ public class TenantMapper {
     private static Instant toInstant(LocalDateTime localDateTime) {
         return localDateTime != null ? 
             localDateTime.atZone(ZoneId.systemDefault()).toInstant() : null;
+    }
+
+    // Helper method: Get package name from package ID
+    private static String getPackageName(String packageId) {
+        if (packageId == null) return null;
+        
+        switch (packageId.toLowerCase()) {
+            case "free":
+                return "Free";
+            case "pro":
+                return "Pro";
+            case "business":
+                return "Business";
+            case "enterprise":
+                return "Enterprise";
+            default:
+                return packageId;
+        }
     }
 }

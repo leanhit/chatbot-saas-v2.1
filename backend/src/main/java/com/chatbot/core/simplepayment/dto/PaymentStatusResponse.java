@@ -19,6 +19,7 @@ public class PaymentStatusResponse {
     private BigDecimal amount;
     private String currency;
     private String description;
+    private String bankTransactionId;
     
     // Original timestamps
     private LocalDateTime createdAt;

@@ -8,6 +8,7 @@ import com.chatbot.core.simplepayment.model.SimplePayment;
 import com.chatbot.core.simplepayment.repository.SimplePaymentRepository;
 import com.chatbot.core.user.repository.UserRepository;
 import com.chatbot.core.user.model.User;
+import com.chatbot.core.simplepayment.dto.PaymentEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -27,6 +28,7 @@ public class SimplePaymentService {
     private final UserRepository userRepository;
     private final QRCodeService qrCodeService;
     private final BankApiService bankApiService;
+    private final RedisPaymentService redisPaymentService;
 
     /**
      * Tạo yêu cầu nạp tiền mới
@@ -60,6 +62,14 @@ public class SimplePaymentService {
 
         savedPayment.setQrContent(qrContent);
         paymentRepository.save(savedPayment);
+
+        // Publish Redis event for real-time notification
+        PaymentEvent event = redisPaymentService.createPaymentEvent(
+            referenceCode, userId, tenantId, 
+            request.getAmount().toString(), request.getCurrency(), 
+            request.getDescription()
+        );
+        redisPaymentService.publishPaymentEvent(event);
 
         log.info("✅ Deposit request created: {}", referenceCode);
         return DepositResponse.from(savedPayment, qrContent);
@@ -111,6 +121,12 @@ public class SimplePaymentService {
 
         // Update user balance
         updateUserBalance(payment.getUserId(), payment.getAmount());
+
+        // Publish Redis event for real-time notification
+        PaymentEvent event = redisPaymentService.createStatusUpdateEvent(
+            referenceCode, PaymentStatus.COMPLETED, bankTransactionId
+        );
+        redisPaymentService.publishPaymentEvent(event);
 
         log.info("✅ Payment completed successfully: {}", referenceCode);
     }
@@ -177,6 +193,12 @@ public class SimplePaymentService {
         for (SimplePayment payment : expiredPayments) {
             payment.setStatus(PaymentStatus.EXPIRED);
             paymentRepository.save(payment);
+            
+            // Publish Redis event for real-time notification
+            PaymentEvent event = redisPaymentService.createStatusUpdateEvent(
+                payment.getReferenceCode(), PaymentStatus.EXPIRED, null
+            );
+            redisPaymentService.publishPaymentEvent(event);
         }
 
         log.info("✅ Expired {} payments", expiredPayments.size());

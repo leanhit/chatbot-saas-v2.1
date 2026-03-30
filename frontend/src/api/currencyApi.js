@@ -1,14 +1,14 @@
-import api from './api'
+import axios from '@/plugins/axios'
 
 export const currencyApi = {
   // Get supported currencies
   getSupportedCurrencies() {
-    return api.get('/billing/currency/supported')
+    return axios.get('/billing/currency/supported')
   },
 
   // Get exchange rate
   getExchangeRate(tenantKey, fromCurrency, toCurrency) {
-    return api.get(`/billing/currency/rate`, {
+    return axios.get(`/billing/currency/rate`, {
       params: {
         tenantKey,
         from: fromCurrency,
@@ -19,7 +19,7 @@ export const currencyApi = {
 
   // Convert currency
   convertCurrency(tenantKey, amount, fromCurrency, toCurrency) {
-    return api.post('/billing/currency/convert', null, {
+    return axios.post('/billing/currency/convert', null, {
       params: {
         tenantKey,
         amount,
@@ -31,26 +31,26 @@ export const currencyApi = {
 
   // Get user currency settings
   getUserCurrencySettings(tenantKey) {
-    return api.get('/billing/currency/settings', {
+    return axios.get('/billing/currency/settings', {
       params: { tenantKey }
     })
   },
 
   // Update user currency settings
   updateUserCurrencySettings(tenantKey, settings) {
-    return api.put('/billing/currency/settings', settings, {
+    return axios.put('/billing/currency/settings', settings, {
       params: { tenantKey }
     })
   },
 
   // Get all exchange rates (admin only)
   getAllExchangeRates() {
-    return api.get('/billing/currency/rates')
+    return axios.get('/billing/currency/rates')
   },
 
   // Update exchange rate (admin only)
   updateExchangeRate(fromCurrency, toCurrency, rate, source = 'MANUAL') {
-    return api.post('/billing/currency/rates', null, {
+    return axios.post('/billing/currency/rates', null, {
       params: {
         from: fromCurrency,
         to: toCurrency,

@@ -50,6 +50,13 @@ public class Tenant {
     @Builder.Default
     private Currency defaultCurrency = Currency.USD;
 
+    @Column(name = "current_package_id")
+    private String currentPackageId; // e.g., 'free', 'pro', 'business', 'enterprise'
+
+    @Column(name = "package_activated_at")
+    @JsonFormat(pattern = DateUtils.STANDARD_JSON_FORMAT, timezone = DateUtils.STANDARD_TIMEZONE)
+    private LocalDateTime packageActivatedAt;
+
     // --- audit ---
     @Column
     @JsonFormat(pattern = DateUtils.STANDARD_JSON_FORMAT, timezone = DateUtils.STANDARD_TIMEZONE)

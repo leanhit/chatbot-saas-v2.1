@@ -14,15 +14,17 @@ import com.chatbot.core.tenant.dto.*;
 import com.chatbot.core.tenant.mapper.TenantMapper;
 import com.chatbot.core.tenant.model.*;
 import com.chatbot.core.tenant.repository.TenantRepository;
-import com.chatbot.core.tenant.membership.model.TenantMember;
+import com.chatbot.core.tenant.membership.service.TenantMembershipFacade;
+import com.chatbot.core.tenant.service.TenantPackageService;
 import com.chatbot.core.tenant.membership.model.TenantRole;
 import com.chatbot.core.tenant.membership.repository.TenantMemberRepository;
+import com.chatbot.core.tenant.membership.model.TenantMember;
 import com.chatbot.core.tenant.profile.model.TenantProfile;
+import com.chatbot.core.tenant.profile.dto.TenantProfileResponse;
 import com.chatbot.core.tenant.profile.repository.TenantProfileRepository;
 import com.chatbot.core.tenant.profile.service.TenantProfileService;
 
 import com.chatbot.shared.address.dto.AddressDetailResponseDTO;
-import com.chatbot.core.tenant.profile.dto.TenantProfileResponse;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -46,10 +48,12 @@ import java.util.Collections;
 public class TenantService {
 
     private final TenantRepository tenantRepository;
-    private final TenantMemberRepository tenantMemberRepository;
     private final UserRepository userRepository;
-    private final TenantProfileService tenantProfileService;
+    private final TenantMemberRepository tenantMemberRepository;
+    private final TenantMembershipFacade tenantMembershipFacade;
+    private final TenantPackageService tenantPackageService;
     private final TenantProfileRepository tenantProfileRepository;
+    private final TenantProfileService tenantProfileService;
     private final AddressService addressService;
 
     /**
@@ -123,6 +127,17 @@ public class TenantService {
             log.error("❌ [TenantService] Failed to create address for tenant {}: {}", savedTenant.getId(), e.getMessage(), e);
             // Rollback transaction để đảm bảo data consistency
             throw new TenantProfileException("Không thể tạo địa chỉ tenant: " + e.getMessage(), e);
+        }
+
+        // Assign default free package to new tenant
+        log.info("🎁 [TenantService] Assigning default package to new tenant {}", savedTenant.getTenantKey());
+        try {
+            tenantPackageService.assignDefaultPackageToTenant(savedTenant);
+            log.info("✅ [TenantService] Default package assigned successfully");
+        } catch (Exception e) {
+            log.error("❌ [TenantService] Failed to assign default package to tenant {}: {}", 
+                    savedTenant.getTenantKey(), e.getMessage(), e);
+            // Don't roll back for package assignment failure - tenant can still function
         }
 
         TenantResponse response = TenantMapper.toResponse(savedTenant);

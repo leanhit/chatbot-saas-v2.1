@@ -4,7 +4,7 @@
       <div class="flex items-center">
         <Icon icon="mdi:bank-transfer" class="text-2xl text-blue-600 dark:text-blue-400 mr-3" />
         <h1 class="text-2xl font-bold text-gray-800 dark:text-white">
-          Nạp Tiền Theo Gói
+          {{ $t('payment.title') }}
         </h1>
       </div>
     </div>
@@ -19,218 +19,63 @@
       <div class="flex items-center justify-center mb-6">
         <Icon icon="mdi:package-variant" class="text-2xl text-blue-600 dark:text-blue-400 mr-3" />
         <h2 class="text-xl font-semibold text-gray-800 dark:text-white">
-          Chọn Gói Dịch Vụ
+          {{ $t('payment.selectPackage') }}
         </h2>
       </div>
       
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <!-- Free Package -->
+        <!-- Dynamic Package Cards -->
         <div 
-          @click="paymentStore.selectPackage('free')"
+          v-for="pkg in paymentStore.packages"
+          :key="pkg.packageId"
+          @click="paymentStore.selectPackage(pkg.packageId)"
           :class="[
             'bg-white dark:bg-gray-900 rounded-lg shadow p-6 border-2 cursor-pointer transition-all duration-200 hover:shadow-lg relative',
-            paymentStore.currentPackage?.id === 'free'
+            paymentStore.currentPackage?.id === pkg.packageId
               ? 'border-green-500 dark:border-green-400'
-              : paymentStore.selectedPackage?.id === 'free'
+              : paymentStore.selectedPackage?.id === pkg.packageId
               ? 'border-blue-500 dark:border-blue-400'
               : 'border-gray-200 dark:border-gray-700'
           ]"
         >
+          <!-- Badge -->
           <div 
-            v-if="paymentStore.currentPackage?.id === 'free'"
+            v-if="pkg.badge"
+            class="absolute -top-3 right-4 bg-red-500 dark:bg-red-600 text-white dark:text-white px-3 py-1 rounded-full text-xs font-semibold"
+          >
+            {{ $t(`payment.${pkg.badge.toLowerCase()}`) }}
+          </div>
+          
+          <!-- Status labels -->
+          <div 
+            v-if="paymentStore.currentPackage?.id === pkg.packageId"
             class="absolute -top-3 left-4 bg-green-500 dark:bg-green-600 text-white dark:text-white px-3 py-1 rounded-full text-xs font-semibold"
           >
-            ĐANG DÙNG
+            {{ $t('payment.current') }}
           </div>
           <div 
-            v-else-if="paymentStore.selectedPackage?.id === 'free'"
+            v-else-if="paymentStore.selectedPackage?.id === pkg.packageId"
             class="absolute -top-3 left-4 bg-blue-500 dark:bg-blue-600 text-white dark:text-white px-3 py-1 rounded-full text-xs font-semibold"
           >
-            ĐÃ CHỌN
+            {{ $t('payment.selected') }}
           </div>
+          
           <div class="text-center">
-            <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-2">Free</h3>
-            <div class="text-3xl font-bold text-green-600 dark:text-green-400 mb-4">Miễn phí</div>
-            <p class="text-sm text-gray-700 dark:text-gray-300 mb-4">Dùng thử nghiệm</p>
-            <ul class="text-left space-y-2 text-sm text-gray-700 dark:text-gray-300">
-              <li class="flex items-center">
-                <Icon icon="mdi:check-circle" class="text-green-500 dark:text-green-400 mr-2" />
-                <span class="text-gray-700 dark:text-gray-300">100 tin nhắn/tháng</span>
-              </li>
-              <li class="flex items-center">
-                <Icon icon="mdi:check-circle" class="text-green-500 dark:text-green-400 mr-2" />
-                <span class="text-gray-700 dark:text-gray-300">1 chatbot</span>
-              </li>
-              <li class="flex items-center">
-                <Icon icon="mdi:check-circle" class="text-green-500 dark:text-green-400 mr-2" />
-                <span class="text-gray-700 dark:text-gray-300">Support cơ bản</span>
-              </li>
-            </ul>
-          </div>
-        </div>
-
-        <!-- Pro Package -->
-        <div 
-          @click="paymentStore.selectPackage('pro')"
-          :class="[
-            'bg-white dark:bg-gray-900 rounded-lg shadow p-6 border-2 cursor-pointer transition-all duration-200 hover:shadow-lg relative',
-            paymentStore.currentPackage?.id === 'pro'
-              ? 'border-blue-500 dark:border-blue-400'
-              : paymentStore.selectedPackage?.id === 'pro'
-              ? 'border-blue-500 dark:border-blue-400'
-              : 'border-gray-200 dark:border-gray-700'
-          ]"
-        >
-          <div class="absolute -top-3 right-4 bg-red-500 dark:bg-red-600 text-white dark:text-white px-3 py-1 rounded-full text-xs font-semibold">
-            POPULAR
-          </div>
-          <div 
-            v-if="paymentStore.currentPackage?.id === 'pro'"
-            class="absolute -top-3 left-4 bg-blue-500 dark:bg-blue-600 text-white dark:text-white px-3 py-1 rounded-full text-xs font-semibold"
-          >
-            ĐANG DÙNG
-          </div>
-          <div 
-            v-else-if="paymentStore.selectedPackage?.id === 'pro'"
-            class="absolute -top-3 left-4 bg-blue-500 dark:bg-blue-600 text-white dark:text-white px-3 py-1 rounded-full text-xs font-semibold"
-          >
-            ĐÃ CHỌN
-          </div>
-          <div class="text-center">
-            <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-2">Pro</h3>
-            <div class="text-3xl font-bold text-blue-600 dark:text-blue-300 mb-4">
-              250.000 ₫
-              <span class="text-sm text-gray-500 dark:text-gray-400">/tháng</span>
+            <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-2">
+              {{ getLocalizedPackageName(pkg) }}
+            </h3>
+            <div class="text-3xl font-bold mb-4" :class="getPriceColorClass(pkg.packageId)">
+              <span v-if="pkg.price === 0">{{ getLocalizedPrice(pkg) }}</span>
+              <template v-else>
+                {{ formatCurrency(pkg.price) }}
+                <span class="text-sm text-gray-500 dark:text-gray-400">/{{ getLocalizedDuration(pkg) }}</span>
+              </template>
             </div>
-            <p class="text-sm text-gray-700 dark:text-gray-300 mb-4">1 tháng sử dụng</p>
+            <p class="text-sm text-gray-700 dark:text-gray-300 mb-4">{{ getLocalizedDescription(pkg) }}</p>
             <ul class="text-left space-y-2 text-sm text-gray-700 dark:text-gray-300">
-              <li class="flex items-center">
+              <li v-for="feature in getPackageFeatures(pkg)" :key="feature" class="flex items-center">
                 <Icon icon="mdi:check-circle" class="text-green-500 dark:text-green-400 mr-2" />
-                <span class="text-gray-700 dark:text-gray-300">5.000 tin nhắn/tháng</span>
-              </li>
-              <li class="flex items-center">
-                <Icon icon="mdi:check-circle" class="text-green-500 dark:text-green-400 mr-2" />
-                <span class="text-gray-700 dark:text-gray-300">3 chatbots</span>
-              </li>
-              <li class="flex items-center">
-                <Icon icon="mdi:check-circle" class="text-green-500 dark:text-green-400 mr-2" />
-                <span class="text-gray-700 dark:text-gray-300">Support ưu tiên</span>
-              </li>
-              <li class="flex items-center">
-                <Icon icon="mdi:check-circle" class="text-green-500 dark:text-green-400 mr-2" />
-                <span class="text-gray-700 dark:text-gray-300">Analytics cơ bản</span>
-              </li>
-            </ul>
-          </div>
-        </div>
-
-        <!-- Business Package -->
-        <div 
-          @click="paymentStore.selectPackage('business')"
-          :class="[
-            'bg-white dark:bg-gray-900 rounded-lg shadow p-6 border-2 cursor-pointer transition-all duration-200 hover:shadow-lg relative',
-            paymentStore.currentPackage?.id === 'business'
-              ? 'border-purple-500 dark:border-purple-400'
-              : paymentStore.selectedPackage?.id === 'business'
-              ? 'border-purple-500 dark:border-purple-400'
-              : 'border-gray-200 dark:border-gray-700'
-          ]"
-        >
-          <div 
-            v-if="paymentStore.currentPackage?.id === 'business'"
-            class="absolute -top-3 left-4 bg-purple-500 dark:bg-purple-600 text-white dark:text-white px-3 py-1 rounded-full text-xs font-semibold"
-          >
-            ĐANG DÙNG
-          </div>
-          <div 
-            v-else-if="paymentStore.selectedPackage?.id === 'business'"
-            class="absolute -top-3 left-4 bg-purple-500 dark:bg-purple-600 text-white dark:text-white px-3 py-1 rounded-full text-xs font-semibold"
-          >
-            ĐÃ CHỌN
-          </div>
-          <div class="text-center">
-            <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-2">Business</h3>
-            <div class="text-3xl font-bold text-purple-600 dark:text-purple-300 mb-4">
-              500.000 ₫
-              <span class="text-sm text-gray-500 dark:text-gray-400">/tháng</span>
-            </div>
-            <p class="text-sm text-gray-700 dark:text-gray-300 mb-4">1 tháng sử dụng</p>
-            <ul class="text-left space-y-2 text-sm text-gray-700 dark:text-gray-300">
-              <li class="flex items-center">
-                <Icon icon="mdi:check-circle" class="text-green-500 dark:text-green-400 mr-2" />
-                <span class="text-gray-700 dark:text-gray-300">15.000 tin nhắn/tháng</span>
-              </li>
-              <li class="flex items-center">
-                <Icon icon="mdi:check-circle" class="text-green-500 dark:text-green-400 mr-2" />
-                <span class="text-gray-700 dark:text-gray-300">10 chatbots</span>
-              </li>
-              <li class="flex items-center">
-                <Icon icon="mdi:check-circle" class="text-green-500 dark:text-green-400 mr-2" />
-                <span class="text-gray-700 dark:text-gray-300">Support 24/7</span>
-              </li>
-              <li class="flex items-center">
-                <Icon icon="mdi:check-circle" class="text-green-500 dark:text-green-400 mr-2" />
-                <span class="text-gray-700 dark:text-gray-300">Analytics nâng cao</span>
-              </li>
-              <li class="flex items-center">
-                <Icon icon="mdi:check-circle" class="text-green-500 dark:text-green-400 mr-2" />
-                <span class="text-gray-700 dark:text-gray-300">Custom integrations</span>
-              </li>
-            </ul>
-          </div>
-        </div>
-
-        <!-- Enterprise Package -->
-        <div 
-          @click="paymentStore.selectPackage('enterprise')"
-          :class="[
-            'bg-white dark:bg-gray-900 rounded-lg shadow p-6 border-2 cursor-pointer transition-all duration-200 hover:shadow-lg relative',
-            paymentStore.currentPackage?.id === 'enterprise'
-              ? 'border-yellow-500 dark:border-yellow-400'
-              : paymentStore.selectedPackage?.id === 'enterprise'
-              ? 'border-yellow-500 dark:border-yellow-400'
-              : 'border-gray-200 dark:border-gray-700'
-          ]"
-        >
-          <div 
-            v-if="paymentStore.currentPackage?.id === 'enterprise'"
-            class="absolute -top-3 left-4 bg-yellow-500 dark:bg-yellow-600 text-white dark:text-white px-3 py-1 rounded-full text-xs font-semibold"
-          >
-            ĐANG DÙNG
-          </div>
-          <div 
-            v-else-if="paymentStore.selectedPackage?.id === 'enterprise'"
-            class="absolute -top-3 left-4 bg-yellow-500 dark:bg-yellow-600 text-white dark:text-white px-3 py-1 rounded-full text-xs font-semibold"
-          >
-            ĐÃ CHỌN
-          </div>
-          <div class="text-center">
-            <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-2">Enterprise</h3>
-            <div class="text-3xl font-bold text-yellow-600 dark:text-yellow-300 mb-4">
-              1.000.000 ₫
-              <span class="text-sm text-gray-500 dark:text-gray-400">/tháng</span>
-            </div>
-            <p class="text-sm text-gray-700 dark:text-gray-300 mb-4">1 tháng sử dụng</p>
-            <ul class="text-left space-y-2 text-sm text-gray-700 dark:text-gray-300">
-              <li class="flex items-center">
-                <Icon icon="mdi:check-circle" class="text-green-500 dark:text-green-400 mr-2" />
-                <span class="text-gray-700 dark:text-gray-300">Unlimited tin nhắn</span>
-              </li>
-              <li class="flex items-center">
-                <Icon icon="mdi:check-circle" class="text-green-500 dark:text-green-400 mr-2" />
-                <span class="text-gray-700 dark:text-gray-300">Unlimited chatbots</span>
-              </li>
-              <li class="flex items-center">
-                <Icon icon="mdi:check-circle" class="text-green-500 dark:text-green-400 mr-2" />
-                <span class="text-gray-700 dark:text-gray-300">Dedicated support</span>
-              </li>
-              <li class="flex items-center">
-                <Icon icon="mdi:check-circle" class="text-green-500 dark:text-green-400 mr-2" />
-                <span class="text-gray-700 dark:text-gray-300">Custom features</span>
-              </li>
-              <li class="flex items-center">
-                <Icon icon="mdi:check-circle" class="text-green-500 dark:text-green-400 mr-2" />
-                <span class="text-gray-700 dark:text-gray-300">SLA guarantee</span>
+                <span class="text-gray-700 dark:text-gray-300">{{ feature }}</span>
               </li>
             </ul>
           </div>
@@ -243,7 +88,7 @@
       <div class="flex items-center justify-center mb-6">
         <Icon icon="mdi:cart-check" class="text-2xl text-blue-600 dark:text-blue-400 mr-3" />
         <h3 class="text-lg font-semibold text-gray-800 dark:text-white">
-          Tóm Tắt Thanh Toán
+          {{ $t('payment.deposit.title') }}
         </h3>
       </div>
         
@@ -252,19 +97,19 @@
           <div>
             <div class="space-y-2">
               <div class="flex justify-between">
-                <span class="text-gray-700 dark:text-gray-300">Gói dịch vụ:</span>
+                <span class="text-gray-700 dark:text-gray-300">{{ $t('payment.selectPackage') }}:</span>
                 <span class="font-semibold text-gray-800 dark:text-white">
-                  {{ paymentStore.selectedPackage ? paymentStore.selectedPackage.name : 'Tùy chỉnh' }}
+                  {{ paymentStore.selectedPackage ? paymentStore.selectedPackage.name : $t('payment.custom') }}
                 </span>
               </div>
               <div class="flex justify-between">
-                <span class="text-gray-700 dark:text-gray-300">Số tiền:</span>
+                <span class="text-gray-700 dark:text-gray-300">{{ $t('payment.amount') }}:</span>
                 <span class="font-bold text-lg text-blue-700 dark:text-blue-300">
                   {{ paymentStore.formattedAmount }}
                 </span>
               </div>
               <div v-if="paymentStore.selectedPackage" class="flex justify-between">
-                <span class="text-gray-700 dark:text-gray-300">Thời hạn:</span>
+                <span class="text-gray-700 dark:text-gray-300">{{ $t('payment.duration') }}:</span>
                 <span class="font-semibold text-gray-800 dark:text-white">
                   {{ paymentStore.selectedPackage.duration }}
                 </span>
@@ -280,9 +125,9 @@
             >
               <span v-if="paymentStore.loading" class="flex items-center justify-center">
                 <Icon icon="eos-icons:loading" class="animate-spin mr-2" />
-                Đang xử lý...
+                {{ $t('payment.deposit.loading') }}
               </span>
-              <span v-else>Nạp Tiền Ngay</span>
+              <span v-else>{{ $t('payment.deposit.proceed') }}</span>
             </button>
           </div>
         </div>
@@ -294,7 +139,7 @@
       <div class="flex items-center justify-center mb-6">
         <Icon icon="mdi:qrcode-scan" class="text-2xl text-blue-600 dark:text-blue-400 mr-3" />
         <h2 class="text-xl font-semibold text-gray-800 dark:text-white">
-          Yêu Cầu Nạp Tiền Của Bạn
+          {{ $t('payment.bankInfo.title') }}
         </h2>
       </div>
       
@@ -327,11 +172,11 @@
               </div>
             </div>
             <div v-else class="text-gray-500 dark:text-gray-400">
-              QR Code đang được tạo...
+              {{ $t('payment.qr.creating') }}
             </div>
           </div>
           <p class="text-sm text-gray-600 dark:text-gray-400">
-            Quét mã QR để thanh toán
+            {{ $t('payment.qr.scan') }}
           </p>
         </div>
         
@@ -339,17 +184,17 @@
         <div>
           <div v-if="paymentStore.currentPayment" class="space-y-3">
             <div class="bg-gray-50 dark:bg-gray-700 p-3 rounded">
-              <span class="text-gray-700 dark:text-gray-300 text-sm">Mã tham chiếu:</span>
+              <span class="text-gray-700 dark:text-gray-300 text-sm">{{ $t('payment.referenceCode') }}:</span>
               <div class="font-mono font-bold text-primary text-lg">{{ paymentStore.currentPayment.referenceCode }}</div>
             </div>
             
             <div class="flex justify-between items-center">
-              <span class="text-gray-700 dark:text-gray-300">Số tiền:</span>
+              <span class="text-gray-700 dark:text-gray-300">{{ $t('payment.amount') }}:</span>
               <span class="font-bold text-lg text-gray-800 dark:text-white">{{ formatCurrency(paymentStore.currentPayment.amount) }}</span>
             </div>
             
             <div class="flex justify-between items-center">
-              <span class="text-gray-700 dark:text-gray-300">Trạng thái:</span>
+              <span class="text-gray-700 dark:text-gray-300">{{ $t('payment.status') }}:</span>
               <span 
                 class="px-3 py-1 rounded-full text-sm font-semibold"
                 :class="paymentStore.getStatusClass(paymentStore.currentPayment.status)"
@@ -359,25 +204,25 @@
             </div>
             
             <div class="flex justify-between items-center">
-              <span class="text-gray-700 dark:text-gray-300">Tạo lúc:</span>
+              <span class="text-gray-700 dark:text-gray-300">{{ $t('payment.createdAt') }}:</span>
               <span class="text-sm text-gray-600 dark:text-gray-400">{{ paymentStore.formattedCreatedAt }}</span>
             </div>
             
             <div v-if="paymentStore.currentPayment.expiresAt" class="flex justify-between items-center">
-              <span class="text-gray-700 dark:text-gray-300">Hết hạn:</span>
+              <span class="text-gray-700 dark:text-gray-300">{{ $t('payment.expiresAt') }}:</span>
               <span class="text-sm text-gray-600 dark:text-gray-400">{{ paymentStore.formattedExpiresAt }}</span>
             </div>
             
             <div v-if="paymentStore.currentPayment.completedAt" class="flex justify-between items-center">
-              <span class="text-gray-700 dark:text-gray-300">Hoàn thành:</span>
+              <span class="text-gray-700 dark:text-gray-300">{{ $t('payment.completedAt') }}:</span>
               <span class="text-sm text-gray-600 dark:text-gray-400">{{ paymentStore.formattedCompletedAt }}</span>
             </div>
           </div>
           
           <div v-else class="text-center py-8">
             <Icon icon="mdi:clock-outline" class="text-6xl text-blue-300 dark:text-blue-400 mb-4" />
-            <p class="text-blue-600 dark:text-blue-300 mb-4">Sẵn sàng tạo yêu cầu nạp tiền</p>
-            <p class="text-sm text-blue-500 dark:text-blue-400">Nhấn nút "Nạp Tiền Ngay" để tạo yêu cầu thanh toán</p>
+            <p class="text-blue-600 dark:text-blue-300 mb-4">{{ $t('payment.readyToCreate') }}</p>
+            <p class="text-sm text-blue-500 dark:text-blue-400">{{ $t('payment.clickCreateButton') }}</p>
           </div>
 
           <!-- Actions -->
@@ -389,11 +234,11 @@
             >
               <span v-if="paymentStore.checkingStatus" class="flex items-center justify-center">
                 <Icon icon="eos-icons:loading" class="animate-spin mr-2" />
-                Đang kiểm tra...
+                {{ $t('payment.checkingStatus') }}
               </span>
               <span v-else>
                 <Icon icon="mdi:refresh" class="mr-2" />
-                Kiểm tra trạng thái
+                {{ $t('payment.checkStatus') }}
               </span>
             </button>
             
@@ -403,7 +248,7 @@
               class="flex-1 bg-green-500 text-white py-2 px-4 rounded hover:bg-green-600 disabled:opacity-50"
             >
               <Icon icon="mdi:play-circle" class="mr-2" />
-              Giả lập thanh toán
+              {{ $t('payment.simulatePayment') }}
             </button>
             
             <button
@@ -411,7 +256,7 @@
               class="flex-1 bg-gray-500 text-white py-2 px-4 rounded hover:bg-gray-600"
             >
               <Icon icon="mdi:content-copy" class="mr-2" />
-              Sao chép mã
+              {{ $t('payment.copyCode') }}
             </button>
           </div>
         </div>
@@ -423,20 +268,20 @@
       <div class="flex items-center justify-center mb-6">
         <Icon icon="mdi:gift" class="text-2xl text-green-600 dark:text-green-400 mr-3" />
         <h3 class="text-lg font-semibold text-gray-800 dark:text-white">
-          Xác Nhận Gói Miễn Phí
+          {{ $t('payment.free.confirmTitle') }}
         </h3>
       </div>
       
       <div class="text-center">
         <p class="text-gray-600 dark:text-gray-300 mb-6">
-          Bạn đã chọn gói miễn phí. Gói này sẽ được kích hoạt ngay lập tức.
+          {{ $t('payment.free.confirmDescription') }}
         </p>
         
         <button
           @click="paymentStore.activateFreePackage()"
           class="bg-green-600 text-white py-3 px-6 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 text-lg font-semibold"
         >
-          Kích hoạt gói miễn phí
+          {{ $t('payment.free.activateButton') }}
         </button>
       </div>
     </div>
@@ -446,47 +291,47 @@
       <div class="flex items-center justify-center mb-6">
         <Icon icon="mdi:bank" class="text-2xl text-blue-600 dark:text-blue-400 mr-3" />
         <h2 class="text-xl font-semibold text-gray-800 dark:text-white">
-          Thông Tin Thanh Toán
+          {{ $t('payment.bankInfo.title') }}
         </h2>
       </div>
       
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div>
-          <h3 class="font-semibold text-white dark:text-white mb-4">Thông tin chuyển khoản</h3>
+          <h3 class="font-semibold text-white dark:text-white mb-4">{{ $t('payment.bankInfo.transferInfo') }}</h3>
           <div class="space-y-3">
             <div class="flex justify-between">
-              <span class="text-white dark:text-white">Ngân hàng:</span>
+              <span class="text-white dark:text-white">{{ $t('payment.bankInfo.bankName') }}:</span>
               <span class="font-semibold text-white dark:text-white">{{ paymentStore.bankInfo.bankName }}</span>
             </div>
             <div class="flex justify-between">
-              <span class="text-white dark:text-white">Số tài khoản:</span>
+              <span class="text-white dark:text-white">{{ $t('payment.bankInfo.accountNumber') }}:</span>
               <span class="font-mono font-semibold text-white dark:text-white">{{ paymentStore.bankInfo.accountNumber }}</span>
             </div>
             <div class="flex justify-between">
-              <span class="text-white dark:text-white">Chủ tài khoản:</span>
+              <span class="text-white dark:text-white">{{ $t('payment.bankInfo.accountName') }}:</span>
               <span class="font-semibold text-white dark:text-white">{{ paymentStore.bankInfo.accountName }}</span>
             </div>
           </div>
         </div>
         
         <div>
-          <h3 class="font-semibold text-white dark:text-white mb-4">Hướng dẫn thanh toán</h3>
+          <h3 class="font-semibold text-white dark:text-white mb-4">{{ $t('payment.bankInfo.instructions') }}</h3>
           <ul class="space-y-2 text-sm text-white dark:text-white">
             <li class="flex items-start">
               <Icon icon="mdi:numeric-1-circle" class="text-blue-500 dark:text-blue-400 mr-2 mt-0.5" />
-              <span>Chuyển khoản theo thông tin bên trên</span>
+              <span>{{ $t('payment.bankInfo.step1') }}</span>
             </li>
             <li class="flex items-start">
               <Icon icon="mdi:numeric-2-circle" class="text-blue-500 dark:text-blue-400 mr-2 mt-0.5" />
-              <span>Nội dung chuyển khoản: <strong v-if="paymentStore.currentPayment" class="text-white dark:text-white">{{ paymentStore.currentPayment.referenceCode }}</strong><span v-else class="text-white dark:text-white">[sẽ được tạo sau khi nạp tiền]</span></span>
+              <span>{{ $t('payment.bankInfo.step2') }}<strong v-if="paymentStore.currentPayment" class="text-white dark:text-white">{{ paymentStore.currentPayment.referenceCode }}</strong><span v-else class="text-white dark:text-white">[{{ $t('payment.referencePlaceholder') }}]</span></span>
             </li>
             <li class="flex items-start">
               <Icon icon="mdi:numeric-3-circle" class="text-blue-500 dark:text-blue-400 mr-2 mt-0.5" />
-              <span>Thanh toán sẽ được tự động xác nhận</span>
+              <span>{{ $t('payment.bankInfo.step3') }}</span>
             </li>
             <li class="flex items-start">
               <Icon icon="mdi:numeric-4-circle" class="text-blue-500 dark:text-blue-400 mr-2 mt-0.5" />
-              <span>Gói dịch vụ sẽ được kích hoạt ngay sau khi thanh toán thành công</span>
+              <span>{{ $t('payment.bankInfo.note') }}{{ $t('payment.activation.success') }}</span>
             </li>
           </ul>
         </div>
@@ -499,6 +344,8 @@
 import { Icon } from '@iconify/vue'
 import { usePaymentStore } from '@/stores/paymentStore'
 import QRCode from 'qrcode'
+import { useI18n } from 'vue-i18n'
+import { watch } from 'vue'
 
 export default {
   name: 'PaymentDeposit',
@@ -529,6 +376,14 @@ export default {
   },
   setup() {
     const paymentStore = usePaymentStore()
+    const { t, locale } = useI18n()
+
+    // Watch for language changes and reload packages
+    watch(locale, async (newLocale) => {
+      console.log('🌐 Language changed to:', newLocale)
+      console.log('🌐 Current locale value:', locale.value)
+      await paymentStore.loadPackages()
+    })
 
     // Format currency function
     const formatCurrency = (amount) => {
@@ -538,9 +393,128 @@ export default {
       }).format(amount)
     }
 
+    // Helper function to get price color class
+    const getPriceColorClass = (packageId) => {
+      const colorClasses = {
+        free: 'text-green-600 dark:text-green-400',
+        pro: 'text-blue-600 dark:text-blue-300',
+        business: 'text-purple-600 dark:text-purple-300',
+        enterprise: 'text-yellow-600 dark:text-yellow-300'
+      }
+      return colorClasses[packageId] || 'text-gray-600 dark:text-gray-400'
+    }
+
+    // Helper function to get package features with translation
+    const getPackageFeatures = (pkg) => {
+      const features = []
+      const isVietnamese = locale.value === 'vi'
+      
+      // Message limit
+      if (pkg.messageLimit && pkg.messageLimit > 0) {
+        if (pkg.messageLimit >= 2147483647) {
+          const unlimitedText = isVietnamese ? 'Không giới hạn' : 'Unlimited'
+          const messagesText = isVietnamese ? 'tháng' : 'month'
+          features.push(`${unlimitedText} ${messagesText}`)
+        } else {
+          const messagesText = isVietnamese ? 'tháng' : 'month'
+          features.push(`${pkg.messageLimit.toLocaleString()} ${messagesText}`)
+        }
+      }
+      
+      // Chatbot limit
+      if (pkg.chatbotLimit && pkg.chatbotLimit > 0) {
+        if (pkg.chatbotLimit >= 2147483647) {
+          const unlimitedText = isVietnamese ? 'Không giới hạn' : 'Unlimited'
+          const chatbotsText = isVietnamese ? 'chatbot' : 'chatbots'
+          features.push(`${unlimitedText} ${chatbotsText}`)
+        } else {
+          const chatbotsText = isVietnamese ? 'chatbot' : 'chatbots'
+          features.push(`${pkg.chatbotLimit} ${chatbotsText}`)
+        }
+      }
+      
+      // Support features
+      if (pkg.hasPrioritySupport) {
+        features.push(isVietnamese ? 'Hỗ trợ ưu tiên' : 'Priority Support')
+      }
+      
+      if (pkg.hasDedicatedSupport) {
+        features.push(isVietnamese ? 'Hỗ trợ 24/7' : '24/7 Support')
+      }
+      
+      if (pkg.hasAnalytics) {
+        features.push(isVietnamese ? 'Phân tích cơ bản' : 'Basic Analytics')
+      }
+      
+      if (pkg.hasAdvancedAnalytics) {
+        features.push(isVietnamese ? 'Phân tích nâng cao' : 'Advanced Analytics')
+      }
+      
+      if (pkg.hasCustomIntegrations) {
+        features.push(isVietnamese ? 'Tích hợp tùy chỉnh' : 'Custom integrations')
+      }
+      
+      if (pkg.hasCustomFeatures) {
+        features.push(isVietnamese ? 'Tính năng tùy chỉnh' : 'Custom features')
+      }
+      
+      if (pkg.hasSlaGuarantee) {
+        features.push(isVietnamese ? 'Đảm bảo SLA' : 'SLA guarantee')
+      }
+      
+      // Add basic support for free packages
+      if (pkg.price === 0) {
+        features.push(isVietnamese ? 'Hỗ trợ cơ bản' : 'Basic Support')
+      }
+      
+      return features
+    }
+    
+    // Helper functions for localization
+    const getLocalizedPackageName = (pkg) => {
+      const isVietnamese = locale.value === 'vi'
+      console.log('🔍 getLocalizedPackageName - locale:', locale.value, 'isVietnamese:', isVietnamese)
+      const nameMap = {
+        free: isVietnamese ? 'Miễn phí' : 'Free',
+        pro: 'Pro',
+        business: 'Business', 
+        enterprise: 'Enterprise'
+      }
+      return nameMap[pkg.packageId] || pkg.name
+    }
+    
+    const getLocalizedDescription = (pkg) => {
+      const isVietnamese = locale.value === 'vi'
+      const descMap = {
+        free: isVietnamese ? 'Gói dùng thử' : 'Trial package',
+        pro: isVietnamese ? 'Gói chuyên nghiệp' : 'Professional package',
+        business: isVietnamese ? 'Gói doanh nghiệp' : 'Business package',
+        enterprise: isVietnamese ? 'Gói doanh nghiệp lớn' : 'Enterprise package'
+      }
+      return descMap[pkg.packageId] || pkg.description
+    }
+    
+    const getLocalizedDuration = (pkg) => {
+      const isVietnamese = locale.value === 'vi'
+      if (pkg.duration === '1 month') {
+        return isVietnamese ? '1 tháng' : '1 month'
+      }
+      return pkg.duration
+    }
+    
+    const getLocalizedPrice = (pkg) => {
+      const isVietnamese = locale.value === 'vi'
+      return isVietnamese ? 'Miễn phí' : 'Free'
+    }
+
     // Load data on mount
-    paymentStore.loadBankInfo()
-    paymentStore.loadCurrentPackage()
+    const loadAllData = async () => {
+      await paymentStore.loadPackages()
+      await paymentStore.loadBankInfo()
+      await paymentStore.loadCurrentPackage()
+    }
+    
+    loadAllData()
 
     // Debug: Log current package
     console.log('Payment store current package:', paymentStore.currentPackage)
@@ -548,7 +522,13 @@ export default {
 
     return {
       paymentStore,
-      formatCurrency
+      formatCurrency,
+      getPriceColorClass,
+      getPackageFeatures,
+      getLocalizedPackageName,
+      getLocalizedDescription,
+      getLocalizedDuration,
+      getLocalizedPrice
     }
   }
 }

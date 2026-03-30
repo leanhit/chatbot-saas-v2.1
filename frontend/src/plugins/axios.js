@@ -35,7 +35,12 @@ instance.interceptors.request.use(
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
         }
-        // 2. XỬ LÝ TENANT KEY VỚI BỘ LỌC
+        
+        // 2. Add Accept-Language header
+        const language = localStorage.getItem('language') || 'vi';
+        config.headers['Accept-Language'] = language;
+        
+        // 3. XỬ LÝ TENANT KEY VỚI BỘ LỌC
         const activeTenantKey = localStorage.getItem(ACTIVE_TENANT_ID);
         
         // Force override if wrong-tenant-key is detected

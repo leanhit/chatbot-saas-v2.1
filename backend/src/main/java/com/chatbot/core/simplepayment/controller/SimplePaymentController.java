@@ -189,6 +189,26 @@ public class SimplePaymentController {
     }
 
     /**
+     * Public health check (no authentication required)
+     */
+    @GetMapping("/public/health")
+    @Operation(
+        summary = "Public health check",
+        description = "Check if simple payment service is healthy (no auth required)"
+    )
+    public ResponseEntity<Map<String, Object>> publicHealthCheck() {
+        
+        Map<String, Object> health = Map.of(
+            "status", "healthy",
+            "service", "simple-payment",
+            "timestamp", java.time.LocalDateTime.now(),
+            "packages", "loaded"
+        );
+
+        return ResponseEntity.ok(health);
+    }
+
+    /**
      * Health check
      */
     @GetMapping("/health")

@@ -26,4 +26,9 @@ public class TenantResponse {
     private String logoUrl;
     private String contactEmail;
     private String contactPhone;
+    
+    // Package fields
+    private String currentPackageId;
+    private String currentPackageName;
+    private Instant packageActivatedAt;
 }

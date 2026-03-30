@@ -713,6 +713,101 @@
         }
       }
     },
+    "payment": {
+      "subtitle": "Nâng cao trải nghiệm chatbot của bạn",
+      "current": "ĐANG DÙNG",
+      "popular": "POPULAR",
+      "select": "Chọn Gói",
+      "selected": "Đã Chọn",
+      "upgrade": "Nâng Cấp",
+      "selectPackage": "Gói dịch vụ",
+      "packageDescription": "Gói dịch vụ",
+      "duration": "thời hạn",
+      "custom": "Tùy chỉnh",
+      "referencePlaceholder": "sẽ được tạo sau khi nạp tiền",
+      "title": "Nạp Tiền Theo Gói",
+      "qr": {
+        "creating": "QR Code đang được tạo...",
+        "scan": "Quét mã QR để thanh toán"
+      },
+      "referenceCode": "Mã tham chiếu",
+      "status": "Trạng thái",
+      "createdAt": "Tạo lúc",
+      "expiresAt": "Hết hạn",
+      "completedAt": "Hoàn thành",
+      "readyToCreate": "Sẵn sàng tạo yêu cầu nạp tiền",
+      "clickCreateButton": "Nhấn nút \"Nạp Tiền Ngay\" để tạo yêu cầu thanh toán",
+      "checkingStatus": "Đang kiểm tra...",
+      "checkStatus": "Kiểm tra trạng thái",
+      "simulatePayment": "Giả lập thanh toán",
+      "copyCode": "Sao chép mã",
+      "free": {
+        "confirmTitle": "Xác Nhận Gói Miễn Phí",
+        "confirmDescription": "Bạn đã chọn gói miễn phí. Gói này sẽ được kích hoạt ngay lập tức.",
+        "activateButton": "Kích hoạt gói miễn phí"
+      },
+      "features": {
+        "messages": "tin nhắn/tháng",
+        "chatbots": "chatbots",
+        "support": "Hỗ trợ",
+        "analytics": "Phân tích",
+        "integrations": "Tích hợp tùy chỉnh",
+        "customFeatures": "Tính năng tùy chỉnh",
+        "sla": "Cam kết SLA",
+        "basic": "Hỗ trợ cơ bản",
+        "priority": "Hỗ trợ ưu tiên",
+        "dedicated": "Hỗ trợ 24/7",
+        "basicAnalytics": "Phân tích cơ bản",
+        "advancedAnalytics": "Phân tích nâng cao",
+        "unlimited": "Không giới hạn"
+      },
+      "deposit": {
+        "title": "Nạp Tiền",
+        "amount": "Số Tiền",
+        "description": "Mô Tả",
+        "customAmount": "Số Tiền Tùy Chọn",
+        "customAmountPlaceholder": "Nhập số tiền",
+        "customDescription": "Mô Tả Tùy Chọn",
+        "customDescriptionPlaceholder": "Nhập mô tả",
+        "selectPackage": "Chọn Gói Dịch Vụ",
+        "proceed": "Tiếp Tục",
+        "cancel": "Hủy",
+        "loading": "Đang xử lý...",
+        "error": "Lỗi thanh toán",
+        "success": "Thanh toán thành công"
+      },
+      "bankInfo": {
+        "title": "Thông Tin Thanh Toán",
+        "transferInfo": "Thông tin chuyển khoản",
+        "bankName": "Ngân hàng",
+        "accountNumber": "Số tài khoản",
+        "accountName": "Chủ tài khoản",
+        "instructions": "Hướng dẫn thanh toán",
+        "step1": "Chuyển khoản theo thông tin bên trên",
+        "step2": "Nội dung chuyển khoản: ",
+        "step3": "Tải lên xác nhận thanh toán",
+        "note": "Lưu ý: ",
+        "qrCode": "Mã QR",
+        "amount": "Số tiền",
+        "expired": "Đã hết hạn"
+      },
+      "activation": {
+        "success": "Gói dịch vụ sẽ được kích hoạt ngay sau khi thanh toán thành công"
+      },
+      "status": {
+        "pending": "Chờ thanh toán",
+        "completed": "Đã thanh toán",
+        "expired": "Đã hết hạn",
+        "cancelled": "Đã hủy",
+        "failed": "Thất bại"
+      },
+      "actions": {
+        "simulate": "Giả Lập Thanh Toán",
+        "checkStatus": "Kiểm Tra Trạng Thái",
+        "viewHistory": "Xem Lịch Sử",
+        "downloadQR": "Tải QR Code"
+      }
+    },
     "support": {
       "title": "Liên hệ Hỗ trợ",
       "email": "Hỗ trợ Email",

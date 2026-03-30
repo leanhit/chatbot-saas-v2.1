@@ -806,6 +806,101 @@
         }
       }
     },
+    "payment": {
+      "subtitle": "Enhance your chatbot experience",
+      "current": "CURRENT",
+      "popular": "POPULAR",
+      "select": "Select Plan",
+      "selected": "Selected",
+      "upgrade": "Upgrade",
+      "selectPackage": "Service Plan",
+      "packageDescription": "Service Plan",
+      "duration": "duration",
+      "custom": "Custom",
+      "referencePlaceholder": "will be created after deposit",
+      "title": "Package-Based Deposit",
+      "qr": {
+        "creating": "QR Code is being created...",
+        "scan": "Scan QR code to pay"
+      },
+      "referenceCode": "Reference Code",
+      "status": "Status",
+      "createdAt": "Created At",
+      "expiresAt": "Expires At",
+      "completedAt": "Completed At",
+      "readyToCreate": "Ready to create deposit request",
+      "clickCreateButton": "Click \"Deposit Now\" button to create payment request",
+      "checkingStatus": "Checking...",
+      "checkStatus": "Check Status",
+      "simulatePayment": "Simulate Payment",
+      "copyCode": "Copy Code",
+      "free": {
+        "confirmTitle": "Confirm Free Package",
+        "confirmDescription": "You have selected free package. This package will be activated immediately.",
+        "activateButton": "Activate Free Package"
+      },
+      "features": {
+        "messages": "messages/month",
+        "chatbots": "chatbots",
+        "support": "Support",
+        "analytics": "Analytics",
+        "integrations": "Custom integrations",
+        "customFeatures": "Custom features",
+        "sla": "SLA guarantee",
+        "basic": "Basic Support",
+        "priority": "Priority Support",
+        "dedicated": "24/7 Support",
+        "basicAnalytics": "Basic Analytics",
+        "advancedAnalytics": "Advanced Analytics",
+        "unlimited": "Unlimited"
+      },
+      "deposit": {
+        "title": "Deposit Funds",
+        "amount": "Amount",
+        "description": "Description",
+        "customAmount": "Custom Amount",
+        "customAmountPlaceholder": "Enter amount",
+        "customDescription": "Custom Description",
+        "customDescriptionPlaceholder": "Enter description",
+        "selectPackage": "Select Service Plan",
+        "proceed": "Proceed",
+        "cancel": "Cancel",
+        "loading": "Processing...",
+        "error": "Payment Error",
+        "success": "Payment Successful"
+      },
+      "bankInfo": {
+        "title": "Payment Information",
+        "transferInfo": "Transfer Information",
+        "bankName": "Bank",
+        "accountNumber": "Account Number",
+        "accountName": "Account Name",
+        "instructions": "Payment Instructions",
+        "step1": "Transfer using the information above",
+        "step2": "Reference: ",
+        "step3": "Upload payment confirmation",
+        "note": "Note: ",
+        "qrCode": "QR Code",
+        "amount": "Amount",
+        "expired": "Expired"
+      },
+      "activation": {
+        "success": "Service package will be activated immediately after successful payment"
+      },
+      "status": {
+        "pending": "Pending Payment",
+        "completed": "Completed",
+        "expired": "Expired",
+        "cancelled": "Cancelled",
+        "failed": "Failed"
+      },
+      "actions": {
+        "simulate": "Simulate Payment",
+        "checkStatus": "Check Status",
+        "viewHistory": "View History",
+        "downloadQR": "Download QR"
+      }
+    },
     "support": {
       "title": "Contact Support",
       "email": "Email Support",

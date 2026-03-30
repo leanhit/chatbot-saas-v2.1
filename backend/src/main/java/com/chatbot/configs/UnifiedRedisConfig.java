@@ -3,6 +3,7 @@ package com.chatbot.configs;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -11,37 +12,48 @@ import org.springframework.data.redis.listener.RedisMessageListenerContainer;
 import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
+/**
+ * UNIFIED REDIS CONFIGURATION
+ * Single source of truth for all Redis configurations across the application
+ */
 @Configuration
-public class RedisConfig {
+public class UnifiedRedisConfig {
 
-    // Lấy giá trị từ application.properties
     @Value("${spring.data.redis.host}")
     private String redisHost;
 
     @Value("${spring.data.redis.port}")
     private int redisPort;
 
+    @Value("${spring.data.redis.timeout:2000ms}")
+    private String redisTimeout;
+
     /**
-     * Định nghĩa RedisConnectionFactory rõ ràng là Standalone (Độc lập).
-     * Điều này ngăn chặn lỗi READONLY do nhầm lẫn Cluster/Replica.
+     * Primary Redis Connection Factory
+     * Used by all Redis templates and containers
      */
     @Bean
+    @Primary
     public LettuceConnectionFactory redisConnectionFactory() {
         RedisStandaloneConfiguration config = new RedisStandaloneConfiguration(redisHost, redisPort);
         return new LettuceConnectionFactory(config);
     }
-    
-    // Cấu hình RedisTemplate cho String keys và Object values
+
+    /**
+     * Standard RedisTemplate for Object storage
+     * Used by: SimplePayment, Config, Message services
+     */
     @Bean
+    @Primary
     public RedisTemplate<String, Object> redisTemplate(LettuceConnectionFactory connectionFactory) {
         RedisTemplate<String, Object> template = new RedisTemplate<>();
         template.setConnectionFactory(connectionFactory);
         
-        // Sử dụng StringSerializer cho Key
+        // String serialization for keys
         template.setKeySerializer(new StringRedisSerializer());
         template.setHashKeySerializer(new StringRedisSerializer());
         
-        // Sử dụng JSON serializer cho Value
+        // JSON serialization for values
         template.setValueSerializer(new GenericJackson2JsonRedisSerializer());
         template.setHashValueSerializer(new GenericJackson2JsonRedisSerializer());
         
@@ -49,6 +61,10 @@ public class RedisConfig {
         return template;
     }
 
+    /**
+     * StringRedisTemplate for simple string operations
+     * Used by: Rate limiting, Token blacklist, Simple operations
+     */
     @Bean
     public StringRedisTemplate stringRedisTemplate(LettuceConnectionFactory connectionFactory) {
         StringRedisTemplate template = new StringRedisTemplate();
@@ -56,10 +72,33 @@ public class RedisConfig {
         return template;
     }
 
+    /**
+     * Redis Message Listener Container for Pub/Sub
+     * Used by: SimplePayment events, Takeover notifications
+     */
     @Bean
     public RedisMessageListenerContainer redisMessageListenerContainer(LettuceConnectionFactory connectionFactory) {
         RedisMessageListenerContainer container = new RedisMessageListenerContainer();
         container.setConnectionFactory(connectionFactory);
         return container;
+    }
+
+    /**
+     * Dedicated RedisTemplate for caching (if needed)
+     * Optional: Separate template for cache-specific serialization
+     */
+    @Bean(name = "cacheRedisTemplate")
+    public RedisTemplate<String, Object> cacheRedisTemplate(LettuceConnectionFactory connectionFactory) {
+        RedisTemplate<String, Object> template = new RedisTemplate<>();
+        template.setConnectionFactory(connectionFactory);
+        
+        // Optimized serialization for caching
+        template.setKeySerializer(new StringRedisSerializer());
+        template.setHashKeySerializer(new StringRedisSerializer());
+        template.setValueSerializer(new GenericJackson2JsonRedisSerializer());
+        template.setHashValueSerializer(new GenericJackson2JsonRedisSerializer());
+        
+        template.afterPropertiesSet();
+        return template;
     }
 }

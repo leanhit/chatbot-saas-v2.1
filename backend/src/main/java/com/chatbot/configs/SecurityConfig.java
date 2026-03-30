@@ -124,6 +124,9 @@ public class SecurityConfig {
                 
                 // ================= SIMPLE PAYMENT APIs (PUBLIC) =================
                 .requestMatchers("/api/public/simple-payment/**").permitAll()
+                .requestMatchers("/api/simple-payment/public/**").permitAll()
+                .requestMatchers("/api/simple-payment/bank-info").permitAll()
+                .requestMatchers("/api/simple-payment/health").permitAll()
                 
                 // ================= SWAGGER UI =================
                 .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
