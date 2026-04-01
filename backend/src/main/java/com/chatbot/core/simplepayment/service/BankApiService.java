@@ -2,11 +2,15 @@ package com.chatbot.core.simplepayment.service;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -17,6 +21,14 @@ public class BankApiService {
 
     // Mock database for demo - in real implementation, call actual bank API
     private final Map<String, BankTransaction> mockTransactionDatabase = new ConcurrentHashMap<>();
+    
+    @Autowired
+    private RedisTemplate<String, Object> redisTemplate;
+    
+    @Autowired
+    private RedisPaymentService redisPaymentService;
+    
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     /**
      * Find transaction by reference code
@@ -156,7 +168,30 @@ public class BankApiService {
         
         mockTransactionDatabase.put(referenceCode, transaction);
         
-        log.info("✅ Simulated transaction created: {}", transactionId);
+        log.info("✅ Simulated transaction created: {} for reference: {}", transactionId, referenceCode);
+        
+        // Publish Redis event for PaymentEventListener to handle
+        try {
+            // Create PaymentEvent with proper structure using RedisPaymentService
+            var event = redisPaymentService.createPaymentEvent(
+                referenceCode, 
+                1L, // userId
+                1L, // tenantId  
+                amount.toString(),
+                "VND",
+                "Simulated bank transaction"
+            );
+            event.setType("PAYMENT_SIMULATED");
+            event.setBankTransactionId(transactionId);
+            event.setUpdatedAt(LocalDateTime.now());
+            
+            // Use RedisPaymentService to publish
+            redisPaymentService.publishPaymentEvent(event);
+            
+            log.info("✅ Published simulated payment event: {}", referenceCode);
+        } catch (Exception e) {
+            log.error("❌ Failed to publish simulated payment event: {}", e.getMessage(), e);
+        }
     }
 
     private BigDecimal getMockAmount(String referenceCode) {

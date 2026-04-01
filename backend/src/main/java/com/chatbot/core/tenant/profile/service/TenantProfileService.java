@@ -13,6 +13,7 @@ import com.chatbot.spokes.minio.image.category.model.Category;
 import com.chatbot.spokes.minio.image.category.dto.CategoryRequestDTO;
 import com.chatbot.spokes.minio.image.category.dto.CategoryResponseDTO;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.security.core.context.SecurityContextHolder;
 
@@ -31,6 +32,7 @@ import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class TenantProfileService {
 
     private final TenantProfileRepository profileRepo;
@@ -119,33 +121,48 @@ public class TenantProfileService {
     @Transactional(rollbackFor = Exception.class)
     public TenantProfileResponse updateLogo(Long tenantId, MultipartFile file) {
         try {
+            log.info("🔄 [LOGO START] Starting logo update for tenantId: {}, fileName: {}, fileSize: {}", 
+                    tenantId, file.getOriginalFilename(), file.getSize());
+            
             // 1. Clear any existing tenant context to get global categories (like user avatar)
+            log.debug("🧹 [CONTEXT] Clearing tenant context for global category access");
             TenantContext.clear();
             
             // 2. Find or create GLOBAL category for tenant logos (like avatar category)
+            log.debug("📂 [CATEGORY] Finding or creating tenant-logo category");
             Category logoCategory;
             List<CategoryResponseDTO> categories = categoryService.getAllCategoriesGlobal();
+            log.debug("📂 [CATEGORY] Found {} global categories", categories.size());
+            
             Optional<Category> existingCategory = categories.stream()
                 .filter(cat -> "tenant-logo".equals(cat.getName()))
                 .findFirst()
-                .map(catDto -> categoryService.getCategoryById(catDto.getId()).orElse(null));
+                .map(catDto -> {
+                    log.debug("📂 [CATEGORY] Found existing tenant-logo category: {}", catDto.getId());
+                    return categoryService.getCategoryById(catDto.getId()).orElse(null);
+                });
 
             if (existingCategory.isEmpty()) {
                 // Create default GLOBAL category for tenant logos if not exists
+                log.info("📂 [CATEGORY] Creating new tenant-logo category");
                 CategoryRequestDTO categoryRequest = new CategoryRequestDTO();
                 categoryRequest.setName("tenant-logo");
                 categoryRequest.setDescription("Tenant logo images");
                 CategoryResponseDTO newCategoryDto = categoryService.createCategoryGlobal(categoryRequest);
                 logoCategory = categoryService.getCategoryById(newCategoryDto.getId()).orElse(null);
+                log.info("📂 [CATEGORY] Created new category with ID: {}", newCategoryDto.getId());
             } else {
                 logoCategory = existingCategory.get();
+                log.debug("📂 [CATEGORY] Using existing category: {}", logoCategory.getId());
             }
 
             if (logoCategory == null) {
+                log.error("❌ [CATEGORY] Failed to create or find tenant-logo category");
                 throw new RuntimeException("Không thể tạo hoặc tìm category cho tenant logo");
             }
 
             // 3. Upload file to MinIO using FileMetadataService
+            log.debug("📤 [UPLOAD] Preparing file upload to MinIO");
             com.chatbot.spokes.minio.image.fileMetadata.dto.FileRequestDTO fileRequest = 
                 new com.chatbot.spokes.minio.image.fileMetadata.dto.FileRequestDTO();
             fileRequest.setCategoryId(logoCategory.getId());
@@ -154,22 +171,30 @@ public class TenantProfileService {
             fileRequest.setTags(List.of("tenant", "logo"));
             fileRequest.setFiles(List.of(file));
 
+            log.debug("📤 [UPLOAD] Calling FileMetadataService.processUploadRequest");
             List<com.chatbot.spokes.minio.image.fileMetadata.dto.FileResponseDTO> uploadedFiles = 
                 fileMetadataService.processUploadRequest(fileRequest, getCurrentUserEmail());
 
             if (uploadedFiles.isEmpty()) {
+                log.error("❌ [UPLOAD] No files returned from upload service");
                 throw new RuntimeException("Không thể upload tenant logo");
             }
 
             String logoUrl = uploadedFiles.get(0).getFileUrl(); // Use direct MinIO URL like user avatar
+            log.info("✅ [UPLOAD] File uploaded successfully to: {}", logoUrl);
 
             // 4. Update tenant profile with new logo URL
+            log.debug("💾 [PROFILE] Updating tenant profile with new logo URL");
             TenantProfileRequest profileRequest = new TenantProfileRequest();
             profileRequest.setLogoUrl(logoUrl);
             
-            return upsertProfile(tenantId, profileRequest);
+            TenantProfileResponse response = upsertProfile(tenantId, profileRequest);
+            log.info("✅ [LOGO SUCCESS] Logo updated successfully for tenantId: {}, logoUrl: {}", tenantId, logoUrl);
+            
+            return response;
 
         } catch (Exception e) {
+            log.error("❌ [LOGO ERROR] Failed to update tenant logo for tenantId {}: {}", tenantId, e.getMessage(), e);
             throw new RuntimeException("Không thể cập nhật tenant logo: " + e.getMessage(), e);
         }
     }

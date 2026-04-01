@@ -5,18 +5,23 @@ import com.chatbot.core.simplepayment.dto.DepositResponse;
 import com.chatbot.core.simplepayment.dto.PaymentStatusResponse;
 import com.chatbot.core.simplepayment.model.PaymentStatus;
 import com.chatbot.core.simplepayment.model.SimplePayment;
+import com.chatbot.core.simplepayment.model.Package;
 import com.chatbot.core.simplepayment.repository.SimplePaymentRepository;
+import com.chatbot.core.simplepayment.repository.PackageRepository;
 import com.chatbot.core.user.repository.UserRepository;
 import com.chatbot.core.user.model.User;
 import com.chatbot.core.simplepayment.dto.PaymentEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -25,17 +30,43 @@ import java.util.UUID;
 public class SimplePaymentService {
 
     private final SimplePaymentRepository paymentRepository;
+    private final PackageRepository packageRepository;
     private final UserRepository userRepository;
     private final QRCodeService qrCodeService;
     private final BankApiService bankApiService;
     private final RedisPaymentService redisPaymentService;
+    private final PaymentPackageUpgradeService packageUpgradeService;
+    private final PackageValidationService packageValidationService;
 
     /**
      * Tạo yêu cầu nạp tiền mới
      */
     @Transactional
     public DepositResponse createDeposit(DepositRequest request, Long userId, Long tenantId) {
-        log.info("📱 Creating deposit request for user: {}, amount: {}", userId, request.getAmount());
+        log.info("📱 Creating deposit request for user: {}, amount: {}, targetPackage: {}", 
+                userId, request.getAmount(), request.getTargetPackageId());
+
+        // Validate package using PackageValidationService
+        PackageValidationService.PackageValidationResult validationResult = null;
+        Package targetPackage = null;
+        
+        if (request.getTargetPackageId() != null) {
+            validationResult = packageValidationService.validatePackageForPayment(
+                request.getTargetPackageId(), request.getAmount(), userId, tenantId);
+            
+            if (!validationResult.isValid()) {
+                String errorMessage = String.join("; ", validationResult.getErrors().values());
+                throw new IllegalArgumentException("Package validation failed: " + errorMessage);
+            }
+            
+            targetPackage = validationResult.getPackage();
+            
+            // Log warnings if any
+            if (!validationResult.getWarnings().isEmpty()) {
+                validationResult.getWarnings().values().forEach(warning -> 
+                    log.warn("⚠️ {}", warning));
+            }
+        }
 
         // Generate unique reference code
         String referenceCode = generateReferenceCode();
@@ -49,6 +80,7 @@ public class SimplePaymentService {
                 .referenceCode(referenceCode)
                 .status(PaymentStatus.PENDING)
                 .description(request.getDescription())
+                .targetPackageId(request.getTargetPackageId())
                 .build();
 
         SimplePayment savedPayment = paymentRepository.save(payment);
@@ -76,6 +108,21 @@ public class SimplePaymentService {
     }
 
     /**
+     * Get current deposit limits for user/tenant (using PackageValidationService)
+     */
+    @Transactional(readOnly = true)
+    public Map<String, Object> getCurrentDepositLimits(Long userId, Long tenantId) {
+        return packageValidationService.getPackageUsageStats(userId, tenantId);
+    }
+
+    /**
+     * Generate unique reference code for payment
+     */
+    private String generateReferenceCode() {
+        return "PAY" + UUID.randomUUID().toString().replace("-", "").substring(0, 12).toUpperCase();
+    }
+
+    /**
      * Kiểm tra trạng thái thanh toán
      */
     @Transactional(readOnly = true)
@@ -91,11 +138,46 @@ public class SimplePaymentService {
         response.setAmount(payment.getAmount());
         response.setCurrency(payment.getCurrency());
         response.setDescription(payment.getDescription());
+        response.setBankTransactionId(payment.getBankTransactionId());
+        response.setTargetPackageId(payment.getTargetPackageId()); // Add targetPackageId
         response.setCreatedAt(payment.getCreatedAt());
         response.setCompletedAt(payment.getCompletedAt());
-        response.setBankTransactionId(payment.getBankTransactionId());
-
+        response.setExpiresAt(payment.getExpiresAt());
+        response.setUpdatedAt(payment.getUpdatedAt());
         return response;
+    }
+
+    /**
+     * Complete payment in new transaction to avoid rollback issues
+     */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void completePaymentInNewTransaction(String referenceCode, String bankTransactionId) {
+        log.info("✅ Completing payment: {}", referenceCode);
+
+        SimplePayment payment = paymentRepository.findByReferenceCode(referenceCode)
+                .orElseThrow(() -> new RuntimeException("Payment not found: " + referenceCode));
+
+        if (payment.getStatus() != PaymentStatus.PENDING) {
+            log.warn("Payment {} is not pending: {}", referenceCode, payment.getStatus());
+            return;
+        }
+
+        // Update payment status
+        payment.setStatus(PaymentStatus.COMPLETED);
+        payment.setBankTransactionId(bankTransactionId);
+        payment.setCompletedAt(LocalDateTime.now());
+        paymentRepository.save(payment);
+
+        // Update user balance
+        updateUserBalance(payment.getUserId(), payment.getAmount());
+
+        // Publish Redis event for real-time notification
+        PaymentEvent event = redisPaymentService.createStatusUpdateEvent(
+                referenceCode, PaymentStatus.COMPLETED, bankTransactionId
+        );
+        redisPaymentService.publishPaymentEvent(event);
+
+        log.info("✅ Payment completed successfully: {}", referenceCode);
     }
 
     /**
@@ -122,6 +204,15 @@ public class SimplePaymentService {
         // Update user balance
         updateUserBalance(payment.getUserId(), payment.getAmount());
 
+        // Process automatic package upgrade
+        boolean upgradeSuccess = packageUpgradeService.processPackageUpgrade(payment);
+        
+        if (upgradeSuccess) {
+            log.info("🎁 Package upgrade processed successfully for payment: {}", referenceCode);
+        } else if (payment.getTargetPackageId() != null) {
+            log.warn("⚠️ Package upgrade failed for payment: {}, but payment completed", referenceCode);
+        }
+
         // Publish Redis event for real-time notification
         PaymentEvent event = redisPaymentService.createStatusUpdateEvent(
             referenceCode, PaymentStatus.COMPLETED, bankTransactionId
@@ -146,9 +237,12 @@ public class SimplePaymentService {
                     response.setAmount(payment.getAmount());
                     response.setCurrency(payment.getCurrency());
                     response.setDescription(payment.getDescription());
+                    response.setBankTransactionId(payment.getBankTransactionId());
+                    response.setTargetPackageId(payment.getTargetPackageId()); // Add targetPackageId
                     response.setCreatedAt(payment.getCreatedAt());
                     response.setCompletedAt(payment.getCompletedAt());
-                    response.setBankTransactionId(payment.getBankTransactionId());
+                    response.setExpiresAt(payment.getExpiresAt());
+                    response.setUpdatedAt(payment.getUpdatedAt());
                     return response;
                 })
                 .toList();
@@ -169,10 +263,12 @@ public class SimplePaymentService {
                 String bankTransactionId = bankApiService.findTransactionByReference(payment.getReferenceCode());
                 
                 if (bankTransactionId != null) {
-                    completePayment(payment.getReferenceCode(), bankTransactionId);
+                    // Use new transaction for each payment completion
+                    completePaymentInNewTransaction(payment.getReferenceCode(), bankTransactionId);
                 }
             } catch (Exception e) {
                 log.error("❌ Error checking payment {}: {}", payment.getReferenceCode(), e.getMessage());
+                // Continue with other payments - don't rollback entire transaction
             }
         }
 
@@ -202,14 +298,6 @@ public class SimplePaymentService {
         }
 
         log.info("✅ Expired {} payments", expiredPayments.size());
-    }
-
-    private String generateReferenceCode() {
-        String code;
-        do {
-            code = "NAP" + UUID.randomUUID().toString().replace("-", "").substring(0, 8).toUpperCase();
-        } while (paymentRepository.existsByReferenceCode(code));
-        return code;
     }
 
     private void updateUserBalance(Long userId, BigDecimal amount) {

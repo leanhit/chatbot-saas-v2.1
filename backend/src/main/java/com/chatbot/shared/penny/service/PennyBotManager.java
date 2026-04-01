@@ -6,7 +6,9 @@ import com.chatbot.shared.penny.model.PennyBot;
 import com.chatbot.shared.penny.model.PennyBotType;
 import com.chatbot.shared.penny.repository.PennyBotRepository;
 import com.chatbot.core.tenant.infra.TenantContext;
+import com.chatbot.core.tenant.service.PackageLimitValidationService;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.security.access.AccessDeniedException;
@@ -26,13 +28,16 @@ public class PennyBotManager {
     private final PennyBotRepository pennyBotRepository;
     private final ContextManager contextManager;
     private final AnalyticsCollector analyticsCollector;
+    private final PackageLimitValidationService limitValidationService;
     
     public PennyBotManager(PennyBotRepository pennyBotRepository,
                          ContextManager contextManager,
-                         AnalyticsCollector analyticsCollector) {
+                         AnalyticsCollector analyticsCollector,
+                         PackageLimitValidationService limitValidationService) {
         this.pennyBotRepository = pennyBotRepository;
         this.contextManager = contextManager;
         this.analyticsCollector = analyticsCollector;
+        this.limitValidationService = limitValidationService;
     }
     
     /**
@@ -48,14 +53,19 @@ public class PennyBotManager {
             throw new IllegalStateException("Tenant context not found");
         }
         
-        // 2. Check if tenant already has bot of this type
+        // 2. VALIDATE CHATBOT LIMIT FROM SIMPLE PAYMENT SYSTEM
+        log.info("🔍 Checking chatbot limit for tenant {} before creating bot", tenantId);
+        limitValidationService.validateChatbotCreation(tenantId);
+        log.info("✅ Chatbot limit validation passed for tenant {}", tenantId);
+        
+        // 3. Check if tenant already has bot of this type
         if (pennyBotRepository.existsByTenantIdAndBotTypeAndIsActiveTrue(tenantId, botType)) {
             throw new IllegalStateException(
                 "Tenant " + tenantId + " already has an active " + botType.getDisplayName() + " bot"
             );
         }
         
-        // 3. Create Penny Bot entity
+        // 4. Create Penny Bot entity
         PennyBot newBot = PennyBot.builder()
             .id(UUID.randomUUID())
             .botName(botName)
@@ -68,7 +78,7 @@ public class PennyBotManager {
             .isEnabled(true)
             .build();
         
-        // 4. Save to database
+        // 5. Save to database
         PennyBot savedBot = pennyBotRepository.save(newBot);
         
         // 5. Initialize Penny context for bot

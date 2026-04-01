@@ -139,7 +139,7 @@
                   required
                   :disabled="showEditModal"
                   class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:text-white"
-                  placeholder="VD: free, pro, business"
+                  placeholder="VD: free, 3months, 6months, 12months"
                 />
               </div>
               
@@ -152,7 +152,7 @@
                   type="text"
                   required
                   class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:text-white"
-                  placeholder="VD: Free, Pro, Business"
+                  placeholder="VD: Free, 3 Months, 6 Months, 12 Months"
                 />
               </div>
               
@@ -180,7 +180,7 @@
                   type="text"
                   required
                   class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:text-white"
-                  placeholder="VD: 1 tháng, 1 năm"
+                  placeholder="VD: 1 month, 3 months, 6 months, 12 months"
                 />
               </div>
               

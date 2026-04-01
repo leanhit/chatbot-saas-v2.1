@@ -40,9 +40,19 @@ public class AvatarStorageService {
      */
     public String uploadUserAvatar(String userId, MultipartFile file) {
         try {
+            log.info("🔄 [AVATAR] Starting user avatar upload - userId: {}, fileName: {}, fileSize: {}", 
+                    userId, file.getOriginalFilename(), file.getSize());
+            
             String bucketName = "user-avatars";
             String fileExtension = getFileExtension(file.getOriginalFilename());
             String objectName = "avatar_" + userId + "_" + UUID.randomUUID() + "." + fileExtension;
+            
+            log.info("📁 [AVATAR] Bucket: {}, ObjectName: {}, Extension: {}", bucketName, objectName, fileExtension);
+            
+            // Check file size
+            if (file.getSize() == 0) {
+                log.warn("⚠️ [AVATAR] File is empty (size: 0), but proceeding with upload");
+            }
             
             minioClient.putObject(
                 PutObjectArgs.builder()
@@ -53,10 +63,11 @@ public class AvatarStorageService {
                     .build()
             );
             
-            log.info("User avatar uploaded successfully: userId={}, objectName={}", userId, objectName);
-            return getFileUrl(bucketName, objectName);
+            String fileUrl = getFileUrl(bucketName, objectName);
+            log.info("✅ [AVATAR] User avatar uploaded successfully: userId={}, objectName={}, url={}", userId, objectName, fileUrl);
+            return fileUrl;
         } catch (Exception e) {
-            log.error("Error uploading user avatar to MinIO: userId={}", userId, e);
+            log.error("❌ [AVATAR] Error uploading user avatar to MinIO: userId={}, fileSize={}", userId, file.getSize(), e);
             throw new RuntimeException("Failed to upload user avatar", e);
         }
     }
@@ -66,9 +77,19 @@ public class AvatarStorageService {
      */
     public String uploadTenantLogo(String tenantId, MultipartFile file) {
         try {
+            log.info("🔄 [TENANT LOGO] Starting tenant logo upload - tenantId: {}, fileName: {}, fileSize: {}", 
+                    tenantId, file.getOriginalFilename(), file.getSize());
+            
             String bucketName = "tenant-logos";
             String fileExtension = getFileExtension(file.getOriginalFilename());
             String objectName = "logo_" + tenantId + "_" + UUID.randomUUID() + "." + fileExtension;
+            
+            log.info("📁 [TENANT LOGO] Bucket: {}, ObjectName: {}, Extension: {}", bucketName, objectName, fileExtension);
+            
+            // Check file size
+            if (file.getSize() == 0) {
+                log.warn("⚠️ [TENANT LOGO] File is empty (size: 0), but proceeding with upload");
+            }
             
             minioClient.putObject(
                 PutObjectArgs.builder()
@@ -79,10 +100,11 @@ public class AvatarStorageService {
                     .build()
             );
             
-            log.info("Tenant logo uploaded successfully: tenantId={}, objectName={}", tenantId, objectName);
-            return getFileUrl(bucketName, objectName);
+            String fileUrl = getFileUrl(bucketName, objectName);
+            log.info("✅ [TENANT LOGO] Tenant logo uploaded successfully: tenantId={}, objectName={}, url={}", tenantId, objectName, fileUrl);
+            return fileUrl;
         } catch (Exception e) {
-            log.error("Error uploading tenant logo to MinIO: tenantId={}", tenantId, e);
+            log.error("❌ [TENANT LOGO] Error uploading tenant logo to MinIO: tenantId={}, fileSize={}", tenantId, file.getSize(), e);
             throw new RuntimeException("Failed to upload tenant logo", e);
         }
     }

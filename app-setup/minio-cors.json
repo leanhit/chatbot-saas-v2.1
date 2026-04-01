@@ -1,0 +1,50 @@
+{
+  "cors": [
+    {
+      "AllowedOrigins": [
+        "http://localhost:3000",
+        "http://localhost:3001", 
+        "http://localhost:3002",
+        "http://localhost:3003",
+        "http://localhost:8080",
+        "http://127.0.0.1:3000",
+        "http://127.0.0.1:3001",
+        "http://127.0.0.1:3002",
+        "http://127.0.0.1:3003",
+        "http://127.0.0.1:8080"
+      ],
+      "AllowedMethods": [
+        "GET",
+        "POST",
+        "PUT",
+        "DELETE",
+        "HEAD",
+        "OPTIONS"
+      ],
+      "AllowedHeaders": [
+        "Authorization",
+        "Content-Type",
+        "X-Tenant-Key",
+        "Accept",
+        "Accept-Language",
+        "Connection",
+        "Referer",
+        "Sec-Fetch-Dest",
+        "Sec-Fetch-Mode",
+        "Sec-Fetch-Site",
+        "User-Agent",
+        "sec-ch-ua",
+        "sec-ch-ua-mobile",
+        "sec-ch-ua-platform"
+      ],
+      "ExposeHeaders": [
+        "ETag",
+        "Last-Modified",
+        "Content-Length",
+        "Content-Type"
+      ],
+      "MaxAgeSeconds": 86400,
+      "AllowCredentials": true
+    }
+  ]
+}

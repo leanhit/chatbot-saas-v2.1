@@ -16,6 +16,7 @@ import com.chatbot.shared.penny.dto.PennyBotResponse;
 import com.chatbot.shared.exceptions.ResourceNotFoundException;
 import com.chatbot.shared.constants.CacheConstants;
 import com.chatbot.core.tenant.infra.TenantContext;
+import com.chatbot.core.tenant.service.PackageLimitValidationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.Cacheable;
@@ -40,6 +41,7 @@ public class PennyBotService {
     private final TenantRepository tenantRepository;
     private final UserRepository userRepository;
     private final TenantMemberRepository tenantMemberRepository;
+    private final PackageLimitValidationService limitValidationService;
 
     /**
      * Convert tenantId to tenantKey using database lookup with caching
@@ -89,20 +91,40 @@ public class PennyBotService {
         
         log.info("Creating Penny bot: {}", request.getBotName());
 
+        // Get tenant ID for validation
+        log.info("🔄 [CONVERT] Converting tenantKey to tenantId: {}", request.getTenantKey());
+        Long tenantId = convertTenantKeyToTenantId(request.getTenantKey());
+        log.info("✅ [CONVERT] Converted tenantKey {} to tenantId: {}", request.getTenantKey(), tenantId);
+        
+        // ✅ VALIDATE CHATBOT LIMIT FROM SIMPLE PAYMENT SYSTEM
+        log.info("🔍 [VALIDATION] Starting chatbot limit validation for tenant {} before creating Penny bot", tenantId);
+        try {
+            limitValidationService.validateChatbotCreation(tenantId);
+            log.info("✅ [VALIDATION SUCCESS] Chatbot limit validation passed for tenant {} (PennyBot creation)", tenantId);
+        } catch (Exception e) {
+            log.error("❌ [VALIDATION FAILED] Chatbot limit validation failed for tenant {}: {}", tenantId, e.getMessage());
+            throw e;  // Re-throw the exception
+        }
+
         // Check if bot name already exists for tenant (simplified check)
-        List<PennyBot> existingBots = pennyBotRepository.findByTenantIdAndIsActiveTrue(convertTenantKeyToTenantId(request.getTenantKey()));
+        log.info("🔍 [NAME CHECK] Checking if bot name '{}' already exists for tenant: {}", request.getBotName(), tenantId);
+        List<PennyBot> existingBots = pennyBotRepository.findByTenantIdAndIsActiveTrue(tenantId);
         boolean nameExists = existingBots.stream()
                 .anyMatch(bot -> bot.getBotName().equals(request.getBotName()));
         
         if (nameExists) {
+            log.error("❌ [NAME EXISTS] Bot name '{}' already exists for tenant: {}", request.getBotName(), tenantId);
             throw new IllegalStateException("Bot with name '" + request.getBotName() + "' already exists for tenant");
         }
+        log.info("✅ [NAME OK] Bot name '{}' is available for tenant: {}", request.getBotName(), tenantId);
+
+        log.info("🏗️ [CREATE] Starting Penny bot creation process for bot: {}", request.getBotName());
 
         PennyBot pennyBot = PennyBot.builder()
                 .id(UUID.randomUUID())
                 .botName(request.getBotName())
                 .botType(request.getBotType())
-                .tenantId(convertTenantKeyToTenantId(request.getTenantKey()))
+                .tenantId(tenantId)
                 .ownerId(request.getOwnerId())
                 .pennyBotId(request.getPennyBotId())
                 .description(request.getDescription())
@@ -110,10 +132,13 @@ public class PennyBotService {
                 .isEnabled(true)
                 .build();
 
+        log.info("💾 [SAVE] Saving Penny bot to database: {} (ID: {})", pennyBot.getBotName(), pennyBot.getId());
         PennyBot saved = pennyBotRepository.save(pennyBot);
-        log.info("Created Penny bot: {} with ID: {}", saved.getBotName(), saved.getId());
+        log.info("✅ [SAVED] Penny bot saved successfully: {} with ID: {}", saved.getBotName(), saved.getId());
 
-        return PennyBotResponse.builder()
+        log.info("🔄 [RESPONSE] Building response for Penny bot: {}", saved.getBotName());
+
+        PennyBotResponse response = PennyBotResponse.builder()
                 .id(saved.getId())
                 .botName(saved.getBotName())
                 .botType(saved.getBotType())
@@ -126,6 +151,9 @@ public class PennyBotService {
                 .createdAt(saved.getCreatedAt())
                 .updatedAt(saved.getUpdatedAt())
                 .build();
+        
+        log.info("✅ [COMPLETE] Penny bot creation completed successfully: {} (ID: {})", saved.getBotName(), saved.getId());
+        return response;
     }
 
     /**

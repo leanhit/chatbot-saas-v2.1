@@ -381,6 +381,16 @@
       @close="showAddressModal = false"
       @submit="handleAddressSubmit"
     />
+    
+    <!-- Image Cropper Modal -->
+    <ImageCropper
+      :isVisible="showImageCropper"
+      title="Crop Avatar"
+      :imageUrl="previewImageUrl"
+      :outputSize="800"
+      @cancel="handleImageCropperCancel"
+      @crop="handleImageCrop"
+    />
   </div>
 </div>
 </template>
@@ -397,6 +407,7 @@ import { getCurrentInstance } from 'vue'
 import UserBasicInfoModal from './components/UserBasicInfoModalSimple.vue'
 import UserProfessionalModal from './components/UserProfessionalModalSimple.vue'
 import UserAddressModal from './components/UserAddressModalSimple.vue'
+import ImageCropper from '@/components/common/ImageCropper.vue'
 import defaultAvatar from '@/assets/img/user.jpg'
 export default {
   name: 'Profile',
@@ -404,7 +415,8 @@ export default {
     Icon,
     UserBasicInfoModal,
     UserProfessionalModal,
-    UserAddressModal
+    UserAddressModal,
+    ImageCropper
   },
   emits: ['profile-updated'],
   setup(props, { emit }) {
@@ -418,7 +430,10 @@ export default {
     const showBasicModal = ref(false)
     const showProfessionalModal = ref(false)
     const showAddressModal = ref(false)
+    const showImageCropper = ref(false)
     const currentAddressData = ref({})
+    const selectedImageFile = ref(null)
+    const previewImageUrl = ref('')
     // Loading states
     const loading = ref(false)
     const avatarUploading = ref(false)
@@ -553,21 +568,57 @@ export default {
     const handleAvatarUpload = async (event) => {
       const file = event.target.files[0]
       if (!file) return
+      
+      // Log file details before validation
+      console.log('🔄 [FRONTEND AVATAR] File selected:', {
+        name: file.name,
+        size: file.size,
+        type: file.type,
+        lastModified: file.lastModified
+      })
+      
       // Validate file type
       if (!file.type.startsWith('image/')) {
+        console.error('❌ [FRONTEND AVATAR] Invalid file type:', file.type, file.name)
         toast?.error('Please select an image file')
         return
       }
+      
+      // Store file and show cropper
+      selectedImageFile.value = file
+      previewImageUrl.value = URL.createObjectURL(file)
+      showImageCropper.value = true
+    }
+    const handleImageCrop = async (croppedFile) => {
+      console.log('✅ [FRONTEND AVATAR] Image cropped:', {
+        originalSize: selectedImageFile.value.size,
+        croppedSize: croppedFile.size,
+        reduction: Math.round((1 - croppedFile.size / selectedImageFile.value.size) * 100) + '%'
+      })
+      
       // Validate file size (max 5MB)
-      if (file.size > 5 * 1024 * 1024) {
+      if (croppedFile.size > 5 * 1024 * 1024) {
+        console.error('❌ [FRONTEND AVATAR] Cropped file too large:', croppedFile.size, croppedFile.name)
         toast?.error('Image size should be less than 5MB')
         return
       }
+      
+      console.log('✅ [FRONTEND AVATAR] File validation passed:', croppedFile.name)
+      
       avatarUploading.value = true
       try {
         const formData = new FormData()
-        formData.append('avatar', file)
+        formData.append('avatar', croppedFile)
+        
+        console.log('📤 [FRONTEND AVATAR] Sending request to backend:', {
+          endpoint: '/v1/user-info/me/avatar',
+          originalFileSize: selectedImageFile.value.size,
+          croppedFileSize: croppedFile.size,
+          fileName: croppedFile.name
+        })
+        
         const response = await usersApi.updateAvatar(formData)
+        console.log('✅ [FRONTEND AVATAR] Backend response:', response.data)
         // Update user data in store
         if (response.data) {
           // Update the avatar in the store directly
@@ -604,13 +655,34 @@ export default {
           // Emit event to refresh profile data
           emit('profile-updated')
         }
+        
+        // Close cropper modal after successful upload
+        showImageCropper.value = false
+        // Clean up preview URL
+        if (previewImageUrl.value) {
+          URL.revokeObjectURL(previewImageUrl.value)
+          previewImageUrl.value = ''
+        }
+        selectedImageFile.value = null
       } catch (error) {
+        console.error('❌ [FRONTEND AVATAR] Upload error:', error)
         toast?.error('Failed to upload avatar. Please try again.')
       } finally {
         // Clear the file input and reset loading state
         event.target.value = ''
         avatarUploading.value = false
+        console.log('🔄 [FRONTEND AVATAR] Upload process completed')
       }
+    }
+    
+    const handleImageCropperCancel = () => {
+      showImageCropper.value = false
+      // Clean up preview URL
+      if (previewImageUrl.value) {
+        URL.revokeObjectURL(previewImageUrl.value)
+        previewImageUrl.value = ''
+      }
+      selectedImageFile.value = null
     }
     const openLink = (url) => {
       window.open(url, '_blank')
@@ -733,7 +805,10 @@ export default {
       showBasicModal,
       showProfessionalModal,
       showAddressModal,
+      showImageCropper,
       currentAddressData,
+      selectedImageFile,
+      previewImageUrl,
       userAddress,
       userLocation,
       userFullName,
@@ -751,6 +826,8 @@ export default {
       formatDate,
       triggerAvatarUpload,
       handleAvatarUpload,
+      handleImageCrop,
+      handleImageCropperCancel,
       openLink,
       handleTabChange,
       handleEditBasic,

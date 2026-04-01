@@ -18,7 +18,6 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 public class RedisPaymentService {
 
-    private final StringRedisTemplate stringRedisTemplate;
     private final RedisTemplate<String, Object> redisTemplate;
     private final ObjectMapper objectMapper;
 
@@ -34,8 +33,15 @@ public class RedisPaymentService {
     public void publishPaymentEvent(PaymentEvent event) {
         try {
             String eventJson = objectMapper.writeValueAsString(event);
-            stringRedisTemplate.convertAndSend(PAYMENT_STATUS_CHANNEL, eventJson);
-            log.debug("📢 Published payment event: {}", event.getType());
+            
+            // Choose channel based on event type
+            String channel = PAYMENT_STATUS_CHANNEL; // default
+            if ("PAYMENT_SIMULATED".equals(event.getType())) {
+                channel = "payment:simulated";
+            }
+            
+            redisTemplate.convertAndSend(channel, eventJson);
+            log.debug("📢 Published payment event: {} to channel: {}", event.getType(), channel);
         } catch (Exception e) {
             log.error("❌ Error publishing payment event: {}", e.getMessage(), e);
         }
@@ -47,7 +53,8 @@ public class RedisPaymentService {
     public void storePayment(String referenceCode, PaymentEvent event) {
         try {
             String key = PAYMENT_KEY_PREFIX + referenceCode;
-            redisTemplate.opsForValue().set(key, event, Duration.ofHours(24));
+            String eventJson = objectMapper.writeValueAsString(event);
+            redisTemplate.opsForValue().set(key, eventJson, Duration.ofHours(24));
             log.debug("💾 Stored payment in Redis: {}", referenceCode);
         } catch (Exception e) {
             log.error("❌ Error storing payment in Redis: {}", e.getMessage(), e);
@@ -59,9 +66,9 @@ public class RedisPaymentService {
      */
     public void addToPendingPayments(String referenceCode) {
         try {
-            stringRedisTemplate.opsForSet().add(PENDING_PAYMENTS_SET, referenceCode);
+            redisTemplate.opsForSet().add(PENDING_PAYMENTS_SET, referenceCode);
             // Set TTL for the set entry
-            stringRedisTemplate.expire(PENDING_PAYMENTS_SET + ":" + referenceCode, Duration.ofHours(2));
+            redisTemplate.expire(PENDING_PAYMENTS_SET + ":" + referenceCode, Duration.ofHours(2));
             log.debug("➕ Added to pending payments: {}", referenceCode);
         } catch (Exception e) {
             log.error("❌ Error adding to pending payments: {}", e.getMessage(), e);
@@ -73,7 +80,7 @@ public class RedisPaymentService {
      */
     public void removeFromPendingPayments(String referenceCode) {
         try {
-            stringRedisTemplate.opsForSet().remove(PENDING_PAYMENTS_SET, referenceCode);
+            redisTemplate.opsForSet().remove(PENDING_PAYMENTS_SET, referenceCode);
             log.debug("➖ Removed from pending payments: {}", referenceCode);
         } catch (Exception e) {
             log.error("❌ Error removing from pending payments: {}", e.getMessage(), e);
@@ -86,7 +93,17 @@ public class RedisPaymentService {
     public PaymentEvent getPayment(String referenceCode) {
         try {
             String key = PAYMENT_KEY_PREFIX + referenceCode;
-            return (PaymentEvent) redisTemplate.opsForValue().get(key);
+            Object eventObj = redisTemplate.opsForValue().get(key);
+            
+            if (eventObj == null) {
+                return null;
+            }
+            
+            if (eventObj instanceof String) {
+                return objectMapper.readValue((String) eventObj, PaymentEvent.class);
+            } else {
+                return objectMapper.convertValue(eventObj, PaymentEvent.class);
+            }
         } catch (Exception e) {
             log.error("❌ Error getting payment from Redis: {}", e.getMessage(), e);
             return null;
@@ -99,7 +116,7 @@ public class RedisPaymentService {
     public boolean paymentExists(String referenceCode) {
         try {
             String key = PAYMENT_KEY_PREFIX + referenceCode;
-            return Boolean.TRUE.equals(stringRedisTemplate.hasKey(key));
+            return Boolean.TRUE.equals(redisTemplate.hasKey(key));
         } catch (Exception e) {
             log.error("❌ Error checking payment existence: {}", e.getMessage(), e);
             return false;
@@ -111,7 +128,7 @@ public class RedisPaymentService {
      */
     public long getPendingPaymentsCount() {
         try {
-            return stringRedisTemplate.opsForSet().size(PENDING_PAYMENTS_SET);
+            return redisTemplate.opsForSet().size(PENDING_PAYMENTS_SET);
         } catch (Exception e) {
             log.error("❌ Error getting pending payments count: {}", e.getMessage(), e);
             return 0;

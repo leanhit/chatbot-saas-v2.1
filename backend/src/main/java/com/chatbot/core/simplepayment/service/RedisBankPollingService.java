@@ -17,6 +17,7 @@ public class RedisBankPollingService {
 
     private final RedisPaymentService redisPaymentService;
     private final BankApiService bankApiService;
+    private final SimplePaymentService simplePaymentService;
 
     /**
      * Redis-based polling - check pending payments more efficiently
@@ -69,11 +70,14 @@ public class RedisBankPollingService {
     }
 
     /**
-     * Fallback to original method for now
+     * Fallback method - now actually calls SimplePaymentService
      */
     private void checkPendingPayments() {
-        // This would be replaced with Redis-based queue processing
-        // Keeping original logic as fallback
-        log.debug("🔄 Using fallback payment check method");
+        log.debug("🔄 Using fallback payment check method - calling SimplePaymentService");
+        try {
+            simplePaymentService.checkPendingPayments();
+        } catch (Exception e) {
+            log.error("❌ Error in fallback payment check: {}", e.getMessage(), e);
+        }
     }
 }

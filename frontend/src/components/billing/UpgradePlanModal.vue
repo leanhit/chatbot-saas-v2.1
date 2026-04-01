@@ -68,21 +68,22 @@
                 <p class="text-3xl font-bold text-gray-900 dark:text-white">
                   {{ formatCurrency(plan.price, plan.currency) }}
                 </p>
-                <p class="text-sm text-gray-500 dark:text-gray-400">per {{ plan.billingCycle }}</p>
+                <p class="text-sm text-gray-500 dark:text-gray-400">{{ plan.duration }}</p>
               </div>
 
               <!-- Features -->
               <div class="space-y-2 mb-4">
-                <div v-for="feature in plan.features" :key="feature" class="flex items-center text-sm">
+                <div v-for="feature in getPackageFeatures(plan)" :key="feature" class="flex items-center text-sm">
                   <Icon icon="mdi:check-circle" class="w-4 h-4 text-green-500 mr-2 flex-shrink-0" />
                   <span class="text-gray-700 dark:text-gray-300">{{ feature }}</span>
                 </div>
               </div>
 
-              <!-- Popular Badge -->
-              <div v-if="plan.popular" class="text-center">
-                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-primary-100 text-primary-800 dark:bg-primary-900 dark:text-primary-200">
-                  Most Popular
+              <!-- Badge -->
+              <div v-if="plan.badge" class="text-center">
+                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium"
+                      :class="getBadgeClass(plan.badge)">
+                  {{ plan.badge }}
                 </span>
               </div>
             </div>
@@ -93,21 +94,21 @@
             <h4 class="text-sm font-medium text-blue-900 dark:text-blue-200 mb-3">What you'll get:</h4>
             <div class="space-y-2 text-sm">
               <div class="flex justify-between">
-                <span class="text-blue-700 dark:text-blue-300">Additional Users:</span>
+                <span class="text-blue-700 dark:text-blue-300">Duration:</span>
                 <span class="font-medium text-blue-900 dark:text-blue-100">
-                  {{ selectedPlan.maxUsers - currentPlan.maxUsers }} more
+                  {{ selectedPlan.duration }} vs {{ currentPlan.duration }}
                 </span>
               </div>
               <div class="flex justify-between">
-                <span class="text-blue-700 dark:text-blue-300">Storage:</span>
+                <span class="text-blue-700 dark:text-blue-300">Messages:</span>
                 <span class="font-medium text-blue-900 dark:text-blue-100">
-                  {{ formatStorage(selectedPlan.maxStorageMb) }} vs {{ formatStorage(currentPlan.maxStorageMb) }}
+                  {{ formatLimit(selectedPlan.messageLimit) }} vs {{ formatLimit(currentPlan.messageLimit) }}
                 </span>
               </div>
               <div class="flex justify-between">
-                <span class="text-blue-700 dark:text-blue-300">API Calls:</span>
+                <span class="text-blue-700 dark:text-blue-300">Chatbots:</span>
                 <span class="font-medium text-blue-900 dark:text-blue-100">
-                  {{ selectedPlan.maxApiCallsPerMonth?.toLocaleString() }} vs {{ currentPlan.maxApiCallsPerMonth?.toLocaleString() }}
+                  {{ formatLimit(selectedPlan.chatbotLimit) }} vs {{ formatLimit(currentPlan.chatbotLimit) }}
                 </span>
               </div>
             </div>
@@ -174,6 +175,76 @@ const formatStorage = (mb) => {
     return `${mb} MB`
   }
   return `${(mb / 1024).toFixed(1)} GB`
+}
+
+const formatLimit = (limit) => {
+  if (limit >= 2147483647) {
+    return 'Unlimited'
+  }
+  return limit?.toLocaleString() || '0'
+}
+
+const getPackageFeatures = (plan) => {
+  const features = []
+  
+  // Message limit
+  if (plan.messageLimit) {
+    if (plan.messageLimit >= 2147483647) {
+      features.push('Unlimited messages')
+    } else {
+      features.push(`${plan.messageLimit.toLocaleString()} messages`)
+    }
+  }
+  
+  // Chatbot limit
+  if (plan.chatbotLimit) {
+    if (plan.chatbotLimit >= 2147483647) {
+      features.push('Unlimited chatbots')
+    } else {
+      features.push(`${plan.chatbotLimit} chatbots`)
+    }
+  }
+  
+  // Support features
+  if (plan.hasPrioritySupport) {
+    features.push('Priority Support')
+  }
+  
+  if (plan.hasDedicatedSupport) {
+    features.push('24/7 Support')
+  }
+  
+  if (plan.hasAnalytics) {
+    features.push('Basic Analytics')
+  }
+  
+  if (plan.hasAdvancedAnalytics) {
+    features.push('Advanced Analytics')
+  }
+  
+  if (plan.hasCustomIntegrations) {
+    features.push('Custom Integrations')
+  }
+  
+  if (plan.hasCustomFeatures) {
+    features.push('Custom Features')
+  }
+  
+  if (plan.hasSlaGuarantee) {
+    features.push('SLA Guarantee')
+  }
+  
+  return features
+}
+
+const getBadgeClass = (badge) => {
+  const badgeClasses = {
+    'POPULAR': 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
+    'RECOMMENDED': 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
+    'BEST_VALUE': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
+    'VALUE': 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200'
+  }
+  return badgeClasses[badge] || 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
 }
 
 const handleUpgrade = async () => {

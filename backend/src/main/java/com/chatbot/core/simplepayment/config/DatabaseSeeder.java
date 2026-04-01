@@ -7,6 +7,7 @@ import org.springframework.boot.ApplicationRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
+import org.springframework.dao.DataAccessException;
 
 @Configuration
 @RequiredArgsConstructor
@@ -14,6 +15,8 @@ import org.springframework.core.annotation.Order;
 public class DatabaseSeeder {
 
     private final PackageService packageService;
+    private static final int MAX_RETRY_ATTEMPTS = 3;
+    private static final long RETRY_DELAY_MS = 2000; // 2 seconds
 
     @Bean
     @Order(1) // Run this first
@@ -21,18 +24,45 @@ public class DatabaseSeeder {
         return args -> {
             log.info("🌱 Checking if packages need to be initialized...");
             
-            try {
-                if (packageService.isEmpty()) {
-                    log.info("📦 Packages table is empty, initializing default packages...");
-                    packageService.initializeDefaultPackages();
-                    log.info("✅ Default packages initialized successfully!");
-                } else {
-                    log.info("📦 Packages already exist, skipping initialization");
+            int attempt = 0;
+            boolean success = false;
+            
+            while (attempt < MAX_RETRY_ATTEMPTS && !success) {
+                attempt++;
+                try {
+                    log.info("📦 Attempt {} to initialize packages...", attempt);
+                    
+                    if (packageService.isEmpty()) {
+                        log.info("📦 Packages table is empty, initializing default packages...");
+                        packageService.initializeDefaultPackages();
+                        log.info("✅ Default packages initialized successfully!");
+                        success = true;
+                    } else {
+                        log.info("📦 Packages already exist, skipping initialization");
+                        success = true;
+                    }
+                    
+                } catch (DataAccessException e) {
+                    log.error("❌ Database error on attempt {}: {}", attempt, e.getMessage(), e);
+                    if (attempt < MAX_RETRY_ATTEMPTS) {
+                        log.info("⏳ Waiting {}ms before retry...", RETRY_DELAY_MS);
+                        Thread.sleep(RETRY_DELAY_MS);
+                    }
+                } catch (Exception e) {
+                    log.error("❌ Unexpected error on attempt {}: {}", attempt, e.getMessage(), e);
+                    if (attempt < MAX_RETRY_ATTEMPTS) {
+                        log.info("⏳ Waiting {}ms before retry...", RETRY_DELAY_MS);
+                        Thread.sleep(RETRY_DELAY_MS);
+                    }
                 }
-            } catch (Exception e) {
-                log.error("❌ Error initializing packages: {}", e.getMessage(), e);
-                // Don't throw the exception to allow the application to start
-                // Packages can be initialized manually via admin endpoint
+            }
+            
+            if (!success) {
+                log.error("❌ Failed to initialize packages after {} attempts", MAX_RETRY_ATTEMPTS);
+                log.warn("⚠️ Application will continue but packages may not be available. Manual initialization may be required.");
+                log.info("💡 To manually initialize packages, use the admin endpoint: POST /api/v1/packages/initialize");
+            } else {
+                log.info("🎉 Package initialization completed successfully on attempt {}", attempt);
             }
         };
     }

@@ -6,6 +6,7 @@ import com.chatbot.core.simplepayment.dto.PaymentStatusResponse;
 import com.chatbot.core.simplepayment.service.BankApiService;
 import com.chatbot.core.simplepayment.service.QRCodeService;
 import com.chatbot.core.simplepayment.service.SimplePaymentService;
+import com.chatbot.core.tenant.infra.TenantContext;
 import com.chatbot.shared.utils.DateUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -18,6 +19,7 @@ import org.springframework.web.bind.annotation.*;
 
 import jakarta.servlet.http.HttpServletRequest;
 import java.math.BigDecimal;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -209,6 +211,26 @@ public class SimplePaymentController {
     }
 
     /**
+     * Manual trigger payment checking (admin only)
+     */
+    @PostMapping("/admin/check-payments")
+    @Operation(
+        summary = "Check pending payments manually (admin)",
+        description = "Manually trigger pending payment check (admin only)"
+    )
+    public ResponseEntity<String> checkPendingPaymentsManually() {
+        log.info("🔧 Manually triggering payment check");
+        
+        try {
+            simplePaymentService.checkPendingPayments();
+            return ResponseEntity.ok("Payment check triggered successfully");
+        } catch (Exception e) {
+            log.error("❌ Failed to trigger payment check: {}", e.getMessage(), e);
+            return ResponseEntity.badRequest().body("Failed to trigger payment check: " + e.getMessage());
+        }
+    }
+
+    /**
      * Health check
      */
     @GetMapping("/health")
@@ -225,6 +247,45 @@ public class SimplePaymentController {
         );
 
         return ResponseEntity.ok(health);
+    }
+
+    /**
+     * Check deposit limits for free packages
+     */
+    @GetMapping("/deposit-limits")
+    @Operation(
+        summary = "Check deposit limits",
+        description = "Check current deposit limits for free packages"
+    )
+    public ResponseEntity<Map<String, Object>> checkDepositLimits(
+            @AuthenticationPrincipal UserDetails userDetails,
+            HttpServletRequest httpRequest) {
+        
+        try {
+            Long userId = extractUserId(userDetails);
+            Long tenantId = TenantContext.getTenantId();
+            
+            if (tenantId == null) {
+                tenantId = extractTenantId(httpRequest);
+            }
+            
+            log.info("🔍 [DEPOSIT LIMITS] Checking limits for user: {}, tenant: {}", userId, tenantId);
+            
+            // Get current deposit limits from service
+            Map<String, Object> limits = simplePaymentService.getCurrentDepositLimits(userId, tenantId);
+            
+            return ResponseEntity.ok(limits);
+            
+        } catch (Exception e) {
+            log.error("❌ [DEPOSIT LIMITS] Error checking limits: {}", e.getMessage(), e);
+            
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "Failed to check deposit limits");
+            error.put("message", e.getMessage());
+            error.put("timestamp", java.time.LocalDateTime.now());
+            
+            return ResponseEntity.badRequest().body(error);
+        }
     }
 
     // Helper methods (simplified - in real implementation, get from user context)

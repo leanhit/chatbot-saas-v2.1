@@ -7,6 +7,7 @@ import com.chatbot.core.app.subscription.model.SubscriptionPlan;
 import com.chatbot.core.app.subscription.model.SubscriptionStatus;
 import com.chatbot.core.app.subscription.repository.AppSubscriptionRepository;
 import com.chatbot.core.app.registry.service.AppRegistryService;
+import com.chatbot.core.tenant.service.PackageLimitValidationService;
 import com.chatbot.shared.exceptions.ResourceNotFoundException;
 import com.chatbot.shared.exceptions.ValidationException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,6 +31,9 @@ public class AppSubscriptionService {
     @Autowired
     private SubscriptionValidationService validationService;
     
+    @Autowired
+    private PackageLimitValidationService limitValidationService;
+    
     public SubscriptionResponse subscribeToApp(SubscribeAppRequest request, Long userId) {
         // Validate app exists and is active
         appRegistryService.getAppById(request.getAppId());
@@ -38,6 +42,9 @@ public class AppSubscriptionService {
         if (subscriptionRepository.existsByAppIdAndTenantId(request.getAppId(), request.getTenantId())) {
             throw new ValidationException("Subscription already exists for this app and tenant");
         }
+        
+        // VALIDATE CHATBOT LIMIT FROM SIMPLE PAYMENT SYSTEM
+        limitValidationService.validateChatbotCreation(request.getTenantId());
         
         // Validate subscription request
         validationService.validateSubscriptionRequest(request);

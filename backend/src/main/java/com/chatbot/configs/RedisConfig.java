@@ -55,11 +55,4 @@ public class RedisConfig {
         template.setConnectionFactory(connectionFactory);
         return template;
     }
-
-    @Bean
-    public RedisMessageListenerContainer redisMessageListenerContainer(LettuceConnectionFactory connectionFactory) {
-        RedisMessageListenerContainer container = new RedisMessageListenerContainer();
-        container.setConnectionFactory(connectionFactory);
-        return container;
-    }
 }

@@ -1,14 +1,18 @@
 package com.chatbot.core.simplepayment.service;
 
+import com.chatbot.core.simplepayment.config.PackageConfig;
+import com.chatbot.core.simplepayment.config.PackageConfigLoader;
 import com.chatbot.core.simplepayment.model.Package;
 import com.chatbot.core.simplepayment.repository.PackageRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Service
@@ -17,14 +21,16 @@ import java.util.Optional;
 public class PackageService {
 
     private final PackageRepository packageRepository;
+    private final PackageConfigLoader packageConfigLoader;
+    private final CachedPackageService cachedPackageService;
 
     /**
      * Get all active packages ordered by sort order
      */
     @Transactional(readOnly = true)
     public List<Package> getActivePackages() {
-        log.debug("Fetching all active packages");
-        return packageRepository.findActivePackagesOrdered();
+        log.debug("Fetching all active packages (cached)");
+        return cachedPackageService.getActivePackages();
     }
 
     /**
@@ -32,8 +38,8 @@ public class PackageService {
      */
     @Transactional(readOnly = true)
     public List<Package> getAllPackages() {
-        log.debug("Fetching all packages for admin");
-        return packageRepository.findAllByOrderBySortOrderAsc();
+        log.debug("Fetching all packages for admin (cached)");
+        return cachedPackageService.getAllPackages();
     }
 
     /**
@@ -41,8 +47,8 @@ public class PackageService {
      */
     @Transactional(readOnly = true)
     public Optional<Package> getPackageById(Long id) {
-        log.debug("Fetching package by ID: {}", id);
-        return packageRepository.findById(id);
+        log.debug("Fetching package by ID: {} (cached)", id);
+        return cachedPackageService.getPackageById(id);
     }
 
     /**
@@ -50,8 +56,8 @@ public class PackageService {
      */
     @Transactional(readOnly = true)
     public Optional<Package> getPackageByPackageId(String packageId) {
-        log.debug("Fetching package by package ID: {}", packageId);
-        return packageRepository.findByPackageId(packageId);
+        log.debug("Fetching package by package ID: {} (cached)", packageId);
+        return cachedPackageService.getPackageByPackageId(packageId);
     }
 
     /**
@@ -62,7 +68,7 @@ public class PackageService {
         log.info("Creating new package: {}", packageData.getPackageId());
         
         // Check if package ID already exists
-        if (packageRepository.existsByPackageId(packageData.getPackageId())) {
+        if (cachedPackageService.existsByPackageId(packageData.getPackageId())) {
             throw new IllegalArgumentException("Package ID already exists: " + packageData.getPackageId());
         }
 
@@ -78,6 +84,10 @@ public class PackageService {
         }
 
         Package savedPackage = packageRepository.save(packageData);
+        
+        // Clear caches after creation
+        cachedPackageService.clearAllPackageCache();
+        
         log.info("✅ Created package: {}", savedPackage.getPackageId());
         return savedPackage;
     }
@@ -112,6 +122,11 @@ public class PackageService {
         existingPackage.setBadge(packageData.getBadge());
 
         Package updatedPackage = packageRepository.save(existingPackage);
+        
+        // Clear caches after update
+        cachedPackageService.clearPackageCache(id);
+        cachedPackageService.clearPackageCacheByPackageId(updatedPackage.getPackageId());
+        
         log.info("✅ Updated package: {}", updatedPackage.getPackageId());
         return updatedPackage;
     }
@@ -129,6 +144,11 @@ public class PackageService {
         packageData.setIsActive(false);
         packageRepository.save(packageData);
         
+        // Clear caches after deletion
+        cachedPackageService.clearPackageCache(id);
+        cachedPackageService.clearPackageCacheByPackageId(packageData.getPackageId());
+        cachedPackageService.clearActivePackagesCache();
+        
         log.info("✅ Soft deleted package: {}", packageData.getPackageId());
     }
 
@@ -143,6 +163,10 @@ public class PackageService {
                 .orElseThrow(() -> new IllegalArgumentException("Package not found: " + id));
 
         packageRepository.delete(packageData);
+        
+        // Clear all caches after permanent deletion
+        cachedPackageService.clearAllPackageCache();
+        
         log.info("✅ Permanently deleted package: {}", packageData.getPackageId());
     }
 
@@ -166,6 +190,9 @@ public class PackageService {
 
         log.info("Initializing default packages...");
         createDefaultPackages();
+        
+        // Warm up caches after initialization
+        cachedPackageService.warmUpCaches();
     }
     
     /**
@@ -178,105 +205,80 @@ public class PackageService {
         
         log.info("Creating new packages with English text...");
         createDefaultPackages();
+        
+        // Warm up caches after reinitialization
+        cachedPackageService.warmUpCaches();
     }
     
     /**
-     * Create default packages
+     * Create default packages from configuration
      */
     @Transactional
     private void createDefaultPackages() {
+        log.info("📦 Creating packages from configuration...");
         
-        // Free Package
-        Package freePackage = Package.builder()
-                .packageId("free")
-                .name("Free")
-                .price(BigDecimal.ZERO)
-                .currency("VND")
-                .duration("1 month")
-                .description("Trial package")
-                .messageLimit(100)
-                .chatbotLimit(1)
-                .hasPrioritySupport(false)
-                .hasAnalytics(false)
-                .hasAdvancedAnalytics(false)
-                .hasCustomIntegrations(false)
-                .hasDedicatedSupport(false)
-                .hasCustomFeatures(false)
-                .hasSlaGuarantee(false)
-                .isActive(true)
-                .sortOrder(1)
-                .badge(null)
-                .build();
+        Map<String, PackageConfig.PackageDefinition> packageConfigs = packageConfigLoader.getPackages();
+        if (packageConfigs == null || packageConfigs.isEmpty()) {
+            log.warn("⚠️ No package configuration found, skipping package creation");
+            return;
+        }
 
-        // Pro Package
-        Package proPackage = Package.builder()
-                .packageId("pro")
-                .name("Pro")
-                .price(new BigDecimal("250000"))
-                .currency("VND")
-                .duration("1 month")
-                .description("Professional package")
-                .messageLimit(5000)
-                .chatbotLimit(3)
-                .hasPrioritySupport(true)
-                .hasAnalytics(true)
-                .hasAdvancedAnalytics(false)
-                .hasCustomIntegrations(false)
-                .hasDedicatedSupport(false)
-                .hasCustomFeatures(false)
-                .hasSlaGuarantee(false)
-                .isActive(true)
-                .sortOrder(2)
-                .badge("POPULAR")
-                .build();
-
-        // Business Package
-        Package businessPackage = Package.builder()
-                .packageId("business")
-                .name("Business")
-                .price(new BigDecimal("500000"))
-                .currency("VND")
-                .duration("1 month")
-                .description("Business package")
-                .messageLimit(15000)
-                .chatbotLimit(10)
-                .hasPrioritySupport(true)
-                .hasAnalytics(true)
-                .hasAdvancedAnalytics(true)
-                .hasCustomIntegrations(true)
-                .hasDedicatedSupport(true)
-                .hasCustomFeatures(false)
-                .hasSlaGuarantee(false)
-                .isActive(true)
-                .sortOrder(3)
-                .badge(null)
-                .build();
-
-        // Enterprise Package
-        Package enterprisePackage = Package.builder()
-                .packageId("enterprise")
-                .name("Enterprise")
-                .price(new BigDecimal("1000000"))
-                .currency("VND")
-                .duration("1 month")
-                .description("Enterprise package")
-                .messageLimit(Integer.MAX_VALUE)
-                .chatbotLimit(Integer.MAX_VALUE)
-                .hasPrioritySupport(true)
-                .hasAnalytics(true)
-                .hasAdvancedAnalytics(true)
-                .hasCustomIntegrations(true)
-                .hasDedicatedSupport(true)
-                .hasCustomFeatures(true)
-                .hasSlaGuarantee(true)
-                .isActive(true)
-                .sortOrder(4)
-                .badge(null)
-                .build();
+        List<Package> packages = packageConfigs.entrySet().stream()
+            .map(entry -> createPackageFromConfig(entry.getKey(), entry.getValue()))
+            .toList();
 
         // Save all packages
-        packageRepository.saveAll(List.of(freePackage, proPackage, businessPackage, enterprisePackage));
+        packageRepository.saveAll(packages);
         
-        log.info("✅ Initialized {} default packages", 4);
+        log.info("✅ Created {} packages from configuration", packages.size());
+    }
+
+    /**
+     * Create Package entity from configuration
+     */
+    private Package createPackageFromConfig(String packageId, PackageConfig.PackageDefinition config) {
+        log.debug("Creating package {} from config", packageId);
+        
+        return Package.builder()
+                .packageId(packageId)
+                .name(config.getName())
+                .price(BigDecimal.valueOf(config.getPrice()))
+                .currency(config.getCurrency())
+                .duration(config.getDuration())
+                .description(config.getDescription())
+                .messageLimit(config.getMessageLimit())
+                .chatbotLimit(config.getChatbotLimit())
+                .hasPrioritySupport(config.isHasPrioritySupport())
+                .hasAnalytics(config.isHasAnalytics())
+                .hasAdvancedAnalytics(config.isHasAdvancedAnalytics())
+                .hasCustomIntegrations(config.isHasCustomIntegrations())
+                .hasDedicatedSupport(config.isHasDedicatedSupport())
+                .hasCustomFeatures(config.isHasCustomFeatures())
+                .hasSlaGuarantee(config.isHasSlaGuarantee())
+                .isActive(config.isActive())
+                .sortOrder(config.getSortOrder())
+                .badge(config.getBadge())
+                .build();
+    }
+
+    /**
+     * Warm up package caches
+     */
+    public void warmupCache() {
+        cachedPackageService.warmUpCaches();
+    }
+
+    /**
+     * Clear package caches
+     */
+    public void clearCache() {
+        cachedPackageService.clearAllPackageCache();
+    }
+
+    /**
+     * Get cache statistics
+     */
+    public String getCacheStats() {
+        return cachedPackageService.getCacheStats();
     }
 }

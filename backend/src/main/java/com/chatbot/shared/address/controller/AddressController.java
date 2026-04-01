@@ -9,6 +9,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -21,6 +22,7 @@ import com.chatbot.core.tenant.infra.TenantContext;
 @RestController
 @RequestMapping("/api/addresses")
 @RequiredArgsConstructor
+@Slf4j
 @Tag(name = "Address Management", description = "Address and location management operations")
 public class AddressController {
 
@@ -133,11 +135,23 @@ public class AddressController {
             @PathVariable Long id,
             @Valid @RequestBody AddressRequestDTO dto) {
         
+        log.info("🔄 [ADDRESS CONTROLLER] Update address request - ID: {}, tenantKey from context: {}", id, TenantContext.getCurrentTenant());
+        
         Long tenantId = TenantContext.getTenantId();
         if (tenantId == null) {
+            log.error("❌ [ADDRESS CONTROLLER] Missing tenant context");
             return ResponseEntity.badRequest().build();
         }
-        return ResponseEntity.ok(addressService.updateAddress(tenantId, id, dto));
+        
+        try {
+            log.info("✅ [ADDRESS CONTROLLER] Calling service to update address");
+            AddressResponseDTO response = addressService.updateAddress(tenantId, id, dto);
+            log.info("✅ [ADDRESS CONTROLLER] Address updated successfully");
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            log.error("❌ [ADDRESS CONTROLLER] Failed to update address: {}", e.getMessage(), e);
+            throw e;
+        }
     }
 
     // Update address fields - no ownerType/ownerId required

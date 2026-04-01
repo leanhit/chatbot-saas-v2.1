@@ -19,4 +19,6 @@ public class DepositRequest {
     private String currency = "VND";
     
     private String description = "Nạp tiền vào ví";
+    
+    private String targetPackageId; // Package to upgrade to after payment
 }

@@ -223,11 +223,39 @@ public class AddressService {
 
     @Transactional
     public AddressResponseDTO updateAddress(Long tenantId, Long id, AddressRequestDTO dto) {
-        Address address = addressRepository.findByIdAndTenantId(id, tenantId)
-                .orElseThrow(() -> new RuntimeException("Address not found"));
+        try {
+            log.info("🔄 [ADDRESS UPDATE] Starting address update - tenantId: {}, addressId: {}", tenantId, id);
+            log.info("📋 [ADDRESS UPDATE] Request data: houseNumber={}, street={}, ward={}, district={}, province={}, country={}", 
+                    dto.getHouseNumber(), dto.getStreet(), dto.getWard(), dto.getDistrict(), dto.getProvince(), dto.getCountry());
+            log.info("👤 [ADDRESS UPDATE] Owner info - type: {}, ownerId: {}", dto.getOwnerType(), dto.getOwnerId());
+            
+            // Validate suspicious content
+            if (dto.getStreet() != null && dto.getStreet().contains("gradlew")) {
+                log.error("🚨 [SECURITY] Suspicious content detected in street field: {}", dto.getStreet());
+                throw new RuntimeException("Invalid content in street field");
+            }
+            
+            Address address = addressRepository.findByIdAndTenantId(id, tenantId)
+                    .orElseThrow(() -> {
+                        log.error("❌ [ADDRESS UPDATE] Address not found - id: {}, tenantId: {}", id, tenantId);
+                        return new RuntimeException("Address not found");
+                    });
 
-        updateAddressFields(address, dto);
-        return addressMapper.toResponseDTO(addressRepository.save(address));
+            log.info("✅ [ADDRESS UPDATE] Found existing address: {}", address.getId());
+            updateAddressFields(address, dto);
+            
+            Address saved = addressRepository.save(address);
+            log.info("✅ [ADDRESS UPDATE] Address updated successfully: {}", saved.getId());
+            
+            return addressMapper.toResponseDTO(saved);
+            
+        } catch (RuntimeException e) {
+            log.error("❌ [ADDRESS UPDATE] Runtime error: {}", e.getMessage(), e);
+            throw e;
+        } catch (Exception e) {
+            log.error("💥 [ADDRESS UPDATE] Unexpected error: {}", e.getMessage(), e);
+            throw new RuntimeException("Failed to update address: " + e.getMessage(), e);
+        }
     }
 
     @Transactional

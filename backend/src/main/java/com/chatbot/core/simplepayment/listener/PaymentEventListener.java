@@ -24,9 +24,19 @@ public class PaymentEventListener implements MessageListener {
     public void onMessage(Message message, byte[] pattern) {
         try {
             String messageBody = new String(message.getBody());
-            PaymentEvent event = objectMapper.readValue(messageBody, PaymentEvent.class);
+            log.info("📨 Received raw message: {}", messageBody);
             
-            log.debug("📨 Received payment event: {} for payment: {}", event.getType(), event.getReferenceCode());
+            PaymentEvent event;
+            
+            // Try to parse as JSON string first
+            if (messageBody.startsWith("{")) {
+                event = objectMapper.readValue(messageBody, PaymentEvent.class);
+            } else {
+                // If it's already deserialized, convert it
+                event = objectMapper.convertValue(messageBody, PaymentEvent.class);
+            }
+            
+            log.info("📨 Parsed payment event: {} for payment: {}", event.getType(), event.getReferenceCode());
             
             switch (event.getType()) {
                 case "PAYMENT_CREATED":
@@ -37,6 +47,9 @@ public class PaymentEventListener implements MessageListener {
                     break;
                 case "PAYMENT_EXPIRED":
                     handlePaymentExpired(event);
+                    break;
+                case "PAYMENT_SIMULATED":
+                    handlePaymentSimulated(event);
                     break;
                 case "PAYMENT_UPDATED":
                     handlePaymentUpdated(event);
@@ -102,8 +115,48 @@ public class PaymentEventListener implements MessageListener {
             // Update stored payment event
             redisPaymentService.storePayment(event.getReferenceCode(), event);
             
+            // Check if this is a simulated payment that needs completion
+            if (event.getType().equals("PAYMENT_SIMULATED") && event.getBankTransactionId() != null) {
+                log.info("🧪 Handling simulated payment completion: {}", event.getReferenceCode());
+                simplePaymentService.completePayment(event.getReferenceCode(), event.getBankTransactionId());
+            }
+            
         } catch (Exception e) {
             log.error("❌ Error handling payment update: {}", e.getMessage(), e);
+        }
+    }
+    
+    /**
+     * Handle simulated payment completion
+     */
+    private void handlePaymentSimulated(PaymentEvent event) {
+        log.info("🧪 Simulated payment event received: {}", event.getReferenceCode());
+        log.info("🧪 Event details: bankTransactionId={}, amount={}", event.getBankTransactionId(), event.getAmount());
+        
+        try {
+            // Use the transaction ID from the event
+            String transactionId = event.getBankTransactionId();
+            
+            if (transactionId != null) {
+                log.info("🔄 Calling completePayment for: {} with transaction: {}", event.getReferenceCode(), transactionId);
+                
+                // Complete the payment
+                simplePaymentService.completePayment(event.getReferenceCode(), transactionId);
+                log.info("✅ Simulated payment completed: {}", event.getReferenceCode());
+                
+                // Remove from pending tracking
+                redisPaymentService.removeFromPendingPayments(event.getReferenceCode());
+                
+                // Update stored payment event
+                PaymentEvent updatedEvent = redisPaymentService.createStatusUpdateEvent(
+                    event.getReferenceCode(), PaymentStatus.COMPLETED, transactionId);
+                redisPaymentService.storePayment(event.getReferenceCode(), updatedEvent);
+            } else {
+                log.warn("⚠️ No transaction ID in simulated payment event: {}", event.getReferenceCode());
+            }
+            
+        } catch (Exception e) {
+            log.error("❌ Error handling simulated payment: {}", e.getMessage(), e);
         }
     }
 }

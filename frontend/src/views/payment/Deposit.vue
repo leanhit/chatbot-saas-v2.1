@@ -397,9 +397,9 @@ export default {
     const getPriceColorClass = (packageId) => {
       const colorClasses = {
         free: 'text-green-600 dark:text-green-400',
-        pro: 'text-blue-600 dark:text-blue-300',
-        business: 'text-purple-600 dark:text-purple-300',
-        enterprise: 'text-yellow-600 dark:text-yellow-300'
+        '3months': 'text-blue-600 dark:text-blue-300',
+        '6months': 'text-purple-600 dark:text-purple-300',
+        '12months': 'text-yellow-600 dark:text-yellow-300'
       }
       return colorClasses[packageId] || 'text-gray-600 dark:text-gray-400'
     }
@@ -476,9 +476,9 @@ export default {
       console.log('🔍 getLocalizedPackageName - locale:', locale.value, 'isVietnamese:', isVietnamese)
       const nameMap = {
         free: isVietnamese ? 'Miễn phí' : 'Free',
-        pro: 'Pro',
-        business: 'Business', 
-        enterprise: 'Enterprise'
+        '3months': isVietnamese ? '3 Tháng' : '3 Months',
+        '6months': isVietnamese ? '6 Tháng' : '6 Months',
+        '12months': isVietnamese ? '12 Tháng' : '12 Months'
       }
       return nameMap[pkg.packageId] || pkg.name
     }
@@ -486,20 +486,23 @@ export default {
     const getLocalizedDescription = (pkg) => {
       const isVietnamese = locale.value === 'vi'
       const descMap = {
-        free: isVietnamese ? 'Gói dùng thử' : 'Trial package',
-        pro: isVietnamese ? 'Gói chuyên nghiệp' : 'Professional package',
-        business: isVietnamese ? 'Gói doanh nghiệp' : 'Business package',
-        enterprise: isVietnamese ? 'Gói doanh nghiệp lớn' : 'Enterprise package'
+        free: isVietnamese ? 'Gói dùng thử miễn phí' : 'Free trial package',
+        '3months': isVietnamese ? 'Gói 3 tháng không giới hạn' : 'Unlimited 3 months package',
+        '6months': isVietnamese ? 'Gói 6 tháng không giới hạn' : 'Unlimited 6 months package',
+        '12months': isVietnamese ? 'Gói 12 tháng không giới hạn' : 'Unlimited 12 months package'
       }
       return descMap[pkg.packageId] || pkg.description
     }
     
     const getLocalizedDuration = (pkg) => {
       const isVietnamese = locale.value === 'vi'
-      if (pkg.duration === '1 month') {
-        return isVietnamese ? '1 tháng' : '1 month'
+      const durationMap = {
+        '1 month': isVietnamese ? '1 tháng' : '1 month',
+        '3 months': isVietnamese ? '3 tháng' : '3 months',
+        '6 months': isVietnamese ? '6 tháng' : '6 months',
+        '12 months': isVietnamese ? '12 tháng' : '12 months'
       }
-      return pkg.duration
+      return durationMap[pkg.duration] || pkg.duration
     }
     
     const getLocalizedPrice = (pkg) => {

@@ -142,6 +142,16 @@
       @close="showAddressModal = false"
       @submit="handleAddressSubmit"
     />
+    
+    <!-- Image Cropper Modal -->
+    <ImageCropper
+      :isVisible="showImageCropper"
+      title="Crop Logo"
+      :imageUrl="previewImageUrl"
+      :outputSize="1200"
+      @cancel="handleImageCropperCancel"
+      @crop="handleLogoCrop"
+    />
   </div>
 </template>
 
@@ -159,6 +169,7 @@ import AddressTab from './components/tabs/AddressTab.vue'
 import BasicInfoModal from './components/modals/BasicInfoModal.vue'
 import ContactModal from './components/modals/ContactModal.vue'
 import AddressModal from './components/modals/AddressModal.vue'
+import ImageCropper from '@/components/common/ImageCropper.vue'
 
 // Import store and API
 import { useTenantAdminContextStore } from '@/stores/tenant/admin/tenantContextStore'
@@ -178,7 +189,8 @@ export default {
     AddressTab,
     BasicInfoModal,
     ContactModal,
-    AddressModal
+    AddressModal,
+    ImageCropper
   },
   setup() {
     const router = useRouter()
@@ -191,6 +203,9 @@ export default {
     const showBasicModal = ref(false)
     const showContactModal = ref(false)
     const showAddressModal = ref(false)
+    const showImageCropper = ref(false)
+    const selectedImageFile = ref(null)
+    const previewImageUrl = ref('')
     
     // Real stats data from API
     const stats = ref({
@@ -274,19 +289,66 @@ export default {
     
     const handleLogoUpload = async (file) => {
       try {
+        // Log file details before validation
+        console.log('🔄 [FRONTEND LOGO] File selected:', {
+          name: file.name,
+          size: file.size,
+          type: file.type,
+          lastModified: file.lastModified
+        })
+        
+        // Validate file is not empty
+        if (file.size === 0) {
+          console.error('❌ [FRONTEND LOGO] File is empty:', file.name)
+          toast?.error('Please select a valid image file (file is empty)')
+          return
+        }
+        
         // Validate file
         if (!file.type.startsWith('image/')) {
+          console.error('❌ [FRONTEND LOGO] Invalid file type:', file.type, file.name)
           toast?.error('Please select an image file')
           return
         }
         
-        if (file.size > 5 * 1024 * 1024) {
+        // Store file and show cropper
+        selectedImageFile.value = file
+        previewImageUrl.value = URL.createObjectURL(file)
+        showImageCropper.value = true
+      } catch (error) {
+        console.error('❌ [FRONTEND LOGO] Error in handleLogoUpload:', error)
+        toast?.error('Failed to process image. Please try again.')
+      }
+    }
+    
+    const handleLogoCrop = async (croppedFile) => {
+      try {
+        console.log('✅ [FRONTEND LOGO] Logo cropped:', {
+          originalSize: selectedImageFile.value.size,
+          croppedSize: croppedFile.size,
+          reduction: Math.round((1 - croppedFile.size / selectedImageFile.value.size) * 100) + '%'
+        })
+        
+        // Validate file size (max 5MB)
+        if (croppedFile.size > 5 * 1024 * 1024) {
+          console.error('❌ [FRONTEND LOGO] Cropped file too large:', croppedFile.size, croppedFile.name)
           toast?.error('Image size should be less than 5MB')
           return
         }
         
+        console.log('✅ [FRONTEND LOGO] File validation passed:', croppedFile.name)
+        
         // Call tenant API to update logo
-        const response = await tenantApi.uploadTenantLogo(tenantStore.activeTenantKey, file)
+        console.log('📤 [FRONTEND LOGO] Sending request to backend:', {
+          tenantKey: tenantStore.activeTenantKey,
+          endpoint: `/tenant/${tenantStore.activeTenantKey}/logo`,
+          originalFileSize: selectedImageFile.value.size,
+          croppedFileSize: croppedFile.size,
+          fileName: croppedFile.name
+        })
+        
+        const response = await tenantApi.uploadTenantLogo(tenantStore.activeTenantKey, croppedFile)
+        console.log('✅ [FRONTEND LOGO] Backend response:', response.data)
         
         // Refresh tenant data
         await tenantStore.loadTenant()
@@ -297,8 +359,17 @@ export default {
         }))
         
         toast?.success('Logo updated successfully!')
+        
+        // Close cropper modal after successful upload
+        showImageCropper.value = false
+        // Clean up preview URL
+        if (previewImageUrl.value) {
+          URL.revokeObjectURL(previewImageUrl.value)
+          previewImageUrl.value = ''
+        }
+        selectedImageFile.value = null
       } catch (error) {
-        console.error('Logo upload error:', error)
+        console.error('❌ [FRONTEND LOGO] Upload error:', error)
         
         // Show specific error message
         let errorMessage = 'Failed to update logo'
@@ -308,8 +379,24 @@ export default {
           errorMessage = error.message
         }
         
+        console.error('❌ [FRONTEND LOGO] Error details:', {
+          message: errorMessage,
+          response: error.response?.data,
+          status: error.response?.status
+        })
+        
         toast?.error(errorMessage)
       }
+    }
+    
+    const handleImageCropperCancel = () => {
+      showImageCropper.value = false
+      // Clean up preview URL
+      if (previewImageUrl.value) {
+        URL.revokeObjectURL(previewImageUrl.value)
+        previewImageUrl.value = ''
+      }
+      selectedImageFile.value = null
     }
     
     // Modal submit handlers
@@ -474,6 +561,9 @@ export default {
       showBasicModal,
       showContactModal,
       showAddressModal,
+      showImageCropper,
+      selectedImageFile,
+      previewImageUrl,
       // Data
       tenant,
       tenantAddress,
@@ -487,6 +577,8 @@ export default {
       handleSettings,
       handleUpdateLogo,
       handleLogoUpload,
+      handleLogoCrop,
+      handleImageCropperCancel,
       handleBasicSubmit,
       handleContactSubmit,
       handleAddressSubmit

@@ -305,6 +305,24 @@ public class TenantController {
     }
 
     /**
+     * Cập nhật logo tenant (Alternative endpoint for frontend compatibility)
+     */
+    @PutMapping("/{tenantKey}/logo")
+    @Operation(
+        summary = "Update tenant logo (alternative endpoint)",
+        description = "Upload and update tenant logo image - alternative endpoint for frontend compatibility"
+    )
+    public TenantResponse updateLogoAlternative(
+            @PathVariable String tenantKey,
+            @Parameter(description = "Logo image file", required = true)
+            @RequestParam("logo") org.springframework.web.multipart.MultipartFile file
+    ) {
+        log.info("🔄 [ALTERNATIVE] Using alternative endpoint for tenant logo update: {}", tenantKey);
+        // Delegate to main method
+        return updateLogo(tenantKey, file);
+    }
+
+    /**
      * Get tenant members
      */
     @GetMapping("/key/{tenantKey}/members")

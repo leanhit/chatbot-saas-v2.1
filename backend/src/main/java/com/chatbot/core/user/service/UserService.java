@@ -138,73 +138,126 @@ public class UserService {
      */
     @Transactional
     public UserProfileResponse updateAvatar(Long userId, MultipartFile file) {
-        // Auto-create UserProfile if not exists (migration compatibility)
-        UserProfile profile = userProfileRepository.findByUserId(userId)
-                .orElseGet(() -> {
-                    log.info("Auto-creating UserProfile for user ID: {}", userId);
-                    User user = userRepository.findById(userId)
-                            .orElseThrow(() -> new RuntimeException("User not found with ID: " + userId));
-                    UserProfile newProfile = UserProfile.builder()
-                            .user(user)
-                            .build();
-                    return userProfileRepository.save(newProfile);
-                });
-
-        // Upload avatar file using FileMetadataService (same pattern as existing user avatar)
-        String avatarUrl;
         try {
-            // 1. Find category for avatar - use default category or create new
-            Category avatarCategory;
-            List<CategoryResponseDTO> categories = categoryService.getAllCategoriesGlobal();
-            Optional<Category> existingCategory = categories.stream()
-                .filter(cat -> "avatar".equals(cat.getName()))
-                .findFirst()
-                .map(catDto -> categoryService.getCategoryById(catDto.getId()).orElse(null));
-
-            if (existingCategory.isEmpty()) {
-                // Create default category for avatar if not exists
-                CategoryRequestDTO categoryRequest = new CategoryRequestDTO();
-                categoryRequest.setName("avatar");
-                categoryRequest.setDescription("User avatar images");
-                CategoryResponseDTO newCategoryDto = categoryService.createCategoryGlobal(categoryRequest);
-                avatarCategory = categoryService.getCategoryById(newCategoryDto.getId()).orElse(null);
-            } else {
-                avatarCategory = existingCategory.get();
-            }
-
-            if (avatarCategory == null) {
-                throw new RuntimeException("Không thể tạo hoặc tìm category cho avatar");
-            }
-
-            // 2. Upload file to MinIO using FileMetadataService
-            FileRequestDTO fileRequest = new FileRequestDTO();
-            fileRequest.setCategoryId(avatarCategory.getId());
-            fileRequest.setTitle("Avatar for user " + userId);
-            fileRequest.setDescription("User avatar uploaded from profile");
-            fileRequest.setTags(List.of("avatar", "user"));
-            fileRequest.setFiles(List.of(file));
-
-            List<com.chatbot.spokes.minio.image.fileMetadata.dto.FileResponseDTO> uploadedFiles = 
-                fileMetadataService.processUploadRequest(fileRequest, getCurrentUserEmail(userId));
-
-            if (uploadedFiles.isEmpty()) {
-                throw new RuntimeException("Không thể upload avatar");
-            }
-
-            // 3. Get public URL from FileResponse (not manual construct)
-            avatarUrl = uploadedFiles.get(0).getFileUrl();
+            log.info("🔄 [AVATAR UPDATE] Starting avatar update for userId: {}, fileName: {}, fileSize: {}", 
+                    userId, file.getOriginalFilename(), file.getSize());
             
-            log.info("Uploaded avatar for user ID: {} to public URL: {}", userId, avatarUrl);
+            // Validate file size
+            if (file.getSize() == 0) {
+                log.error("❌ [AVATAR UPDATE] File is empty (size: 0) for userId: {}", userId);
+                throw new IllegalArgumentException("File cannot be empty");
+            }
+            
+            // Validate file type
+            if (file.getContentType() == null || !file.getContentType().startsWith("image/")) {
+                log.error("❌ [AVATAR UPDATE] Invalid file type: {} for userId: {}", file.getContentType(), userId);
+                throw new IllegalArgumentException("Only image files are allowed");
+            }
+            
+            // Validate file size (max 5MB)
+            if (file.getSize() > 5 * 1024 * 1024) {
+                log.error("❌ [AVATAR UPDATE] File too large: {} bytes for userId: {}", file.getSize(), userId);
+                throw new IllegalArgumentException("File size cannot exceed 5MB");
+            }
+            
+            log.info("✅ [AVATAR UPDATE] File validation passed for userId: {}", userId);
+            
+            // Auto-create UserProfile if not exists (migration compatibility)
+            UserProfile profile = userProfileRepository.findByUserId(userId)
+                    .orElseGet(() -> {
+                        log.info("🆕 [AVATAR UPDATE] Auto-creating UserProfile for user ID: {}", userId);
+                        User user = userRepository.findById(userId)
+                                .orElseThrow(() -> new RuntimeException("User not found with ID: " + userId));
+                        UserProfile newProfile = UserProfile.builder()
+                                .user(user)
+                                .build();
+                        return userProfileRepository.save(newProfile);
+                    });
+
+            log.info("👤 [AVATAR UPDATE] Found/created profile for userId: {}", userId);
+
+            // Upload avatar file using FileMetadataService (same pattern as existing user avatar)
+            String avatarUrl;
+            try {
+                log.info("📂 [AVATAR UPDATE] Starting file upload process");
+                
+                // 1. Find category for avatar - use default category or create new
+                Category avatarCategory;
+                List<CategoryResponseDTO> categories = categoryService.getAllCategoriesGlobal();
+                log.info("📂 [AVATAR UPDATE] Found {} global categories", categories.size());
+                
+                Optional<Category> existingCategory = categories.stream()
+                    .filter(cat -> "avatar".equals(cat.getName()))
+                    .findFirst()
+                    .map(catDto -> {
+                        log.debug("📂 [AVATAR UPDATE] Found existing avatar category: {}", catDto.getId());
+                        return categoryService.getCategoryById(catDto.getId()).orElse(null);
+                    });
+
+                if (existingCategory.isEmpty()) {
+                    // Create default category for avatar if not exists
+                    log.info("📂 [AVATAR UPDATE] Creating new avatar category");
+                    CategoryRequestDTO categoryRequest = new CategoryRequestDTO();
+                    categoryRequest.setName("avatar");
+                    categoryRequest.setDescription("User avatar images");
+                    CategoryResponseDTO newCategoryDto = categoryService.createCategoryGlobal(categoryRequest);
+                    avatarCategory = categoryService.getCategoryById(newCategoryDto.getId()).orElse(null);
+                    log.info("📂 [AVATAR UPDATE] Created new category with ID: {}", newCategoryDto.getId());
+                } else {
+                    avatarCategory = existingCategory.get();
+                    log.debug("📂 [AVATAR UPDATE] Using existing category: {}", avatarCategory.getId());
+                }
+
+                if (avatarCategory == null) {
+                    log.error("❌ [AVATAR UPDATE] Failed to create or find avatar category for userId: {}", userId);
+                    throw new RuntimeException("Không thể tạo hoặc tìm category cho avatar");
+                }
+
+                log.info("✅ [AVATAR UPDATE] Category ready: {} (ID: {})", avatarCategory.getName(), avatarCategory.getId());
+
+                // 2. Upload file to MinIO using FileMetadataService
+                log.info("📤 [AVATAR UPDATE] Preparing file upload to MinIO");
+                FileRequestDTO fileRequest = new FileRequestDTO();
+                fileRequest.setCategoryId(avatarCategory.getId());
+                fileRequest.setTitle("Avatar for user " + userId);
+                fileRequest.setDescription("User avatar uploaded from profile");
+                fileRequest.setTags(List.of("avatar", "user"));
+                fileRequest.setFiles(List.of(file));
+
+                log.info("📤 [AVATAR UPDATE] Calling FileMetadataService.processUploadRequest");
+                List<com.chatbot.spokes.minio.image.fileMetadata.dto.FileResponseDTO> uploadedFiles = 
+                    fileMetadataService.processUploadRequest(fileRequest, getCurrentUserEmail(userId));
+
+                if (uploadedFiles.isEmpty()) {
+                    log.error("❌ [AVATAR UPDATE] No files returned from upload service for userId: {}", userId);
+                    throw new RuntimeException("Không thể upload avatar");
+                }
+
+                // 3. Get public URL from FileResponse (not manual construct)
+                avatarUrl = uploadedFiles.get(0).getFileUrl();
+                log.info("✅ [AVATAR UPDATE] File uploaded successfully to: {}", avatarUrl);
+                
+            } catch (Exception e) {
+                log.error("❌ [AVATAR UPDATE] Failed to upload avatar for user ID: {}", userId, e);
+                throw new RuntimeException("Failed to upload avatar: " + e.getMessage(), e);
+            }
+            
+            // Update profile with new avatar URL
+            log.info("💾 [AVATAR UPDATE] Updating profile with new avatar URL for userId: {}", userId);
+            profile.setAvatar(avatarUrl);
+            
+            UserProfile updatedProfile = userProfileRepository.save(profile);
+            log.info("✅ [AVATAR UPDATE] Avatar updated successfully for user ID: {}, avatarUrl: {}", userId, avatarUrl);
+            
+            return mapToProfileResponse(updatedProfile);
+            
+        } catch (IllegalArgumentException e) {
+            log.error("❌ [AVATAR UPDATE] Validation error for userId {}: {}", userId, e.getMessage());
+            throw e;
         } catch (Exception e) {
-            log.error("Failed to upload avatar for user ID: {}", userId, e);
-            throw new RuntimeException("Failed to upload avatar: " + e.getMessage());
+            log.error("💥 [AVATAR UPDATE] Unexpected error for userId {}: {}", userId, e.getMessage(), e);
+            throw new RuntimeException("Failed to update avatar: " + e.getMessage(), e);
         }
-        profile.setAvatar(avatarUrl);
-        
-        UserProfile updatedProfile = userProfileRepository.save(profile);
-        log.info("Updated avatar for user ID: {}", userId);
-        
-        return mapToProfileResponse(updatedProfile);
     }
 
     /**

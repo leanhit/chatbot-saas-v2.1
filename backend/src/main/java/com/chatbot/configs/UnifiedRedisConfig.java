@@ -53,9 +53,9 @@ public class UnifiedRedisConfig {
         template.setKeySerializer(new StringRedisSerializer());
         template.setHashKeySerializer(new StringRedisSerializer());
         
-        // JSON serialization for values
-        template.setValueSerializer(new GenericJackson2JsonRedisSerializer());
-        template.setHashValueSerializer(new GenericJackson2JsonRedisSerializer());
+        // Use String serializer for values to avoid double JSON serialization
+        template.setValueSerializer(new StringRedisSerializer());
+        template.setHashValueSerializer(new StringRedisSerializer());
         
         template.afterPropertiesSet();
         return template;
@@ -70,17 +70,6 @@ public class UnifiedRedisConfig {
         StringRedisTemplate template = new StringRedisTemplate();
         template.setConnectionFactory(connectionFactory);
         return template;
-    }
-
-    /**
-     * Redis Message Listener Container for Pub/Sub
-     * Used by: SimplePayment events, Takeover notifications
-     */
-    @Bean
-    public RedisMessageListenerContainer redisMessageListenerContainer(LettuceConnectionFactory connectionFactory) {
-        RedisMessageListenerContainer container = new RedisMessageListenerContainer();
-        container.setConnectionFactory(connectionFactory);
-        return container;
     }
 
     /**

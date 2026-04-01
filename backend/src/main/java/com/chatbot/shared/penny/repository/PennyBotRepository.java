@@ -20,6 +20,12 @@ import java.util.UUID;
 public interface PennyBotRepository extends JpaRepository<PennyBot, UUID> {
 
     /**
+     * Count active bots by tenant ID
+     */
+    @Query("SELECT COUNT(b) FROM PennyBot b WHERE b.tenantId = :tenantId AND b.isActive = true")
+    Long countByTenantIdAndIsActiveTrue(@Param("tenantId") Long tenantId);
+
+    /**
      * Find active bots by tenant ID
      */
     List<PennyBot> findByTenantIdAndIsActiveTrue(Long tenantId);

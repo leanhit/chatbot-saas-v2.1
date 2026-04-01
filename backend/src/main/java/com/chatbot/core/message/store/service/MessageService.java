@@ -6,6 +6,7 @@ import com.chatbot.core.message.store.model.Message;
 import com.chatbot.core.message.store.repository.ConversationRepository;
 import com.chatbot.core.message.store.repository.MessageRepository;
 import com.chatbot.core.tenant.infra.TenantContext;
+import com.chatbot.core.message.usage.service.MessageUsageService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.*;
@@ -24,6 +25,7 @@ public class MessageService {
 
     private final MessageRepository messageRepo;
     private final ConversationRepository conversationRepo; // Cần inject ConversationRepository để cập nhật lastMessageId
+    private final MessageUsageService messageUsageService;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     /**
@@ -31,6 +33,20 @@ public class MessageService {
      */
     @Transactional // Đảm bảo việc lưu message và cập nhật conversation là 1 transaction
     public Message saveMessage(Long conversationId, String sender, String content, String messageType, Map<String, Object> raw) {
+        // Validate message limit for user messages only
+        if ("user".equals(sender)) {
+            Long tenantId = TenantContext.getTenantId();
+            if (tenantId != null) {
+                try {
+                    messageUsageService.validateMessageSending(tenantId);
+                    log.debug("✅ Message limit validation passed for tenant: {}", tenantId);
+                } catch (MessageUsageService.MessageLimitExceededException e) {
+                    log.warn("❌ Message limit exceeded for tenant {}: {}", tenantId, e.getMessage());
+                    throw e; // Re-throw to stop message processing
+                }
+            }
+        }
+        
         // Kiểm tra nếu người gửi là agent, cho phép gửi message mà không cần takeover
         // Agent có thể gửi message bất cứ lúc nào để hỗ trợ user
         if ("agent".equals(sender)) {

@@ -288,7 +288,8 @@ export const usePaymentStore = defineStore('payment', {
         const depositRequest = {
           amount: this.selectedPackage.price,
           currency: 'VND',
-          description: `Thanh toán gói ${this.selectedPackage.name}`
+          description: `Thanh toán gói ${this.selectedPackage.name}`,
+          targetPackageId: this.selectedPackage.id // Add targetPackageId
         }
 
         const response = await paymentAPI.createDeposit(depositRequest)
@@ -323,6 +324,8 @@ export const usePaymentStore = defineStore('payment', {
         
         if (this.currentPayment.status === 'COMPLETED') {
           this.setMessage('Thanh toán thành công! Gói dịch vụ đã được kích hoạt.', 'success')
+          // Refresh current package after successful payment
+          await this.loadCurrentPackage()
         } else if (this.currentPayment.status === 'EXPIRED') {
           this.setMessage('Yêu cầu thanh toán đã hết hạn. Vui lòng tạo yêu cầu mới.', 'error')
         }
@@ -355,7 +358,10 @@ export const usePaymentStore = defineStore('payment', {
         // Check status after simulation
         await this.checkPaymentStatus()
         
-        this.setMessage('Giả lập thanh toán thành công!', 'success')
+        // Refresh current package to get updated package after payment
+        await this.loadCurrentPackage()
+        
+        this.setMessage('Giả lập thanh toán thành công! Gói dịch vụ đã được kích hoạt.', 'success')
       } catch (error) {
         console.error('❌ Error simulating payment:', error)
         this.setMessage('Lỗi giả lập thanh toán: ' + (error.response?.data?.message || error.message || 'Unknown error'), 'error')

@@ -50,6 +50,9 @@ public class SimplePayment {
 
     @Column(name = "description")
     private String description;
+    
+    @Column(name = "target_package_id")
+    private String targetPackageId;
 
     @Column(name = "qr_content")
     private String qrContent;

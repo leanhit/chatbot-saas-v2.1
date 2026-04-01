@@ -43,6 +43,9 @@ public interface AppSubscriptionRepository extends JpaRepository<AppSubscription
     @Query("SELECT COUNT(s) FROM AppSubscription s WHERE s.tenantId = :tenantId AND s.subscriptionStatus = :status")
     long countByTenantIdAndSubscriptionStatus(@Param("tenantId") Long tenantId, @Param("status") SubscriptionStatus status);
     
+    @Query("SELECT COUNT(s) FROM AppSubscription s WHERE s.tenantId = :tenantId")
+    long countByTenantId(@Param("tenantId") Long tenantId);
+    
     boolean existsByAppIdAndTenantId(Long appId, Long tenantId);
     
     @Query("SELECT s FROM AppSubscription s WHERE s.autoRenew = true AND s.subscriptionEnd <= :now AND s.subscriptionStatus = :status")

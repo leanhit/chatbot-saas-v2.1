@@ -20,6 +20,7 @@ public class PaymentStatusResponse {
     private String currency;
     private String description;
     private String bankTransactionId;
+    private String targetPackageId; // Add targetPackageId
     
     // Original timestamps
     private LocalDateTime createdAt;

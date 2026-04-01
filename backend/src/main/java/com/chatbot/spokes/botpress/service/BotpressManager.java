@@ -4,7 +4,9 @@ import com.chatbot.shared.penny.model.PennyBot;
 import com.chatbot.shared.penny.model.PennyBotType;
 import com.chatbot.shared.penny.repository.PennyBotRepository;
 import com.chatbot.core.tenant.infra.TenantContext;
+import com.chatbot.core.tenant.service.PackageLimitValidationService;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,10 +22,14 @@ public class BotpressManager {
     
     private final PennyBotRepository pennyBotRepository;
     private final BotpressApiService botpressApiService;
+    private final PackageLimitValidationService limitValidationService;
     
-    public BotpressManager(PennyBotRepository pennyBotRepository, BotpressApiService botpressApiService) {
+    public BotpressManager(PennyBotRepository pennyBotRepository, 
+                        BotpressApiService botpressApiService,
+                        PackageLimitValidationService limitValidationService) {
         this.pennyBotRepository = pennyBotRepository;
         this.botpressApiService = botpressApiService;
+        this.limitValidationService = limitValidationService;
     }
     
     /**
@@ -37,6 +43,11 @@ public class BotpressManager {
         if (tenantId == null) {
             throw new IllegalStateException("Tenant context not found for auto-creation");
         }
+        
+        // ✅ VALIDATE CHATBOT LIMIT FROM SIMPLE PAYMENT SYSTEM
+        log.info("🔍 Checking chatbot limit for tenant {} before auto-creating Botpress bot", tenantId);
+        limitValidationService.validateChatbotCreation(tenantId);
+        log.info("✅ Chatbot limit validation passed for tenant {} (Botpress auto-creation)", tenantId);
         
         // Get available Botpress bots
         List<BotpressApiService.BotInfo> availableBots = botpressApiService.getAvailableBots();
@@ -64,6 +75,11 @@ public class BotpressManager {
         if (tenantId == null) {
             throw new IllegalStateException("Tenant context not found");
         }
+        
+        // ✅ VALIDATE CHATBOT LIMIT FROM SIMPLE PAYMENT SYSTEM
+        log.info("🔍 Checking chatbot limit for tenant {} before creating Botpress bot", tenantId);
+        limitValidationService.validateChatbotCreation(tenantId);
+        log.info("✅ Chatbot limit validation passed for tenant {} (Botpress creation)", tenantId);
         
         // Create Penny Bot entity with Botpress integration
         PennyBot newBot = PennyBot.builder()

@@ -151,6 +151,9 @@ public class AuthController {
     public ResponseEntity<String> logout(
             @Parameter(hidden = true) @AuthenticationPrincipal(expression = "user") CustomUserDetails currentUser) {
         try {
+            if (currentUser == null) {
+                return ResponseEntity.badRequest().body("User not authenticated");
+            }
             authService.logout(currentUser.getUser().getEmail());
             return ResponseEntity.ok("Logout successful");
         } catch (Exception e) {

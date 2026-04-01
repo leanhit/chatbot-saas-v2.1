@@ -13,6 +13,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -20,6 +21,7 @@ import org.springframework.web.multipart.MultipartFile;
 @RestController
 @RequestMapping("/api/tenant")
 @RequiredArgsConstructor
+@Slf4j
 @Tag(name = "Tenant Profile Management", description = "Tenant profile and branding operations")
 public class TenantProfileController {
 
@@ -83,11 +85,57 @@ public class TenantProfileController {
             @PathVariable String tenantKey,
             @RequestParam("logo") MultipartFile file
     ) {
-        Tenant tenant = tenantRepository.findByTenantKey(tenantKey)
-                .orElseThrow(() -> new RuntimeException("Tenant not found with key: " + tenantKey));
-        return ResponseEntity.ok(
-                tenantProfileService.updateLogo(tenant.getId(), file)
-        );
+        try {
+            log.info("🔄 [TENANT PROFILE CONTROLLER] Logo upload request - tenantKey: {}, fileName: {}, fileSize: {}", 
+                    tenantKey, file.getOriginalFilename(), file.getSize());
+            
+            // Validate file
+            if (file == null) {
+                log.error("❌ [TENANT PROFILE CONTROLLER] File is null");
+                throw new IllegalArgumentException("File cannot be null");
+            }
+            
+            // Temporarily allow empty files for debugging
+            if (file.isEmpty()) {
+                log.warn("⚠️ [TENANT PROFILE CONTROLLER] File is empty (size: 0), but allowing for debugging");
+                // throw new IllegalArgumentException("File cannot be empty");
+            }
+            
+            // Validate file type
+            String contentType = file.getContentType();
+            if (contentType == null || !contentType.startsWith("image/")) {
+                log.error("❌ [TENANT PROFILE CONTROLLER] Invalid file type: {}", contentType);
+                throw new IllegalArgumentException("Only image files are allowed");
+            }
+            
+            // Validate file size (max 5MB)
+            if (file.getSize() > 5 * 1024 * 1024) {
+                log.error("❌ [TENANT PROFILE CONTROLLER] File too large: {} bytes", file.getSize());
+                throw new IllegalArgumentException("File size cannot exceed 5MB");
+            }
+            
+            log.info("✅ [TENANT PROFILE CONTROLLER] File validation passed, finding tenant");
+            
+            Tenant tenant = tenantRepository.findByTenantKey(tenantKey)
+                    .orElseThrow(() -> {
+                        log.error("❌ [TENANT PROFILE CONTROLLER] Tenant not found: {}", tenantKey);
+                        return new RuntimeException("Tenant not found with key: " + tenantKey);
+                    });
+            
+            log.info("✅ [TENANT PROFILE CONTROLLER] Found tenant: {} (ID: {}), calling service", tenant.getTenantKey(), tenant.getId());
+            
+            TenantProfileResponse response = tenantProfileService.updateLogo(tenant.getId(), file);
+            
+            log.info("✅ [TENANT PROFILE CONTROLLER] Logo updated successfully for tenant: {}", tenantKey);
+            return ResponseEntity.ok(response);
+            
+        } catch (IllegalArgumentException e) {
+            log.error("❌ [TENANT PROFILE CONTROLLER] Validation error: {}", e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            log.error("💥 [TENANT PROFILE CONTROLLER] Unexpected error: {}", e.getMessage(), e);
+            throw new RuntimeException("Failed to update logo: " + e.getMessage(), e);
+        }
     }
 
     @PutMapping(value = "/{tenantKey}", consumes = "application/json")

@@ -172,4 +172,52 @@ public class PackageController {
         boolean isEmpty = packageService.isEmpty();
         return ResponseEntity.ok(ApiResponse.success(isEmpty, "Packages initialization status"));
     }
+
+    /**
+     * Warm up package caches (admin only)
+     */
+    @PostMapping("/warmup-cache")
+    @PreAuthorize("hasRole('SYSTEM_ADMIN')")
+    @Operation(summary = "Warm up package caches", description = "Warm up package caches for performance (Admin only)")
+    public ResponseEntity<ApiResponse<String>> warmupCache() {
+        log.info("🔥 Admin warming up package caches");
+        try {
+            packageService.warmupCache();
+            return ResponseEntity.ok(ApiResponse.success("Cache warmed up successfully", "Package caches warmed up"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(ApiResponse.error("Failed to warm up cache: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * Clear package caches (admin only)
+     */
+    @PostMapping("/clear-cache")
+    @PreAuthorize("hasRole('SYSTEM_ADMIN')")
+    @Operation(summary = "Clear package caches", description = "Clear all package caches (Admin only)")
+    public ResponseEntity<ApiResponse<String>> clearCache() {
+        log.info("🗑️ Admin clearing package caches");
+        try {
+            packageService.clearCache();
+            return ResponseEntity.ok(ApiResponse.success("Cache cleared successfully", "Package caches cleared"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(ApiResponse.error("Failed to clear cache: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * Get cache statistics (admin only)
+     */
+    @GetMapping("/cache-stats")
+    @PreAuthorize("hasRole('SYSTEM_ADMIN')")
+    @Operation(summary = "Get cache statistics", description = "Get package cache statistics (Admin only)")
+    public ResponseEntity<ApiResponse<String>> getCacheStats() {
+        log.info("📊 Admin getting cache statistics");
+        try {
+            String stats = packageService.getCacheStats();
+            return ResponseEntity.ok(ApiResponse.success(stats, "Cache statistics retrieved"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(ApiResponse.error("Failed to get cache stats: " + e.getMessage()));
+        }
+    }
 }
