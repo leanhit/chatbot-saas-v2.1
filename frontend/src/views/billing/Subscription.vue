@@ -232,6 +232,21 @@ const availablePlans = computed(() => billingStore.availablePlans)
 const recentInvoices = computed(() => billingStore.recentInvoices)
 
 // Methods
+const loadData = async () => {
+  console.log('🔄 [Subscription] Loading subscription data...')
+  try {
+    await billingStore.fetchSubscription()
+    console.log('✅ [Subscription] Subscription data loaded')
+  } catch (error) {
+    console.error('❌ [Subscription] Error loading subscription data:', error)
+  }
+}
+
+// Load data on mount
+onMounted(() => {
+  loadData()
+})
+
 const getStatusBackgroundClass = () => {
   const statusClasses = {
     ACTIVE: 'bg-green-100 dark:bg-green-900',

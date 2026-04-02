@@ -2,6 +2,8 @@ package com.chatbot.core.simplepayment.service;
 
 import com.chatbot.core.simplepayment.dto.PaymentEvent;
 import com.chatbot.core.simplepayment.model.PaymentStatus;
+import com.chatbot.core.simplepayment.model.SimplePayment;
+import com.chatbot.core.simplepayment.repository.SimplePaymentRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,6 +22,7 @@ public class RedisPaymentService {
 
     private final RedisTemplate<String, Object> redisTemplate;
     private final ObjectMapper objectMapper;
+    private final SimplePaymentRepository simplePaymentRepository;
 
     // Redis keys
     private static final String PAYMENT_KEY_PREFIX = "payment:";
@@ -158,8 +161,18 @@ public class RedisPaymentService {
      */
     public PaymentEvent createStatusUpdateEvent(String referenceCode, PaymentStatus status, 
                                                String bankTransactionId) {
+        // Get payment record to extract tenant and user info
+        SimplePayment payment = null;
+        try {
+            payment = simplePaymentRepository.findByReferenceCode(referenceCode).orElse(null);
+        } catch (Exception e) {
+            log.warn("Could not fetch payment for event: {}", e.getMessage());
+        }
+        
         return PaymentEvent.builder()
                 .referenceCode(referenceCode)
+                .userId(payment != null ? payment.getUserId() : null)
+                .tenantId(payment != null ? payment.getTenantId() : null)
                 .status(status.name())
                 .bankTransactionId(bankTransactionId)
                 .updatedAt(LocalDateTime.now())

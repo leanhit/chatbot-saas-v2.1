@@ -21,18 +21,7 @@ import Rules from "../views/penny/rules/Rules.vue";
 import Messages from "../views/messages/chat/Chat.vue";
 import CustomerData from "../views/customers/CustomerData.vue";
 import ForgotPassword from "../views/auth/ForgotPassword.vue";
-// Wallet Pages
-import WalletDashboard from "../views/wallet/Dashboard.vue";
-import WalletTransactions from "../views/wallet/Transactions.vue";
-import WalletTopup from "../views/wallet/Topup.vue";
-import WalletTransfer from "../views/wallet/Transfer.vue";
-// Billing Pages
-import BillingOverview from "../views/billing/Overview.vue";
-import BillingSubscription from "../views/billing/Subscription.vue";
-import BillingPaymentMethods from "../views/billing/PaymentMethods.vue";
-import BillingInvoices from "../views/billing/Invoices.vue";
-import BillingEntitlements from "../views/billing/Entitlements.vue";
-// Payment Pages
+// Payment Pages (SimplePayment Only)
 import PaymentDeposit from "../views/payment/Deposit.vue";
 import PaymentHistory from "../views/payment/History.vue";
 var appname = " - Windzo Dashboard Admin Template";
@@ -136,63 +125,7 @@ const routes = [
     component: CustomerData,
     meta: { requiresAuth: true, title: "Customer Data" + appname, skipTenantCheck: true },
   },
-  // Wallet Routes
-  {
-    path: "/wallet/dashboard",
-    name: "wallet-dashboard",
-    component: WalletDashboard,
-    meta: { requiresAuth: true, title: "Wallet Dashboard" + appname, skipTenantCheck: true },
-  },
-  {
-    path: "/wallet/transactions",
-    name: "wallet-transactions",
-    component: WalletTransactions,
-    meta: { requiresAuth: true, title: "Wallet Transactions" + appname, skipTenantCheck: true },
-  },
-  {
-    path: "/wallet/topup",
-    name: "wallet-topup",
-    component: WalletTopup,
-    meta: { requiresAuth: true, title: "Wallet Top Up" + appname, skipTenantCheck: true },
-  },
-  {
-    path: "/wallet/transfer",
-    name: "wallet-transfer",
-    component: WalletTransfer,
-    meta: { requiresAuth: true, title: "Wallet Transfer" + appname, skipTenantCheck: true },
-  },
-  // Billing Routes
-  {
-    path: "/billing/overview",
-    name: "billing-overview",
-    component: BillingOverview,
-    meta: { requiresAuth: true, title: "Billing Overview" + appname, skipTenantCheck: true },
-  },
-  {
-    path: "/billing/subscription",
-    name: "billing-subscription",
-    component: BillingSubscription,
-    meta: { requiresAuth: true, title: "Billing Subscription" + appname, skipTenantCheck: true },
-  },
-  {
-    path: "/billing/payment-methods",
-    name: "billing-payment-methods",
-    component: BillingPaymentMethods,
-    meta: { requiresAuth: true, title: "Billing Payment Methods" + appname, skipTenantCheck: true },
-  },
-  {
-    path: "/billing/invoices",
-    name: "billing-invoices",
-    component: BillingInvoices,
-    meta: { requiresAuth: true, title: "Billing Invoices" + appname, skipTenantCheck: true },
-  },
-  {
-    path: "/billing/entitlements",
-    name: "billing-entitlements",
-    component: BillingEntitlements,
-    meta: { requiresAuth: true, title: "Billing Entitlements" + appname, skipTenantCheck: true },
-  },
-  // Payment Routes
+  // Payment Routes (SimplePayment Only)
   {
     path: "/payment/deposit",
     name: "payment-deposit",

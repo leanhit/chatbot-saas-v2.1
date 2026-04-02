@@ -318,18 +318,42 @@ export default {
         const scaleX = imageElement.value.naturalWidth / imageRect.width
         const scaleY = imageElement.value.naturalHeight / imageRect.height
         
-        const sourceX = (cropX.value - translateX.value) * scaleX / zoom.value
-        const sourceY = (cropY.value - translateY.value) * scaleY / zoom.value
-        const sourceWidth = (cropSize.value * scaleX) / zoom.value
-        const sourceHeight = (cropSize.value * scaleY) / zoom.value
+        // Calculate crop area in original image coordinates
+        const cropAreaX = (cropX.value - translateX.value) / zoom.value
+        const cropAreaY = (cropY.value - translateY.value) / zoom.value
+        const cropAreaSize = cropSize.value / zoom.value
         
-        // Draw cropped image to canvas
+        // Convert to original image pixel coordinates
+        const sourceX = cropAreaX * scaleX
+        const sourceY = cropAreaY * scaleY
+        const sourceWidth = cropAreaSize * scaleX
+        const sourceHeight = cropAreaSize * scaleY
+        
+        // Ensure source coordinates are within image bounds
+        const clampedSourceX = Math.max(0, Math.min(sourceX, imageElement.value.naturalWidth - sourceWidth))
+        const clampedSourceY = Math.max(0, Math.min(sourceY, imageElement.value.naturalHeight - sourceHeight))
+        const clampedSourceWidth = Math.min(sourceWidth, imageElement.value.naturalWidth - clampedSourceX)
+        const clampedSourceHeight = Math.min(sourceHeight, imageElement.value.naturalHeight - clampedSourceY)
+        
+        console.log('🎯 [ImageCropper] Crop coordinates:', {
+          sourceX: clampedSourceX,
+          sourceY: clampedSourceY,
+          sourceWidth: clampedSourceWidth,
+          sourceHeight: clampedSourceHeight,
+          imageWidth: imageElement.value.naturalWidth,
+          imageHeight: imageElement.value.naturalHeight
+        })
+        
+        // Clear canvas before drawing
+        ctx.clearRect(0, 0, canvas.width, canvas.height)
+        
+        // Draw cropped image to canvas with proper centering
         ctx.drawImage(
           imageElement.value,
-          sourceX,
-          sourceY,
-          sourceWidth,
-          sourceHeight,
+          clampedSourceX,
+          clampedSourceY,
+          clampedSourceWidth,
+          clampedSourceHeight,
           0,
           0,
           props.outputSize,

@@ -9,9 +9,10 @@
         class="flex"
       >
         <img
-          class="w-8 mt-1"
+          class="w-8 mt-1 flex-shrink-0"
           src="@/assets/logo/logo.svg"
           alt="logo windzo"
+          style="object-fit: contain; height: 32px; width: 32px;"
         />
         <h2
           class="text-2xl font-normal ml-3 mt-2 text-gray-800 dark:text-gray-200"

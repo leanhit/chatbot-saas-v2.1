@@ -67,6 +67,8 @@ public class TenantContextInterceptor implements HandlerInterceptor {
                path.startsWith("/api/actuator/") ||
                path.startsWith("/api/error") ||
                path.equals("/api/health") ||
-               path.startsWith("/api/public/");
+               path.startsWith("/api/public/health") ||
+               path.startsWith("/api/public/bank-info") ||
+               path.startsWith("/api/public/test/");
     }
 }

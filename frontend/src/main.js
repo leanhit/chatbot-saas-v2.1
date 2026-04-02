@@ -28,17 +28,27 @@ import { useAuthStore } from './stores/authStore'
 import { useGatewayTenantStore } from './stores/tenant/gateway/myTenantStore'
 import { useWalletStore } from './stores/walletStore'
 import { useBillingStore } from './stores/billingStore'
+import { usePaymentStore } from './stores/paymentStore'
 import websocketService from './services/websocketService'
 const authStore = useAuthStore()
 const tenantStore = useGatewayTenantStore()
 const walletStore = useWalletStore()
 const billingStore = useBillingStore()
+const paymentStore = usePaymentStore()
 authStore.initialize()
 
-// Initialize WebSocket when user is authenticated
-authStore.$subscribe((state, prevState) => {
+// Initialize billing store when user is authenticated
+authStore.$subscribe(async (state, prevState) => {
   if (state.isAuthenticated && !prevState.isAuthenticated) {
-    // User just logged in, connect WebSocket
+    // User just logged in, initialize billing data
+    try {
+      await billingStore.fetchSubscription()
+      console.log('✅ [Main] Billing store initialized')
+    } catch (error) {
+      console.error('❌ [Main] Failed to initialize billing store:', error)
+    }
+    
+    // Initialize WebSocket
     const token = localStorage.getItem('accessToken')
     if (token) {
       websocketService.connect(token)

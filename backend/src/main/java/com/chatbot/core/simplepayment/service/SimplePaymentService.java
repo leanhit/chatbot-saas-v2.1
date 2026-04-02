@@ -2,15 +2,16 @@ package com.chatbot.core.simplepayment.service;
 
 import com.chatbot.core.simplepayment.dto.DepositRequest;
 import com.chatbot.core.simplepayment.dto.DepositResponse;
+import com.chatbot.core.simplepayment.dto.PaymentEvent;
 import com.chatbot.core.simplepayment.dto.PaymentStatusResponse;
 import com.chatbot.core.simplepayment.model.PaymentStatus;
 import com.chatbot.core.simplepayment.model.SimplePayment;
 import com.chatbot.core.simplepayment.model.Package;
 import com.chatbot.core.simplepayment.repository.SimplePaymentRepository;
 import com.chatbot.core.simplepayment.repository.PackageRepository;
+import com.chatbot.core.tenant.infra.TenantContext;
 import com.chatbot.core.user.repository.UserRepository;
 import com.chatbot.core.user.model.User;
-import com.chatbot.core.simplepayment.dto.PaymentEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -204,8 +205,23 @@ public class SimplePaymentService {
         // Update user balance
         updateUserBalance(payment.getUserId(), payment.getAmount());
 
-        // Process automatic package upgrade
-        boolean upgradeSuccess = packageUpgradeService.processPackageUpgrade(payment);
+        // Process automatic package upgrade with correct tenant context
+        log.info("🔄 [SimplePaymentService] About to process package upgrade for payment: {}, targetPackage: {}", 
+                referenceCode, payment.getTargetPackageId());
+        
+        boolean upgradeSuccess = false;
+        try {
+            upgradeSuccess = TenantContext.executeWithTenantId(
+                payment.getTenantId(), 
+                () -> packageUpgradeService.processPackageUpgrade(payment)
+            );
+            log.info("✅ [SimplePaymentService] Package upgrade process completed for payment: {}, success: {}", 
+                    referenceCode, upgradeSuccess);
+        } catch (Exception e) {
+            log.error("❌ [SimplePaymentService] Package upgrade failed for payment {}: {}", 
+                    referenceCode, e.getMessage(), e);
+            upgradeSuccess = false;
+        }
         
         if (upgradeSuccess) {
             log.info("🎁 Package upgrade processed successfully for payment: {}", referenceCode);

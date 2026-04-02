@@ -1,5 +1,7 @@
 package com.chatbot.core.simplepayment.service;
 
+import com.chatbot.core.simplepayment.model.SimplePayment;
+import com.chatbot.core.simplepayment.repository.SimplePaymentRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,6 +29,9 @@ public class BankApiService {
     
     @Autowired
     private RedisPaymentService redisPaymentService;
+    
+    @Autowired
+    private SimplePaymentRepository paymentRepository;
     
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -172,21 +177,30 @@ public class BankApiService {
         
         // Publish Redis event for PaymentEventListener to handle
         try {
-            // Create PaymentEvent with proper structure using RedisPaymentService
-            var event = redisPaymentService.createPaymentEvent(
-                referenceCode, 
-                1L, // userId
-                1L, // tenantId  
-                amount.toString(),
-                "VND",
-                "Simulated bank transaction"
-            );
-            event.setType("PAYMENT_SIMULATED");
-            event.setBankTransactionId(transactionId);
-            event.setUpdatedAt(LocalDateTime.now());
+            // Find the actual payment to get correct userId and tenantId
+            SimplePayment payment = paymentRepository.findByReferenceCode(referenceCode).orElse(null);
             
-            // Use RedisPaymentService to publish
-            redisPaymentService.publishPaymentEvent(event);
+            if (payment != null) {
+                // Create PaymentEvent with actual payment data
+                var event = redisPaymentService.createPaymentEvent(
+                    referenceCode, 
+                    payment.getUserId(), // actual userId
+                    payment.getTenantId(), // actual tenantId
+                    amount.toString(),
+                    "VND",
+                    "Simulated bank transaction"
+                );
+                event.setType("PAYMENT_SIMULATED");
+                event.setBankTransactionId(transactionId);
+                event.setUpdatedAt(LocalDateTime.now());
+                
+                log.info("🧪 Publishing simulated payment event for tenant: {}", payment.getTenantId());
+                
+                // Use RedisPaymentService to publish
+                redisPaymentService.publishPaymentEvent(event);
+            } else {
+                log.warn("⚠️ Payment not found for reference: {}, skipping event publish", referenceCode);
+            }
             
             log.info("✅ Published simulated payment event: {}", referenceCode);
         } catch (Exception e) {

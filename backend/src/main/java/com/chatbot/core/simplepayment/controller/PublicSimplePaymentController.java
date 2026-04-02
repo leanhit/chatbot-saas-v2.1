@@ -4,14 +4,23 @@ import com.chatbot.core.simplepayment.dto.DepositRequest;
 import com.chatbot.core.simplepayment.dto.DepositResponse;
 import com.chatbot.core.simplepayment.dto.PaymentStatusResponse;
 import com.chatbot.core.simplepayment.service.BankApiService;
-import com.chatbot.core.simplepayment.service.QRCodeService;
 import com.chatbot.core.simplepayment.service.SimplePaymentService;
-import com.chatbot.shared.utils.DateUtils;
+import com.chatbot.core.simplepayment.service.QRCodeService;
+import com.chatbot.core.tenant.service.TenantPackageService;
+import com.chatbot.core.tenant.infra.TenantContext;
+import com.chatbot.core.tenant.membership.repository.TenantJoinRequestRepository;
+import com.chatbot.core.tenant.membership.model.MembershipStatus;
+import com.chatbot.core.tenant.membership.model.TenantJoinRequest;
+import com.chatbot.core.user.model.User;
+import com.chatbot.core.user.repository.UserRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
@@ -27,7 +36,10 @@ public class PublicSimplePaymentController {
 
     private final SimplePaymentService simplePaymentService;
     private final QRCodeService qrCodeService;
+    private final UserRepository userRepository;
     private final BankApiService bankApiService;
+    private final TenantPackageService tenantPackageService;
+    private final TenantJoinRequestRepository tenantJoinRequestRepository;
 
     /**
      * Public health check - no authentication required
@@ -76,18 +88,40 @@ public class PublicSimplePaymentController {
     @PostMapping("/deposit")
     @Operation(
         summary = "Create deposit request (public)",
-        description = "Create a new deposit request with QR code for bank transfer - no authentication required"
+        description = "Create a new deposit request - no authentication required"
     )
     public ResponseEntity<DepositResponse> createDeposit(@RequestBody DepositRequest request) {
         
         log.info("📱 Creating public deposit request: {} VND", request.getAmount());
 
         try {
-            // Mock user and tenant IDs for public testing
-            Long userId = 1L;
-            Long tenantId = 1L;
+            // Get authenticated user ID from security context
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication == null || !authentication.isAuthenticated()) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            }
+            
+            // Get user ID from authenticated user
+            String userEmail = authentication.getName();
+            User user = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new RuntimeException("User not found: " + userEmail));
+            
+            // Get tenant ID from context or user's tenant
+            Long tenantId = TenantContext.getTenantId();
+            if (tenantId == null) {
+                // Fallback to user's primary tenant - get from TenantJoinRequest
+                List<TenantJoinRequest> activeMemberships = tenantJoinRequestRepository.findByUser_IdAndStatus(user.getId(), MembershipStatus.ACTIVE);
+                if (!activeMemberships.isEmpty()) {
+                    tenantId = activeMemberships.get(0).getTenant().getId();
+                } else {
+                    throw new RuntimeException("No active tenant found for user: " + user.getId());
+                }
+            }
+            
+            log.info("📱 Creating deposit request for user: {}, amount: {}, targetPackage: {}", 
+                    user.getId(), request.getAmount(), request.getTargetPackageId());
 
-            DepositResponse response = simplePaymentService.createDeposit(request, userId, tenantId);
+            DepositResponse response = simplePaymentService.createDeposit(request, user.getId(), tenantId);
             // Apply DateUtils formatting
             response.withFormattedDates();
             

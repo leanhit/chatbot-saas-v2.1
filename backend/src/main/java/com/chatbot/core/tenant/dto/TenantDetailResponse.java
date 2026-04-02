@@ -32,6 +32,11 @@ public class TenantDetailResponse {
     
     private TenantProfileResponse profile;
     private AddressDetailResponseDTO address;
+    
+    // Package information
+    private String currentPackageId;
+    private String currentPackageName;
+    private Instant packageActivatedAt;
 
     /**
      * Tạo đối tượng TenantDetailResponse từ các thành phần.
@@ -51,6 +56,12 @@ public class TenantDetailResponse {
         response.setCreatedAt(tenant.getCreatedAt());
         response.setProfile(profile);
         response.setAddress(address);
+        
+        // Add package information
+        response.setCurrentPackageId(tenant.getCurrentPackageId());
+        response.setCurrentPackageName(tenant.getCurrentPackageName());
+        response.setPackageActivatedAt(tenant.getPackageActivatedAt());
+        
         return response;
     }
 
@@ -73,6 +84,12 @@ public class TenantDetailResponse {
         response.setProfile(profile);
         // Lấy địa chỉ đầu tiên nếu có, không thì để null
         response.setAddress(addresses != null && !addresses.isEmpty() ? addresses.get(0) : null);
+        
+        // Add package information
+        response.setCurrentPackageId(tenant.getCurrentPackageId());
+        response.setCurrentPackageName(tenant.getCurrentPackageName());
+        response.setPackageActivatedAt(tenant.getPackageActivatedAt());
+        
         return response;
     }
 }

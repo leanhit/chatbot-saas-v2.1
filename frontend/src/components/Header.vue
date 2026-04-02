@@ -82,6 +82,18 @@
               </span>
             </button>
             
+            <!-- Package Badge - Removed Billing, keeping simple payment only -->
+            <!-- <div class="ml-2">
+              <div 
+                v-if="currentPlan"
+                class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium"
+                :class="getPackageBadgeClass()"
+              >
+                <Icon :icon="getPackageIcon()" class="w-3 h-3 mr-1" />
+                {{ currentPlan.name || 'Free' }}
+              </div>
+            </div> -->
+            
             <!-- Notification Dropdown -->
             <transition
               enter-active-class="transition ease-out duration-200"
@@ -157,9 +169,10 @@
               <div class="flex items-center space-x-3">
                 <img
                   :src="userAvatar"
-                  class="h-8 w-8 rounded-full object-cover ring-2 ring-gray-300 dark:ring-gray-600"
+                  class="h-8 w-8 rounded-full object-cover ring-2 ring-gray-300 dark:ring-gray-600 flex-shrink-0"
                   alt="User Avatar"
                   @error="handleAvatarError"
+                  style="border-radius: 50%; overflow: hidden;"
                 />
                 <div class="hidden lg:block text-left">
                   <p class="text-sm font-medium text-gray-900 dark:text-white">{{ userName }}</p>
@@ -252,7 +265,7 @@
   import { Icon } from "@iconify/vue";
   import { useRouter } from "vue-router";
   import { useI18n } from 'vue-i18n';
-  import { ref, onUnmounted, computed } from 'vue';
+  import { ref, onUnmounted, computed, onMounted } from 'vue';
   import { fullscreen } from "@/helper/fullscreen";
   import { setDarkMode, loadDarkMode } from "@/helper/theme";
   import LanguageSwitcher from "./LanguageSwitcher.vue";
@@ -290,6 +303,11 @@
       const router = useRouter();
       const avatarTimestamp = ref(Date.now());
       
+      // Load subscription data when component mounts if not already loaded
+      onMounted(async () => {
+        // Billing functionality removed - only simple payment available
+      });
+      
       // Computed property for search placeholder based on context
       const searchPlaceholder = computed(() => {
         switch (searchStore.searchContext) {
@@ -320,7 +338,7 @@
         router,
         t,
         avatarTimestamp,
-        searchPlaceholder
+        searchPlaceholder,
       };
     },
     computed: {
@@ -377,9 +395,7 @@
       },
       notifToggle: function () {
         this.notification = !this.notification;
-      },
-      notifToggleBlur: function () {
-        this.notification = false;
+        this.menu = false;
       },
       limitText(message) {
         const text =
@@ -400,10 +416,22 @@
         this.authStore.logout();
         this.menu = false;
       },
-      // handle avatar image error
+      // handle tenant gateway click
+      handleTenantGateway() {
+        // Navigate to tenant gateway
+        this.$router.push('/tenant-gateway').then(() => {
+        }).catch(error => {
+        });
+        this.menu = false;
+      },
+      // Enhanced avatar error handling
       handleAvatarError(event) {
         const img = event.target;
         const originalSrc = img.src;
+        
+        // Force proper styling for fallback
+        img.style.cssText = 'border-radius: 50%; overflow: hidden; object-fit: cover; height: 32px; width: 32px;';
+        
         // Try to handle Botpress SSL errors with proxy
         if (originalSrc && originalSrc.includes('cwsv.truyenthongviet.vn:9000')) {
           try {
@@ -432,14 +460,6 @@
           img.src = require("@/assets/img/user.jpg");
         }
       },
-      // handle tenant gateway click
-      handleTenantGateway() {
-        // Navigate to tenant gateway
-        this.$router.push('/tenant-gateway').then(() => {
-        }).catch(error => {
-        });
-        this.menu = false;
-      },
       imageAssets(url) {
         return require("@/assets/img/" + url);
       },
@@ -456,6 +476,14 @@
           'agent_takeover': 'mdi:account-switch'
         };
         return icons[type] || 'mdi:bell';
+      },
+      // Get package badge class - Removed Billing
+      getPackageBadgeClass() {
+        return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200';
+      },
+      // Get package icon - Removed Billing  
+      getPackageIcon() {
+        return 'mdi:help-circle-outline';
       },
       // Format timestamp
       formatTime(timestamp) {

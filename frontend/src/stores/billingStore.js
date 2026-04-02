@@ -59,11 +59,41 @@ export const useBillingStore = defineStore('billing', () => {
 
     loading.value = true
     try {
-      console.log('Fetching subscription for tenant:', tenantKey)
-      const response = await billingApi.getSubscription(tenantKey)
-      subscription.value = response.data
-      currentPlan.value = response.data.plan
+      console.log('🔄 [BillingStore] Fetching subscription for tenant:', tenantKey)
+      
+      // Get tenant data from /tenants/me instead of billing API
+      const response = await fetch(`/api/tenants/me`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json'
+        }
+      })
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch tenant data')
+      }
+      
+      const tenants = await response.json()
+      if (tenants && tenants.length > 0) {
+        const tenant = tenants[0]
+        console.log('📦 [BillingStore] Tenant data:', tenant)
+        
+        // Map tenant data to subscription format
+        subscription.value = {
+          status: tenant.status === 'ACTIVE' ? 'ACTIVE' : 'INACTIVE',
+          endsAt: tenant.expiresAt,
+          plan: {
+            id: tenant.currentPackageId,
+            name: tenant.currentPackageName,
+            packageId: tenant.currentPackageId
+          }
+        }
+        
+        currentPlan.value = subscription.value.plan
+        console.log('✅ [BillingStore] Subscription loaded:', subscription.value)
+      }
     } catch (err) {
+      console.error('❌ [BillingStore] Error fetching subscription:', err)
       error.value = err.message || 'Failed to fetch subscription'
       throw err
     } finally {

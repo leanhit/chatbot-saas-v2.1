@@ -50,6 +50,9 @@ export const useGatewayTenantStore = defineStore('gateway-tenant', () => {
       // Use new endpoint with tenantKey
       const { data } = await tenantApi.getTenant(tenantKey)
       currentTenant.value = data
+      
+      // Billing functionality removed - only simple payment available
+      
       // Fetch user profile now that tenant context is set
       try {
         const authStore = useAuthStore()

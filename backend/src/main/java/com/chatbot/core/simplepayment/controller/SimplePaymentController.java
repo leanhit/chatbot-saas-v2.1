@@ -7,6 +7,8 @@ import com.chatbot.core.simplepayment.service.BankApiService;
 import com.chatbot.core.simplepayment.service.QRCodeService;
 import com.chatbot.core.simplepayment.service.SimplePaymentService;
 import com.chatbot.core.tenant.infra.TenantContext;
+import com.chatbot.core.tenant.model.Tenant;
+import com.chatbot.core.tenant.repository.TenantRepository;
 import com.chatbot.shared.utils.DateUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -33,6 +35,7 @@ public class SimplePaymentController {
     private final SimplePaymentService simplePaymentService;
     private final QRCodeService qrCodeService;
     private final BankApiService bankApiService;
+    private final TenantRepository tenantRepository;
 
     /**
      * Tạo yêu cầu nạp tiền mới
@@ -295,7 +298,24 @@ public class SimplePaymentController {
     }
 
     private Long extractTenantId(HttpServletRequest request) {
-        // In real implementation, extract from request context or user session
-        return 1L; // Mock tenant ID
+        // Extract from TenantContext (set by TenantContextInterceptor)
+        Long tenantId = TenantContext.getTenantId();
+        if (tenantId != null) {
+            return tenantId;
+        }
+        
+        // Fallback: extract from X-Tenant-Key header
+        String tenantKey = request.getHeader("X-Tenant-Key");
+        if (tenantKey != null && !tenantKey.isBlank()) {
+            try {
+                return tenantRepository.findByTenantKey(tenantKey)
+                        .map(Tenant::getId)
+                        .orElseThrow(() -> new RuntimeException("Tenant not found: " + tenantKey));
+            } catch (Exception e) {
+                log.warn("Could not extract tenant ID from header: {}", e.getMessage());
+            }
+        }
+        
+        throw new RuntimeException("Tenant ID not found in context or request");
     }
 }

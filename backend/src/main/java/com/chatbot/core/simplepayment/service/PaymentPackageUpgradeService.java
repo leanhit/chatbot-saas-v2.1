@@ -76,8 +76,14 @@ public class PaymentPackageUpgradeService {
             String currentPackageId = getCurrentPackageId(payment.getTenantId());
             audit.setFromPackageId(currentPackageId);
 
+            log.info("🔄 [PaymentPackageUpgradeService] About to upgrade tenant {} from {} to {}", 
+                    payment.getTenantId(), currentPackageId, targetPackageId);
+
             // Execute upgrade
             tenantPackageService.upgradeTenantPackage(payment.getTenantId(), targetPackageId);
+            
+            log.info("✅ [PaymentPackageUpgradeService] Successfully called upgrade for tenant {} to {}", 
+                    payment.getTenantId(), targetPackageId);
             
             // Update audit as successful
             audit.setUpgradeStatus(PackageUpgradeAudit.UpgradeStatus.SUCCESS);

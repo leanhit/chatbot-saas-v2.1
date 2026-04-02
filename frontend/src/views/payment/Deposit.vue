@@ -31,9 +31,9 @@
           @click="paymentStore.selectPackage(pkg.packageId)"
           :class="[
             'bg-white dark:bg-gray-900 rounded-lg shadow p-6 border-2 cursor-pointer transition-all duration-200 hover:shadow-lg relative',
-            paymentStore.currentPackage?.id === pkg.packageId
+            (paymentStore.currentPackage?.id === pkg.packageId || paymentStore.currentPackage?.packageId === pkg.packageId)
               ? 'border-green-500 dark:border-green-400'
-              : paymentStore.selectedPackage?.id === pkg.packageId
+              : (paymentStore.selectedPackage?.id === pkg.packageId || paymentStore.selectedPackage?.packageId === pkg.packageId)
               ? 'border-blue-500 dark:border-blue-400'
               : 'border-gray-200 dark:border-gray-700'
           ]"
@@ -48,16 +48,18 @@
           
           <!-- Status labels -->
           <div 
-            v-if="paymentStore.currentPackage?.id === pkg.packageId"
+            v-if="paymentStore.currentPackage?.id === pkg.packageId || paymentStore.currentPackage?.packageId === pkg.packageId"
             class="absolute -top-3 left-4 bg-green-500 dark:bg-green-600 text-white dark:text-white px-3 py-1 rounded-full text-xs font-semibold"
           >
-            {{ $t('payment.current') }}
+            <Icon icon="mdi:check-circle" class="w-3 h-3 mr-1" />
+            Đang dùng
           </div>
           <div 
-            v-else-if="paymentStore.selectedPackage?.id === pkg.packageId"
+            v-else-if="paymentStore.selectedPackage?.id === pkg.packageId || paymentStore.selectedPackage?.packageId === pkg.packageId"
             class="absolute -top-3 left-4 bg-blue-500 dark:bg-blue-600 text-white dark:text-white px-3 py-1 rounded-full text-xs font-semibold"
           >
-            {{ $t('payment.selected') }}
+            <Icon icon="mdi:cart" class="w-3 h-3 mr-1" />
+            Đã chọn
           </div>
           
           <div class="text-center">
@@ -345,7 +347,7 @@ import { Icon } from '@iconify/vue'
 import { usePaymentStore } from '@/stores/paymentStore'
 import QRCode from 'qrcode'
 import { useI18n } from 'vue-i18n'
-import { watch } from 'vue'
+import { watch, onMounted } from 'vue'
 
 export default {
   name: 'PaymentDeposit',
@@ -512,16 +514,47 @@ export default {
 
     // Load data on mount
     const loadAllData = async () => {
-      await paymentStore.loadPackages()
-      await paymentStore.loadBankInfo()
-      await paymentStore.loadCurrentPackage()
+      console.log('🔄 [Deposit] Loading all payment data...')
+      try {
+        await paymentStore.loadPackages()
+        console.log('✅ [Deposit] Packages loaded')
+        
+        await paymentStore.loadBankInfo()
+        console.log('✅ [Deposit] Bank info loaded')
+        
+        await paymentStore.loadCurrentPackage()
+        console.log('✅ [Deposit] Current package loaded')
+        
+        console.log('✅ [Deposit] All payment data loaded successfully')
+      } catch (error) {
+        console.error('❌ [Deposit] Error loading payment data:', error)
+      }
     }
     
-    loadAllData()
+    // Load data on mount
+    onMounted(() => {
+      loadAllData()
+    })
 
     // Debug: Log current package
     console.log('Payment store current package:', paymentStore.currentPackage)
     console.log('Payment store selected package:', paymentStore.selectedPackage)
+    console.log('Payment store packages:', paymentStore.packages)
+    
+    // Debug function to check package matching
+    const debugPackageMatch = () => {
+      if (paymentStore.currentPackage) {
+        console.log('🔍 Current package ID:', paymentStore.currentPackage.id)
+        console.log('🔍 Current package packageId:', paymentStore.currentPackage.packageId)
+        paymentStore.packages.forEach(pkg => {
+          const match = paymentStore.currentPackage.id === pkg.packageId || paymentStore.currentPackage.packageId === pkg.packageId
+          console.log(`📦 Package ${pkg.packageId} matches: ${match}`)
+        })
+      }
+    }
+    
+    // Call debug function
+    debugPackageMatch()
 
     return {
       paymentStore,

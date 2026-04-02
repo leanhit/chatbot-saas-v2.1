@@ -62,10 +62,13 @@ public class TenantPackageService {
         
         String oldPackageId = tenant.getCurrentPackageId();
         
+        log.info("🔄 [TenantPackageService] Current package: {}, New package: {}", oldPackageId, packageId);
+        
         // Update tenant package
         tenant.setCurrentPackageId(packageId);
         tenant.setPackageActivatedAt(LocalDateTime.now());
         
+        log.info("💾 [TenantPackageService] Saving tenant with new package...");
         tenantRepository.save(tenant);
         
         log.info("✅ [TenantPackageService] Tenant {} upgraded from {} to {} at {}", 

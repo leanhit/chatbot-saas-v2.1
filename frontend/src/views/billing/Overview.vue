@@ -296,6 +296,21 @@ const progressPercentage = computed(() => {
 })
 
 // Methods
+const loadData = async () => {
+  console.log('🔄 [Overview] Loading billing data...')
+  try {
+    await billingStore.fetchSubscription()
+    console.log('✅ [Overview] Billing data loaded')
+  } catch (error) {
+    console.error('❌ [Overview] Error loading billing data:', error)
+  }
+}
+
+// Load data on mount
+onMounted(() => {
+  loadData()
+})
+
 const getPlanIcon = () => {
   const planIcons = {
     FREE: 'mdi:gift-outline',

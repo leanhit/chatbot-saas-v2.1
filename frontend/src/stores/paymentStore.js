@@ -421,38 +421,60 @@ export const usePaymentStore = defineStore('payment', {
      */
     async loadCurrentPackage() {
       try {
-        // Get current tenant package from backend
-        const response = await tenantApi.getCurrentTenantPackage()
+        console.log('🔄 [PaymentStore] Loading current package from tenant API...')
         
-        if (response.data) {
-          // Map backend package to frontend format
-          this.currentPackage = {
-            id: response.data.packageId,
-            name: response.data.name,
-            price: response.data.price,
-            duration: response.data.duration,
-            features: this.getPackageFeatures(response.data)
+        // Get current tenant package from backend
+        const response = await tenantApi.getUserTenants()
+        
+        if (response.data && response.data.length > 0) {
+          const tenant = response.data[0]
+          console.log('📦 [PaymentStore] Tenant data:', tenant)
+          
+          if (tenant.currentPackageId && tenant.currentPackageName) {
+            // Map backend tenant data to frontend package format
+            this.currentPackage = {
+              id: tenant.currentPackageId,
+              name: tenant.currentPackageName,
+              packageId: tenant.currentPackageId,
+              // Try to find full package details from packages list
+              ...(this.packages.find(pkg => pkg.packageId === tenant.currentPackageId) || {
+                price: 0,
+                duration: 'unlimited',
+                currency: 'VND',
+                description: `${tenant.currentPackageName} package`
+              })
+            }
+            console.log('✅ [PaymentStore] Current package loaded from tenant:', this.currentPackage)
+          } else {
+            console.warn('⚠️ [PaymentStore] No package info found in tenant data')
+            // Fallback to free package if available
+            if (this.packages.length > 0) {
+              const freePackage = this.packages.find(pkg => pkg.packageId === 'free')
+              if (freePackage) {
+                this.setCurrentPackage('free')
+                console.log('✅ [PaymentStore] Fallback: Set free package as default')
+              }
+            }
           }
-          console.log('✅ Current package loaded from tenant API:', this.currentPackage)
         } else {
-          console.warn('⚠️ No current package found for tenant - setting free package as default')
+          console.warn('⚠️ [PaymentStore] No tenant data found')
           // Fallback to free package if available
           if (this.packages.length > 0) {
             const freePackage = this.packages.find(pkg => pkg.packageId === 'free')
             if (freePackage) {
               this.setCurrentPackage('free')
-              console.log('✅ Fallback: Set free package as default')
+              console.log('✅ [PaymentStore] Error fallback: Set free package as default')
             }
           }
         }
       } catch (error) {
-        console.error('❌ Error loading current package:', error)
+        console.error('❌ [PaymentStore] Error loading current package:', error)
         // Fallback to free package if available
         if (this.packages.length > 0) {
           const freePackage = this.packages.find(pkg => pkg.packageId === 'free')
           if (freePackage) {
             this.setCurrentPackage('free')
-            console.log('✅ Error fallback: Set free package as default')
+            console.log('✅ [PaymentStore] Error fallback: Set free package as default')
           }
         }
       }

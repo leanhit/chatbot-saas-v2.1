@@ -48,11 +48,11 @@
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div
               v-for="plan in availablePlans"
-              :key="plan.id"
+              :key="plan.id || plan.packageId"
               @click="selectPlan(plan)"
               :class="[
                 'p-4 border-2 rounded-lg cursor-pointer transition-all',
-                selectedPlan?.id === plan.id
+                (selectedPlan?.id === plan.id || selectedPlan?.packageId === plan.packageId) || (currentPlan?.id === plan.id || currentPlan?.packageId === plan.packageId)
                   ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
                   : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'
               ]"
@@ -61,6 +61,13 @@
               <div class="text-center mb-4">
                 <h4 class="text-lg font-semibold text-gray-900 dark:text-white">{{ plan.name }}</h4>
                 <p class="text-sm text-gray-500 dark:text-gray-400">{{ plan.description }}</p>
+                <!-- Current Plan Badge -->
+                <div v-if="currentPlan?.id === plan.id || currentPlan?.packageId === plan.packageId" class="mt-2">
+                  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                    <Icon icon="mdi:check-circle" class="w-3 h-3 mr-1" />
+                    Đang dùng
+                  </span>
+                </div>
               </div>
 
               <!-- Price -->

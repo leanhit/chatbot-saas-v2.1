@@ -78,6 +78,12 @@ public class TenantMapper {
         switch (packageId.toLowerCase()) {
             case "free":
                 return "Free";
+            case "3months":
+                return "3 Months";
+            case "6months":
+                return "6 Months";
+            case "12months":
+                return "12 Months";
             case "pro":
                 return "Pro";
             case "business":
