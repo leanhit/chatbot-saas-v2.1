@@ -283,16 +283,26 @@ export function getRelativeTime(dateString) {
  * @returns {string} Formatted currency string
  */
 export function formatCurrency(amount, currency = 'USD') {
-  if (typeof amount !== 'number') return 'N/A'
+  // Handle different input types
+  let numAmount = amount
+  
+  if (typeof amount === 'object' && amount !== null) {
+    // If amount is an object, try to extract numeric value
+    numAmount = amount.value || amount.amount || parseFloat(amount) || 0
+  } else if (typeof amount === 'string') {
+    numAmount = parseFloat(amount) || 0
+  } else if (typeof amount !== 'number') {
+    return 'N/A'
+  }
   
   try {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: currency
-    }).format(amount)
+    }).format(numAmount)
   } catch (e) {
     console.warn('Currency formatting error:', amount, e)
-    return amount.toString()
+    return `${currency} ${numAmount}`
   }
 }
 

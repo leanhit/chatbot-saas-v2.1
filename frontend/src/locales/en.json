@@ -671,6 +671,97 @@
       "testBeforeSave": "Test before saving"
     }
   },
+  "payment": {
+    "title": "Package-Based Deposit",
+    "subtitle": "Enhance your chatbot experience",
+    "selectPackage": "Select Service Plan",
+    "referencePlaceholder": "will be created after deposit",
+    "custom": "Custom",
+    "popular": "POPULAR",
+    "current": "CURRENT",
+    "value": "Value",
+    "best_value": "Best Value",
+    "deposit": {
+      "title": "Deposit Funds",
+      "loading": "Processing...",
+      "proceed": "Proceed"
+    },
+    "bankInfo": {
+      "title": "Payment Information",
+      "transferInfo": "Transfer Information",
+      "bankName": "Bank",
+      "accountNumber": "Account Number",
+      "accountName": "Account Name",
+      "instructions": "Payment Instructions",
+      "step1": "Transfer using information above",
+      "step2": "Reference: ",
+      "step3": "Upload payment confirmation",
+      "note": "Note: "
+    },
+    "free": {
+      "confirmTitle": "Confirm Free Package",
+      "confirmDescription": "You have selected free package. This package will be activated immediately.",
+      "activateButton": "Activate Free Package"
+    },
+    "qr": {
+      "creating": "QR Code is being created...",
+      "scan": "Scan QR code to pay"
+    },
+    "activation": {
+      "success": "Service package will be activated immediately after successful payment"
+    },
+    "packages": {
+      "free": "Free",
+      "threeMonths": "3 Months",
+      "sixMonths": "6 Months",
+      "twelveMonths": "12 Months"
+    },
+    "descriptions": {
+      "free": "Free trial package",
+      "threeMonths": "Unlimited 3 months package",
+      "sixMonths": "Unlimited 6 months package",
+      "twelveMonths": "Unlimited 12 months package"
+    },
+    "durations": {
+      "oneMonth": "1 month",
+      "threeMonths": "3 months",
+      "sixMonths": "6 months",
+      "twelveMonths": "12 months"
+    },
+    "features": {
+      "unlimitedPerMonth": "Unlimited per month",
+      "unlimitedChatbots": "Unlimited chatbots"
+    },
+    "featuresNew": {
+      "prioritySupport": "Priority Support",
+      "support247": "24/7 Support"
+    },
+    "readyToCreate": "Ready to create deposit request",
+    "clickCreateButton": "Click \"Deposit Now\" button to create payment request",
+    "checkingStatus": "Checking...",
+    "referenceCode": "Reference Code",
+    "amount": "Amount",
+    "duration": "duration",
+    "status": "Status",
+    "createdAt": "Created At",
+    "expiresAt": "Expires At",
+    "completedAt": "Completed At",
+    "simulatePayment": "Simulate Payment",
+    "copyCode": "Copy Code",
+    "checkStatus": "Check Status",
+    "error": {
+      "selectPackage": "Please select a service package",
+      "noPendingPayment": "No pending payment to simulate",
+      "statusCheck": "Error checking payment status"
+    },
+    "actions": {
+      "simulate": "Simulate Payment",
+      "checkStatus": "Check Status",
+      "viewHistory": "View History",
+      "downloadQR": "Download QR",
+      "copySuccess": "Reference code copied successfully!"
+    }
+  },
   "error": {
     "title": "Page Not Found",
     "subtitle": "The page you're looking for doesn't exist",
@@ -808,23 +899,11 @@
     },
     "payment": {
       "subtitle": "Enhance your chatbot experience",
-      "current": "CURRENT",
-      "popular": "POPULAR",
-      "select": "Select Plan",
-      "selected": "Selected",
-      "upgrade": "Upgrade",
-      "selectPackage": "Service Plan",
-      "packageDescription": "Service Plan",
-      "duration": "duration",
-      "custom": "Custom",
-      "referencePlaceholder": "will be created after deposit",
-      "title": "Package-Based Deposit",
       "qr": {
         "creating": "QR Code is being created...",
         "scan": "Scan QR code to pay"
       },
       "referenceCode": "Reference Code",
-      "status": "Status",
       "createdAt": "Created At",
       "expiresAt": "Expires At",
       "completedAt": "Completed At",
@@ -853,39 +932,6 @@
         "basicAnalytics": "Basic Analytics",
         "advancedAnalytics": "Advanced Analytics",
         "unlimited": "Unlimited"
-      },
-      "deposit": {
-        "title": "Deposit Funds",
-        "amount": "Amount",
-        "description": "Description",
-        "customAmount": "Custom Amount",
-        "customAmountPlaceholder": "Enter amount",
-        "customDescription": "Custom Description",
-        "customDescriptionPlaceholder": "Enter description",
-        "selectPackage": "Select Service Plan",
-        "proceed": "Proceed",
-        "cancel": "Cancel",
-        "loading": "Processing...",
-        "error": "Payment Error",
-        "success": "Payment Successful"
-      },
-      "bankInfo": {
-        "title": "Payment Information",
-        "transferInfo": "Transfer Information",
-        "bankName": "Bank",
-        "accountNumber": "Account Number",
-        "accountName": "Account Name",
-        "instructions": "Payment Instructions",
-        "step1": "Transfer using the information above",
-        "step2": "Reference: ",
-        "step3": "Upload payment confirmation",
-        "note": "Note: ",
-        "qrCode": "QR Code",
-        "amount": "Amount",
-        "expired": "Expired"
-      },
-      "activation": {
-        "success": "Service package will be activated immediately after successful payment"
       },
       "status": {
         "pending": "Pending Payment",

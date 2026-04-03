@@ -68,7 +68,7 @@ export const usePaymentStore = defineStore('payment', {
      */
     formattedAmount: (state) => {
       return state.currentPayment ? 
-        formatCurrency(state.currentPayment.amount, { currency: 'VND' }) : 
+        formatCurrency(state.currentPayment.amount, 'VND') : 
         '0 ₫'
     },
 
@@ -277,7 +277,7 @@ export const usePaymentStore = defineStore('payment', {
      */
     async createDeposit() {
       if (!this.selectedPackage) {
-        this.setMessage('Vui lòng chọn gói dịch vụ', 'error')
+        this.setMessage('Please select a service package', 'error')
         return
       }
 
@@ -295,7 +295,7 @@ export const usePaymentStore = defineStore('payment', {
         const response = await paymentAPI.createDeposit(depositRequest)
         this.currentPayment = response.data
         
-        this.setMessage('Yêu cầu nạp tiền đã được tạo thành công!', 'success')
+        this.setMessage('Payment request created successfully!', 'success')
         console.log('✅ Deposit created:', this.currentPayment)
         
         return this.currentPayment
@@ -346,7 +346,7 @@ export const usePaymentStore = defineStore('payment', {
      */
     async simulatePayment() {
       if (!this.currentPayment?.referenceCode) {
-        this.setMessage('Không có thanh toán đang chờ để giả lập', 'error')
+        this.setMessage('No pending payment to simulate', 'error')
         return
       }
 
@@ -540,14 +540,14 @@ export const usePaymentStore = defineStore('payment', {
     },
 
     /**
-     * Get status text in Vietnamese
+     * Get status text in English (fallback)
      */
     getStatusText(status) {
       const statusTexts = {
-        PENDING: 'Đang chờ thanh toán',
-        COMPLETED: 'Thanh toán thành công',
-        EXPIRED: 'Đã hết hạn',
-        FAILED: 'Thất bại'
+        PENDING: 'Pending Payment',
+        COMPLETED: 'Completed',
+        EXPIRED: 'Expired',
+        FAILED: 'Failed'
       }
       return statusTexts[status] || status
     },
@@ -558,7 +558,7 @@ export const usePaymentStore = defineStore('payment', {
     async copyReferenceCode(referenceCode) {
       try {
         await navigator.clipboard.writeText(referenceCode)
-        this.setMessage('Mã tham chiếu đã được sao chép!', 'success')
+        this.setMessage('Reference code copied successfully!', 'success')
       } catch (error) {
         console.error('❌ Error copying to clipboard:', error)
         this.setMessage('Lỗi sao chép mã tham chiếu', 'error')

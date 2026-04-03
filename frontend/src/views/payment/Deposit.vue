@@ -389,10 +389,13 @@ export default {
 
     // Format currency function
     const formatCurrency = (amount) => {
+      // Ensure amount is a number
+      const numAmount = typeof amount === 'number' ? amount : parseFloat(amount) || 0
+      
       return new Intl.NumberFormat('vi-VN', {
         style: 'currency',
         currency: 'VND'
-      }).format(amount)
+      }).format(numAmount)
     }
 
     // Helper function to get price color class
