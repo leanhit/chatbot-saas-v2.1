@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS packages (
     description TEXT,
     message_limit INTEGER NOT NULL DEFAULT 0,
     chatbot_limit INTEGER NOT NULL DEFAULT 1,
+    connection_limit INTEGER NOT NULL DEFAULT 1,
     has_priority_support BOOLEAN NOT NULL DEFAULT FALSE,
     has_analytics BOOLEAN NOT NULL DEFAULT FALSE,
     has_advanced_analytics BOOLEAN NOT NULL DEFAULT FALSE,

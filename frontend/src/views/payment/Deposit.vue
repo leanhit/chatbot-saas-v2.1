@@ -472,6 +472,15 @@ export default {
         features.push(isVietnamese ? 'Hỗ trợ cơ bản' : 'Basic Support')
       }
       
+      // Add connection limit
+      if (pkg.connectionLimit && pkg.connectionLimit > 0) {
+        if (pkg.connectionLimit >= 2147483647) {
+          features.push(isVietnamese ? 'Kết nối không giới hạn' : 'Unlimited connections')
+        } else {
+          features.push(isVietnamese ? `${pkg.connectionLimit} kết nối` : `${pkg.connectionLimit} connections`)
+        }
+      }
+      
       return features
     }
     

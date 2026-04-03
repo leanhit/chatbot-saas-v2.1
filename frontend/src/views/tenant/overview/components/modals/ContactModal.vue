@@ -186,7 +186,7 @@ export default {
       contactPhone: '',
       logoUrl: '',
       faviconUrl: '',
-      primaryColor: ''
+      primaryColor: '#3B82F6' // Default blue color
     })
     
     // Watch for tenant changes to populate form
@@ -203,7 +203,7 @@ export default {
           contactPhone: newTenant?.profile?.contactPhone || '',
           logoUrl: newTenant?.profile?.logoUrl || '',
           faviconUrl: newTenant?.profile?.faviconUrl || '',
-          primaryColor: newTenant?.profile?.primaryColor || ''
+          primaryColor: newTenant?.profile?.primaryColor || '#3B82F6' // Default blue color
         }
       }
     }, { immediate: true })

@@ -730,7 +730,8 @@
     },
     "features": {
       "unlimitedPerMonth": "Unlimited per month",
-      "unlimitedChatbots": "Unlimited chatbots"
+      "unlimitedChatbots": "Unlimited chatbots",
+      "unlimitedConnections": "Unlimited connections"
     },
     "featuresNew": {
       "prioritySupport": "Priority Support",

@@ -215,6 +215,15 @@ export const usePaymentStore = defineStore('payment', {
         }
       }
       
+      // Connection limit
+      if (pkg.connectionLimit && pkg.connectionLimit > 0) {
+        if (pkg.connectionLimit >= 2147483647) {
+          features.push('Unlimited connections')
+        } else {
+          features.push(`${pkg.connectionLimit} connections`)
+        }
+      }
+      
       // Support features
       if (pkg.hasPrioritySupport) {
         features.push('Support ưu tiên')
