@@ -164,8 +164,13 @@ export default {
     const handleSubmit = async (formData) => {
       try {
         if (isEdit.value) {
-          // Update existing address
-          await addressApi.updateAddress(address.value.id, formData)
+          // Update existing address - use user-specific endpoint for user addresses
+          if (props.ownerType === 'USER') {
+            await addressApi.updateUserAddress(props.ownerType, props.ownerId, formData)
+          } else {
+            // For non-user addresses, use the regular update endpoint
+            await addressApi.updateAddress(address.value.id, formData)
+          }
         } else {
           // Create new address
           await addressApi.createAddress(formData)

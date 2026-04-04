@@ -755,14 +755,8 @@ export default {
           toast?.error('Address not found. Please contact support.')
           return
         }
-        // Update existing address
-        // Add required owner information for backend validation
-        const addressUpdateData = {
-          ...formData,
-          ownerId: currentUserId,
-          ownerType: 'USER'
-        }
-        await addressApi.updateAddress(userAddress.value.firstAddress?.id, addressUpdateData)
+        // Update existing address - use user-specific endpoint
+        await addressApi.updateUserAddress('USER', currentUserId, formData)
         // Close modal and refresh data
         showAddressModal.value = false
         currentAddressData.value = {}

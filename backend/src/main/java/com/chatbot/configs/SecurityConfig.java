@@ -128,6 +128,10 @@ public class SecurityConfig {
                 .requestMatchers("/api/simple-payment/bank-info").permitAll()
                 .requestMatchers("/api/simple-payment/health").permitAll()
                 
+                // ================= PACKAGES APIs (PUBLIC) =================
+                .requestMatchers("/api/v1/packages/active").permitAll()
+                .requestMatchers("/api/v1/packages/by-package-id/**").permitAll()
+                
                 // ================= SWAGGER UI =================
                 .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                 .requestMatchers("/api/swagger-ui/**", "/api/v3/api-docs/**").permitAll()
