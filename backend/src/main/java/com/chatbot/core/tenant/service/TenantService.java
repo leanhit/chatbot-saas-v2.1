@@ -535,6 +535,10 @@ public class TenantService {
             tenant.setVisibility(req.getVisibility());
         }
         if (req.getExpiresAt() != null) {
+            log.info("Updating expires_at for tenant {}: from {} to {}", 
+                tenantKey, 
+                tenant.getExpiresAt(),
+                req.getExpiresAt());
             tenant.setExpiresAt(req.getExpiresAt());
         }
 

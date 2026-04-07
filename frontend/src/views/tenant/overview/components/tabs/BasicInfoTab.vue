@@ -36,7 +36,9 @@
         </div>
         <div>
           <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Expires At</label>
-          <p class="text-gray-900 dark:text-white">{{ formatDate(tenant?.expiresAt) || 'Not provided' }}</p>
+          <p class="text-gray-900 dark:text-white">
+            {{ tenant?.expiresAt ? formatDate(tenant.expiresAt) : 'N/A' }}
+          </p>
         </div>
         <div>
           <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Created At</label>

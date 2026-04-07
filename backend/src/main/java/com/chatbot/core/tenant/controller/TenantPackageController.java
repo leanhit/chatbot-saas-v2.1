@@ -1,6 +1,8 @@
 package com.chatbot.core.tenant.controller;
 
 import com.chatbot.core.simplepayment.model.Package;
+import com.chatbot.core.tenant.dto.TenantPackageInfo;
+import com.chatbot.core.tenant.model.Tenant;
 import com.chatbot.core.tenant.service.TenantPackageService;
 import com.chatbot.shared.constants.ApiConstants;
 import com.chatbot.shared.dto.ApiResponse;
@@ -22,6 +24,44 @@ import java.util.List;
 public class TenantPackageController {
 
     private final TenantPackageService tenantPackageService;
+
+    /**
+     * Get current package info with expiration details
+     */
+    @GetMapping("/current/info")
+    @PreAuthorize("isAuthenticated()")
+    @Operation(summary = "Get current tenant package info with expiration", description = "Get the current package with expiration details for the authenticated tenant")
+    public ResponseEntity<ApiResponse<TenantPackageInfo>> getCurrentPackageInfo() {
+        try {
+            // This would typically get tenant ID from security context
+            // For now, we'll use a mock implementation
+            Long tenantId = 1L; // TODO: Get from security context
+            
+            TenantPackageInfo packageInfo = tenantPackageService.getCurrentTenantPackageInfo(tenantId);
+            
+            return ResponseEntity.ok(ApiResponse.success(packageInfo, "Current package info retrieved successfully"));
+        } catch (Exception e) {
+            log.error("Error getting current package info: {}", e.getMessage(), e);
+            return ResponseEntity.badRequest().body(ApiResponse.error("Error getting current package info: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * Get current package info with expiration details by tenant key
+     */
+    @GetMapping("/current/info/{tenantKey}")
+    @PreAuthorize("isAuthenticated()")
+    @Operation(summary = "Get current tenant package info by key", description = "Get the current package with expiration details for a specific tenant by key")
+    public ResponseEntity<ApiResponse<TenantPackageInfo>> getCurrentPackageInfoByKey(@PathVariable String tenantKey) {
+        try {
+            TenantPackageInfo packageInfo = tenantPackageService.getCurrentTenantPackageInfoByKey(tenantKey);
+            
+            return ResponseEntity.ok(ApiResponse.success(packageInfo, "Current package info retrieved successfully"));
+        } catch (Exception e) {
+            log.error("Error getting current package info for tenant {}: {}", tenantKey, e.getMessage(), e);
+            return ResponseEntity.badRequest().body(ApiResponse.error("Error getting current package info: " + e.getMessage()));
+        }
+    }
 
     /**
      * Get current package for current tenant
@@ -116,8 +156,25 @@ public class TenantPackageController {
             tenantPackageService.initializeExistingTenants();
             return ResponseEntity.ok(ApiResponse.success("Initialization completed", "Existing tenants initialized with free package"));
         } catch (Exception e) {
-            log.error("❌ Error initializing existing tenants: {}", e.getMessage(), e);
+            log.error("Error initializing existing tenants: {}", e.getMessage(), e);
             return ResponseEntity.badRequest().body(ApiResponse.error("Error initializing tenants: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * Test time accumulation logic (for debugging)
+     */
+    @PostMapping("/tenant/{tenantId}/test-accumulation")
+    @PreAuthorize("hasRole('SYSTEM_ADMIN')")
+    @Operation(summary = "Test time accumulation", description = "Test time accumulation logic for debugging")
+    public ResponseEntity<ApiResponse<String>> testTimeAccumulation(@PathVariable Long tenantId) {
+        try {
+            tenantPackageService.testTimeAccumulation(tenantId);
+            return ResponseEntity.ok(ApiResponse.success("Time accumulation test completed", "Check logs for details"));
+        } catch (Exception e) {
+            log.error("Error testing time accumulation: {}", e.getMessage(), e);
+            return ResponseEntity.internalServerError()
+                    .body(ApiResponse.error("Test failed: " + e.getMessage()));
         }
     }
 }

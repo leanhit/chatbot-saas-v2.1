@@ -6,6 +6,7 @@ import lombok.Data;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.Date;
 import com.chatbot.core.tenant.model.TenantStatus;
 import com.chatbot.core.tenant.model.TenantVisibility;
 import com.chatbot.shared.utils.DateUtils;
@@ -36,16 +37,10 @@ public class TenantBasicInfoRequest {
     public void setExpiresAt(String expiresAtString) {
         if (expiresAtString != null && !expiresAtString.trim().isEmpty()) {
             try {
-                // Try parsing as ISO 8601 Instant (preferred)
-                this.expiresAtInstant = Instant.parse(expiresAtString);
+                // Use DateUtils for consistent datetime parsing
+                this.expiresAtInstant = DateUtils.parseInstant(expiresAtString, DateUtils.API_DATETIME_FORMAT);
             } catch (Exception e) {
-                // Fallback: try parsing as LocalDateTime without timezone
-                try {
-                    LocalDateTime localDateTime = LocalDateTime.parse(expiresAtString.replace("Z", ""));
-                    this.expiresAtInstant = localDateTime.atZone(ZoneId.systemDefault()).toInstant();
-                } catch (Exception e2) {
-                    throw new IllegalArgumentException("Invalid datetime format. Expected ISO 8601 format: " + expiresAtString);
-                }
+                throw new IllegalArgumentException("Invalid datetime format. Expected: " + DateUtils.API_DATETIME_FORMAT + ", got: " + expiresAtString);
             }
         }
     }

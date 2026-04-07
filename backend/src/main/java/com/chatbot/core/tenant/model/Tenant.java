@@ -42,7 +42,7 @@ public class Tenant {
     private TenantVisibility visibility = TenantVisibility.PUBLIC;
 
     @Column(name = "expires_at")
-    @JsonFormat(pattern = DateUtils.STANDARD_JSON_FORMAT, timezone = DateUtils.STANDARD_TIMEZONE)
+    @JsonFormat(pattern = DateUtils.API_DATETIME_FORMAT, timezone = DateUtils.API_TIMEZONE)
     private LocalDateTime expiresAt;
 
     @Enumerated(EnumType.STRING)
@@ -54,16 +54,16 @@ public class Tenant {
     private String currentPackageId; // e.g., 'free', 'pro', 'business', 'enterprise'
 
     @Column(name = "package_activated_at")
-    @JsonFormat(pattern = DateUtils.STANDARD_JSON_FORMAT, timezone = DateUtils.STANDARD_TIMEZONE)
+    @JsonFormat(pattern = DateUtils.API_DATETIME_FORMAT, timezone = DateUtils.API_TIMEZONE)
     private LocalDateTime packageActivatedAt;
 
     // --- audit ---
     @Column
-    @JsonFormat(pattern = DateUtils.STANDARD_JSON_FORMAT, timezone = DateUtils.STANDARD_TIMEZONE)
+    @JsonFormat(pattern = DateUtils.API_DATETIME_FORMAT, timezone = DateUtils.API_TIMEZONE)
     private LocalDateTime createdAt;
     
     @Column
-    @JsonFormat(pattern = DateUtils.STANDARD_JSON_FORMAT, timezone = DateUtils.STANDARD_TIMEZONE)
+    @JsonFormat(pattern = DateUtils.API_DATETIME_FORMAT, timezone = DateUtils.API_TIMEZONE)
     private LocalDateTime updatedAt;
 
     @PrePersist

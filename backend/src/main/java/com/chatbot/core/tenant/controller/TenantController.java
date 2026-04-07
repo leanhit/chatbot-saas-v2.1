@@ -424,4 +424,41 @@ public class TenantController {
                 "Failed to update join request: " + e.getMessage(), e);
         }
     }
+
+    /**
+     * Debug packages database query
+     */
+    @GetMapping("/debug/packages")
+    public Map<String, Object> debugPackages() {
+        Map<String, Object> result = new java.util.HashMap<>();
+        try {
+            // Import Package classes
+            com.chatbot.core.simplepayment.repository.PackageRepository packageRepo = 
+                com.chatbot.core.simplepayment.config.ApplicationContextProvider.getBean(com.chatbot.core.simplepayment.repository.PackageRepository.class);
+            
+            long totalPackages = packageRepo.count();
+            result.put("totalPackages", totalPackages);
+            
+            if (totalPackages > 0) {
+                List<com.chatbot.core.simplepayment.model.Package> allPackages = packageRepo.findAll();
+                result.put("packages", allPackages.stream().map(p -> {
+                    Map<String, Object> pkg = new java.util.HashMap<>();
+                    pkg.put("id", p.getId());
+                    pkg.put("packageId", p.getPackageId());
+                    pkg.put("name", p.getName());
+                    pkg.put("price", p.getPrice());
+                    pkg.put("isActive", p.getIsActive());
+                    pkg.put("sortOrder", p.getSortOrder());
+                    return pkg;
+                }).toList());
+            }
+            
+            result.put("success", true);
+        } catch (Exception e) {
+            result.put("success", false);
+            result.put("error", e.getMessage());
+            log.error("Debug packages error: {}", e.getMessage(), e);
+        }
+        return result;
+    }
 }
