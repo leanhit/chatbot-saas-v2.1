@@ -202,7 +202,20 @@ export default {
         emit('saved')
       } catch (error) {
         console.error('Failed to save bot:', error)
-        alert('Failed to save bot: ' + error.message)
+        
+        // Extract actual error message from backend response
+        let errorMessage = 'Failed to save bot'
+        if (error.response && error.response.data) {
+          if (error.response.data.error) {
+            errorMessage = error.response.data.error
+          } else if (error.response.data.message) {
+            errorMessage = error.response.data.message
+          }
+        } else if (error.message) {
+          errorMessage = error.message
+        }
+        
+        alert(errorMessage)
       } finally {
         submitting.value = false
       }

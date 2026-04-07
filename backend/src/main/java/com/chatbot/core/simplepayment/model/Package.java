@@ -69,7 +69,7 @@ public class Package {
     @Column(nullable = false)
     private Boolean hasSlaGuarantee;
     
-    @Column(nullable = false)
+    @Column(name = "isactive", nullable = false)
     private Boolean isActive;
     
     @Column(nullable = false)
