@@ -51,6 +51,40 @@ export const useGatewayTenantStore = defineStore('gateway-tenant', () => {
       const { data } = await tenantApi.getTenant(tenantKey)
       currentTenant.value = data
       
+      // Reset payment store to prevent cross-tenant data contamination
+      try {
+        const { usePaymentStore } = await import('@/stores/paymentStore')
+        const paymentStore = usePaymentStore()
+        paymentStore.resetState()
+        // Reload payment data for new tenant context
+        await paymentStore.loadPaymentHistory()
+        await paymentStore.loadPackages()
+        await paymentStore.loadCurrentPackage()
+        console.log('Payment store reset and reloaded on tenant switch')
+      } catch (paymentError) {
+        console.warn('Failed to reset payment store:', paymentError)
+      }
+      
+      // Reset wallet store to prevent cross-tenant balance contamination
+      try {
+        const { useWalletStore } = await import('@/stores/walletStore')
+        const walletStore = useWalletStore()
+        walletStore.resetState()
+        console.log('Wallet store reset on tenant switch')
+      } catch (walletError) {
+        console.warn('Failed to reset wallet store:', walletError)
+      }
+      
+      // Reset billing store to prevent cross-tenant subscription contamination
+      try {
+        const { useBillingStore } = await import('@/stores/billingStore')
+        const billingStore = useBillingStore()
+        billingStore.resetState()
+        console.log('Billing store reset on tenant switch')
+      } catch (billingError) {
+        console.warn('Failed to reset billing store:', billingError)
+      }
+      
       // Billing functionality removed - only simple payment available
       
       // Fetch user profile now that tenant context is set

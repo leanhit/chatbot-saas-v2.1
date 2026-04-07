@@ -17,7 +17,8 @@ export const tenantApi = {
   // Tenant core
   async getTenant(tenantKey) {
     try {
-      const response = await axios.get(`/tenants/key/${tenantKey}/full`);
+      // Add cache-busting timestamp for tenant data
+      const response = await axios.get(`/tenants/key/${tenantKey}/full?_t=${Date.now()}`);
       return response;
     } catch (error) {
       handleTenantError(error);

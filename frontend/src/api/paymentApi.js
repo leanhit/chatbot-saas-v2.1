@@ -26,7 +26,9 @@ class PaymentAPI {
   // Get payment history
   async getPaymentHistory(params = {}) {
     try {
-      const response = await axios.get('/simple-payment/history', { params })
+      // Add cache-busting timestamp
+      const cacheParams = { ...params, _t: Date.now() }
+      const response = await axios.get('/simple-payment/history', { params: cacheParams })
       return response
     } catch (error) {
       throw error
