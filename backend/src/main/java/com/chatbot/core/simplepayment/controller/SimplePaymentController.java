@@ -46,7 +46,7 @@ public class SimplePaymentController {
         summary = "Create deposit request",
         description = "Create a new deposit request with QR code for bank transfer"
     )
-    public ResponseEntity<DepositResponse> createDeposit(
+    public ResponseEntity<Object> createDeposit(
             @RequestBody DepositRequest request,
             @AuthenticationPrincipal UserDetails userDetails,
             HttpServletRequest httpRequest) {
@@ -58,10 +58,14 @@ public class SimplePaymentController {
             Long userId = extractUserId(userDetails);
             Long tenantId = extractTenantId(httpRequest);
 
+            log.info("📝 Deposit request - User ID: {}, Tenant ID: {}, Amount: {}", userId, tenantId, request.getAmount());
+
             // SECURITY: Validate user has access to this tenant
             if (!tenantRepository.existsByUserIdAndTenantId(userId, tenantId)) {
-                log.warn("Unauthorized deposit attempt: User {} trying to deposit to tenant {}", userId, tenantId);
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+                log.warn("❌ Unauthorized deposit attempt: User {} trying to deposit to tenant {}", userId, tenantId);
+                Map<String, String> error = new HashMap<>();
+                error.put("error", "Unauthorized access to tenant");
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(error);
             }
 
             DepositResponse response = simplePaymentService.createDeposit(request, userId, tenantId);
@@ -71,7 +75,9 @@ public class SimplePaymentController {
 
         } catch (Exception e) {
             log.error("❌ Failed to create deposit request: {}", e.getMessage(), e);
-            return ResponseEntity.badRequest().build();
+            Map<String, String> error = new HashMap<>();
+            error.put("error", e.getMessage());
+            return ResponseEntity.badRequest().body(error);
         }
     }
 

@@ -20,28 +20,15 @@ public class RedisBankPollingService {
     private final SimplePaymentService simplePaymentService;
 
     /**
-     * Redis-based polling - check pending payments more efficiently
-     * Runs every 5 seconds (faster than original 10 seconds)
-     * This replaces the original scheduler
+     * DISABLED - Now using event-driven architecture
+     * Payment checks are triggered by PaymentCreatedEvent events
+     * This scheduler is kept as emergency backup only
      */
-    @Scheduled(fixedDelay = 5000) // 5 seconds - Redis-based polling
+    // @Scheduled(fixedDelay = 5000) // DISABLED - Use event-driven instead
     public void checkPendingPaymentsWithRedis() {
-        try {
-            long pendingCount = redisPaymentService.getPendingPaymentsCount();
-            if (pendingCount == 0) {
-                log.debug("🏦 No pending payments to check");
-                return;
-            }
-
-            log.debug("🏦 Checking {} pending payments via Redis...", pendingCount);
-            
-            // This is where we would integrate with Redis-based queue
-            // For now, keep the original logic but with reduced frequency
-            checkPendingPayments();
-            
-        } catch (Exception e) {
-            log.error("❌ Error in Redis-based payment check: {}", e.getMessage(), e);
-        }
+        log.info("⚠️ Event-driven scheduler is disabled. Using event listeners instead.");
+        // Emergency fallback - can be enabled manually if needed
+        // checkPendingPayments();
     }
 
     /**

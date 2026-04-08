@@ -74,22 +74,6 @@
     },
     mounted() {
       Scrollbar.init(document.querySelector("#body-scroll"));
-      this.loadSubscriptionData();
-    },
-    methods: {
-      async loadSubscriptionData() {
-        const authStore = useAuthStore();
-        
-        // Only load if user is logged in and has a tenant selected
-        if (authStore.isLoggedIn && localStorage.getItem(ACTIVE_TENANT_ID)) {
-          try {
-            console.log('🔄 [App] Billing functionality removed - using simple payment only');
-            // Billing functionality removed - only simple payment available
-          } catch (error) {
-            console.warn('⚠️ [App] Failed to load subscription data:', error);
-          }
-        }
-      },
     },
   };
 </script>

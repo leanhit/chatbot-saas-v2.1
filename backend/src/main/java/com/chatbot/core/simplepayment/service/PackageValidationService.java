@@ -4,6 +4,8 @@ import com.chatbot.core.simplepayment.model.Package;
 import com.chatbot.core.simplepayment.repository.PackageRepository;
 import com.chatbot.core.simplepayment.repository.SimplePaymentRepository;
 import com.chatbot.core.simplepayment.model.PaymentStatus;
+import com.chatbot.core.user.repository.UserRepository;
+import com.chatbot.core.user.model.User;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -21,6 +23,7 @@ public class PackageValidationService {
 
     private final PackageRepository packageRepository;
     private final SimplePaymentRepository paymentRepository;
+    private final UserRepository userRepository;
 
     /**
      * Validate package before creating payment
@@ -74,10 +77,15 @@ public class PackageValidationService {
         // Validate user hasn't already purchased this package recently
         validateRecentPurchase(userId, tenantId, targetPackage, result);
 
+        // Validate user has sufficient balance (for paid packages)
+        if (!targetPackage.isFree()) {
+            validateUserBalance(userId, targetPackage.getPrice(), result);
+        }
+
         if (result.isValid()) {
-            log.info("✅ Package validation passed for: {}", packageId);
+            log.info(" Package validation passed for: {}", packageId);
         } else {
-            log.warn("❌ Package validation failed for: {}", packageId);
+            log.warn(" Package validation failed for: {}", packageId);
             result.getErrors().values().forEach(error -> log.warn("  - {}", error));
         }
 
@@ -203,6 +211,40 @@ public class PackageValidationService {
         stats.put("availablePackages", packageRepository.findActivePackagesOrdered());
 
         return stats;
+    }
+
+    /**
+     * Validate user has sufficient balance for package purchase
+     */
+    private void validateUserBalance(Long userId, BigDecimal requiredAmount, PackageValidationResult result) {
+        try {
+            User user = userRepository.findById(userId)
+                    .orElseThrow(() -> new RuntimeException("User not found: " + userId));
+
+            // Initialize balance if null
+            if (user.getBalance() == null) {
+                user.setBalance(BigDecimal.ZERO);
+                userRepository.save(user);
+            }
+
+            // Check sufficient balance
+            if (user.getBalance().compareTo(requiredAmount) < 0) {
+                result.setValid(false);
+                result.addError(String.format(
+                    "Insufficient balance. Required: %s, Available: %s", 
+                    requiredAmount, user.getBalance()
+                ));
+                log.warn(" Balance validation failed for user {}: required={}, available={}", 
+                        userId, requiredAmount, user.getBalance());
+            } else {
+                log.info(" Balance validation passed for user {}: required={}, available={}", 
+                        userId, requiredAmount, user.getBalance());
+            }
+        } catch (Exception e) {
+            result.setValid(false);
+            result.addError("Balance validation error: " + e.getMessage());
+            log.error(" Error validating balance for user {}: {}", userId, e.getMessage(), e);
+        }
     }
 
     /**

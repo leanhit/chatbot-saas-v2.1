@@ -9,16 +9,13 @@ import java.math.BigDecimal;
 @Data
 public class DepositRequest {
     
-    @NotNull(message = "Wallet ID is required")
-    private Long walletId;
-    
     @NotNull(message = "Amount is required")
     @Positive(message = "Amount must be positive")
     private BigDecimal amount;
     
     private String currency = "VND";
     
-    private String description = "Nạp tiền vào ví";
+    private String description = "Nạp tiền vào tài khoản";
     
     private String targetPackageId; // Package to upgrade to after payment
 }

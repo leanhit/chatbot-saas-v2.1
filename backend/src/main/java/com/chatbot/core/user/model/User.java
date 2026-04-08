@@ -48,6 +48,11 @@ public class User {
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private UserProfile profile;
 
+    // --- Optimistic Locking Version ---
+    @Version
+    @Column(name = "version")
+    private Long version;
+
     // --- Simple Payment Balance ---
     @Builder.Default
     @Column(name = "balance", precision = 15, scale = 2)

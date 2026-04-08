@@ -477,15 +477,7 @@
         };
         return icons[type] || 'mdi:bell';
       },
-      // Get package badge class - Removed Billing
-      getPackageBadgeClass() {
-        return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200';
-      },
-      // Get package icon - Removed Billing  
-      getPackageIcon() {
-        return 'mdi:help-circle-outline';
-      },
-      // Format timestamp
+            // Format timestamp
       formatTime(timestamp) {
         if (!timestamp) return '';
         

@@ -14,6 +14,7 @@ import com.chatbot.core.user.repository.UserRepository;
 import com.chatbot.core.user.model.User;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -38,6 +39,9 @@ public class SimplePaymentService {
     private final RedisPaymentService redisPaymentService;
     private final PaymentPackageUpgradeService packageUpgradeService;
     private final PackageValidationService packageValidationService;
+    private final PaymentEventService paymentEventService;
+    private final PaymentTTLService paymentTTLService;
+    private final ApplicationEventPublisher eventPublisher;
 
     /**
      * Tạo yêu cầu nạp tiền mới
@@ -104,6 +108,14 @@ public class SimplePaymentService {
         );
         redisPaymentService.publishPaymentEvent(event);
 
+        // Publish event for event-driven processing
+        eventPublisher.publishEvent(new PaymentEventService.PaymentCreatedEvent(
+            referenceCode, savedPayment.getCreatedAt(), userId, tenantId
+        ));
+
+        // Set TTL for automatic expiration
+        paymentTTLService.setPaymentTTL(referenceCode, savedPayment.getCreatedAt());
+
         log.info("✅ Deposit request created: {}", referenceCode);
         return DepositResponse.from(savedPayment, qrContent);
     }
@@ -149,9 +161,9 @@ public class SimplePaymentService {
     }
 
     /**
-     * Complete payment in new transaction to avoid rollback issues
+     * Complete payment in same transaction for proper rollback support
      */
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    @Transactional
     public void completePaymentInNewTransaction(String referenceCode, String bankTransactionId) {
         log.info("✅ Completing payment: {}", referenceCode);
 
@@ -182,11 +194,12 @@ public class SimplePaymentService {
     }
 
     /**
-     * Hoàn thành thanh toán (khi thấy transaction ở bank)
+     * Hoàn thành thanh toán (khi nhìn transaction o bank)
+     * Atomic transaction: payment + balance + package upgrade
      */
     @Transactional
     public void completePayment(String referenceCode, String bankTransactionId) {
-        log.info("✅ Completing payment: {}", referenceCode);
+        log.info(" Completing payment: {}", referenceCode);
 
         SimplePayment payment = paymentRepository.findByReferenceCode(referenceCode)
                 .orElseThrow(() -> new RuntimeException("Payment not found: " + referenceCode));
@@ -196,46 +209,47 @@ public class SimplePaymentService {
             return;
         }
 
-        // Update payment status
-        payment.setStatus(PaymentStatus.COMPLETED);
-        payment.setBankTransactionId(bankTransactionId);
-        payment.setCompletedAt(LocalDateTime.now());
-        paymentRepository.save(payment);
-
-        // Update user balance
-        updateUserBalance(payment.getUserId(), payment.getAmount());
-
-        // Process automatic package upgrade with correct tenant context
-        log.info("🔄 [SimplePaymentService] About to process package upgrade for payment: {}, targetPackage: {}", 
-                referenceCode, payment.getTargetPackageId());
-        
-        boolean upgradeSuccess = false;
         try {
-            upgradeSuccess = TenantContext.executeWithTenantId(
-                payment.getTenantId(), 
-                () -> packageUpgradeService.processPackageUpgrade(payment)
+            // Update payment status
+            payment.setStatus(PaymentStatus.COMPLETED);
+            payment.setBankTransactionId(bankTransactionId);
+            payment.setCompletedAt(LocalDateTime.now());
+            paymentRepository.save(payment);
+
+            // Update user balance
+            updateUserBalance(payment.getUserId(), payment.getAmount());
+
+            // Process automatic package upgrade in same transaction
+            if (payment.getTargetPackageId() != null && !payment.getTargetPackageId().trim().isEmpty()) {
+                log.info(" [SimplePaymentService] Processing package upgrade for payment: {}, targetPackage: {}", 
+                        referenceCode, payment.getTargetPackageId());
+                
+                boolean upgradeSuccess = TenantContext.executeWithTenantId(
+                    payment.getTenantId(), 
+                    () -> packageUpgradeService.processPackageUpgrade(payment)
+                );
+                
+                if (!upgradeSuccess) {
+                    throw new RuntimeException("Package upgrade failed for payment: " + referenceCode);
+                }
+                
+                log.info(" [SimplePaymentService] Package upgrade completed successfully for payment: {}", 
+                        referenceCode);
+            }
+
+            // Publish Redis event for real-time notification
+            PaymentEvent event = redisPaymentService.createStatusUpdateEvent(
+                    referenceCode, PaymentStatus.COMPLETED, bankTransactionId
             );
-            log.info("✅ [SimplePaymentService] Package upgrade process completed for payment: {}, success: {}", 
-                    referenceCode, upgradeSuccess);
+            redisPaymentService.publishPaymentEvent(event);
+
+            log.info(" Payment completed successfully: {}", referenceCode);
+            
         } catch (Exception e) {
-            log.error("❌ [SimplePaymentService] Package upgrade failed for payment {}: {}", 
-                    referenceCode, e.getMessage(), e);
-            upgradeSuccess = false;
+            log.error(" Payment completion failed for {}: {}", referenceCode, e.getMessage(), e);
+            // Transaction will rollback automatically
+            throw e;
         }
-        
-        if (upgradeSuccess) {
-            log.info("🎁 Package upgrade processed successfully for payment: {}", referenceCode);
-        } else if (payment.getTargetPackageId() != null) {
-            log.warn("⚠️ Package upgrade failed for payment: {}, but payment completed", referenceCode);
-        }
-
-        // Publish Redis event for real-time notification
-        PaymentEvent event = redisPaymentService.createStatusUpdateEvent(
-            referenceCode, PaymentStatus.COMPLETED, bankTransactionId
-        );
-        redisPaymentService.publishPaymentEvent(event);
-
-        log.info("✅ Payment completed successfully: {}", referenceCode);
     }
 
     /**
@@ -313,14 +327,14 @@ public class SimplePaymentService {
             redisPaymentService.publishPaymentEvent(event);
         }
 
-        log.info("✅ Expired {} payments", expiredPayments.size());
+        log.info("✅ Expired {} pending payments", expiredPayments.size());
     }
 
     private void updateUserBalance(Long userId, BigDecimal amount) {
-        User user = userRepository.findById(userId)
+        User user = userRepository.findByIdWithLock(userId)
                 .orElseThrow(() -> new RuntimeException("User not found: " + userId));
 
-        // Add balance column to user if not exists
+        // Initialize balance if null
         if (user.getBalance() == null) {
             user.setBalance(BigDecimal.ZERO);
         }
@@ -328,6 +342,53 @@ public class SimplePaymentService {
         user.setBalance(user.getBalance().add(amount));
         userRepository.save(user);
 
-        log.info("💰 Updated user balance: {} + {} = {}", userId, amount, user.getBalance());
+        log.info("💸 Updated user balance: {} + {} = {}", userId, amount, user.getBalance());
+    }
+
+    /**
+     * Deduct balance from user when purchasing package
+     */
+    public void deductUserBalance(Long userId, BigDecimal amount) {
+        User user = userRepository.findByIdWithLock(userId)
+                .orElseThrow(() -> new RuntimeException("User not found: " + userId));
+
+        // Initialize balance if null
+        if (user.getBalance() == null) {
+            user.setBalance(BigDecimal.ZERO);
+        }
+
+        // Check sufficient balance
+        if (user.getBalance().compareTo(amount) < 0) {
+            throw new RuntimeException(
+                String.format("Insufficient balance. Required: %s, Available: %s", 
+                    amount, user.getBalance())
+            );
+        }
+
+        BigDecimal oldBalance = user.getBalance();
+        user.setBalance(user.getBalance().subtract(amount));
+        userRepository.save(user);
+
+        log.info("💸 Deducted user balance: {} - {} = {}", userId, amount, user.getBalance());
+        log.info("💰 Balance change for user {}: {} → {}", userId, oldBalance, user.getBalance());
+    }
+
+    /**
+     * Check if user has sufficient balance for package purchase
+     */
+    public boolean hasSufficientBalance(Long userId, BigDecimal requiredAmount) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found: " + userId));
+
+        if (user.getBalance() == null) {
+            user.setBalance(BigDecimal.ZERO);
+            userRepository.save(user);
+        }
+
+        boolean sufficient = user.getBalance().compareTo(requiredAmount) >= 0;
+        log.info("🔍 Balance check for user {}: required={}, available={}, sufficient={}", 
+                userId, requiredAmount, user.getBalance(), sufficient);
+        
+        return sufficient;
     }
 }
