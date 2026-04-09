@@ -66,4 +66,27 @@ public class DatabaseSeeder {
             }
         };
     }
+
+    /**
+     * Force clean reinitialize - remove all packages and recreate from SimplePayment config
+     */
+    @Bean
+    @Order(2) // Run after initialization
+    public ApplicationRunner forceCleanReinitialize() {
+        return args -> {
+            // Only run if specifically requested via environment variable
+            String forceReinit = System.getProperty("force.reinitialize.packages", "false");
+            if (!"true".equals(forceReinit)) {
+                return;
+            }
+
+            log.info(" forcing clean reinitialize of packages...");
+            try {
+                packageService.forceReinitializePackages();
+                log.info(" Clean reinitialize completed successfully");
+            } catch (Exception e) {
+                log.error("Failed to force reinitialize packages: {}", e.getMessage(), e);
+            }
+        };
+    }
 }

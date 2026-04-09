@@ -69,8 +69,9 @@ public class Package {
     @Column(nullable = false)
     private Boolean hasSlaGuarantee;
     
-    @Column(name = "isactive", nullable = false)
-    private Boolean isActive;
+    @Column(name = "isactive", nullable = false, columnDefinition = "BOOLEAN DEFAULT TRUE")
+    @Builder.Default
+    private Boolean isActive = true;
     
     @Column(nullable = false)
     private Integer sortOrder;

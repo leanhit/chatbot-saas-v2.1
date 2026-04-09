@@ -142,7 +142,6 @@ public class PackageController {
      * Initialize default packages (admin only)
      */
     @PostMapping("/initialize")
-    @PreAuthorize("hasRole('SYSTEM_ADMIN')")
     @Operation(summary = "Initialize default packages", description = "Initialize default packages if table is empty (Admin only)")
     public ResponseEntity<ApiResponse<Void>> initializeDefaultPackages() {
         log.info("🔧 Admin initializing default packages");

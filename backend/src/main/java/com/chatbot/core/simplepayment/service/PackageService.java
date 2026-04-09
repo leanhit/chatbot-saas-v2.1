@@ -255,7 +255,7 @@ public class PackageService {
                 .hasDedicatedSupport(config.isHasDedicatedSupport())
                 .hasCustomFeatures(config.isHasCustomFeatures())
                 .hasSlaGuarantee(config.isHasSlaGuarantee())
-                .isActive(config.isActive())
+                .isActive(true) // Force active for all default packages
                 .sortOrder(config.getSortOrder())
                 .badge(config.getBadge())
                 .build();
