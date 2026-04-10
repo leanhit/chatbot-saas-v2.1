@@ -25,6 +25,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -56,21 +57,15 @@ public class SimplePaymentService {
         Package targetPackage = null;
         
         if (request.getTargetPackageId() != null) {
-            validationResult = packageValidationService.validatePackageForPayment(
-                request.getTargetPackageId(), request.getAmount(), userId, tenantId);
+            // Only validate package exists, skip balance validation for QR creation
+            targetPackage = packageRepository.findByPackageId(request.getTargetPackageId())
+                .orElseThrow(() -> new IllegalArgumentException("Package not found: " + request.getTargetPackageId()));
             
-            if (!validationResult.isValid()) {
-                String errorMessage = String.join("; ", validationResult.getErrors().values());
-                throw new IllegalArgumentException("Package validation failed: " + errorMessage);
+            if (!targetPackage.getIsActive()) {
+                throw new IllegalArgumentException("Package is not active: " + request.getTargetPackageId());
             }
             
-            targetPackage = validationResult.getPackage();
-            
-            // Log warnings if any
-            if (!validationResult.getWarnings().isEmpty()) {
-                validationResult.getWarnings().values().forEach(warning -> 
-                    log.warn("⚠️ {}", warning));
-            }
+            log.info("   Package validated for QR creation: {} (balance check skipped)", targetPackage.getName());
         }
 
         // Generate unique reference code

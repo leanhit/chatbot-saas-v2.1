@@ -85,67 +85,67 @@
       </div>
     </div>
 
-    <!-- Selected Package Summary -->
-    <div v-if="paymentStore.selectedPackage && paymentStore.selectedPackage.price > 0" class="mb-8">
-      <div class="flex items-center justify-center mb-6">
-        <Icon icon="mdi:cart-check" class="text-2xl text-blue-600 dark:text-blue-400 mr-3" />
-        <h3 class="text-lg font-semibold text-gray-800 dark:text-white">
-          {{ $t('payment.deposit.title') }}
-        </h3>
-      </div>
-        
-      <div class="bg-white dark:bg-gray-900 rounded-lg shadow p-6">
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div>
-            <div class="space-y-2">
-              <div class="flex justify-between">
-                <span class="text-gray-700 dark:text-gray-300">{{ $t('payment.selectPackage') }}:</span>
-                <span class="font-semibold text-gray-800 dark:text-white">
-                  {{ paymentStore.selectedPackage ? paymentStore.selectedPackage.name : $t('payment.custom') }}
-                </span>
-              </div>
-              <div class="flex justify-between">
-                <span class="text-gray-700 dark:text-gray-300">{{ $t('payment.amount') }}:</span>
-                <span class="font-bold text-lg text-blue-700 dark:text-blue-300">
-                  {{ paymentStore.formattedAmount }}
-                </span>
-              </div>
-              <div v-if="paymentStore.selectedPackage" class="flex justify-between">
-                <span class="text-gray-700 dark:text-gray-300">{{ $t('payment.duration') }}:</span>
-                <span class="font-semibold text-gray-800 dark:text-white">
-                  {{ paymentStore.selectedPackage.duration }}
-                </span>
+    <!-- Payment Container: 1/4 + 3/4 Layout -->
+    <div v-if="paymentStore.selectedPackage && paymentStore.selectedPackage.price > 0" class="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-8">
+      <!-- Selected Package Summary - 1/4 width -->
+      <div class="lg:col-span-1">
+        <div class="flex items-center justify-center mb-6">
+          <Icon icon="mdi:cart-check" class="text-2xl text-blue-600 dark:text-blue-400 mr-3" />
+          <h3 class="text-lg font-semibold text-gray-800 dark:text-white">
+            {{ $t('payment.deposit.title') }}
+          </h3>
+        </div>
+          
+        <div class="bg-white dark:bg-gray-900 rounded-lg shadow p-6">
+          <div class="space-y-4">
+            <div>
+              <span class="text-gray-700 dark:text-gray-300 text-sm">{{ $t('payment.selectPackage') }}:</span>
+              <div class="font-semibold text-gray-800 dark:text-white mt-1">
+                {{ paymentStore.selectedPackage ? paymentStore.selectedPackage.name : $t('payment.custom') }}
               </div>
             </div>
-          </div>
-          
-          <div class="text-center">
-            <button
-              @click="paymentStore.createDeposit()"
-              :disabled="!paymentStore.canCreatePayment"
-              class="w-full bg-blue-600 text-white py-3 px-6 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 text-lg font-semibold"
-            >
-              <span v-if="paymentStore.loading" class="flex items-center justify-center">
-                <Icon icon="eos-icons:loading" class="animate-spin mr-2" />
-                {{ $t('payment.deposit.loading') }}
-              </span>
-              <span v-else>{{ $t('payment.deposit.proceed') }}</span>
-            </button>
+            
+            <div>
+              <span class="text-gray-700 dark:text-gray-300 text-sm">{{ $t('payment.amount') }}:</span>
+              <div class="font-bold text-lg text-blue-700 dark:text-blue-300 mt-1">
+                {{ paymentStore.formattedAmount }}
+              </div>
+            </div>
+            
+            <div v-if="paymentStore.selectedPackage">
+              <span class="text-gray-700 dark:text-gray-300 text-sm">{{ $t('payment.duration') }}:</span>
+              <div class="font-semibold text-gray-800 dark:text-white mt-1">
+                {{ paymentStore.selectedPackage.duration }}
+              </div>
+            </div>
+            
+            <div class="pt-4">
+              <button
+                @click="paymentStore.createDeposit()"
+                :disabled="!paymentStore.canCreatePayment"
+                class="w-full bg-blue-600 text-white py-3 px-6 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 text-lg font-semibold"
+              >
+                <span v-if="paymentStore.loading" class="flex items-center justify-center">
+                  <Icon icon="eos-icons:loading" class="animate-spin mr-2" />
+                  {{ $t('payment.deposit.loading') }}
+                </span>
+                <span v-else>{{ $t('payment.deposit.proceed') }}</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- QR Code Display -->
-    <div v-if="paymentStore.currentPayment" class="mt-6 bg-white dark:bg-gray-900 rounded-lg shadow p-6">
-      <div class="flex items-center justify-center mb-6">
-        <Icon icon="mdi:qrcode-scan" class="text-2xl text-blue-600 dark:text-blue-400 mr-3" />
-        <h2 class="text-xl font-semibold text-gray-800 dark:text-white">
-          {{ $t('payment.bankInfo.title') }}
-        </h2>
-      </div>
-      
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <!-- QR Code Display - 3/4 width -->
+      <div v-if="paymentStore.currentPayment" class="lg:col-span-3">
+        <div class="flex items-center justify-center mb-6">
+          <Icon icon="mdi:qrcode-scan" class="text-2xl text-blue-600 dark:text-blue-400 mr-3" />
+          <h2 class="text-xl font-semibold text-gray-800 dark:text-white">
+            {{ $t('payment.bankInfo.title') }}
+          </h2>
+        </div>
+        
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <!-- QR Code -->
         <div class="text-center">
           <div class="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg mb-4">
@@ -262,6 +262,7 @@
             </button>
           </div>
         </div>
+      </div>
       </div>
     </div>
 
