@@ -1,0 +1,181 @@
+# ConfigMap for Chatbot SaaS v2.1
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: chatbot-saas-config
+  namespace: chatbot-saas
+  labels:
+    app: chatbot-saas
+    component: backend
+data:
+  # Application configuration
+  application.yml: |
+    spring:
+      profiles:
+        active: production
+      application:
+        name: chatbot-saas
+      jpa:
+        hibernate:
+          ddl-auto: validate
+        show-sql: false
+        properties:
+          hibernate:
+            format_sql: false
+            use_sql_comments: false
+            jdbc:
+              batch_size: 50
+              order_inserts: true
+              order_updates: true
+      datasource:
+        hikari:
+          maximum-pool-size: 20
+          minimum-idle: 10
+          idle-timeout: 300000
+          max-lifetime: 1200000
+          connection-timeout: 20000
+      redis:
+        timeout: 2000ms
+        lettuce:
+          pool:
+            max-active: 20
+            max-idle: 10
+            min-idle: 5
+      cache:
+        type: redis
+        redis:
+          time-to-live: 600000
+      servlet:
+        multipart:
+          max-file-size: 10MB
+          max-request-size: 10MB
+    
+    server:
+      port: 8080
+      servlet:
+        context-path: /
+      compression:
+        enabled: true
+        mime-types: text/html,text/xml,text/plain,text/css,text/javascript,application/javascript,application/json
+      http2:
+        enabled: true
+    
+    management:
+      endpoints:
+        web:
+          exposure:
+            include: health,info,metrics,prometheus
+      endpoint:
+        health:
+          show-details: when-authorized
+      metrics:
+        export:
+          prometheus:
+            enabled: true
+    
+    logging:
+      level:
+        root: WARN
+        com.chatbot: INFO
+        org.springframework.web: INFO
+        org.springframework.security: INFO
+      pattern:
+        console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+        file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+      file:
+        name: /app/logs/application.log
+        max-size: 100MB
+        max-history: 30
+    
+    # Security configuration
+    security:
+      jwt:
+        expiration: 86400000
+      cors:
+        allowed-origins: "https://yourdomain.com,https://www.yourdomain.com"
+        allowed-methods: "GET,POST,PUT,DELETE,OPTIONS"
+        allowed-headers: "Authorization,Content-Type,X-Tenant-Key"
+    
+    # gRPC configuration
+    grpc:
+      server:
+        port: 50051
+      client:
+        identity-hub:
+          address: 'dns:///identity-hub:50051'
+        user-hub:
+          address: 'dns:///user-hub:50052'
+        tenant-hub:
+          address: 'dns:///tenant-hub:50053'
+        app-hub:
+          address: 'dns:///app-hub:50054'
+        billing-hub:
+          address: 'dns:///billing-hub:50055'
+        wallet-hub:
+          address: 'dns:///wallet-hub:50056'
+        config-hub:
+          address: 'dns:///config-hub:50057'
+        message-hub:
+          address: 'dns:///message-hub:50058'
+
+  # Nginx configuration
+  nginx.conf: |
+    upstream backend {
+        server backend-service:8080;
+    }
+    
+    server {
+        listen 80;
+        server_name _;
+        
+        location /api/ {
+            proxy_pass http://backend;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+        
+        location /health {
+            proxy_pass http://backend/actuator/health;
+        }
+        
+        location / {
+            root /usr/share/nginx/html;
+            try_files $uri $uri/ /index.html;
+        }
+    }
+
+  # Log configuration
+  logback.xml: |
+    <?xml version="1.0" encoding="UTF-8"?>
+    <configuration>
+        <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+            <encoder>
+                <pattern>%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n</pattern>
+            </encoder>
+        </appender>
+        
+        <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+            <file>/app/logs/application.log</file>
+            <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+                <fileNamePattern>/app/logs/application.%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+                <timeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
+                    <maxFileSize>100MB</maxFileSize>
+                </timeBasedFileNamingAndTriggeringPolicy>
+                <maxHistory>30</maxHistory>
+            </rollingPolicy>
+            <encoder>
+                <pattern>%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n</pattern>
+            </encoder>
+        </appender>
+        
+        <root level="WARN">
+            <appender-ref ref="STDOUT"/>
+            <appender-ref ref="FILE"/>
+        </root>
+        
+        <logger name="com.chatbot" level="INFO"/>
+        <logger name="org.springframework.web" level="INFO"/>
+        <logger name="org.springframework.security" level="INFO"/>
+    </configuration>

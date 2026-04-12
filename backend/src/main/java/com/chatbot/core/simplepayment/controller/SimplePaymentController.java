@@ -9,6 +9,8 @@ import com.chatbot.core.simplepayment.service.SimplePaymentService;
 import com.chatbot.core.tenant.infra.TenantContext;
 import com.chatbot.core.tenant.model.Tenant;
 import com.chatbot.core.tenant.repository.TenantRepository;
+import com.chatbot.core.user.model.User;
+import com.chatbot.core.identity.repository.AuthRepository;
 import com.chatbot.shared.utils.DateUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -37,6 +39,7 @@ public class SimplePaymentController {
     private final QRCodeService qrCodeService;
     private final BankApiService bankApiService;
     private final TenantRepository tenantRepository;
+    private final AuthRepository authRepository;
 
     /**
      * Tạo yêu cầu nạp tiền mới
@@ -58,7 +61,9 @@ public class SimplePaymentController {
             Long userId = extractUserId(userDetails);
             Long tenantId = extractTenantId(httpRequest);
 
-            log.info("📝 Deposit request - User ID: {}, Tenant ID: {}, Amount: {}", userId, tenantId, request.getAmount());
+            log.info("?? Deposit request - User ID: {}, Tenant ID: {}, Amount: {}", userId, tenantId, request.getAmount());
+            log.info("?? Request headers: X-Tenant-Key = {}", httpRequest.getHeader("X-Tenant-Key"));
+            log.info("?? TenantContext: tenantId = {}", TenantContext.getTenantId());
 
             // SECURITY: Validate user has access to this tenant
             if (!tenantRepository.existsByUserIdAndTenantId(userId, tenantId)) {
@@ -346,27 +351,20 @@ public class SimplePaymentController {
         }
     }
 
-    // Helper methods (simplified - in real implementation, get from user context)
+    // Helper methods
     private Long extractUserId(UserDetails userDetails) {
         // Extract real user ID from authenticated user
-        // In production, this should come from User entity or JWT claims
         try {
-            // Try to get from user service or database
-            // For now, extract from email or use a proper user lookup
             String username = userDetails.getUsername();
             
-            // This is a temporary fix - in production, implement proper user lookup
-            if ("testuser@newdomain.com".equals(username)) {
-                return 2L; // New user ID
-            } else if ("phongvanhiep@gmail.com".equals(username)) {
-                return 1L; // Original user ID
-            }
+            // Get user from database using the auth repository
+            User user = authRepository.findByEmail(username)
+                    .orElseThrow(() -> new RuntimeException("User not found: " + username));
             
-            // Fallback - should not happen in production
-            return 1L;
+            return user.getId();
         } catch (Exception e) {
-            log.warn("Failed to extract user ID for user: {}", userDetails.getUsername());
-            return 1L; // Safe fallback
+            log.error("Failed to extract user ID for user: {}", userDetails.getUsername(), e);
+            throw new RuntimeException("Failed to extract user ID", e);
         }
     }
 
@@ -374,6 +372,7 @@ public class SimplePaymentController {
         // Extract from TenantContext (set by TenantContextInterceptor)
         Long tenantId = TenantContext.getTenantId();
         if (tenantId != null) {
+            log.debug("Found tenant ID from context: {}", tenantId);
             return tenantId;
         }
         
@@ -381,14 +380,31 @@ public class SimplePaymentController {
         String tenantKey = request.getHeader("X-Tenant-Key");
         if (tenantKey != null && !tenantKey.isBlank()) {
             try {
-                return tenantRepository.findByTenantKey(tenantKey)
+                Long foundTenantId = tenantRepository.findByTenantKey(tenantKey)
                         .map(Tenant::getId)
                         .orElseThrow(() -> new RuntimeException("Tenant not found: " + tenantKey));
+                log.debug("Found tenant ID from header {}: {}", tenantKey, foundTenantId);
+                return foundTenantId;
             } catch (Exception e) {
-                log.warn("Could not extract tenant ID from header: {}", e.getMessage());
+                log.warn("Could not extract tenant ID from header {}: {}", tenantKey, e.getMessage());
             }
         }
         
+        // Fallback: get tenant from user
+        try {
+            UserDetails userDetails = (UserDetails) request.getUserPrincipal();
+            if (userDetails != null) {
+                Long userId = extractUserId(userDetails);
+                Tenant tenant = tenantRepository.findByUserId(userId)
+                        .orElseThrow(() -> new RuntimeException("No tenant found for user: " + userId));
+                log.debug("Found tenant ID from user {}: {}", userId, tenant.getId());
+                return tenant.getId();
+            }
+        } catch (Exception e) {
+            log.warn("Could not extract tenant ID from user: {}", e.getMessage());
+        }
+        
+        log.error("Tenant ID not found in context, header, or user");
         throw new RuntimeException("Tenant ID not found in context or request");
     }
 }

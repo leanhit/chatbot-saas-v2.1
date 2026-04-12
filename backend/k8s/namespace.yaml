@@ -1,0 +1,10 @@
+# Namespace for Chatbot SaaS v2.1
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: chatbot-saas
+  labels:
+    name: chatbot-saas
+    environment: production
+    application: chatbot-saas
+    version: v2.1

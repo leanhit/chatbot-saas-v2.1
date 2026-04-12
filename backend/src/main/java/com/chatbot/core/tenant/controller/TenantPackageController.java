@@ -1,9 +1,14 @@
 package com.chatbot.core.tenant.controller;
 
+import com.chatbot.core.tenant.service.TenantPackageService;
 import com.chatbot.core.simplepayment.model.Package;
 import com.chatbot.core.tenant.dto.TenantPackageInfo;
 import com.chatbot.core.tenant.model.Tenant;
-import com.chatbot.core.tenant.service.TenantPackageService;
+import com.chatbot.core.tenant.repository.TenantRepository;
+import com.chatbot.core.tenant.infra.TenantContext;
+import com.chatbot.core.user.model.User;
+import com.chatbot.core.identity.repository.AuthRepository;
+import com.chatbot.core.simplepayment.repository.PackageRepository;
 import com.chatbot.shared.constants.ApiConstants;
 import com.chatbot.shared.dto.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -12,9 +17,14 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
+import jakarta.servlet.http.HttpServletRequest;
+
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping(ApiConstants.BASE_PATH + "/tenant-packages")
@@ -24,6 +34,9 @@ import java.util.List;
 public class TenantPackageController {
 
     private final TenantPackageService tenantPackageService;
+    private final TenantRepository tenantRepository;
+    private final AuthRepository authRepository;
+    private final PackageRepository packageRepository;
 
     /**
      * Get current package info with expiration details
@@ -31,11 +44,11 @@ public class TenantPackageController {
     @GetMapping("/current/info")
     @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Get current tenant package info with expiration", description = "Get the current package with expiration details for the authenticated tenant")
-    public ResponseEntity<ApiResponse<TenantPackageInfo>> getCurrentPackageInfo() {
+    public ResponseEntity<ApiResponse<TenantPackageInfo>> getCurrentPackageInfo(
+            @AuthenticationPrincipal UserDetails userDetails,
+            HttpServletRequest httpRequest) {
         try {
-            // This would typically get tenant ID from security context
-            // For now, we'll use a mock implementation
-            Long tenantId = 1L; // TODO: Get from security context
+            Long tenantId = extractTenantId(userDetails, httpRequest);
             
             TenantPackageInfo packageInfo = tenantPackageService.getCurrentTenantPackageInfo(tenantId);
             
@@ -69,11 +82,11 @@ public class TenantPackageController {
     @GetMapping("/current")
     @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Get current tenant package", description = "Get the current package for the authenticated tenant")
-    public ResponseEntity<ApiResponse<Package>> getCurrentPackage() {
+    public ResponseEntity<ApiResponse<Package>> getCurrentPackage(
+            @AuthenticationPrincipal UserDetails userDetails,
+            HttpServletRequest httpRequest) {
         try {
-            // This would typically get tenant ID from security context
-            // For now, we'll use a mock implementation
-            Long tenantId = 1L; // TODO: Get from security context
+            Long tenantId = extractTenantId(userDetails, httpRequest);
             
             Package currentPackage = tenantPackageService.getCurrentTenantPackage(tenantId);
             
@@ -162,6 +175,80 @@ public class TenantPackageController {
     }
 
     /**
+     * Upgrade current user's package (self-service)
+     */
+    @PostMapping("/upgrade-my-package")
+    @PreAuthorize("isAuthenticated()")
+    @Operation(summary = "Upgrade current user package", description = "Upgrade the current user's tenant package")
+    public ResponseEntity<ApiResponse<String>> upgradeMyPackage(
+            @RequestParam String packageId,
+            @AuthenticationPrincipal UserDetails userDetails,
+            HttpServletRequest httpRequest) {
+        try {
+            Long tenantId = extractTenantId(userDetails, httpRequest);
+            tenantPackageService.upgradeTenantPackage(tenantId, packageId);
+            return ResponseEntity.ok(ApiResponse.success("Package upgraded successfully", "Your package has been upgraded to " + packageId));
+        } catch (Exception e) {
+            log.error("Error upgrading package for current user: {}", e.getMessage(), e);
+            return ResponseEntity.badRequest().body(ApiResponse.error("Error upgrading package: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * Get current package info without caching issues
+     */
+    @GetMapping("/my-package")
+    @PreAuthorize("isAuthenticated()")
+    @Operation(summary = "Get my package info", description = "Get current user's package info")
+    public ResponseEntity<ApiResponse<Object>> getMyPackage(
+            @AuthenticationPrincipal UserDetails userDetails,
+            HttpServletRequest httpRequest) {
+        try {
+            Long tenantId = extractTenantId(userDetails, httpRequest);
+            
+            // Get tenant info directly
+            Tenant tenant = tenantRepository.findById(tenantId)
+                    .orElseThrow(() -> new RuntimeException("Tenant not found"));
+            
+            // Get package info directly from repository to avoid caching issues
+            Package currentPackage = null;
+            if (tenant.getCurrentPackageId() != null) {
+                currentPackage = packageRepository.findByPackageId(tenant.getCurrentPackageId())
+                        .orElse(null);
+            }
+            
+            // Create response manually
+            Map<String, Object> response = new java.util.HashMap<>();
+            response.put("tenantId", tenantId);
+            response.put("tenantKey", tenant.getTenantKey());
+            response.put("currentPackageId", tenant.getCurrentPackageId());
+            response.put("packageActivatedAt", tenant.getPackageActivatedAt());
+            response.put("expiresAt", tenant.getExpiresAt());
+            
+            if (currentPackage != null) {
+                response.put("packageName", currentPackage.getName());
+                response.put("packagePrice", currentPackage.getPrice());
+                response.put("packageCurrency", currentPackage.getCurrency());
+                response.put("packageDuration", currentPackage.getDuration());
+                response.put("chatbotLimit", currentPackage.getChatbotLimit());
+                response.put("messageLimit", currentPackage.getMessageLimit());
+            } else {
+                response.put("packageName", null);
+                response.put("packagePrice", null);
+                response.put("packageCurrency", null);
+                response.put("packageDuration", null);
+                response.put("chatbotLimit", null);
+                response.put("messageLimit", null);
+            }
+            
+            return ResponseEntity.ok(ApiResponse.success(response, "Package info retrieved successfully"));
+        } catch (Exception e) {
+            log.error("Error getting package info: {}", e.getMessage(), e);
+            return ResponseEntity.badRequest().body(ApiResponse.error("Error getting package info: " + e.getMessage()));
+        }
+    }
+
+    /**
      * Test time accumulation logic (for debugging)
      */
     @PostMapping("/tenant/{tenantId}/test-accumulation")
@@ -175,6 +262,61 @@ public class TenantPackageController {
             log.error("Error testing time accumulation: {}", e.getMessage(), e);
             return ResponseEntity.internalServerError()
                     .body(ApiResponse.error("Test failed: " + e.getMessage()));
+        }
+    }
+
+    // Helper methods
+    private Long extractTenantId(UserDetails userDetails, HttpServletRequest httpRequest) {
+        // Extract from TenantContext (set by TenantContextInterceptor)
+        Long tenantId = TenantContext.getTenantId();
+        if (tenantId != null) {
+            log.debug("Found tenant ID from context: {}", tenantId);
+            return tenantId;
+        }
+        
+        // Fallback: extract from X-Tenant-Key header
+        String tenantKey = httpRequest.getHeader("X-Tenant-Key");
+        if (tenantKey != null && !tenantKey.isBlank()) {
+            try {
+                Long foundTenantId = tenantRepository.findByTenantKey(tenantKey)
+                        .map(Tenant::getId)
+                        .orElseThrow(() -> new RuntimeException("Tenant not found: " + tenantKey));
+                log.debug("Found tenant ID from header {}: {}", tenantKey, foundTenantId);
+                return foundTenantId;
+            } catch (Exception e) {
+                log.warn("Could not extract tenant ID from header {}: {}", tenantKey, e.getMessage());
+            }
+        }
+        
+        // Fallback: get tenant from user
+        try {
+            if (userDetails != null) {
+                Long userId = extractUserId(userDetails);
+                Tenant tenant = tenantRepository.findByUserId(userId)
+                        .orElseThrow(() -> new RuntimeException("No tenant found for user: " + userId));
+                log.debug("Found tenant ID from user {}: {}", userId, tenant.getId());
+                return tenant.getId();
+            }
+        } catch (Exception e) {
+            log.warn("Could not extract tenant ID from user: {}", e.getMessage());
+        }
+        
+        log.error("Tenant ID not found in context, header, or user");
+        throw new RuntimeException("Tenant ID not found in context or request");
+    }
+
+    private Long extractUserId(UserDetails userDetails) {
+        try {
+            String username = userDetails.getUsername();
+            
+            // Get user from database using the auth repository
+            User user = authRepository.findByEmail(username)
+                    .orElseThrow(() -> new RuntimeException("User not found: " + username));
+            
+            return user.getId();
+        } catch (Exception e) {
+            log.error("Failed to extract user ID for user: {}", userDetails.getUsername(), e);
+            throw new RuntimeException("Failed to extract user ID", e);
         }
     }
 }

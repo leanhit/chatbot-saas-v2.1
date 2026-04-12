@@ -1,0 +1,6 @@
+# Logstash Configuration for Chatbot SaaS v2.1
+http.host: "0.0.0.0"
+xpack.monitoring.elasticsearch.hosts: [ "http://elasticsearch:9200" ]
+path.config: /usr/share/logstash/pipeline
+path.logs: /usr/share/logstash/logs
+log.level: info

@@ -1,0 +1,192 @@
+# Centralized Logging Stack for Chatbot SaaS v2.1
+# Elasticsearch + Logstash + Kibana (ELK Stack)
+version: '3.8'
+
+services:
+  # Elasticsearch - Log Storage and Search
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.8.0
+    container_name: chatbot_saas_elasticsearch
+    restart: always
+    environment:
+      - node.name=elasticsearch
+      - cluster.name=chatbot-saas-cluster
+      - discovery.type=single-node
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - xpack.security.enabled=false
+      - xpack.security.enrollment.enabled=false
+      - xpack.monitoring.collection.enabled=true
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+      - ./logging/elasticsearch/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    networks:
+      - logging
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '0.5'
+        reservations:
+          memory: 512M
+          cpus: '0.25'
+
+  # Logstash - Log Processing
+  logstash:
+    image: docker.elastic.co/logstash/logstash:8.8.0
+    container_name: chatbot_saas_logstash
+    restart: always
+    environment:
+      - "LS_JAVA_OPTS=-Xmx256m -Xms256m"
+    volumes:
+      - ./logging/logstash/logstash.yml:/usr/share/logstash/config/logstash.yml
+      - ./logging/logstash/pipeline:/usr/share/logstash/pipeline
+      - ./logging/logstash/patterns:/usr/share/logstash/patterns
+      - app_logs:/var/log/app:ro
+      - nginx_logs:/var/log/nginx:ro
+    ports:
+      - "5044:5044"
+      - "9600:9600"
+    networks:
+      - logging
+    depends_on:
+      - elasticsearch
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9600/_node/stats || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.1'
+
+  # Kibana - Log Visualization
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.8.0
+    container_name: chatbot_saas_kibana
+    restart: always
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+      - SERVER_NAME=kibana.yourdomain.com
+      - SERVER_HOST=0.0.0.0
+      - SERVER_PORT=5601
+      - XPACK_SECURITY_ENABLED=false
+      - XPACK_MONITORING_ENABLED=true
+    volumes:
+      - ./logging/kibana/kibana.yml:/usr/share/kibana/config/kibana.yml
+    ports:
+      - "5601:5601"
+    networks:
+      - logging
+    depends_on:
+      - elasticsearch
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:5601/api/status || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.1'
+
+  # Filebeat - Log Shipping
+  filebeat:
+    image: docker.elastic.co/beats/filebeat:8.8.0
+    container_name: chatbot_saas_filebeat
+    restart: always
+    user: root
+    environment:
+      - output.elasticsearch.hosts=["elasticsearch:9200"]
+      - setup.kibana.host=kibana:5601
+    volumes:
+      - ./logging/filebeat/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro
+      - ./logging/filebeat/modules.d:/usr/share/filebeat/modules.d:ro
+      - app_logs:/var/log/app:ro
+      - nginx_logs:/var/log/nginx:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - logging
+    depends_on:
+      - elasticsearch
+      - kibana
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.1'
+        reservations:
+          memory: 128M
+          cpus: '0.05'
+
+  # Apm Server - Application Performance Monitoring
+  apm-server:
+    image: docker.elastic.co/apm/apm-server:8.8.0
+    container_name: chatbot_saas_apm_server
+    restart: always
+    environment:
+      - output.elasticsearch.hosts=["elasticsearch:9200"]
+      - setup.kibana.host=kibana:5601
+    volumes:
+      - ./logging/apm-server/apm-server.yml:/usr/share/apm-server/apm-server.yml:ro
+    ports:
+      - "8200:8200"
+    networks:
+      - logging
+    depends_on:
+      - elasticsearch
+      - kibana
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8200/ || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.1'
+        reservations:
+          memory: 128M
+          cpus: '0.05'
+
+# Volumes
+volumes:
+  elasticsearch_data:
+    driver: local
+    name: chatbot_saas_elasticsearch_data
+  app_logs:
+    driver: local
+    name: chatbot_saas_app_logs
+  nginx_logs:
+    driver: local
+    name: chatbot_saas_nginx_logs
+
+# Networks
+networks:
+  logging:
+    driver: bridge
+    name: chatbot_saas_logging

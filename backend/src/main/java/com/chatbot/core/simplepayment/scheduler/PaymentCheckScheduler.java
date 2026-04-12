@@ -14,10 +14,10 @@ public class PaymentCheckScheduler {
     private final SimplePaymentService simplePaymentService;
 
     /**
-     * DISABLED - Now using Redis pub/sub for real-time payment processing
-     * This scheduler is kept as emergency backup only
+     * ENABLED - Payment checking for automatic payment completion
+     * Runs every 30 seconds to check pending payments
      */
-    // @Scheduled(fixedDelay = 30000) // DISABLED - Use Redis instead
+    @Scheduled(fixedDelay = 30000) // ENABLED - Check every 30 seconds
     public void checkPendingPayments() {
         log.debug("🏦 Running scheduled payment check...");
         

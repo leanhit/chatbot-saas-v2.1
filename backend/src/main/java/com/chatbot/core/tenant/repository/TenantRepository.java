@@ -55,6 +55,13 @@ public interface TenantRepository extends JpaRepository<Tenant, Long> {
     @Query("SELECT t FROM Tenant t LEFT JOIN FETCH t.profile WHERE t.id IN :ids")
     List<Tenant> findAllByIdsWithProfile(@Param("ids") List<Long> ids);
 
+    // Tìm tenant theo user ID (thông qua tenant membership)
+    @Query("SELECT t FROM Tenant t WHERE EXISTS (" +
+           "  SELECT 1 FROM TenantMember tm " +
+           "  WHERE tm.tenant.id = t.id AND tm.user.id = :userId" +
+           ")")
+    Optional<Tenant> findByUserId(@Param("userId") Long userId);
+
     // Kiêm tra user có access vào tenant không (thông qua tenant membership)
     @Query("SELECT COUNT(t) > 0 FROM Tenant t " +
            "WHERE t.id = :tenantId AND EXISTS (" +

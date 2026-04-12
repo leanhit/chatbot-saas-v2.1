@@ -5,6 +5,7 @@ import com.chatbot.core.tenant.model.Tenant;
 import com.chatbot.core.tenant.repository.TenantRepository;
 import com.chatbot.core.simplepayment.service.PackageService;
 import com.chatbot.core.simplepayment.model.Package;
+import com.chatbot.core.simplepayment.repository.PackageRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -19,6 +20,7 @@ public class TenantPackageService {
 
     private final TenantRepository tenantRepository;
     private final PackageService packageService;
+    private final PackageRepository packageRepository;
 
     /**
      * Assign default free package to a new tenant
@@ -29,7 +31,7 @@ public class TenantPackageService {
         
         try {
             // Get free package
-            Package freePackage = packageService.getPackageByPackageId("free")
+            Package freePackage = packageRepository.findByPackageId("free")
                     .orElseThrow(() -> new RuntimeException("Free package not found in database"));
             
             // Assign free package to tenant
@@ -59,7 +61,7 @@ public class TenantPackageService {
         Tenant tenant = tenantRepository.findById(tenantId)
                 .orElseThrow(() -> new RuntimeException("Tenant not found: " + tenantId));
         
-        Package newPackage = packageService.getPackageByPackageId(packageId)
+        Package newPackage = packageRepository.findByPackageId(packageId)
                 .orElseThrow(() -> new RuntimeException("Package not found: " + packageId));
         
         String oldPackageId = tenant.getCurrentPackageId();
@@ -213,12 +215,21 @@ public class TenantPackageService {
                 .orElseThrow(() -> new RuntimeException("Tenant not found: " + tenantId));
         
         if (tenant.getCurrentPackageId() == null) {
-            log.warn("⚠️ [TenantPackageService] Tenant {} has no package assigned", tenant.getTenantKey());
+            log.warn(" [TenantPackageService] Tenant {} has no package assigned", tenant.getTenantKey());
             return null;
         }
         
-        return packageService.getPackageByPackageId(tenant.getCurrentPackageId())
-                .orElse(null);
+        try {
+            return packageService.getPackageByPackageId(tenant.getCurrentPackageId())
+                    .orElse(null);
+        } catch (Exception e) {
+            log.error("Error getting package by packageId {}, trying direct repository access: {}", 
+                    tenant.getCurrentPackageId(), e.getMessage());
+            
+            // Fallback: direct repository access to avoid caching issues
+            return packageRepository.findByPackageId(tenant.getCurrentPackageId())
+                    .orElse(null);
+        }
     }
 
     /**

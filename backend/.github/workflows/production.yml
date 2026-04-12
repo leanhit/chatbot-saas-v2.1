@@ -1,0 +1,332 @@
+# Production CI/CD Pipeline for Chatbot SaaS v2.1
+name: Production Deploy
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: chatbot-saas/backend
+  DOCKERFILE: Dockerfile.optimized
+
+jobs:
+  # Code Quality and Security
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up JDK 21
+      uses: actions/setup-java@v4
+      with:
+        java-version: '21'
+        distribution: 'temurin'
+
+    - name: Cache Gradle packages
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.gradle/caches
+          ~/.gradle/wrapper
+        key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+        restore-keys: |
+          ${{ runner.os }}-gradle-
+
+    - name: Run tests
+      run: ./gradlew test --no-daemon
+
+    - name: Run integration tests
+      run: ./gradlew integrationTest --no-daemon
+
+    - name: Generate test report
+      uses: dorny/test-reporter@v1
+      if: success() || failure()
+      with:
+        name: Test Results
+        path: build/test-results/test/
+        reporter: java-junit
+
+    - name: Code coverage
+      uses: codecov/codecov-action@v4
+      with:
+        file: build/reports/jacoco/test/jacocoTestReport.xml
+        flags: unittests
+        name: codecov-umbrella
+
+    - name: SonarCloud Scan
+      uses: SonarSource/sonarcloud-github-action@master
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+    - name: Security scan with Trivy
+      uses: aquasecurity/trivy-action@master
+      with:
+        scan-type: 'fs'
+        scan-ref: '.'
+        format: 'sarif'
+        output: 'trivy-results.sarif'
+
+    - name: Upload Trivy scan results to GitHub Security tab
+      uses: github/codeql-action/upload-sarif@v3
+      with:
+        sarif_file: 'trivy-results.sarif'
+
+  # Build and Push Docker Image
+  build:
+    needs: quality
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+    outputs:
+      image: ${{ steps.meta.outputs.tags }}
+      digest: ${{ steps.build.outputs.digest }}
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Log in to Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Extract metadata
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+        tags: |
+          type=ref,event=branch
+          type=ref,event=pr
+          type=sha,prefix={{branch}}-
+          type=raw,value=latest,enable={{is_default_branch}}
+          type=semver,pattern={{version}}
+          type=semver,pattern={{major}}.{{minor}}
+
+    - name: Build and push Docker image
+      id: build
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        file: ${{ env.DOCKERFILE }}
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+        platforms: linux/amd64,linux/arm64
+        build-args: |
+          BUILD_DATE=${{ fromJSON(steps.meta.outputs.json).labels['org.opencontainers.image.created'] }}
+          VCS_REF=${{ fromJSON(steps.meta.outputs.json).labels['org.opencontainers.image.revision'] }}
+          VERSION=${{ fromJSON(steps.meta.outputs.json).labels['org.opencontainers.image.version'] }}
+
+    - name: Generate SBOM
+      uses: anchore/sbom-action@v0
+      with:
+        image: ${{ steps.meta.outputs.tags }}
+        format: spdx-json
+        output-file: sbom.spdx.json
+
+    - name: Upload SBOM
+      uses: actions/upload-artifact@v4
+      with:
+        name: sbom
+        path: sbom.spdx.json
+
+  # Security Scan on Image
+  security-scan:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+    - name: Run Trivy vulnerability scanner on image
+      uses: aquasecurity/trivy-action@master
+      with:
+        image-ref: ${{ needs.build.outputs.image }}
+        format: 'sarif'
+        output: 'trivy-image-results.sarif'
+
+    - name: Upload Trivy scan results to GitHub Security tab
+      uses: github/codeql-action/upload-sarif@v3
+      with:
+        sarif_file: 'trivy-image-results.sarif'
+
+  # Deploy to Staging
+  deploy-staging:
+    needs: [build, security-scan]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    environment: staging
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Configure kubectl
+      uses: azure/k8s-set-context@v4
+      with:
+        method: kubeconfig
+        kubeconfig: ${{ secrets.KUBE_CONFIG_STAGING }}
+
+    - name: Deploy to staging
+      run: |
+        # Update image tag in deployment
+        kubectl set image deployment/backend backend=${{ needs.build.outputs.image }} -n chatbot-saas-staging
+        
+        # Wait for rollout
+        kubectl rollout status deployment/backend -n chatbot-saas-staging --timeout=300s
+        
+        # Get deployment status
+        kubectl get deployment backend -n chatbot-saas-staging
+
+    - name: Run smoke tests
+      run: |
+        # Wait for service to be ready
+        sleep 30
+        
+        # Run smoke tests
+        curl -f https://staging.yourdomain.com/api/actuator/health || exit 1
+        curl -f https://staging.yourdomain.com/api/actuator/info || exit 1
+
+    - name: Run integration tests on staging
+      run: |
+        # Run API tests
+        ./scripts/staging-integration-tests.sh
+
+    - name: Create deployment tag
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const sha = context.sha.substring(0, 7);
+          const tag = `staging-${sha}`;
+          
+          github.rest.git.createRef({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            ref: `refs/tags/${tag}`,
+            sha: context.sha
+          });
+
+  # Deploy to Production
+  deploy-production:
+    needs: [build, security-scan, deploy-staging]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    environment: production
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Configure kubectl
+      uses: azure/k8s-set-context@v4
+      with:
+        method: kubeconfig
+        kubeconfig: ${{ secrets.KUBE_CONFIG_PROD }}
+
+    - name: Create production namespace if not exists
+      run: |
+        kubectl create namespace chatbot-saas --dry-run=client -o yaml | kubectl apply -f -
+
+    - name: Apply secrets
+      run: |
+        # Apply secrets from encrypted files
+        kubectl apply -f k8s/secrets.yaml -n chatbot-saas
+
+    - name: Apply configmaps
+      run: |
+        kubectl apply -f k8s/configmap.yaml -n chatbot-saas
+
+    - name: Deploy to production with blue-green strategy
+      run: |
+        # Create blue deployment if not exists
+        kubectl apply -f k8s/backend-deployment.yaml -n chatbot-saas
+        
+        # Wait for blue deployment to be ready
+        kubectl rollout status deployment/backend -n chatbot-saas --timeout=600s
+        
+        # Update service to point to new version
+        kubectl apply -f k8s/backend-service.yaml -n chatbot-saas
+
+    - name: Verify deployment
+      run: |
+        # Check pod status
+        kubectl get pods -n chatbot-saas -l app=chatbot-saas,component=backend
+        
+        # Check service status
+        kubectl get svc backend-service -n chatbot-saas
+        
+        # Check health endpoint
+        kubectl port-forward svc/backend-service 8080:80 -n chatbot-saas &
+        PF_PID=$!
+        sleep 10
+        
+        curl -f http://localhost:8080/actuator/health || exit 1
+        kill $PF_PID
+
+    - name: Run production smoke tests
+      run: |
+        # Wait for DNS propagation
+        sleep 60
+        
+        # Run smoke tests
+        curl -f https://api.yourdomain.com/actuator/health || exit 1
+        curl -f https://api.yourdomain.com/actuator/info || exit 1
+
+    - name: Create production release
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const tag = context.ref.replace('refs/tags/', '');
+          const release = await github.rest.repos.createRelease({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            tag_name: tag,
+            name: `Release ${tag}`,
+            body: `## Production Release ${tag}
+          
+          ### Changes
+          - Automated deployment from main branch
+          - Image: ${{ needs.build.outputs.image }}
+          - Digest: ${{ needs.build.outputs.digest }}
+          
+          ### Deployment Status
+          - Environment: Production
+          - Namespace: chatbot-saas
+          - Replicas: 3
+          
+          ### Verification
+          - Health checks passed
+          - Smoke tests passed
+          - Security scans passed
+          
+          ### Rollback
+          To rollback to previous version:
+          \`\`\`bash
+          kubectl rollout undo deployment/backend -n chatbot-saas
+          \`\`\`
+          `,
+            draft: false,
+            prerelease: false
+          });
+
+  # Cleanup
+  cleanup:
+    needs: [deploy-staging, deploy-production]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+    - name: Cleanup old images
+      uses: actions/delete-package-versions@v5
+      with:
+        package-name: ${{ env.IMAGE_NAME }}
+        package-type: 'container'
+        min-versions-to-keep: 10
+        delete-only-untagged-versions: true

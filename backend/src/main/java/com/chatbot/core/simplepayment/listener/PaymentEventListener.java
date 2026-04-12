@@ -87,7 +87,12 @@ public class PaymentEventListener implements MessageListener {
             redisPaymentService.storePayment(event.getReferenceCode(), updatedEvent);
             
         } catch (Exception e) {
-            log.error("❌ Error handling payment completion: {}", e.getMessage(), e);
+            // Ignore "Payment not found" errors - payment already completed
+            if (e.getMessage() != null && e.getMessage().contains("Payment not found")) {
+                log.info("Payment {} already completed, skipping duplicate completion", event.getReferenceCode());
+            } else {
+                log.error("Error handling payment completion: {}", e.getMessage(), e);
+            }
         }
     }
 

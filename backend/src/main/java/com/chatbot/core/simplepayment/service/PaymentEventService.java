@@ -122,9 +122,12 @@ public class PaymentEventService {
     }
 
     /**
-     * Process package upgrade directly
+     * Process package upgrade directly (for testing)
      */
-    private void processPackageUpgradeDirectly(Long userId, Long tenantId, String packageId, String referenceCode) {
+    @Transactional(propagation = org.springframework.transaction.annotation.Propagation.REQUIRES_NEW)
+    public void processPackageUpgradeDirectly(Long userId, Long tenantId, String packageId, String referenceCode) {
+        log.info("🔄 Processing package upgrade directly for user: {}, tenant: {}, package: {}", userId, tenantId, packageId);
+        
         try {
             // Create a mock SimplePayment object for the upgrade service
             SimplePayment mockPayment = SimplePayment.builder()

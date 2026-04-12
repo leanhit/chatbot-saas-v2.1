@@ -1,0 +1,116 @@
+# Alertmanager Configuration for Chatbot SaaS v2.1
+global:
+  smtp_smarthost: 'smtp.gmail.com:587'
+  smtp_from: 'alerts@truyenthongviet.vn'
+  smtp_auth_username: 'alerts@truyenthongviet.vn'
+  smtp_auth_password: 'your_gmail_app_password'
+  resolve_timeout: 5m
+
+# Route configuration
+route:
+  group_by: ['alertname', 'cluster', 'service']
+  group_wait: 10s
+  group_interval: 10s
+  repeat_interval: 12h
+  receiver: 'web.hook'
+  routes:
+    # Critical alerts go to email and Slack
+    - match:
+        severity: critical
+      receiver: 'critical-alerts'
+      group_wait: 5s
+      repeat_interval: 5m
+      continue: true
+    
+    # Warning alerts go to email only
+    - match:
+        severity: warning
+      receiver: 'warning-alerts'
+      group_wait: 30s
+      repeat_interval: 2h
+    
+    # Business alerts go to business team
+    - match:
+        severity: info
+      receiver: 'business-alerts'
+      group_wait: 1m
+      repeat_interval: 4h
+
+# Receivers configuration
+receivers:
+  # Critical alerts - Email + Slack
+  - name: 'critical-alerts'
+    email_configs:
+      - to: 'admin@truyenthongviet.vn,devops@truyenthongviet.vn'
+        subject: '[CRITICAL] {{ .GroupLabels.alertname }} - Chatbot SaaS v2.1'
+        body: |
+          {{ range .Alerts }}
+          Alert: {{ .Annotations.summary }}
+          Description: {{ .Annotations.description }}
+          Labels: {{ range .Labels.SortedPairs }}{{ .Name }}={{ .Value }} {{ end }}
+          {{ end }}
+    slack_configs:
+      - api_url: 'YOUR_SLACK_WEBHOOK_URL'
+        channel: '#alerts-critical'
+        title: 'Critical Alert: {{ .GroupLabels.alertname }}'
+        text: |
+          {{ range .Alerts }}
+          *Alert:* {{ .Annotations.summary }}
+          *Description:* {{ .Annotations.description }}
+          *Labels:* {{ range .Labels.SortedPairs }}{{ .Name }}={{ .Value }} {{ end }}
+          {{ end }}
+        send_resolved: true
+
+  # Warning alerts - Email only
+  - name: 'warning-alerts'
+    email_configs:
+      - to: 'devops@truyenthongviet.vn'
+        subject: '[WARNING] {{ .GroupLabels.alertname }} - Chatbot SaaS v2.1'
+        body: |
+          {{ range .Alerts }}
+          Alert: {{ .Annotations.summary }}
+          Description: {{ .Annotations.description }}
+          Labels: {{ range .Labels.SortedPairs }}{{ .Name }}={{ .Value }} {{ end }}
+          {{ end }}
+
+  # Business alerts - Business team
+  - name: 'business-alerts'
+    email_configs:
+      - to: 'business@truyenthongviet.vn,product@truyenthongviet.vn'
+        subject: '[INFO] {{ .GroupLabels.alertname }} - Chatbot SaaS v2.1'
+        body: |
+          {{ range .Alerts }}
+          Alert: {{ .Annotations.summary }}
+          Description: {{ .Annotations.description }}
+          Labels: {{ range .Labels.SortedPairs }}{{ .Name }}={{ .Value }} {{ end }}
+          {{ end }}
+
+  # Webhook receiver for custom integrations
+  - name: 'web.hook'
+    webhook_configs:
+      - url: 'http://localhost:8080/webhooks/alerts'
+        send_resolved: true
+        http_config:
+          basic_auth:
+            username: 'alertmanager'
+            password: 'alertmanager_password'
+
+# Inhibition rules
+inhibit_rules:
+  # Inhibit warning alerts if critical alert is firing
+  - source_match:
+      severity: 'critical'
+    target_match:
+      severity: 'warning'
+    equal: ['alertname', 'instance']
+
+  # Inhibit instance down alerts if node is down
+  - source_match:
+      alertname: 'InstanceDown'
+    target_match_re:
+      alertname: '(HighCPUUsage|HighMemoryUsage|DiskSpaceLow)'
+    equal: ['instance']
+
+# Templates
+templates:
+  - '/etc/alertmanager/templates/*.tmpl'

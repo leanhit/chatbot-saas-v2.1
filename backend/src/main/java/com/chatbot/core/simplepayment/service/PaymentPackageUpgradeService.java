@@ -4,6 +4,7 @@ import com.chatbot.core.simplepayment.model.Package;
 import com.chatbot.core.simplepayment.model.SimplePayment;
 import com.chatbot.core.simplepayment.model.PackageUpgradeAudit;
 import com.chatbot.core.simplepayment.repository.PackageUpgradeAuditRepository;
+import com.chatbot.core.simplepayment.repository.PackageRepository;
 import com.chatbot.core.tenant.service.TenantPackageService;
 import com.chatbot.core.user.repository.UserRepository;
 import com.chatbot.core.user.model.User;
@@ -24,6 +25,7 @@ public class PaymentPackageUpgradeService {
 
     private final TenantPackageService tenantPackageService;
     private final PackageService packageService;
+    private final PackageRepository packageRepository;
     private final PackageUpgradeAuditRepository auditRepository;
     private final UserRepository userRepository;
 
@@ -57,8 +59,19 @@ public class PaymentPackageUpgradeService {
             }
 
             // Validate package exists
-            Package targetPackage = packageService.getPackageByPackageId(targetPackageId)
-                    .orElse(null);
+            Package targetPackage;
+            try {
+                targetPackage = packageService.getPackageByPackageId(targetPackageId)
+                        .orElse(null);
+            } catch (ClassCastException e) {
+                log.error("ClassCastException getting package {}: {}", targetPackageId, e.getMessage());
+                // Try to get package directly from repository to avoid caching issues
+                targetPackage = packageRepository.findByPackageId(targetPackageId).orElse(null);
+            } catch (Exception e) {
+                log.error("Error getting package {}: {}", targetPackageId, e.getMessage());
+                // Try to get package directly from repository to avoid any caching issues
+                targetPackage = packageRepository.findByPackageId(targetPackageId).orElse(null);
+            }
             if (targetPackage == null) {
                 String error = "Package " + targetPackageId + " not found";
                 log.error("❌ {} for payment {}", error, payment.getReferenceCode());
@@ -204,13 +217,14 @@ public class PaymentPackageUpgradeService {
     /**
      * Execute package upgrade with balance deduction
      */
+    @Transactional(propagation = org.springframework.transaction.annotation.Propagation.REQUIRES_NEW)
     public void executeUpgradeWithBalanceDeduction(SimplePayment payment, String targetPackageId) {
         log.info(" executing upgrade with balance deduction for payment: {}, targetPackage: {}", 
                 payment.getReferenceCode(), targetPackageId);
         
         try {
-            // Get package price
-            Package targetPackage = packageService.getPackageByPackageId(targetPackageId)
+            // Get package price - use direct repository access to avoid caching issues
+            Package targetPackage = packageRepository.findByPackageId(targetPackageId)
                     .orElseThrow(() -> new RuntimeException("Package not found: " + targetPackageId));
             
             // Check and deduct user balance directly with pessimistic locking

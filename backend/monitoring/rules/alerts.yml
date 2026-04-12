@@ -1,0 +1,226 @@
+# Alert Rules for Chatbot SaaS v2.1
+groups:
+  - name: system.rules
+    rules:
+      # System Alerts
+      - alert: InstanceDown
+        expr: up == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Instance {{ $labels.instance }} is down"
+          description: "{{ $labels.instance }} has been down for more than 1 minute."
+
+      - alert: HighCPUUsage
+        expr: 100 - (avg by(instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU usage on {{ $labels.instance }}"
+          description: "CPU usage is above 80% for more than 5 minutes on {{ $labels.instance }}."
+
+      - alert: HighMemoryUsage
+        expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory usage on {{ $labels.instance }}"
+          description: "Memory usage is above 85% for more than 5 minutes on {{ $labels.instance }}."
+
+      - alert: DiskSpaceLow
+        expr: (1 - (node_filesystem_avail_bytes{fstype!="tmpfs"} / node_filesystem_size_bytes{fstype!="tmpfs"})) * 100 > 90
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Disk space low on {{ $labels.instance }}"
+          description: "Disk usage is above 90% on {{ $labels.device }} at {{ $labels.instance }}."
+
+  - name: application.rules
+    rules:
+      # Application Alerts
+      - alert: SpringBootDown
+        expr: up{job="spring-boot"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Spring Boot application is down"
+          description: "Spring Boot application has been down for more than 1 minute."
+
+      - alert: HighResponseTime
+        expr: http_server_requests_seconds_max{job="spring-boot"} > 5
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High response time"
+          description: "Response time is above 5 seconds for more than 5 minutes."
+
+      - alert: HighErrorRate
+        expr: rate(http_server_requests_seconds_count{status=~"5.."}[5m]) / rate(http_server_requests_seconds_count[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High error rate"
+          description: "Error rate is above 10% for more than 5 minutes."
+
+      - alert: JVMMemoryHigh
+        expr: (jvm_memory_used_bytes{area="heap"} / jvm_memory_max_bytes{area="heap"}) * 100 > 85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "JVM memory usage high"
+          description: "JVM heap memory usage is above 85% for more than 5 minutes."
+
+  - name: database.rules
+    rules:
+      # Database Alerts
+      - alert: PostgreSQLDown
+        expr: up{job="postgres-exporter"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "PostgreSQL is down"
+          description: "PostgreSQL database has been down for more than 1 minute."
+
+      - alert: PostgreSQLTooManyConnections
+        expr: pg_stat_database_numbackends / pg_settings_max_connections * 100 > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "PostgreSQL too many connections"
+          description: "PostgreSQL has more than 80% connections used."
+
+      - alert: PostgreSQLSlowQueries
+        expr: pg_stat_statements_mean_time_seconds > 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "PostgreSQL slow queries"
+          description: "PostgreSQL average query time is above 1 second."
+
+      - alert: RedisDown
+        expr: up{job="redis-exporter"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Redis is down"
+          description: "Redis cache has been down for more than 1 minute."
+
+      - alert: RedisMemoryHigh
+        expr: redis_memory_used_bytes / redis_memory_max_bytes * 100 > 85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Redis memory usage high"
+          description: "Redis memory usage is above 85% for more than 5 minutes."
+
+  - name: container.rules
+    rules:
+      # Container Alerts
+      - alert: ContainerDown
+        expr: up{job="cadvisor"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Container {{ $labels.name }} is down"
+          description: "Container {{ $labels.name }} has been down for more than 1 minute."
+
+      - alert: ContainerCPUHigh
+        expr: rate(container_cpu_usage_seconds_total{name!=""}[5m]) * 100 > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU usage in container {{ $labels.name }}"
+          description: "CPU usage is above 80% for more than 5 minutes in container {{ $labels.name }}."
+
+      - alert: ContainerMemoryHigh
+        expr: (container_memory_usage_bytes{name!=""} / container_spec_memory_limit_bytes{name!=""}) * 100 > 85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory usage in container {{ $labels.name }}"
+          description: "Memory usage is above 85% for more than 5 minutes in container {{ $labels.name }}."
+
+  - name: security.rules
+    rules:
+      # Security Alerts
+      - alert: TooManyFailedLogins
+        expr: rate(http_server_requests_seconds_count{uri="/api/auth/login",status="401"}[5m]) > 10
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Too many failed login attempts"
+          description: "More than 10 failed login attempts per minute for 2 minutes."
+
+      - alert: SuspiciousAPIUsage
+        expr: rate(http_server_requests_seconds_count{job="spring-boot"}[5m]) > 100
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Suspicious API usage"
+          description: "API request rate is unusually high (>100 req/min)."
+
+      - alert: UnauthorizedAccessAttempts
+        expr: rate(http_server_requests_seconds_count{status="403"}[5m]) > 5
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Unauthorized access attempts"
+          description: "More than 5 unauthorized access attempts per minute."
+
+  - name: business.rules
+    rules:
+      # Business Logic Alerts
+      - alert: NoNewUsers
+        expr: increase(users_created_total[1h]) == 0
+        for: 2h
+        labels:
+          severity: warning
+        annotations:
+          summary: "No new users registered"
+          description: "No new users have been registered in the last 2 hours."
+
+      - alert: NoActiveBots
+        expr: active_bots_total == 0
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "No active bots"
+          description: "No active chatbots detected for more than 10 minutes."
+
+      - alert: MessageQueueBacklog
+        expr: rabbitmq_queue_messages{queue_name="chatbot_messages"} > 1000
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Message queue backlog"
+          description: "Chatbot message queue has more than 1000 pending messages."
+
+      - alert: PaymentProcessingFailures
+        expr: rate(payment_processing_failures_total[5m]) > 0.1
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Payment processing failures"
+          description: "Payment processing failure rate is above 10%."
