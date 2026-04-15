@@ -226,6 +226,9 @@ export const usePaymentStore = defineStore('payment', {
         }
       }
       
+      // User tenant creation limit (per user)
+      features.push('Tối đa 4 tenant/user')
+      
       // Support features
       if (pkg.hasPrioritySupport) {
         features.push('Support ưu tiên')

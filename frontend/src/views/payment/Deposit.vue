@@ -31,9 +31,9 @@
           @click="paymentStore.selectPackage(pkg.packageId)"
           :class="[
             'bg-white dark:bg-gray-900 rounded-lg shadow p-6 border-2 cursor-pointer transition-all duration-200 hover:shadow-lg relative',
-            (paymentStore.currentPackage?.id === pkg.packageId || paymentStore.currentPackage?.packageId === pkg.packageId)
+            isCurrentPackage(pkg)
               ? 'border-green-500 dark:border-green-400'
-              : (paymentStore.selectedPackage?.id === pkg.packageId || paymentStore.selectedPackage?.packageId === pkg.packageId)
+              : isSelectedPackage(pkg)
               ? 'border-blue-500 dark:border-blue-400'
               : 'border-gray-200 dark:border-gray-700'
           ]"
@@ -48,18 +48,18 @@
           
           <!-- Status labels -->
           <div 
-            v-if="paymentStore.currentPackage?.id === pkg.packageId || paymentStore.currentPackage?.packageId === pkg.packageId"
+            v-if="isCurrentPackage(pkg)"
             class="absolute -top-3 left-4 bg-green-500 dark:bg-green-600 text-white dark:text-white px-3 py-1 rounded-full text-xs font-semibold"
           >
             <Icon icon="mdi:check-circle" class="w-3 h-3 mr-1" />
-            Đang dùng
+            {{ $t('payment.currentlyUsing', 'Ðang dùng') || 'Ðang dùng' }}
           </div>
           <div 
-            v-else-if="paymentStore.selectedPackage?.id === pkg.packageId || paymentStore.selectedPackage?.packageId === pkg.packageId"
+            v-else-if="isSelectedPackage(pkg)"
             class="absolute -top-3 left-4 bg-blue-500 dark:bg-blue-600 text-white dark:text-white px-3 py-1 rounded-full text-xs font-semibold"
           >
             <Icon icon="mdi:cart" class="w-3 h-3 mr-1" />
-            Đã chọn
+            {{ $t('payment.selected') }}
           </div>
           
           <div class="text-center">
@@ -383,9 +383,18 @@ export default {
 
     // Watch for language changes and reload packages
     watch(locale, async (newLocale) => {
-      console.log('🌐 Language changed to:', newLocale)
-      console.log('🌐 Current locale value:', locale.value)
+      console.log('ð ã Language changed to:', newLocale)
+      console.log('ð ã Current locale value:', locale.value)
       await paymentStore.loadPackages()
+    })
+
+    // Watch for payment status changes and refresh current package when completed
+    watch(() => paymentStore.currentPayment?.status, async (newStatus, oldStatus) => {
+      if (newStatus === 'COMPLETED' && oldStatus !== 'COMPLETED') {
+        console.log('ð Payment completed! Refreshing current package...')
+        await paymentStore.loadCurrentPackage()
+        console.log('ð Current package refreshed after payment completion')
+      }
     })
 
     // Format currency function
@@ -438,6 +447,10 @@ export default {
           features.push(`${pkg.chatbotLimit} ${chatbotsText}`)
         }
       }
+      
+      // User tenant creation limit (per user)
+      const userTenantLimitText = isVietnamese ? 'Tối đa 4 tenant/user' : 'Maximum 4 tenants per user'
+      features.push(userTenantLimitText)
       
       // Support features
       if (pkg.hasPrioritySupport) {
@@ -524,6 +537,25 @@ export default {
       const isVietnamese = locale.value === 'vi'
       return isVietnamese ? 'Miễn phí' : 'Free'
     }
+    
+    // Helper methods for package matching
+    const isCurrentPackage = (pkg) => {
+      if (!paymentStore.currentPackage) return false
+      // Check both possible ID fields for robust matching
+      return paymentStore.currentPackage.id === pkg.packageId || 
+             paymentStore.currentPackage.packageId === pkg.packageId ||
+             paymentStore.currentPackage.id === pkg.id ||
+             paymentStore.currentPackage.packageId === pkg.id
+    }
+    
+    const isSelectedPackage = (pkg) => {
+      if (!paymentStore.selectedPackage) return false
+      // Check both possible ID fields for robust matching
+      return paymentStore.selectedPackage.id === pkg.packageId || 
+             paymentStore.selectedPackage.packageId === pkg.packageId ||
+             paymentStore.selectedPackage.id === pkg.id ||
+             paymentStore.selectedPackage.packageId === pkg.id
+    }
 
     // Load data on mount
     const loadAllData = async () => {
@@ -577,7 +609,9 @@ export default {
       getLocalizedPackageName,
       getLocalizedDescription,
       getLocalizedDuration,
-      getLocalizedPrice
+      getLocalizedPrice,
+      isCurrentPackage,
+      isSelectedPackage
     }
   }
 }

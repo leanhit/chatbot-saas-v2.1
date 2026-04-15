@@ -82,6 +82,7 @@
                 >
                   Member
                 </router-link>
+                <!-- Temporarily hidden
                 <router-link
                   to="/tenant/settings"
                   @click.stop
@@ -89,6 +90,7 @@
                 >
                   Settings
                 </router-link>
+                -->
               </template>
             </menu-accordion>
           </div>
