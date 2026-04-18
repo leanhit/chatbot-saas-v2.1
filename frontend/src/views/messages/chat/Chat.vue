@@ -379,31 +379,8 @@ const notificationStore = useNotificationStore()
 const realTimeNotifications = ref([])
 const isRealTimeConnected = ref(false)
 
-// Listen for real-time events
+// Listen for real-time events (excluding conversation messages to avoid duplicates)
 const setupRealTimeListeners = () => {
-  // Listen for conversation messages
-  window.addEventListener('conversationMessage', (event) => {
-    const { conversationId, sender, message, timestamp } = event.detail
-    console.log('📡 Real-time conversation message received:', { conversationId, sender, message })
-    
-    // Add to real-time notifications only if not current conversation
-    if (shouldShowNotification({ conversationId, sender, message }, selectedConversation.value)) {
-      const notification = {
-        id: Date.now() + Math.random(),
-        type: 'info',
-        title: `${sender === 'user' ? 'User' : 'Bot'} Message`,
-        message: message,
-        timestamp: timestamp,
-        read: false,
-        data: { conversationId }
-      }
-      realTimeNotifications.value.unshift(notification)
-      
-      // Update notification store
-      notificationStore.addNotification(notification)
-    }
-  })
-  
   // Listen for system alerts
   window.addEventListener('systemAlert', (event) => {
     console.log('🚨 System alert received:', event.detail)
@@ -455,21 +432,6 @@ const setupRealTimeListeners = () => {
   })
 }
 
-// Helper function to check if message should trigger notification
-const shouldShowNotification = (message, currentConversationId) => {
-  // Don't show notification for current conversation
-  if (currentConversationId && String(message.conversationId) === String(currentConversationId)) {
-    return false
-  }
-  
-  // Don't show notification for own messages
-  if (message.sender === 'agent') {
-    return false
-  }
-  
-  // Only show for user/bot messages in other conversations
-  return true
-}
 
 // WebSocket Service
 const wsService = takeoverWebSocketService
@@ -1071,46 +1033,6 @@ const stopTyping = () => {
   }
 }
 
-// Global event listener for conversation messages
-const handleConversationMessage = (event) => {
-  const { conversationId, sender, message, timestamp } = event.detail
-  
-  console.log('📡 Global conversation message received:', { conversationId, sender, message, timestamp })
-  
-  if (conversationId === selectedConversation.value?.id) {
-    // Format message for RealTimeMessageBubble component
-    const formattedMessage = {
-      id: `global-${Date.now()}`,
-      content: message || '',
-      sender: sender === 'user' ? 'user' : 'bot',
-      timestamp: new Date(timestamp),
-      isRealtime: true, // Mark as real-time
-      read: false
-    }
-    
-    console.log('📝 Formatted message:', formattedMessage)
-    
-    // Check for duplicates before adding
-    const isDuplicate = messages.value.some(existing => 
-      existing.content === formattedMessage.content && 
-      Math.abs(new Date(existing.timestamp) - new Date(formattedMessage.timestamp)) < 1000
-    )
-    
-    if (!isDuplicate) {
-      console.log('➕ Adding real-time message to chat')
-      messages.value.push(formattedMessage)
-      
-      // Scroll to bottom
-      nextTick(() => {
-        scrollToBottom()
-      })
-    } else {
-      console.log('🚫 Duplicate message detected, skipping')
-    }
-  } else {
-    console.log('⚠️ Message for different conversation, ignoring')
-  }
-}
 
 // Lifecycle
 onMounted(async () => {
@@ -1119,9 +1041,6 @@ onMounted(async () => {
   
   // Setup real-time listeners
   setupRealTimeListeners()
-  
-  // Add global event listener for conversation messages
-  window.addEventListener('conversationMessage', handleConversationMessage)
   
   // Fetch bots data first
   await pennyBotStore.fetchPennyBots()
@@ -1139,9 +1058,6 @@ onMounted(async () => {
 })
 
 onUnmounted(() => {
-  // Remove global event listener
-  window.removeEventListener('conversationMessage', handleConversationMessage)
-  
   // Cleanup WebSocket connection
   wsService.disconnect()
 })
