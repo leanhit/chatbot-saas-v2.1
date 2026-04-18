@@ -327,9 +327,13 @@ public class TakeoverWebSocketHandler extends TextWebSocketHandler {
             String payload = objectMapper.writeValueAsString(websocketMessage);
             TextMessage textMessage = new TextMessage(payload);
             
+            log.info("🔍 [DEBUG] Sending WebSocket message - ID: {}, Sender: {}, Content: {}, Sessions: {}", 
+                message.getId(), message.getSender(), message.getContent(), sessions.size());
+            
             for (WebSocketSession session : sessions) {
                 if (session.isOpen()) {
                     session.sendMessage(textMessage);
+                    log.debug("🔍 [DEBUG] Sent to session: {}", session.getId());
                 }
             }
             log.info("✉️ WebSocket: Đã gửi tin nhắn đến " + sessions.size() + " Agent xem Conversation " + conversationId);

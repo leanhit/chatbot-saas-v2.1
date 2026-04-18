@@ -3,6 +3,8 @@ package com.chatbot.core.message.decision.service;
 import com.chatbot.core.message.decision.model.TakeoverMessage;
 // !!! Cần Import WebSocket Handler !!!
 import com.chatbot.core.message.decision.websocket.TakeoverWebSocketHandler; 
+import com.chatbot.core.message.store.service.MessageService;
+import com.chatbot.core.message.router.service.AgentMessageService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,7 +24,9 @@ public class TakeoverService {
     private final ObjectMapper objectMapper;
     
     // 1. INJECT WEBSOCKET HANDLER
-    private final TakeoverWebSocketHandler websocketHandler; 
+    private final TakeoverWebSocketHandler websocketHandler;
+    private final MessageService messageService;
+    private final AgentMessageService agentMessageService; 
 
     private final long MESSAGE_TTL_HOURS = 24;
     private final long MAX_MESSAGE_COUNT = 100; // Giới hạn 100 tin nhắn lịch sử
@@ -55,6 +59,56 @@ public class TakeoverService {
         } catch (Exception e) {
             log.error("❌ Lỗi khi lưu Message vào Redis/gửi WebSocket: " + e.getMessage());
             e.printStackTrace();
+        }
+    }
+
+    /**
+     * Centralized method for handling agent messages:
+     * 1. Save to database (permanent storage)
+     * 2. Save to Redis (for takeover history)
+     * 3. Send to Facebook (via AgentMessageService)
+     * 4. Send WebSocket (real-time UI updates)
+     */
+    public void saveAndSendAgentMessage(TakeoverMessage message, Long conversationIdLong) {
+        try {
+            String conversationIdStr = message.getConversationId();
+            
+            // 1. Lưu message từ agent vào database (lâu dài)
+            try {
+                messageService.saveMessage(
+                    conversationIdLong, 
+                    "agent", 
+                    message.getContent(), 
+                    "TEXT", 
+                    null
+                );
+                log.info("💾 [Takeover] Saved agent message to DB. Conversation ID: {}", conversationIdLong);
+            } catch (Exception e) {
+                log.error("❌ [Takeover] Error saving agent message to DB: {}", e.getMessage(), e);
+            }
+
+            // 2. Lưu vào Redis cho takeover history
+            saveMessage(message);
+            log.info("💾 [Takeover] Saved agent message to Redis. Conversation ID: {}", conversationIdStr);
+
+            // 3. Gửi tin nhắn đến Facebook user
+            try {
+                agentMessageService.sendAgentTextMessage(
+                    conversationIdLong, 
+                    message.getContent(), 
+                    null // agentId đang là null, có thể cần lấy từ context sau này
+                );
+                log.info("📤 [Takeover] Agent message sent to Facebook. Conversation ID: {}", conversationIdLong);
+            } catch (Exception e) {
+                log.error("❌ [Takeover] Error sending agent message to Facebook: {}", e.getMessage(), e);
+            }
+
+            // 4. Gửi tin nhắn qua WebSocket (real-time UI)
+            sendToConversation(message);
+            log.info("📡 [Takeover] Agent message sent via WebSocket. Conversation ID: {}", conversationIdStr);
+            
+        } catch (Exception e) {
+            log.error("❌ [Takeover] Error in saveAndSendAgentMessage: {}", e.getMessage(), e);
         }
     }
 

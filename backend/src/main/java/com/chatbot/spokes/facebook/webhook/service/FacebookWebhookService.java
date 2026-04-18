@@ -266,20 +266,8 @@ public class FacebookWebhookService {
             log.error("❌ Lỗi khi lưu Message vào DB: " + e.getMessage());
         }
 
-        // Gửi user message qua WebSocket để hiện trên UX
-        try {
-            TakeoverMessage userMessage = new TakeoverMessage(
-                "user_" + System.currentTimeMillis() + "_" + (int)(Math.random() * 10000),
-                String.valueOf(conversationId), 
-                "user", 
-                text, 
-                System.currentTimeMillis()
-            );
-            takeoverService.sendToConversation(userMessage);
-            log.info("📡 [Facebook] User message sent via WebSocket. Conversation ID: {}", conversationId);
-        } catch (Exception e) {
-            log.error("❌ [Facebook] Error sending user message via WebSocket: {}", e.getMessage());
-        }
+        // User message WebSocket sẽ được xử lý trong routeToPennyBot để tránh duplicate
+        log.info("📡 [Facebook] User message WebSocket will be handled in routeToPennyBot. Conversation ID: {}", conversationId);
 
         // 4️⃣ GỌI DỊCH VỤ ODOO: BẮT NGẦM DỮ LIỆU KHÁCH HÀNG (like traloitudongV2)
         try {
@@ -471,6 +459,14 @@ public class FacebookWebhookService {
             takeoverService.saveMessage(takeoverMessage);
             log.info("💾 Saved message to Redis for Takeover.");
             
+            // 1️⃣ Gửi user message qua WebSocket để hiện trên UX (centralized)
+            try {
+                takeoverService.sendToConversation(takeoverMessage);
+                log.info("📡 [Facebook] User message sent via WebSocket. Conversation ID: {}", conversationId);
+            } catch (Exception e) {
+                log.error("❌ [Facebook] Error sending user message via WebSocket: {}", e.getMessage());
+            }
+            
             // 2️⃣ KIỂM TRA LUỒNG: TAKEOVER vs PENNY BOT vs BOTPRESS
             UUID connectionId = connection.getId();
             conversation = conversationService.findOrCreate(connectionId, senderId, Channel.FACEBOOK);
@@ -479,14 +475,7 @@ public class FacebookWebhookService {
             
             if (isTakenOver) {
                 log.info("🛑 Conversation {} is taken over by Agent. Skipping Penny/Botpress processing.", conversationId);
-                
-                // 3️⃣ Push WebSocket cho Agent đang xem conversation này
-                try {
-                    takeoverService.sendToConversation(takeoverMessage);
-                    log.info("📢 Sent message to Agent via WebSocket.");
-                } catch (Exception e) {
-                    log.error("❌ Error sending WebSocket to Agent: {}", e.getMessage());
-                }
+                log.info("📢 Message already sent to Agent via WebSocket (centralized).");
                 return; // KHÔNG chuyển đến bot
             }
             
@@ -514,7 +503,7 @@ public class FacebookWebhookService {
                     log.error("❌ [Penny] Error saving bot message to DB: {}", e.getMessage());
                 }
                 
-                // Gửi bot message qua WebSocket để hiện trên UX
+                // Gửi bot message qua WebSocket để hiện trên UX (centralized)
                 try {
                     TakeoverMessage botMessage = new TakeoverMessage(
                         "bot_" + System.currentTimeMillis() + "_" + (int)(Math.random() * 10000),
@@ -523,8 +512,11 @@ public class FacebookWebhookService {
                         pennyResponse, 
                         System.currentTimeMillis()
                     );
+                    // Lưu vào Redis cho history
+                    takeoverService.saveMessage(botMessage);
+                    // Gửi qua WebSocket
                     takeoverService.sendToConversation(botMessage);
-                    log.info("📡 [Penny] Bot message sent via WebSocket. Conversation ID: {}", conversation.getId());
+                    log.info("📡 [Penny] Bot message saved to Redis and sent via WebSocket. Conversation ID: {}", conversation.getId());
                 } catch (Exception e) {
                     log.error("❌ [Penny] Error sending bot message via WebSocket: {}", e.getMessage());
                 }
@@ -585,7 +577,7 @@ public class FacebookWebhookService {
                         log.error("❌ [{}] Error saving bot message to DB: {}", connection.getChatbotProvider(), e.getMessage());
                     }
                     
-                    // 📡 Gửi bot response qua WebSocket để hiện trên UX (CHO CẢ BOTPRESS FALLBACK)
+                    // 📡 Gửi bot response qua WebSocket để hiện trên UX (CHO CẢ BOTPRESS FALLBACK - centralized)
                     try {
                         if (conversation != null) {
                             TakeoverMessage botMessage = new TakeoverMessage(
@@ -595,8 +587,11 @@ public class FacebookWebhookService {
                                 chatbotResponse.toString(), 
                                 System.currentTimeMillis()
                             );
+                            // Lưu vào Redis cho history
+                            takeoverService.saveMessage(botMessage);
+                            // Gửi qua WebSocket
                             takeoverService.sendToConversation(botMessage);
-                            log.info("📡 [{}] Bot message sent via WebSocket. Conversation ID: {}", connection.getChatbotProvider(), conversation.getId());
+                            log.info("📡 [{}] Bot message saved to Redis and sent via WebSocket. Conversation ID: {}", connection.getChatbotProvider(), conversation.getId());
                         } else {
                             log.warn("⚠️ [{}] Conversation is null, skipping WebSocket send", connection.getChatbotProvider());
                         }

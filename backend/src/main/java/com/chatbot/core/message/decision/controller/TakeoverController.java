@@ -36,40 +36,23 @@ public class TakeoverController {
     private final ConversationService conversationService;
     private final ConversationRepository conversationRepo;
 
-    // UI gửi tin nhắn → lưu DB (lâu dài) → push WebSocket (real-time)
+    // UI gửi tin nhắn → centralized xử lý qua TakeoverService
     @PostMapping("/send")
     public ResponseEntity<?> sendMessage(@RequestBody TakeoverMessage message) {
         try {
             // Generate unique ID for the message
             message.setId("agent_" + System.currentTimeMillis() + "_" + (int)(Math.random() * 10000));
             message.setTimestamp(System.currentTimeMillis());
+            message.setSender("agent"); // Ensure sender is set to agent
             
             String conversationIdStr = message.getConversationId();
             Long conversationIdLong = Long.parseLong(conversationIdStr);
 
-            // 1. Lưu message từ agent vào database (trước khi gửi)
-            try {
-                messageService.saveMessage(
-                    conversationIdLong, 
-                    "agent", 
-                    message.getContent(), 
-                    "TEXT", 
-                    null
-                );
-                log.info("💾 [Takeover] Saved agent message to DB. Conversation ID: {}", conversationIdLong);
-            } catch (Exception e) {
-                log.error("❌ [Takeover] Error saving agent message to DB: {}", e.getMessage(), e);
-            }
-
-            // 2. Gửi tin nhắn qua AgentMessageService (sẽ xử lý gửi đến Facebook)
-            agentMessageService.sendAgentTextMessage(
-                conversationIdLong, 
-                message.getContent(), 
-                null // agentId đang là null, có thể cần lấy từ context sau này
-            );
+            // 1. Centralized: Lưu vào DB + Gửi đến Facebook + Push WebSocket thông qua TakeoverService
+            takeoverService.saveAndSendAgentMessage(message, conversationIdLong);
             
-            // 3. Push WebSocket cho real-time (hiển thị cho các agent khác)
-            websocketHandler.sendToConversation(conversationIdStr, message);
+            log.info("✅ [Takeover] Agent message processed centrally. ID: {}, Conversation: {}", 
+                message.getId(), conversationIdLong);
             
             return ResponseEntity.ok().body("{\"message\": \"Message sent successfully\"}");
             
