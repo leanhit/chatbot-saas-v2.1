@@ -316,6 +316,7 @@ public class TakeoverWebSocketHandler extends TextWebSocketHandler {
             Map<String, Object> websocketMessage = Map.of(
                 "type", "CONVERSATION_MESSAGE",
                 "data", Map.of(
+                    "id", message.getId(),
                     "conversationId", conversationId,
                     "sender", message.getSender(),
                     "message", message.getContent(),

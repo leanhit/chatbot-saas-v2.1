@@ -269,6 +269,7 @@ public class FacebookWebhookService {
         // Gửi user message qua WebSocket để hiện trên UX
         try {
             TakeoverMessage userMessage = new TakeoverMessage(
+                "user_" + System.currentTimeMillis() + "_" + (int)(Math.random() * 10000),
                 String.valueOf(conversationId), 
                 "user", 
                 text, 
@@ -461,6 +462,7 @@ public class FacebookWebhookService {
         try {
             // 1️⃣ LƯU TẠM VÀO REDIS (cho luồng Agent/Takeover)
             TakeoverMessage takeoverMessage = new TakeoverMessage(
+                "user_" + System.currentTimeMillis() + "_" + (int)(Math.random() * 10000),
                 String.valueOf(conversationId), 
                 "user", 
                 messageText, 
@@ -515,6 +517,7 @@ public class FacebookWebhookService {
                 // Gửi bot message qua WebSocket để hiện trên UX
                 try {
                     TakeoverMessage botMessage = new TakeoverMessage(
+                        "bot_" + System.currentTimeMillis() + "_" + (int)(Math.random() * 10000),
                         String.valueOf(conversation.getId()), 
                         "bot", 
                         pennyResponse, 
@@ -586,6 +589,7 @@ public class FacebookWebhookService {
                     try {
                         if (conversation != null) {
                             TakeoverMessage botMessage = new TakeoverMessage(
+                                "bot_" + System.currentTimeMillis() + "_" + (int)(Math.random() * 10000),
                                 String.valueOf(conversation.getId()), 
                                 "bot", 
                                 chatbotResponse.toString(), 

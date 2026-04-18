@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class TakeoverMessage {
+    private String id;              // Unique message ID
     private String conversationId;  // ID cuộc trò chuyện
     private String sender;          // user | bot | agent
     private String content;

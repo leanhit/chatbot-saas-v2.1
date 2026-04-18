@@ -49,8 +49,8 @@ public class TakeoverService {
             // 3. Đặt thời gian hết hạn (Expire)
             redisTemplate.expire(redisKey, MESSAGE_TTL_HOURS, TimeUnit.HOURS);
 
-            // 4. Gửi qua WebSocket cho Agent đang xem
-            sendToConversation(message); 
+            // Note: WebSocket sending is handled by the caller to avoid duplicates
+            // sendToConversation(message); // Removed to prevent duplicate messages 
             
         } catch (Exception e) {
             log.error("❌ Lỗi khi lưu Message vào Redis/gửi WebSocket: " + e.getMessage());

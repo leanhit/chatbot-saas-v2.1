@@ -40,6 +40,8 @@ public class TakeoverController {
     @PostMapping("/send")
     public ResponseEntity<?> sendMessage(@RequestBody TakeoverMessage message) {
         try {
+            // Generate unique ID for the message
+            message.setId("agent_" + System.currentTimeMillis() + "_" + (int)(Math.random() * 10000));
             message.setTimestamp(System.currentTimeMillis());
             
             String conversationIdStr = message.getConversationId();
@@ -109,6 +111,7 @@ public class TakeoverController {
             
             // 2. Gửi thông báo qua WebSocket về tất cả sessions
             TakeoverMessage takeoverNotification = new TakeoverMessage(
+                "system_" + System.currentTimeMillis() + "_" + (int)(Math.random() * 10000),
                 String.valueOf(conversationId),
                 "system",
                 "🔒 Conversation has been taken over by agent",
