@@ -253,10 +253,10 @@ public class TenantController {
                     "Chỉ chấp nhận file ảnh. Received: " + contentType);
             }
             
-            // Validate file size (max 5MB)
-            if (file.getSize() > 5 * 1024 * 1024) {
+            // Validate file size (max 10MB)
+            if (file.getSize() > 10 * 1024 * 1024) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, 
-                    "File quá lớn. Kích thước tối đa: 5MB");
+                    "File quá lớn. Kích thước tối đa: 10MB");
             }
             
             log.info("📤 [TenantController] Updating logo for tenantKey: {}, fileName: {}, fileSize: {}", 

@@ -108,10 +108,10 @@ public class TenantProfileController {
                 throw new IllegalArgumentException("Only image files are allowed");
             }
             
-            // Validate file size (max 5MB)
-            if (file.getSize() > 5 * 1024 * 1024) {
+            // Validate file size (max 10MB)
+            if (file.getSize() > 10 * 1024 * 1024) {
                 log.error("❌ [TENANT PROFILE CONTROLLER] File too large: {} bytes", file.getSize());
-                throw new IllegalArgumentException("File size cannot exceed 5MB");
+                throw new IllegalArgumentException("File size cannot exceed 10MB");
             }
             
             log.info("✅ [TENANT PROFILE CONTROLLER] File validation passed, finding tenant");

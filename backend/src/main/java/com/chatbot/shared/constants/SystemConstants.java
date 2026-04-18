@@ -65,7 +65,7 @@ public class SystemConstants {
 
     public static final class File {
         public static final long MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
-        public static final long MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB
+        public static final long MAX_IMAGE_SIZE = 10 * 1024 * 1024; // 10MB
         public static final long MAX_DOCUMENT_SIZE = 20 * 1024 * 1024; // 20MB
         public static final String[] ALLOWED_IMAGE_TYPES = {"jpg", "jpeg", "png", "gif", "bmp", "webp"};
         public static final String[] ALLOWED_DOCUMENT_TYPES = {"pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "txt"};

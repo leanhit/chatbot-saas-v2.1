@@ -194,7 +194,7 @@ http {
     
     # Buffer sizes
     client_body_buffer_size 128k;
-    client_max_body_size 10m;
+    client_max_body_size 10MB;
     client_header_buffer_size 1k;
     large_client_header_buffers 4 4k;
     client_body_timeout 12;
