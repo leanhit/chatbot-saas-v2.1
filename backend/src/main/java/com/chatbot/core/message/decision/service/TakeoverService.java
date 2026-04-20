@@ -13,6 +13,7 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 @Service
@@ -73,16 +74,24 @@ public class TakeoverService {
         try {
             String conversationIdStr = message.getConversationId();
             
-            // 1. Lưu message từ agent vào database (lâu dài)
+            // 1. L message t agent vào database (l u dài)
             try {
+                System.out.println("=== DEBUG TAKEOVER SERVICE SAVING AGENT MESSAGE ===");
+                System.out.println("Message ID: " + message.getId());
+                System.out.println("Conversation ID: " + conversationIdLong);
+                System.out.println("Content: " + message.getContent());
+                System.out.println("External Message ID: " + message.getId());
+                
                 messageService.saveMessage(
                     conversationIdLong, 
                     "agent", 
                     message.getContent(), 
                     "TEXT", 
-                    null
+                    Map.of("externalMessageId", message.getId()) // Save external message ID for idempotency
                 );
-                log.info("💾 [Takeover] Saved agent message to DB. Conversation ID: {}", conversationIdLong);
+                
+                System.out.println("=== TAKEOVER SERVICE: Agent message SAVED to DB ===");
+                log.info(" [Takeover] Saved agent message to DB. Conversation ID: {}", conversationIdLong);
             } catch (Exception e) {
                 log.error("❌ [Takeover] Error saving agent message to DB: {}", e.getMessage(), e);
             }

@@ -373,21 +373,40 @@ public class EnhancedPennyBotProviderService implements ChatbotProviderService {
     // Rest of the methods remain the same as original...
     private void saveAgentMessageToDatabase(String botId, String senderId, String messageText) {
         try {
+            System.out.println("=== DEBUG ENHANCED PENNY BOT SAVING AGENT MESSAGE ===");
+            System.out.println("Bot ID: " + botId);
+            System.out.println("Sender ID: " + senderId);
+            System.out.println("Message: " + messageText);
+            
+            // Generate unique message ID for idempotency check
+            String messageId = "enhanced_agent_" + botId + "_" + senderId + "_" + messageText.hashCode() + "_" + System.currentTimeMillis();
+            System.out.println("Generated Message ID: " + messageId);
+            
+            // Check if message already exists (idempotency)
+            if (messageService.messageExists(messageId)) {
+                System.out.println("=== ENHANCED PENNY BOT: Agent message ALREADY EXISTS, skipping save ===");
+                log.info("Agent message already exists, skipping save: {}", messageId);
+                return;
+            }
+            
             FacebookConnection connection = facebookConnectionRepository.findByBotIdAndIsActiveTrue(botId)
                 .orElseThrow(() -> new RuntimeException("Facebook connection not found for botId: " + botId));
             
             Conversation conversation = conversationRepository.findByExternalUserIdAndConnectionId(senderId, connection.getId())
                 .orElseThrow(() -> new RuntimeException("Conversation not found for senderId: " + senderId));
             
+            System.out.println("Conversation ID: " + conversation.getId());
+            
             messageService.saveMessage(
                 conversation.getId(),
                 "agent",
                 messageText,
                 "TEXT",
-                Map.of("botId", botId, "sentVia", "enhanced_agent_ui", "provider", "EnhancedPennyBot")
+                Map.of("externalMessageId", messageId, "botId", botId, "sentVia", "enhanced_agent_ui", "provider", "EnhancedPennyBot")
             );
             
-            log.info("✅ Saved enhanced agent message to database. ConversationId: {}, SenderId: {}", conversation.getId(), senderId);
+            System.out.println("=== ENHANCED PENNY BOT: Agent message SAVED to DB ===");
+            log.info(" Saved enhanced agent message to database. ConversationId: {}, SenderId: {}", conversation.getId(), senderId);
             
         } catch (Exception e) {
             log.error("❌ Failed to save enhanced agent message to database: {}", e.getMessage(), e);

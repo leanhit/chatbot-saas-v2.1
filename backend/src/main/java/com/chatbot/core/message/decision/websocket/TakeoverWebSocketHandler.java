@@ -1,7 +1,6 @@
 package com.chatbot.core.message.decision.websocket;
 
 import com.chatbot.core.message.decision.model.TakeoverMessage;
-import com.chatbot.core.message.store.service.MessageService;
 import com.chatbot.core.message.store.repository.ConversationRepository;
 import com.chatbot.spokes.facebook.connection.repository.FacebookConnectionRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -36,7 +35,6 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 public class TakeoverWebSocketHandler extends TextWebSocketHandler {
 
     private final ObjectMapper objectMapper;
-    private final MessageService messageService;
     private final ConversationRepository conversationRepository;
     private final FacebookConnectionRepository facebookConnectionRepository;
     private final StringRedisTemplate redisTemplate;
@@ -338,45 +336,15 @@ public class TakeoverWebSocketHandler extends TextWebSocketHandler {
             }
             log.info("✉️ WebSocket: Đã gửi tin nhắn đến " + sessions.size() + " Agent xem Conversation " + conversationId);
             
-            // Save ALL messages to database (user, bot, agent) - but avoid duplicates
-            // Messages from webhook/bot are already saved in their respective services
-            // Only save messages that originate from WebSocket (Agent UI) to avoid duplicates
-            if (message.getContent() != null && "agent".equals(message.getSender())) {
-                saveMessageToDatabase(conversationId, message);
-            }
+            // NOTE: Messages are now saved centrally in TakeoverService
+            // WebSocket handler only broadcasts messages, no longer saves to database
+            // This prevents duplicate saves since TakeoverService already handles persistence
 
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
     
-    /**
-     * Save agent messages from WebSocket to database
-     * User/Bot messages are already saved in their respective services (webhook, bot processing)
-     * Only WebSocket-originated agent messages need to be saved here to avoid duplicates
-     */
-    private void saveMessageToDatabase(String conversationId, TakeoverMessage message) {
-        try {
-            Long conversationIdLong = Long.parseLong(conversationId);
-            
-            // Save agent message with proper metadata
-            messageService.saveMessage(
-                conversationIdLong,
-                message.getSender(), // "agent"
-                message.getContent(),
-                "TEXT",
-                Map.of(
-                    "source", "agent_websocket",
-                    "sender", message.getSender(),
-                    "timestamp", message.getTimestamp()
-                )
-            );
-            
-            log.info("💾 [WebSocket] Saved {} message to database. Conversation: {}, Sender: {}", 
-                message.getSender(), conversationId, message.getSender());
-                
-        } catch (Exception e) {
-            log.error("❌ [WebSocket] Error saving {} message to database: {}", message.getSender(), e.getMessage());
-        }
-    }
+    // NOTE: saveMessageToDatabase method removed since messages are now saved centrally in TakeoverService
+    // This prevents duplicate saves and centralizes message persistence logic
 }

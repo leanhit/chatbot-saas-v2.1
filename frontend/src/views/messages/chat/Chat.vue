@@ -746,23 +746,15 @@ const sendMessage = async () => {
       sender: 'agent'
     }
     
+    // Send to backend - message will be rendered only after backend confirms via WebSocket
     const response = await takeoverApi.sendMessage(payload)
-    console.log('Message sent successfully:', response.data)
+    console.log('Message sent to backend, waiting for confirmation:', response.data)
     
-    // Add message to local state
-    const message = {
-      id: Date.now(),
-      content: newMessage.value,
-      sender: 'agent',
-      createdAt: new Date().toISOString()
-    }
-    messages.value.push(message)
-    
+    // Clear input immediately but don't add to messages yet
     newMessage.value = ''
     
-    // Scroll to bottom
-    await nextTick()
-    scrollToBottom()
+    // Show temporary "sending..." indicator if needed
+    // Message will be rendered when backend sends it back via WebSocket
     
   } catch (error) {
     console.error('Error sending message:', error)
@@ -921,27 +913,39 @@ const setupWebSocketHandlers = () => {
     console.log('📡 WebSocket message received:', message)
     
     if (String(message.conversationId) === String(selectedConversation.value?.id)) {
+      // Only render messages that have proper backend ID (confirmed by backend)
+      if (!message.id || message.id.startsWith('ws-')) {
+        console.log('⚠️ Message without backend ID, skipping (not confirmed by backend)')
+        return
+      }
+      
       // Format message for RealTimeMessageBubble component
       const formattedMessage = {
-        id: message.id || `ws-${Date.now()}`,
+        id: message.id,
         content: message.content || message.text || message.message || '',
         sender: message.sender || 'bot',
         timestamp: message.timestamp || new Date(),
         isRealtime: true, // Mark as real-time
-        read: false
+        read: false,
+        confirmed: true // Mark as backend-confirmed
       }
       
-      console.log('📝 WebSocket formatted message:', formattedMessage)
+      console.log('📝 Backend-confirmed WebSocket message:', formattedMessage)
       
-      // Check for duplicates before adding
+      // Check for duplicates by ID (most reliable)
       const isDuplicate = messages.value.some(existing => 
-        existing.id === formattedMessage.id || 
-        (existing.content === formattedMessage.content && 
-         Math.abs(new Date(existing.timestamp) - new Date(formattedMessage.timestamp)) < 1000)
+        existing.id === formattedMessage.id
       )
       
-      if (!isDuplicate) {
-        console.log('➕ Adding WebSocket message to chat')
+      // Additional check for content+timestamp within 2 seconds (fallback)
+      const isContentDuplicate = messages.value.some(existing => 
+        existing.content === formattedMessage.content && 
+        existing.sender === formattedMessage.sender &&
+        Math.abs(new Date(existing.timestamp) - new Date(formattedMessage.timestamp)) < 2000
+      )
+      
+      if (!isDuplicate && !isContentDuplicate) {
+        console.log('✅ Adding backend-confirmed message to chat')
         messages.value.push(formattedMessage)
         
         // Scroll to bottom
@@ -950,11 +954,9 @@ const setupWebSocketHandlers = () => {
         })
         
         // Mark message as read
-        if (formattedMessage.id) {
-          wsService.markMessageRead(formattedMessage.id)
-        }
+        wsService.markMessageRead(formattedMessage.id)
       } else {
-        console.log('🚫 Duplicate WebSocket message detected, skipping')
+        console.log('🚫 Duplicate backend message detected, skipping')
       }
     } else {
       console.log('⚠️ WebSocket message for different conversation, ignoring')

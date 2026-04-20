@@ -249,7 +249,21 @@ public class FacebookWebhookService {
         // 1️⃣ XÁC ĐỊNH HOẶC TẠO CONVERSATION (following traloitudongV2 pattern)
         UUID connectionId = connection.getId();
         Channel channel = Channel.FACEBOOK;
-        var conversation = conversationService.findOrCreate(connectionId, senderId, channel);
+        
+        // Find existing conversation first to preserve takeover status
+        Optional<Conversation> existingConvOpt = conversationService.findByConnectionIdAndExternalUserId(connectionId, senderId);
+        
+        Conversation conversation;
+        if (existingConvOpt.isEmpty()) {
+            // Only create new if doesn't exist
+            conversation = conversationService.findOrCreate(connectionId, senderId, channel);
+            log.info(" handleTextMessage: Created new conversation {} for user {} on connection {}", conversation.getId(), senderId, connectionId);
+        } else {
+            // Use existing to preserve takeover status
+            conversation = existingConvOpt.get();
+            log.info(" handleTextMessage: Using existing conversation {} for user {} on connection {}", conversation.getId(), senderId, connectionId);
+        }
+        
         Long conversationId = conversation.getId();
         
         // 2️⃣ LƯU TRỮ VĨNH VIỄN MESSAGE VÀO DB (following traloitudongV2 pattern)

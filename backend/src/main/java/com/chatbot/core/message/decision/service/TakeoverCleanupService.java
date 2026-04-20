@@ -166,10 +166,17 @@ public class TakeoverCleanupService {
             return 0;
         }
         
-        return conversation.getUpdatedAt()
+        long updatedAtMillis = conversation.getUpdatedAt()
                 .atZone(ZoneOffset.ofHours(7)) // Vietnam timezone
                 .toInstant()
                 .toEpochMilli();
+        
+        long idleDuration = currentTimeMillis - updatedAtMillis;
+        
+        log.debug("⏱️ [TakeoverCleanup] Conversation {} - Updated: {}, Current: {}, Idle: {}ms", 
+                 conversation.getId(), updatedAtMillis, currentTimeMillis, idleDuration);
+        
+        return idleDuration;
     }
     
     /**

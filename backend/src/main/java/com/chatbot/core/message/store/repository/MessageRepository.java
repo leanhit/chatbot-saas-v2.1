@@ -89,4 +89,7 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
     
     // Tìm message theo ID và tenantId
     Optional<Message> findByIdAndTenantId(Long messageId, Long tenantId);
+    
+    // Tìm message theo external message ID và tenantId (for idempotency)
+    Optional<Message> findByExternalMessageIdAndTenantId(String externalMessageId, Long tenantId);
 }

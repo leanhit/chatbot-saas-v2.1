@@ -40,14 +40,31 @@ public class TakeoverController {
     @PostMapping("/send")
     public ResponseEntity<?> sendMessage(@RequestBody TakeoverMessage message) {
         try {
-            // Generate unique ID for the message
-            message.setId("agent_" + System.currentTimeMillis() + "_" + (int)(Math.random() * 10000));
+            System.out.println("=== DEBUG TAKEOVER CONTROLLER RECEIVED AGENT MESSAGE ===");
+            System.out.println("Message ID: " + message.getId());
+            System.out.println("Conversation ID: " + message.getConversationId());
+            System.out.println("Content: " + message.getContent());
+            System.out.println("Sender: " + message.getSender());
+            
+            // Check for duplicate message (idempotency)
+            if (message.getId() != null && messageService.messageExists(message.getId())) {
+                System.out.println("=== TAKEOVER CONTROLLER: Message ALREADY PROCESSED, skipping ===");
+                log.info("Message already processed: {}", message.getId());
+                return ResponseEntity.ok().body("{\"message\": \"Message already processed\"}");
+            }
+            
+            // Generate unique ID for the message if not provided
+            if (message.getId() == null) {
+                message.setId("agent_" + System.currentTimeMillis() + "_" + (int)(Math.random() * 10000));
+                System.out.println("Generated new Message ID: " + message.getId());
+            }
             message.setTimestamp(System.currentTimeMillis());
             message.setSender("agent"); // Ensure sender is set to agent
             
             String conversationIdStr = message.getConversationId();
             Long conversationIdLong = Long.parseLong(conversationIdStr);
 
+            System.out.println("=== TAKEOVER CONTROLLER: Calling TakeoverService ===");
             // 1. Centralized: Lưu vào DB + Gửi đến Facebook + Push WebSocket thông qua TakeoverService
             takeoverService.saveAndSendAgentMessage(message, conversationIdLong);
             
@@ -121,10 +138,32 @@ public class TakeoverController {
     @PostMapping("/release/{conversationId}")
     public ResponseEntity<?> releaseConversation(@PathVariable Long conversationId) {
         try {
-            // Logic để release conversation
-            // Cần implement release logic trong service
-            return ResponseEntity.ok().body("{\"message\": \"Conversation released successfully\"}");
+            // 1. Get conversation to check ownership
+            Conversation conversation = conversationRepo.findById(conversationId)
+                .orElseThrow(() -> new RuntimeException("Conversation not found"));
+            
+            // 2. Use updateTakenOverStatus method to release
+            conversationService.updateTakenOverStatus(conversationId, false, conversation.getOwnerId());
+            
+            // 3. G thông báo qua WebSocket
+            TakeoverMessage releaseNotification = new TakeoverMessage(
+                "system_" + System.currentTimeMillis() + "_" + (int)(Math.random() * 10000),
+                String.valueOf(conversationId),
+                "system",
+                "Conversation has been released - bot can now respond",
+                System.currentTimeMillis()
+            );
+            websocketHandler.sendToConversation(String.valueOf(conversationId), releaseNotification);
+            
+            log.info("Conversation {} released successfully", conversationId);
+            return ResponseEntity.ok().body(Map.of(
+                "message", "Conversation released successfully",
+                "conversationId", conversationId,
+                "isTakenOver", false,
+                "releasedAt", System.currentTimeMillis()
+            ));
         } catch (Exception e) {
+            log.error("Cannot release conversation: {}", e.getMessage());
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot release conversation", e);
         }
     }

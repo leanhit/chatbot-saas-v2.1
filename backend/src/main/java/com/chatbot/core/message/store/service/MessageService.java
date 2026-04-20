@@ -82,6 +82,12 @@ public class MessageService {
             // Có thể throw exception hoặc log lại tùy thuộc vào yêu cầu nghiệp vụ
         }
 
+        // Extract externalMessageId from raw Map if present
+        String externalMessageId = null;
+        if (raw != null && raw.containsKey("externalMessageId")) {
+            externalMessageId = (String) raw.get("externalMessageId");
+        }
+        
         // 1. Lưu Message
         Message m = Message.builder()
                 .conversationId(conversationId)
@@ -89,6 +95,7 @@ public class MessageService {
                 .content(content)
                 .rawPayload(rawJson)
                 .messageType(messageType) // <--- Trường mới BẮT BUỘC
+                .externalMessageId(externalMessageId) // Set external message ID for idempotency
                 .isRead(false) // <--- Trường mới BẮT BUỘC, mặc định là false (cho Agent/Bot)
                 .sentTime(LocalDateTime.now()) // Có thể set sentTime ở đây, hoặc lấy từ payload
                 .build();
@@ -214,5 +221,22 @@ public class MessageService {
         // Không update sender, conversationId, createdAt để maintain data integrity
         
         return messageRepo.save(existingMessage);
+    }
+    
+    /**
+     * Check if message exists by external message ID (for idempotency)
+     */
+    public boolean messageExists(String externalMessageId) {
+        if (externalMessageId == null || externalMessageId.trim().isEmpty()) {
+            return false;
+        }
+        
+        Long tenantId = TenantContext.getTenantId();
+        if (tenantId == null) {
+            log.warn("Tenant context not found for messageExists check");
+            return false;
+        }
+        
+        return messageRepo.findByExternalMessageIdAndTenantId(externalMessageId, tenantId).isPresent();
     }
 }

@@ -185,6 +185,12 @@ class TakeoverWebSocketService {
   handleConversationMessage(message) {
     console.log(`📨 New conversation message:`, message)
     
+    // Only process messages that have backend ID (confirmed messages)
+    if (!message.id || message.id.startsWith('ws-')) {
+      console.log('⚠️ Skipping message without backend ID:', message)
+      return
+    }
+    
     // Add message to queue
     this.messageQueue.value.push({
       ...message,
@@ -221,6 +227,12 @@ class TakeoverWebSocketService {
    */
   handleTakeoverMessage(message) {
     console.log(`📨 New real-time message:`, message)
+    
+    // Only process messages that have backend ID (confirmed messages)
+    if (!message.id || message.id.startsWith('ws-')) {
+      console.log('⚠️ Skipping takeover message without backend ID:', message)
+      return
+    }
     
     // Add message to queue
     this.messageQueue.value.push({
