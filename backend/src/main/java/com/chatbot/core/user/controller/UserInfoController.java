@@ -156,6 +156,14 @@ public class UserInfoController {
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             log.error("Error updating avatar: {}", e.getMessage(), e);
+            
+            // Check for 413 size limit errors
+            if (e.getMessage() != null && e.getMessage().contains("size")) {
+                System.err.println("413 ERROR - Avatar file size too large in UserInfoController: " + e.getMessage());
+                e.printStackTrace();
+                throw new RuntimeException("File size too large. Please choose a smaller image (max 5MB).");
+            }
+            
             throw e;
         }
     }

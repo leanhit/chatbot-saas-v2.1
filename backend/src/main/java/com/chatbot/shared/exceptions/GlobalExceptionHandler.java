@@ -9,6 +9,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
@@ -268,6 +269,21 @@ public class GlobalExceptionHandler {
                 .withTimestamp(java.time.LocalDateTime.now());
         
         return new ResponseEntity<>(errorResponse, HttpStatus.CONFLICT);
+    }
+
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<ErrorResponse> handleMaxUploadSizeExceededException(
+            MaxUploadSizeExceededException ex, WebRequest request) {
+        
+        System.err.println("413 ERROR - File size too large: " + ex.getMessage());
+        ex.printStackTrace();
+        
+        ErrorResponse errorResponse = ErrorResponse.fromCode("PAYLOAD_TOO_LARGE", "File size too large")
+                .withDescription("The uploaded file exceeds the maximum allowed size. Please choose a smaller file.")
+                .withPath(request.getDescription(false))
+                .withTimestamp(java.time.LocalDateTime.now());
+        
+        return new ResponseEntity<>(errorResponse, HttpStatus.PAYLOAD_TOO_LARGE);
     }
 
     protected ErrorResponse createErrorResponse(String code, String message, String path) {

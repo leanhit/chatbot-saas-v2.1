@@ -584,10 +584,42 @@ export default {
         return
       }
       
-      // Store file and show cropper
+      // TEMP: Bypass ImageCropper for testing 413 error
+      console.log('Testing direct upload without cropping')
       selectedImageFile.value = file
-      previewImageUrl.value = URL.createObjectURL(file)
-      showImageCropper.value = true
+      
+      // Validate file size directly (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        console.error('File too large:', file.size)
+        toast?.error('File size should be less than 5MB')
+        return
+      }
+      
+      // Upload directly without cropping
+      avatarUploading.value = true
+      try {
+        const formData = new FormData()
+        formData.append('avatar', file)
+        
+        console.log('Direct upload test:', {
+          fileSize: file.size,
+          fileName: file.name
+        })
+        
+        const response = await usersApi.updateAvatar(formData)
+        console.log('Direct upload success:', response.data)
+        toast?.success('Avatar updated successfully!')
+      } catch (error) {
+        console.error('Direct upload error:', error)
+        // Handle error as before...
+      } finally {
+        avatarUploading.value = false
+        event.target.value = ''
+      }
+      
+      // Comment out cropper for now
+      // previewImageUrl.value = URL.createObjectURL(file)
+      // showImageCropper.value = true
     }
     const handleImageCrop = async (croppedFile) => {
       console.log('✅ [FRONTEND AVATAR] Image cropped:', {
@@ -665,8 +697,27 @@ export default {
         }
         selectedImageFile.value = null
       } catch (error) {
-        console.error('❌ [FRONTEND AVATAR] Upload error:', error)
-        toast?.error('Failed to upload avatar. Please try again.')
+        console.error('Upload error:', error)
+        console.error('Full error details:', {
+          message: error.message,
+          status: error.response?.status,
+          statusText: error.response?.statusText,
+          data: error.response?.data,
+          headers: error.response?.headers,
+          config: error.config
+        })
+        
+        // Handle 413 Payload Too Large error specifically
+        if (error.response?.status === 413) {
+          console.error('413 ERROR - File size too large:', error)
+          toast?.error('File size too large. Please choose a smaller image (max 5MB).')
+        } else if (error.response?.status === 400 && error.response?.data?.error?.includes('size')) {
+          console.error('File size validation error:', error.response.data.error)
+          toast?.error('File size too large. Please choose a smaller image (max 5MB).')
+        } else {
+          console.error('Upload error:', error)
+          toast?.error('Failed to upload avatar. Please try again.')
+        }
       } finally {
         // Clear the file input and reset loading state
         event.target.value = ''

@@ -110,7 +110,8 @@ public class TenantProfileController {
             
             // Validate file size (max 10MB)
             if (file.getSize() > 10 * 1024 * 1024) {
-                log.error("❌ [TENANT PROFILE CONTROLLER] File too large: {} bytes", file.getSize());
+                log.error("413 ERROR - File too large: {} bytes", file.getSize());
+                System.err.println("413 ERROR - Tenant logo file size validation failed: " + file.getSize() + " bytes");
                 throw new IllegalArgumentException("File size cannot exceed 10MB");
             }
             

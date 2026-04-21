@@ -371,15 +371,21 @@ export default {
       } catch (error) {
         console.error('❌ [FRONTEND LOGO] Upload error:', error)
         
-        // Show specific error message
+        // Handle 413 Payload Too Large error specifically
         let errorMessage = 'Failed to update logo'
-        if (error.response?.data?.message) {
+        if (error.response?.status === 413) {
+          console.error('File size too large - 413 error:', error)
+          errorMessage = 'File size too large. Please choose a smaller image (max 10MB).'
+        } else if (error.response?.status === 400 && error.response?.data?.error?.includes('size')) {
+          console.error('File size validation error:', error.response.data.error)
+          errorMessage = 'File size too large. Please choose a smaller image (max 10MB).'
+        } else if (error.response?.data?.message) {
           errorMessage = error.response.data.message
         } else if (error.message) {
           errorMessage = error.message
         }
         
-        console.error('❌ [FRONTEND LOGO] Error details:', {
+        console.error('Error details:', {
           message: errorMessage,
           response: error.response?.data,
           status: error.response?.status
