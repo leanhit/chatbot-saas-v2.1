@@ -125,6 +125,17 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(errorResponse, HttpStatus.CONFLICT);
     }
 
+    @ExceptionHandler(org.springframework.web.server.ResponseStatusException.class)
+    public ResponseEntity<ErrorResponse> handleResponseStatusException(
+            org.springframework.web.server.ResponseStatusException ex, WebRequest request) {
+        
+        ErrorResponse errorResponse = ErrorResponse.fromCode("BAD_REQUEST", ex.getReason())
+                .withPath(request.getDescription(false))
+                .withTimestamp(java.time.LocalDateTime.now());
+        
+        return new ResponseEntity<>(errorResponse, ex.getStatusCode());
+    }
+
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<ErrorResponse> handleRuntimeException(
             RuntimeException ex, WebRequest request) {

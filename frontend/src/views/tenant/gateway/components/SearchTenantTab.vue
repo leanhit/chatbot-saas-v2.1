@@ -158,7 +158,9 @@ export default {
         await executeSearch()
       } catch (error) {
         console.error('Failed to join tenant:', error)
-        alert($t('gateway.errors.failedJoinRequest'))
+        // Show specific error message from backend if available
+        const errorMessage = error.response?.data?.message || error.message || $t('gateway.errors.failedJoinRequest')
+        alert(errorMessage)
       } finally {
         joinLoading.value = false
       }

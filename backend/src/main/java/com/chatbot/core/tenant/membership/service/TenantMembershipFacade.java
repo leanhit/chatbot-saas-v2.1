@@ -85,6 +85,16 @@ public class TenantMembershipFacade {
     }
 
     /**
+     * Create invitation for tenant
+     */
+    public void createInvitation(Long tenantId, String email, String role, User admin) {
+        InviteMemberRequest request = new InviteMemberRequest();
+        request.setEmail(email);
+        request.setRole(TenantRole.valueOf(role));
+        invitationService.inviteMember(tenantId, request, admin);
+    }
+
+    /**
      * Convert tenantKey to tenantId
      */
     public Long getTenantIdByKey(String tenantKey) {

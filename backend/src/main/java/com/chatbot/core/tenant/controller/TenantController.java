@@ -1,11 +1,13 @@
 package com.chatbot.core.tenant.controller;
 
+import com.chatbot.core.user.model.User;
 import com.chatbot.core.tenant.dto.*;
 import com.chatbot.core.tenant.mapper.TenantMapper;
 import com.chatbot.core.tenant.service.TenantService;
 import com.chatbot.core.tenant.profile.service.TenantProfileService;
 import com.chatbot.core.tenant.repository.TenantRepository;
 import com.chatbot.core.tenant.model.Tenant;
+import com.chatbot.core.tenant.exception.BusinessLogicException;
 import com.chatbot.core.user.repository.UserRepository;
 import com.chatbot.core.identity.model.SystemRole;
 import com.chatbot.core.tenant.membership.model.TenantRole;
@@ -17,6 +19,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.http.HttpStatus;
@@ -361,6 +364,62 @@ public class TenantController {
     }
 
     /**
+     * POST join-requests by tenantKey
+     */
+    @PostMapping("/key/{tenantKey}/members/join-requests")
+    public void requestJoinByTenantKey(
+            @PathVariable String tenantKey,
+            @AuthenticationPrincipal(expression = "user") User user
+    ) {
+        try {
+            // Convert tenantKey to tenantId and delegate to membership facade
+            Tenant tenant = tenantRepository.findByTenantKey(tenantKey)
+                .orElseThrow(() -> new RuntimeException("Tenant not found with key: " + tenantKey));
+            
+            // Delegate to TenantMembershipFacade
+            tenantMembershipFacade.requestJoin(tenant.getId(), user);
+        } catch (IllegalStateException e) {
+            // Business logic errors - return 400 with specific message
+            log.warn("Business logic error: {}", e.getMessage());
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage(), e);
+        } catch (RuntimeException e) {
+            // System errors - return 500
+            log.error("Failed to request join: {}", e.getMessage(), e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage(), e);
+        }
+    }
+
+    /**
+     * POST invitations by tenantKey
+     */
+    @PostMapping("/key/{tenantKey}/invitations")
+    public void createInvitation(
+            @PathVariable String tenantKey,
+            @RequestBody Map<String, Object> inviteData,
+            @AuthenticationPrincipal(expression = "user") User user
+    ) {
+        try {
+            // Convert tenantKey to tenantId and delegate to invitation service
+            Long tenantId = tenantMembershipFacade.getTenantIdByKey(tenantKey);
+            
+            // Extract email and role from inviteData
+            String email = (String) inviteData.get("email");
+            String role = (String) inviteData.get("role");
+            
+            // Delegate to TenantMembershipFacade
+            tenantMembershipFacade.createInvitation(tenantId, email, role, user);
+        } catch (IllegalStateException e) {
+            // Business logic errors - return 400 with specific message
+            log.warn("Business logic error: {}", e.getMessage());
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage(), e);
+        } catch (RuntimeException e) {
+            // System errors - return 500
+            log.error("Failed to create invitation: {}", e.getMessage(), e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage(), e);
+        }
+    }
+
+    /**
      * Get tenant invitations
      */
     @GetMapping("/key/{tenantKey}/invitations")
@@ -373,8 +432,66 @@ public class TenantController {
             return tenantMembershipFacade.getInvitations(tenantId);
         } catch (Exception e) {
             log.error("Failed to get invitations: {}", e.getMessage(), e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Get member by ID
+     */
+    @GetMapping("/key/{tenantKey}/members/{userId}")
+    public Object getMember(@PathVariable String tenantKey, @PathVariable Long userId) {
+        try {
+            Long tenantId = tenantMembershipFacade.getTenantIdByKey(tenantKey);
+            return tenantMembershipFacade.getMember(tenantId, userId);
+        } catch (Exception e) {
+            log.error("Failed to get member: {}", e.getMessage(), e);
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, 
-                "Failed to get invitations: " + e.getMessage(), e);
+                "Failed to get member: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Get current member info
+     */
+    @GetMapping("/key/{tenantKey}/members/me")
+    public Object getMyMember(@PathVariable String tenantKey, @AuthenticationPrincipal User user) {
+        try {
+            Long tenantId = tenantMembershipFacade.getTenantIdByKey(tenantKey);
+            return tenantMembershipFacade.myMember(tenantId, user);
+        } catch (Exception e) {
+            log.error("Failed to get my member: {}", e.getMessage(), e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, 
+                "Failed to get my member: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Leave tenant
+     */
+    @DeleteMapping("/key/{tenantKey}/members/me")
+    public void leaveTenant(@PathVariable String tenantKey, @AuthenticationPrincipal User user) {
+        try {
+            Long tenantId = tenantMembershipFacade.getTenantIdByKey(tenantKey);
+            tenantMembershipFacade.leave(tenantId, user);
+        } catch (Exception e) {
+            log.error("Failed to leave tenant: {}", e.getMessage(), e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, 
+                "Failed to leave tenant: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Cancel join request
+     */
+    @DeleteMapping("/key/{tenantKey}/members/join-requests/{requestId}")
+    public void cancelJoinRequest(@PathVariable String tenantKey, @PathVariable Long requestId, @AuthenticationPrincipal User user) {
+        try {
+            tenantMembershipFacade.cancelJoinRequest(requestId, user);
+        } catch (Exception e) {
+            log.error("Failed to cancel join request: {}", e.getMessage(), e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, 
+                "Failed to cancel join request: " + e.getMessage(), e);
         }
     }
 

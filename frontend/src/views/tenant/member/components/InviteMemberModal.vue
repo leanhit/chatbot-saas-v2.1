@@ -153,7 +153,10 @@ export default {
         emit('invited', formData.value)
         handleClose()
       } catch (error) {
-        alert('Failed to send invitation. Please try again.')
+        console.error('Failed to send invitation:', error)
+        // Show specific error message from backend if available
+        const errorMessage = error.response?.data?.message || error.message || 'Failed to send invitation. Please try again.'
+        alert(errorMessage)
       } finally {
         loading.value = false
       }

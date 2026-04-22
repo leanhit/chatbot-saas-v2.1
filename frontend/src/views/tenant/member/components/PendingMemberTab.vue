@@ -223,7 +223,8 @@ export default {
         emit('request-approved', request)
       } catch (error) {
         console.error('Failed to approve request:', error)
-        alert('Failed to approve request. Please try again.')
+        const errorMessage = error.response?.data?.message || error.message || 'Failed to approve request. Please try again.'
+        alert(errorMessage)
       }
     }
     const rejectRequest = async (request) => {
@@ -245,7 +246,8 @@ export default {
         emit('request-rejected', request)
       } catch (error) {
         console.error('Failed to reject request:', error)
-        alert('Failed to reject request. Please try again.')
+        const errorMessage = error.response?.data?.message || error.message || 'Failed to reject request. Please try again.'
+        alert(errorMessage)
       }
     }
     const viewRequest = (request) => {

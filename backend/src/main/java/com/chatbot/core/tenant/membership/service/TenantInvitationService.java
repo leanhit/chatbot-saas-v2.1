@@ -45,14 +45,14 @@ public class TenantInvitationService {
             .orElseThrow(() -> new RuntimeException("Tenant không tồn tại"));
 
         User userToBeInvited = userRepo.findByEmail(request.getEmail().toLowerCase())
-            .orElseThrow(() -> new RuntimeException("Người dùng này chưa có tài khoản trên hệ thống."));
+            .orElseThrow(() -> new IllegalStateException("Ngày dùng này chùa có tài khoàn trên hê thông."));
 
         if (memberRepo.existsByTenantIdAndUserId(tenantId, userToBeInvited.getId())) {
-            throw new RuntimeException("Người dùng đã là thành viên của tổ chức này rồi.");
+            throw new IllegalStateException("Người dùng đã là thành viên của tổ chức này rồi.");
         }
 
         if (invitationRepo.existsByTenantIdAndEmailAndStatus(tenantId, request.getEmail(), InvitationStatus.PENDING)) {
-            throw new RuntimeException("Một lời mời đang ở trạng thái chờ xác nhận.");
+            throw new IllegalStateException("Một lời mời đang ở trạng thái chờ xác nhận.");
         }
 
         TenantInvitation invitation = TenantInvitation.builder()

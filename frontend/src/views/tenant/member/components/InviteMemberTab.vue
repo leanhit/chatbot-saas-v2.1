@@ -235,7 +235,8 @@ export default {
         alert('Invitation resent successfully!')
       } catch (error) {
         console.error('Failed to resend invitation:', error)
-        alert('Failed to resend invitation. Please try again.')
+        const errorMessage = error.response?.data?.message || error.message || 'Failed to resend invitation. Please try again.'
+        alert(errorMessage)
       }
     }
     const revokeInvitation = async (invitation) => {
@@ -259,7 +260,8 @@ export default {
         emit('invitation-revoked', invitation)
       } catch (error) {
         console.error('Failed to revoke invitation:', error)
-        alert('Failed to revoke invitation. Please try again.')
+        const errorMessage = error.response?.data?.message || error.message || 'Failed to revoke invitation. Please try again.'
+        alert(errorMessage)
       }
     }
     const viewInvitation = (invitation) => {

@@ -10,16 +10,30 @@
 export function secureImageUrl(url) {
   if (!url) return undefined;
   
-  // Handle localhost:9000 - keep as is for development
+  // Handle localhost:9000 - convert to backend proxy
   if (url.includes('localhost:9000')) {
-    // For development, keep localhost URLs as-is
-    return url;
+    try {
+      const urlObj = new URL(url);
+      // Extract filename from path (remove /chatbot-files/ prefix)
+      const filename = urlObj.pathname.replace('/chatbot-files/', '');
+      // Convert to backend proxy URL
+      return `https://chat.truyenthongviet.vn/api/images/public/filename/${filename}/content`;
+    } catch (e) {
+      return url;
+    }
   }
   
-  // Handle direct chatbot-files URLs - keep as is for development
+  // Handle direct chatbot-files URLs - convert to backend proxy
   if (url.includes('chatbot-files/')) {
-    // For development, keep chatbot-files URLs as-is
-    return url;
+    try {
+      const urlObj = new URL(url);
+      // Extract filename from path (remove /chatbot-files/ prefix)
+      const filename = urlObj.pathname.replace('/chatbot-files/', '');
+      // Convert to backend proxy URL
+      return `https://chat.truyenthongviet.vn/api/images/public/filename/${filename}/content`;
+    } catch (e) {
+      return url;
+    }
   }
   
   // Handle Botpress server SSL issues - use proxy for port 9000

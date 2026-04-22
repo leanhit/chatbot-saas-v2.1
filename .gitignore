@@ -30,6 +30,8 @@ docker-compose.override.yml
 /backend/.mvn/
 /backend/.gradle/
 /backend/build/
+/backend/gradlew
+/backend/gradlew.bat
 /backend/pom.xml.tag
 /backend/pom.xml.releaseBackup
 /backend/pom.xml.versionsBackup

@@ -14,7 +14,7 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
-@RestControllerAdvice
+// @RestControllerAdvice
 public class IdentityExceptionHandler {
 
     @ExceptionHandler(EmailAlreadyExistsException.class)
@@ -45,6 +45,19 @@ public class IdentityExceptionHandler {
     public ResponseEntity<Map<String, Object>> handleValidation(
             ValidationException ex, WebRequest request) {
         return createErrorResponse(ex, HttpStatus.BAD_REQUEST, request);
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<Map<String, Object>> handleIllegalArgumentException(
+            IllegalArgumentException ex, WebRequest request) {
+        Map<String, Object> response = new HashMap<>();
+        response.put("timestamp", LocalDateTime.now());
+        response.put("status", HttpStatus.BAD_REQUEST.value());
+        response.put("error", "Bad Request");
+        response.put("message", ex.getMessage());
+        response.put("path", request.getDescription(false).replace("uri=", ""));
+        
+        return ResponseEntity.badRequest().body(response);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

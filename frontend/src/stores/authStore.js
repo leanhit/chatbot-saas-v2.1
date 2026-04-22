@@ -3,6 +3,7 @@ import { ref, computed } from 'vue'
 import router from '@/router'
 import { usersApi } from '@/api/usersApi'
 import { useGatewayTenantStore } from './tenant/gateway/myTenantStore'
+import { tenantApi } from '@/api/tenantApi'
 import axios from '@/plugins/axios'
 // Import constants from tenant store (giống frontend)
 const TENANT_DATA = 'tenant_data'
@@ -80,14 +81,41 @@ export const useAuthStore = defineStore('auth', () => {
       // 4. Lấy thông tin User Profile - CHỈ SAU KHI CÓ TENANT
       // Skip profile fetch during login as it requires tenant context
       // Profile will be fetched when tenant is selected
-      // 5. Điều hướng dựa trên dữ liệu Tenant đã fetch
+      // 5. Determine redirect based on tenant data
       const tenantStore = useGatewayTenantStore()
-      if (!tenantStore.currentTenant) {
-        // No active tenant, redirect to tenant gateway
+      
+      console.log('Login - User tenants:', tenantStore.userTenants)
+      console.log('Login - Current tenant:', tenantStore.currentTenant)
+      console.log('Login - Tenant list length:', tenantStore.userTenants.length)
+      
+      // Always try to get stored tenant first
+      const storedTenantKey = localStorage.getItem('active_tenant_id')
+      const storedTenantData = localStorage.getItem('tenant_data')
+      console.log('Login - Stored tenant key:', storedTenantKey)
+      console.log('Login - Stored tenant data:', storedTenantData)
+      console.log('Login - All localStorage keys:', Object.keys(localStorage))
+      
+      // Re-enable hydrate for future logins
+      localStorage.setItem('should_hydrate_tenant', 'true')
+      
+      if (storedTenantKey && tenantStore.currentTenant) {
+        // Has stored active tenant, go to dashboard directly
+        console.log('Login - Using stored tenant, going to dashboard')
+        await router.push('/dashboard')
+      } else if (tenantStore.userTenants.length === 1) {
+        // Only one tenant, auto-switch and go to dashboard (same as Enter tenant)
+        const onlyTenant = tenantStore.userTenants[0]
+        console.log('Login - Auto-switching to only tenant:', onlyTenant.tenantKey)
+        await tenantStore.switchTenant(onlyTenant.tenantKey)
+        await router.push('/dashboard')
+      } else if (tenantStore.userTenants.length > 1) {
+        // Multiple tenants, go to tenant gateway
+        console.log('Login - Multiple tenants, going to gateway')
         await router.push({ name: 'tenant-gateway' })
       } else {
-        // Has active tenant, go to home
-        await router.push('/')
+        // No tenants, go to tenant gateway
+        console.log('Login - No tenants, going to gateway')
+        await router.push({ name: 'tenant-gateway' })
       }
       return { success: true, data: authData }
     } catch (err) {
@@ -110,7 +138,63 @@ export const useAuthStore = defineStore('auth', () => {
       if (!authData.token) {
         throw new Error("No token received")
       }
+      
+      // Login with received token
       await login(authData)
+      
+      // Auto-create workspace with email-based name
+      try {
+        const tenantStore = useGatewayTenantStore()
+        
+        // Extract username from email for workspace name
+        const email = userData.email
+        const workspaceName = email.substring(0, email.indexOf('@')) + "'s Workspace"
+        
+        // Create workspace
+        console.log('Creating default workspace:', workspaceName)
+        const createResponse = await tenantApi.createTenant({
+          name: workspaceName,
+          visibility: 'PUBLIC'
+        })
+        
+        console.log('Workspace created successfully:', createResponse.data)
+        
+        // Fetch updated tenant list
+        await tenantStore.fetchUserTenants()
+        
+        console.log('User tenants after fetch:', tenantStore.userTenants)
+        console.log('Looking for workspace name:', workspaceName)
+        
+        // Auto-switch to newly created tenant
+        let newTenant = tenantStore.userTenants.find(tenant => tenant.name === workspaceName)
+        
+        // If not found by name, try to get the first tenant (fallback)
+        if (!newTenant && tenantStore.userTenants.length > 0) {
+          newTenant = tenantStore.userTenants[0]
+          console.log('Using first tenant as fallback:', newTenant)
+        }
+        
+        if (newTenant) {
+          console.log('Attempting to switch to tenant:', newTenant)
+          
+          // Apply same logic as Enter tenant button
+          await tenantStore.switchTenant(newTenant.tenantKey)
+          console.log('Switched to new tenant successfully')
+          
+          // Redirect to dashboard (same as Enter tenant button)
+          await router.push('/dashboard')
+        } else {
+          // Fallback to tenant gateway if something goes wrong
+          console.log('No tenant found, redirecting to tenant gateway')
+          await router.push({ name: 'tenant-gateway' })
+        }
+        
+      } catch (workspaceErr) {
+        console.error('Failed to create workspace:', workspaceErr)
+        // Still consider registration successful, redirect to tenant gateway
+        await router.push({ name: 'tenant-gateway' })
+      }
+      
       return { success: true, data: authData }
     } catch (err) {
       const message = err.response?.data?.message || err.message || 'Registration failed'
@@ -163,16 +247,30 @@ export const useAuthStore = defineStore('auth', () => {
       console.error('Logout API call failed:', error)
     } finally {
       const tenantStore = useGatewayTenantStore()
-      // Xóa sạch context của Tenant và Auth
+      
+      // Clear ALL tenant data first
       tenantStore.clearTenant()
+      tenantStore.userTenants = [] // Clear tenant list in memory
+      
+      // Clear ALL auth data
       token.value = null
       refreshToken.value = null
       user.value = null
+      
+      // Clear ALL localStorage data
       localStorage.removeItem('accessToken')
       localStorage.removeItem('refreshToken')
       localStorage.removeItem('user')
-      localStorage.removeItem(ACTIVE_TENANT_ID) // Use constant
-      router.push({ name: 'login' })
+      localStorage.removeItem(ACTIVE_TENANT_ID)
+      localStorage.removeItem(TENANT_DATA)
+      
+      // Prevent tenant store from hydrating old data on next login
+      localStorage.setItem('should_hydrate_tenant', 'false')
+      
+      console.log('Logout completed - all data cleared, hydrate disabled')
+      
+      // Redirect to login
+      await router.push({ name: 'login' })
     }
   }
   /**

@@ -8,10 +8,20 @@ import { TenantStatus } from '@/types/tenant'
 const ACTIVE_TENANT_ID = 'active_tenant_id'
 const TENANT_DATA = 'tenant_data'
 export const useGatewayTenantStore = defineStore('gateway-tenant', () => {
+  // Check if we should hydrate from localStorage (not after logout)
+  let shouldHydrate = true
+  try {
+    if (typeof localStorage !== 'undefined') {
+      shouldHydrate = localStorage.getItem('should_hydrate_tenant') !== 'false'
+    }
+  } catch (error) {
+    console.error('Error checking hydrate flag:', error);
+  }
+  
   // hydrate from localStorage with defensive check
   let storedTenant = null
   try {
-    if (typeof localStorage !== 'undefined') {
+    if (typeof localStorage !== 'undefined' && shouldHydrate) {
       storedTenant = localStorage.getItem(TENANT_DATA)
     }
   } catch (error) {
@@ -20,7 +30,7 @@ export const useGatewayTenantStore = defineStore('gateway-tenant', () => {
   // state
   const userTenants = ref([])
   const currentTenant = ref(
-    storedTenant ? JSON.parse(storedTenant) : null
+    (shouldHydrate && storedTenant) ? JSON.parse(storedTenant) : null
   )
   const loadingTenants = ref(false)
   const switchingTenant = ref(false)
@@ -93,14 +103,19 @@ export const useGatewayTenantStore = defineStore('gateway-tenant', () => {
     }
   }
   const clearTenant = () => {
+    // Clear all tenant state
     currentTenant.value = null
-    // Defensive localStorage access
+    userTenants.value = [] // Clear tenant list
+    
+    // Clear all localStorage data
     try {
       if (typeof localStorage !== 'undefined') {
         localStorage.removeItem(TENANT_DATA)
         localStorage.removeItem(ACTIVE_TENANT_ID)
+        console.log('Tenant data cleared from localStorage')
       }
     } catch (error) {
+      console.error('Error clearing localStorage:', error)
     }
   }
   const suspendTenant = async (tenantKey) => {
