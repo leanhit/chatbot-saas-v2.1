@@ -30,6 +30,7 @@
                 <select
                   id="botId"
                   v-model="formData.botId"
+                  @change="onBotSelectionChange"
                   class="form-select"
                   :disabled="!!props.bot"
                   required
@@ -252,7 +253,7 @@
 </template>
 
 <script>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { Icon } from '@iconify/vue'
 import { useI18n } from 'vue-i18n'
 import { pennyRuleApi } from '@/api/pennyRuleApi'
@@ -345,6 +346,15 @@ export default {
       formData.value.action = ''
     }
 
+    const onBotSelectionChange = (event) => {
+      console.log('🔄 BOT SELECTION CHANGED!')
+      console.log('🔄 Event target value:', event.target.value)
+      console.log('🔄 Event target value type:', typeof event.target.value)
+      console.log('🔄 formData.botId after change:', formData.value.botId)
+      console.log('🔄 formData.botId type after change:', typeof formData.value.botId)
+      console.log('🔄 Selected option details:', event.target.options[event.target.selectedIndex])
+    }
+
     const getTriggerValuePlaceholder = () => {
       const placeholders = {
         [RuleTriggerType.INTENT]: 'Enter intent name (e.g., greeting)',
@@ -423,10 +433,31 @@ export default {
     }
 
     const handleSubmit = async () => {
+      // Debug: Log when button is clicked
+      console.log('🎯 CREATE RULE BUTTON CLICKED!')
+      console.log('🔍 handleSubmit - FULL formData:', JSON.stringify(formData.value, null, 2))
+      console.log('🔍 handleSubmit - botId:', formData.value.botId)
+      console.log('🔍 handleSubmit - botId type:', typeof formData.value.botId)
+      console.log('🔍 handleSubmit - botId JSON:', JSON.stringify(formData.value.botId))
+      console.log('🔍 handleSubmit - props.bot:', props.bot)
+      console.log('🔍 handleSubmit - props.bot JSON:', JSON.stringify(props.bot))
+      console.log('🔍 handleSubmit - isEditMode:', isEditMode.value)
+      
       // Validate required fields
       if (!formData.value.botId) {
         alert('Please select a bot for this rule')
         return
+      }
+
+      // Ensure botId is a string (not object)
+      if (typeof formData.value.botId === 'object') {
+        console.log('🔧 Converting botId object to string')
+        formData.value.botId = formData.value.botId.id || formData.value.botId.botId || ''
+        console.log('🔧 Converted botId to:', formData.value.botId)
+        if (!formData.value.botId) {
+          alert('Invalid bot ID selected')
+          return
+        }
       }
 
       if (!formData.value.ruleName || !formData.value.ruleType || !formData.value.triggerType) {
@@ -471,10 +502,10 @@ export default {
 
         if (props.rule) {
           // Update existing rule
-          await pennyRuleApi.updateRule(props.rule.id, ruleRequest.toApiRequest())
+          await pennyRuleApi.updateRule(formData.value.botId, props.rule.id, ruleRequest.toApiRequest())
         } else {
           // Create new rule
-          await pennyRuleApi.createRule(ruleRequest.toApiRequest())
+          await pennyRuleApi.createRule(formData.value.botId, ruleRequest.toApiRequest())
         }
         emit('saved')
       } catch (error) {
@@ -559,17 +590,44 @@ export default {
       }
     }
 
+    // Watch for botId changes
+    watch(() => formData.value.botId, (newBotId, oldBotId) => {
+      console.log('👁️ formData.botId CHANGED!')
+      console.log('👁️ Old botId:', oldBotId, 'type:', typeof oldBotId)
+      console.log('👁️ New botId:', newBotId, 'type:', typeof newBotId)
+      console.log('👁️ New botId JSON:', JSON.stringify(newBotId))
+    }, { immediate: true })
+
+    // Watch for props.bot changes
+    watch(() => props.bot, (newBot, oldBot) => {
+      console.log('👁️ props.bot CHANGED!')
+      console.log('👁️ Old bot:', oldBot)
+      console.log('👁️ New bot:', newBot)
+      console.log('👁️ New bot JSON:', JSON.stringify(newBot))
+    }, { immediate: true })
+
     // Lifecycle
     onMounted(() => {
+      console.log('🔍 PennyRuleModal onMounted - props.bot:', props.bot)
+      console.log('🔍 PennyRuleModal onMounted - props.rule:', props.rule)
+      
       loadAvailableBots()
       
       if (props.rule) {
-        // Populate form with existing rule data
-        Object.assign(formData.value, props.rule)
+        // Populate form with existing rule data, but preserve botId
+        const ruleData = { ...props.rule }
+        formData.value.botId = props.bot?.id || ruleData.botId || ''
+        console.log('🔧 onMounted - Setting botId from rule:', formData.value.botId)
+        delete ruleData.botId // Remove botId from ruleData to avoid overwriting
+        Object.assign(formData.value, ruleData)
       } else if (props.bot) {
         // Set bot ID if bot is provided
         formData.value.botId = props.bot.id
+        console.log('🔧 onMounted - Setting botId from props.bot:', formData.value.botId)
       }
+      
+      console.log('🔍 onMounted - Final formData.botId:', formData.value.botId)
+      console.log('🔍 onMounted - Final formData.botId type:', typeof formData.value.botId)
     })
 
     return {
@@ -586,6 +644,7 @@ export default {
       priorityLevels,
       onTriggerTypeChange,
       onRuleTypeChange,
+      onBotSelectionChange,
       copyToClipboard,
       handleSubmit,
       testRule,

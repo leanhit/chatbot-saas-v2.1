@@ -171,13 +171,13 @@
     <div v-else class="rules-grid">
       <div
         v-for="rule in rules"
-        :key="rule.id"
+        :key="rule.ruleId"
         class="bg-white dark:bg-gray-800 rounded-lg shadow-md border border-gray-200 dark:border-gray-700 hover:shadow-lg transition-shadow duration-200 p-6"
       >
         <div class="card-header">
           <div class="rule-avatar" :class="{ 'is-inactive': !rule.isActive }">
             <div class="avatar-content">
-              <Icon :icon="getRuleTypeIcon(rule.type)" class="h-8 w-8" />
+              <Icon :icon="getRuleTypeIcon(rule.ruleType)" class="h-8 w-8" />
             </div>
           </div>
           <div class="header-main">
@@ -196,7 +196,7 @@
                 {{ rule.isActive ? $t('penny.rules.active') : $t('penny.rules.inactive') }}
               </span>
               <span class="text-xs py-1 px-2 rounded-md bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200">
-                {{ getRuleTypeDisplayName(rule.type) }}
+                {{ getRuleTypeDisplayName(rule.ruleType) }}
               </span>
             </div>
           </div>
@@ -205,7 +205,7 @@
         <div class="card-content">
           <div class="info-item">
             <span class="label">{{ $t('penny.rules.type') }}:</span>
-            <span class="value">{{ getRuleTypeDisplayName(rule.type) }}</span>
+            <span class="value">{{ getRuleTypeDisplayName(rule.ruleType) }}</span>
           </div>
           <div class="info-item">
             <span class="label">{{ $t('penny.rules.bot') }}:</span>
@@ -344,52 +344,148 @@ export default {
     }
 
     const toggleRuleStatus = async (rule) => {
+      console.log('🔄 toggleRuleStatus called')
+      console.log('🔄 selectedBot:', selectedBot.value)
+      console.log('🔄 rule:', rule)
+      console.log('🔄 rule.ruleId:', rule.ruleId)
+      
+      if (!selectedBot.value) {
+        console.error('❌ No bot selected for toggle rule status')
+        alert('Please select a bot first')
+        return
+      }
+      
+      if (!rule.ruleId) {
+        console.error('❌ Rule ID is undefined')
+        alert('Invalid rule: missing rule ID')
+        return
+      }
+      
       try {
-        await pennyRuleStore.toggleRuleStatus(rule.id, !rule.isActive)
+        console.log('🔄 Toggling rule:', rule.ruleId, 'to', !rule.isActive)
+        const updateData = { isActive: !rule.isActive }
+        await pennyRuleStore.updateRule(selectedBot.value.id, rule.ruleId, updateData)
+        console.log('✅ Rule status toggled successfully')
       } catch (error) {
         console.error('Failed to toggle rule status:', error)
+        alert('Failed to toggle rule status: ' + error.message)
       }
     }
 
     const editRule = (rule) => {
+      console.log('✏️ editRule called')
+      console.log('✏️ rule:', rule)
+      console.log('✏️ selectedBot:', selectedBot.value)
+      
       editingRule.value = { ...rule }
+      showCreateModal.value = true
+      console.log('✏️ Modal opened for editing')
     }
 
     const deleteRule = async (rule) => {
+      console.log('🗑️ deleteRule called')
+      console.log('🗑️ rule:', rule)
+      console.log('🗑️ rule.ruleId:', rule.ruleId)
+      console.log('🗑️ selectedBot:', selectedBot.value)
+      
+      if (!selectedBot.value) {
+        console.error('❌ No bot selected for delete rule')
+        alert('Please select a bot first')
+        return
+      }
+      
+      if (!rule.ruleId) {
+        console.error('❌ Rule ID is undefined')
+        alert('Invalid rule: missing rule ID')
+        return
+      }
+      
       if (confirm(`Are you sure you want to delete "${rule.name}"?`)) {
         try {
-          await pennyRuleStore.deleteRule(rule.id)
+          console.log('🗑️ Deleting rule:', rule.ruleId)
+          await pennyRuleStore.deleteRule(selectedBot.value.id, rule.ruleId)
+          console.log('✅ Rule deleted successfully')
         } catch (error) {
           console.error('Failed to delete rule:', error)
+          alert('Failed to delete rule: ' + error.message)
         }
       }
     }
 
     const testRule = async (rule) => {
+      console.log('🧪 testRule called')
+      console.log('🧪 rule:', rule)
+      console.log('🧪 rule.ruleId:', rule.ruleId)
+      console.log('🧪 selectedBot:', selectedBot.value)
+      
+      if (!selectedBot.value) {
+        console.error('❌ No bot selected for test rule')
+        alert('Please select a bot first')
+        return
+      }
+      
+      if (!rule.ruleId) {
+        console.error('❌ Rule ID is undefined')
+        alert('Invalid rule: missing rule ID')
+        return
+      }
+      
       try {
-        await pennyRuleStore.testRule(rule.id)
-        alert('Rule test successful!')
+        const testData = {
+          intent: rule.triggerType === 'INTENT' ? rule.triggerValue : 'test_intent',
+          message: rule.triggerType === 'KEYWORD' || rule.triggerType === 'REGEX' 
+            ? rule.triggerValue 
+            : 'test message',
+          context: {
+            userId: 'test_user',
+            platform: 'test'
+          }
+        }
+        
+        console.log('🧪 Testing rule with data:', testData)
+        const result = await pennyRuleStore.testRule(selectedBot.value.id, rule.ruleId, testData)
+        console.log('✅ Rule test result:', result)
+        
+        if (result.matches) {
+          alert(`✅ Rule matched!\n\nRule: ${result.ruleName}\nTest data: ${JSON.stringify(testData, null, 2)}`)
+        } else {
+          alert(`❌ Rule did not match.\n\nTest data: ${JSON.stringify(testData, null, 2)}`)
+        }
       } catch (error) {
         console.error('Rule test failed:', error)
-        alert('Rule test failed: ' + error.message)
+        alert('Rule test failed: ' + (error.response?.data?.error || error.message))
       }
     }
 
     const duplicateRule = async (rule) => {
+      console.log('📋 duplicateRule called')
+      console.log('📋 rule:', rule)
+      console.log('📋 rule.ruleId:', rule.ruleId)
+      console.log('📋 selectedBot:', selectedBot.value)
+      
+      if (!selectedBot.value) {
+        console.error('❌ No bot selected for duplicate rule')
+        alert('Please select a bot first')
+        return
+      }
+      
       try {
         const duplicatedRule = {
           ...rule,
           name: `${rule.name} (Copy)`,
           isActive: false
         }
-        delete duplicatedRule.id
+        delete duplicatedRule.ruleId
         delete duplicatedRule.createdAt
         delete duplicatedRule.updatedAt
         
-        await pennyRuleStore.createRule(duplicatedRule)
+        console.log('📋 Creating duplicated rule:', duplicatedRule)
+        await pennyRuleStore.createRule(selectedBot.value.id, duplicatedRule)
+        console.log('✅ Rule duplicated successfully')
         fetchRules()
       } catch (error) {
         console.error('Failed to duplicate rule:', error)
+        alert('Failed to duplicate rule: ' + error.message)
       }
     }
 
@@ -405,12 +501,15 @@ export default {
 
     const getRuleTypeIcon = (type) => {
       const icons = {
+        'RESPONSE': 'mdi:message-text',
+        'REDIRECT': 'mdi:directions',
+        'WEBHOOK': 'mdi:webhook',
+        'SCRIPT': 'mdi:script',
         'AI': 'mdi:brain',
         'KEYWORD': 'mdi:key',
         'INTENT': 'mdi:target-account',
         'TIME_BASED': 'mdi:clock',
         'CONDITION': 'mdi:logic',
-        'WEBHOOK': 'mdi:webhook',
         'CUSTOM': 'mdi:cog'
       }
       return icons[type] || 'mdi:cog'
@@ -418,12 +517,15 @@ export default {
 
     const getRuleTypeDisplayName = (type) => {
       const names = {
+        'RESPONSE': 'Response',
+        'REDIRECT': 'Redirect',
+        'WEBHOOK': 'Webhook',
+        'SCRIPT': 'Script',
         'AI': 'AI Rule',
         'KEYWORD': 'Keyword',
         'INTENT': 'Intent',
         'TIME_BASED': 'Time Based',
         'CONDITION': 'Condition',
-        'WEBHOOK': 'Webhook',
         'CUSTOM': 'Custom'
       }
       return names[type] || type
@@ -444,20 +546,33 @@ export default {
 
     // Lifecycle
     onMounted(() => {
+      console.log('🔍 Rules.vue onMounted')
+      console.log('🔍 availableBots:', availableBots.value)
+      console.log('🔍 currentBot:', currentBot.value)
+      console.log('🔍 currentBotId:', currentBotId.value)
+      
       // Load available bots first
       if (availableBots.value.length === 0) {
+        console.log('🔍 Fetching penny bots...')
         pennyBotStore.fetchPennyBots().then(() => {
+          console.log('🔍 Bots fetched, availableBots:', availableBots.value)
           // Auto-select current bot if available
           if (currentBot.value) {
             selectedBot.value = currentBot.value
+            console.log('🔍 Auto-selected current bot:', selectedBot.value)
             fetchRules()
+          } else {
+            console.log('⚠️ No current bot available')
           }
         })
       } else {
         // Auto-select current bot if available
         if (currentBot.value) {
           selectedBot.value = currentBot.value
+          console.log('🔍 Auto-selected current bot:', selectedBot.value)
           fetchRules()
+        } else {
+          console.log('⚠️ No current bot available')
         }
       }
     })

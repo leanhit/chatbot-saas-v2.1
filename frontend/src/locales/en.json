@@ -280,7 +280,12 @@
       "requestedAt": "Requested At",
       "actions": "Actions",
       "approve": "Approve",
-      "reject": "Reject"
+      "reject": "Reject",
+      "invitedBy": "Invited By",
+      "invitedAt": "Invited At",
+      "expiresAt": "Expires At",
+      "resend": "Resend",
+      "revoke": "Revoke"
     },
     "gateway": {
       "empty": "Empty",
@@ -531,6 +536,7 @@
       "status": "Status",
       "enabled": "Enabled",
       "disabled": "Disabled",
+      "active": "Active",
       "save": "Save",
       "cancel": "Cancel",
       "testConnection": "Test Connection",
@@ -681,6 +687,8 @@
     "current": "CURRENT",
     "value": "Value",
     "best_value": "Best Value",
+    "currentlyUsing": "Currently Using",
+    "selected": "Selected",
     "deposit": {
       "title": "Deposit Funds",
       "loading": "Processing...",
