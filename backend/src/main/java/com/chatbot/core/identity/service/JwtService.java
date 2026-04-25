@@ -17,6 +17,8 @@ import org.springframework.stereotype.Service;
 
 import java.security.Key;
 import java.util.Date;
+import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 
 @Service
@@ -143,5 +145,59 @@ public class JwtService {
     private <T> T getClaim(String token, Function<Claims, T> claimsResolver) {
         Claims claims = getClaims(token);
         return claimsResolver.apply(claims);
+    }
+
+    // License JWT methods according to req.md
+    public String generateLicenseToken(String email, Long userId, Long expiration, 
+                                     List<String> features, List<String> modules, 
+                                     Map<String, Integer> limits) {
+        return Jwts.builder()
+                .setSubject(email)
+                .claim("sub", userId.toString()) // User ID as string for local app
+                .claim("email", email)
+                .claim("exp", expiration) // Unix timestamp for local app compatibility
+                .claim("features", features)
+                .claim("modules", modules)
+                .claim("limits", limits)
+                .setIssuedAt(new Date())
+                .signWith(key, SignatureAlgorithm.HS256)
+                .compact();
+    }
+
+    public String extractUserId(String token) {
+        return getClaim(token, claims -> claims.get("sub", String.class));
+    }
+
+    public String extractEmailFromLicense(String token) {
+        return getClaim(token, claims -> claims.get("email", String.class));
+    }
+
+    public Long extractExpiration(String token) {
+        return getClaim(token, claims -> claims.get("exp", Long.class));
+    }
+
+    @SuppressWarnings("unchecked")
+    public List<String> extractFeatures(String token) {
+        return getClaim(token, claims -> claims.get("features", List.class));
+    }
+
+    @SuppressWarnings("unchecked")
+    public List<String> extractModules(String token) {
+        return getClaim(token, claims -> claims.get("modules", List.class));
+    }
+
+    @SuppressWarnings("unchecked")
+    public Map<String, Integer> extractLimits(String token) {
+        return getClaim(token, claims -> claims.get("limits", Map.class));
+    }
+
+    public boolean isLicenseExpired(String token) {
+        try {
+            Long exp = extractExpiration(token);
+            return exp != null && exp < (System.currentTimeMillis() / 1000);
+        } catch (Exception e) {
+            log.error("Error checking license expiration: {}", e.getMessage());
+            return true; // Consider expired if we can't parse
+        }
     }
 }

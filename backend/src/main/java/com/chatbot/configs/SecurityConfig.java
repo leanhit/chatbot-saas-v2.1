@@ -136,6 +136,12 @@ public class SecurityConfig {
                 .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                 .requestMatchers("/api/swagger-ui/**", "/api/v3/api-docs/**").permitAll()
 
+                // ================= LICENSE ENDPOINTS (SPECIFIC FIRST) =================
+                .requestMatchers(HttpMethod.GET, "/api/license/me").authenticated()
+                .requestMatchers(HttpMethod.GET, "/api/license/check/feature/**").authenticated()
+                .requestMatchers(HttpMethod.GET, "/api/license/check/module/**").authenticated()
+                .requestMatchers(HttpMethod.GET, "/api/license/check/limit/**").authenticated()
+                
                 // ================= TENANT ENDPOINTS (SPECIFIC FIRST) =================
                 .requestMatchers(HttpMethod.GET, "/api/tenants/me").authenticated()
                 .requestMatchers(HttpMethod.POST, "/api/tenants").authenticated()
