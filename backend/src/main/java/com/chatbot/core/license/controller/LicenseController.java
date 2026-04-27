@@ -23,6 +23,7 @@ import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/license")
@@ -253,5 +254,128 @@ public class LicenseController {
         ApiResponse<Integer> response = ApiResponse.success(limit, "Limit retrieved for: " + limitKey);
         
         return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/activate/{token}")
+    @Operation(
+        summary = "Activate license with token",
+        description = "Activate license using JWT token from SaaS redirect",
+        responses = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "License activated successfully"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Invalid or expired token"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "409", description = "User already has active license")
+        }
+    )
+    public ResponseEntity<ApiResponse<LicenseResponse>> activateLicense(
+            @Parameter(description = "JWT activation token", required = true)
+            @PathVariable String token) {
+        
+        log.info("Activating license with token: {}", token.substring(0, Math.min(10, token.length())));
+        
+        try {
+            // Verify token is signed by cloud
+            if (!jwtService.verifyLicenseSignedByCloud(token)) {
+                log.warn("Invalid activation token - not signed by cloud");
+                return ResponseEntity.badRequest()
+                    .body(ApiResponse.error("Invalid activation token"));
+            }
+            
+            // Check if token is expired
+            if (jwtService.isLicenseExpired(token)) {
+                log.warn("Activation token has expired");
+                return ResponseEntity.badRequest()
+                    .body(ApiResponse.error("Activation token has expired"));
+            }
+            
+            // Extract user info from token
+            String userEmail = jwtService.extractEmailFromLicense(token);
+            String userIdStr = jwtService.extractUserId(token);
+            Long userId = Long.parseLong(userIdStr);
+            
+            log.info("Activating license for user: {} (ID: {})", userEmail, userId);
+            
+            // Check if user already has active license
+            if (licenseService.hasActiveLicense(userId)) {
+                log.warn("User {} already has active license", userId);
+                return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body(ApiResponse.error("User already has active license"));
+            }
+            
+            // Extract license data from token
+            Long expiration = jwtService.extractExpiration(token);
+            List<String> features = jwtService.extractFeatures(token);
+            List<String> modules = jwtService.extractModules(token);
+            Map<String, Integer> limits = jwtService.extractLimits(token);
+            
+            // Create license from token data
+            CreateLicenseRequest licenseRequest = CreateLicenseRequest.builder()
+                .userId(userId)
+                .planName("Activated License")
+                .isActive(true)
+                .expiresAt(expiration != null ? 
+                    java.time.Instant.ofEpochSecond(expiration) : 
+                    java.time.Instant.now().plusSeconds(86400 * 30)) // 30 days default
+                .features(features)
+                .modules(modules)
+                .limits(limits)
+                .build();
+            
+            LicenseResponse response = licenseService.createLicense(licenseRequest);
+            
+            log.info("License activated successfully for user: {}", userEmail);
+            return ResponseEntity.ok(ApiResponse.success(response, "License activated successfully"));
+            
+        } catch (Exception e) {
+            log.error("Failed to activate license: {}", e.getMessage(), e);
+            return ResponseEntity.badRequest()
+                .body(ApiResponse.error("Failed to activate license: " + e.getMessage()));
+        }
+    }
+
+    @PostMapping("/callback")
+    @Operation(
+        summary = "License activation callback",
+        description = "Receive activation token from SaaS redirect",
+        responses = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Callback processed successfully"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Invalid callback data")
+        }
+    )
+    public ResponseEntity<ApiResponse<Map<String, Object>>> activationCallback(
+            @Parameter(description = "Activation token", required = true)
+            @RequestParam String token,
+            @Parameter(description = "Redirect URL (optional)", required = false)
+            @RequestParam(required = false) String redirectUrl) {
+        
+        log.info("Received activation callback with token: {}", token.substring(0, Math.min(10, token.length())));
+        
+        try {
+            // Verify token is signed by cloud
+            if (!jwtService.verifyLicenseSignedByCloud(token)) {
+                log.warn("Invalid callback token - not signed by cloud");
+                return ResponseEntity.badRequest()
+                    .body(ApiResponse.<Map<String, Object>>error("Invalid activation token"));
+            }
+            
+            // Extract user info for logging
+            String userEmail = jwtService.extractEmailFromLicense(token);
+            log.info("Processing activation callback for user: {}", userEmail);
+            
+            // For now, just return success with activation URL
+            // In real implementation, this would trigger the activation flow
+            String activationUrl = "/api/license/activate/" + token;
+            
+            Map<String, Object> data = Map.of(
+                "activationUrl", activationUrl,
+                "message", "License ready for activation"
+            );
+            
+            return ResponseEntity.ok(ApiResponse.success(data, "Callback processed successfully"));
+            
+        } catch (Exception e) {
+            log.error("Failed to process activation callback: {}", e.getMessage(), e);
+            return ResponseEntity.badRequest()
+                .body(ApiResponse.<Map<String, Object>>error("Failed to process callback: " + e.getMessage()));
+        }
     }
 }
