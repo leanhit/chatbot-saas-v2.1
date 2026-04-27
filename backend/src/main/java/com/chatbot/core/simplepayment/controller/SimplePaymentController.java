@@ -18,12 +18,15 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.servlet.http.HttpServletRequest;
 import java.math.BigDecimal;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -60,6 +63,13 @@ public class SimplePaymentController {
             // Extract user ID and tenant ID from user details (simplified)
             Long userId = extractUserId(userDetails);
             Long tenantId = extractTenantId(httpRequest);
+
+            if (tenantId == null) {
+                log.warn("❌ User {} has no tenant assigned - cannot create deposit", userId);
+                Map<String, String> error = new HashMap<>();
+                error.put("error", "User has no tenant assigned. Please contact support.");
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(error);
+            }
 
             log.info("?? Deposit request - User ID: {}, Tenant ID: {}, Amount: {}", userId, tenantId, request.getAmount());
             log.info("?? Request headers: X-Tenant-Key = {}", httpRequest.getHeader("X-Tenant-Key"));
@@ -125,6 +135,11 @@ public class SimplePaymentController {
         try {
             Long userId = extractUserId(userDetails);
             Long tenantId = extractTenantId(httpRequest);
+
+            if (tenantId == null) {
+                log.info("User {} has no tenant assigned - returning empty payment history", userId);
+                return ResponseEntity.ok(Collections.emptyList());
+            }
 
             // SECURITY: Validate user has access to this tenant
             if (!tenantRepository.existsByUserIdAndTenantId(userId, tenantId)) {
@@ -297,13 +312,22 @@ public class SimplePaymentController {
             debug.put("authenticatedUser", userDetails.getUsername());
             debug.put("extractedUserId", userId);
             debug.put("requestedTenantId", tenantId);
-            debug.put("hasAccess", tenantRepository.existsByUserIdAndTenantId(userId, tenantId));
+            debug.put("hasTenant", tenantId != null);
+            
+            if (tenantId != null) {
+                debug.put("hasAccess", tenantRepository.existsByUserIdAndTenantId(userId, tenantId));
+            } else {
+                debug.put("hasAccess", false);
+                debug.put("message", "User has no tenant assigned");
+            }
             
             // Get tenant info
-            tenantRepository.findById(tenantId).ifPresent(tenant -> {
-                debug.put("tenantName", tenant.getName());
-                debug.put("tenantPackage", tenant.getCurrentPackageId());
-            });
+            if (tenantId != null) {
+                tenantRepository.findById(tenantId).ifPresent(tenant -> {
+                    debug.put("tenantName", tenant.getName());
+                    debug.put("tenantPackage", tenant.getCurrentPackageId());
+                });
+            }
             
         } catch (Exception e) {
             debug.put("error", e.getMessage());
@@ -330,6 +354,14 @@ public class SimplePaymentController {
             
             if (tenantId == null) {
                 tenantId = extractTenantId(httpRequest);
+            }
+            
+            if (tenantId == null) {
+                log.warn("❌ [DEPOSIT LIMITS] User {} has no tenant assigned", userId);
+                Map<String, Object> error = new HashMap<>();
+                error.put("error", "User has no tenant assigned");
+                error.put("message", "Please contact support to set up your tenant");
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(error);
             }
             
             log.info("🔍 [DEPOSIT LIMITS] Checking limits for user: {}, tenant: {}", userId, tenantId);
@@ -392,8 +424,9 @@ public class SimplePaymentController {
         
         // Fallback: get tenant from user
         try {
-            UserDetails userDetails = (UserDetails) request.getUserPrincipal();
-            if (userDetails != null) {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication != null && authentication.getPrincipal() instanceof UserDetails) {
+                UserDetails userDetails = (UserDetails) authentication.getPrincipal();
                 Long userId = extractUserId(userDetails);
                 Tenant tenant = tenantRepository.findByUserId(userId)
                         .orElseThrow(() -> new RuntimeException("No tenant found for user: " + userId));
@@ -404,7 +437,7 @@ public class SimplePaymentController {
             log.warn("Could not extract tenant ID from user: {}", e.getMessage());
         }
         
-        log.error("Tenant ID not found in context, header, or user");
-        throw new RuntimeException("Tenant ID not found in context or request");
+        log.warn("Tenant ID not found in context, header, or user - user may not have a tenant assigned");
+        return null;
     }
 }

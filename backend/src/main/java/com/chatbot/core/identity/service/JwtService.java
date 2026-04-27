@@ -9,13 +9,20 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
+import io.jsonwebtoken.security.SignatureException;
+import java.security.Key;
+import java.security.KeyFactory;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.security.spec.PKCS8EncodedKeySpec;
+import java.security.spec.X509EncodedKeySpec;
+import java.util.Base64;
 import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
-import java.security.Key;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -31,23 +38,84 @@ public class JwtService {
     @Value("${spring.security.jwt.expiration}")
     private long expirationTime;
 
-    private Key key;
+    @Value("${spring.security.jwt.algorithm:HS256}")
+    private String jwtAlgorithm;
+
+    @Value("${spring.security.jwt.rsa.private-key:}")
+    private String rsaPrivateKey;
+
+    @Value("${spring.security.jwt.rsa.public-key:}")
+    private String rsaPublicKey;
+
+    private Key hmacKey;
+    private PrivateKey privateKey;
+    private PublicKey publicKey;
     
     @Autowired(required = false)
     private TokenBlacklistService tokenBlacklistService;
 
     @PostConstruct
     public void init() {
-        this.key = Keys.hmacShaKeyFor(secretKey.getBytes());
+        try {
+            // Initialize HMAC key for HS256
+            this.hmacKey = Keys.hmacShaKeyFor(secretKey.getBytes());
+            
+            // Initialize RSA keys for RS256
+            if ("RS256".equals(jwtAlgorithm)) {
+                if (rsaPrivateKey == null || rsaPrivateKey.isEmpty()) {
+                    throw new IllegalArgumentException("RSA private key is required for RS256 algorithm");
+                }
+                if (rsaPublicKey == null || rsaPublicKey.isEmpty()) {
+                    throw new IllegalArgumentException("RSA public key is required for RS256 algorithm");
+                }
+                
+                KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+                
+                // Remove PEM headers and decode
+                String privateKeyPEM = rsaPrivateKey.replace("-----BEGIN PRIVATE KEY-----", "")
+                        .replace("-----END PRIVATE KEY-----", "")
+                        .replaceAll("\\s", "");
+                String publicKeyPEM = rsaPublicKey.replace("-----BEGIN PUBLIC KEY-----", "")
+                        .replace("-----END PUBLIC KEY-----", "")
+                        .replaceAll("\\s", "");
+                
+                PKCS8EncodedKeySpec privateSpec = new PKCS8EncodedKeySpec(Base64.getDecoder().decode(privateKeyPEM));
+                X509EncodedKeySpec publicSpec = new X509EncodedKeySpec(Base64.getDecoder().decode(publicKeyPEM));
+                
+                this.privateKey = keyFactory.generatePrivate(privateSpec);
+                this.publicKey = keyFactory.generatePublic(publicSpec);
+                
+                log.info("RSA keys initialized successfully for RS256 algorithm");
+            } else {
+                log.info("HMAC key initialized successfully for HS256 algorithm");
+            }
+        } catch (Exception e) {
+            log.error("Failed to initialize JWT keys: {}", e.getMessage(), e);
+            throw new RuntimeException("JWT key initialization failed", e);
+        }
     }
 
     public String generateToken(String email) {
-        return Jwts.builder()
-                .setSubject(email)
-                .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + expirationTime))
-                .signWith(key, SignatureAlgorithm.HS256)
-                .compact();
+        try {
+            if ("RS256".equals(jwtAlgorithm)) {
+                return Jwts.builder()
+                        .setSubject(email)
+                        .setIssuedAt(new Date())
+                        .setExpiration(new Date(System.currentTimeMillis() + expirationTime))
+                        .signWith(privateKey, SignatureAlgorithm.RS256)
+                        .compact();
+            } else {
+                return Jwts.builder()
+                        .setSubject(email)
+                        .setIssuedAt(new Date())
+                        .setExpiration(new Date(System.currentTimeMillis() + expirationTime))
+                        .signWith(hmacKey, SignatureAlgorithm.HS256)
+                        .compact();
+            }
+        } catch (Exception e) {
+            log.error("Token generation failed: {}", e.getMessage(), e);
+            throw new RuntimeException("Failed to generate token", e);
+        }
     }
 
     public boolean validateToken(String token, UserDetails userDetails) {
@@ -132,12 +200,24 @@ public class JwtService {
 
     private Claims getClaims(String token) {
         try {
-            return Jwts.parserBuilder()
-                    .setSigningKey(key)
-                    .build()
-                    .parseClaimsJws(token)
-                    .getBody();
+            if ("RS256".equals(jwtAlgorithm)) {
+                return Jwts.parserBuilder()
+                        .setSigningKey(publicKey)
+                        .build()
+                        .parseClaimsJws(token)
+                        .getBody();
+            } else {
+                return Jwts.parserBuilder()
+                        .setSigningKey(hmacKey)
+                        .build()
+                        .parseClaimsJws(token)
+                        .getBody();
+            }
+        } catch (SignatureException e) {
+            log.error("Invalid JWT signature: {}", e.getMessage());
+            throw new InvalidTokenException("Token signature is invalid", e);
         } catch (Exception e) {
+            log.error("Token parsing failed: {}", e.getMessage(), e);
             throw new InvalidTokenException("Token không hợp lệ hoặc đã hết hạn", e);
         }
     }
@@ -147,21 +227,54 @@ public class JwtService {
         return claimsResolver.apply(claims);
     }
 
-    // License JWT methods according to req.md
+    // License JWT methods according to req.md - Cloud only signing
     public String generateLicenseToken(String email, Long userId, Long expiration, 
                                      List<String> features, List<String> modules, 
                                      Map<String, Integer> limits) {
-        return Jwts.builder()
-                .setSubject(email)
-                .claim("sub", userId.toString()) // User ID as string for local app
-                .claim("email", email)
-                .claim("exp", expiration) // Unix timestamp for local app compatibility
-                .claim("features", features)
-                .claim("modules", modules)
-                .claim("limits", limits)
-                .setIssuedAt(new Date())
-                .signWith(key, SignatureAlgorithm.HS256)
-                .compact();
+        try {
+            if ("RS256".equals(jwtAlgorithm)) {
+                return Jwts.builder()
+                        .setSubject(email)
+                        .claim("sub", userId.toString()) // User ID as string for local app
+                        .claim("email", email)
+                        .claim("exp", expiration) // Unix timestamp for local app compatibility
+                        .claim("features", features)
+                        .claim("modules", modules)
+                        .claim("limits", limits)
+                        .claim("signed_by", "cloud") // Prevent client self-signing
+                        .setIssuedAt(new Date())
+                        .signWith(privateKey, SignatureAlgorithm.RS256)
+                        .compact();
+            } else {
+                return Jwts.builder()
+                        .setSubject(email)
+                        .claim("sub", userId.toString())
+                        .claim("email", email)
+                        .claim("exp", expiration)
+                        .claim("features", features)
+                        .claim("modules", modules)
+                        .claim("limits", limits)
+                        .claim("signed_by", "cloud") // Prevent client self-signing
+                        .setIssuedAt(new Date())
+                        .signWith(hmacKey, SignatureAlgorithm.HS256)
+                        .compact();
+            }
+        } catch (Exception e) {
+            log.error("License token generation failed: {}", e.getMessage(), e);
+            throw new RuntimeException("Failed to generate license token", e);
+        }
+    }
+
+    // Verify license was signed by cloud (prevent client self-signing)
+    public boolean verifyLicenseSignedByCloud(String token) {
+        try {
+            Claims claims = getClaims(token);
+            String signedBy = claims.get("signed_by", String.class);
+            return "cloud".equals(signedBy);
+        } catch (Exception e) {
+            log.error("License signature verification failed: {}", e.getMessage());
+            return false;
+        }
     }
 
     public String extractUserId(String token) {

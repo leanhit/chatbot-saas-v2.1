@@ -5,6 +5,7 @@ import com.chatbot.core.license.dto.LicenseResponse;
 import com.chatbot.core.license.dto.UpdateLicenseRequest;
 import com.chatbot.core.license.service.LicenseService;
 import com.chatbot.core.identity.security.CustomUserDetails;
+import com.chatbot.core.identity.service.JwtService;
 import com.chatbot.shared.dto.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -31,6 +32,7 @@ import java.util.List;
 public class LicenseController {
 
     private final LicenseService licenseService;
+    private final JwtService jwtService;
 
     @GetMapping("/me")
     @Operation(
@@ -44,34 +46,79 @@ public class LicenseController {
         }
     )
     public ResponseEntity<LicenseResponse> getMyLicense(
-            @Parameter(hidden = true) @AuthenticationPrincipal(expression = "user") CustomUserDetails currentUser) {
+            @Parameter(hidden = true) @AuthenticationPrincipal(expression = "user") CustomUserDetails currentUser,
+            @RequestHeader(value = "X-License-Token", required = false) String licenseToken) {
         
         Long userId = currentUser.getUser().getId();
         log.info("Fetching license for user: {}", userId);
         
-        LicenseResponse response = licenseService.getLicenseForUser(userId);
-        return ResponseEntity.ok(response);
+        try {
+            LicenseResponse response = licenseService.getLicenseForUser(userId);
+            
+            // If license token provided, verify it's signed by cloud
+            if (licenseToken != null && !licenseToken.isEmpty()) {
+                if (!jwtService.verifyLicenseSignedByCloud(licenseToken)) {
+                    log.warn("Invalid license token provided for user: {}", userId);
+                    return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+                }
+            }
+            
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            log.error("Failed to fetch license for user {}: {}", userId, e.getMessage(), e);
+            throw e;
+        }
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('CLOUD_SERVICE')")
     @Operation(
-        summary = "Create new license (Admin only)",
-        description = "Create a new license for a user. Only accessible by administrators.",
+        summary = "Create new license (Admin or Cloud Service only)",
+        description = "Create a new license for a user. Only accessible by administrators or cloud services.",
         responses = {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "201", description = "License created successfully",
                 content = @Content(schema = @Schema(implementation = LicenseResponse.class))),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Bad request - User already has active license"),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "Access denied - Admin role required")
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "Access denied - Admin or Cloud Service role required")
         }
     )
     public ResponseEntity<LicenseResponse> createLicense(
             @Parameter(description = "License creation details", required = true)
-            @Valid @RequestBody CreateLicenseRequest request) {
+            @Valid @RequestBody CreateLicenseRequest request,
+            @Parameter(hidden = true) @AuthenticationPrincipal(expression = "user") CustomUserDetails currentUser) {
         
-        log.info("Creating license for user: {} by admin", request.getUserId());
-        LicenseResponse response = licenseService.createLicense(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        // Additional validation: Only cloud service can create licenses with specific features
+        if (request.getFeatures() != null && !request.getFeatures().isEmpty()) {
+            // Verify this is a cloud service operation
+            boolean isCloudService = currentUser.getAuthorities().stream()
+                .anyMatch(auth -> "ROLE_CLOUD_SERVICE".equals(auth.getAuthority()));
+            
+            if (!isCloudService) {
+                log.warn("Non-cloud service user {} attempted to create license with features: {}", 
+                    currentUser.getUser().getEmail(), request.getFeatures());
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .build();
+            }
+        }
+        
+        log.info("Creating license for user: {} by {}", request.getUserId(), 
+            currentUser.getUser().getEmail());
+        
+        try {
+            LicenseResponse response = licenseService.createLicense(request);
+            
+            // Verify license was properly signed by cloud
+            if (response.getExp() != null && !jwtService.verifyLicenseSignedByCloud(response.toString())) {
+                log.error("License creation failed - invalid signature for user: {}", request.getUserId());
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .build();
+            }
+            
+            return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        } catch (Exception e) {
+            log.error("License creation failed for user {}: {}", request.getUserId(), e.getMessage(), e);
+            return ResponseEntity.badRequest().build();
+        }
     }
 
     @PutMapping("/{licenseId}")
