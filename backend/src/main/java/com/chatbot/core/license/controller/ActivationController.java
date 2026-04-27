@@ -14,6 +14,6 @@ public class ActivationController {
 
     @GetMapping("/")
     public String homePage() {
-        return "forward:/activate.html";
+        return "forward:/activation-saas.html";
     }
 }

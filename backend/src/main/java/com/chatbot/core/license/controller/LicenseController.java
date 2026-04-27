@@ -332,6 +332,87 @@ public class LicenseController {
         }
     }
 
+    @PostMapping("/generate-token")
+    @Operation(
+        summary = "Generate activation token for user",
+        description = "Generate JWT activation token for user to activate license on local app",
+        responses = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Activation token generated successfully"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "User already has active license"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "Access denied")
+        }
+    )
+    public ResponseEntity<ApiResponse<Map<String, Object>>> generateActivationToken(
+            @Parameter(hidden = true) @AuthenticationPrincipal(expression = "user") CustomUserDetails currentUser,
+            @Parameter(description = "License configuration", required = false)
+            @RequestBody(required = false) Map<String, Object> licenseConfig) {
+        
+        Long userId = currentUser.getUser().getId();
+        String userEmail = currentUser.getUser().getEmail();
+        
+        log.info("Generating activation token for user: {} (ID: {})", userEmail, userId);
+        
+        try {
+            // Check if user already has active license
+            if (licenseService.hasActiveLicense(userId)) {
+                log.warn("User {} already has active license", userId);
+                return ResponseEntity.badRequest()
+                    .body(ApiResponse.<Map<String, Object>>error("User already has active license"));
+            }
+            
+            // Default license configuration
+            List<String> features = licenseConfig != null && licenseConfig.containsKey("features") 
+                ? (List<String>) licenseConfig.get("features")
+                : List.of("facebook", "zalo");
+                
+            List<String> modules = licenseConfig != null && licenseConfig.containsKey("modules")
+                ? (List<String>) licenseConfig.get("modules") 
+                : List.of("reengage", "ai-reply");
+                
+            Map<String, Integer> limits = licenseConfig != null && licenseConfig.containsKey("limits")
+                ? (Map<String, Integer>) licenseConfig.get("limits")
+                : Map.of("bots", 2, "storage", 1000);
+            
+            // Generate expiration (30 days from now)
+            Long expiration = System.currentTimeMillis() / 1000 + (86400 * 30);
+            
+            // Generate JWT activation token
+            String token = jwtService.generateLicenseToken(
+                userEmail, userId, expiration, features, modules, limits
+            );
+            
+            // Create redirect URL to local app
+            String redirectUrl = String.format("http://localhost:1717/callback?token=%s", token);
+            
+            Map<String, Object> response = Map.of(
+                "token", token,
+                "redirectUrl", redirectUrl,
+                "expiresAt", expiration,
+                "features", features,
+                "modules", modules,
+                "limits", limits,
+                "message", "Activation token generated successfully"
+            );
+            
+            log.info("Activation token generated for user: {}, redirect: {}", userEmail, redirectUrl);
+            return ResponseEntity.ok(ApiResponse.success(response, "Token generated successfully"));
+            
+        } catch (Exception e) {
+            log.error("Failed to generate activation token for user {}: {}", userId, e.getMessage(), e);
+            return ResponseEntity.badRequest()
+                .body(ApiResponse.<Map<String, Object>>error("Failed to generate token: " + e.getMessage()));
+        }
+    }
+
+    @GetMapping("/activate-saas")
+    @Operation(
+        summary = "SaaS activation page",
+        description = "Page for users to generate activation tokens for local app"
+    )
+    public String activationPage() {
+        return "forward:/activation-saas.html";
+    }
+
     @PostMapping("/callback")
     @Operation(
         summary = "License activation callback",

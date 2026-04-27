@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>License Activation - ChatBot SaaS</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .container {
+            background: white;
+            border-radius: 12px;
+            padding: 40px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            max-width: 600px;
+            width: 100%;
+            text-align: center;
+        }
+        .logo {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+        .title {
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 1.5em;
+        }
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+            line-height: 1.6;
+        }
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 500;
+        }
+        select, input[type="number"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+            box-sizing: border-box;
+        }
+        select:focus, input[type="number"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        .checkbox-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .checkbox-item:hover {
+            border-color: #667eea;
+            background: #f8f9ff;
+        }
+        .checkbox-item input[type="checkbox"] {
+            margin-right: 8px;
+            width: 18px;
+            height: 18px;
+        }
+        .checkbox-item.selected {
+            border-color: #667eea;
+            background: #f0f4ff;
+        }
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+            width: 100%;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .loading {
+            display: none;
+            margin-top: 20px;
+            color: #667eea;
+        }
+        .error {
+            background: #fee;
+            color: #c33;
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        .success {
+            background: #efe;
+            color: #3c3;
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        .info {
+            background: #e3f2fd;
+            color: #1976d2;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+        .flow-diagram {
+            background: #f8f9ff;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 30px;
+            text-align: left;
+        }
+        .flow-step {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+        .flow-number {
+            background: #667eea;
+            color: white;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 10px;
+            font-weight: bold;
+            font-size: 12px;
+        }
+        .result {
+            background: #f8f9ff;
+            border: 2px solid #667eea;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+            display: none;
+        }
+        .result h3 {
+            color: #667eea;
+            margin-top: 0;
+        }
+        .result-item {
+            margin-bottom: 10px;
+            text-align: left;
+        }
+        .result-item strong {
+            color: #333;
+            display: inline-block;
+            width: 120px;
+        }
+        .redirect-btn {
+            background: #4caf50;
+            color: white;
+            text-decoration: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            display: inline-block;
+            margin-top: 15px;
+            transition: background 0.3s;
+        }
+        .redirect-btn:hover {
+            background: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">🤖 ChatBot</div>
+        <h1 class="title">License Activation</h1>
+        <p class="subtitle">Generate activation token for your local ChatBot app</p>
+        
+        <div class="flow-diagram">
+            <div class="flow-step">
+                <div class="flow-number">1</div>
+                <span>Click "Generate Token" below</span>
+            </div>
+            <div class="flow-step">
+                <div class="flow-number">2</div>
+                <span>Copy the activation token</span>
+            </div>
+            <div class="flow-step">
+                <div class="flow-number">3</div>
+                <span>Open your local ChatBot app</span>
+            </div>
+            <div class="flow-step">
+                <div class="flow-number">4</div>
+                <span>App will redirect to localhost:1717 with token</span>
+            </div>
+            <div class="flow-step">
+                <div class="flow-number">5</div>
+                <span>License activated automatically! 🎉</span>
+            </div>
+        </div>
+
+        <div class="error" id="error"></div>
+        <div class="success" id="success"></div>
+        
+        <form id="tokenForm">
+            <div class="form-group">
+                <label>📦 License Features:</label>
+                <div class="checkbox-group">
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="facebook" name="features" value="facebook" checked>
+                        <label for="facebook">📘 Facebook</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="zalo" name="features" value="zalo" checked>
+                        <label for="zalo">💬 Zalo</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="tiktok" name="features" value="tiktok">
+                        <label for="tiktok">🎵 TikTok</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="instagram" name="features" value="instagram">
+                        <label for="instagram">📷 Instagram</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>⚙️ Modules:</label>
+                <div class="checkbox-group">
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="reengage" name="modules" value="reengage" checked>
+                        <label for="reengage">🔄 Re-engage</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="ai-reply" name="modules" value="ai-reply" checked>
+                        <label for="ai-reply">🤖 AI Reply</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="analytics" name="modules" value="analytics">
+                        <label for="analytics">📊 Analytics</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="broadcast" name="modules" value="broadcast">
+                        <label for="broadcast">📢 Broadcast</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="bots">🤖 Maximum Bots:</label>
+                <input type="number" id="bots" name="bots" value="2" min="1" max="10">
+            </div>
+
+            <div class="form-group">
+                <label for="storage">💾 Storage (MB):</label>
+                <input type="number" id="storage" name="storage" value="1000" min="100" max="10000" step="100">
+            </div>
+            
+            <button type="submit" class="btn" id="generateBtn">
+                🚀 Generate Activation Token
+            </button>
+            
+            <div class="loading" id="loading">
+                ⏳ Generating activation token...
+            </div>
+        </form>
+
+        <div class="result" id="result">
+            <h3>✅ Activation Token Generated!</h3>
+            <div class="result-item">
+                <strong>Token:</strong>
+                <div style="word-break: break-all; font-family: monospace; background: #f5f5f5; padding: 10px; border-radius: 4px; margin-top: 5px;" id="tokenDisplay"></div>
+            </div>
+            <div class="result-item">
+                <strong>Expires:</strong>
+                <span id="expiresDisplay"></span>
+            </div>
+            <div class="result-item">
+                <strong>Features:</strong>
+                <span id="featuresDisplay"></span>
+            </div>
+            <div class="result-item">
+                <strong>Modules:</strong>
+                <span id="modulesDisplay"></span>
+            </div>
+            <div class="result-item">
+                <strong>Limits:</strong>
+                <span id="limitsDisplay"></span>
+            </div>
+            <div class="result-item">
+                <strong>Redirect URL:</strong>
+                <div style="word-break: break-all; font-family: monospace; background: #f5f5f5; padding: 10px; border-radius: 4px; margin-top: 5px;" id="redirectDisplay"></div>
+            </div>
+            <a href="#" class="redirect-btn" id="redirectBtn" target="_blank">
+                🚀 Open Local App
+            </a>
+        </div>
+    </div>
+
+    <script>
+        const form = document.getElementById('tokenForm');
+        const generateBtn = document.getElementById('generateBtn');
+        const loading = document.getElementById('loading');
+        const error = document.getElementById('error');
+        const success = document.getElementById('success');
+        const result = document.getElementById('result');
+
+        // Checkbox styling
+        document.querySelectorAll('.checkbox-item').forEach(item => {
+            item.addEventListener('click', function() {
+                const checkbox = this.querySelector('input[type="checkbox"]');
+                checkbox.checked = !checkbox.checked;
+                this.classList.toggle('selected', checkbox.checked);
+            });
+            
+            // Initialize selected state
+            const checkbox = item.querySelector('input[type="checkbox"]');
+            item.classList.toggle('selected', checkbox.checked);
+        });
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            // Collect form data
+            const features = Array.from(document.querySelectorAll('input[name="features"]:checked'))
+                .map(cb => cb.value);
+            const modules = Array.from(document.querySelectorAll('input[name="modules"]:checked'))
+                .map(cb => cb.value);
+            const bots = parseInt(document.getElementById('bots').value);
+            const storage = parseInt(document.getElementById('storage').value);
+
+            if (features.length === 0) {
+                showError('Please select at least one feature');
+                return;
+            }
+
+            if (modules.length === 0) {
+                showError('Please select at least one module');
+                return;
+            }
+
+            const licenseConfig = {
+                features: features,
+                modules: modules,
+                limits: {
+                    bots: bots,
+                    storage: storage
+                }
+            };
+
+            setLoading(true);
+            hideMessages();
+
+            try {
+                const response = await fetch('/api/license/generate-token', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + getAuthToken()
+                    },
+                    body: JSON.stringify(licenseConfig)
+                });
+
+                const result_data = await response.json();
+
+                if (response.ok) {
+                    showResult(result_data.data);
+                    generateBtn.textContent = '✅ Token Generated';
+                    generateBtn.disabled = true;
+                } else {
+                    showError(result_data.message || 'Failed to generate token');
+                }
+            } catch (err) {
+                showError('Error: ' + err.message);
+            } finally {
+                setLoading(false);
+            }
+        });
+
+        function getAuthToken() {
+            // Get token from localStorage or cookie
+            return localStorage.getItem('authToken') || getCookie('authToken');
+        }
+
+        function getCookie(name) {
+            const value = "; " + document.cookie;
+            const parts = value.split("; " + name + "=");
+            if (parts.length == 2) return parts.pop().split(";").shift();
+        }
+
+        function showResult(data) {
+            document.getElementById('tokenDisplay').textContent = data.token;
+            document.getElementById('redirectDisplay').textContent = data.redirectUrl;
+            document.getElementById('expiresDisplay').textContent = new Date(data.expiresAt * 1000).toLocaleString();
+            document.getElementById('featuresDisplay').textContent = data.features.join(', ');
+            document.getElementById('modulesDisplay').textContent = data.modules.join(', ');
+            document.getElementById('limitsDisplay').textContent = `Bots: ${data.limits.bots}, Storage: ${data.limits.storage}MB`;
+            
+            document.getElementById('redirectBtn').href = data.redirectUrl;
+            
+            result.style.display = 'block';
+            success.textContent = '✅ ' + data.message;
+            success.style.display = 'block';
+        }
+
+        function setLoading(isLoading) {
+            if (isLoading) {
+                generateBtn.disabled = true;
+                loading.style.display = 'block';
+            } else {
+                generateBtn.disabled = false;
+                loading.style.display = 'none';
+            }
+        }
+
+        function showError(message) {
+            error.textContent = '❌ ' + message;
+            error.style.display = 'block';
+        }
+
+        function showSuccess(message) {
+            success.textContent = '✅ ' + message;
+            success.style.display = 'block';
+        }
+
+        function hideMessages() {
+            error.style.display = 'none';
+            success.style.display = 'none';
+        }
+    </script>
+</body>
+</html>
