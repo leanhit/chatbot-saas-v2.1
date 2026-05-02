@@ -1,0 +1,342 @@
+[
+  {
+    "code": "91",
+    "name": "An Giang",
+    "nameEn": "An Giang",
+    "fullName": "Tỉnh An Giang",
+    "fullNameEn": "An Giang Province",
+    "codeName": "an-giang",
+    "administrativeUnit": "Tỉnh",
+    "region": "Miền Nam"
+  },
+  {
+    "code": "24",
+    "name": "Bắc Ninh",
+    "nameEn": "Bac Ninh",
+    "fullName": "Tỉnh Bắc Ninh",
+    "fullNameEn": "Bắc Ninh Province",
+    "codeName": "bac-ninh",
+    "administrativeUnit": "Tỉnh",
+    "region": "Miền Bắc"
+  },
+  {
+    "code": "96",
+    "name": "Cà Mau",
+    "nameEn": "Ca Mau",
+    "fullName": "Tỉnh Cà Mau",
+    "fullNameEn": "Cà Mau Province",
+    "codeName": "ca-mau",
+    "administrativeUnit": "Tỉnh",
+    "region": "Miền Nam"
+  },
+  {
+    "code": "92",
+    "name": "Cần Thơ",
+    "nameEn": "Can Tho",
+    "fullName": "Thành phố Cần Thơ",
+    "fullNameEn": "Cần Thơ Province",
+    "codeName": "can-tho",
+    "administrativeUnit": "Thành phố",
+    "region": "Miền Nam"
+  },
+  {
+    "code": "04",
+    "name": "Cao Bằng",
+    "nameEn": "Cao Bang",
+    "fullName": "Tỉnh Cao Bằng",
+    "fullNameEn": "Cao Bằng Province",
+    "codeName": "cao-bang",
+    "administrativeUnit": "Tỉnh",
+    "region": "Miền Bắc"
+  },
+  {
+    "code": "48",
+    "name": "Đà Nẵng",
+    "nameEn": "Da Nang",
+    "fullName": "Thành phố Đà Nẵng",
+    "fullNameEn": "Đà Nẵng Province",
+    "codeName": "da-nang",
+    "administrativeUnit": "Thành phố",
+    "region": "Miền Trung"
+  },
+  {
+    "code": "66",
+    "name": "Đắk Lắk",
+    "nameEn": "Dak Lak",
+    "fullName": "Tỉnh Đắk Lắk",
+    "fullNameEn": "Đắk Lắk Province",
+    "codeName": "dak-lak",
+    "administrativeUnit": "Tỉnh",
+    "region": "Miền Trung"
+  },
+  {
+    "code": "11",
+    "name": "Điện Biên",
+    "nameEn": "Dien Bien",
+    "fullName": "Tỉnh Điện Biên",
+    "fullNameEn": "Điện Biên Province",
+    "codeName": "dien-bien",
+    "administrativeUnit": "Tỉnh",
+    "region": "Miền Bắc"
+  },
+  {
+    "code": "75",
+    "name": "Đồng Nai",
+    "nameEn": "Dong Nai",
+    "fullName": "Thành phố Đồng Nai",
+    "fullNameEn": "Đồng Nai Province",
+    "codeName": "dong-nai",
+    "administrativeUnit": "Thành phố",
+    "region": "Miền Nam"
+  },
+  {
+    "code": "82",
+    "name": "Đồng Tháp",
+    "nameEn": "Dong Thap",
+    "fullName": "Tỉnh Đồng Tháp",
+    "fullNameEn": "Đồng Tháp Province",
+    "codeName": "dong-thap",
+    "administrativeUnit": "Tỉnh",
+    "region": "Miền Nam"
+  },
+  {
+    "code": "52",
+    "name": "Gia Lai",
+    "nameEn": "Gia Lai",
+    "fullName": "Tỉnh Gia Lai",
+    "fullNameEn": "Gia Lai Province",
+    "codeName": "gia-lai",
+    "administrativeUnit": "Tỉnh",
+    "region": "Miền Trung"
+  },
+  {
+    "code": "01",
+    "name": "Hà Nội",
+    "nameEn": "Ha Noi",
+    "fullName": "Thủ Đô Hà Nội",
+    "fullNameEn": "Thủ Đô Hà Nội Province",
+    "codeName": "ha-noi",
+    "administrativeUnit": "Thành phố",
+    "region": "Miền Bắc"
+  },
+  {
+    "code": "42",
+    "name": "Hà Tĩnh",
+    "nameEn": "Ha Tinh",
+    "fullName": "Tỉnh Hà Tĩnh",
+    "fullNameEn": "Hà Tĩnh Province",
+    "codeName": "ha-tinh",
+    "administrativeUnit": "Tỉnh",
+    "region": "Miền Trung"
+  },
+  {
+    "code": "31",
+    "name": "Hải Phòng",
+    "nameEn": "Hai Phong",
+    "fullName": "Thành phố Hải Phòng",
+    "fullNameEn": "Hải Phòng Province",
+    "codeName": "hai-phong",
+    "administrativeUnit": "Thành phố",
+    "region": "Miền Bắc"
+  },
+  {
+    "code": "79",
+    "name": "Hồ Chí Minh",
+    "nameEn": "Ho Chi Minh",
+    "fullName": "Thành phố Hồ Chí Minh",
+    "fullNameEn": "Hồ Chí Minh Province",
+    "codeName": "ho-chi-minh",
+    "administrativeUnit": "Thành phố",
+    "region": "Miền Nam"
+  },
+  {
+    "code": "46",
+    "name": "Huế",
+    "nameEn": "Hue",
+    "fullName": "Thành phố Huế",
+    "fullNameEn": "Huế Province",
+    "codeName": "hue",
+    "administrativeUnit": "Thành phố",
+    "region": "Miền Trung"
+  },
+  {
+    "code": "33",
+    "name": "Hưng Yên",
+    "nameEn": "Hung Yen",
+    "fullName": "Tỉnh Hưng Yên",
+    "fullNameEn": "Hưng Yên Province",
+    "codeName": "hung-yen",
+    "administrativeUnit": "Tỉnh",
+    "region": "Miền Bắc"
+  },
+  {
+    "code": "56",
+    "name": "Khánh Hòa",
+    "nameEn": "Khanh Hoa",
+    "fullName": "Tỉnh Khánh Hòa",
+    "fullNameEn": "Khánh Hòa Province",
+    "codeName": "khanh-hoa",
+    "administrativeUnit": "Tỉnh",
+    "region": "Miền Trung"
+  },
+  {
+    "code": "12",
+    "name": "Lai Châu",
+    "nameEn": "Lai Chau",
+    "fullName": "Tỉnh Lai Châu",
+    "fullNameEn": "Lai Châu Province",
+    "codeName": "lai-chau",
+    "administrativeUnit": "Tỉnh",
+    "region": "Miền Bắc"
+  },
+  {
+    "code": "68",
+    "name": "Lâm Đồng",
+    "nameEn": "Lam Dong",
+    "fullName": "Tỉnh Lâm Đồng",
+    "fullNameEn": "Lâm Đồng Province",
+    "codeName": "lam-dong",
+    "administrativeUnit": "Tỉnh",
+    "region": "Miền Trung"
+  },
+  {
+    "code": "20",
+    "name": "Lạng Sơn",
+    "nameEn": "Lang Son",
+    "fullName": "Tỉnh Lạng Sơn",
+    "fullNameEn": "Lạng Sơn Province",
+    "codeName": "lang-son",
+    "administrativeUnit": "Tỉnh",
+    "region": "Miền Bắc"
+  },
+  {
+    "code": "15",
+    "name": "Lào Cai",
+    "nameEn": "Lao Cai",
+    "fullName": "Tỉnh Lào Cai",
+    "fullNameEn": "Lào Cai Province",
+    "codeName": "lao-cai",
+    "administrativeUnit": "Tỉnh",
+    "region": "Miền Bắc"
+  },
+  {
+    "code": "40",
+    "name": "Nghệ An",
+    "nameEn": "Nghe An",
+    "fullName": "Tỉnh Nghệ An",
+    "fullNameEn": "Nghệ An Province",
+    "codeName": "nghe-an",
+    "administrativeUnit": "Tỉnh",
+    "region": "Miền Trung"
+  },
+  {
+    "code": "37",
+    "name": "Ninh Bình",
+    "nameEn": "Ninh Binh",
+    "fullName": "Tỉnh Ninh Bình",
+    "fullNameEn": "Ninh Bình Province",
+    "codeName": "ninh-binh",
+    "administrativeUnit": "Tỉnh",
+    "region": "Miền Bắc"
+  },
+  {
+    "code": "25",
+    "name": "Phú Thọ",
+    "nameEn": "Phu Tho",
+    "fullName": "Tỉnh Phú Thọ",
+    "fullNameEn": "Phú Thọ Province",
+    "codeName": "phu-tho",
+    "administrativeUnit": "Tỉnh",
+    "region": "Miền Bắc"
+  },
+  {
+    "code": "51",
+    "name": "Quảng Ngãi",
+    "nameEn": "Quang Ngai",
+    "fullName": "Tỉnh Quảng Ngãi",
+    "fullNameEn": "Quảng Ngãi Province",
+    "codeName": "quang-ngai",
+    "administrativeUnit": "Tỉnh",
+    "region": "Miền Trung"
+  },
+  {
+    "code": "22",
+    "name": "Quảng Ninh",
+    "nameEn": "Quang Ninh",
+    "fullName": "Tỉnh Quảng Ninh",
+    "fullNameEn": "Quảng Ninh Province",
+    "codeName": "quang-ninh",
+    "administrativeUnit": "Tỉnh",
+    "region": "Miền Bắc"
+  },
+  {
+    "code": "44",
+    "name": "Quảng Trị",
+    "nameEn": "Quang Tri",
+    "fullName": "Tỉnh Quảng Trị",
+    "fullNameEn": "Quảng Trị Province",
+    "codeName": "quang-tri",
+    "administrativeUnit": "Tỉnh",
+    "region": "Miền Trung"
+  },
+  {
+    "code": "14",
+    "name": "Sơn La",
+    "nameEn": "Son La",
+    "fullName": "Tỉnh Sơn La",
+    "fullNameEn": "Sơn La Province",
+    "codeName": "son-la",
+    "administrativeUnit": "Tỉnh",
+    "region": "Miền Bắc"
+  },
+  {
+    "code": "80",
+    "name": "Tây Ninh",
+    "nameEn": "Tay Ninh",
+    "fullName": "Tỉnh Tây Ninh",
+    "fullNameEn": "Tây Ninh Province",
+    "codeName": "tay-ninh",
+    "administrativeUnit": "Tỉnh",
+    "region": "Miền Nam"
+  },
+  {
+    "code": "19",
+    "name": "Thái Nguyên",
+    "nameEn": "Thai Nguyen",
+    "fullName": "Tỉnh Thái Nguyên",
+    "fullNameEn": "Thái Nguyên Province",
+    "codeName": "thai-nguyen",
+    "administrativeUnit": "Tỉnh",
+    "region": "Miền Bắc"
+  },
+  {
+    "code": "38",
+    "name": "Thanh Hóa",
+    "nameEn": "Thanh Hoa",
+    "fullName": "Tỉnh Thanh Hóa",
+    "fullNameEn": "Thanh Hóa Province",
+    "codeName": "thanh-hoa",
+    "administrativeUnit": "Tỉnh",
+    "region": "Miền Trung"
+  },
+  {
+    "code": "08",
+    "name": "Tuyên Quang",
+    "nameEn": "Tuyen Quang",
+    "fullName": "Tỉnh Tuyên Quang",
+    "fullNameEn": "Tuyên Quang Province",
+    "codeName": "tuyen-quang",
+    "administrativeUnit": "Tỉnh",
+    "region": "Miền Bắc"
+  },
+  {
+    "code": "86",
+    "name": "Vĩnh Long",
+    "nameEn": "Vinh Long",
+    "fullName": "Tỉnh Vĩnh Long",
+    "fullNameEn": "Vĩnh Long Province",
+    "codeName": "vinh-long",
+    "administrativeUnit": "Tỉnh",
+    "region": "Miền Nam"
+  }
+]

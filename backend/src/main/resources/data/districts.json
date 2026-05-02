@@ -1,0 +1,4012 @@
+[
+  {
+    "code": "911",
+    "name": "Huyện An Biên",
+    "nameEn": "An Bien",
+    "fullName": "Huyện An Biên",
+    "fullNameEn": "An Bien District",
+    "codeName": "an-bien",
+    "provinceCode": "91",
+    "administrativeUnit": "Huyện"
+  },
+  {
+    "code": "912",
+    "name": "Huyện Châu Thành",
+    "nameEn": "Chau Thanh",
+    "fullName": "Huyện Châu Thành",
+    "fullNameEn": "Chau Thanh District",
+    "codeName": "chau-thanh",
+    "provinceCode": "91",
+    "administrativeUnit": "Huyện"
+  },
+  {
+    "code": "913",
+    "name": "Huyện Châu Phú",
+    "nameEn": "Chau Phu",
+    "fullName": "Huyện Châu Phú",
+    "fullNameEn": "Chau Phu District",
+    "codeName": "chau-phu",
+    "provinceCode": "91",
+    "administrativeUnit": "Huyện"
+  },
+  {
+    "code": "914",
+    "name": "Thị xã Tịnh Biên",
+    "nameEn": "Tinh Bien",
+    "fullName": "Thị xã Tịnh Biên",
+    "fullNameEn": "Tinh Bien Town",
+    "codeName": "tinh-bien",
+    "provinceCode": "91",
+    "administrativeUnit": "Thị xã"
+  },
+  {
+    "code": "915",
+    "name": "Huyện An Minh",
+    "nameEn": "An Minh",
+    "fullName": "Huyện An Minh",
+    "fullNameEn": "An Minh District",
+    "codeName": "an-minh",
+    "provinceCode": "91",
+    "administrativeUnit": "Huyện"
+  },
+  {
+    "code": "916",
+    "name": "Huyện An Phú",
+    "nameEn": "An Phu",
+    "fullName": "Huyện An Phú",
+    "fullNameEn": "An Phu District",
+    "codeName": "an-phu",
+    "provinceCode": "91",
+    "administrativeUnit": "Huyện"
+  },
+  {
+    "code": "917",
+    "name": "Huyện Tri Tôn",
+    "nameEn": "Tri Ton",
+    "fullName": "Huyện Tri Tôn",
+    "fullNameEn": "Tri Ton District",
+    "codeName": "tri-ton",
+    "provinceCode": "91",
+    "administrativeUnit": "Huyện"
+  },
+  {
+    "code": "918",
+    "name": "Thành phố Long Xuyên",
+    "nameEn": "Long Xuyen",
+    "fullName": "Thành phố Long Xuyên",
+    "fullNameEn": "Long Xuyen City",
+    "codeName": "long-xuyen",
+    "provinceCode": "91",
+    "administrativeUnit": "Thành phố"
+  },
+  {
+    "code": "919",
+    "name": "Huyện Hòn Đất",
+    "nameEn": "Hon Dat",
+    "fullName": "Huyện Hòn Đất",
+    "fullNameEn": "Hon Dat District",
+    "codeName": "hon-dat",
+    "provinceCode": "91",
+    "administrativeUnit": "Huyện"
+  },
+  {
+    "code": "921",
+    "name": "Huyện Phú Tân",
+    "nameEn": "Phu Tan",
+    "fullName": "Huyện Phú Tân",
+    "fullNameEn": "Phu Tan District",
+    "codeName": "phu-tan",
+    "provinceCode": "91",
+    "administrativeUnit": "Huyện"
+  },
+  {
+    "code": "922",
+    "name": "Thành phố Châu Đốc",
+    "nameEn": "Chau Doc",
+    "fullName": "Thành phố Châu Đốc",
+    "fullNameEn": "Chau Doc City",
+    "codeName": "chau-doc",
+    "provinceCode": "91",
+    "administrativeUnit": "Thành phố"
+  },
+  {
+    "code": "923",
+    "name": "Thị xã Tân Châu",
+    "nameEn": "Tan Chau",
+    "fullName": "Thị xã Tân Châu",
+    "fullNameEn": "Tan Chau Town",
+    "codeName": "tan-chau",
+    "provinceCode": "91",
+    "administrativeUnit": "Thị xã"
+  },
+  {
+    "code": "924",
+    "name": "Huyện Chợ Mới",
+    "nameEn": "Cho Moi",
+    "fullName": "Huyện Chợ Mới",
+    "fullNameEn": "Chợ Mới District",
+    "codeName": "cho-moi",
+    "provinceCode": "91",
+    "administrativeUnit": "Huyện"
+  },
+  {
+    "code": "2401",
+    "name": "Thành phố Bắc 1",
+    "nameEn": "Bắc 1",
+    "fullName": "Thành phố Bắc 1",
+    "fullNameEn": "Bắc 1 District",
+    "codeName": "bắc-1",
+    "provinceCode": "24",
+    "administrativeUnit": "Thành phố"
+  },
+  {
+    "code": "2402",
+    "name": "Huyện Nam 2",
+    "nameEn": "Nam 2",
+    "fullName": "Huyện Nam 2",
+    "fullNameEn": "Nam 2 District",
+    "codeName": "nam-2",
+    "provinceCode": "24",
+    "administrativeUnit": "Huyện"
+  },
+  {
+    "code": "2403",
+    "name": "Thành phố Đông 3",
+    "nameEn": "Đông 3",
+    "fullName": "Thành phố Đông 3",
+    "fullNameEn": "Đông 3 District",
+    "codeName": "đông-3",
+    "provinceCode": "24",
+    "administrativeUnit": "Thành phố"
+  },
+  {
+    "code": "2404",
+    "name": "Quận Tây 4",
+    "nameEn": "Tây 4",
+    "fullName": "Quận Tây 4",
+    "fullNameEn": "Tây 4 District",
+    "codeName": "tây-4",
+    "provinceCode": "24",
+    "administrativeUnit": "Quận"
+  },
+  {
+    "code": "2405",
+    "name": "Thị xã Gia 5",
+    "nameEn": "Gia 5",
+    "fullName": "Thị xã Gia 5",
+    "fullNameEn": "Gia 5 District",
+    "codeName": "gia-5",
+    "provinceCode": "24",
+    "administrativeUnit": "Thị xã"
+  },
+  {
+    "code": "2406",
+    "name": "Huyện Lâm 6",
+    "nameEn": "Lâm 6",
+    "fullName": "Huyện Lâm 6",
+    "fullNameEn": "Lâm 6 District",
+    "codeName": "lâm-6",
+    "provinceCode": "24",
+    "administrativeUnit": "Huyện"
+  },
+  {
+    "code": "2407",
+    "name": "Thành phố Sơn 7",
+    "nameEn": "Sơn 7",
+    "fullName": "Thành phố Sơn 7",
+    "fullNameEn": "Sơn 7 District",
+    "codeName": "sơn-7",
+    "provinceCode": "24",
+    "administrativeUnit": "Thành phố"
+  },
+  {
+    "code": "2408",
+    "name": "Huyện Thành 8",
+    "nameEn": "Thành 8",
+    "fullName": "Huyện Thành 8",
+    "fullNameEn": "Thành 8 District",
+    "codeName": "thành-8",
+    "provinceCode": "24",
+    "administrativeUnit": "Huyện"
+  },
+  {
+    "code": "2409",
+    "name": "Thành phố Việt 9",
+    "nameEn": "Việt 9",
+    "fullName": "Thành phố Việt 9",
+    "fullNameEn": "Việt 9 District",
+    "codeName": "việt-9",
+    "provinceCode": "24",
+    "administrativeUnit": "Thành phố"
+  },
+  {
+    "code": "2410",
+    "name": "Huyện Yên 10",
+    "nameEn": "Yên 10",
+    "fullName": "Huyện Yên 10",
+    "fullNameEn": "Yên 10 District",
+    "codeName": "yên-10",
+    "provinceCode": "24",
+    "administrativeUnit": "Huyện"
+  },
+  {
+    "code": "2411",
+    "name": "Thị xã Bắc 11",
+    "nameEn": "Bắc 11",
+    "fullName": "Thị xã Bắc 11",
+    "fullNameEn": "Bắc 11 District",
+    "codeName": "bắc-11",
+    "provinceCode": "24",
+    "administrativeUnit": "Thị xã"
+  },
+  {
+    "code": "2412",
+    "name": "Thành phố Nam 12",
+    "nameEn": "Nam 12",
+    "fullName": "Thành phố Nam 12",
+    "fullNameEn": "Nam 12 District",
+    "codeName": "nam-12",
+    "provinceCode": "24",
+    "administrativeUnit": "Thành phố"
+  },
+  {
+    "code": "9601",
+    "name": "Thị xã Bắc 1",
+    "nameEn": "Bắc 1",
+    "fullName": "Thị xã Bắc 1",
+    "fullNameEn": "Bắc 1 District",
+    "codeName": "bắc-1",
+    "provinceCode": "96",
+    "administrativeUnit": "Thị xã"
+  },
+  {
+    "code": "9602",
+    "name": "Thành phố Nam 2",
+    "nameEn": "Nam 2",
+    "fullName": "Thành phố Nam 2",
+    "fullNameEn": "Nam 2 District",
+    "codeName": "nam-2",
+    "provinceCode": "96",
+    "administrativeUnit": "Thành phố"
+  },
+  {
+    "code": "9603",
+    "name": "Thành phố Đông 3",
+    "nameEn": "Đông 3",
+    "fullName": "Thành phố Đông 3",
+    "fullNameEn": "Đông 3 District",
+    "codeName": "đông-3",
+    "provinceCode": "96",
+    "administrativeUnit": "Thành phố"
+  },
+  {
+    "code": "9604",
+    "name": "Quận Tây 4",
+    "nameEn": "Tây 4",
+    "fullName": "Quận Tây 4",
+    "fullNameEn": "Tây 4 District",
+    "codeName": "tây-4",
+    "provinceCode": "96",
+    "administrativeUnit": "Quận"
+  },
+  {
+    "code": "9605",
+    "name": "Thị xã Châu 5",
+    "nameEn": "Châu 5",
+    "fullName": "Thị xã Châu 5",
+    "fullNameEn": "Châu 5 District",
+    "codeName": "châu-5",
+    "provinceCode": "96",
+    "administrativeUnit": "Thị xã"
+  },
+  {
+    "code": "9606",
+    "name": "Huyện Giá 6",
+    "nameEn": "Giá 6",
+    "fullName": "Huyện Giá 6",
+    "fullNameEn": "Giá 6 District",
+    "codeName": "giá-6",
+    "provinceCode": "96",
+    "administrativeUnit": "Huyện"
+  },
+  {
+    "code": "9607",
+    "name": "Quận Khánh 7",
+    "nameEn": "Khánh 7",
+    "fullName": "Quận Khánh 7",
+    "fullNameEn": "Khánh 7 District",
+    "codeName": "khánh-7",
+    "provinceCode": "96",
+    "administrativeUnit": "Quận"
+  },
+  {
+    "code": "9608",
+    "name": "Huyện Long 8",
+    "nameEn": "Long 8",
+    "fullName": "Huyện Long 8",
+    "fullNameEn": "Long 8 District",
+    "codeName": "long-8",
+    "provinceCode": "96",
+    "administrativeUnit": "Huyện"
+  },
+  {
+    "code": "9201",
+    "name": "Thành phố Bắc 1",
+    "nameEn": "Bắc 1",
+    "fullName": "Thành phố Bắc 1",
+    "fullNameEn": "Bắc 1 District",
+    "codeName": "bắc-1",
+    "provinceCode": "92",
+    "administrativeUnit": "Thành phố"
+  },
+  {
+    "code": "9202",
+    "name": "Quận Nam 2",
+    "nameEn": "Nam 2",
+    "fullName": "Quận Nam 2",
+    "fullNameEn": "Nam 2 District",
+    "codeName": "nam-2",
+    "provinceCode": "92",
+    "administrativeUnit": "Quận"
+  },
+  {
+    "code": "9203",
+    "name": "Quận Đông 3",
+    "nameEn": "Đông 3",
+    "fullName": "Quận Đông 3",
+    "fullNameEn": "Đông 3 District",
+    "codeName": "đông-3",
+    "provinceCode": "92",
+    "administrativeUnit": "Quận"
+  },
+  {
+    "code": "9204",
+    "name": "Quận Tây 4",
+    "nameEn": "Tây 4",
+    "fullName": "Quận Tây 4",
+    "fullNameEn": "Tây 4 District",
+    "codeName": "tây-4",
+    "provinceCode": "92",
+    "administrativeUnit": "Quận"
+  },
+  {
+    "code": "9205",
+    "name": "Thị xã Châu 5",
+    "nameEn": "Châu 5",
+    "fullName": "Thị xã Châu 5",
+    "fullNameEn": "Châu 5 District",
+    "codeName": "châu-5",
+    "provinceCode": "92",
+    "administrativeUnit": "Thị xã"
+  },
+  {
+    "code": "9206",
+    "name": "Thị xã Giá 6",
+    "nameEn": "Giá 6",
+    "fullName": "Thị xã Giá 6",
+    "fullNameEn": "Giá 6 District",
+    "codeName": "giá-6",
+    "provinceCode": "92",
+    "administrativeUnit": "Thị xã"
+  },
+  {
+    "code": "9207",
+    "name": "Thành phố Khánh 7",
+    "nameEn": "Khánh 7",
+    "fullName": "Thành phố Khánh 7",
+    "fullNameEn": "Khánh 7 District",
+    "codeName": "khánh-7",
+    "provinceCode": "92",
+    "administrativeUnit": "Thành phố"
+  },
+  {
+    "code": "9208",
+    "name": "Thành phố Long 8",
+    "nameEn": "Long 8",
+    "fullName": "Thành phố Long 8",
+    "fullNameEn": "Long 8 District",
+    "codeName": "long-8",
+    "provinceCode": "92",
+    "administrativeUnit": "Thành phố"
+  },
+  {
+    "code": "9209",
+    "name": "Huyện Mỹ 9",
+    "nameEn": "Mỹ 9",
+    "fullName": "Huyện Mỹ 9",
+    "fullNameEn": "Mỹ 9 District",
+    "codeName": "mỹ-9",
+    "provinceCode": "92",
+    "administrativeUnit": "Huyện"
+  },
+  {
+    "code": "9210",
+    "name": "Thị xã Phong 10",
+    "nameEn": "Phong 10",
+    "fullName": "Thị xã Phong 10",
+    "fullNameEn": "Phong 10 District",
+    "codeName": "phong-10",
+    "provinceCode": "92",
+    "administrativeUnit": "Thị xã"
+  },
+  {
+    "code": "9211",
+    "name": "Thị xã Quới 11",
+    "nameEn": "Quới 11",
+    "fullName": "Thị xã Quới 11",
+    "fullNameEn": "Quới 11 District",
+    "codeName": "quới-11",
+    "provinceCode": "92",
+    "administrativeUnit": "Thị xã"
+  },
+  {
+    "code": "9212",
+    "name": "Huyện Sơn 12",
+    "nameEn": "Sơn 12",
+    "fullName": "Huyện Sơn 12",
+    "fullNameEn": "Sơn 12 District",
+    "codeName": "sơn-12",
+    "provinceCode": "92",
+    "administrativeUnit": "Huyện"
+  },
+  {
+    "code": "401",
+    "name": "Huyện Bắc 1",
+    "nameEn": "Bắc 1",
+    "fullName": "Huyện Bắc 1",
+    "fullNameEn": "Bắc 1 District",
+    "codeName": "bắc-1",
+    "provinceCode": "04",
+    "administrativeUnit": "Huyện"
+  },
+  {
+    "code": "402",
+    "name": "Huyện Nam 2",
+    "nameEn": "Nam 2",
+    "fullName": "Huyện Nam 2",
+    "fullNameEn": "Nam 2 District",
+    "codeName": "nam-2",
+    "provinceCode": "04",
+    "administrativeUnit": "Huyện"
+  },
+  {
+    "code": "403",
+    "name": "Thành phố Đông 3",
+    "nameEn": "Đông 3",
+    "fullName": "Thành phố Đông 3",
+    "fullNameEn": "Đông 3 District",
+    "codeName": "đông-3",
+    "provinceCode": "04",
+    "administrativeUnit": "Thành phố"
+  },
+  {
+    "code": "404",
+    "name": "Thị xã Tây 4",
+    "nameEn": "Tây 4",
+    "fullName": "Thị xã Tây 4",
+    "fullNameEn": "Tây 4 District",
+    "codeName": "tây-4",
+    "provinceCode": "04",
+    "administrativeUnit": "Thị xã"
+  },
+  {
+    "code": "405",
+    "name": "Thành phố Gia 5",
+    "nameEn": "Gia 5",
+    "fullName": "Thành phố Gia 5",
+    "fullNameEn": "Gia 5 District",
+    "codeName": "gia-5",
+    "provinceCode": "04",
+    "administrativeUnit": "Thành phố"
+  },
+  {
+    "code": "406",
+    "name": "Thành phố Lâm 6",
+    "nameEn": "Lâm 6",
+    "fullName": "Thành phố Lâm 6",
+    "fullNameEn": "Lâm 6 District",
+    "codeName": "lâm-6",
+    "provinceCode": "04",
+    "administrativeUnit": "Thành phố"
+  },
+  {
+    "code": "407",
+    "name": "Huyện Sơn 7",
+    "nameEn": "Sơn 7",
+    "fullName": "Huyện Sơn 7",
+    "fullNameEn": "Sơn 7 District",
+    "codeName": "sơn-7",
+    "provinceCode": "04",
+    "administrativeUnit": "Huyện"
+  },
+  {
+    "code": "4801",
+    "name": "Huyện Bắc 1",
+    "nameEn": "Bắc 1",
+    "fullName": "Huyện Bắc 1",
+    "fullNameEn": "Bắc 1 District",
+    "codeName": "bắc-1",
+    "provinceCode": "48",
+    "administrativeUnit": "Huyện"
+  },
+  {
+    "code": "4802",
+    "name": "Huyện Nam 2",
+    "nameEn": "Nam 2",
+    "fullName": "Huyện Nam 2",
+    "fullNameEn": "Nam 2 District",
+    "codeName": "nam-2",
+    "provinceCode": "48",
+    "administrativeUnit": "Huyện"
+  },
+  {
+    "code": "4803",
+    "name": "Quận Đông 3",
+    "nameEn": "Đông 3",
+    "fullName": "Quận Đông 3",
+    "fullNameEn": "Đông 3 District",
+    "codeName": "đông-3",
+    "provinceCode": "48",
+    "administrativeUnit": "Quận"
+  },
+  {
+    "code": "4804",
+    "name": "Thành phố Tây 4",
+    "nameEn": "Tây 4",
+    "fullName": "Thành phố Tây 4",
+    "fullNameEn": "Tây 4 District",
+    "codeName": "tây-4",
+    "provinceCode": "48",
+    "administrativeUnit": "Thành phố"
+  },
+  {
+    "code": "4805",
+    "name": "Thành phố Hà 5",
+    "nameEn": "Hà 5",
+    "fullName": "Thành phố Hà 5",
+    "fullNameEn": "Hà 5 District",
+    "codeName": "hà-5",
+    "provinceCode": "48",
+    "administrativeUnit": "Thành phố"
+  },
+  {
+    "code": "4806",
+    "name": "Huyện Lộc 6",
+    "nameEn": "Lộc 6",
+    "fullName": "Huyện Lộc 6",
+    "fullNameEn": "Lộc 6 District",
+    "codeName": "lộc-6",
+    "provinceCode": "48",
+    "administrativeUnit": "Huyện"
+  },
+  {
+    "code": "4807",
+    "name": "Huyện Ninh 7",
+    "nameEn": "Ninh 7",
+    "fullName": "Huyện Ninh 7",
+    "fullNameEn": "Ninh 7 District",
+    "codeName": "ninh-7",
+    "provinceCode": "48",
+    "administrativeUnit": "Huyện"
+  },
+  {
+    "code": "4808",
+    "name": "Quận Phú 8",
+    "nameEn": "Phú 8",
+    "fullName": "Quận Phú 8",
+    "fullNameEn": "Phú 8 District",
+    "codeName": "phú-8",
+    "provinceCode": "48",
+    "administrativeUnit": "Quận"
+  },
+  {
+    "code": "4809",
+    "name": "Huyện Quảng 9",
+    "nameEn": "Quảng 9",
+    "fullName": "Huyện Quảng 9",
+    "fullNameEn": "Quảng 9 District",
+    "codeName": "quảng-9",
+    "provinceCode": "48",
+    "administrativeUnit": "Huyện"
+  },
+  {
+    "code": "4810",
+    "name": "Thành phố Thị 10",
+    "nameEn": "Thị 10",
+    "fullName": "Thành phố Thị 10",
+    "fullNameEn": "Thị 10 District",
+    "codeName": "thị-10",
+    "provinceCode": "48",
+    "administrativeUnit": "Thành phố"
+  },
+  {
+    "code": "4811",
+    "name": "Huyện Trà 11",
+    "nameEn": "Trà 11",
+    "fullName": "Huyện Trà 11",
+    "fullNameEn": "Trà 11 District",
+    "codeName": "trà-11",
+    "provinceCode": "48",
+    "administrativeUnit": "Huyện"
+  },
+  {
+    "code": "6601",
+    "name": "Quận Bắc 1",
+    "nameEn": "Bắc 1",
+    "fullName": "Quận Bắc 1",
+    "fullNameEn": "Bắc 1 District",
+    "codeName": "bắc-1",
+    "provinceCode": "66",
+    "administrativeUnit": "Quận"
+  },
+  {
+    "code": "6602",
+    "name": "Thị xã Nam 2",
+    "nameEn": "Nam 2",
+    "fullName": "Thị xã Nam 2",
+    "fullNameEn": "Nam 2 District",
+    "codeName": "nam-2",
+    "provinceCode": "66",
+    "administrativeUnit": "Thị xã"
+  },
+  {
+    "code": "6603",
+    "name": "Quận Đông 3",
+    "nameEn": "Đông 3",
+    "fullName": "Quận Đông 3",
+    "fullNameEn": "Đông 3 District",
+    "codeName": "đông-3",
+    "provinceCode": "66",
+    "administrativeUnit": "Quận"
+  },
+  {
+    "code": "6604",
+    "name": "Huyện Tây 4",
+    "nameEn": "Tây 4",
+    "fullName": "Huyện Tây 4",
+    "fullNameEn": "Tây 4 District",
+    "codeName": "tây-4",
+    "provinceCode": "66",
+    "administrativeUnit": "Huyện"
+  },
+  {
+    "code": "6605",
+    "name": "Quận Hà 5",
+    "nameEn": "Hà 5",
+    "fullName": "Quận Hà 5",
+    "fullNameEn": "Hà 5 District",
+    "codeName": "hà-5",
+    "provinceCode": "66",
+    "administrativeUnit": "Quận"
+  },
+  {
+    "code": "6606",
+    "name": "Quận Lộc 6",
+    "nameEn": "Lộc 6",
+    "fullName": "Quận Lộc 6",
+    "fullNameEn": "Lộc 6 District",
+    "codeName": "lộc-6",
+    "provinceCode": "66",
+    "administrativeUnit": "Quận"
+  },
+  {
+    "code": "6607",
+    "name": "Thị xã Ninh 7",
+    "nameEn": "Ninh 7",
+    "fullName": "Thị xã Ninh 7",
+    "fullNameEn": "Ninh 7 District",
+    "codeName": "ninh-7",
+    "provinceCode": "66",
+    "administrativeUnit": "Thị xã"
+  },
+  {
+    "code": "6608",
+    "name": "Thị xã Phú 8",
+    "nameEn": "Phú 8",
+    "fullName": "Thị xã Phú 8",
+    "fullNameEn": "Phú 8 District",
+    "codeName": "phú-8",
+    "provinceCode": "66",
+    "administrativeUnit": "Thị xã"
+  },
+  {
+    "code": "6609",
+    "name": "Huyện Quảng 9",
+    "nameEn": "Quảng 9",
+    "fullName": "Huyện Quảng 9",
+    "fullNameEn": "Quảng 9 District",
+    "codeName": "quảng-9",
+    "provinceCode": "66",
+    "administrativeUnit": "Huyện"
+  },
+  {
+    "code": "6610",
+    "name": "Thị xã Thị 10",
+    "nameEn": "Thị 10",
+    "fullName": "Thị xã Thị 10",
+    "fullNameEn": "Thị 10 District",
+    "codeName": "thị-10",
+    "provinceCode": "66",
+    "administrativeUnit": "Thị xã"
+  },
+  {
+    "code": "6611",
+    "name": "Quận Trà 11",
+    "nameEn": "Trà 11",
+    "fullName": "Quận Trà 11",
+    "fullNameEn": "Trà 11 District",
+    "codeName": "trà-11",
+    "provinceCode": "66",
+    "administrativeUnit": "Quận"
+  },
+  {
+    "code": "6612",
+    "name": "Quận Bắc 12",
+    "nameEn": "Bắc 12",
+    "fullName": "Quận Bắc 12",
+    "fullNameEn": "Bắc 12 District",
+    "codeName": "bắc-12",
+    "provinceCode": "66",
+    "administrativeUnit": "Quận"
+  },
+  {
+    "code": "1101",
+    "name": "Thành phố Bắc 1",
+    "nameEn": "Bắc 1",
+    "fullName": "Thành phố Bắc 1",
+    "fullNameEn": "Bắc 1 District",
+    "codeName": "bắc-1",
+    "provinceCode": "11",
+    "administrativeUnit": "Thành phố"
+  },
+  {
+    "code": "1102",
+    "name": "Thị xã Nam 2",
+    "nameEn": "Nam 2",
+    "fullName": "Thị xã Nam 2",
+    "fullNameEn": "Nam 2 District",
+    "codeName": "nam-2",
+    "provinceCode": "11",
+    "administrativeUnit": "Thị xã"
+  },
+  {
+    "code": "1103",
+    "name": "Quận Đông 3",
+    "nameEn": "Đông 3",
+    "fullName": "Quận Đông 3",
+    "fullNameEn": "Đông 3 District",
+    "codeName": "đông-3",
+    "provinceCode": "11",
+    "administrativeUnit": "Quận"
+  },
+  {
+    "code": "1104",
+    "name": "Thành phố Tây 4",
+    "nameEn": "Tây 4",
+    "fullName": "Thành phố Tây 4",
+    "fullNameEn": "Tây 4 District",
+    "codeName": "tây-4",
+    "provinceCode": "11",
+    "administrativeUnit": "Thành phố"
+  },
+  {
+    "code": "1105",
+    "name": "Thành phố Gia 5",
+    "nameEn": "Gia 5",
+    "fullName": "Thành phố Gia 5",
+    "fullNameEn": "Gia 5 District",
+    "codeName": "gia-5",
+    "provinceCode": "11",
+    "administrativeUnit": "Thành phố"
+  },
+  {
+    "code": "7501",
+    "name": "Huyện Bắc 1",
+    "nameEn": "Bắc 1",
+    "fullName": "Huyện Bắc 1",
+    "fullNameEn": "Bắc 1 District",
+    "codeName": "bắc-1",
+    "provinceCode": "75",
+    "administrativeUnit": "Huyện"
+  },
+  {
+    "code": "7502",
+    "name": "Thành phố Nam 2",
+    "nameEn": "Nam 2",
+    "fullName": "Thành phố Nam 2",
+    "fullNameEn": "Nam 2 District",
+    "codeName": "nam-2",
+    "provinceCode": "75",
+    "administrativeUnit": "Thành phố"
+  },
+  {
+    "code": "7503",
+    "name": "Quận Đông 3",
+    "nameEn": "Đông 3",
+    "fullName": "Quận Đông 3",
+    "fullNameEn": "Đông 3 District",
+    "codeName": "đông-3",
+    "provinceCode": "75",
+    "administrativeUnit": "Quận"
+  },
+  {
+    "code": "7504",
+    "name": "Quận Tây 4",
+    "nameEn": "Tây 4",
+    "fullName": "Quận Tây 4",
+    "fullNameEn": "Tây 4 District",
+    "codeName": "tây-4",
+    "provinceCode": "75",
+    "administrativeUnit": "Quận"
+  },
+  {
+    "code": "7505",
+    "name": "Quận Châu 5",
+    "nameEn": "Châu 5",
+    "fullName": "Quận Châu 5",
+    "fullNameEn": "Châu 5 District",
+    "codeName": "châu-5",
+    "provinceCode": "75",
+    "administrativeUnit": "Quận"
+  },
+  {
+    "code": "7506",
+    "name": "Quận Giá 6",
+    "nameEn": "Giá 6",
+    "fullName": "Quận Giá 6",
+    "fullNameEn": "Giá 6 District",
+    "codeName": "giá-6",
+    "provinceCode": "75",
+    "administrativeUnit": "Quận"
+  },
+  {
+    "code": "7507",
+    "name": "Thành phố Khánh 7",
+    "nameEn": "Khánh 7",
+    "fullName": "Thành phố Khánh 7",
+    "fullNameEn": "Khánh 7 District",
+    "codeName": "khánh-7",
+    "provinceCode": "75",
+    "administrativeUnit": "Thành phố"
+  },
+  {
+    "code": "7508",
+    "name": "Thị xã Long 8",
+    "nameEn": "Long 8",
+    "fullName": "Thị xã Long 8",
+    "fullNameEn": "Long 8 District",
+    "codeName": "long-8",
+    "provinceCode": "75",
+    "administrativeUnit": "Thị xã"
+  },
+  {
+    "code": "7509",
+    "name": "Huyện Mỹ 9",
+    "nameEn": "Mỹ 9",
+    "fullName": "Huyện Mỹ 9",
+    "fullNameEn": "Mỹ 9 District",
+    "codeName": "mỹ-9",
+    "provinceCode": "75",
+    "administrativeUnit": "Huyện"
+  },
+  {
+    "code": "7510",
+    "name": "Quận Phong 10",
+    "nameEn": "Phong 10",
+    "fullName": "Quận Phong 10",
+    "fullNameEn": "Phong 10 District",
+    "codeName": "phong-10",
+    "provinceCode": "75",
+    "administrativeUnit": "Quận"
+  },
+  {
+    "code": "7511",
+    "name": "Quận Quới 11",
+    "nameEn": "Quới 11",
+    "fullName": "Quận Quới 11",
+    "fullNameEn": "Quới 11 District",
+    "codeName": "quới-11",
+    "provinceCode": "75",
+    "administrativeUnit": "Quận"
+  },
+  {
+    "code": "8201",
+    "name": "Huyện Bắc 1",
+    "nameEn": "Bắc 1",
+    "fullName": "Huyện Bắc 1",
+    "fullNameEn": "Bắc 1 District",
+    "codeName": "bắc-1",
+    "provinceCode": "82",
+    "administrativeUnit": "Huyện"
+  },
+  {
+    "code": "8202",
+    "name": "Thị xã Nam 2",
+    "nameEn": "Nam 2",
+    "fullName": "Thị xã Nam 2",
+    "fullNameEn": "Nam 2 District",
+    "codeName": "nam-2",
+    "provinceCode": "82",
+    "administrativeUnit": "Thị xã"
+  },
+  {
+    "code": "8203",
+    "name": "Thị xã Đông 3",
+    "nameEn": "Đông 3",
+    "fullName": "Thị xã Đông 3",
+    "fullNameEn": "Đông 3 District",
+    "codeName": "đông-3",
+    "provinceCode": "82",
+    "administrativeUnit": "Thị xã"
+  },
+  {
+    "code": "8204",
+    "name": "Thị xã Tây 4",
+    "nameEn": "Tây 4",
+    "fullName": "Thị xã Tây 4",
+    "fullNameEn": "Tây 4 District",
+    "codeName": "tây-4",
+    "provinceCode": "82",
+    "administrativeUnit": "Thị xã"
+  },
+  {
+    "code": "8205",
+    "name": "Quận Châu 5",
+    "nameEn": "Châu 5",
+    "fullName": "Quận Châu 5",
+    "fullNameEn": "Châu 5 District",
+    "codeName": "châu-5",
+    "provinceCode": "82",
+    "administrativeUnit": "Quận"
+  },
+  {
+    "code": "8206",
+    "name": "Huyện Giá 6",
+    "nameEn": "Giá 6",
+    "fullName": "Huyện Giá 6",
+    "fullNameEn": "Giá 6 District",
+    "codeName": "giá-6",
+    "provinceCode": "82",
+    "administrativeUnit": "Huyện"
+  },
+  {
+    "code": "8207",
+    "name": "Thành phố Khánh 7",
+    "nameEn": "Khánh 7",
+    "fullName": "Thành phố Khánh 7",
+    "fullNameEn": "Khánh 7 District",
+    "codeName": "khánh-7",
+    "provinceCode": "82",
+    "administrativeUnit": "Thành phố"
+  },
+  {
+    "code": "8208",
+    "name": "Thị xã Long 8",
+    "nameEn": "Long 8",
+    "fullName": "Thị xã Long 8",
+    "fullNameEn": "Long 8 District",
+    "codeName": "long-8",
+    "provinceCode": "82",
+    "administrativeUnit": "Thị xã"
+  },
+  {
+    "code": "8209",
+    "name": "Thị xã Mỹ 9",
+    "nameEn": "Mỹ 9",
+    "fullName": "Thị xã Mỹ 9",
+    "fullNameEn": "Mỹ 9 District",
+    "codeName": "mỹ-9",
+    "provinceCode": "82",
+    "administrativeUnit": "Thị xã"
+  },
+  {
+    "code": "8210",
+    "name": "Thành phố Phong 10",
+    "nameEn": "Phong 10",
+    "fullName": "Thành phố Phong 10",
+    "fullNameEn": "Phong 10 District",
+    "codeName": "phong-10",
+    "provinceCode": "82",
+    "administrativeUnit": "Thành phố"
+  },
+  {
+    "code": "8211",
+    "name": "Quận Quới 11",
+    "nameEn": "Quới 11",
+    "fullName": "Quận Quới 11",
+    "fullNameEn": "Quới 11 District",
+    "codeName": "quới-11",
+    "provinceCode": "82",
+    "administrativeUnit": "Quận"
+  },
+  {
+    "code": "8212",
+    "name": "Quận Sơn 12",
+    "nameEn": "Sơn 12",
+    "fullName": "Quận Sơn 12",
+    "fullNameEn": "Sơn 12 District",
+    "codeName": "sơn-12",
+    "provinceCode": "82",
+    "administrativeUnit": "Quận"
+  },
+  {
+    "code": "5201",
+    "name": "Huyện Bắc 1",
+    "nameEn": "Bắc 1",
+    "fullName": "Huyện Bắc 1",
+    "fullNameEn": "Bắc 1 District",
+    "codeName": "bắc-1",
+    "provinceCode": "52",
+    "administrativeUnit": "Huyện"
+  },
+  {
+    "code": "5202",
+    "name": "Thị xã Nam 2",
+    "nameEn": "Nam 2",
+    "fullName": "Thị xã Nam 2",
+    "fullNameEn": "Nam 2 District",
+    "codeName": "nam-2",
+    "provinceCode": "52",
+    "administrativeUnit": "Thị xã"
+  },
+  {
+    "code": "5203",
+    "name": "Thành phố Đông 3",
+    "nameEn": "Đông 3",
+    "fullName": "Thành phố Đông 3",
+    "fullNameEn": "Đông 3 District",
+    "codeName": "đông-3",
+    "provinceCode": "52",
+    "administrativeUnit": "Thành phố"
+  },
+  {
+    "code": "5204",
+    "name": "Thị xã Tây 4",
+    "nameEn": "Tây 4",
+    "fullName": "Thị xã Tây 4",
+    "fullNameEn": "Tây 4 District",
+    "codeName": "tây-4",
+    "provinceCode": "52",
+    "administrativeUnit": "Thị xã"
+  },
+  {
+    "code": "5205",
+    "name": "Huyện Hà 5",
+    "nameEn": "Hà 5",
+    "fullName": "Huyện Hà 5",
+    "fullNameEn": "Hà 5 District",
+    "codeName": "hà-5",
+    "provinceCode": "52",
+    "administrativeUnit": "Huyện"
+  },
+  {
+    "code": "5206",
+    "name": "Thị xã Lộc 6",
+    "nameEn": "Lộc 6",
+    "fullName": "Thị xã Lộc 6",
+    "fullNameEn": "Lộc 6 District",
+    "codeName": "lộc-6",
+    "provinceCode": "52",
+    "administrativeUnit": "Thị xã"
+  },
+  {
+    "code": "5207",
+    "name": "Quận Ninh 7",
+    "nameEn": "Ninh 7",
+    "fullName": "Quận Ninh 7",
+    "fullNameEn": "Ninh 7 District",
+    "codeName": "ninh-7",
+    "provinceCode": "52",
+    "administrativeUnit": "Quận"
+  },
+  {
+    "code": "5208",
+    "name": "Quận Phú 8",
+    "nameEn": "Phú 8",
+    "fullName": "Quận Phú 8",
+    "fullNameEn": "Phú 8 District",
+    "codeName": "phú-8",
+    "provinceCode": "52",
+    "administrativeUnit": "Quận"
+  },
+  {
+    "code": "5209",
+    "name": "Quận Quảng 9",
+    "nameEn": "Quảng 9",
+    "fullName": "Quận Quảng 9",
+    "fullNameEn": "Quảng 9 District",
+    "codeName": "quảng-9",
+    "provinceCode": "52",
+    "administrativeUnit": "Quận"
+  },
+  {
+    "code": "5210",
+    "name": "Thành phố Thị 10",
+    "nameEn": "Thị 10",
+    "fullName": "Thành phố Thị 10",
+    "fullNameEn": "Thị 10 District",
+    "codeName": "thị-10",
+    "provinceCode": "52",
+    "administrativeUnit": "Thành phố"
+  },
+  {
+    "code": "5211",
+    "name": "Thị xã Trà 11",
+    "nameEn": "Trà 11",
+    "fullName": "Thị xã Trà 11",
+    "fullNameEn": "Trà 11 District",
+    "codeName": "trà-11",
+    "provinceCode": "52",
+    "administrativeUnit": "Thị xã"
+  },
+  {
+    "code": "5212",
+    "name": "Quận Bắc 12",
+    "nameEn": "Bắc 12",
+    "fullName": "Quận Bắc 12",
+    "fullNameEn": "Bắc 12 District",
+    "codeName": "bắc-12",
+    "provinceCode": "52",
+    "administrativeUnit": "Quận"
+  },
+  {
+    "code": "5213",
+    "name": "Huyện Nam 13",
+    "nameEn": "Nam 13",
+    "fullName": "Huyện Nam 13",
+    "fullNameEn": "Nam 13 District",
+    "codeName": "nam-13",
+    "provinceCode": "52",
+    "administrativeUnit": "Huyện"
+  },
+  {
+    "code": "5214",
+    "name": "Quận Đông 14",
+    "nameEn": "Đông 14",
+    "fullName": "Quận Đông 14",
+    "fullNameEn": "Đông 14 District",
+    "codeName": "đông-14",
+    "provinceCode": "52",
+    "administrativeUnit": "Quận"
+  },
+  {
+    "code": "5215",
+    "name": "Huyện Tây 15",
+    "nameEn": "Tây 15",
+    "fullName": "Huyện Tây 15",
+    "fullNameEn": "Tây 15 District",
+    "codeName": "tây-15",
+    "provinceCode": "52",
+    "administrativeUnit": "Huyện"
+  },
+  {
+    "code": "5216",
+    "name": "Huyện Hà 16",
+    "nameEn": "Hà 16",
+    "fullName": "Huyện Hà 16",
+    "fullNameEn": "Hà 16 District",
+    "codeName": "hà-16",
+    "provinceCode": "52",
+    "administrativeUnit": "Huyện"
+  },
+  {
+    "code": "101",
+    "name": "Thành phố Bắc 1",
+    "nameEn": "Bắc 1",
+    "fullName": "Thành phố Bắc 1",
+    "fullNameEn": "Bắc 1 District",
+    "codeName": "bắc-1",
+    "provinceCode": "01",
+    "administrativeUnit": "Thành phố"
+  },
+  {
+    "code": "102",
+    "name": "Huyện Nam 2",
+    "nameEn": "Nam 2",
+    "fullName": "Huyện Nam 2",
+    "fullNameEn": "Nam 2 District",
+    "codeName": "nam-2",
+    "provinceCode": "01",
+    "administrativeUnit": "Huyện"
+  },
+  {
+    "code": "103",
+    "name": "Thị xã Đông 3",
+    "nameEn": "Đông 3",
+    "fullName": "Thị xã Đông 3",
+    "fullNameEn": "Đông 3 District",
+    "codeName": "đông-3",
+    "provinceCode": "01",
+    "administrativeUnit": "Thị xã"
+  },
+  {
+    "code": "104",
+    "name": "Huyện Tây 4",
+    "nameEn": "Tây 4",
+    "fullName": "Huyện Tây 4",
+    "fullNameEn": "Tây 4 District",
+    "codeName": "tây-4",
+    "provinceCode": "01",
+    "administrativeUnit": "Huyện"
+  },
+  {
+    "code": "105",
+    "name": "Thành phố Gia 5",
+    "nameEn": "Gia 5",
+    "fullName": "Thành phố Gia 5",
+    "fullNameEn": "Gia 5 District",
+    "codeName": "gia-5",
+    "provinceCode": "01",
+    "administrativeUnit": "Thành phố"
+  },
+  {
+    "code": "106",
+    "name": "Thị xã Lâm 6",
+    "nameEn": "Lâm 6",
+    "fullName": "Thị xã Lâm 6",
+    "fullNameEn": "Lâm 6 District",
+    "codeName": "lâm-6",
+    "provinceCode": "01",
+    "administrativeUnit": "Thị xã"
+  },
+  {
+    "code": "107",
+    "name": "Thành phố Sơn 7",
+    "nameEn": "Sơn 7",
+    "fullName": "Thành phố Sơn 7",
+    "fullNameEn": "Sơn 7 District",
+    "codeName": "sơn-7",
+    "provinceCode": "01",
+    "administrativeUnit": "Thành phố"
+  },
+  {
+    "code": "108",
+    "name": "Huyện Thành 8",
+    "nameEn": "Thành 8",
+    "fullName": "Huyện Thành 8",
+    "fullNameEn": "Thành 8 District",
+    "codeName": "thành-8",
+    "provinceCode": "01",
+    "administrativeUnit": "Huyện"
+  },
+  {
+    "code": "109",
+    "name": "Thị xã Việt 9",
+    "nameEn": "Việt 9",
+    "fullName": "Thị xã Việt 9",
+    "fullNameEn": "Việt 9 District",
+    "codeName": "việt-9",
+    "provinceCode": "01",
+    "administrativeUnit": "Thị xã"
+  },
+  {
+    "code": "110",
+    "name": "Thành phố Yên 10",
+    "nameEn": "Yên 10",
+    "fullName": "Thành phố Yên 10",
+    "fullNameEn": "Yên 10 District",
+    "codeName": "yên-10",
+    "provinceCode": "01",
+    "administrativeUnit": "Thành phố"
+  },
+  {
+    "code": "111",
+    "name": "Quận Bắc 11",
+    "nameEn": "Bắc 11",
+    "fullName": "Quận Bắc 11",
+    "fullNameEn": "Bắc 11 District",
+    "codeName": "bắc-11",
+    "provinceCode": "01",
+    "administrativeUnit": "Quận"
+  },
+  {
+    "code": "112",
+    "name": "Quận Nam 12",
+    "nameEn": "Nam 12",
+    "fullName": "Quận Nam 12",
+    "fullNameEn": "Nam 12 District",
+    "codeName": "nam-12",
+    "provinceCode": "01",
+    "administrativeUnit": "Quận"
+  },
+  {
+    "code": "113",
+    "name": "Thị xã Đông 13",
+    "nameEn": "Đông 13",
+    "fullName": "Thị xã Đông 13",
+    "fullNameEn": "Đông 13 District",
+    "codeName": "đông-13",
+    "provinceCode": "01",
+    "administrativeUnit": "Thị xã"
+  },
+  {
+    "code": "114",
+    "name": "Thị xã Tây 14",
+    "nameEn": "Tây 14",
+    "fullName": "Thị xã Tây 14",
+    "fullNameEn": "Tây 14 District",
+    "codeName": "tây-14",
+    "provinceCode": "01",
+    "administrativeUnit": "Thị xã"
+  },
+  {
+    "code": "115",
+    "name": "Thị xã Gia 15",
+    "nameEn": "Gia 15",
+    "fullName": "Thị xã Gia 15",
+    "fullNameEn": "Gia 15 District",
+    "codeName": "gia-15",
+    "provinceCode": "01",
+    "administrativeUnit": "Thị xã"
+  },
+  {
+    "code": "4201",
+    "name": "Huyện Bắc 1",
+    "nameEn": "Bắc 1",
+    "fullName": "Huyện Bắc 1",
+    "fullNameEn": "Bắc 1 District",
+    "codeName": "bắc-1",
+    "provinceCode": "42",
+    "administrativeUnit": "Huyện"
+  },
+  {
+    "code": "4202",
+    "name": "Quận Nam 2",
+    "nameEn": "Nam 2",
+    "fullName": "Quận Nam 2",
+    "fullNameEn": "Nam 2 District",
+    "codeName": "nam-2",
+    "provinceCode": "42",
+    "administrativeUnit": "Quận"
+  },
+  {
+    "code": "4203",
+    "name": "Quận Đông 3",
+    "nameEn": "Đông 3",
+    "fullName": "Quận Đông 3",
+    "fullNameEn": "Đông 3 District",
+    "codeName": "đông-3",
+    "provinceCode": "42",
+    "administrativeUnit": "Quận"
+  },
+  {
+    "code": "4204",
+    "name": "Huyện Tây 4",
+    "nameEn": "Tây 4",
+    "fullName": "Huyện Tây 4",
+    "fullNameEn": "Tây 4 District",
+    "codeName": "tây-4",
+    "provinceCode": "42",
+    "administrativeUnit": "Huyện"
+  },
+  {
+    "code": "4205",
+    "name": "Thị xã Hà 5",
+    "nameEn": "Hà 5",
+    "fullName": "Thị xã Hà 5",
+    "fullNameEn": "Hà 5 District",
+    "codeName": "hà-5",
+    "provinceCode": "42",
+    "administrativeUnit": "Thị xã"
+  },
+  {
+    "code": "4206",
+    "name": "Quận Lộc 6",
+    "nameEn": "Lộc 6",
+    "fullName": "Quận Lộc 6",
+    "fullNameEn": "Lộc 6 District",
+    "codeName": "lộc-6",
+    "provinceCode": "42",
+    "administrativeUnit": "Quận"
+  },
+  {
+    "code": "4207",
+    "name": "Thành phố Ninh 7",
+    "nameEn": "Ninh 7",
+    "fullName": "Thành phố Ninh 7",
+    "fullNameEn": "Ninh 7 District",
+    "codeName": "ninh-7",
+    "provinceCode": "42",
+    "administrativeUnit": "Thành phố"
+  },
+  {
+    "code": "4208",
+    "name": "Quận Phú 8",
+    "nameEn": "Phú 8",
+    "fullName": "Quận Phú 8",
+    "fullNameEn": "Phú 8 District",
+    "codeName": "phú-8",
+    "provinceCode": "42",
+    "administrativeUnit": "Quận"
+  },
+  {
+    "code": "3101",
+    "name": "Thị xã Bắc 1",
+    "nameEn": "Bắc 1",
+    "fullName": "Thị xã Bắc 1",
+    "fullNameEn": "Bắc 1 District",
+    "codeName": "bắc-1",
+    "provinceCode": "31",
+    "administrativeUnit": "Thị xã"
+  },
+  {
+    "code": "3102",
+    "name": "Quận Nam 2",
+    "nameEn": "Nam 2",
+    "fullName": "Quận Nam 2",
+    "fullNameEn": "Nam 2 District",
+    "codeName": "nam-2",
+    "provinceCode": "31",
+    "administrativeUnit": "Quận"
+  },
+  {
+    "code": "3103",
+    "name": "Huyện Đông 3",
+    "nameEn": "Đông 3",
+    "fullName": "Huyện Đông 3",
+    "fullNameEn": "Đông 3 District",
+    "codeName": "đông-3",
+    "provinceCode": "31",
+    "administrativeUnit": "Huyện"
+  },
+  {
+    "code": "3104",
+    "name": "Thị xã Tây 4",
+    "nameEn": "Tây 4",
+    "fullName": "Thị xã Tây 4",
+    "fullNameEn": "Tây 4 District",
+    "codeName": "tây-4",
+    "provinceCode": "31",
+    "administrativeUnit": "Thị xã"
+  },
+  {
+    "code": "3105",
+    "name": "Thị xã Gia 5",
+    "nameEn": "Gia 5",
+    "fullName": "Thị xã Gia 5",
+    "fullNameEn": "Gia 5 District",
+    "codeName": "gia-5",
+    "provinceCode": "31",
+    "administrativeUnit": "Thị xã"
+  },
+  {
+    "code": "3106",
+    "name": "Thành phố Lâm 6",
+    "nameEn": "Lâm 6",
+    "fullName": "Thành phố Lâm 6",
+    "fullNameEn": "Lâm 6 District",
+    "codeName": "lâm-6",
+    "provinceCode": "31",
+    "administrativeUnit": "Thành phố"
+  },
+  {
+    "code": "3107",
+    "name": "Huyện Sơn 7",
+    "nameEn": "Sơn 7",
+    "fullName": "Huyện Sơn 7",
+    "fullNameEn": "Sơn 7 District",
+    "codeName": "sơn-7",
+    "provinceCode": "31",
+    "administrativeUnit": "Huyện"
+  },
+  {
+    "code": "3108",
+    "name": "Quận Thành 8",
+    "nameEn": "Thành 8",
+    "fullName": "Quận Thành 8",
+    "fullNameEn": "Thành 8 District",
+    "codeName": "thành-8",
+    "provinceCode": "31",
+    "administrativeUnit": "Quận"
+  },
+  {
+    "code": "3109",
+    "name": "Thị xã Việt 9",
+    "nameEn": "Việt 9",
+    "fullName": "Thị xã Việt 9",
+    "fullNameEn": "Việt 9 District",
+    "codeName": "việt-9",
+    "provinceCode": "31",
+    "administrativeUnit": "Thị xã"
+  },
+  {
+    "code": "3110",
+    "name": "Thị xã Yên 10",
+    "nameEn": "Yên 10",
+    "fullName": "Thị xã Yên 10",
+    "fullNameEn": "Yên 10 District",
+    "codeName": "yên-10",
+    "provinceCode": "31",
+    "administrativeUnit": "Thị xã"
+  },
+  {
+    "code": "3111",
+    "name": "Huyện Bắc 11",
+    "nameEn": "Bắc 11",
+    "fullName": "Huyện Bắc 11",
+    "fullNameEn": "Bắc 11 District",
+    "codeName": "bắc-11",
+    "provinceCode": "31",
+    "administrativeUnit": "Huyện"
+  },
+  {
+    "code": "3112",
+    "name": "Quận Nam 12",
+    "nameEn": "Nam 12",
+    "fullName": "Quận Nam 12",
+    "fullNameEn": "Nam 12 District",
+    "codeName": "nam-12",
+    "provinceCode": "31",
+    "administrativeUnit": "Quận"
+  },
+  {
+    "code": "3113",
+    "name": "Thị xã Đông 13",
+    "nameEn": "Đông 13",
+    "fullName": "Thị xã Đông 13",
+    "fullNameEn": "Đông 13 District",
+    "codeName": "đông-13",
+    "provinceCode": "31",
+    "administrativeUnit": "Thị xã"
+  },
+  {
+    "code": "3114",
+    "name": "Thị xã Tây 14",
+    "nameEn": "Tây 14",
+    "fullName": "Thị xã Tây 14",
+    "fullNameEn": "Tây 14 District",
+    "codeName": "tây-14",
+    "provinceCode": "31",
+    "administrativeUnit": "Thị xã"
+  },
+  {
+    "code": "7901",
+    "name": "Quận Bắc 1",
+    "nameEn": "Bắc 1",
+    "fullName": "Quận Bắc 1",
+    "fullNameEn": "Bắc 1 District",
+    "codeName": "bắc-1",
+    "provinceCode": "79",
+    "administrativeUnit": "Quận"
+  },
+  {
+    "code": "7902",
+    "name": "Huyện Nam 2",
+    "nameEn": "Nam 2",
+    "fullName": "Huyện Nam 2",
+    "fullNameEn": "Nam 2 District",
+    "codeName": "nam-2",
+    "provinceCode": "79",
+    "administrativeUnit": "Huyện"
+  },
+  {
+    "code": "7903",
+    "name": "Quận Đông 3",
+    "nameEn": "Đông 3",
+    "fullName": "Quận Đông 3",
+    "fullNameEn": "Đông 3 District",
+    "codeName": "đông-3",
+    "provinceCode": "79",
+    "administrativeUnit": "Quận"
+  },
+  {
+    "code": "7904",
+    "name": "Thành phố Tây 4",
+    "nameEn": "Tây 4",
+    "fullName": "Thành phố Tây 4",
+    "fullNameEn": "Tây 4 District",
+    "codeName": "tây-4",
+    "provinceCode": "79",
+    "administrativeUnit": "Thành phố"
+  },
+  {
+    "code": "7905",
+    "name": "Huyện Châu 5",
+    "nameEn": "Châu 5",
+    "fullName": "Huyện Châu 5",
+    "fullNameEn": "Châu 5 District",
+    "codeName": "châu-5",
+    "provinceCode": "79",
+    "administrativeUnit": "Huyện"
+  },
+  {
+    "code": "7906",
+    "name": "Quận Giá 6",
+    "nameEn": "Giá 6",
+    "fullName": "Quận Giá 6",
+    "fullNameEn": "Giá 6 District",
+    "codeName": "giá-6",
+    "provinceCode": "79",
+    "administrativeUnit": "Quận"
+  },
+  {
+    "code": "7907",
+    "name": "Quận Khánh 7",
+    "nameEn": "Khánh 7",
+    "fullName": "Quận Khánh 7",
+    "fullNameEn": "Khánh 7 District",
+    "codeName": "khánh-7",
+    "provinceCode": "79",
+    "administrativeUnit": "Quận"
+  },
+  {
+    "code": "7908",
+    "name": "Quận Long 8",
+    "nameEn": "Long 8",
+    "fullName": "Quận Long 8",
+    "fullNameEn": "Long 8 District",
+    "codeName": "long-8",
+    "provinceCode": "79",
+    "administrativeUnit": "Quận"
+  },
+  {
+    "code": "7909",
+    "name": "Quận Mỹ 9",
+    "nameEn": "Mỹ 9",
+    "fullName": "Quận Mỹ 9",
+    "fullNameEn": "Mỹ 9 District",
+    "codeName": "mỹ-9",
+    "provinceCode": "79",
+    "administrativeUnit": "Quận"
+  },
+  {
+    "code": "7910",
+    "name": "Thành phố Phong 10",
+    "nameEn": "Phong 10",
+    "fullName": "Thành phố Phong 10",
+    "fullNameEn": "Phong 10 District",
+    "codeName": "phong-10",
+    "provinceCode": "79",
+    "administrativeUnit": "Thành phố"
+  },
+  {
+    "code": "7911",
+    "name": "Huyện Quới 11",
+    "nameEn": "Quới 11",
+    "fullName": "Huyện Quới 11",
+    "fullNameEn": "Quới 11 District",
+    "codeName": "quới-11",
+    "provinceCode": "79",
+    "administrativeUnit": "Huyện"
+  },
+  {
+    "code": "7912",
+    "name": "Thành phố Sơn 12",
+    "nameEn": "Sơn 12",
+    "fullName": "Thành phố Sơn 12",
+    "fullNameEn": "Sơn 12 District",
+    "codeName": "sơn-12",
+    "provinceCode": "79",
+    "administrativeUnit": "Thành phố"
+  },
+  {
+    "code": "7913",
+    "name": "Huyện Bắc 13",
+    "nameEn": "Bắc 13",
+    "fullName": "Huyện Bắc 13",
+    "fullNameEn": "Bắc 13 District",
+    "codeName": "bắc-13",
+    "provinceCode": "79",
+    "administrativeUnit": "Huyện"
+  },
+  {
+    "code": "7914",
+    "name": "Huyện Nam 14",
+    "nameEn": "Nam 14",
+    "fullName": "Huyện Nam 14",
+    "fullNameEn": "Nam 14 District",
+    "codeName": "nam-14",
+    "provinceCode": "79",
+    "administrativeUnit": "Huyện"
+  },
+  {
+    "code": "7915",
+    "name": "Quận Đông 15",
+    "nameEn": "Đông 15",
+    "fullName": "Quận Đông 15",
+    "fullNameEn": "Đông 15 District",
+    "codeName": "đông-15",
+    "provinceCode": "79",
+    "administrativeUnit": "Quận"
+  },
+  {
+    "code": "7916",
+    "name": "Thành phố Tây 16",
+    "nameEn": "Tây 16",
+    "fullName": "Thành phố Tây 16",
+    "fullNameEn": "Tây 16 District",
+    "codeName": "tây-16",
+    "provinceCode": "79",
+    "administrativeUnit": "Thành phố"
+  },
+  {
+    "code": "7917",
+    "name": "Thành phố Châu 17",
+    "nameEn": "Châu 17",
+    "fullName": "Thành phố Châu 17",
+    "fullNameEn": "Châu 17 District",
+    "codeName": "châu-17",
+    "provinceCode": "79",
+    "administrativeUnit": "Thành phố"
+  },
+  {
+    "code": "7918",
+    "name": "Huyện Giá 18",
+    "nameEn": "Giá 18",
+    "fullName": "Huyện Giá 18",
+    "fullNameEn": "Giá 18 District",
+    "codeName": "giá-18",
+    "provinceCode": "79",
+    "administrativeUnit": "Huyện"
+  },
+  {
+    "code": "7919",
+    "name": "Thị xã Khánh 19",
+    "nameEn": "Khánh 19",
+    "fullName": "Thị xã Khánh 19",
+    "fullNameEn": "Khánh 19 District",
+    "codeName": "khánh-19",
+    "provinceCode": "79",
+    "administrativeUnit": "Thị xã"
+  },
+  {
+    "code": "7920",
+    "name": "Huyện Long 20",
+    "nameEn": "Long 20",
+    "fullName": "Huyện Long 20",
+    "fullNameEn": "Long 20 District",
+    "codeName": "long-20",
+    "provinceCode": "79",
+    "administrativeUnit": "Huyện"
+  },
+  {
+    "code": "7921",
+    "name": "Huyện Mỹ 21",
+    "nameEn": "Mỹ 21",
+    "fullName": "Huyện Mỹ 21",
+    "fullNameEn": "Mỹ 21 District",
+    "codeName": "mỹ-21",
+    "provinceCode": "79",
+    "administrativeUnit": "Huyện"
+  },
+  {
+    "code": "4601",
+    "name": "Thị xã Bắc 1",
+    "nameEn": "Bắc 1",
+    "fullName": "Thị xã Bắc 1",
+    "fullNameEn": "Bắc 1 District",
+    "codeName": "bắc-1",
+    "provinceCode": "46",
+    "administrativeUnit": "Thị xã"
+  },
+  {
+    "code": "4602",
+    "name": "Thị xã Nam 2",
+    "nameEn": "Nam 2",
+    "fullName": "Thị xã Nam 2",
+    "fullNameEn": "Nam 2 District",
+    "codeName": "nam-2",
+    "provinceCode": "46",
+    "administrativeUnit": "Thị xã"
+  },
+  {
+    "code": "4603",
+    "name": "Huyện Đông 3",
+    "nameEn": "Đông 3",
+    "fullName": "Huyện Đông 3",
+    "fullNameEn": "Đông 3 District",
+    "codeName": "đông-3",
+    "provinceCode": "46",
+    "administrativeUnit": "Huyện"
+  },
+  {
+    "code": "4604",
+    "name": "Thị xã Tây 4",
+    "nameEn": "Tây 4",
+    "fullName": "Thị xã Tây 4",
+    "fullNameEn": "Tây 4 District",
+    "codeName": "tây-4",
+    "provinceCode": "46",
+    "administrativeUnit": "Thị xã"
+  },
+  {
+    "code": "4605",
+    "name": "Thành phố Hà 5",
+    "nameEn": "Hà 5",
+    "fullName": "Thành phố Hà 5",
+    "fullNameEn": "Hà 5 District",
+    "codeName": "hà-5",
+    "provinceCode": "46",
+    "administrativeUnit": "Thành phố"
+  },
+  {
+    "code": "3301",
+    "name": "Huyện Bắc 1",
+    "nameEn": "Bắc 1",
+    "fullName": "Huyện Bắc 1",
+    "fullNameEn": "Bắc 1 District",
+    "codeName": "bắc-1",
+    "provinceCode": "33",
+    "administrativeUnit": "Huyện"
+  },
+  {
+    "code": "3302",
+    "name": "Quận Nam 2",
+    "nameEn": "Nam 2",
+    "fullName": "Quận Nam 2",
+    "fullNameEn": "Nam 2 District",
+    "codeName": "nam-2",
+    "provinceCode": "33",
+    "administrativeUnit": "Quận"
+  },
+  {
+    "code": "3303",
+    "name": "Thị xã Đông 3",
+    "nameEn": "Đông 3",
+    "fullName": "Thị xã Đông 3",
+    "fullNameEn": "Đông 3 District",
+    "codeName": "đông-3",
+    "provinceCode": "33",
+    "administrativeUnit": "Thị xã"
+  },
+  {
+    "code": "3304",
+    "name": "Thành phố Tây 4",
+    "nameEn": "Tây 4",
+    "fullName": "Thành phố Tây 4",
+    "fullNameEn": "Tây 4 District",
+    "codeName": "tây-4",
+    "provinceCode": "33",
+    "administrativeUnit": "Thành phố"
+  },
+  {
+    "code": "3305",
+    "name": "Quận Gia 5",
+    "nameEn": "Gia 5",
+    "fullName": "Quận Gia 5",
+    "fullNameEn": "Gia 5 District",
+    "codeName": "gia-5",
+    "provinceCode": "33",
+    "administrativeUnit": "Quận"
+  },
+  {
+    "code": "3306",
+    "name": "Thị xã Lâm 6",
+    "nameEn": "Lâm 6",
+    "fullName": "Thị xã Lâm 6",
+    "fullNameEn": "Lâm 6 District",
+    "codeName": "lâm-6",
+    "provinceCode": "33",
+    "administrativeUnit": "Thị xã"
+  },
+  {
+    "code": "3307",
+    "name": "Huyện Sơn 7",
+    "nameEn": "Sơn 7",
+    "fullName": "Huyện Sơn 7",
+    "fullNameEn": "Sơn 7 District",
+    "codeName": "sơn-7",
+    "provinceCode": "33",
+    "administrativeUnit": "Huyện"
+  },
+  {
+    "code": "3308",
+    "name": "Huyện Thành 8",
+    "nameEn": "Thành 8",
+    "fullName": "Huyện Thành 8",
+    "fullNameEn": "Thành 8 District",
+    "codeName": "thành-8",
+    "provinceCode": "33",
+    "administrativeUnit": "Huyện"
+  },
+  {
+    "code": "3309",
+    "name": "Quận Việt 9",
+    "nameEn": "Việt 9",
+    "fullName": "Quận Việt 9",
+    "fullNameEn": "Việt 9 District",
+    "codeName": "việt-9",
+    "provinceCode": "33",
+    "administrativeUnit": "Quận"
+  },
+  {
+    "code": "3310",
+    "name": "Huyện Yên 10",
+    "nameEn": "Yên 10",
+    "fullName": "Huyện Yên 10",
+    "fullNameEn": "Yên 10 District",
+    "codeName": "yên-10",
+    "provinceCode": "33",
+    "administrativeUnit": "Huyện"
+  },
+  {
+    "code": "3311",
+    "name": "Thành phố Bắc 11",
+    "nameEn": "Bắc 11",
+    "fullName": "Thành phố Bắc 11",
+    "fullNameEn": "Bắc 11 District",
+    "codeName": "bắc-11",
+    "provinceCode": "33",
+    "administrativeUnit": "Thành phố"
+  },
+  {
+    "code": "3312",
+    "name": "Quận Nam 12",
+    "nameEn": "Nam 12",
+    "fullName": "Quận Nam 12",
+    "fullNameEn": "Nam 12 District",
+    "codeName": "nam-12",
+    "provinceCode": "33",
+    "administrativeUnit": "Quận"
+  },
+  {
+    "code": "3313",
+    "name": "Thị xã Đông 13",
+    "nameEn": "Đông 13",
+    "fullName": "Thị xã Đông 13",
+    "fullNameEn": "Đông 13 District",
+    "codeName": "đông-13",
+    "provinceCode": "33",
+    "administrativeUnit": "Thị xã"
+  },
+  {
+    "code": "5601",
+    "name": "Huyện Bắc 1",
+    "nameEn": "Bắc 1",
+    "fullName": "Huyện Bắc 1",
+    "fullNameEn": "Bắc 1 District",
+    "codeName": "bắc-1",
+    "provinceCode": "56",
+    "administrativeUnit": "Huyện"
+  },
+  {
+    "code": "5602",
+    "name": "Quận Nam 2",
+    "nameEn": "Nam 2",
+    "fullName": "Quận Nam 2",
+    "fullNameEn": "Nam 2 District",
+    "codeName": "nam-2",
+    "provinceCode": "56",
+    "administrativeUnit": "Quận"
+  },
+  {
+    "code": "5603",
+    "name": "Thành phố Đông 3",
+    "nameEn": "Đông 3",
+    "fullName": "Thành phố Đông 3",
+    "fullNameEn": "Đông 3 District",
+    "codeName": "đông-3",
+    "provinceCode": "56",
+    "administrativeUnit": "Thành phố"
+  },
+  {
+    "code": "5604",
+    "name": "Quận Tây 4",
+    "nameEn": "Tây 4",
+    "fullName": "Quận Tây 4",
+    "fullNameEn": "Tây 4 District",
+    "codeName": "tây-4",
+    "provinceCode": "56",
+    "administrativeUnit": "Quận"
+  },
+  {
+    "code": "5605",
+    "name": "Thành phố Hà 5",
+    "nameEn": "Hà 5",
+    "fullName": "Thành phố Hà 5",
+    "fullNameEn": "Hà 5 District",
+    "codeName": "hà-5",
+    "provinceCode": "56",
+    "administrativeUnit": "Thành phố"
+  },
+  {
+    "code": "5606",
+    "name": "Thị xã Lộc 6",
+    "nameEn": "Lộc 6",
+    "fullName": "Thị xã Lộc 6",
+    "fullNameEn": "Lộc 6 District",
+    "codeName": "lộc-6",
+    "provinceCode": "56",
+    "administrativeUnit": "Thị xã"
+  },
+  {
+    "code": "5607",
+    "name": "Thành phố Ninh 7",
+    "nameEn": "Ninh 7",
+    "fullName": "Thành phố Ninh 7",
+    "fullNameEn": "Ninh 7 District",
+    "codeName": "ninh-7",
+    "provinceCode": "56",
+    "administrativeUnit": "Thành phố"
+  },
+  {
+    "code": "5608",
+    "name": "Huyện Phú 8",
+    "nameEn": "Phú 8",
+    "fullName": "Huyện Phú 8",
+    "fullNameEn": "Phú 8 District",
+    "codeName": "phú-8",
+    "provinceCode": "56",
+    "administrativeUnit": "Huyện"
+  },
+  {
+    "code": "1201",
+    "name": "Thành phố Bắc 1",
+    "nameEn": "Bắc 1",
+    "fullName": "Thành phố Bắc 1",
+    "fullNameEn": "Bắc 1 District",
+    "codeName": "bắc-1",
+    "provinceCode": "12",
+    "administrativeUnit": "Thành phố"
+  },
+  {
+    "code": "1202",
+    "name": "Thành phố Nam 2",
+    "nameEn": "Nam 2",
+    "fullName": "Thành phố Nam 2",
+    "fullNameEn": "Nam 2 District",
+    "codeName": "nam-2",
+    "provinceCode": "12",
+    "administrativeUnit": "Thành phố"
+  },
+  {
+    "code": "1203",
+    "name": "Huyện Đông 3",
+    "nameEn": "Đông 3",
+    "fullName": "Huyện Đông 3",
+    "fullNameEn": "Đông 3 District",
+    "codeName": "đông-3",
+    "provinceCode": "12",
+    "administrativeUnit": "Huyện"
+  },
+  {
+    "code": "1204",
+    "name": "Thành phố Tây 4",
+    "nameEn": "Tây 4",
+    "fullName": "Thành phố Tây 4",
+    "fullNameEn": "Tây 4 District",
+    "codeName": "tây-4",
+    "provinceCode": "12",
+    "administrativeUnit": "Thành phố"
+  },
+  {
+    "code": "6801",
+    "name": "Thành phố Bắc 1",
+    "nameEn": "Bắc 1",
+    "fullName": "Thành phố Bắc 1",
+    "fullNameEn": "Bắc 1 District",
+    "codeName": "bắc-1",
+    "provinceCode": "68",
+    "administrativeUnit": "Thành phố"
+  },
+  {
+    "code": "6802",
+    "name": "Quận Nam 2",
+    "nameEn": "Nam 2",
+    "fullName": "Quận Nam 2",
+    "fullNameEn": "Nam 2 District",
+    "codeName": "nam-2",
+    "provinceCode": "68",
+    "administrativeUnit": "Quận"
+  },
+  {
+    "code": "6803",
+    "name": "Quận Đông 3",
+    "nameEn": "Đông 3",
+    "fullName": "Quận Đông 3",
+    "fullNameEn": "Đông 3 District",
+    "codeName": "đông-3",
+    "provinceCode": "68",
+    "administrativeUnit": "Quận"
+  },
+  {
+    "code": "6804",
+    "name": "Thành phố Tây 4",
+    "nameEn": "Tây 4",
+    "fullName": "Thành phố Tây 4",
+    "fullNameEn": "Tây 4 District",
+    "codeName": "tây-4",
+    "provinceCode": "68",
+    "administrativeUnit": "Thành phố"
+  },
+  {
+    "code": "6805",
+    "name": "Thành phố Hà 5",
+    "nameEn": "Hà 5",
+    "fullName": "Thành phố Hà 5",
+    "fullNameEn": "Hà 5 District",
+    "codeName": "hà-5",
+    "provinceCode": "68",
+    "administrativeUnit": "Thành phố"
+  },
+  {
+    "code": "6806",
+    "name": "Thị xã Lộc 6",
+    "nameEn": "Lộc 6",
+    "fullName": "Thị xã Lộc 6",
+    "fullNameEn": "Lộc 6 District",
+    "codeName": "lộc-6",
+    "provinceCode": "68",
+    "administrativeUnit": "Thị xã"
+  },
+  {
+    "code": "6807",
+    "name": "Quận Ninh 7",
+    "nameEn": "Ninh 7",
+    "fullName": "Quận Ninh 7",
+    "fullNameEn": "Ninh 7 District",
+    "codeName": "ninh-7",
+    "provinceCode": "68",
+    "administrativeUnit": "Quận"
+  },
+  {
+    "code": "6808",
+    "name": "Thành phố Phú 8",
+    "nameEn": "Phú 8",
+    "fullName": "Thành phố Phú 8",
+    "fullNameEn": "Phú 8 District",
+    "codeName": "phú-8",
+    "provinceCode": "68",
+    "administrativeUnit": "Thành phố"
+  },
+  {
+    "code": "6809",
+    "name": "Thành phố Quảng 9",
+    "nameEn": "Quảng 9",
+    "fullName": "Thành phố Quảng 9",
+    "fullNameEn": "Quảng 9 District",
+    "codeName": "quảng-9",
+    "provinceCode": "68",
+    "administrativeUnit": "Thành phố"
+  },
+  {
+    "code": "6810",
+    "name": "Huyện Thị 10",
+    "nameEn": "Thị 10",
+    "fullName": "Huyện Thị 10",
+    "fullNameEn": "Thị 10 District",
+    "codeName": "thị-10",
+    "provinceCode": "68",
+    "administrativeUnit": "Huyện"
+  },
+  {
+    "code": "6811",
+    "name": "Huyện Trà 11",
+    "nameEn": "Trà 11",
+    "fullName": "Huyện Trà 11",
+    "fullNameEn": "Trà 11 District",
+    "codeName": "trà-11",
+    "provinceCode": "68",
+    "administrativeUnit": "Huyện"
+  },
+  {
+    "code": "6812",
+    "name": "Quận Bắc 12",
+    "nameEn": "Bắc 12",
+    "fullName": "Quận Bắc 12",
+    "fullNameEn": "Bắc 12 District",
+    "codeName": "bắc-12",
+    "provinceCode": "68",
+    "administrativeUnit": "Quận"
+  },
+  {
+    "code": "6813",
+    "name": "Thành phố Nam 13",
+    "nameEn": "Nam 13",
+    "fullName": "Thành phố Nam 13",
+    "fullNameEn": "Nam 13 District",
+    "codeName": "nam-13",
+    "provinceCode": "68",
+    "administrativeUnit": "Thành phố"
+  },
+  {
+    "code": "6814",
+    "name": "Thị xã Đông 14",
+    "nameEn": "Đông 14",
+    "fullName": "Thị xã Đông 14",
+    "fullNameEn": "Đông 14 District",
+    "codeName": "đông-14",
+    "provinceCode": "68",
+    "administrativeUnit": "Thị xã"
+  },
+  {
+    "code": "6815",
+    "name": "Thị xã Tây 15",
+    "nameEn": "Tây 15",
+    "fullName": "Thị xã Tây 15",
+    "fullNameEn": "Tây 15 District",
+    "codeName": "tây-15",
+    "provinceCode": "68",
+    "administrativeUnit": "Thị xã"
+  },
+  {
+    "code": "2001",
+    "name": "Thành phố Bắc 1",
+    "nameEn": "Bắc 1",
+    "fullName": "Thành phố Bắc 1",
+    "fullNameEn": "Bắc 1 District",
+    "codeName": "bắc-1",
+    "provinceCode": "20",
+    "administrativeUnit": "Thành phố"
+  },
+  {
+    "code": "2002",
+    "name": "Quận Nam 2",
+    "nameEn": "Nam 2",
+    "fullName": "Quận Nam 2",
+    "fullNameEn": "Nam 2 District",
+    "codeName": "nam-2",
+    "provinceCode": "20",
+    "administrativeUnit": "Quận"
+  },
+  {
+    "code": "2003",
+    "name": "Huyện Đông 3",
+    "nameEn": "Đông 3",
+    "fullName": "Huyện Đông 3",
+    "fullNameEn": "Đông 3 District",
+    "codeName": "đông-3",
+    "provinceCode": "20",
+    "administrativeUnit": "Huyện"
+  },
+  {
+    "code": "2004",
+    "name": "Quận Tây 4",
+    "nameEn": "Tây 4",
+    "fullName": "Quận Tây 4",
+    "fullNameEn": "Tây 4 District",
+    "codeName": "tây-4",
+    "provinceCode": "20",
+    "administrativeUnit": "Quận"
+  },
+  {
+    "code": "2005",
+    "name": "Huyện Gia 5",
+    "nameEn": "Gia 5",
+    "fullName": "Huyện Gia 5",
+    "fullNameEn": "Gia 5 District",
+    "codeName": "gia-5",
+    "provinceCode": "20",
+    "administrativeUnit": "Huyện"
+  },
+  {
+    "code": "2006",
+    "name": "Thành phố Lâm 6",
+    "nameEn": "Lâm 6",
+    "fullName": "Thành phố Lâm 6",
+    "fullNameEn": "Lâm 6 District",
+    "codeName": "lâm-6",
+    "provinceCode": "20",
+    "administrativeUnit": "Thành phố"
+  },
+  {
+    "code": "2007",
+    "name": "Thị xã Sơn 7",
+    "nameEn": "Sơn 7",
+    "fullName": "Thị xã Sơn 7",
+    "fullNameEn": "Sơn 7 District",
+    "codeName": "sơn-7",
+    "provinceCode": "20",
+    "administrativeUnit": "Thị xã"
+  },
+  {
+    "code": "2008",
+    "name": "Quận Thành 8",
+    "nameEn": "Thành 8",
+    "fullName": "Quận Thành 8",
+    "fullNameEn": "Thành 8 District",
+    "codeName": "thành-8",
+    "provinceCode": "20",
+    "administrativeUnit": "Quận"
+  },
+  {
+    "code": "1501",
+    "name": "Thành phố Bắc 1",
+    "nameEn": "Bắc 1",
+    "fullName": "Thành phố Bắc 1",
+    "fullNameEn": "Bắc 1 District",
+    "codeName": "bắc-1",
+    "provinceCode": "15",
+    "administrativeUnit": "Thành phố"
+  },
+  {
+    "code": "1502",
+    "name": "Thành phố Nam 2",
+    "nameEn": "Nam 2",
+    "fullName": "Thành phố Nam 2",
+    "fullNameEn": "Nam 2 District",
+    "codeName": "nam-2",
+    "provinceCode": "15",
+    "administrativeUnit": "Thành phố"
+  },
+  {
+    "code": "1503",
+    "name": "Huyện Đông 3",
+    "nameEn": "Đông 3",
+    "fullName": "Huyện Đông 3",
+    "fullNameEn": "Đông 3 District",
+    "codeName": "đông-3",
+    "provinceCode": "15",
+    "administrativeUnit": "Huyện"
+  },
+  {
+    "code": "1504",
+    "name": "Huyện Tây 4",
+    "nameEn": "Tây 4",
+    "fullName": "Huyện Tây 4",
+    "fullNameEn": "Tây 4 District",
+    "codeName": "tây-4",
+    "provinceCode": "15",
+    "administrativeUnit": "Huyện"
+  },
+  {
+    "code": "1505",
+    "name": "Thành phố Gia 5",
+    "nameEn": "Gia 5",
+    "fullName": "Thành phố Gia 5",
+    "fullNameEn": "Gia 5 District",
+    "codeName": "gia-5",
+    "provinceCode": "15",
+    "administrativeUnit": "Thành phố"
+  },
+  {
+    "code": "1506",
+    "name": "Huyện Lâm 6",
+    "nameEn": "Lâm 6",
+    "fullName": "Huyện Lâm 6",
+    "fullNameEn": "Lâm 6 District",
+    "codeName": "lâm-6",
+    "provinceCode": "15",
+    "administrativeUnit": "Huyện"
+  },
+  {
+    "code": "1507",
+    "name": "Huyện Sơn 7",
+    "nameEn": "Sơn 7",
+    "fullName": "Huyện Sơn 7",
+    "fullNameEn": "Sơn 7 District",
+    "codeName": "sơn-7",
+    "provinceCode": "15",
+    "administrativeUnit": "Huyện"
+  },
+  {
+    "code": "1508",
+    "name": "Quận Thành 8",
+    "nameEn": "Thành 8",
+    "fullName": "Quận Thành 8",
+    "fullNameEn": "Thành 8 District",
+    "codeName": "thành-8",
+    "provinceCode": "15",
+    "administrativeUnit": "Quận"
+  },
+  {
+    "code": "1509",
+    "name": "Huyện Việt 9",
+    "nameEn": "Việt 9",
+    "fullName": "Huyện Việt 9",
+    "fullNameEn": "Việt 9 District",
+    "codeName": "việt-9",
+    "provinceCode": "15",
+    "administrativeUnit": "Huyện"
+  },
+  {
+    "code": "1510",
+    "name": "Huyện Yên 10",
+    "nameEn": "Yên 10",
+    "fullName": "Huyện Yên 10",
+    "fullNameEn": "Yên 10 District",
+    "codeName": "yên-10",
+    "provinceCode": "15",
+    "administrativeUnit": "Huyện"
+  },
+  {
+    "code": "1511",
+    "name": "Huyện Bắc 11",
+    "nameEn": "Bắc 11",
+    "fullName": "Huyện Bắc 11",
+    "fullNameEn": "Bắc 11 District",
+    "codeName": "bắc-11",
+    "provinceCode": "15",
+    "administrativeUnit": "Huyện"
+  },
+  {
+    "code": "1512",
+    "name": "Thành phố Nam 12",
+    "nameEn": "Nam 12",
+    "fullName": "Thành phố Nam 12",
+    "fullNameEn": "Nam 12 District",
+    "codeName": "nam-12",
+    "provinceCode": "15",
+    "administrativeUnit": "Thành phố"
+  },
+  {
+    "code": "4001",
+    "name": "Quận Bắc 1",
+    "nameEn": "Bắc 1",
+    "fullName": "Quận Bắc 1",
+    "fullNameEn": "Bắc 1 District",
+    "codeName": "bắc-1",
+    "provinceCode": "40",
+    "administrativeUnit": "Quận"
+  },
+  {
+    "code": "4002",
+    "name": "Quận Nam 2",
+    "nameEn": "Nam 2",
+    "fullName": "Quận Nam 2",
+    "fullNameEn": "Nam 2 District",
+    "codeName": "nam-2",
+    "provinceCode": "40",
+    "administrativeUnit": "Quận"
+  },
+  {
+    "code": "4003",
+    "name": "Huyện Đông 3",
+    "nameEn": "Đông 3",
+    "fullName": "Huyện Đông 3",
+    "fullNameEn": "Đông 3 District",
+    "codeName": "đông-3",
+    "provinceCode": "40",
+    "administrativeUnit": "Huyện"
+  },
+  {
+    "code": "4004",
+    "name": "Thị xã Tây 4",
+    "nameEn": "Tây 4",
+    "fullName": "Thị xã Tây 4",
+    "fullNameEn": "Tây 4 District",
+    "codeName": "tây-4",
+    "provinceCode": "40",
+    "administrativeUnit": "Thị xã"
+  },
+  {
+    "code": "4005",
+    "name": "Huyện Hà 5",
+    "nameEn": "Hà 5",
+    "fullName": "Huyện Hà 5",
+    "fullNameEn": "Hà 5 District",
+    "codeName": "hà-5",
+    "provinceCode": "40",
+    "administrativeUnit": "Huyện"
+  },
+  {
+    "code": "4006",
+    "name": "Thành phố Lộc 6",
+    "nameEn": "Lộc 6",
+    "fullName": "Thành phố Lộc 6",
+    "fullNameEn": "Lộc 6 District",
+    "codeName": "lộc-6",
+    "provinceCode": "40",
+    "administrativeUnit": "Thành phố"
+  },
+  {
+    "code": "4007",
+    "name": "Quận Ninh 7",
+    "nameEn": "Ninh 7",
+    "fullName": "Quận Ninh 7",
+    "fullNameEn": "Ninh 7 District",
+    "codeName": "ninh-7",
+    "provinceCode": "40",
+    "administrativeUnit": "Quận"
+  },
+  {
+    "code": "4008",
+    "name": "Quận Phú 8",
+    "nameEn": "Phú 8",
+    "fullName": "Quận Phú 8",
+    "fullNameEn": "Phú 8 District",
+    "codeName": "phú-8",
+    "provinceCode": "40",
+    "administrativeUnit": "Quận"
+  },
+  {
+    "code": "4009",
+    "name": "Thành phố Quảng 9",
+    "nameEn": "Quảng 9",
+    "fullName": "Thành phố Quảng 9",
+    "fullNameEn": "Quảng 9 District",
+    "codeName": "quảng-9",
+    "provinceCode": "40",
+    "administrativeUnit": "Thành phố"
+  },
+  {
+    "code": "4010",
+    "name": "Huyện Thị 10",
+    "nameEn": "Thị 10",
+    "fullName": "Huyện Thị 10",
+    "fullNameEn": "Thị 10 District",
+    "codeName": "thị-10",
+    "provinceCode": "40",
+    "administrativeUnit": "Huyện"
+  },
+  {
+    "code": "4011",
+    "name": "Thành phố Trà 11",
+    "nameEn": "Trà 11",
+    "fullName": "Thành phố Trà 11",
+    "fullNameEn": "Trà 11 District",
+    "codeName": "trà-11",
+    "provinceCode": "40",
+    "administrativeUnit": "Thành phố"
+  },
+  {
+    "code": "4012",
+    "name": "Quận Bắc 12",
+    "nameEn": "Bắc 12",
+    "fullName": "Quận Bắc 12",
+    "fullNameEn": "Bắc 12 District",
+    "codeName": "bắc-12",
+    "provinceCode": "40",
+    "administrativeUnit": "Quận"
+  },
+  {
+    "code": "4013",
+    "name": "Quận Nam 13",
+    "nameEn": "Nam 13",
+    "fullName": "Quận Nam 13",
+    "fullNameEn": "Nam 13 District",
+    "codeName": "nam-13",
+    "provinceCode": "40",
+    "administrativeUnit": "Quận"
+  },
+  {
+    "code": "4014",
+    "name": "Quận Đông 14",
+    "nameEn": "Đông 14",
+    "fullName": "Quận Đông 14",
+    "fullNameEn": "Đông 14 District",
+    "codeName": "đông-14",
+    "provinceCode": "40",
+    "administrativeUnit": "Quận"
+  },
+  {
+    "code": "4015",
+    "name": "Huyện Tây 15",
+    "nameEn": "Tây 15",
+    "fullName": "Huyện Tây 15",
+    "fullNameEn": "Tây 15 District",
+    "codeName": "tây-15",
+    "provinceCode": "40",
+    "administrativeUnit": "Huyện"
+  },
+  {
+    "code": "4016",
+    "name": "Thành phố Hà 16",
+    "nameEn": "Hà 16",
+    "fullName": "Thành phố Hà 16",
+    "fullNameEn": "Hà 16 District",
+    "codeName": "hà-16",
+    "provinceCode": "40",
+    "administrativeUnit": "Thành phố"
+  },
+  {
+    "code": "3701",
+    "name": "Thị xã Bắc 1",
+    "nameEn": "Bắc 1",
+    "fullName": "Thị xã Bắc 1",
+    "fullNameEn": "Bắc 1 District",
+    "codeName": "bắc-1",
+    "provinceCode": "37",
+    "administrativeUnit": "Thị xã"
+  },
+  {
+    "code": "3702",
+    "name": "Thành phố Nam 2",
+    "nameEn": "Nam 2",
+    "fullName": "Thành phố Nam 2",
+    "fullNameEn": "Nam 2 District",
+    "codeName": "nam-2",
+    "provinceCode": "37",
+    "administrativeUnit": "Thành phố"
+  },
+  {
+    "code": "3703",
+    "name": "Thị xã Đông 3",
+    "nameEn": "Đông 3",
+    "fullName": "Thị xã Đông 3",
+    "fullNameEn": "Đông 3 District",
+    "codeName": "đông-3",
+    "provinceCode": "37",
+    "administrativeUnit": "Thị xã"
+  },
+  {
+    "code": "3704",
+    "name": "Thành phố Tây 4",
+    "nameEn": "Tây 4",
+    "fullName": "Thành phố Tây 4",
+    "fullNameEn": "Tây 4 District",
+    "codeName": "tây-4",
+    "provinceCode": "37",
+    "administrativeUnit": "Thành phố"
+  },
+  {
+    "code": "3705",
+    "name": "Thị xã Gia 5",
+    "nameEn": "Gia 5",
+    "fullName": "Thị xã Gia 5",
+    "fullNameEn": "Gia 5 District",
+    "codeName": "gia-5",
+    "provinceCode": "37",
+    "administrativeUnit": "Thị xã"
+  },
+  {
+    "code": "3706",
+    "name": "Huyện Lâm 6",
+    "nameEn": "Lâm 6",
+    "fullName": "Huyện Lâm 6",
+    "fullNameEn": "Lâm 6 District",
+    "codeName": "lâm-6",
+    "provinceCode": "37",
+    "administrativeUnit": "Huyện"
+  },
+  {
+    "code": "3707",
+    "name": "Thị xã Sơn 7",
+    "nameEn": "Sơn 7",
+    "fullName": "Thị xã Sơn 7",
+    "fullNameEn": "Sơn 7 District",
+    "codeName": "sơn-7",
+    "provinceCode": "37",
+    "administrativeUnit": "Thị xã"
+  },
+  {
+    "code": "3708",
+    "name": "Thành phố Thành 8",
+    "nameEn": "Thành 8",
+    "fullName": "Thành phố Thành 8",
+    "fullNameEn": "Thành 8 District",
+    "codeName": "thành-8",
+    "provinceCode": "37",
+    "administrativeUnit": "Thành phố"
+  },
+  {
+    "code": "3709",
+    "name": "Thành phố Việt 9",
+    "nameEn": "Việt 9",
+    "fullName": "Thành phố Việt 9",
+    "fullNameEn": "Việt 9 District",
+    "codeName": "việt-9",
+    "provinceCode": "37",
+    "administrativeUnit": "Thành phố"
+  },
+  {
+    "code": "3710",
+    "name": "Huyện Yên 10",
+    "nameEn": "Yên 10",
+    "fullName": "Huyện Yên 10",
+    "fullNameEn": "Yên 10 District",
+    "codeName": "yên-10",
+    "provinceCode": "37",
+    "administrativeUnit": "Huyện"
+  },
+  {
+    "code": "3711",
+    "name": "Quận Bắc 11",
+    "nameEn": "Bắc 11",
+    "fullName": "Quận Bắc 11",
+    "fullNameEn": "Bắc 11 District",
+    "codeName": "bắc-11",
+    "provinceCode": "37",
+    "administrativeUnit": "Quận"
+  },
+  {
+    "code": "3712",
+    "name": "Thị xã Nam 12",
+    "nameEn": "Nam 12",
+    "fullName": "Thị xã Nam 12",
+    "fullNameEn": "Nam 12 District",
+    "codeName": "nam-12",
+    "provinceCode": "37",
+    "administrativeUnit": "Thị xã"
+  },
+  {
+    "code": "3713",
+    "name": "Thị xã Đông 13",
+    "nameEn": "Đông 13",
+    "fullName": "Thị xã Đông 13",
+    "fullNameEn": "Đông 13 District",
+    "codeName": "đông-13",
+    "provinceCode": "37",
+    "administrativeUnit": "Thị xã"
+  },
+  {
+    "code": "3714",
+    "name": "Thành phố Tây 14",
+    "nameEn": "Tây 14",
+    "fullName": "Thành phố Tây 14",
+    "fullNameEn": "Tây 14 District",
+    "codeName": "tây-14",
+    "provinceCode": "37",
+    "administrativeUnit": "Thành phố"
+  },
+  {
+    "code": "3715",
+    "name": "Thị xã Gia 15",
+    "nameEn": "Gia 15",
+    "fullName": "Thị xã Gia 15",
+    "fullNameEn": "Gia 15 District",
+    "codeName": "gia-15",
+    "provinceCode": "37",
+    "administrativeUnit": "Thị xã"
+  },
+  {
+    "code": "3716",
+    "name": "Quận Lâm 16",
+    "nameEn": "Lâm 16",
+    "fullName": "Quận Lâm 16",
+    "fullNameEn": "Lâm 16 District",
+    "codeName": "lâm-16",
+    "provinceCode": "37",
+    "administrativeUnit": "Quận"
+  },
+  {
+    "code": "2501",
+    "name": "Thị xã Bắc 1",
+    "nameEn": "Bắc 1",
+    "fullName": "Thị xã Bắc 1",
+    "fullNameEn": "Bắc 1 District",
+    "codeName": "bắc-1",
+    "provinceCode": "25",
+    "administrativeUnit": "Thị xã"
+  },
+  {
+    "code": "2502",
+    "name": "Thị xã Nam 2",
+    "nameEn": "Nam 2",
+    "fullName": "Thị xã Nam 2",
+    "fullNameEn": "Nam 2 District",
+    "codeName": "nam-2",
+    "provinceCode": "25",
+    "administrativeUnit": "Thị xã"
+  },
+  {
+    "code": "2503",
+    "name": "Thị xã Đông 3",
+    "nameEn": "Đông 3",
+    "fullName": "Thị xã Đông 3",
+    "fullNameEn": "Đông 3 District",
+    "codeName": "đông-3",
+    "provinceCode": "25",
+    "administrativeUnit": "Thị xã"
+  },
+  {
+    "code": "2504",
+    "name": "Thị xã Tây 4",
+    "nameEn": "Tây 4",
+    "fullName": "Thị xã Tây 4",
+    "fullNameEn": "Tây 4 District",
+    "codeName": "tây-4",
+    "provinceCode": "25",
+    "administrativeUnit": "Thị xã"
+  },
+  {
+    "code": "2505",
+    "name": "Thị xã Gia 5",
+    "nameEn": "Gia 5",
+    "fullName": "Thị xã Gia 5",
+    "fullNameEn": "Gia 5 District",
+    "codeName": "gia-5",
+    "provinceCode": "25",
+    "administrativeUnit": "Thị xã"
+  },
+  {
+    "code": "2506",
+    "name": "Quận Lâm 6",
+    "nameEn": "Lâm 6",
+    "fullName": "Quận Lâm 6",
+    "fullNameEn": "Lâm 6 District",
+    "codeName": "lâm-6",
+    "provinceCode": "25",
+    "administrativeUnit": "Quận"
+  },
+  {
+    "code": "2507",
+    "name": "Huyện Sơn 7",
+    "nameEn": "Sơn 7",
+    "fullName": "Huyện Sơn 7",
+    "fullNameEn": "Sơn 7 District",
+    "codeName": "sơn-7",
+    "provinceCode": "25",
+    "administrativeUnit": "Huyện"
+  },
+  {
+    "code": "2508",
+    "name": "Huyện Thành 8",
+    "nameEn": "Thành 8",
+    "fullName": "Huyện Thành 8",
+    "fullNameEn": "Thành 8 District",
+    "codeName": "thành-8",
+    "provinceCode": "25",
+    "administrativeUnit": "Huyện"
+  },
+  {
+    "code": "2509",
+    "name": "Thị xã Việt 9",
+    "nameEn": "Việt 9",
+    "fullName": "Thị xã Việt 9",
+    "fullNameEn": "Việt 9 District",
+    "codeName": "việt-9",
+    "provinceCode": "25",
+    "administrativeUnit": "Thị xã"
+  },
+  {
+    "code": "2510",
+    "name": "Thành phố Yên 10",
+    "nameEn": "Yên 10",
+    "fullName": "Thành phố Yên 10",
+    "fullNameEn": "Yên 10 District",
+    "codeName": "yên-10",
+    "provinceCode": "25",
+    "administrativeUnit": "Thành phố"
+  },
+  {
+    "code": "2511",
+    "name": "Quận Bắc 11",
+    "nameEn": "Bắc 11",
+    "fullName": "Quận Bắc 11",
+    "fullNameEn": "Bắc 11 District",
+    "codeName": "bắc-11",
+    "provinceCode": "25",
+    "administrativeUnit": "Quận"
+  },
+  {
+    "code": "2512",
+    "name": "Thành phố Nam 12",
+    "nameEn": "Nam 12",
+    "fullName": "Thành phố Nam 12",
+    "fullNameEn": "Nam 12 District",
+    "codeName": "nam-12",
+    "provinceCode": "25",
+    "administrativeUnit": "Thành phố"
+  },
+  {
+    "code": "2513",
+    "name": "Quận Đông 13",
+    "nameEn": "Đông 13",
+    "fullName": "Quận Đông 13",
+    "fullNameEn": "Đông 13 District",
+    "codeName": "đông-13",
+    "provinceCode": "25",
+    "administrativeUnit": "Quận"
+  },
+  {
+    "code": "2514",
+    "name": "Thị xã Tây 14",
+    "nameEn": "Tây 14",
+    "fullName": "Thị xã Tây 14",
+    "fullNameEn": "Tây 14 District",
+    "codeName": "tây-14",
+    "provinceCode": "25",
+    "administrativeUnit": "Thị xã"
+  },
+  {
+    "code": "2515",
+    "name": "Thị xã Gia 15",
+    "nameEn": "Gia 15",
+    "fullName": "Thị xã Gia 15",
+    "fullNameEn": "Gia 15 District",
+    "codeName": "gia-15",
+    "provinceCode": "25",
+    "administrativeUnit": "Thị xã"
+  },
+  {
+    "code": "2516",
+    "name": "Thị xã Lâm 16",
+    "nameEn": "Lâm 16",
+    "fullName": "Thị xã Lâm 16",
+    "fullNameEn": "Lâm 16 District",
+    "codeName": "lâm-16",
+    "provinceCode": "25",
+    "administrativeUnit": "Thị xã"
+  },
+  {
+    "code": "2517",
+    "name": "Quận Sơn 17",
+    "nameEn": "Sơn 17",
+    "fullName": "Quận Sơn 17",
+    "fullNameEn": "Sơn 17 District",
+    "codeName": "sơn-17",
+    "provinceCode": "25",
+    "administrativeUnit": "Quận"
+  },
+  {
+    "code": "2518",
+    "name": "Huyện Thành 18",
+    "nameEn": "Thành 18",
+    "fullName": "Huyện Thành 18",
+    "fullNameEn": "Thành 18 District",
+    "codeName": "thành-18",
+    "provinceCode": "25",
+    "administrativeUnit": "Huyện"
+  },
+  {
+    "code": "5101",
+    "name": "Thành phố Bắc 1",
+    "nameEn": "Bắc 1",
+    "fullName": "Thành phố Bắc 1",
+    "fullNameEn": "Bắc 1 District",
+    "codeName": "bắc-1",
+    "provinceCode": "51",
+    "administrativeUnit": "Thành phố"
+  },
+  {
+    "code": "5102",
+    "name": "Thành phố Nam 2",
+    "nameEn": "Nam 2",
+    "fullName": "Thành phố Nam 2",
+    "fullNameEn": "Nam 2 District",
+    "codeName": "nam-2",
+    "provinceCode": "51",
+    "administrativeUnit": "Thành phố"
+  },
+  {
+    "code": "5103",
+    "name": "Thành phố Đông 3",
+    "nameEn": "Đông 3",
+    "fullName": "Thành phố Đông 3",
+    "fullNameEn": "Đông 3 District",
+    "codeName": "đông-3",
+    "provinceCode": "51",
+    "administrativeUnit": "Thành phố"
+  },
+  {
+    "code": "5104",
+    "name": "Quận Tây 4",
+    "nameEn": "Tây 4",
+    "fullName": "Quận Tây 4",
+    "fullNameEn": "Tây 4 District",
+    "codeName": "tây-4",
+    "provinceCode": "51",
+    "administrativeUnit": "Quận"
+  },
+  {
+    "code": "5105",
+    "name": "Huyện Hà 5",
+    "nameEn": "Hà 5",
+    "fullName": "Huyện Hà 5",
+    "fullNameEn": "Hà 5 District",
+    "codeName": "hà-5",
+    "provinceCode": "51",
+    "administrativeUnit": "Huyện"
+  },
+  {
+    "code": "5106",
+    "name": "Thành phố Lộc 6",
+    "nameEn": "Lộc 6",
+    "fullName": "Thành phố Lộc 6",
+    "fullNameEn": "Lộc 6 District",
+    "codeName": "lộc-6",
+    "provinceCode": "51",
+    "administrativeUnit": "Thành phố"
+  },
+  {
+    "code": "5107",
+    "name": "Huyện Ninh 7",
+    "nameEn": "Ninh 7",
+    "fullName": "Huyện Ninh 7",
+    "fullNameEn": "Ninh 7 District",
+    "codeName": "ninh-7",
+    "provinceCode": "51",
+    "administrativeUnit": "Huyện"
+  },
+  {
+    "code": "5108",
+    "name": "Huyện Phú 8",
+    "nameEn": "Phú 8",
+    "fullName": "Huyện Phú 8",
+    "fullNameEn": "Phú 8 District",
+    "codeName": "phú-8",
+    "provinceCode": "51",
+    "administrativeUnit": "Huyện"
+  },
+  {
+    "code": "5109",
+    "name": "Quận Quảng 9",
+    "nameEn": "Quảng 9",
+    "fullName": "Quận Quảng 9",
+    "fullNameEn": "Quảng 9 District",
+    "codeName": "quảng-9",
+    "provinceCode": "51",
+    "administrativeUnit": "Quận"
+  },
+  {
+    "code": "5110",
+    "name": "Thị xã Thị 10",
+    "nameEn": "Thị 10",
+    "fullName": "Thị xã Thị 10",
+    "fullNameEn": "Thị 10 District",
+    "codeName": "thị-10",
+    "provinceCode": "51",
+    "administrativeUnit": "Thị xã"
+  },
+  {
+    "code": "5111",
+    "name": "Huyện Trà 11",
+    "nameEn": "Trà 11",
+    "fullName": "Huyện Trà 11",
+    "fullNameEn": "Trà 11 District",
+    "codeName": "trà-11",
+    "provinceCode": "51",
+    "administrativeUnit": "Huyện"
+  },
+  {
+    "code": "5112",
+    "name": "Thị xã Bắc 12",
+    "nameEn": "Bắc 12",
+    "fullName": "Thị xã Bắc 12",
+    "fullNameEn": "Bắc 12 District",
+    "codeName": "bắc-12",
+    "provinceCode": "51",
+    "administrativeUnit": "Thị xã"
+  },
+  {
+    "code": "2201",
+    "name": "Huyện Bắc 1",
+    "nameEn": "Bắc 1",
+    "fullName": "Huyện Bắc 1",
+    "fullNameEn": "Bắc 1 District",
+    "codeName": "bắc-1",
+    "provinceCode": "22",
+    "administrativeUnit": "Huyện"
+  },
+  {
+    "code": "2202",
+    "name": "Thị xã Nam 2",
+    "nameEn": "Nam 2",
+    "fullName": "Thị xã Nam 2",
+    "fullNameEn": "Nam 2 District",
+    "codeName": "nam-2",
+    "provinceCode": "22",
+    "administrativeUnit": "Thị xã"
+  },
+  {
+    "code": "2203",
+    "name": "Thành phố Đông 3",
+    "nameEn": "Đông 3",
+    "fullName": "Thành phố Đông 3",
+    "fullNameEn": "Đông 3 District",
+    "codeName": "đông-3",
+    "provinceCode": "22",
+    "administrativeUnit": "Thành phố"
+  },
+  {
+    "code": "2204",
+    "name": "Thị xã Tây 4",
+    "nameEn": "Tây 4",
+    "fullName": "Thị xã Tây 4",
+    "fullNameEn": "Tây 4 District",
+    "codeName": "tây-4",
+    "provinceCode": "22",
+    "administrativeUnit": "Thị xã"
+  },
+  {
+    "code": "2205",
+    "name": "Quận Gia 5",
+    "nameEn": "Gia 5",
+    "fullName": "Quận Gia 5",
+    "fullNameEn": "Gia 5 District",
+    "codeName": "gia-5",
+    "provinceCode": "22",
+    "administrativeUnit": "Quận"
+  },
+  {
+    "code": "2206",
+    "name": "Huyện Lâm 6",
+    "nameEn": "Lâm 6",
+    "fullName": "Huyện Lâm 6",
+    "fullNameEn": "Lâm 6 District",
+    "codeName": "lâm-6",
+    "provinceCode": "22",
+    "administrativeUnit": "Huyện"
+  },
+  {
+    "code": "4401",
+    "name": "Quận Bắc 1",
+    "nameEn": "Bắc 1",
+    "fullName": "Quận Bắc 1",
+    "fullNameEn": "Bắc 1 District",
+    "codeName": "bắc-1",
+    "provinceCode": "44",
+    "administrativeUnit": "Quận"
+  },
+  {
+    "code": "4402",
+    "name": "Huyện Nam 2",
+    "nameEn": "Nam 2",
+    "fullName": "Huyện Nam 2",
+    "fullNameEn": "Nam 2 District",
+    "codeName": "nam-2",
+    "provinceCode": "44",
+    "administrativeUnit": "Huyện"
+  },
+  {
+    "code": "4403",
+    "name": "Quận Đông 3",
+    "nameEn": "Đông 3",
+    "fullName": "Quận Đông 3",
+    "fullNameEn": "Đông 3 District",
+    "codeName": "đông-3",
+    "provinceCode": "44",
+    "administrativeUnit": "Quận"
+  },
+  {
+    "code": "4404",
+    "name": "Quận Tây 4",
+    "nameEn": "Tây 4",
+    "fullName": "Quận Tây 4",
+    "fullNameEn": "Tây 4 District",
+    "codeName": "tây-4",
+    "provinceCode": "44",
+    "administrativeUnit": "Quận"
+  },
+  {
+    "code": "4405",
+    "name": "Huyện Hà 5",
+    "nameEn": "Hà 5",
+    "fullName": "Huyện Hà 5",
+    "fullNameEn": "Hà 5 District",
+    "codeName": "hà-5",
+    "provinceCode": "44",
+    "administrativeUnit": "Huyện"
+  },
+  {
+    "code": "4406",
+    "name": "Thành phố Lộc 6",
+    "nameEn": "Lộc 6",
+    "fullName": "Thành phố Lộc 6",
+    "fullNameEn": "Lộc 6 District",
+    "codeName": "lộc-6",
+    "provinceCode": "44",
+    "administrativeUnit": "Thành phố"
+  },
+  {
+    "code": "4407",
+    "name": "Thị xã Ninh 7",
+    "nameEn": "Ninh 7",
+    "fullName": "Thị xã Ninh 7",
+    "fullNameEn": "Ninh 7 District",
+    "codeName": "ninh-7",
+    "provinceCode": "44",
+    "administrativeUnit": "Thị xã"
+  },
+  {
+    "code": "4408",
+    "name": "Thành phố Phú 8",
+    "nameEn": "Phú 8",
+    "fullName": "Thành phố Phú 8",
+    "fullNameEn": "Phú 8 District",
+    "codeName": "phú-8",
+    "provinceCode": "44",
+    "administrativeUnit": "Thành phố"
+  },
+  {
+    "code": "4409",
+    "name": "Thành phố Quảng 9",
+    "nameEn": "Quảng 9",
+    "fullName": "Thành phố Quảng 9",
+    "fullNameEn": "Quảng 9 District",
+    "codeName": "quảng-9",
+    "provinceCode": "44",
+    "administrativeUnit": "Thành phố"
+  },
+  {
+    "code": "1401",
+    "name": "Thành phố Bắc 1",
+    "nameEn": "Bắc 1",
+    "fullName": "Thành phố Bắc 1",
+    "fullNameEn": "Bắc 1 District",
+    "codeName": "bắc-1",
+    "provinceCode": "14",
+    "administrativeUnit": "Thành phố"
+  },
+  {
+    "code": "1402",
+    "name": "Thành phố Nam 2",
+    "nameEn": "Nam 2",
+    "fullName": "Thành phố Nam 2",
+    "fullNameEn": "Nam 2 District",
+    "codeName": "nam-2",
+    "provinceCode": "14",
+    "administrativeUnit": "Thành phố"
+  },
+  {
+    "code": "1403",
+    "name": "Quận Đông 3",
+    "nameEn": "Đông 3",
+    "fullName": "Quận Đông 3",
+    "fullNameEn": "Đông 3 District",
+    "codeName": "đông-3",
+    "provinceCode": "14",
+    "administrativeUnit": "Quận"
+  },
+  {
+    "code": "1404",
+    "name": "Thị xã Tây 4",
+    "nameEn": "Tây 4",
+    "fullName": "Thị xã Tây 4",
+    "fullNameEn": "Tây 4 District",
+    "codeName": "tây-4",
+    "provinceCode": "14",
+    "administrativeUnit": "Thị xã"
+  },
+  {
+    "code": "1405",
+    "name": "Thành phố Gia 5",
+    "nameEn": "Gia 5",
+    "fullName": "Thành phố Gia 5",
+    "fullNameEn": "Gia 5 District",
+    "codeName": "gia-5",
+    "provinceCode": "14",
+    "administrativeUnit": "Thành phố"
+  },
+  {
+    "code": "1406",
+    "name": "Thành phố Lâm 6",
+    "nameEn": "Lâm 6",
+    "fullName": "Thành phố Lâm 6",
+    "fullNameEn": "Lâm 6 District",
+    "codeName": "lâm-6",
+    "provinceCode": "14",
+    "administrativeUnit": "Thành phố"
+  },
+  {
+    "code": "1407",
+    "name": "Huyện Sơn 7",
+    "nameEn": "Sơn 7",
+    "fullName": "Huyện Sơn 7",
+    "fullNameEn": "Sơn 7 District",
+    "codeName": "sơn-7",
+    "provinceCode": "14",
+    "administrativeUnit": "Huyện"
+  },
+  {
+    "code": "1408",
+    "name": "Thành phố Thành 8",
+    "nameEn": "Thành 8",
+    "fullName": "Thành phố Thành 8",
+    "fullNameEn": "Thành 8 District",
+    "codeName": "thành-8",
+    "provinceCode": "14",
+    "administrativeUnit": "Thành phố"
+  },
+  {
+    "code": "1409",
+    "name": "Thị xã Việt 9",
+    "nameEn": "Việt 9",
+    "fullName": "Thị xã Việt 9",
+    "fullNameEn": "Việt 9 District",
+    "codeName": "việt-9",
+    "provinceCode": "14",
+    "administrativeUnit": "Thị xã"
+  },
+  {
+    "code": "8001",
+    "name": "Thị xã Bắc 1",
+    "nameEn": "Bắc 1",
+    "fullName": "Thị xã Bắc 1",
+    "fullNameEn": "Bắc 1 District",
+    "codeName": "bắc-1",
+    "provinceCode": "80",
+    "administrativeUnit": "Thị xã"
+  },
+  {
+    "code": "8002",
+    "name": "Quận Nam 2",
+    "nameEn": "Nam 2",
+    "fullName": "Quận Nam 2",
+    "fullNameEn": "Nam 2 District",
+    "codeName": "nam-2",
+    "provinceCode": "80",
+    "administrativeUnit": "Quận"
+  },
+  {
+    "code": "8003",
+    "name": "Quận Đông 3",
+    "nameEn": "Đông 3",
+    "fullName": "Quận Đông 3",
+    "fullNameEn": "Đông 3 District",
+    "codeName": "đông-3",
+    "provinceCode": "80",
+    "administrativeUnit": "Quận"
+  },
+  {
+    "code": "8004",
+    "name": "Thành phố Tây 4",
+    "nameEn": "Tây 4",
+    "fullName": "Thành phố Tây 4",
+    "fullNameEn": "Tây 4 District",
+    "codeName": "tây-4",
+    "provinceCode": "80",
+    "administrativeUnit": "Thành phố"
+  },
+  {
+    "code": "8005",
+    "name": "Thị xã Châu 5",
+    "nameEn": "Châu 5",
+    "fullName": "Thị xã Châu 5",
+    "fullNameEn": "Châu 5 District",
+    "codeName": "châu-5",
+    "provinceCode": "80",
+    "administrativeUnit": "Thị xã"
+  },
+  {
+    "code": "8006",
+    "name": "Thị xã Giá 6",
+    "nameEn": "Giá 6",
+    "fullName": "Thị xã Giá 6",
+    "fullNameEn": "Giá 6 District",
+    "codeName": "giá-6",
+    "provinceCode": "80",
+    "administrativeUnit": "Thị xã"
+  },
+  {
+    "code": "8007",
+    "name": "Thành phố Khánh 7",
+    "nameEn": "Khánh 7",
+    "fullName": "Thành phố Khánh 7",
+    "fullNameEn": "Khánh 7 District",
+    "codeName": "khánh-7",
+    "provinceCode": "80",
+    "administrativeUnit": "Thành phố"
+  },
+  {
+    "code": "8008",
+    "name": "Quận Long 8",
+    "nameEn": "Long 8",
+    "fullName": "Quận Long 8",
+    "fullNameEn": "Long 8 District",
+    "codeName": "long-8",
+    "provinceCode": "80",
+    "administrativeUnit": "Quận"
+  },
+  {
+    "code": "8009",
+    "name": "Quận Mỹ 9",
+    "nameEn": "Mỹ 9",
+    "fullName": "Quận Mỹ 9",
+    "fullNameEn": "Mỹ 9 District",
+    "codeName": "mỹ-9",
+    "provinceCode": "80",
+    "administrativeUnit": "Quận"
+  },
+  {
+    "code": "8010",
+    "name": "Thành phố Phong 10",
+    "nameEn": "Phong 10",
+    "fullName": "Thành phố Phong 10",
+    "fullNameEn": "Phong 10 District",
+    "codeName": "phong-10",
+    "provinceCode": "80",
+    "administrativeUnit": "Thành phố"
+  },
+  {
+    "code": "8011",
+    "name": "Huyện Quới 11",
+    "nameEn": "Quới 11",
+    "fullName": "Huyện Quới 11",
+    "fullNameEn": "Quới 11 District",
+    "codeName": "quới-11",
+    "provinceCode": "80",
+    "administrativeUnit": "Huyện"
+  },
+  {
+    "code": "8012",
+    "name": "Thành phố Sơn 12",
+    "nameEn": "Sơn 12",
+    "fullName": "Thành phố Sơn 12",
+    "fullNameEn": "Sơn 12 District",
+    "codeName": "sơn-12",
+    "provinceCode": "80",
+    "administrativeUnit": "Thành phố"
+  },
+  {
+    "code": "1901",
+    "name": "Quận Bắc 1",
+    "nameEn": "Bắc 1",
+    "fullName": "Quận Bắc 1",
+    "fullNameEn": "Bắc 1 District",
+    "codeName": "bắc-1",
+    "provinceCode": "19",
+    "administrativeUnit": "Quận"
+  },
+  {
+    "code": "1902",
+    "name": "Thị xã Nam 2",
+    "nameEn": "Nam 2",
+    "fullName": "Thị xã Nam 2",
+    "fullNameEn": "Nam 2 District",
+    "codeName": "nam-2",
+    "provinceCode": "19",
+    "administrativeUnit": "Thị xã"
+  },
+  {
+    "code": "1903",
+    "name": "Thị xã Đông 3",
+    "nameEn": "Đông 3",
+    "fullName": "Thị xã Đông 3",
+    "fullNameEn": "Đông 3 District",
+    "codeName": "đông-3",
+    "provinceCode": "19",
+    "administrativeUnit": "Thị xã"
+  },
+  {
+    "code": "1904",
+    "name": "Quận Tây 4",
+    "nameEn": "Tây 4",
+    "fullName": "Quận Tây 4",
+    "fullNameEn": "Tây 4 District",
+    "codeName": "tây-4",
+    "provinceCode": "19",
+    "administrativeUnit": "Quận"
+  },
+  {
+    "code": "1905",
+    "name": "Thành phố Gia 5",
+    "nameEn": "Gia 5",
+    "fullName": "Thành phố Gia 5",
+    "fullNameEn": "Gia 5 District",
+    "codeName": "gia-5",
+    "provinceCode": "19",
+    "administrativeUnit": "Thành phố"
+  },
+  {
+    "code": "1906",
+    "name": "Thành phố Lâm 6",
+    "nameEn": "Lâm 6",
+    "fullName": "Thành phố Lâm 6",
+    "fullNameEn": "Lâm 6 District",
+    "codeName": "lâm-6",
+    "provinceCode": "19",
+    "administrativeUnit": "Thành phố"
+  },
+  {
+    "code": "1907",
+    "name": "Thị xã Sơn 7",
+    "nameEn": "Sơn 7",
+    "fullName": "Thị xã Sơn 7",
+    "fullNameEn": "Sơn 7 District",
+    "codeName": "sơn-7",
+    "provinceCode": "19",
+    "administrativeUnit": "Thị xã"
+  },
+  {
+    "code": "1908",
+    "name": "Thành phố Thành 8",
+    "nameEn": "Thành 8",
+    "fullName": "Thành phố Thành 8",
+    "fullNameEn": "Thành 8 District",
+    "codeName": "thành-8",
+    "provinceCode": "19",
+    "administrativeUnit": "Thành phố"
+  },
+  {
+    "code": "1909",
+    "name": "Huyện Việt 9",
+    "nameEn": "Việt 9",
+    "fullName": "Huyện Việt 9",
+    "fullNameEn": "Việt 9 District",
+    "codeName": "việt-9",
+    "provinceCode": "19",
+    "administrativeUnit": "Huyện"
+  },
+  {
+    "code": "1910",
+    "name": "Huyện Yên 10",
+    "nameEn": "Yên 10",
+    "fullName": "Huyện Yên 10",
+    "fullNameEn": "Yên 10 District",
+    "codeName": "yên-10",
+    "provinceCode": "19",
+    "administrativeUnit": "Huyện"
+  },
+  {
+    "code": "1911",
+    "name": "Thị xã Bắc 11",
+    "nameEn": "Bắc 11",
+    "fullName": "Thị xã Bắc 11",
+    "fullNameEn": "Bắc 11 District",
+    "codeName": "bắc-11",
+    "provinceCode": "19",
+    "administrativeUnit": "Thị xã"
+  },
+  {
+    "code": "3801",
+    "name": "Huyện Bắc 1",
+    "nameEn": "Bắc 1",
+    "fullName": "Huyện Bắc 1",
+    "fullNameEn": "Bắc 1 District",
+    "codeName": "bắc-1",
+    "provinceCode": "38",
+    "administrativeUnit": "Huyện"
+  },
+  {
+    "code": "3802",
+    "name": "Huyện Nam 2",
+    "nameEn": "Nam 2",
+    "fullName": "Huyện Nam 2",
+    "fullNameEn": "Nam 2 District",
+    "codeName": "nam-2",
+    "provinceCode": "38",
+    "administrativeUnit": "Huyện"
+  },
+  {
+    "code": "3803",
+    "name": "Thành phố Đông 3",
+    "nameEn": "Đông 3",
+    "fullName": "Thành phố Đông 3",
+    "fullNameEn": "Đông 3 District",
+    "codeName": "đông-3",
+    "provinceCode": "38",
+    "administrativeUnit": "Thành phố"
+  },
+  {
+    "code": "3804",
+    "name": "Huyện Tây 4",
+    "nameEn": "Tây 4",
+    "fullName": "Huyện Tây 4",
+    "fullNameEn": "Tây 4 District",
+    "codeName": "tây-4",
+    "provinceCode": "38",
+    "administrativeUnit": "Huyện"
+  },
+  {
+    "code": "3805",
+    "name": "Thành phố Hà 5",
+    "nameEn": "Hà 5",
+    "fullName": "Thành phố Hà 5",
+    "fullNameEn": "Hà 5 District",
+    "codeName": "hà-5",
+    "provinceCode": "38",
+    "administrativeUnit": "Thành phố"
+  },
+  {
+    "code": "3806",
+    "name": "Thành phố Lộc 6",
+    "nameEn": "Lộc 6",
+    "fullName": "Thành phố Lộc 6",
+    "fullNameEn": "Lộc 6 District",
+    "codeName": "lộc-6",
+    "provinceCode": "38",
+    "administrativeUnit": "Thành phố"
+  },
+  {
+    "code": "3807",
+    "name": "Huyện Ninh 7",
+    "nameEn": "Ninh 7",
+    "fullName": "Huyện Ninh 7",
+    "fullNameEn": "Ninh 7 District",
+    "codeName": "ninh-7",
+    "provinceCode": "38",
+    "administrativeUnit": "Huyện"
+  },
+  {
+    "code": "3808",
+    "name": "Thành phố Phú 8",
+    "nameEn": "Phú 8",
+    "fullName": "Thành phố Phú 8",
+    "fullNameEn": "Phú 8 District",
+    "codeName": "phú-8",
+    "provinceCode": "38",
+    "administrativeUnit": "Thành phố"
+  },
+  {
+    "code": "3809",
+    "name": "Quận Quảng 9",
+    "nameEn": "Quảng 9",
+    "fullName": "Quận Quảng 9",
+    "fullNameEn": "Quảng 9 District",
+    "codeName": "quảng-9",
+    "provinceCode": "38",
+    "administrativeUnit": "Quận"
+  },
+  {
+    "code": "3810",
+    "name": "Thị xã Thị 10",
+    "nameEn": "Thị 10",
+    "fullName": "Thị xã Thị 10",
+    "fullNameEn": "Thị 10 District",
+    "codeName": "thị-10",
+    "provinceCode": "38",
+    "administrativeUnit": "Thị xã"
+  },
+  {
+    "code": "3811",
+    "name": "Thị xã Trà 11",
+    "nameEn": "Trà 11",
+    "fullName": "Thị xã Trà 11",
+    "fullNameEn": "Trà 11 District",
+    "codeName": "trà-11",
+    "provinceCode": "38",
+    "administrativeUnit": "Thị xã"
+  },
+  {
+    "code": "3812",
+    "name": "Huyện Bắc 12",
+    "nameEn": "Bắc 12",
+    "fullName": "Huyện Bắc 12",
+    "fullNameEn": "Bắc 12 District",
+    "codeName": "bắc-12",
+    "provinceCode": "38",
+    "administrativeUnit": "Huyện"
+  },
+  {
+    "code": "3813",
+    "name": "Thị xã Nam 13",
+    "nameEn": "Nam 13",
+    "fullName": "Thị xã Nam 13",
+    "fullNameEn": "Nam 13 District",
+    "codeName": "nam-13",
+    "provinceCode": "38",
+    "administrativeUnit": "Thị xã"
+  },
+  {
+    "code": "3814",
+    "name": "Huyện Đông 14",
+    "nameEn": "Đông 14",
+    "fullName": "Huyện Đông 14",
+    "fullNameEn": "Đông 14 District",
+    "codeName": "đông-14",
+    "provinceCode": "38",
+    "administrativeUnit": "Huyện"
+  },
+  {
+    "code": "3815",
+    "name": "Quận Tây 15",
+    "nameEn": "Tây 15",
+    "fullName": "Quận Tây 15",
+    "fullNameEn": "Tây 15 District",
+    "codeName": "tây-15",
+    "provinceCode": "38",
+    "administrativeUnit": "Quận"
+  },
+  {
+    "code": "3816",
+    "name": "Thị xã Hà 16",
+    "nameEn": "Hà 16",
+    "fullName": "Thị xã Hà 16",
+    "fullNameEn": "Hà 16 District",
+    "codeName": "hà-16",
+    "provinceCode": "38",
+    "administrativeUnit": "Thị xã"
+  },
+  {
+    "code": "3817",
+    "name": "Thành phố Lộc 17",
+    "nameEn": "Lộc 17",
+    "fullName": "Thành phố Lộc 17",
+    "fullNameEn": "Lộc 17 District",
+    "codeName": "lộc-17",
+    "provinceCode": "38",
+    "administrativeUnit": "Thành phố"
+  },
+  {
+    "code": "3818",
+    "name": "Thị xã Ninh 18",
+    "nameEn": "Ninh 18",
+    "fullName": "Thị xã Ninh 18",
+    "fullNameEn": "Ninh 18 District",
+    "codeName": "ninh-18",
+    "provinceCode": "38",
+    "administrativeUnit": "Thị xã"
+  },
+  {
+    "code": "3819",
+    "name": "Huyện Phú 19",
+    "nameEn": "Phú 19",
+    "fullName": "Huyện Phú 19",
+    "fullNameEn": "Phú 19 District",
+    "codeName": "phú-19",
+    "provinceCode": "38",
+    "administrativeUnit": "Huyện"
+  },
+  {
+    "code": "3820",
+    "name": "Thành phố Quảng 20",
+    "nameEn": "Quảng 20",
+    "fullName": "Thành phố Quảng 20",
+    "fullNameEn": "Quảng 20 District",
+    "codeName": "quảng-20",
+    "provinceCode": "38",
+    "administrativeUnit": "Thành phố"
+  },
+  {
+    "code": "801",
+    "name": "Huyện Bắc 1",
+    "nameEn": "Bắc 1",
+    "fullName": "Huyện Bắc 1",
+    "fullNameEn": "Bắc 1 District",
+    "codeName": "bắc-1",
+    "provinceCode": "08",
+    "administrativeUnit": "Huyện"
+  },
+  {
+    "code": "802",
+    "name": "Thành phố Nam 2",
+    "nameEn": "Nam 2",
+    "fullName": "Thành phố Nam 2",
+    "fullNameEn": "Nam 2 District",
+    "codeName": "nam-2",
+    "provinceCode": "08",
+    "administrativeUnit": "Thành phố"
+  },
+  {
+    "code": "803",
+    "name": "Thành phố Đông 3",
+    "nameEn": "Đông 3",
+    "fullName": "Thành phố Đông 3",
+    "fullNameEn": "Đông 3 District",
+    "codeName": "đông-3",
+    "provinceCode": "08",
+    "administrativeUnit": "Thành phố"
+  },
+  {
+    "code": "804",
+    "name": "Huyện Tây 4",
+    "nameEn": "Tây 4",
+    "fullName": "Huyện Tây 4",
+    "fullNameEn": "Tây 4 District",
+    "codeName": "tây-4",
+    "provinceCode": "08",
+    "administrativeUnit": "Huyện"
+  },
+  {
+    "code": "805",
+    "name": "Thành phố Gia 5",
+    "nameEn": "Gia 5",
+    "fullName": "Thành phố Gia 5",
+    "fullNameEn": "Gia 5 District",
+    "codeName": "gia-5",
+    "provinceCode": "08",
+    "administrativeUnit": "Thành phố"
+  },
+  {
+    "code": "806",
+    "name": "Huyện Lâm 6",
+    "nameEn": "Lâm 6",
+    "fullName": "Huyện Lâm 6",
+    "fullNameEn": "Lâm 6 District",
+    "codeName": "lâm-6",
+    "provinceCode": "08",
+    "administrativeUnit": "Huyện"
+  },
+  {
+    "code": "807",
+    "name": "Quận Sơn 7",
+    "nameEn": "Sơn 7",
+    "fullName": "Quận Sơn 7",
+    "fullNameEn": "Sơn 7 District",
+    "codeName": "sơn-7",
+    "provinceCode": "08",
+    "administrativeUnit": "Quận"
+  },
+  {
+    "code": "808",
+    "name": "Quận Thành 8",
+    "nameEn": "Thành 8",
+    "fullName": "Quận Thành 8",
+    "fullNameEn": "Thành 8 District",
+    "codeName": "thành-8",
+    "provinceCode": "08",
+    "administrativeUnit": "Quận"
+  },
+  {
+    "code": "809",
+    "name": "Huyện Việt 9",
+    "nameEn": "Việt 9",
+    "fullName": "Huyện Việt 9",
+    "fullNameEn": "Việt 9 District",
+    "codeName": "việt-9",
+    "provinceCode": "08",
+    "administrativeUnit": "Huyện"
+  },
+  {
+    "code": "810",
+    "name": "Thị xã Yên 10",
+    "nameEn": "Yên 10",
+    "fullName": "Thị xã Yên 10",
+    "fullNameEn": "Yên 10 District",
+    "codeName": "yên-10",
+    "provinceCode": "08",
+    "administrativeUnit": "Thị xã"
+  },
+  {
+    "code": "811",
+    "name": "Thành phố Bắc 11",
+    "nameEn": "Bắc 11",
+    "fullName": "Thành phố Bắc 11",
+    "fullNameEn": "Bắc 11 District",
+    "codeName": "bắc-11",
+    "provinceCode": "08",
+    "administrativeUnit": "Thành phố"
+  },
+  {
+    "code": "812",
+    "name": "Huyện Nam 12",
+    "nameEn": "Nam 12",
+    "fullName": "Huyện Nam 12",
+    "fullNameEn": "Nam 12 District",
+    "codeName": "nam-12",
+    "provinceCode": "08",
+    "administrativeUnit": "Huyện"
+  },
+  {
+    "code": "813",
+    "name": "Quận Đông 13",
+    "nameEn": "Đông 13",
+    "fullName": "Quận Đông 13",
+    "fullNameEn": "Đông 13 District",
+    "codeName": "đông-13",
+    "provinceCode": "08",
+    "administrativeUnit": "Quận"
+  },
+  {
+    "code": "814",
+    "name": "Thành phố Tây 14",
+    "nameEn": "Tây 14",
+    "fullName": "Thành phố Tây 14",
+    "fullNameEn": "Tây 14 District",
+    "codeName": "tây-14",
+    "provinceCode": "08",
+    "administrativeUnit": "Thành phố"
+  },
+  {
+    "code": "815",
+    "name": "Huyện Gia 15",
+    "nameEn": "Gia 15",
+    "fullName": "Huyện Gia 15",
+    "fullNameEn": "Gia 15 District",
+    "codeName": "gia-15",
+    "provinceCode": "08",
+    "administrativeUnit": "Huyện"
+  },
+  {
+    "code": "8601",
+    "name": "Thành phố Bắc 1",
+    "nameEn": "Bắc 1",
+    "fullName": "Thành phố Bắc 1",
+    "fullNameEn": "Bắc 1 District",
+    "codeName": "bắc-1",
+    "provinceCode": "86",
+    "administrativeUnit": "Thành phố"
+  },
+  {
+    "code": "8602",
+    "name": "Quận Nam 2",
+    "nameEn": "Nam 2",
+    "fullName": "Quận Nam 2",
+    "fullNameEn": "Nam 2 District",
+    "codeName": "nam-2",
+    "provinceCode": "86",
+    "administrativeUnit": "Quận"
+  },
+  {
+    "code": "8603",
+    "name": "Thị xã Đông 3",
+    "nameEn": "Đông 3",
+    "fullName": "Thị xã Đông 3",
+    "fullNameEn": "Đông 3 District",
+    "codeName": "đông-3",
+    "provinceCode": "86",
+    "administrativeUnit": "Thị xã"
+  },
+  {
+    "code": "8604",
+    "name": "Quận Tây 4",
+    "nameEn": "Tây 4",
+    "fullName": "Quận Tây 4",
+    "fullNameEn": "Tây 4 District",
+    "codeName": "tây-4",
+    "provinceCode": "86",
+    "administrativeUnit": "Quận"
+  },
+  {
+    "code": "8605",
+    "name": "Thành phố Châu 5",
+    "nameEn": "Châu 5",
+    "fullName": "Thành phố Châu 5",
+    "fullNameEn": "Châu 5 District",
+    "codeName": "châu-5",
+    "provinceCode": "86",
+    "administrativeUnit": "Thành phố"
+  },
+  {
+    "code": "8606",
+    "name": "Huyện Giá 6",
+    "nameEn": "Giá 6",
+    "fullName": "Huyện Giá 6",
+    "fullNameEn": "Giá 6 District",
+    "codeName": "giá-6",
+    "provinceCode": "86",
+    "administrativeUnit": "Huyện"
+  },
+  {
+    "code": "8607",
+    "name": "Thị xã Khánh 7",
+    "nameEn": "Khánh 7",
+    "fullName": "Thị xã Khánh 7",
+    "fullNameEn": "Khánh 7 District",
+    "codeName": "khánh-7",
+    "provinceCode": "86",
+    "administrativeUnit": "Thị xã"
+  },
+  {
+    "code": "8608",
+    "name": "Thị xã Long 8",
+    "nameEn": "Long 8",
+    "fullName": "Thị xã Long 8",
+    "fullNameEn": "Long 8 District",
+    "codeName": "long-8",
+    "provinceCode": "86",
+    "administrativeUnit": "Thị xã"
+  },
+  {
+    "code": "8609",
+    "name": "Quận Mỹ 9",
+    "nameEn": "Mỹ 9",
+    "fullName": "Quận Mỹ 9",
+    "fullNameEn": "Mỹ 9 District",
+    "codeName": "mỹ-9",
+    "provinceCode": "86",
+    "administrativeUnit": "Quận"
+  },
+  {
+    "code": "8610",
+    "name": "Thành phố Phong 10",
+    "nameEn": "Phong 10",
+    "fullName": "Thành phố Phong 10",
+    "fullNameEn": "Phong 10 District",
+    "codeName": "phong-10",
+    "provinceCode": "86",
+    "administrativeUnit": "Thành phố"
+  },
+  {
+    "code": "8611",
+    "name": "Thị xã Quới 11",
+    "nameEn": "Quới 11",
+    "fullName": "Thị xã Quới 11",
+    "fullNameEn": "Quới 11 District",
+    "codeName": "quới-11",
+    "provinceCode": "86",
+    "administrativeUnit": "Thị xã"
+  },
+  {
+    "code": "8612",
+    "name": "Huyện Sơn 12",
+    "nameEn": "Sơn 12",
+    "fullName": "Huyện Sơn 12",
+    "fullNameEn": "Sơn 12 District",
+    "codeName": "sơn-12",
+    "provinceCode": "86",
+    "administrativeUnit": "Huyện"
+  },
+  {
+    "code": "8613",
+    "name": "Huyện Bắc 13",
+    "nameEn": "Bắc 13",
+    "fullName": "Huyện Bắc 13",
+    "fullNameEn": "Bắc 13 District",
+    "codeName": "bắc-13",
+    "provinceCode": "86",
+    "administrativeUnit": "Huyện"
+  },
+  {
+    "code": "8614",
+    "name": "Quận Nam 14",
+    "nameEn": "Nam 14",
+    "fullName": "Quận Nam 14",
+    "fullNameEn": "Nam 14 District",
+    "codeName": "nam-14",
+    "provinceCode": "86",
+    "administrativeUnit": "Quận"
+  },
+  {
+    "code": "8615",
+    "name": "Thành phố Đông 15",
+    "nameEn": "Đông 15",
+    "fullName": "Thành phố Đông 15",
+    "fullNameEn": "Đông 15 District",
+    "codeName": "đông-15",
+    "provinceCode": "86",
+    "administrativeUnit": "Thành phố"
+  }
+]
