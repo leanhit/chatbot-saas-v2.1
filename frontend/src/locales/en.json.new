@@ -609,7 +609,7 @@
       "connectToFacebook": "Connect to Facebook",
       "complete": "Complete",
       "errors": "Errors ({count})",
-      "connectionsManagement": "Connections Management"
+      "connectionsManagement": "[TODO: Quản lý kết nối]"
     },
     "rules": {
       "title": "Rules",
@@ -676,7 +676,7 @@
       "selectRuleType": "Select rule type",
       "status": "Status",
       "testBeforeSave": "Test before saving",
-      "createABotFirst": "Create a bot first"
+      "createABotFirst": "[TODO: Tạo bot trước để quản lý quy tắc]"
     }
   },
   "payment": {
@@ -957,49 +957,49 @@
         "viewHistory": "View History",
         "downloadQR": "Download QR"
       },
-      "current": "Current",
-      "popular": "Popular",
-      "select": "Select",
-      "selected": "Selected",
-      "upgrade": "Upgrade",
-      "selectPackage": "Select a package",
-      "packageDescription": "Package description",
-      "duration": "Duration",
-      "custom": "Custom",
-      "referencePlaceholder": "Enter reference code",
-      "title": "Payment Help",
+      "current": "[TODO: ĐANG DÙNG]",
+      "popular": "[TODO: POPULAR]",
+      "select": "[TODO: Chọn Gói]",
+      "selected": "[TODO: Đã Chọn]",
+      "upgrade": "[TODO: Nâng Cấp]",
+      "selectPackage": "[TODO: Gói dịch vụ]",
+      "packageDescription": "[TODO: Gói dịch vụ]",
+      "duration": "[TODO: thời hạn]",
+      "custom": "[TODO: Tùy chỉnh]",
+      "referencePlaceholder": "[TODO: sẽ được tạo sau khi nạp tiền]",
+      "title": "[TODO: Nạp Tiền Theo Gói]",
       "deposit": {
-        "title": "Deposit",
-        "amount": "Deposit amount",
-        "description": "Deposit description",
-        "customAmount": "Custom amount",
-        "customAmountPlaceholder": "Enter custom amount",
-        "customDescription": "Custom description",
-        "customDescriptionPlaceholder": "Enter custom description",
-        "selectPackage": "Select a package",
-        "proceed": "Proceed to Deposit",
-        "cancel": "Cancel",
-        "loading": "Processing deposit...",
-        "error": "Deposit error",
-        "success": "Deposit successful"
+        "title": "[TODO: Nạp Tiền]",
+        "amount": "[TODO: Số Tiền]",
+        "description": "[TODO: Mô Tả]",
+        "customAmount": "[TODO: Số Tiền Tùy Chọn]",
+        "customAmountPlaceholder": "[TODO: Nhập số tiền]",
+        "customDescription": "[TODO: Mô Tả Tùy Chọn]",
+        "customDescriptionPlaceholder": "[TODO: Nhập mô tả]",
+        "selectPackage": "[TODO: Chọn Gói Dịch Vụ]",
+        "proceed": "[TODO: Tiếp Tục]",
+        "cancel": "[TODO: Hủy]",
+        "loading": "[TODO: Đang xử lý...]",
+        "error": "[TODO: Lỗi thanh toán]",
+        "success": "[TODO: Thanh toán thành công]"
       },
       "bankInfo": {
-        "title": "Bank Information",
-        "transferInfo": "Transfer Information",
-        "bankName": "Bank Name",
-        "accountNumber": "Account Number",
-        "accountName": "Account Name",
-        "instructions": "Transfer Instructions",
-        "step1": "Step 1",
-        "step2": "Step 2",
-        "step3": "Step 3",
-        "note": "Note",
-        "qrCode": "QR Code",
-        "amount": "Amount",
-        "expired": "Expired"
+        "title": "[TODO: Thông Tin Thanh Toán]",
+        "transferInfo": "[TODO: Thông tin chuyển khoản]",
+        "bankName": "[TODO: Ngân hàng]",
+        "accountNumber": "[TODO: Số tài khoản]",
+        "accountName": "[TODO: Chủ tài khoản]",
+        "instructions": "[TODO: Hướng dẫn thanh toán]",
+        "step1": "[TODO: Chuyển khoản theo thông tin bên trên]",
+        "step2": "[TODO: Nội dung chuyển khoản: ]",
+        "step3": "[TODO: Tải lên xác nhận thanh toán]",
+        "note": "[TODO: Lưu ý: ]",
+        "qrCode": "[TODO: Mã QR]",
+        "amount": "[TODO: Số tiền]",
+        "expired": "[TODO: Đã hết hạn]"
       },
       "activation": {
-        "success": "Activation successful"
+        "success": "[TODO: Gói dịch vụ sẽ được kích hoạt ngay sau khi thanh toán thành công]"
       }
     },
     "support": {

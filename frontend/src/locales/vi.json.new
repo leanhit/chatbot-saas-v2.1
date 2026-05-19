@@ -101,7 +101,9 @@
   "common": {
     "refresh": "Làm mới",
     "search": "Tìm kiếm",
-    "loading": "Đang tải"
+    "loading": "Đang tải",
+    "cancel": "[TODO: Cancel]",
+    "save": "[TODO: Save]"
   },
   "auth": {
     "login": {
@@ -197,7 +199,8 @@
       "success": "Thao tác thành công",
       "warning": "Cảnh báo",
       "info": "Thông tin"
-    }
+    },
+    "vsLastMonth": "[TODO: vs last month]"
   },
   "tenant": {
     "overview": {
@@ -262,7 +265,27 @@
       "requestedAt": "Ngày yêu cầu",
       "actions": "Hành động",
       "approve": "Phê duyệt",
-      "reject": "Từ chối"
+      "reject": "Từ chối",
+      "inviteNewMember": "[TODO: Invite New Member]",
+      "noPendingInvitations": "[TODO: No pending invitations]",
+      "noPendingInvitationsDescription": "[TODO: There are no pending member invitations]",
+      "emailAddress": "[TODO: Email Address]",
+      "emailPlaceholder": "[TODO: Enter email address]",
+      "assignRole": "[TODO: Assign Role]",
+      "admin": "[TODO: Admin]",
+      "editor": "[TODO: Editor]",
+      "member": "[TODO: Member]",
+      "invitationExpiry": "[TODO: Invitation Expiry]",
+      "days": "[TODO: days]",
+      "expiryDescription": "[TODO: Invitation will expire after this period]",
+      "personalMessage": "[TODO: Personal Message]",
+      "messagePlaceholder": "[TODO: Add a personal message (optional)]",
+      "sendInvitation": "[TODO: Send Invitation]",
+      "invitedBy": "[TODO: Invited By]",
+      "invitedAt": "[TODO: Invited At]",
+      "expiresAt": "[TODO: Expires At]",
+      "resend": "[TODO: Resend]",
+      "revoke": "[TODO: Revoke]"
     },
     "gateway": {
       "empty": "Trống",
@@ -554,33 +577,39 @@
       "complete": "Hoàn thành",
       "back": "Quay lại",
       "done": "Xong",
-      "loading": "Đang tải...",
-      "useAutoConnect": "Sử dụng Tự động kết nối",
-      "autoConnectingPages": "Đang tự động kết nối các trang...",
-      "connectingDescription": "Vui lòng chờ trong khi hệ thống kết nối các trang của bạn.",
-      "autoConnectCompleted": "Tự động kết nối hoàn tất",
-      "autoConnectCompletedWithIssues": "Tự động kết nối hoàn tất (Có lỗi)",
-      "connectedPages": "Các trang đã kết nối",
-      "processing": "Đang xử lý...",
-      "connectPages": "Kết nối các trang",
-      "deleteConnection": "Xóa kết nối",
-      "noDescriptionAvailable": "Không có mô tả",
-      "databaseHost": "Máy chủ CSDL",
-      "databasePort": "Cổng CSDL",
-      "databaseName": "Tên CSDL",
-      "username": "Tên đăng nhập",
-      "headers": "Tiêu đề (Headers)",
-      "apiUrl": "URL API",
-      "apiKey": "Khóa API (API Key)",
-      "apiVersion": "Phiên bản API",
-      "updateConnection": "Cập nhật kết nối",
-      "foundFanpagesDescription": "Đã tìm thấy các trang",
-      "loadingFanpages": "Đang tải danh sách trang...",
-      "noFanpagesFound": "Không tìm thấy trang nào",
-      "selectAll": "Chọn tất cả",
-      "reactivatedPages": "Đã kích hoạt lại",
-      "inactivePages": "Trang không hoạt động",
-      "errors": "Lỗi"
+      "subtitle": "[TODO: Manage bot connections and integrations]",
+      "selectBotPlaceholder": "[TODO: Select a bot]",
+      "active": "[TODO: Active]",
+      "autoConnect": "[TODO: Auto Connect]",
+      "selectBotToView": "[TODO: Select a Bot to View Connections]",
+      "selectBotDescription": "[TODO: Please select a bot from dropdown above to view and manage its connections.]",
+      "loading": "[TODO: Loading...]",
+      "useAutoConnect": "[TODO: Use Auto Connect button to automatically connect your Facebook pages]",
+      "autoConnectingPages": "[TODO: Auto-Connecting Pages]",
+      "connectingDescription": "[TODO: We are connecting {count} selected fanpages to your bot. This may take a moment...]",
+      "autoConnectCompleted": "[TODO: Auto-Connect Completed!]",
+      "autoConnectCompletedWithIssues": "[TODO: Auto-Connect Completed with Issues]",
+      "connectedPages": "[TODO: Connected Pages ({count})]",
+      "processing": "[TODO: Processing...]",
+      "connectPages": "[TODO: Connect {count} Pages]",
+      "deleteConnection": "[TODO: Delete Connection]",
+      "noDescriptionAvailable": "[TODO: No description available]",
+      "databaseHost": "[TODO: Database Host]",
+      "databasePort": "[TODO: Database Port]",
+      "databaseName": "[TODO: Database Name]",
+      "username": "[TODO: Username]",
+      "headers": "[TODO: Headers]",
+      "apiUrl": "[TODO: API URL]",
+      "apiKey": "[TODO: API Key]",
+      "apiVersion": "[TODO: API Version]",
+      "updateConnection": "[TODO: Update Connection]",
+      "foundFanpagesDescription": "[TODO: We found {count} fanpages. Select which ones you want to connect to your bot.]",
+      "loadingFanpages": "[TODO: Loading your fanpages...]",
+      "noFanpagesFound": "[TODO: No Fanpages Found]",
+      "selectAll": "[TODO: Select All ({count} pages)]",
+      "reactivatedPages": "[TODO: Reactivated Pages ({count})]",
+      "inactivePages": "[TODO: Inactive Pages ({count})]",
+      "errors": "[TODO: Errors ({count})]"
     },
     "rules": {
       "title": "Quy tắc",
@@ -612,42 +641,42 @@
       "goToBotManagement": "Đi đến quản lý bot",
       "activeRulesDisplay": "Quy tắc hoạt động",
       "aiRules": "Quy tắc AI",
-      "subtitle": "Quản lý quy tắc tự động",
-      "selectBotPlaceholder": "Chọn Bot",
-      "selectBotToManageRules": "Vui lòng chọn Bot để quản lý quy tắc",
-      "updateRule": "Cập nhật quy tắc",
-      "createYourFirstRule": "Tạo quy tắc đầu tiên của bạn",
-      "enable": "Bật",
-      "disable": "Tắt",
-      "testExistingRule": "Kiểm tra quy tắc hiện có",
-      "duplicate": "Nhân bản",
-      "createBotFirst": "Vui lòng tạo bot trước",
-      "type": "Loại",
-      "bot": "Bot",
-      "description": "Mô tả",
-      "priority": "Độ ưu tiên",
-      "created": "Ngày tạo",
-      "selectBot": "Chọn Bot",
-      "ruleName": "Tên quy tắc",
-      "enterRuleName": "Nhập tên quy tắc",
-      "describeRule": "Mô tả quy tắc",
-      "triggerConfiguration": "Cấu hình Kích hoạt",
-      "triggerType": "Loại Kích hoạt",
-      "selectTriggerType": "Chọn Loại Kích hoạt",
-      "triggerValue": "Giá trị Kích hoạt",
+      "subtitle": "[TODO: Manage bot rules and automation]",
+      "selectBotPlaceholder": "[TODO: Select a bot]",
+      "selectBotToManageRules": "[TODO: Select a bot to manage rules]",
+      "updateRule": "[TODO: Update Rule]",
+      "createYourFirstRule": "[TODO: Create your first rule]",
+      "enable": "[TODO: Enable]",
+      "disable": "[TODO: Disable]",
+      "testExistingRule": "[TODO: Test this existing rule]",
+      "duplicate": "[TODO: Duplicate]",
+      "createBotFirst": "[TODO: Create a bot first to manage rules]",
+      "type": "[TODO: Type]",
+      "bot": "[TODO: Bot]",
+      "description": "[TODO: Description]",
+      "priority": "[TODO: Priority]",
+      "created": "[TODO: Created]",
+      "selectBot": "[TODO: Select Bot]",
+      "ruleName": "[TODO: Rule Name]",
+      "enterRuleName": "[TODO: Enter rule name]",
+      "describeRule": "[TODO: Describe rule]",
+      "triggerConfiguration": "[TODO: Trigger Configuration]",
+      "triggerType": "[TODO: Trigger Type]",
+      "selectTriggerType": "[TODO: Select trigger type]",
+      "triggerValue": "[TODO: Trigger Value]",
       "condition": {
-        "label": "Điều kiện",
-        "placeholder": "Nhập điều kiện",
-        "help": "Trợ giúp điều kiện"
+        "label": "[TODO: Condition]",
+        "placeholder": "[TODO: Enter condition expression]",
+        "help": "[TODO: Example: message.contains('hello')]"
       },
-      "ruleConfiguration": "Cấu hình Quy tắc",
+      "ruleConfiguration": "[TODO: Rule Configuration]",
       "ruleType": {
-        "label": "Loại Quy tắc",
-        "placeholder": "Chọn Loại Quy tắc"
+        "label": "[TODO: Rule Type]",
+        "placeholder": "[TODO: Enter rule type]"
       },
-      "selectRuleType": "Chọn Loại Quy tắc",
-      "status": "Trạng thái",
-      "testBeforeSave": "Kiểm tra trước khi lưu"
+      "selectRuleType": "[TODO: Select rule type]",
+      "status": "[TODO: Status]",
+      "testBeforeSave": "[TODO: Test before saving]"
     }
   },
   "error": {
@@ -720,15 +749,15 @@
     "deleteAccount": "Xóa tài khoản",
     "exportData": "Xuất dữ liệu",
     "importData": "Nhập dữ liệu",
-    "website": "Trang web",
-    "portfolioUrl": "URL Portfolio",
-    "houseNumber": "Số nhà/Tên đường",
-    "street": "Đường/Phố",
-    "ward": "Phường/Xã",
-    "district": "Quận/Huyện",
-    "province": "Tỉnh/Thành phố",
-    "fullAddress": "Địa chỉ đầy đủ",
-    "updateExistingAddress": "Cập nhật địa chỉ hiện tại"
+    "website": "[TODO: Website]",
+    "portfolioUrl": "[TODO: Portfolio URL]",
+    "houseNumber": "[TODO: House Number]",
+    "street": "[TODO: Street]",
+    "ward": "[TODO: Ward]",
+    "district": "[TODO: District]",
+    "province": "[TODO: Province]",
+    "fullAddress": "[TODO: Full Address]",
+    "updateExistingAddress": "[TODO: Update Existing Address]"
   },
   "help": {
     "title": "Trung tâm Trợ giúp",
@@ -888,97 +917,97 @@
     }
   },
   "payment": {
-    "title": "Thanh toán",
-    "subtitle": "Quản lý thanh toán và gói dịch vụ của bạn",
-    "selectPackage": "Chọn gói dịch vụ",
-    "referencePlaceholder": "Nhập mã tham chiếu",
-    "custom": "Tùy chỉnh",
-    "popular": "Phổ biến",
-    "current": "Hiện tại",
-    "value": "Giá trị",
-    "best_value": "Giá trị tốt nhất",
-    "currentlyUsing": "Đang sử dụng",
-    "selected": "Đã chọn",
+    "title": "[TODO: Package-Based Deposit]",
+    "subtitle": "[TODO: Enhance your chatbot experience]",
+    "selectPackage": "[TODO: Select Service Plan]",
+    "referencePlaceholder": "[TODO: will be created after deposit]",
+    "custom": "[TODO: Custom]",
+    "popular": "[TODO: POPULAR]",
+    "current": "[TODO: CURRENT]",
+    "value": "[TODO: Value]",
+    "best_value": "[TODO: Best Value]",
+    "currentlyUsing": "[TODO: Currently Using]",
+    "selected": "[TODO: Selected]",
     "deposit": {
-      "title": "Nạp tiền",
-      "loading": "Đang nạp tiền...",
-      "proceed": "Tiến hành nạp tiền"
+      "title": "[TODO: Deposit Funds]",
+      "loading": "[TODO: Processing...]",
+      "proceed": "[TODO: Proceed]"
     },
     "bankInfo": {
-      "title": "Thông tin Ngân hàng",
-      "transferInfo": "Thông tin chuyển khoản",
-      "bankName": "Tên Ngân hàng",
-      "accountNumber": "Số tài khoản",
-      "accountName": "Tên tài khoản",
-      "instructions": "Hướng dẫn chuyển khoản",
-      "step1": "Bước 1",
-      "step2": "Bước 2",
-      "step3": "Bước 3",
-      "note": "Ghi chú"
+      "title": "[TODO: Payment Information]",
+      "transferInfo": "[TODO: Transfer Information]",
+      "bankName": "[TODO: Bank]",
+      "accountNumber": "[TODO: Account Number]",
+      "accountName": "[TODO: Account Name]",
+      "instructions": "[TODO: Payment Instructions]",
+      "step1": "[TODO: Transfer using information above]",
+      "step2": "[TODO: Reference: ]",
+      "step3": "[TODO: Upload payment confirmation]",
+      "note": "[TODO: Note: ]"
     },
     "free": {
-      "confirmTitle": "Xác nhận kích hoạt gói miễn phí",
-      "confirmDescription": "Bạn có chắc chắn muốn kích hoạt gói miễn phí không?",
-      "activateButton": "Kích hoạt ngay"
+      "confirmTitle": "[TODO: Confirm Free Package]",
+      "confirmDescription": "[TODO: You have selected free package. This package will be activated immediately.]",
+      "activateButton": "[TODO: Activate Free Package]"
     },
     "qr": {
-      "creating": "Đang tạo mã QR...",
-      "scan": "Quét mã QR để thanh toán"
+      "creating": "[TODO: QR Code is being created...]",
+      "scan": "[TODO: Scan QR code to pay]"
     },
     "activation": {
-      "success": "Kích hoạt gói dịch vụ thành công!"
+      "success": "[TODO: Service package will be activated immediately after successful payment]"
     },
     "packages": {
-      "free": "Gói Miễn phí",
-      "threeMonths": "3 Tháng",
-      "sixMonths": "6 Tháng",
-      "twelveMonths": "12 Tháng"
+      "free": "[TODO: Free]",
+      "threeMonths": "[TODO: 3 Months]",
+      "sixMonths": "[TODO: 6 Months]",
+      "twelveMonths": "[TODO: 12 Months]"
     },
     "descriptions": {
-      "free": "Bắt đầu sử dụng hoàn toàn miễn phí",
-      "threeMonths": "Trải nghiệm toàn bộ tính năng trong 3 tháng",
-      "sixMonths": "Tiết kiệm hơn với gói 6 tháng",
-      "twelveMonths": "Lựa chọn tốt nhất cho sử dụng lâu dài"
+      "free": "[TODO: Free trial package]",
+      "threeMonths": "[TODO: Unlimited 3 months package]",
+      "sixMonths": "[TODO: Unlimited 6 months package]",
+      "twelveMonths": "[TODO: Unlimited 12 months package]"
     },
     "durations": {
-      "oneMonth": "1 Tháng",
-      "threeMonths": "3 Tháng",
-      "sixMonths": "6 Tháng",
-      "twelveMonths": "12 Tháng"
+      "oneMonth": "[TODO: 1 month]",
+      "threeMonths": "[TODO: 3 months]",
+      "sixMonths": "[TODO: 6 months]",
+      "twelveMonths": "[TODO: 12 months]"
     },
     "features": {
-      "unlimitedPerMonth": "Không giới hạn / tháng",
-      "unlimitedChatbots": "Không giới hạn chatbots",
-      "unlimitedConnections": "Không giới hạn kết nối"
+      "unlimitedPerMonth": "[TODO: Unlimited per month]",
+      "unlimitedChatbots": "[TODO: Unlimited chatbots]",
+      "unlimitedConnections": "[TODO: Unlimited connections]"
     },
     "featuresNew": {
-      "prioritySupport": "Hỗ trợ ưu tiên",
-      "support247": "Hỗ trợ 24/7"
+      "prioritySupport": "[TODO: Priority Support]",
+      "support247": "[TODO: 24/7 Support]"
     },
-    "readyToCreate": "Sẵn sàng tạo yêu cầu",
-    "clickCreateButton": "Nhấp vào nút để tạo",
-    "checkingStatus": "Đang kiểm tra trạng thái...",
-    "referenceCode": "Mã tham chiếu",
-    "amount": "Số tiền",
-    "duration": "Thời hạn",
-    "status": "Trạng thái",
-    "createdAt": "Ngày tạo",
-    "expiresAt": "Ngày hết hạn",
-    "completedAt": "Ngày hoàn thành",
-    "simulatePayment": "Mô phỏng thanh toán",
-    "copyCode": "Sao chép mã",
-    "checkStatus": "Kiểm tra trạng thái",
+    "readyToCreate": "[TODO: Ready to create deposit request]",
+    "clickCreateButton": "[TODO: Click \"Deposit Now\" button to create payment request]",
+    "checkingStatus": "[TODO: Checking...]",
+    "referenceCode": "[TODO: Reference Code]",
+    "amount": "[TODO: Amount]",
+    "duration": "[TODO: duration]",
+    "status": "[TODO: Status]",
+    "createdAt": "[TODO: Created At]",
+    "expiresAt": "[TODO: Expires At]",
+    "completedAt": "[TODO: Completed At]",
+    "simulatePayment": "[TODO: Simulate Payment]",
+    "copyCode": "[TODO: Copy Code]",
+    "checkStatus": "[TODO: Check Status]",
     "error": {
-      "selectPackage": "Vui lòng chọn gói",
-      "noPendingPayment": "Không có thanh toán đang chờ",
-      "statusCheck": "Lỗi khi kiểm tra trạng thái"
+      "selectPackage": "[TODO: Please select a service package]",
+      "noPendingPayment": "[TODO: No pending payment to simulate]",
+      "statusCheck": "[TODO: Error checking payment status]"
     },
     "actions": {
-      "simulate": "Mô phỏng",
-      "checkStatus": "Kiểm tra",
-      "viewHistory": "Lịch sử",
-      "downloadQR": "Tải mã QR",
-      "copySuccess": "Đã sao chép thành công"
+      "simulate": "[TODO: Simulate Payment]",
+      "checkStatus": "[TODO: Check Status]",
+      "viewHistory": "[TODO: View History]",
+      "downloadQR": "[TODO: Download QR]",
+      "copySuccess": "[TODO: Reference code copied successfully!]"
     }
   }
 }
