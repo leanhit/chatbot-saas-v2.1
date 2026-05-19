@@ -5,25 +5,25 @@ import { useGatewayTenantStore } from '../stores/tenant/gateway/myTenantStore';
 const TENANT_DATA = 'tenant_data'
 const ACTIVE_TENANT_ID = 'active_tenant_id'  // ✅ Match store constant
 // Default Pages
-import Dashboard from "../views/Dashboard.vue";
+const Dashboard = () => import("../views/Dashboard.vue");
 // Auth Pages
-import Login from "../views/auth/Login.vue";
-import Register from "../views/auth/Register.vue";
-import Profile from "../views/profile/Profile.vue";
-import Tenant from "../views/tenant/gateway/Gateway.vue";
-import Help from "../views/help/Help.vue";
-import TenantOverview from "../views/tenant/overview/TenantOverview.vue";
-import TenantMember from "../views/tenant/member/TenantMember.vue";
-import TenantSettings from "../views/tenant/settings/TenantSettings.vue";
-import BotManagement from "../views/penny/bots/BotManagement.vue";
-import Connections from "../views/penny/connections/Connections.vue";
-import Rules from "../views/penny/rules/Rules.vue";
-import Messages from "../views/messages/chat/Chat.vue";
-import CustomerData from "../views/customers/CustomerData.vue";
-import ForgotPassword from "../views/auth/ForgotPassword.vue";
+const Login = () => import("../views/auth/Login.vue");
+const Register = () => import("../views/auth/Register.vue");
+const Profile = () => import("../views/profile/Profile.vue");
+const Tenant = () => import("../views/tenant/gateway/Gateway.vue");
+const Help = () => import("../views/help/Help.vue");
+const TenantOverview = () => import("../views/tenant/overview/TenantOverview.vue");
+const TenantMember = () => import("../views/tenant/member/TenantMember.vue");
+const TenantSettings = () => import("../views/tenant/settings/TenantSettings.vue");
+const BotManagement = () => import("../views/penny/bots/BotManagement.vue");
+const Connections = () => import("../views/penny/connections/Connections.vue");
+const Rules = () => import("../views/penny/rules/Rules.vue");
+const Messages = () => import("../views/messages/chat/Chat.vue");
+const CustomerData = () => import("../views/customers/CustomerData.vue");
+const ForgotPassword = () => import("../views/auth/ForgotPassword.vue");
 // Payment Pages (SimplePayment Only)
-import PaymentDeposit from "../views/payment/Deposit.vue";
-import PaymentHistory from "../views/payment/History.vue";
+const PaymentDeposit = () => import("../views/payment/Deposit.vue");
+const PaymentHistory = () => import("../views/payment/History.vue");
 var appname = " - Windzo Dashboard Admin Template";
 const routes = [
   // Root route - redirect to login
@@ -74,69 +74,69 @@ const routes = [
     path: "/dashboard",
     name: "dasboard",
     component: Dashboard,
-    meta: { requiresAuth: true, title: "Dashboard" + appname, skipTenantCheck: true },
+    meta: { requiresAuth: true, title: "Dashboard" + appname },
   },
   //tenant  
   {
     path: "/tenant/overview",
     name: "tenant-overview",
     component: TenantOverview,
-    meta: { requiresAuth: true, title: "Tenant Overview" + appname, skipTenantCheck: true },
+    meta: { requiresAuth: true, title: "Tenant Overview" + appname },
   },
   {
     path: "/tenant/members",
     name: "tenant-members",
     component: TenantMember,
-    meta: { requiresAuth: true, title: "Tenant Members" + appname, skipTenantCheck: true },
+    meta: { requiresAuth: true, title: "Tenant Members" + appname },
   },
   {
     path: "/tenant/settings",
     name: "tenant-settings",
     component: TenantSettings,
-    meta: { requiresAuth: true, title: "Tenant Settings" + appname, skipTenantCheck: true },
+    meta: { requiresAuth: true, title: "Tenant Settings" + appname },
   },
   {
     path: "/penny-bots",
     name: "penny-bots",
     component: BotManagement,
-    meta: { requiresAuth: true, title: "Penny Bot Management" + appname, skipTenantCheck: true },
+    meta: { requiresAuth: true, title: "Penny Bot Management" + appname },
   },
   {
     path: "/penny-connections",
     name: "penny-connections",
     component: Connections,
-    meta: { requiresAuth: true, title: "Penny Connections" + appname, skipTenantCheck: true },
+    meta: { requiresAuth: true, title: "Penny Connections" + appname },
   },
   {
     path: "/penny-rules",
     name: "penny-rules",
     component: Rules,
-    meta: { requiresAuth: true, title: "Penny Rules" + appname, skipTenantCheck: true },
+    meta: { requiresAuth: true, title: "Penny Rules" + appname },
   },
   {
     path: "/messages",
     name: "messages",
     component: Messages,
-    meta: { requiresAuth: true, title: "Messages" + appname, skipTenantCheck: true },
+    meta: { requiresAuth: true, title: "Messages" + appname },
   },
   {
     path: "/customers",
     name: "customers",
     component: CustomerData,
-    meta: { requiresAuth: true, title: "Customer Data" + appname, skipTenantCheck: true },
+    meta: { requiresAuth: true, title: "Customer Data" + appname },
   },
   // Payment Routes (SimplePayment Only)
   {
     path: "/payment/deposit",
     name: "payment-deposit",
     component: PaymentDeposit,
-    meta: { requiresAuth: true, title: "Payment Deposit" + appname, skipTenantCheck: true },
+    meta: { requiresAuth: true, title: "Payment Deposit" + appname },
   },
   {
     path: "/payment/history",
     name: "payment-history",
     component: PaymentHistory,
-    meta: { requiresAuth: true, title: "Payment History" + appname, skipTenantCheck: true },
+    meta: { requiresAuth: true, title: "Payment History" + appname },
   },
 ];
 const router = createRouter({

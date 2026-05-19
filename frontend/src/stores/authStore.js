@@ -208,11 +208,10 @@ export const useAuthStore = defineStore('auth', () => {
    * Refresh access token
    */
   const refreshAccessToken = async () => {
-    if (!refreshToken.value || isRefreshing.value) {
-      return false
+    if (!refreshToken.value) {
+      return null
     }
 
-    isRefreshing.value = true
     try {
       const response = await usersApi.refreshToken({ refreshToken: refreshToken.value })
       const authData = response.data
@@ -223,14 +222,12 @@ export const useAuthStore = defineStore('auth', () => {
       localStorage.setItem('accessToken', authData.accessToken)
       localStorage.setItem('refreshToken', authData.refreshToken)
       
-      return true
+      return authData.accessToken
     } catch (error) {
       console.error('Refresh token failed:', error)
       // Refresh token expired or invalid - logout
       logout()
-      return false
-    } finally {
-      isRefreshing.value = false
+      return null
     }
   }
 

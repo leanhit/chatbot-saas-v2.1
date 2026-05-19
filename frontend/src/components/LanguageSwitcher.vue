@@ -32,6 +32,8 @@
 import { Icon } from "@iconify/vue";
 import { useI18n } from 'vue-i18n';
 import { ref, computed } from 'vue';
+import i18n, { loadLocaleMessages } from '../locales';
+
 export default {
   name: "LanguageSwitcher",
   components: {
@@ -40,26 +42,29 @@ export default {
   setup() {
     const { locale, t } = useI18n();
     const isOpen = ref(false);
+
     const languages = [
       { code: 'vi', name: 'Tiếng Việt', flag: '🇻🇳' },
       { code: 'en', name: 'English', flag: '🇺🇸' }
     ];
+
     const currentLanguageLabel = computed(() => {
       const currentLang = languages.find(lang => lang.code === locale.value);
       return currentLang ? currentLang.name : 'Language';
     });
+
     const toggleDropdown = () => {
       isOpen.value = !isOpen.value;
     };
+
     const closeDropdown = () => {
       isOpen.value = false;
     };
-    const changeLanguage = (langCode) => {
-      locale.value = langCode;
+
+    const changeLanguage = async (langCode) => {
+      await loadLocaleMessages(i18n, langCode);
       localStorage.setItem('language', langCode);
       isOpen.value = false;
-      // Force page reload to update all translations
-      window.location.reload();
     };
     return {
       languages,
