@@ -346,8 +346,7 @@ const refreshData = async () => {
       activeConnections: conversationStats.activeConnections || 0
     }
     
-    console.log('Dashboard data refreshed with real API data')
-  } catch (error) {
+    } catch (error) {
     console.error('Failed to fetch dashboard data:', error)
   } finally {
     loading.value = false
@@ -360,8 +359,7 @@ const openSettings = () => {
 
 const testBot = () => {
   // TODO: Open bot test modal or navigate to test page
-  console.log('Test bot functionality')
-}
+  }
 
 const viewAllActivity = () => {
   router.push('/messages')

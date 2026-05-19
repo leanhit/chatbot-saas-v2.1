@@ -22,19 +22,12 @@ export const pennyRuleApi = {
 
   // Create new rule
   createRule(botId, ruleData) {
-    console.log('🚀 pennyRuleApi.createRule - botId:', botId)
-    console.log('🚀 pennyRuleApi.createRule - botId type:', typeof botId)
-    console.log('🚀 pennyRuleApi.createRule - botId JSON:', JSON.stringify(botId))
-    
     // Force string conversion if object
     if (typeof botId === 'object') {
-      console.log('🔧 API: Converting botId object to string')
       botId = botId.id || botId.botId || ''
-      console.log('🔧 API: Converted botId to:', botId)
-    }
+      }
     
     const url = `/penny/bots/${botId}/rules`
-    console.log('🚀 pennyRuleApi.createRule - Final URL:', url)
     return axios.post(url, ruleData).catch(handleApiError)
   },
 

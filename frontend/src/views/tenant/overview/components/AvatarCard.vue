@@ -22,17 +22,17 @@
           <button
             @click="$emit('update-logo')"
             class="absolute bottom-0 right-0 bg-primary text-white p-2 rounded-full shadow-lg hover:bg-primary/80 transition-colors"
-            title="Update Logo"
+            :title="$t('tenant.overview.updateLogo')"
           >
             <Icon icon="mdi:camera" class="h-4 w-4" />
           </button>
         </div>
       </div>
       <h2 class="mt-4 text-xl font-semibold text-gray-900 dark:text-white">
-        {{ tenant?.name || 'Unknown Tenant' }}
+        {{ tenant?.name || $t('tenant.overview.unknownTenant') }}
       </h2>
       <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-        {{ tenant?.domain || 'No domain' }}
+        {{ tenant?.domain || $t('tenant.overview.noDomain') }}
       </p>
       
       <!-- Status Badges -->
@@ -55,15 +55,15 @@
       </div>
       <div v-if="tenant?.size" class="flex items-center text-sm text-gray-600 dark:text-gray-400">
         <Icon icon="mdi:account-group" class="mr-2 h-4 w-4" />
-        {{ tenant.size }} employees
+        {{ tenant.size }} {{ $t('tenant.overview.employees') }}
       </div>
       <div v-if="tenant?.createdAt" class="flex items-center text-sm text-gray-600 dark:text-gray-400">
         <Icon icon="mdi:calendar" class="mr-2 h-4 w-4" />
-        Created {{ formatDate(tenant.createdAt) }}
+        {{ $t('tenant.overview.created') }} {{ formatDate(tenant.createdAt) }}
       </div>
       <div class="flex items-center text-sm text-gray-600 dark:text-gray-400">
         <Icon icon="mdi:map-marker" class="mr-2 h-4 w-4" />
-        {{ tenant?.location || 'Location not set' }}
+        {{ tenant?.location || $t('tenant.overview.locationNotSet') }}
       </div>
     </div>
     
@@ -74,21 +74,21 @@
           v-if="tenant?.website"
           @click="openLink(tenant.website)"
           class="p-2 text-gray-400 hover:text-blue-600 transition-colors"
-          title="Website"
+          :title="$t('tenant.overview.website')"
         >
           <Icon icon="mdi:web" class="h-5 w-5" />
         </button>
         <button
           @click="$emit('manage-members')"
           class="p-2 text-gray-400 hover:text-green-600 transition-colors"
-          title="Manage Members"
+          :title="$t('tenant.member.title')"
         >
           <Icon icon="mdi:account-group" class="h-5 w-5" />
         </button>
         <button
           @click="$emit('settings')"
           class="p-2 text-gray-400 hover:text-gray-600 transition-colors"
-          title="Settings"
+          :title="$t('tenant.settings.title')"
         >
           <Icon icon="mdi:cog" class="h-5 w-5" />
         </button>
@@ -103,6 +103,7 @@ import { Icon } from '@iconify/vue'
 import { secureImageUrl } from '@/utils/imageUtils'
 import { formatDate } from '@/utils/dateUtils'
 import { getCurrentInstance } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 export default {
   name: 'AvatarCard',
@@ -117,6 +118,7 @@ export default {
   },
   emits: ['manage-members', 'settings', 'update-logo'],
   setup(props) {
+    const { t } = useI18n()
     const logoError = ref(false)
     const logoTimestamp = ref(Date.now())
     
@@ -155,10 +157,10 @@ export default {
     const getStatusLabel = () => {
       const status = props.tenant?.status
       switch (status) {
-        case 'ACTIVE': return 'Active'
-        case 'INACTIVE': return 'Inactive'
-        case 'PENDING': return 'Pending'
-        default: return 'Unknown'
+        case 'ACTIVE': return t('tenant.overview.statusActive')
+        case 'INACTIVE': return t('tenant.overview.statusInactive')
+        case 'PENDING': return t('tenant.overview.statusPending')
+        default: return t('tenant.overview.statusUnknown')
       }
     }
     

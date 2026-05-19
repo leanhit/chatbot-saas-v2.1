@@ -383,18 +383,14 @@ export default {
 
     // Watch for language changes and reload packages
     watch(locale, async (newLocale) => {
-      console.log('ð ã Language changed to:', newLocale)
-      console.log('ð ã Current locale value:', locale.value)
       await paymentStore.loadPackages()
     })
 
     // Watch for payment status changes and refresh current package when completed
     watch(() => paymentStore.currentPayment?.status, async (newStatus, oldStatus) => {
       if (newStatus === 'COMPLETED' && oldStatus !== 'COMPLETED') {
-        console.log('ð Payment completed! Refreshing current package...')
         await paymentStore.loadCurrentPackage()
-        console.log('ð Current package refreshed after payment completion')
-      }
+        }
     })
 
     // Format currency function
@@ -501,7 +497,6 @@ export default {
     // Helper functions for localization
     const getLocalizedPackageName = (pkg) => {
       const isVietnamese = locale.value === 'vi'
-      console.log('🔍 getLocalizedPackageName - locale:', locale.value, 'isVietnamese:', isVietnamese)
       const nameMap = {
         free: isVietnamese ? 'Miễn phí' : 'Free',
         '3months': isVietnamese ? '3 Tháng' : '3 Months',
@@ -559,19 +554,11 @@ export default {
 
     // Load data on mount
     const loadAllData = async () => {
-      console.log('🔄 [Deposit] Loading all payment data...')
       try {
         await paymentStore.loadPackages()
-        console.log('✅ [Deposit] Packages loaded')
-        
         await paymentStore.loadBankInfo()
-        console.log('✅ [Deposit] Bank info loaded')
-        
         await paymentStore.loadCurrentPackage()
-        console.log('✅ [Deposit] Current package loaded')
-        
-        console.log('✅ [Deposit] All payment data loaded successfully')
-      } catch (error) {
+        } catch (error) {
         console.error('❌ [Deposit] Error loading payment data:', error)
       }
     }
@@ -582,19 +569,12 @@ export default {
     })
 
     // Debug: Log current package
-    console.log('Payment store current package:', paymentStore.currentPackage)
-    console.log('Payment store selected package:', paymentStore.selectedPackage)
-    console.log('Payment store packages:', paymentStore.packages)
-    
     // Debug function to check package matching
     const debugPackageMatch = () => {
       if (paymentStore.currentPackage) {
-        console.log('🔍 Current package ID:', paymentStore.currentPackage.id)
-        console.log('🔍 Current package packageId:', paymentStore.currentPackage.packageId)
         paymentStore.packages.forEach(pkg => {
           const match = paymentStore.currentPackage.id === pkg.packageId || paymentStore.currentPackage.packageId === pkg.packageId
-          console.log(`📦 Package ${pkg.packageId} matches: ${match}`)
-        })
+          })
       }
     }
     

@@ -347,13 +347,7 @@ export default {
     }
 
     const onBotSelectionChange = (event) => {
-      console.log('🔄 BOT SELECTION CHANGED!')
-      console.log('🔄 Event target value:', event.target.value)
-      console.log('🔄 Event target value type:', typeof event.target.value)
-      console.log('🔄 formData.botId after change:', formData.value.botId)
-      console.log('🔄 formData.botId type after change:', typeof formData.value.botId)
-      console.log('🔄 Selected option details:', event.target.options[event.target.selectedIndex])
-    }
+      }
 
     const getTriggerValuePlaceholder = () => {
       const placeholders = {
@@ -434,15 +428,6 @@ export default {
 
     const handleSubmit = async () => {
       // Debug: Log when button is clicked
-      console.log('🎯 CREATE RULE BUTTON CLICKED!')
-      console.log('🔍 handleSubmit - FULL formData:', JSON.stringify(formData.value, null, 2))
-      console.log('🔍 handleSubmit - botId:', formData.value.botId)
-      console.log('🔍 handleSubmit - botId type:', typeof formData.value.botId)
-      console.log('🔍 handleSubmit - botId JSON:', JSON.stringify(formData.value.botId))
-      console.log('🔍 handleSubmit - props.bot:', props.bot)
-      console.log('🔍 handleSubmit - props.bot JSON:', JSON.stringify(props.bot))
-      console.log('🔍 handleSubmit - isEditMode:', isEditMode.value)
-      
       // Validate required fields
       if (!formData.value.botId) {
         alert('Please select a bot for this rule')
@@ -451,9 +436,7 @@ export default {
 
       // Ensure botId is a string (not object)
       if (typeof formData.value.botId === 'object') {
-        console.log('🔧 Converting botId object to string')
         formData.value.botId = formData.value.botId.id || formData.value.botId.botId || ''
-        console.log('🔧 Converted botId to:', formData.value.botId)
         if (!formData.value.botId) {
           alert('Invalid bot ID selected')
           return
@@ -554,8 +537,6 @@ export default {
           await pennyRuleApi.deleteRule(props.bot.id, createdRule.data.ruleId)
         }
 
-        console.log('Rule test result:', response.data)
-        
         if (response.data.matches) {
           alert(`✅ Rule matched!\n\nRule: ${response.data.ruleName}\nTest data: ${JSON.stringify(testData, null, 2)}`)
         } else {
@@ -577,8 +558,7 @@ export default {
       try {
         await navigator.clipboard.writeText(text)
         // Optional: Show success message
-        console.log('Copied to clipboard')
-      } catch (err) {
+        } catch (err) {
         console.error('Failed to copy text: ', err)
         // Fallback for older browsers
         const textArea = document.createElement('textarea')
@@ -592,43 +572,28 @@ export default {
 
     // Watch for botId changes
     watch(() => formData.value.botId, (newBotId, oldBotId) => {
-      console.log('👁️ formData.botId CHANGED!')
-      console.log('👁️ Old botId:', oldBotId, 'type:', typeof oldBotId)
-      console.log('👁️ New botId:', newBotId, 'type:', typeof newBotId)
-      console.log('👁️ New botId JSON:', JSON.stringify(newBotId))
-    }, { immediate: true })
+      }, { immediate: true })
 
     // Watch for props.bot changes
     watch(() => props.bot, (newBot, oldBot) => {
-      console.log('👁️ props.bot CHANGED!')
-      console.log('👁️ Old bot:', oldBot)
-      console.log('👁️ New bot:', newBot)
-      console.log('👁️ New bot JSON:', JSON.stringify(newBot))
-    }, { immediate: true })
+      }, { immediate: true })
 
     // Lifecycle
     onMounted(() => {
-      console.log('🔍 PennyRuleModal onMounted - props.bot:', props.bot)
-      console.log('🔍 PennyRuleModal onMounted - props.rule:', props.rule)
-      
       loadAvailableBots()
       
       if (props.rule) {
         // Populate form with existing rule data, but preserve botId
         const ruleData = { ...props.rule }
         formData.value.botId = props.bot?.id || ruleData.botId || ''
-        console.log('🔧 onMounted - Setting botId from rule:', formData.value.botId)
         delete ruleData.botId // Remove botId from ruleData to avoid overwriting
         Object.assign(formData.value, ruleData)
       } else if (props.bot) {
         // Set bot ID if bot is provided
         formData.value.botId = props.bot.id
-        console.log('🔧 onMounted - Setting botId from props.bot:', formData.value.botId)
-      }
+        }
       
-      console.log('🔍 onMounted - Final formData.botId:', formData.value.botId)
-      console.log('🔍 onMounted - Final formData.botId type:', typeof formData.value.botId)
-    })
+      })
 
     return {
       props,

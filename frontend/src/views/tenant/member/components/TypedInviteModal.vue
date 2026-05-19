@@ -223,8 +223,6 @@ export default {
         // Call API with typed response
         const response = await tenantApi.inviteMember(tenantKey, inviteRequest)
         
-        console.log('Invitation sent successfully:', response)
-        
         // Emit success event
         emit('invited', inviteRequest)
         

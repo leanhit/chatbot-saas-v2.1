@@ -1,39 +1,39 @@
 <template>
   <div v-if="show" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white dark:bg-gray-800">
+    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
       <!-- Header -->
       <div class="mb-6">
         <h3 class="text-lg font-medium text-gray-900 dark:text-white">
-          {{ isEditing ? 'Edit Address' : 'Add Address' }}
+          {{ isEditing ? $t('tenant.overview.editAddressInfo') : $t('tenant.overview.addAddressInfo') }}
         </h3>
         <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
-          {{ isEditing ? 'Update existing address' : 'Create new address' }}
+          {{ isEditing ? $t('tenant.overview.updateAddressInfoDesc') : $t('tenant.overview.createAddressInfoDesc') }}
         </p>
       </div>
       <!-- Form -->
       <form @submit.prevent="handleSubmit" class="space-y-4">
         <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">House Number</label>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('tenant.overview.houseNumber') }}</label>
           <input
             v-model="form.houseNumber"
             type="text"
             required
             class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-primary focus:border-primary dark:bg-gray-700 dark:text-white"
-            placeholder="Nhập số nhà"
+            :placeholder="$t('tenant.overview.houseNumber')"
           />
         </div>
         <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Street</label>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('tenant.overview.street') }}</label>
           <input
             v-model="form.street"
             type="text"
             required
             class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-primary focus:border-primary dark:bg-gray-700 dark:text-white"
-            placeholder="Nhập tên đường"
+            :placeholder="$t('tenant.overview.street')"
           />
         </div>
         <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Province</label>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('tenant.overview.province') }}</label>
           <select
             v-model="form.province"
             required
@@ -41,14 +41,14 @@
             @change="onProvinceChange"
             class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-primary focus:border-primary dark:bg-gray-700 dark:text-white"
           >
-            <option value="">Chọn Tỉnh/Thành phố</option>
+            <option value="">{{ $t('tenant.overview.selectProvince') }}</option>
             <option v-for="province in provinces" :key="province.code" :value="province.name">
               {{ province.name }}
             </option>
           </select>
         </div>
         <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">District</label>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('tenant.overview.district') }}</label>
           <select
             v-model="form.district"
             required
@@ -57,14 +57,14 @@
             :disabled="!form.province"
             class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-primary focus:border-primary dark:bg-gray-700 dark:text-white disabled:opacity-50"
           >
-            <option value="">Chọn Quận/Huyện</option>
+            <option value="">{{ $t('tenant.overview.selectDistrict') }}</option>
             <option v-for="district in districtsList" :key="district.code" :value="district.name">
               {{ district.name }}
             </option>
           </select>
         </div>
         <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Ward</label>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('tenant.overview.ward') }}</label>
           <select
             v-model="form.ward"
             required
@@ -72,20 +72,20 @@
             :disabled="!form.district"
             class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-primary focus:border-primary dark:bg-gray-700 dark:text-white disabled:opacity-50"
           >
-            <option value="">Chọn Phường/Xã</option>
+            <option value="">{{ $t('tenant.overview.selectWard') }}</option>
             <option v-for="ward in wardsList" :key="ward.code" :value="ward.name">
               {{ ward.name }}
             </option>
           </select>
         </div>
         <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Country</label>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('tenant.overview.country') }}</label>
           <input
             v-model="form.country"
             type="text"
             required
             class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-primary focus:border-primary dark:bg-gray-700 dark:text-white"
-            placeholder="Nhập quốc gia"
+            :placeholder="$t('tenant.overview.country')"
           />
         </div>
         <!-- Actions -->
@@ -95,15 +95,15 @@
             @click="$emit('close')"
             class="px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-600"
           >
-            Cancel
+            {{ $t('common.cancel') }}
           </button>
           <button
             type="submit"
             :disabled="loading"
             class="px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-primary hover:bg-primary/80 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-50"
           >
-            <span v-if="loading">Loading...</span>
-            <span v-else>Save</span>
+            <span v-if="loading">{{ $t('tenant.settings.saving') }}</span>
+            <span v-else>{{ $t('common.save') || 'Save' }}</span>
           </button>
         </div>
       </form>
@@ -115,6 +115,7 @@
 import { ref, watch, computed } from 'vue'
 import { Icon } from '@iconify/vue'
 import { useLocationStore } from '@/stores/locationStore'
+import { useI18n } from 'vue-i18n'
 
 export default {
   name: 'AddressModal',
@@ -138,6 +139,7 @@ export default {
   emits: ['close', 'submit'],
   setup(props, { emit }) {
     const locationStore = useLocationStore()
+    const { t } = useI18n()
     const loading = ref(false)
     const form = ref({
       houseNumber: '',

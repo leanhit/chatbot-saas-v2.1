@@ -24,7 +24,7 @@
       <div
         class="bg-gray-700 absolute mt-3 dark:block hidden rounded-md py-1 px-2 text-xs text-gray-200"
       >
-        Dark mode
+        {{ $t('sidebar.darkMode') }}
       </div>
       <button
         class="lg:hidden block dark:text-gray-400 float-right -mt-7"
@@ -49,7 +49,7 @@
     <!-- sidebar list -->
     <div class="sidebar-list p-4 mt-4 divide-y dark:divide-gray-700">
       <div class="pb-5">
-        <p class="font-medium text-gray-400 dark:text-gray-400">Menu</p>
+        <p class="font-medium text-gray-400 dark:text-gray-400">{{ $t('sidebar.menu') }}</p>
         <div class="wrap-item mt-4 dark:text-gray-500">
           <div class="item">
             <router-link
@@ -58,7 +58,7 @@
               class="w-full flex text-left rounded-md box-border p-3 hover:bg-gray-200 dark:hover:bg-gray-700"
             >
               <span class="mr-3 text-xl"><Icon icon="bxs:dashboard" /></span>
-              <span class="w-full"> Dashboard </span>
+              <span class="w-full"> {{ $t('dashboard.title') }} </span>
             </router-link>
           </div>
           <div class="item mt-3">
@@ -66,21 +66,21 @@
               <template v-slot:icon>
                 <Icon icon="mdi:office-building" />
               </template>
-              <template v-slot:title> Tenant </template>
+              <template v-slot:title> {{ $t('sidebar.tenant') }} </template>
               <template v-slot:content>
                 <router-link
                   to="/tenant/overview"
                   @click.stop
                   class="w-full text-left block rounded-md p-3 hover:bg-gray-200 dark:hover:bg-gray-700"
                 >
-                  Overview
+                  {{ $t('sidebar.overview') }}
                 </router-link>
                 <router-link
                   to="/tenant/members"
                   @click.stop
                   class="w-full text-left block rounded-md p-3 hover:bg-gray-200 dark:hover:bg-gray-700"
                 >
-                  Member
+                  {{ $t('sidebar.member') }}
                 </router-link>
                 <!-- Temporarily hidden
                 <router-link
@@ -99,28 +99,28 @@
               <template v-slot:icon>
                 <Icon icon="mdi:robot" />
               </template>
-              <template v-slot:title> Penny Bots </template>
+              <template v-slot:title> {{ $t('sidebar.pennyBots') }} </template>
               <template v-slot:content>
                 <router-link
                   to="/penny-bots"
                   @click.stop
                   class="w-full text-left block rounded-md p-3 hover:bg-gray-200 dark:hover:bg-gray-700"
                 >
-                  Bots
+                  {{ $t('sidebar.bots') }}
                 </router-link>
                 <router-link
                   to="/penny-connections"
                   @click.stop
                   class="w-full text-left block rounded-md p-3 hover:bg-gray-200 dark:hover:bg-gray-700"
                 >
-                  Connections
+                  {{ $t('sidebar.connections') }}
                 </router-link>
                 <router-link
                   to="/penny-rules"
                   @click.stop
                   class="w-full text-left block rounded-md p-3 hover:bg-gray-200 dark:hover:bg-gray-700"
                 >
-                  Rules
+                  {{ $t('sidebar.rules') }}
                 </router-link>
               </template>
             </menu-accordion>
@@ -130,14 +130,14 @@
               <template v-slot:icon>
                 <Icon icon="mdi:message-text" />
               </template>
-              <template v-slot:title> Messages </template>
+              <template v-slot:title> {{ $t('sidebar.messages') }} </template>
               <template v-slot:content>
                 <router-link
                   to="/messages"
                   @click.stop
                   class="w-full text-left block rounded-md p-3 hover:bg-gray-200 dark:hover:bg-gray-700"
                 >
-                  Conversations
+                  {{ $t('sidebar.conversations') }}
                 </router-link>
               </template>
             </menu-accordion>
@@ -164,21 +164,21 @@
               <template v-slot:icon>
                 <Icon icon="mdi:bank-transfer" />
               </template>
-              <template v-slot:title> Payments </template>
+              <template v-slot:title> {{ $t('sidebar.payments') }} </template>
               <template v-slot:content>
                 <router-link
                   to="/payment/deposit"
                   @click.stop
                   class="w-full text-left block rounded-md p-3 hover:bg-gray-200 dark:hover:bg-gray-700"
                 >
-                  Deposit
+                  {{ $t('sidebar.deposit') }}
                 </router-link>
                 <router-link
                   to="/payment/history"
                   @click.stop
                   class="w-full text-left block rounded-md p-3 hover:bg-gray-200 dark:hover:bg-gray-700"
                 >
-                  History
+                  {{ $t('sidebar.history') }}
                 </router-link>
               </template>
             </menu-accordion>

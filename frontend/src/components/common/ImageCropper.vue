@@ -335,15 +335,6 @@ export default {
         const clampedSourceWidth = Math.min(sourceWidth, imageElement.value.naturalWidth - clampedSourceX)
         const clampedSourceHeight = Math.min(sourceHeight, imageElement.value.naturalHeight - clampedSourceY)
         
-        console.log('🎯 [ImageCropper] Crop coordinates:', {
-          sourceX: clampedSourceX,
-          sourceY: clampedSourceY,
-          sourceWidth: clampedSourceWidth,
-          sourceHeight: clampedSourceHeight,
-          imageWidth: imageElement.value.naturalWidth,
-          imageHeight: imageElement.value.naturalHeight
-        })
-        
         // Clear canvas before drawing
         ctx.clearRect(0, 0, canvas.width, canvas.height)
         

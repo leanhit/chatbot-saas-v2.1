@@ -58,13 +58,9 @@ class TakeoverWebSocketService {
       // Remove any potential fragments or invalid characters
       const cleanUrl = wsUrl.split('#')[0].trim()
       
-      console.log('🔌 Connecting to WebSocket:', cleanUrl)
-      console.log('Conversation ID:', conversationId)
-      
       this.socket = new WebSocket(cleanUrl)
       
       this.socket.onopen = () => {
-        console.log(`✅ Takeover WebSocket connected for conversation: ${conversationId}`)
         this.connectionStatus.value = 'connected'
         this.reconnectAttempts = 0
         
@@ -85,7 +81,6 @@ class TakeoverWebSocketService {
       }
 
       this.socket.onclose = (event) => {
-        console.log(`❌ Takeover WebSocket disconnected: ${event.code} - ${event.reason}`)
         this.connectionStatus.value = 'disconnected'
         this.stopHeartbeat()
         
@@ -101,14 +96,10 @@ class TakeoverWebSocketService {
         // Analyze close code for better handling
         const closeCode = event.code
         if (closeCode === 1000) {
-          console.log('📝 Normal closure - client initiated close')
-        } else if (closeCode === 1001) {
-          console.log('🏃 Endpoint going away - server initiated close')
-        } else if (closeCode === 1006) {
-          console.log('🚫 Abnormal closure - connection lost')
-        } else {
-          console.log(`❓ Unexpected close code: ${closeCode}`)
-        }
+          } else if (closeCode === 1001) {
+          } else if (closeCode === 1006) {
+          } else {
+          }
         
         // Attempt reconnection
         this.attemptReconnect()
@@ -169,11 +160,9 @@ class TakeoverWebSocketService {
           break
         case 'HEARTBEAT_PONG':
           // Handle heartbeat response from server
-          console.log('💓 Received heartbeat PONG from server')
           break
         default:
-          console.log('📨 Unknown message type:', message.type)
-      }
+          }
     } catch (error) {
       console.error('🚨 Error handling WebSocket message:', error)
     }
@@ -183,11 +172,8 @@ class TakeoverWebSocketService {
    * Handle real-time conversation messages from Facebook/Bot
    */
   handleConversationMessage(message) {
-    console.log(`📨 New conversation message:`, message)
-    
     // Only process messages that have backend ID (confirmed messages)
     if (!message.id || message.id.startsWith('ws-')) {
-      console.log('⚠️ Skipping message without backend ID:', message)
       return
     }
     
@@ -226,11 +212,8 @@ class TakeoverWebSocketService {
    * Handle real-time takeover messages
    */
   handleTakeoverMessage(message) {
-    console.log(`📨 New real-time message:`, message)
-    
     // Only process messages that have backend ID (confirmed messages)
     if (!message.id || message.id.startsWith('ws-')) {
-      console.log('⚠️ Skipping takeover message without backend ID:', message)
       return
     }
     
@@ -276,8 +259,6 @@ class TakeoverWebSocketService {
     }
     this.activeAgents.value.get(conversationId).add(agent)
     
-    console.log(`👤 Agent joined conversation ${conversationId}:`, agent)
-    
     if (this.onAgentJoined) {
       this.onAgentJoined(conversationId, agent)
     }
@@ -295,8 +276,6 @@ class TakeoverWebSocketService {
         this.activeAgents.value.delete(conversationId)
       }
     }
-    
-    console.log(`👤 Agent left conversation ${conversationId}:`, agent)
     
     if (this.onAgentLeft) {
       this.onAgentLeft(conversationId, agent)
@@ -479,13 +458,10 @@ class TakeoverWebSocketService {
       // Exponential backoff for better stability
       const backoffDelay = Math.min(1000 * Math.pow(2, this.reconnectAttempts - 1), 30000)
       
-      console.log(`🔄 Attempting to reconnect (${this.reconnectAttempts}/${this.maxReconnectAttempts}) in ${backoffDelay}ms`)
-      
       setTimeout(() => {
         this.connect(this.currentConversationId.value)
       }, backoffDelay)
     } else {
-      console.log('❌ Max reconnection attempts reached')
       this.connectionStatus.value = 'error'
     }
   }

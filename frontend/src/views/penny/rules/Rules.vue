@@ -344,11 +344,6 @@ export default {
     }
 
     const toggleRuleStatus = async (rule) => {
-      console.log('🔄 toggleRuleStatus called')
-      console.log('🔄 selectedBot:', selectedBot.value)
-      console.log('🔄 rule:', rule)
-      console.log('🔄 rule.ruleId:', rule.ruleId)
-      
       if (!selectedBot.value) {
         console.error('❌ No bot selected for toggle rule status')
         alert('Please select a bot first')
@@ -362,32 +357,20 @@ export default {
       }
       
       try {
-        console.log('🔄 Toggling rule:', rule.ruleId, 'to', !rule.isActive)
         const updateData = { isActive: !rule.isActive }
         await pennyRuleStore.updateRule(selectedBot.value.id, rule.ruleId, updateData)
-        console.log('✅ Rule status toggled successfully')
-      } catch (error) {
+        } catch (error) {
         console.error('Failed to toggle rule status:', error)
         alert('Failed to toggle rule status: ' + error.message)
       }
     }
 
     const editRule = (rule) => {
-      console.log('✏️ editRule called')
-      console.log('✏️ rule:', rule)
-      console.log('✏️ selectedBot:', selectedBot.value)
-      
       editingRule.value = { ...rule }
       showCreateModal.value = true
-      console.log('✏️ Modal opened for editing')
-    }
+      }
 
     const deleteRule = async (rule) => {
-      console.log('🗑️ deleteRule called')
-      console.log('🗑️ rule:', rule)
-      console.log('🗑️ rule.ruleId:', rule.ruleId)
-      console.log('🗑️ selectedBot:', selectedBot.value)
-      
       if (!selectedBot.value) {
         console.error('❌ No bot selected for delete rule')
         alert('Please select a bot first')
@@ -402,10 +385,8 @@ export default {
       
       if (confirm(`Are you sure you want to delete "${rule.name}"?`)) {
         try {
-          console.log('🗑️ Deleting rule:', rule.ruleId)
           await pennyRuleStore.deleteRule(selectedBot.value.id, rule.ruleId)
-          console.log('✅ Rule deleted successfully')
-        } catch (error) {
+          } catch (error) {
           console.error('Failed to delete rule:', error)
           alert('Failed to delete rule: ' + error.message)
         }
@@ -413,11 +394,6 @@ export default {
     }
 
     const testRule = async (rule) => {
-      console.log('🧪 testRule called')
-      console.log('🧪 rule:', rule)
-      console.log('🧪 rule.ruleId:', rule.ruleId)
-      console.log('🧪 selectedBot:', selectedBot.value)
-      
       if (!selectedBot.value) {
         console.error('❌ No bot selected for test rule')
         alert('Please select a bot first')
@@ -442,10 +418,7 @@ export default {
           }
         }
         
-        console.log('🧪 Testing rule with data:', testData)
         const result = await pennyRuleStore.testRule(selectedBot.value.id, rule.ruleId, testData)
-        console.log('✅ Rule test result:', result)
-        
         if (result.matches) {
           alert(`✅ Rule matched!\n\nRule: ${result.ruleName}\nTest data: ${JSON.stringify(testData, null, 2)}`)
         } else {
@@ -458,11 +431,6 @@ export default {
     }
 
     const duplicateRule = async (rule) => {
-      console.log('📋 duplicateRule called')
-      console.log('📋 rule:', rule)
-      console.log('📋 rule.ruleId:', rule.ruleId)
-      console.log('📋 selectedBot:', selectedBot.value)
-      
       if (!selectedBot.value) {
         console.error('❌ No bot selected for duplicate rule')
         alert('Please select a bot first')
@@ -479,9 +447,7 @@ export default {
         delete duplicatedRule.createdAt
         delete duplicatedRule.updatedAt
         
-        console.log('📋 Creating duplicated rule:', duplicatedRule)
         await pennyRuleStore.createRule(selectedBot.value.id, duplicatedRule)
-        console.log('✅ Rule duplicated successfully')
         fetchRules()
       } catch (error) {
         console.error('Failed to duplicate rule:', error)
@@ -546,34 +512,23 @@ export default {
 
     // Lifecycle
     onMounted(() => {
-      console.log('🔍 Rules.vue onMounted')
-      console.log('🔍 availableBots:', availableBots.value)
-      console.log('🔍 currentBot:', currentBot.value)
-      console.log('🔍 currentBotId:', currentBotId.value)
-      
       // Load available bots first
       if (availableBots.value.length === 0) {
-        console.log('🔍 Fetching penny bots...')
         pennyBotStore.fetchPennyBots().then(() => {
-          console.log('🔍 Bots fetched, availableBots:', availableBots.value)
           // Auto-select current bot if available
           if (currentBot.value) {
             selectedBot.value = currentBot.value
-            console.log('🔍 Auto-selected current bot:', selectedBot.value)
             fetchRules()
           } else {
-            console.log('⚠️ No current bot available')
-          }
+            }
         })
       } else {
         // Auto-select current bot if available
         if (currentBot.value) {
           selectedBot.value = currentBot.value
-          console.log('🔍 Auto-selected current bot:', selectedBot.value)
           fetchRules()
         } else {
-          console.log('⚠️ No current bot available')
-        }
+          }
       }
     })
 

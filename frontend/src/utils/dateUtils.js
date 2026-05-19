@@ -34,7 +34,7 @@ export function dateTimeLocalToIso(dateTimeLocalValue) {
  * @returns {string} Date in YYYY-MM-DDTHH:mm format for datetime-local input
  */
 export function formatDateTimeLocal(dateString) {
-  console.log('formatDateTimeLocal input:', dateString, typeof dateString);
+  
   if (!dateString && dateString !== 0) return ''
   
   try {
@@ -49,27 +49,27 @@ export function formatDateTimeLocal(dateString) {
       // Handle Unix timestamp (could be seconds or milliseconds)
       // If timestamp is in seconds (less than year 2000), convert to milliseconds
       const timestamp = dateString < 10000000000 ? dateString * 1000 : dateString
-      console.log('timestamp after conversion:', timestamp);
+      
       date = new Date(timestamp)
     } else {
       // Parse ISO 8601 from backend (should be UTC)
       date = new Date(dateString)
     }
     
-    console.log('date object:', date, 'isValid:', !isNaN(date.getTime()));
+    
     
     if (isNaN(date.getTime())) return ''
     
     // Handle special case for timestamp 0 (no expiry)
     if (date.getTime() === 0) {
-      console.log('timestamp is 0, returning empty string');
+      
       return ''
     }
     
     // Convert to local time and format as YYYY-MM-DDTHH:mm
     const localDate = new Date(date.getTime() - (date.getTimezoneOffset() * 60000))
     const result = localDate.toISOString().slice(0, 16)
-    console.log('formatDateTimeLocal result:', result);
+    
     return result
   } catch (e) {
     console.warn('DateTime-local formatting error:', dateString, e)

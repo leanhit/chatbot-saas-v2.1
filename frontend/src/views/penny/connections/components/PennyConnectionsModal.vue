@@ -325,8 +325,7 @@ export default {
     const deleteConnection = async (connection) => {
       try {
         await pennyConnectionStore.deleteConnection(props.bot.id, connection.id)
-        console.log('Connection deleted successfully')
-      } catch (error) {
+        } catch (error) {
         console.error('Failed to delete connection:', error)
         alert('Failed to delete connection: ' + error.message)
       }
@@ -368,8 +367,7 @@ export default {
       checkingHealth.value = true
       try {
         await pennyConnectionStore.fetchConnectionHealth(props.bot.id, connection.id)
-        console.log('Health check completed for connection:', connection.connectionName)
-      } catch (error) {
+        } catch (error) {
         console.error('Failed to check connection health:', error)
         alert('Failed to check connection health: ' + error.message)
       } finally {
@@ -455,7 +453,7 @@ export default {
 
     const viewDetails = (connection) => {
       // Show connection details modal or expand details
-      console.log('View details for connection:', connection);
+      
       // TODO: Implement details view
     }
 

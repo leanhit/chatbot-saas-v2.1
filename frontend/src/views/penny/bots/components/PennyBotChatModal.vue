@@ -150,14 +150,8 @@ export default {
         // Send message to Penny bot
         const response = await pennyBotStore.chatWithPennyBot(props.bot.id, message, props.isTestMode)
         
-        console.log('🔍 Full API response:', response)
-        console.log('🔍 Response data:', response.data)
-        
         // Backend returns data directly in response, not in response.data
         const responseData = response.data || response || {}
-        console.log('🔍 Parsed response data:', responseData)
-        console.log('🔍 Response text:', responseData.response)
-        
         // Add bot response to chat
         const botChatMessage = {
           type: 'bot',
@@ -243,14 +237,8 @@ export default {
         // Send message to Penny bot
         const response = await pennyBotStore.chatWithPennyBot(props.bot.id, userMessage, props.isTestMode)
         
-        console.log('🔍 Full API response:', response)
-        console.log('🔍 Response data:', response.data)
-        
         // Backend returns data directly in response, not in response.data
         const responseData = response.data || response || {}
-        console.log('🔍 Parsed response data:', responseData)
-        console.log('🔍 Response text:', responseData.response)
-        
         // Add bot response to chat
         const botChatMessage = {
           type: 'bot',

@@ -1,6 +1,5 @@
 package com.chatbot.core.tenant.model;
 
-import com.chatbot.core.billing.currency.model.Currency;
 import com.chatbot.core.tenant.model.TenantStatus;
 import com.chatbot.core.tenant.model.TenantVisibility;
 import com.chatbot.core.tenant.profile.model.TenantProfile;
@@ -44,11 +43,6 @@ public class Tenant {
     @Column(name = "expires_at")
     @JsonFormat(pattern = DateUtils.API_DATETIME_FORMAT, timezone = DateUtils.API_TIMEZONE)
     private LocalDateTime expiresAt;
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "default_currency", nullable = false)
-    @Builder.Default
-    private Currency defaultCurrency = Currency.USD;
 
     @Column(name = "current_package_id")
     private String currentPackageId; // e.g., 'free', 'pro', 'business', 'enterprise'

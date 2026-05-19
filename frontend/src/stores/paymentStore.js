@@ -130,8 +130,7 @@ export const usePaymentStore = defineStore('payment', {
         this.packagesLoading = true
         const response = await packageApi.getActivePackages()
         this.packages = response.data || []
-        console.log('✅ Loaded packages from API:', this.packages)
-      } catch (error) {
+        } catch (error) {
         console.error('❌ Error loading packages:', error)
         this.setMessage('Error loading packages: ' + (error.message || 'Unknown error'), 'error')
         // Fallback to empty packages
@@ -171,7 +170,6 @@ export const usePaymentStore = defineStore('payment', {
      * Thiết lập gói hiện tại của user (từ backend)
      */
     setCurrentPackage(packageId) {
-      console.log('Setting current package:', packageId)
       const foundPackage = this.packages.find(pkg => pkg.packageId === packageId)
       if (foundPackage) {
         this.currentPackage = {
@@ -181,8 +179,7 @@ export const usePaymentStore = defineStore('payment', {
           duration: foundPackage.duration,
           features: this.getPackageFeatures(foundPackage)
         }
-        console.log('✅ Current package set:', this.currentPackage)
-      } else {
+        } else {
         console.warn('⚠️ Package not found:', packageId)
         this.currentPackage = null
       }
@@ -280,8 +277,7 @@ export const usePaymentStore = defineStore('payment', {
           features: this.getPackageFeatures(selectedPkg),
           badge: selectedPkg.badge
         }
-        console.log('✅ Package selected:', this.selectedPackage)
-      } else {
+        } else {
         console.error('❌ Package not found:', packageId)
       }
     },
@@ -310,8 +306,6 @@ export const usePaymentStore = defineStore('payment', {
         this.currentPayment = response.data
         
         this.setMessage('Payment request created successfully!', 'success')
-        console.log('✅ Deposit created:', this.currentPayment)
-        
         return this.currentPayment
       } catch (error) {
         console.error('❌ Error creating deposit:', error)
@@ -344,7 +338,6 @@ export const usePaymentStore = defineStore('payment', {
           this.setMessage('Yêu cầu thanh toán đã hết hạn. Vui lòng tạo yêu cầu mới.', 'error')
         }
         
-        console.log('✅ Payment status checked:', this.currentPayment)
         return this.currentPayment
       } catch (error) {
         console.error('❌ Error checking payment status:', error)
@@ -400,8 +393,7 @@ export const usePaymentStore = defineStore('payment', {
         this.selectedPackage = null
         
         this.setMessage('Gói miễn phí đã được kích hoạt thành công!', 'success')
-        console.log('✅ Free package activated:', this.currentPackage)
-      } catch (error) {
+        } catch (error) {
         console.error('❌ Error activating free package:', error)
         this.setMessage('Lỗi kích hoạt gói miễn phí: ' + (error.response?.data?.message || error.message || 'Unknown error'), 'error')
       } finally {
@@ -416,8 +408,7 @@ export const usePaymentStore = defineStore('payment', {
       try {
         const response = await paymentAPI.getBankInfo()
         this.bankInfo = response.data
-        console.log('✅ Bank info loaded:', this.bankInfo)
-      } catch (error) {
+        } catch (error) {
         console.error('❌ Error loading bank info:', error)
         // Set default bank info if API fails
         this.bankInfo = {
@@ -435,8 +426,6 @@ export const usePaymentStore = defineStore('payment', {
      */
     async loadCurrentPackage() {
       try {
-        console.log('Loading current package from tenant API...')
-        
         // Get current tenant from gateway store
         const { useGatewayTenantStore } = await import('@/stores/tenant/gateway/myTenantStore')
         const gatewayStore = useGatewayTenantStore()
@@ -445,8 +434,6 @@ export const usePaymentStore = defineStore('payment', {
           // Get specific tenant data with cache-busting
           const response = await tenantApi.getTenant(gatewayStore.currentTenant.tenantKey)
           const tenant = response.data
-          
-          console.log('Current tenant data:', tenant)
           
           if (tenant.currentPackageId && tenant.currentPackageName) {
             // Map backend tenant data to frontend package format
@@ -462,16 +449,14 @@ export const usePaymentStore = defineStore('payment', {
                 description: `${tenant.currentPackageName} package`
               })
             }
-            console.log('Current package loaded:', this.currentPackage)
-          } else {
+            } else {
             console.warn('No package info found in tenant data')
             // Fallback to free package if available
             if (this.packages.length > 0) {
               const freePackage = this.packages.find(pkg => pkg.packageId === 'free')
               if (freePackage) {
                 this.setCurrentPackage('free')
-                console.log('Fallback: Set free package as default')
-              }
+                }
             }
           }
         } else {
@@ -481,8 +466,7 @@ export const usePaymentStore = defineStore('payment', {
             const freePackage = this.packages.find(pkg => pkg.packageId === 'free')
             if (freePackage) {
               this.setCurrentPackage('free')
-              console.log('No tenant fallback: Set free package as default')
-            }
+              }
           }
         }
       } catch (error) {
@@ -492,8 +476,7 @@ export const usePaymentStore = defineStore('payment', {
           const freePackage = this.packages.find(pkg => pkg.packageId === 'free')
           if (freePackage) {
             this.setCurrentPackage('free')
-            console.log('Error fallback: Set free package as default')
-          }
+            }
         }
       }
     },
@@ -506,8 +489,7 @@ export const usePaymentStore = defineStore('payment', {
       try {
         const response = await paymentAPI.getPaymentHistory()
         this.paymentHistory = response.data || []
-        console.log('✅ Payment history loaded:', this.paymentHistory.length, 'records')
-      } catch (error) {
+        } catch (error) {
         console.error('❌ Error loading payment history:', error)
         this.setMessage('Lỗi tải lịch sử thanh toán: ' + (error.response?.data?.message || error.message || 'Unknown error'), 'error')
       } finally {

@@ -168,13 +168,8 @@ export default {
       const currentUser = authStore.user
       const currentTenant = tenantStore.currentTenant
 
-      console.log('Debug - User:', currentUser)
-      console.log('Debug - Tenant:', currentTenant)
-
       if (!currentUser || !currentTenant) {
         console.error('User or tenant information not available')
-        console.log('currentUser:', currentUser)
-        console.log('currentTenant:', currentTenant)
         // Show error message to user
         alert('Unable to get user or tenant information. Please try again.')
         return
@@ -189,8 +184,6 @@ export default {
           botDescription: formData.value.description || '',
           tenantKey: currentTenant.tenantKey // Gửi tenantKey thay vì tenantId
         }
-        
-        console.log('Debug - API Request:', apiRequest)
         
         if (props.bot) {
           // Update existing bot

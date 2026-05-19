@@ -249,7 +249,6 @@ export default {
 
     const processCustomer = () => {
       // TODO: Implement customer processing logic
-      console.log('Processing customer:', props.customer)
       emit('close')
     }
 

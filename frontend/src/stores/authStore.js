@@ -84,37 +84,25 @@ export const useAuthStore = defineStore('auth', () => {
       // 5. Determine redirect based on tenant data
       const tenantStore = useGatewayTenantStore()
       
-      console.log('Login - User tenants:', tenantStore.userTenants)
-      console.log('Login - Current tenant:', tenantStore.currentTenant)
-      console.log('Login - Tenant list length:', tenantStore.userTenants.length)
-      
       // Always try to get stored tenant first
       const storedTenantKey = localStorage.getItem('active_tenant_id')
       const storedTenantData = localStorage.getItem('tenant_data')
-      console.log('Login - Stored tenant key:', storedTenantKey)
-      console.log('Login - Stored tenant data:', storedTenantData)
-      console.log('Login - All localStorage keys:', Object.keys(localStorage))
-      
       // Re-enable hydrate for future logins
       localStorage.setItem('should_hydrate_tenant', 'true')
       
       if (storedTenantKey && tenantStore.currentTenant) {
         // Has stored active tenant, go to dashboard directly
-        console.log('Login - Using stored tenant, going to dashboard')
         await router.push('/dashboard')
       } else if (tenantStore.userTenants.length === 1) {
         // Only one tenant, auto-switch and go to dashboard (same as Enter tenant)
         const onlyTenant = tenantStore.userTenants[0]
-        console.log('Login - Auto-switching to only tenant:', onlyTenant.tenantKey)
         await tenantStore.switchTenant(onlyTenant.tenantKey)
         await router.push('/dashboard')
       } else if (tenantStore.userTenants.length > 1) {
         // Multiple tenants, go to tenant gateway
-        console.log('Login - Multiple tenants, going to gateway')
         await router.push({ name: 'tenant-gateway' })
       } else {
         // No tenants, go to tenant gateway
-        console.log('Login - No tenants, going to gateway')
         await router.push({ name: 'tenant-gateway' })
       }
       return { success: true, data: authData }
@@ -151,19 +139,13 @@ export const useAuthStore = defineStore('auth', () => {
         const workspaceName = email.substring(0, email.indexOf('@')) + "'s Workspace"
         
         // Create workspace
-        console.log('Creating default workspace:', workspaceName)
         const createResponse = await tenantApi.createTenant({
           name: workspaceName,
           visibility: 'PUBLIC'
         })
         
-        console.log('Workspace created successfully:', createResponse.data)
-        
         // Fetch updated tenant list
         await tenantStore.fetchUserTenants()
-        
-        console.log('User tenants after fetch:', tenantStore.userTenants)
-        console.log('Looking for workspace name:', workspaceName)
         
         // Auto-switch to newly created tenant
         let newTenant = tenantStore.userTenants.find(tenant => tenant.name === workspaceName)
@@ -171,21 +153,15 @@ export const useAuthStore = defineStore('auth', () => {
         // If not found by name, try to get the first tenant (fallback)
         if (!newTenant && tenantStore.userTenants.length > 0) {
           newTenant = tenantStore.userTenants[0]
-          console.log('Using first tenant as fallback:', newTenant)
-        }
+          }
         
         if (newTenant) {
-          console.log('Attempting to switch to tenant:', newTenant)
-          
           // Apply same logic as Enter tenant button
           await tenantStore.switchTenant(newTenant.tenantKey)
-          console.log('Switched to new tenant successfully')
-          
           // Redirect to dashboard (same as Enter tenant button)
           await router.push('/dashboard')
         } else {
           // Fallback to tenant gateway if something goes wrong
-          console.log('No tenant found, redirecting to tenant gateway')
           await router.push({ name: 'tenant-gateway' })
         }
         
@@ -263,8 +239,6 @@ export const useAuthStore = defineStore('auth', () => {
       
       // Prevent tenant store from hydrating old data on next login
       localStorage.setItem('should_hydrate_tenant', 'false')
-      
-      console.log('Logout completed - all data cleared, hydrate disabled')
       
       // Redirect to login
       await router.push({ name: 'login' })

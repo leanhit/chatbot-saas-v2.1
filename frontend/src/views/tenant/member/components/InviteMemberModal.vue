@@ -96,8 +96,10 @@
 <script>
 import { ref, watch } from 'vue'
 import { Icon } from '@iconify/vue'
+import { useI18n } from 'vue-i18n'
 import { tenantApi } from '@/api/tenantApi'
 import { useGatewayTenantStore } from '@/stores/tenant/gateway/myTenantStore'
+
 export default {
   name: 'InviteMemberModal',
   components: {
@@ -111,6 +113,7 @@ export default {
   },
   emits: ['close', 'invited'],
   setup(props, { emit }) {
+    const { t } = useI18n()
     const tenantStore = useGatewayTenantStore()
     const loading = ref(false)
     const formData = ref({
@@ -126,13 +129,13 @@ export default {
           email: '',
           role: 'MEMBER',
           expiryDays: 7,
-          message: `Hi there!\n\nYou've been invited to join ${tenantStore.currentTenant?.name || 'our workspace'}.\n\nClick the link in the invitation email to get started.\n\nBest regards`
+          message: t('tenant.member.inviteMessageBody', { name: tenantStore.currentTenant?.name || t('tenant.overview.unknownTenant') })
         }
       }
     })
     const handleSubmit = async () => {
       if (!formData.value.email) {
-        alert('Please enter an email address')
+        alert(t('tenant.member.enterEmail'))
         return
       }
       loading.value = true
@@ -140,7 +143,7 @@ export default {
         // Use tenantKey from currentTenant object
         const tenantKey = tenantStore.currentTenant?.tenantKey
         if (!tenantKey) {
-          alert('No tenant selected')
+          alert(t('tenant.overview.unknownTenant'))
           return
         }
         
@@ -154,7 +157,6 @@ export default {
         handleClose()
       } catch (error) {
         console.error('Failed to send invitation:', error)
-        // Show specific error message from backend if available
         const errorMessage = error.response?.data?.message || error.message || 'Failed to send invitation. Please try again.'
         alert(errorMessage)
       } finally {

@@ -268,8 +268,7 @@ export default {
         members.value = sanitizedMembers
         totalMembers.value = sanitizedMembers.length
         
-        console.log(`Loaded ${sanitizedMembers.length} members for tenant ${tenantKey}`)
-      } catch (error) {
+        } catch (error) {
         console.error('Failed to load members:', error)
         console.error('Error details:', {
           message: error.message,
@@ -326,8 +325,7 @@ export default {
         member.role = newRole as TenantRole
         emit('member-updated', member)
         
-        console.log(`Updated role for member ${member.id} to ${newRole}`)
-      } catch (error) {
+        } catch (error) {
         console.error('Failed to update member role:', error)
         alert('Failed to update member role. Please try again.')
       }
@@ -358,8 +356,7 @@ export default {
         }
         
         emit('member-removed', member)
-        console.log(`Removed member ${member.id} from tenant`)
-      } catch (error) {
+        } catch (error) {
         console.error('Failed to remove member:', error)
         alert('Failed to remove member. Please try again.')
       }
@@ -367,8 +364,7 @@ export default {
     
     const viewDetails = (member) => {
       // In real implementation, open member details modal or navigate to details page
-      console.log('View member details:', member)
-    }
+      }
     
     const handleAvatarError = (event) => {
       if (event?.target) {

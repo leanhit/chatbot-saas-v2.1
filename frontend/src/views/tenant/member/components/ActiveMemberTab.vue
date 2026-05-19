@@ -8,9 +8,9 @@
           class="block px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary dark:bg-gray-700 dark:border-gray-600 dark:text-white"
         >
           <option value="">{{ $t('tenant.member.allRoles') }}</option>
-          <option :value="TenantRole.OWNER">Owner</option>
-          <option :value="TenantRole.ADMIN">Admin</option>
-          <option :value="TenantRole.MEMBER">Member</option>
+          <option :value="TenantRole.OWNER">{{ $t('tenant.member.owner') }}</option>
+          <option :value="TenantRole.ADMIN">{{ $t('tenant.member.admin') }}</option>
+          <option :value="TenantRole.MEMBER">{{ $t('tenant.member.member') }}</option>
         </select>
       </div>
     </div>
@@ -41,8 +41,8 @@
               @error="handleAvatarError"
             />
             <div>
-              <h4 class="text-sm font-medium text-gray-900 dark:text-white">{{ member.name || 'Unknown' }}</h4>
-              <p class="text-xs text-gray-500 dark:text-gray-400">{{ member.email || 'No email' }}</p>
+              <h4 class="text-sm font-medium text-gray-900 dark:text-white">{{ member.name || $t('tenant.overview.statusUnknown') }}</h4>
+              <p class="text-xs text-gray-500 dark:text-gray-400">{{ member.email || $t('tenant.member.noEmail') }}</p>
             </div>
           </div>
           <div class="flex items-center space-x-1">
@@ -70,7 +70,7 @@
             <div v-if="member?.role === TenantRole.OWNER" class="flex items-center">
               <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
                 <Icon icon="mdi:crown" class="h-3 w-3 mr-1" />
-                OWNER
+                {{ $t('tenant.member.owner').toUpperCase() }}
               </span>
             </div>
             <select
@@ -80,8 +80,8 @@
               :disabled="!canChangeRole(member?.role)"
               class="text-xs border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-primary dark:bg-gray-700 dark:border-gray-600 dark:text-white"
             >
-              <option :value="TenantRole.ADMIN">Admin</option>
-              <option :value="TenantRole.MEMBER">Member</option>
+              <option :value="TenantRole.ADMIN">{{ $t('tenant.member.admin') }}</option>
+              <option :value="TenantRole.MEMBER">{{ $t('tenant.member.member') }}</option>
             </select>
           </div>
           <!-- Status -->
@@ -107,7 +107,7 @@
     <!-- Pagination -->
     <div v-if="totalPages > 1" class="mt-6 flex items-center justify-between">
       <div class="text-sm text-gray-700 dark:text-gray-300">
-        Showing {{ (currentPage - 1) * pageSize + 1 }} to {{ Math.min(currentPage * pageSize, totalMembers) }} of {{ totalMembers }} members
+        {{ $t('tenant.member.showingMembers', { start: (currentPage - 1) * pageSize + 1, end: Math.min(currentPage * pageSize, totalMembers), total: totalMembers }) }}
       </div>
       <div class="flex space-x-2">
         <button
@@ -131,11 +131,13 @@
 <script>
 import { ref, computed, onMounted, watch } from 'vue'
 import { Icon } from '@iconify/vue'
+import { useI18n } from 'vue-i18n'
 import { tenantApi } from '@/api/tenantApi'
 import { formatDate, getRelativeTime } from '@/utils/dateUtils'
 import { useGatewayTenantStore } from '@/stores/tenant/gateway/myTenantStore'
 import { TenantRole, MembershipStatus } from '@/types/tenant'
 import defaultAvatar from '@/assets/img/user.jpg'
+
 export default {
   name: 'ActiveMemberTab',
   props: {
@@ -149,6 +151,7 @@ export default {
   },
   emits: ['member-removed', 'member-updated'],
   setup(props, { emit }) {
+    const { t } = useI18n()
     const tenantStore = useGatewayTenantStore()
     const loading = ref(false)
     const members = ref([])
@@ -163,7 +166,7 @@ export default {
       return {
         loading,
         members,
-        searchQuery,
+        searchQuery: props.searchQuery,
         roleFilter,
         currentPage,
         pageSize,
@@ -217,25 +220,6 @@ export default {
         totalMembers.value = members.value.length
       } catch (error) {
         console.error('Failed to load members:', error)
-        console.error('Error details:', {
-          message: error.message,
-          status: error.response?.status,
-          statusText: error.response?.statusText,
-          data: error.response?.data,
-          config: error.config
-        })
-        
-        // Show user-friendly error message
-        if (error.response?.status === 409) {
-          console.warn('Conflict error - possibly duplicate request or state conflict')
-        } else if (error.response?.status === 401) {
-          console.warn('Unauthorized - token may be expired')
-        } else if (error.response?.status === 403) {
-          console.warn('Forbidden - insufficient permissions')
-        } else if (error.response?.status === 404) {
-          console.warn('Not found - tenant or endpoint not found')
-        }
-        
         members.value = []
         totalMembers.value = 0
       } finally {
@@ -247,7 +231,7 @@ export default {
         // Get tenantKey from current tenant
         const tenantKey = tenantStore.currentTenant?.tenantKey
         if (!tenantKey) {
-          alert('No tenant selected')
+          alert(t('tenant.overview.unknownTenant'))
           return
         }
 
@@ -263,14 +247,14 @@ export default {
       }
     }
     const removeMember = async (member) => {
-      if (!confirm(`Are you sure you want to remove ${member?.name || 'this member'} from this tenant?`)) {
+      if (!confirm(t('tenant.member.confirmRemove', { name: member?.name || t('tenant.member.member') }))) {
         return
       }
       try {
         // Get tenantKey from current tenant
         const tenantKey = tenantStore.currentTenant?.tenantKey
         if (!tenantKey) {
-          alert('No tenant selected')
+          alert(t('tenant.overview.unknownTenant'))
           return
         }
 
@@ -296,8 +280,6 @@ export default {
     }
     const canChangeRole = (role) => {
       // Only admin and above can change roles
-      // In real implementation, check current user permissions
-      // Defensive check for role parameter
       if (!role) return false
       return true
     }
@@ -313,9 +295,9 @@ export default {
     }
     const getStatusLabel = (status) => {
       switch (status) {
-        case MembershipStatus.ACTIVE: return 'Active'
-        case MembershipStatus.INACTIVE: return 'Inactive'
-        default: return status
+        case MembershipStatus.ACTIVE: return t('tenant.overview.statusActive')
+        case MembershipStatus.INACTIVE: return t('tenant.overview.statusInactive')
+        default: return t('tenant.overview.statusUnknown')
       }
     }
     // Watch for filter changes

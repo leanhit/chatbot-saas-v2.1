@@ -2,7 +2,7 @@
   <div class="space-y-6">
     <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-6">
       <div class="flex justify-between items-center mb-6">
-        <h3 class="text-lg font-medium text-gray-900 dark:text-white">Basic Information</h3>
+        <h3 class="text-lg font-medium text-gray-900 dark:text-white">{{ $t('tenant.overview.basicInfo') }}</h3>
         <button
           @click="$emit('edit')"
           :disabled="loading"
@@ -10,39 +10,39 @@
         >
           <Icon v-if="!loading" icon="mdi:pencil" class="h-4 w-4 mr-2" />
           <Icon v-else icon="mdi:loading" class="h-4 w-4 mr-2 animate-spin" />
-          {{ loading ? 'Saving...' : 'Edit' }}
+          {{ loading ? $t('tenant.settings.saving') : $t('common.edit') || 'Edit' }}
         </button>
       </div>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Tenant Name</label>
-          <p class="text-gray-900 dark:text-white">{{ tenant?.name || 'Not provided' }}</p>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{{ $t('tenant.overview.tenantName') }}</label>
+          <p class="text-gray-900 dark:text-white">{{ tenant?.name || $t('tenant.overview.notProvided') }}</p>
         </div>
         <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Tenant Key</label>
-          <p class="text-gray-900 dark:text-white font-mono text-sm">{{ tenant?.tenantKey || 'Not provided' }}</p>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{{ $t('tenant.overview.tenantKey') }}</label>
+          <p class="text-gray-900 dark:text-white font-mono text-sm">{{ tenant?.tenantKey || $t('tenant.overview.notProvided') }}</p>
         </div>
         <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Status</label>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{{ $t('tenant.overview.status') }}</label>
           <span :class="getStatusBadgeClass()">
             {{ getStatusLabel() }}
           </span>
         </div>
         <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Visibility</label>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{{ $t('tenant.overview.visibility') }}</label>
           <span :class="getVisibilityBadgeClass()">
             {{ getVisibilityLabel() }}
           </span>
         </div>
         <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Expires At</label>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{{ $t('tenant.overview.expiresAt') }}</label>
           <p class="text-gray-900 dark:text-white">
             {{ tenant?.expiresAt ? formatDate(tenant.expiresAt) : 'N/A' }}
           </p>
         </div>
         <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Created At</label>
-          <p class="text-gray-900 dark:text-white">{{ formatDate(tenant?.createdAt) || 'Not provided' }}</p>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{{ $t('tenant.overview.createdAt') }}</label>
+          <p class="text-gray-900 dark:text-white">{{ formatDate(tenant?.createdAt) || $t('tenant.overview.notProvided') }}</p>
         </div>
       </div>
     </div>
@@ -52,6 +52,7 @@
 <script>
 import { Icon } from '@iconify/vue'
 import { formatDate } from '@/utils/dateUtils'
+import { useI18n } from 'vue-i18n'
 
 export default {
   name: 'BasicInfoTab',
@@ -70,6 +71,8 @@ export default {
   },
   emits: ['edit'],
   setup(props) {
+    const { t } = useI18n()
+
     const getStatusBadgeClass = () => {
       const status = props.tenant?.status
       switch (status) {
@@ -87,10 +90,10 @@ export default {
     const getStatusLabel = () => {
       const status = props.tenant?.status
       switch (status) {
-        case 'ACTIVE': return 'Active'
-        case 'INACTIVE': return 'Inactive'
-        case 'PENDING': return 'Pending'
-        default: return 'Unknown'
+        case 'ACTIVE': return t('tenant.overview.statusActive')
+        case 'INACTIVE': return t('tenant.overview.statusInactive')
+        case 'PENDING': return t('tenant.overview.statusPending')
+        default: return t('tenant.overview.statusUnknown')
       }
     }
     
@@ -109,9 +112,9 @@ export default {
     const getVisibilityLabel = () => {
       const visibility = props.tenant?.visibility
       switch (visibility) {
-        case 'PUBLIC': return 'Public'
-        case 'PRIVATE': return 'Private'
-        default: return 'Unknown'
+        case 'PUBLIC': return t('tenant.settings.public') || 'Public'
+        case 'PRIVATE': return t('tenant.settings.private') || 'Private'
+        default: return t('tenant.overview.statusUnknown')
       }
     }
     

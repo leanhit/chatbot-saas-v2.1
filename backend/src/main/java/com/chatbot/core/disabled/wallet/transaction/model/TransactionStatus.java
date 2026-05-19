@@ -1,9 +1,0 @@
-package com.chatbot.core.wallet.transaction.model;
-
-public enum TransactionStatus {
-    PENDING,
-    COMPLETED,
-    FAILED,
-    CANCELLED,
-    REFUNDED
-}

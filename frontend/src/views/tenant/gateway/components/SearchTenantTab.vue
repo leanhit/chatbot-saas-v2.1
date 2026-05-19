@@ -146,12 +146,9 @@ export default {
       await executeSearch()
     }
     const onJoinClick = async (tenantKey) => {
-      console.log('Join clicked for tenant:', tenantKey)
       joinLoading.value = true
       try {
-        console.log('Sending join request...')
         await searchStore.requestJoinTenant(tenantKey)
-        console.log('Join request sent successfully')
         // Show success message
         alert('Join request sent successfully! Please wait for approval.')
         // Re-fetch search results to get updated status

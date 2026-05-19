@@ -32,7 +32,6 @@
 import { Icon } from "@iconify/vue";
 import { useI18n } from 'vue-i18n';
 import { ref, computed } from 'vue';
-import i18n, { loadLocaleMessages } from '../locales';
 
 export default {
   name: "LanguageSwitcher",
@@ -61,8 +60,8 @@ export default {
       isOpen.value = false;
     };
 
-    const changeLanguage = async (langCode) => {
-      await loadLocaleMessages(i18n, langCode);
+    const changeLanguage = (langCode) => {
+      locale.value = langCode;
       localStorage.setItem('language', langCode);
       isOpen.value = false;
     };

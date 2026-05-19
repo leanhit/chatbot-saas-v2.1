@@ -1,8 +1,8 @@
 <template>
   <div v-if="show" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-    <div class="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+    <div class="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto border border-gray-200 dark:border-gray-700">
       <div class="flex justify-between items-center mb-4">
-        <h3 class="text-lg font-medium text-gray-900 dark:text-white">Edit Profile Information</h3>
+        <h3 class="text-lg font-medium text-gray-900 dark:text-white">{{ $t('tenant.overview.editProfileInfo') }}</h3>
         <button
           @click="$emit('close')"
           class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
@@ -15,7 +15,7 @@
           <!-- Left Column -->
           <div class="space-y-4">
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description</label>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('tenant.overview.description') }}</label>
               <textarea
                 v-model="form.description"
                 rows="3"
@@ -23,7 +23,7 @@
               ></textarea>
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Industry</label>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('tenant.overview.industry') }}</label>
               <input
                 v-model="form.industry"
                 type="text"
@@ -31,12 +31,12 @@
               />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Plan</label>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('tenant.overview.plan') }}</label>
               <select
                 v-model="form.plan"
                 class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary dark:bg-gray-700 dark:border-gray-600 dark:text-white"
               >
-                <option value="">Select Plan</option>
+                <option value="">{{ $t('tenant.overview.selectPlan') }}</option>
                 <option value="FREE">FREE</option>
                 <option value="BASIC">BASIC</option>
                 <option value="PRO">PRO</option>
@@ -44,12 +44,12 @@
               </select>
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Company Size</label>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('tenant.overview.companySize') }}</label>
               <select
                 v-model="form.companySize"
                 class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary dark:bg-gray-700 dark:border-gray-600 dark:text-white"
               >
-                <option value="">Select Size</option>
+                <option value="">{{ $t('tenant.overview.selectSize') }}</option>
                 <option value="1-10">1-10</option>
                 <option value="11-50">11-50</option>
                 <option value="51-200">51-200</option>
@@ -58,7 +58,7 @@
               </select>
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Legal Name</label>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('tenant.overview.legalName') }}</label>
               <input
                 v-model="form.legalName"
                 type="text"
@@ -70,7 +70,7 @@
           <!-- Right Column -->
           <div class="space-y-4">
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Tax Code</label>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('tenant.overview.taxCode') }}</label>
               <input
                 v-model="form.taxCode"
                 type="text"
@@ -78,7 +78,7 @@
               />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Contact Email</label>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('tenant.overview.contactEmail') }}</label>
               <input
                 v-model="form.contactEmail"
                 type="email"
@@ -86,7 +86,7 @@
               />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Contact Phone</label>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('tenant.overview.contactPhone') }}</label>
               <input
                 v-model="form.contactPhone"
                 type="tel"
@@ -94,7 +94,7 @@
               />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Logo URL</label>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('tenant.overview.logoUrl') }}</label>
               <input
                 v-model="form.logoUrl"
                 type="url"
@@ -103,7 +103,7 @@
               />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Favicon URL</label>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('tenant.overview.faviconUrl') }}</label>
               <input
                 v-model="form.faviconUrl"
                 type="url"
@@ -112,7 +112,7 @@
               />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Primary Color</label>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('tenant.overview.primaryColor') }}</label>
               <div class="flex space-x-2">
                 <input
                   v-model="form.primaryColor"
@@ -129,20 +129,20 @@
             </div>
           </div>
         </div>
-        <div class="flex justify-end space-x-3 pt-4">
+        <div class="flex justify-end space-x-3 pt-4 border-t dark:border-gray-700">
           <button
             type="button"
             @click="$emit('close')"
             class="px-4 py-2 text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 dark:bg-gray-600 dark:text-gray-300 dark:hover:bg-gray-500"
           >
-            Cancel
+            {{ $t('common.cancel') }}
           </button>
           <button
             type="submit"
             :disabled="loading"
             class="px-4 py-2 text-white bg-primary rounded-md hover:bg-primary/80 disabled:opacity-50"
           >
-            {{ loading ? 'Saving...' : 'Save' }}
+            {{ loading ? $t('tenant.settings.saving') : $t('common.save') || 'Save' }}
           </button>
         </div>
       </form>

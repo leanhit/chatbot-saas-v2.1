@@ -23,7 +23,6 @@ class WebSocketService {
       this.socket = new WebSocket(wsUrl)
       
       this.socket.onopen = () => {
-        console.log('WebSocket connected')
         this.reconnectAttempts = 0
         this.notificationStore.isConnected = true
       }
@@ -33,7 +32,6 @@ class WebSocketService {
       }
 
       this.socket.onclose = () => {
-        console.log('WebSocket disconnected')
         this.notificationStore.isConnected = false
         this.attemptReconnect()
       }
@@ -69,7 +67,6 @@ class WebSocketService {
           this.notificationStore.handleConversationMessage(message.data)
           break
         default:
-          console.log('Unknown notification type:', message.type)
           this.notificationStore.addNotification({
             type: 'info',
             title: 'Notification',
@@ -84,14 +81,11 @@ class WebSocketService {
   attemptReconnect() {
     if (this.reconnectAttempts < this.maxReconnectAttempts) {
       this.reconnectAttempts++
-      console.log(`Attempting to reconnect (${this.reconnectAttempts}/${this.maxReconnectAttempts})`)
-      
       setTimeout(() => {
         this.connect()
       }, this.reconnectInterval)
     } else {
-      console.log('Max reconnection attempts reached')
-    }
+      }
   }
 
   disconnect() {

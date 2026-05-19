@@ -65,16 +65,12 @@ export default {
 
     const handleAction = (action, notification) => {
       // Emit action to parent or handle globally
-      console.log('Action clicked:', action, notification)
-      
       // Handle specific actions
       if (action.action === 'enter_workspace') {
         // Navigate to workspace
-        console.log('Entering workspace:', action.data.tenantName)
-      } else if (action.action === 'view_invitation') {
+        } else if (action.action === 'view_invitation') {
         // Navigate to invitations tab
-        console.log('Viewing invitation:', action.data)
-      }
+        }
       
       markAsRead(notification.id)
     }

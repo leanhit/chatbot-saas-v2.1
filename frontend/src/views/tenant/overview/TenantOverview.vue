@@ -49,7 +49,7 @@
                   >
                     <span class="flex items-center">
                       <Icon icon="mdi:information" class="h-4 w-4 mr-2" />
-                      Basic Info
+                      {{ $t('tenant.overview.basicInfo') }}
                     </span>
                   </button>
                   <button
@@ -63,7 +63,7 @@
                   >
                     <span class="flex items-center">
                       <Icon icon="mdi:account-details" class="h-4 w-4 mr-2" />
-                      Profile
+                      {{ $t('tenant.overview.profileInfo') }}
                     </span>
                   </button>
                   <button
@@ -77,7 +77,7 @@
                   >
                     <span class="flex items-center">
                       <Icon icon="mdi:map-marker" class="h-4 w-4 mr-2" />
-                      Address
+                      {{ $t('tenant.overview.addressInfo') }}
                     </span>
                   </button>
                 </nav>
@@ -146,7 +146,7 @@
     <!-- Image Cropper Modal -->
     <ImageCropper
       :isVisible="showImageCropper"
-      title="Crop Logo"
+      :title="$t('tenant.overview.cropLogo')"
       :imageUrl="previewImageUrl"
       :outputSize="1200"
       @cancel="handleImageCropperCancel"

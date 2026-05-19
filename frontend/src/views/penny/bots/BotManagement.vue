@@ -416,10 +416,6 @@ export default {
     }
 
     const viewAnalytics = (bot) => {
-      console.log('viewAnalytics called with bot:', bot)
-      console.log('bot.id:', bot?.id)
-      console.log('bot.botId:', bot?.botId)
-      
       if (!bot || !bot.id) {
         console.warn('Invalid bot for analytics:', bot)
         return
@@ -427,33 +423,28 @@ export default {
       
       selectedBot.value = bot
       showAnalyticsModal.value = true
-      console.log('Opening analytics modal for bot:', bot.botName, 'ID:', bot.id)
-    }
+      }
 
     const openChatModal = (bot) => {
       if (!bot || !bot.id) {
         console.warn('Invalid bot for chat:', bot)
         return
       }
-      console.log('Opening chat modal for bot:', bot.botName)
       selectedBot.value = bot
       isTestMode.value = false // Default to chat mode
       showChatModal.value = true
     }
 
     const openConnections = (bot) => {
-      console.log('openConnections called with bot:', bot)
       if (!bot || !bot.id) {
         console.warn('Invalid bot for connection:', bot)
         return
       }
       selectedBot.value = bot
       showConnectionsModal.value = true
-      console.log('showConnectionsModal set to true, selectedBot:', selectedBot.value)
-    }
+      }
 
     const goToConnections = (bot) => {
-      console.log('goToConnections called with bot:', bot)
       if (!bot || !bot.id) {
         console.warn('Invalid bot for connections:', bot)
         return
@@ -465,7 +456,6 @@ export default {
     }
 
     const goToRules = (bot) => {
-      console.log('goToRules called with bot:', bot)
       if (!bot || !bot.id) {
         console.warn('Invalid bot for rules:', bot)
         return
@@ -477,15 +467,13 @@ export default {
     }
 
     const createConnection = (bot) => {
-      console.log('createConnection called with bot:', bot)
       if (!bot || !bot.id) {
         console.warn('Invalid bot for connection:', bot)
         return
       }
       selectedBot.value = bot
       showConnectionModal.value = true
-      console.log('showConnectionModal set to true, selectedBot:', selectedBot.value)
-    }
+      }
 
     const createRule = (bot) => {
       selectedBot.value = bot
@@ -512,7 +500,6 @@ export default {
     }
 
     const handleAutoConnect = (results) => {
-      console.log('Auto-connect completed:', results)
       showAutoConnectModal.value = false
       // Refresh connections list
       if (selectedBot.value) {
@@ -521,7 +508,6 @@ export default {
     }
 
     const editRule = (rule) => {
-      console.log('editRule called with:', rule)
       editingRule.value = rule
       showRuleModal.value = true
     }
@@ -535,8 +521,7 @@ export default {
     const deleteRule = async (rule) => {
       try {
         await pennyRuleStore.deleteRule(selectedBot.value.id, rule.id)
-        console.log('Rule deleted successfully')
-      } catch (error) {
+        } catch (error) {
         console.error('Failed to delete rule:', error)
         alert('Failed to delete rule: ' + error.message)
       }
@@ -595,8 +580,7 @@ export default {
       try {
         await navigator.clipboard.writeText(text)
         // You could add a toast notification here if needed
-        console.log(`Copied ${fieldName} to clipboard`)
-      } catch (error) {
+        } catch (error) {
         console.error('Failed to copy to clipboard:', error)
         // Fallback for older browsers
         const textArea = document.createElement('textarea')
@@ -605,8 +589,7 @@ export default {
         textArea.select()
         document.execCommand('copy')
         document.body.removeChild(textArea)
-        console.log(`Copied ${fieldName} to clipboard (fallback)`)
-      }
+        }
     }
 
     // Lifecycle

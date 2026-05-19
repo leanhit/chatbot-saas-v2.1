@@ -32,15 +32,12 @@ export const useGatewayPendingTenantStore = defineStore('gateway-pending-tenant'
     // }
   const approveRequest = async (requestId) => {
     // Users cannot approve their own requests - this is for tenant admins only
-    console.log('Users cannot approve their own join requests. This action is only available to tenant administrators.')
     throw new Error('Cannot approve own request')
   }
   
   const rejectRequest = async (requestId) => {
     try {
       // Cancel/withdraw user's own join request
-      console.log('Canceling join request:', requestId)
-      
       // Call the new backend endpoint
       await tenantApi.cancelJoinRequest(requestId)
       

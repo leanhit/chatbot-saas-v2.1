@@ -570,13 +570,6 @@ export default {
       if (!file) return
       
       // Log file details before validation
-      console.log('🔄 [FRONTEND AVATAR] File selected:', {
-        name: file.name,
-        size: file.size,
-        type: file.type,
-        lastModified: file.lastModified
-      })
-      
       // Validate file type
       if (!file.type.startsWith('image/')) {
         console.error('❌ [FRONTEND AVATAR] Invalid file type:', file.type, file.name)
@@ -585,7 +578,6 @@ export default {
       }
       
       // TEMP: Bypass ImageCropper for testing 413 error
-      console.log('Testing direct upload without cropping')
       selectedImageFile.value = file
       
       // Validate file size directly (max 5MB)
@@ -601,13 +593,7 @@ export default {
         const formData = new FormData()
         formData.append('avatar', file)
         
-        console.log('Direct upload test:', {
-          fileSize: file.size,
-          fileName: file.name
-        })
-        
         const response = await usersApi.updateAvatar(formData)
-        console.log('Direct upload success:', response.data)
         toast?.success('Avatar updated successfully!')
       } catch (error) {
         console.error('Direct upload error:', error)
@@ -622,12 +608,6 @@ export default {
       // showImageCropper.value = true
     }
     const handleImageCrop = async (croppedFile) => {
-      console.log('✅ [FRONTEND AVATAR] Image cropped:', {
-        originalSize: selectedImageFile.value.size,
-        croppedSize: croppedFile.size,
-        reduction: Math.round((1 - croppedFile.size / selectedImageFile.value.size) * 100) + '%'
-      })
-      
       // Validate file size (max 5MB)
       if (croppedFile.size > 5 * 1024 * 1024) {
         console.error('❌ [FRONTEND AVATAR] Cropped file too large:', croppedFile.size, croppedFile.name)
@@ -635,22 +615,12 @@ export default {
         return
       }
       
-      console.log('✅ [FRONTEND AVATAR] File validation passed:', croppedFile.name)
-      
       avatarUploading.value = true
       try {
         const formData = new FormData()
         formData.append('avatar', croppedFile)
         
-        console.log('📤 [FRONTEND AVATAR] Sending request to backend:', {
-          endpoint: '/v1/user-info/me/avatar',
-          originalFileSize: selectedImageFile.value.size,
-          croppedFileSize: croppedFile.size,
-          fileName: croppedFile.name
-        })
-        
         const response = await usersApi.updateAvatar(formData)
-        console.log('✅ [FRONTEND AVATAR] Backend response:', response.data)
         // Update user data in store
         if (response.data) {
           // Update the avatar in the store directly
@@ -722,8 +692,7 @@ export default {
         // Clear the file input and reset loading state
         event.target.value = ''
         avatarUploading.value = false
-        console.log('🔄 [FRONTEND AVATAR] Upload process completed')
-      }
+        }
     }
     
     const handleImageCropperCancel = () => {

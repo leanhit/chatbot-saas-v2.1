@@ -1,8 +1,8 @@
 // Debug environment variables
-console.log('=== Environment Variables Debug ===');
-console.log('process.env.VITE_API_URL:', process.env.VITE_API_URL);
-console.log('process.env:', process.env);
-console.log('import.meta.env:', import.meta.env);
+
+
+
+
 
 // Export for debugging
 export const ENV_DEBUG = {

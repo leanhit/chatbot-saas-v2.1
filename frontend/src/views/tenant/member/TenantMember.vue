@@ -39,7 +39,7 @@
                 'whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm transition-colors duration-200'
               ]"
             >
-              Active Members
+              {{ $t('tenant.member.activeMembers') }}
             </button>
             <button
               @click="activeTab = 'pending-requests'"
@@ -50,7 +50,7 @@
                 'whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm transition-colors duration-200'
               ]"
             >
-              Pending Requests
+              {{ $t('tenant.member.pendingRequests') }}
             </button>
             <button
               @click="activeTab = 'pending-invitations'"
@@ -61,7 +61,7 @@
                 'whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm transition-colors duration-200'
               ]"
             >
-              Pending Invitations
+              {{ $t('tenant.member.pendingInvitations') }}
             </button>
           </nav>
         </div>

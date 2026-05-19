@@ -8,8 +8,8 @@
           class="block px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary dark:bg-gray-700 dark:border-gray-600 dark:text-white"
         >
           <option value="">{{ $t('tenant.member.allStatuses') }}</option>
-          <option value="PENDING">Pending</option>
-          <option value="REVIEWING">Reviewing</option>
+          <option value="PENDING">{{ $t('tenant.overview.statusPending') }}</option>
+          <option value="REVIEWING">{{ $t('tenant.member.reviewing') }}</option>
         </select>
       </div>
     </div>
@@ -117,7 +117,7 @@
     <!-- Pagination -->
     <div v-if="totalPages > 1" class="mt-6 flex items-center justify-between">
       <div class="text-sm text-gray-700 dark:text-gray-300">
-        Showing {{ (currentPage - 1) * pageSize + 1 }} to {{ Math.min(currentPage * pageSize, totalRequests) }} of {{ totalRequests }} requests
+        {{ $t('tenant.member.showingRequests', { start: (currentPage - 1) * pageSize + 1, end: Math.min(currentPage * pageSize, totalRequests), total: totalRequests }) }}
       </div>
       <div class="flex space-x-2">
         <button
@@ -141,10 +141,12 @@
 <script>
 import { ref, computed, onMounted, watch } from 'vue'
 import { Icon } from '@iconify/vue'
+import { useI18n } from 'vue-i18n'
 import { tenantApi } from '@/api/tenantApi'
 import { formatDate } from '@/utils/dateUtils'
 import { useGatewayTenantStore } from '@/stores/tenant/gateway/myTenantStore'
 import defaultAvatar from '@/assets/img/user.jpg'
+
 export default {
   name: 'PendingMemberTab',
   props: {
@@ -158,6 +160,7 @@ export default {
   },
   emits: ['request-approved', 'request-rejected'],
   setup(props, { emit }) {
+    const { t } = useI18n()
     const tenantStore = useGatewayTenantStore()
     const loading = ref(false)
     const requests = ref([])
@@ -166,6 +169,7 @@ export default {
     const pageSize = ref(10)
     const totalRequests = ref(0)
     const totalPages = computed(() => Math.ceil(totalRequests.value / pageSize.value))
+    
     const filteredRequests = computed(() => {
       let filtered = requests.value
       if (props.searchQuery) {
@@ -204,14 +208,14 @@ export default {
       }
     }
     const approveRequest = async (request) => {
-      if (!confirm(`Are you sure you want to approve ${request.name}'s request?`)) {
+      if (!confirm(t('tenant.member.confirmApprove', { name: request.name }))) {
         return
       }
       try {
         // Get tenantKey from current tenant
         const tenantKey = tenantStore.currentTenant?.tenantKey
         if (!tenantKey) {
-          alert('No tenant selected')
+          alert(t('tenant.overview.unknownTenant'))
           return
         }
 
@@ -228,13 +232,13 @@ export default {
       }
     }
     const rejectRequest = async (request) => {
-      const reason = prompt(`Why are you rejecting ${request.name}'s request? (Optional)`)
+      const reason = prompt(t('tenant.member.confirmRejectReason', { name: request.name }))
       if (reason === null) return // User cancelled
       try {
         // Get tenantKey from current tenant
         const tenantKey = tenantStore.currentTenant?.tenantKey
         if (!tenantKey) {
-          alert('No tenant selected')
+          alert(t('tenant.overview.unknownTenant'))
           return
         }
 
@@ -272,10 +276,10 @@ export default {
     }
     const getStatusLabel = (status) => {
       switch (status) {
-        case 'PENDING': return 'Pending'
-        case 'REVIEWING': return 'Reviewing'
-        case 'APPROVED': return 'Approved'
-        case 'REJECTED': return 'Rejected'
+        case 'PENDING': return t('tenant.overview.statusPending')
+        case 'REVIEWING': return t('tenant.member.reviewing')
+        case 'APPROVED': return t('tenant.overview.statusActive')
+        case 'REJECTED': return t('tenant.overview.statusInactive')
         default: return status
       }
     }

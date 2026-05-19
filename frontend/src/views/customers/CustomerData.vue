@@ -431,14 +431,12 @@ export default {
 
     const processSelectedCustomers = async () => {
       // TODO: Implement bulk processing when backend endpoint is available
-      console.log('Processing selected customers:', Array.from(selectedCustomers.value))
       // For now, just show a message
       alert('Customer processing feature will be available soon')
     }
 
     const processCustomer = async () => {
       // TODO: Implement customer processing when backend endpoint is available
-      console.log('Processing customer:', selectedCustomer.value)
       // For now, just show a message
       alert('Customer processing feature will be available soon')
     }

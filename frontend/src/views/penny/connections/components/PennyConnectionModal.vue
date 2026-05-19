@@ -581,12 +581,9 @@ export default {
 
     const loadAvailableBots = async () => {
       try {
-        console.log('PennyConnectionModal: Loading available bots...')
         await pennyBotStore.fetchPennyBots()
-        console.log('PennyConnectionModal: Fetched bots:', pennyBotStore.pennyBots)
         availableBots.value = pennyBotStore.pennyBots.filter(bot => bot.isFullyActive())
-        console.log('PennyConnectionModal: Available bots:', availableBots.value)
-      } catch (error) {
+        } catch (error) {
         console.error('Failed to load bots:', error)
       }
     }
@@ -723,8 +720,6 @@ export default {
             await pennyConnectionApi.deleteConnection(props.bot.id, createdConnection.data.connectionId)
           }
 
-          console.log('Facebook connection test result:', response.data)
-          
           if (response.data.success) {
             alert(`✅ Facebook connection test successful!\n\nConnection: ${formData.value.connectionName}\nPage ID: ${formData.value.pageId}\nResponse: ${response.data.message}`)
           } else {
@@ -754,8 +749,6 @@ export default {
             await pennyConnectionApi.deleteConnection(props.bot?.id, createdConnection.data.connectionId)
           }
 
-          console.log('Connection test result:', response.data)
-          
           if (response.data.success) {
             alert(`✅ Connection test successful!\n\nConnection: ${formData.value.connectionName}\nType: ${formData.value.connectionType}\nResponse: ${response.data.message}`)
           } else {
@@ -813,8 +806,6 @@ export default {
 
     // Lifecycle
     onMounted(async () => {
-      console.log('PennyConnectionModal onMounted called!')
-      console.log('PennyConnectionModal props:', props)
       try {
         await loadAvailableBots()
         
@@ -825,8 +816,7 @@ export default {
           // Set bot ID if bot is provided
           formData.value.botId = props.bot?.id || ''
         }
-        console.log('PennyConnectionModal onMounted completed successfully')
-      } catch (error) {
+        } catch (error) {
         console.error('Error in PennyConnectionModal onMounted:', error)
       }
     })

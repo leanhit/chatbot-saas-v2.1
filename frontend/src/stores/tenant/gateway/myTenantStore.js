@@ -70,8 +70,7 @@ export const useGatewayTenantStore = defineStore('gateway-tenant', () => {
         await paymentStore.loadPaymentHistory()
         await paymentStore.loadPackages()
         await paymentStore.loadCurrentPackage()
-        console.log('Payment store reset and reloaded on tenant switch')
-      } catch (paymentError) {
+        } catch (paymentError) {
         console.warn('Failed to reset payment store:', paymentError)
       }
       
@@ -112,8 +111,7 @@ export const useGatewayTenantStore = defineStore('gateway-tenant', () => {
       if (typeof localStorage !== 'undefined') {
         localStorage.removeItem(TENANT_DATA)
         localStorage.removeItem(ACTIVE_TENANT_ID)
-        console.log('Tenant data cleared from localStorage')
-      }
+        }
     } catch (error) {
       console.error('Error clearing localStorage:', error)
     }

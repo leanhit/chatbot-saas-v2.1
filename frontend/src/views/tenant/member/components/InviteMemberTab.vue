@@ -8,8 +8,8 @@
           class="block px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary dark:bg-gray-700 dark:border-gray-600 dark:text-white"
         >
           <option value="">{{ $t('tenant.member.allStatuses') }}</option>
-          <option value="PENDING">Pending</option>
-          <option value="EXPIRED">Expired</option>
+          <option value="PENDING">{{ $t('tenant.overview.statusPending') }}</option>
+          <option value="EXPIRED">{{ $t('tenant.member.expired') }}</option>
         </select>
       </div>
     </div>
@@ -130,7 +130,7 @@
     <!-- Pagination -->
     <div v-if="totalPages > 1" class="mt-6 flex items-center justify-between">
       <div class="text-sm text-gray-700 dark:text-gray-300">
-        Showing {{ (currentPage - 1) * pageSize + 1 }} to {{ Math.min(currentPage * pageSize, totalInvitations) }} of {{ totalInvitations }} invitations
+        {{ $t('tenant.member.showingInvitations', { start: (currentPage - 1) * pageSize + 1, end: Math.min(currentPage * pageSize, totalInvitations), total: totalInvitations }) }}
       </div>
       <div class="flex space-x-2">
         <button
@@ -154,10 +154,12 @@
 <script>
 import { ref, computed, onMounted, watch } from 'vue'
 import { Icon } from '@iconify/vue'
+import { useI18n } from 'vue-i18n'
 import { tenantApi } from '@/api/tenantApi'
 import { formatDate, isExpiringSoon } from '@/utils/dateUtils'
 import { useGatewayTenantStore } from '@/stores/tenant/gateway/myTenantStore'
 import defaultAvatar from '@/assets/img/user.jpg'
+
 export default {
   name: 'InviteMemberTab',
   props: {
@@ -171,6 +173,7 @@ export default {
   },
   emits: ['invitation-revoked', 'invitation-sent'],
   setup(props, { emit }) {
+    const { t } = useI18n()
     const tenantStore = useGatewayTenantStore()
     const loading = ref(false)
     const invitations = ref([])
@@ -179,6 +182,7 @@ export default {
     const pageSize = ref(10)
     const totalInvitations = ref(0)
     const totalPages = computed(() => Math.ceil(totalInvitations.value / pageSize.value))
+    
     const filteredInvitations = computed(() => {
       let filtered = invitations.value
       if (props.searchQuery) {
@@ -217,20 +221,18 @@ export default {
       }
     }
     const resendInvitation = async (invitation) => {
-      if (!confirm(`Resend invitation to ${invitation.email}?`)) {
+      if (!confirm(t('tenant.member.confirmResend', { email: invitation.email }))) {
         return
       }
       try {
         // Get tenantKey from current tenant
         const tenantKey = tenantStore.currentTenant?.tenantKey
         if (!tenantKey) {
-          alert('No tenant selected')
+          alert(t('tenant.overview.unknownTenant'))
           return
         }
 
         // Call API to resend invitation (if backend supports it)
-        // await tenantApi.resendInvitation(tenantKey, invitation.id)
-        
         // For now, just show success message
         alert('Invitation resent successfully!')
       } catch (error) {
@@ -240,14 +242,14 @@ export default {
       }
     }
     const revokeInvitation = async (invitation) => {
-      if (!confirm(`Are you sure you want to revoke the invitation to ${invitation.email}?`)) {
+      if (!confirm(t('tenant.member.confirmRevoke', { email: invitation.email }))) {
         return
       }
       try {
         // Get tenantKey from current tenant
         const tenantKey = tenantStore.currentTenant?.tenantKey
         if (!tenantKey) {
-          alert('No tenant selected')
+          alert(t('tenant.overview.unknownTenant'))
           return
         }
 
@@ -286,10 +288,10 @@ export default {
     }
     const getStatusLabel = (status) => {
       switch (status) {
-        case 'PENDING': return 'Pending'
-        case 'ACCEPTED': return 'Accepted'
-        case 'EXPIRED': return 'Expired'
-        case 'REVOKED': return 'Revoked'
+        case 'PENDING': return t('tenant.overview.statusPending')
+        case 'ACCEPTED': return t('tenant.member.accepted')
+        case 'EXPIRED': return t('tenant.member.expired')
+        case 'REVOKED': return t('tenant.member.revoked')
         default: return status
       }
     }

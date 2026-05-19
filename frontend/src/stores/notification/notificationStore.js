@@ -118,8 +118,7 @@ export const useNotificationStore = defineStore('notification', () => {
     })
     window.dispatchEvent(event)
     
-    console.log('📡 Conversation message received:', data)
-  }
+    }
 
   return {
     notifications,

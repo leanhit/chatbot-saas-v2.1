@@ -383,8 +383,6 @@ const isRealTimeConnected = ref(false)
 const setupRealTimeListeners = () => {
   // Listen for system alerts
   window.addEventListener('systemAlert', (event) => {
-    console.log('🚨 System alert received:', event.detail)
-    
     const notification = {
       id: Date.now() + Math.random(),
       type: 'system_alert',
@@ -399,8 +397,6 @@ const setupRealTimeListeners = () => {
   
   // Listen for takeover events
   window.addEventListener('agentJoined', (event) => {
-    console.log('👤 Agent joined conversation:', event.detail)
-    
     const notification = {
       id: Date.now() + Math.random(),
       type: 'info',
@@ -416,8 +412,6 @@ const setupRealTimeListeners = () => {
   
   // Listen for new conversations
   window.addEventListener('newConversation', (event) => {
-    console.log('🆕 New conversation created:', event.detail)
-    
     const notification = {
       id: Date.now() + Math.random(),
       type: 'info',
@@ -580,8 +574,6 @@ const loadConversations = async () => {
   try {
     loadingConversations.value = true
     
-    console.log('Filter values - Bot:', filterBot.value, 'Connection:', filterConnection.value)
-    
     let response
     
     // Use different endpoints based on filters
@@ -590,7 +582,6 @@ const loadConversations = async () => {
         page: currentPage.value,
         limit: pageSize.value
       }
-      console.log('Using connection-specific endpoint with params:', params)
       response = await takeoverApi.getConversationsByConnectionId(filterConnection.value, params)
     } else if (filterBot.value !== 'all') {
       const params = {
@@ -598,14 +589,12 @@ const loadConversations = async () => {
         page: currentPage.value,
         limit: pageSize.value
       }
-      console.log('Using bot-specific endpoint with params:', params)
       response = await takeoverApi.getConversationsByOwnerId(params)
     } else {
       const params = {
         page: currentPage.value,
         limit: pageSize.value
       }
-      console.log('Using general endpoint with params:', params)
       response = await takeoverApi.getConversations(params)
     }
     
@@ -621,19 +610,10 @@ const loadConversations = async () => {
       totalPages.value = 1
     }
     
-    console.log('Loaded conversations:', conversations.value.length, 'items')
-    console.log('Pagination info:', {
-      page: currentPage.value,
-      totalPages: totalPages.value,
-      totalElements: totalElements.value,
-      pageSize: pageSize.value
-    })
-    
     // Auto-select first conversation if none selected and conversations exist
     if (!selectedConversation.value && conversations.value.length > 0) {
       await selectConversation(conversations.value[0])
-      console.log('Auto-selected first conversation:', conversations.value[0].id)
-    }
+      }
     
   } catch (error) {
     console.error('Error loading conversations:', error)
@@ -748,8 +728,6 @@ const sendMessage = async () => {
     
     // Send to backend - message will be rendered only after backend confirms via WebSocket
     const response = await takeoverApi.sendMessage(payload)
-    console.log('Message sent to backend, waiting for confirmation:', response.data)
-    
     // Clear input immediately but don't add to messages yet
     newMessage.value = ''
     
@@ -910,12 +888,9 @@ watch(filterConnection, () => {
 const setupWebSocketHandlers = () => {
   // Handle real-time messages
   wsService.onMessageReceived = (message) => {
-    console.log('📡 WebSocket message received:', message)
-    
     if (String(message.conversationId) === String(selectedConversation.value?.id)) {
       // Only render messages that have proper backend ID (confirmed by backend)
       if (!message.id || message.id.startsWith('ws-')) {
-        console.log('⚠️ Message without backend ID, skipping (not confirmed by backend)')
         return
       }
       
@@ -930,8 +905,6 @@ const setupWebSocketHandlers = () => {
         confirmed: true // Mark as backend-confirmed
       }
       
-      console.log('📝 Backend-confirmed WebSocket message:', formattedMessage)
-      
       // Check for duplicates by ID (most reliable)
       const isDuplicate = messages.value.some(existing => 
         existing.id === formattedMessage.id
@@ -945,7 +918,6 @@ const setupWebSocketHandlers = () => {
       )
       
       if (!isDuplicate && !isContentDuplicate) {
-        console.log('✅ Adding backend-confirmed message to chat')
         messages.value.push(formattedMessage)
         
         // Scroll to bottom
@@ -956,11 +928,9 @@ const setupWebSocketHandlers = () => {
         // Mark message as read
         wsService.markMessageRead(formattedMessage.id)
       } else {
-        console.log('🚫 Duplicate backend message detected, skipping')
-      }
+        }
     } else {
-      console.log('⚠️ WebSocket message for different conversation, ignoring')
-    }
+      }
     
     // Update conversation in list
     const conversationIndex = conversations.value.findIndex(c => String(c.id) === String(message.conversationId))
