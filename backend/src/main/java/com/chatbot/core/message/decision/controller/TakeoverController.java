@@ -40,15 +40,14 @@ public class TakeoverController {
     @PostMapping("/send")
     public ResponseEntity<?> sendMessage(@RequestBody TakeoverMessage message) {
         try {
-            System.out.println("=== DEBUG TAKEOVER CONTROLLER RECEIVED AGENT MESSAGE ===");
-            System.out.println("Message ID: " + message.getId());
-            System.out.println("Conversation ID: " + message.getConversationId());
-            System.out.println("Content: " + message.getContent());
-            System.out.println("Sender: " + message.getSender());
+            log.debug("=== RECEIVED AGENT MESSAGE FOR TAKEOVER ===");
+            log.debug("Message ID: {}", message.getId());
+            log.debug("Conversation ID: {}", message.getConversationId());
+            log.debug("Content: {}", message.getContent());
+            log.debug("Sender: {}", message.getSender());
             
             // Check for duplicate message (idempotency)
             if (message.getId() != null && messageService.messageExists(message.getId())) {
-                System.out.println("=== TAKEOVER CONTROLLER: Message ALREADY PROCESSED, skipping ===");
                 log.info("Message already processed: {}", message.getId());
                 return ResponseEntity.ok().body("{\"message\": \"Message already processed\"}");
             }
@@ -56,15 +55,15 @@ public class TakeoverController {
             // Generate unique ID for the message if not provided
             if (message.getId() == null) {
                 message.setId("agent_" + System.currentTimeMillis() + "_" + (int)(Math.random() * 10000));
-                System.out.println("Generated new Message ID: " + message.getId());
+                log.info("Generated new Message ID: {}", message.getId());
             }
             message.setTimestamp(System.currentTimeMillis());
             message.setSender("agent"); // Ensure sender is set to agent
             
             String conversationIdStr = message.getConversationId();
             Long conversationIdLong = Long.parseLong(conversationIdStr);
-
-            System.out.println("=== TAKEOVER CONTROLLER: Calling TakeoverService ===");
+ 
+            log.debug("Calling TakeoverService...");
             // 1. Centralized: Lưu vào DB + Gửi đến Facebook + Push WebSocket thông qua TakeoverService
             takeoverService.saveAndSendAgentMessage(message, conversationIdLong);
             

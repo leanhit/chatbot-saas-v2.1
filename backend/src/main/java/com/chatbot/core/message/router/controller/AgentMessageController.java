@@ -2,6 +2,7 @@ package com.chatbot.core.message.router.controller;
 
 import com.chatbot.core.message.router.dto.MessageSendPayload;
 import com.chatbot.core.message.router.service.AgentMessageService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -12,6 +13,7 @@ import java.util.Map;
  */
 @RestController
 @RequestMapping("/api/agent")
+@Slf4j
 public class AgentMessageController {
 
     private final AgentMessageService agentMessageService;
@@ -22,7 +24,7 @@ public class AgentMessageController {
 
     @PostMapping("/send-message")
     public ResponseEntity<Map<String, String>> sendMessage(@RequestBody MessageSendPayload payload) {
-        System.out.println("message from UI: " + payload.getContent());
+        log.info("Message from UI: {}", payload.getContent());
         if (!"text".equalsIgnoreCase(payload.getMessageType())) {
             // Tạm thời chỉ hỗ trợ tin nhắn text
             return ResponseEntity.badRequest().body(Map.of("message", "Only text messages are supported currently."));
@@ -41,7 +43,7 @@ public class AgentMessageController {
             return ResponseEntity.ok(Map.of("status", "success", "message", "Message sent and logged."));
 
         } catch (Exception e) {
-            System.err.println("❌ Lỗi khi Agent gửi tin nhắn: " + e.getMessage());
+            log.error("❌ Lỗi khi Agent gửi tin nhắn: {}", e.getMessage(), e);
             return ResponseEntity.internalServerError().body(Map.of("status", "error", "message", e.getMessage()));
         }
     }

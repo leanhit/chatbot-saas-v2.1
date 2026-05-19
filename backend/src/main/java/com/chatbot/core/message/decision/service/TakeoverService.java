@@ -76,11 +76,11 @@ public class TakeoverService {
             
             // 1. L message t agent vào database (l u dài)
             try {
-                System.out.println("=== DEBUG TAKEOVER SERVICE SAVING AGENT MESSAGE ===");
-                System.out.println("Message ID: " + message.getId());
-                System.out.println("Conversation ID: " + conversationIdLong);
-                System.out.println("Content: " + message.getContent());
-                System.out.println("External Message ID: " + message.getId());
+                log.debug("=== SAVING AGENT MESSAGE TO DATABASE ===");
+                log.debug("Message ID: {}", message.getId());
+                log.debug("Conversation ID: {}", conversationIdLong);
+                log.debug("Content: {}", message.getContent());
+                log.debug("External Message ID: {}", message.getId());
                 
                 messageService.saveMessage(
                     conversationIdLong, 
@@ -90,7 +90,7 @@ public class TakeoverService {
                     Map.of("externalMessageId", message.getId()) // Save external message ID for idempotency
                 );
                 
-                System.out.println("=== TAKEOVER SERVICE: Agent message SAVED to DB ===");
+                log.debug("=== Agent message saved to DB ===");
                 log.info(" [Takeover] Saved agent message to DB. Conversation ID: {}", conversationIdLong);
             } catch (Exception e) {
                 log.error("❌ [Takeover] Error saving agent message to DB: {}", e.getMessage(), e);
