@@ -9,7 +9,7 @@ import com.chatbot.spokes.facebook.connection.dto.UpdateFacebookConnectionReques
 import com.chatbot.core.tenant.infra.TenantContext;
 import com.chatbot.spokes.facebook.connection.model.FacebookConnection;
 import com.chatbot.spokes.facebook.connection.repository.FacebookConnectionRepository;
-import com.chatbot.spokes.botpress.service.BotpressManager;
+import com.chatbot.shared.penny.service.PennyBotManager;
 import com.chatbot.shared.penny.model.PennyBot;
 import com.chatbot.spokes.facebook.connection.exception.*;
 
@@ -39,18 +39,18 @@ import lombok.extern.slf4j.Slf4j;
 public class FacebookConnectionService {
 
     private final FacebookConnectionRepository connectionRepository;
-    private final BotpressManager botpressManager;
+    private final PennyBotManager pennyBotManager;
     private final UserRepository userRepository;
     private final TenantMemberRepository tenantMemberRepository;
     private final FacebookApiService facebookApiService;
 
     public FacebookConnectionService(FacebookConnectionRepository connectionRepository, 
-                                BotpressManager botpressManager,
+                                PennyBotManager pennyBotManager,
                                 UserRepository userRepository,
                                 TenantMemberRepository tenantMemberRepository,
                                 FacebookApiService facebookApiService) {
         this.connectionRepository = connectionRepository;
-        this.botpressManager = botpressManager;
+        this.pennyBotManager = pennyBotManager;
         this.userRepository = userRepository;
         this.tenantMemberRepository = tenantMemberRepository;
         this.facebookApiService = facebookApiService;
@@ -62,16 +62,16 @@ public class FacebookConnectionService {
             throw new RuntimeException("Insufficient privileges to create connections.");
         }
         
-        // 1. AUTO-CREATE BOTPRESS BOT nếu chưa có botId
+        // 1. AUTO-CREATE PENNY BOT nếu chưa có botId
         String botId = request.getBotId();
         if (botId == null || botId.isEmpty()) {
-            log.info("🤖 Auto-creating Botpress bot for connection");
-            PennyBot newBot = botpressManager.autoCreateBotForConnection(ownerId, request.getPageId());
+            log.info("🤖 Auto-creating Penny bot for connection");
+            PennyBot newBot = pennyBotManager.autoCreateBotForConnection(ownerId, request.getPageId());
             if (newBot == null) {
-                throw new RuntimeException("Failed to auto-create Botpress bot for connection");
+                throw new RuntimeException("Failed to auto-create Penny bot for connection");
             }
             botId = newBot.getId().toString();
-            log.info("✅ Auto-created Botpress bot: {}", botId);
+            log.info("✅ Auto-created Penny bot: {}", botId);
         } else {
             // TODO: Validate bot ownership if needed
             log.info("🔍 Using existing bot: {}", botId);
@@ -190,7 +190,7 @@ public class FacebookConnectionService {
             // 4. Auto-create bot if needed
             String botId = null;
             try {
-                PennyBot newBot = botpressManager.autoCreateBotForConnection(ownerId, pageId);
+                PennyBot newBot = pennyBotManager.autoCreateBotForConnection(ownerId, pageId);
                 if (newBot != null) {
                     botId = newBot.getId().toString();
                     log.info("✅ Auto-created bot: {}", botId);

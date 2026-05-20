@@ -13,8 +13,6 @@ import com.chatbot.core.message.decision.service.TakeoverService;
 import com.chatbot.core.message.decision.model.TakeoverMessage;
 import com.chatbot.core.message.store.model.Channel;
 import com.chatbot.core.tenant.infra.TenantContext;
-import com.chatbot.spokes.facebook.webhook.service.ChatbotServiceWrapper;
-import com.chatbot.spokes.botpress.service.BotpressServiceFb;
 import com.chatbot.spokes.odoo.service.CustomerDataService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -39,8 +37,6 @@ public class FacebookWebhookService {
     private final ConversationService conversationService;
     private final MessageService messageService;
     private final TakeoverService takeoverService;
-    private final ChatbotServiceWrapper chatbotServiceWrapper;
-    private final BotpressServiceFb botpressServiceFb;
     private final CustomerDataService customerDataService;
 
     @Value("${facebook.webhook.verify-token:your_facebook_verify_token}")
@@ -58,8 +54,6 @@ public class FacebookWebhookService {
                                   ConversationService conversationService,
                                   MessageService messageService,
                                   TakeoverService takeoverService,
-                                  ChatbotServiceWrapper chatbotServiceWrapper,
-                                  BotpressServiceFb botpressServiceFb,
                                   CustomerDataService customerDataService) {
         this.connectionRepository = connectionRepository;
         this.pennyBotManager = pennyBotManager;
@@ -67,8 +61,6 @@ public class FacebookWebhookService {
         this.conversationService = conversationService;
         this.messageService = messageService;
         this.takeoverService = takeoverService;
-        this.chatbotServiceWrapper = chatbotServiceWrapper;
-        this.botpressServiceFb = botpressServiceFb;
         this.customerDataService = customerDataService;
     }
 
@@ -494,6 +486,10 @@ public class FacebookWebhookService {
             }
             
             // 4️⃣ XỬ LÝ QUA PENNY BOT TRƯỚC
+            if (connection.getBotId() == null || connection.getBotId().trim().isEmpty()) {
+                log.warn("⚠️ [Penny] Connection has no associated botId. Skipping Penny Bot processing.");
+                return;
+            }
             log.info("🤖 [Penny] Routing message to Penny Bot...");
             UUID botId = UUID.fromString(connection.getBotId());
             String pennyResponse = pennyBotManager.processMessage(botId, messageText, connection.getOwnerId(), false);
@@ -541,11 +537,11 @@ public class FacebookWebhookService {
                 return; // Penny xử lý xong, kết thúc luồng
             }
             
-            log.info("⏭️ [Penny] Bot didn't handle message. Routing to Botpress...");
+            log.info("⏭️ [Penny] Bot didn't handle message. No auto-reply sent.");
             
         } catch (Exception e) {
             log.error("❌ [Penny] Error processing message: {}", e.getMessage(), e);
-            log.info("⏭️ [Penny] Error occurred, routing to Botpress as fallback...");
+            log.info("⏭️ [Penny] Error occurred while processing message.");
             
             // Ensure conversation is initialized even if Penny processing fails
             if (conversation == null) {
@@ -558,71 +554,6 @@ public class FacebookWebhookService {
                     return; // Cannot proceed without conversation
                 }
             }
-        }
-
-        // 5️⃣ CHUYỂN TIẾP TỚI BOTPRESS (FALLBACK) - CHỈ KHI PROVIDER LÀ BOTPRESS
-        if ("BOTPRESS".equals(connection.getChatbotProvider())) {
-            log.info("🤖 [Botpress] Routing message to Botpress (fallback)...");
-            try {
-                log.info("➡️ Routing to {} provider...", connection.getChatbotProvider());
-                
-                Map<String, Object> chatbotResponse = chatbotServiceWrapper.sendMessage(
-                    connection, senderId, messageText
-                );
-                
-                if (chatbotResponse != null) {
-                    log.info("🚀 [{}] Received response from bot, sending back to user...", connection.getChatbotProvider());
-                    
-                    // 💾 Lưu bot response vào database (CHO CẢ BOTPRESS FALLBACK)
-                    try {
-                        if (conversation != null) {
-                            messageService.saveMessage(
-                                conversation.getId(), 
-                                "bot", 
-                                chatbotResponse.toString(), 
-                                FacebookMessageType.TEXT.name(), 
-                                null
-                            );
-                            log.info("💾 [{}] Saved bot response to DB. Conversation ID: {}", connection.getChatbotProvider(), conversation.getId());
-                        } else {
-                            log.warn("⚠️ [{}] Conversation is null, skipping database save", connection.getChatbotProvider());
-                        }
-                    } catch (Exception e) {
-                        log.error("❌ [{}] Error saving bot message to DB: {}", connection.getChatbotProvider(), e.getMessage());
-                    }
-                    
-                    // 📡 Gửi bot response qua WebSocket để hiện trên UX (CHO CẢ BOTPRESS FALLBACK - centralized)
-                    try {
-                        if (conversation != null) {
-                            TakeoverMessage botMessage = new TakeoverMessage(
-                                "bot_" + System.currentTimeMillis() + "_" + (int)(Math.random() * 10000),
-                                String.valueOf(conversation.getId()), 
-                                "bot", 
-                                chatbotResponse.toString(), 
-                                System.currentTimeMillis()
-                            );
-                            // Lưu vào Redis cho history
-                            takeoverService.saveMessage(botMessage);
-                            // Gửi qua WebSocket
-                            takeoverService.sendToConversation(botMessage);
-                            log.info("📡 [{}] Bot message saved to Redis and sent via WebSocket. Conversation ID: {}", connection.getChatbotProvider(), conversation.getId());
-                        } else {
-                            log.warn("⚠️ [{}] Conversation is null, skipping WebSocket send", connection.getChatbotProvider());
-                        }
-                    } catch (Exception e) {
-                        log.error("❌ [{}] Error sending bot message via WebSocket: {}", connection.getChatbotProvider(), e.getMessage());
-                    }
-                    
-                    // Gửi response qua BotpressServiceFb
-                    botpressServiceFb.sendMessage(connection.getBotId(), senderId, chatbotResponse.toString());
-                } else {
-                    log.warn("⚠️ [{}] No response from bot", connection.getChatbotProvider());
-                }
-            } catch (Exception e) {
-                log.error("❌ [{}] Error routing to bot: {}", connection.getChatbotProvider(), e.getMessage());
-            }
-        } else {
-            log.info("⚠️ [Penny] Bot didn't handle message and provider is not BOTPRESS ({}). No fallback available.", connection.getChatbotProvider());
         }
     }
     

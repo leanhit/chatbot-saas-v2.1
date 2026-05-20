@@ -56,7 +56,7 @@ public class FacebookConnection extends BaseTenantEntity {
     
     @Enumerated(EnumType.STRING)
     @Column(name = "chatbot_provider")
-    private ChatbotProvider chatbotProvider = ChatbotProvider.BOTPRESS; // Mặc định là BOTPRESS
+    private ChatbotProvider chatbotProvider = ChatbotProvider.PENNYBOT; // Mặc định là PENNYBOT
 
     @JsonFormat(pattern = DateUtils.STANDARD_JSON_FORMAT, timezone = DateUtils.STANDARD_TIMEZONE)
     private LocalDateTime createdAt;

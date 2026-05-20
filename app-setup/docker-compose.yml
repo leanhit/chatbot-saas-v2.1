@@ -49,26 +49,6 @@ services:
       - internal
 
   # ----------------------------------------
-  # Botpress
-  # ----------------------------------------
-  botpress:
-    image: botpress/server:v12_28_0
-    container_name: chatbot_saas_botpress
-    restart: always
-    user: root
-    ports:
-      - "3001:3000"
-    environment:
-      - DATABASE=postgres
-      - DATABASE_URL=postgres://traloitudong_user:traloitudong_Admin_2025@db:5432/botpress_db
-    volumes:
-      - ./data:/botpress/data
-    depends_on:
-      - db
-    networks:
-      - internal
-
-  # ----------------------------------------
   # Odoo + Init Script
   # ----------------------------------------
   odoo:

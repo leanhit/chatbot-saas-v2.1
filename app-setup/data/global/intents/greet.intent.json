@@ -1,9 +1,0 @@
-{
-  "name": "greet",
-  "contexts": ["global"],
-  "utterances": {
-    "en": ["hello", "hi", "hey", "chào"]
-  },
-  "slots": [],
-  "entities": []
-}

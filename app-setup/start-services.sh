@@ -122,13 +122,6 @@ show_status() {
         echo -e "RabbitMQ (5672): ${RED}❌ Stopped${NC}"
     fi
     
-    # Botpress
-    if nc -z localhost 3001 2>/dev/null; then
-        echo -e "Botpress (3001): ${GREEN}✅ Running${NC}"
-    else
-        echo -e "Botpress (3001): ${RED}❌ Stopped${NC}"
-    fi
-    
     # Odoo
     if nc -z localhost 3005 2>/dev/null; then
         echo -e "Odoo (3005): ${GREEN}✅ Running${NC}"
@@ -142,7 +135,6 @@ show_service_info() {
     echo "=================="
     echo "📊 MinIO Console: http://localhost:9090 (minioadmin/minioadmin)"
     echo "📁 MinIO API: http://localhost:9000"
-    echo "🤖 Botpress: http://localhost:3001"
     echo "💼 Odoo: http://localhost:3005"
     echo "🐰 RabbitMQ Management: http://localhost:15672 (admin/admin123)"
     echo "🗄️  PostgreSQL: localhost:5432"
