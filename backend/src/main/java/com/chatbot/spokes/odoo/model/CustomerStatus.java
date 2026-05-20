@@ -4,13 +4,10 @@ public enum CustomerStatus {
     /** Đang thu thập thông tin, chưa đủ data cần thiết. */
     PENDING, 
     
-    /** Đã thu thập đủ thông tin, sẵn sàng để đẩy vào Odoo. */
+    /** Đã thu thập đủ thông tin. */
     COMPLETED, 
     
-    /** Đã đẩy thành công vào Odoo. */
-    PUSHED_TO_ODOO, 
-    
-    /** Đã thử đẩy nhưng thất bại (lỗi API, data không hợp lệ, v.v.). */
+    /** Thu thập hoặc xử lý thất bại. */
     FAILED
 }
 

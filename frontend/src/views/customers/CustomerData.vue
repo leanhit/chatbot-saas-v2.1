@@ -242,8 +242,8 @@
                 <div class="text-2xl font-bold text-green-600">{{ stats.completedCustomers || 0 }}</div>
               </div>
               <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
-                <div class="text-sm text-gray-600 dark:text-gray-400">{{ $t('customers.stats.synced') }}</div>
-                <div class="text-2xl font-bold text-purple-600">{{ stats.syncedCustomers || 0 }}</div>
+                <div class="text-sm text-gray-600 dark:text-gray-400">{{ $t('customers.stats.capturedPhones') }}</div>
+                <div class="text-2xl font-bold text-purple-600">{{ stats.totalCapturedPhones || 0 }}</div>
               </div>
             </div>
 
@@ -256,6 +256,10 @@
                   <div v-if="selectedCustomer.primaryPhone" class="flex items-center gap-2">
                     <Icon icon="mdi:phone" class="text-gray-400" />
                     <span class="text-gray-900 dark:text-gray-200">{{ selectedCustomer.primaryPhone }}</span>
+                  </div>
+                  <div v-if="selectedCustomer.email" class="flex items-center gap-2">
+                    <Icon icon="mdi:email" class="text-gray-400" />
+                    <span class="text-gray-900 dark:text-gray-200">{{ selectedCustomer.email }}</span>
                   </div>
                   <div v-if="selectedCustomer.totalPhones > 1" class="text-sm text-gray-500">
                     +{{ selectedCustomer.totalPhones - 1 }} {{ $t('customers.morePhones') }}
@@ -278,10 +282,6 @@
                     >
                       {{ $t(`customers.status.${selectedCustomer.status}`) }}
                     </span>
-                  </div>
-                  <div v-if="selectedCustomer.isSyncedWithOdoo" class="flex items-center gap-2 text-green-600">
-                    <Icon icon="mdi:check-circle" />
-                    <span>{{ $t('customers.syncedWithOdoo') }}</span>
                   </div>
                 </div>
               </div>
@@ -470,7 +470,6 @@ export default {
       const classes = {
         'PENDING': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
         'COMPLETED': 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
-        'PUSHED_TO_ODOO': 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
         'FAILED': 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
       }
       return classes[status] || 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'

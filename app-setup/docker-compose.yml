@@ -48,28 +48,6 @@ services:
     networks:
       - internal
 
-  # ----------------------------------------
-  # Odoo + Init Script
-  # ----------------------------------------
-  odoo:
-    image: odoo:17
-    container_name: chatbot_saas_odoo
-    restart: always
-    depends_on:
-      - db
-    environment:
-      POSTGRES_HOST: db
-      POSTGRES_USER: odoo_user
-      POSTGRES_PASSWORD: odoo_Admin_2025
-      POSTGRES_DB: odoo_db
-    ports:
-      - "3005:8069"
-    volumes:
-      - odoo_data:/var/lib/odoo
-      - ./odoo-init.sh:/usr/local/bin/odoo-init.sh
-    command: ["/usr/local/bin/odoo-init.sh"]
-    networks:
-      - internal
 
   # ----------------------------------------
   # RabbitMQ
@@ -108,9 +86,7 @@ volumes:
   postgres_data:
     driver: local
     name: chatbot_saas_postgres_data
-  odoo_data:
-    driver: local
-    name: chatbot_saas_odoo_data
+
   minio_data:
     driver: local
     name: chatbot_saas_minio_data

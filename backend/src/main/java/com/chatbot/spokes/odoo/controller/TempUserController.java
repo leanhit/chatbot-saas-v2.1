@@ -22,9 +22,9 @@ import java.util.Optional;
 
 @Slf4j
 @RestController
-@RequestMapping("/api/odoo/temp-users")
+@RequestMapping("/api/temp-users")
 @RequiredArgsConstructor
-@Tag(name = "Odoo Temp Users", description = "Temporary user management for Odoo integration")
+@Tag(name = "Temp Users", description = "Temporary user management")
 public class TempUserController {
 
     private final FbCustomerStagingCrudService service;

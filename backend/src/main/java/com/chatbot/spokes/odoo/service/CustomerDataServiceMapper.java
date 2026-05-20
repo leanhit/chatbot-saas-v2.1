@@ -14,7 +14,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * Mapper service để gộp data từ 3 bảng vào CustomerDataDTO
+ * Mapper service để gộp data từ các bảng lưu trữ khách hàng Facebook
  */
 @Service
 @Slf4j
@@ -45,10 +45,23 @@ public class CustomerDataServiceMapper {
             log.warn("Error parsing phones JSON for PSID {}: {}", staging.getPsid(), e.getMessage());
         }
 
-        // Map captured phones
+        // Parse email từ dataJson
+        String email = null;
+        try {
+            if (staging.getDataJson() != null && !staging.getDataJson().trim().isEmpty()) {
+                Map<String, String> data = objectMapper.readValue(staging.getDataJson(), new TypeReference<Map<String, String>>() {});
+                email = data.get("email");
+            }
+        } catch (Exception e) {
+            log.warn("Error parsing dataJson to get email for PSID {}: {}", staging.getPsid(), e.getMessage());
+        }
+
+        // Map captured phones - LỌC theo danh sách SĐT của riêng khách hàng này để tránh lộ SĐT của khách hàng khác
         List<CustomerDataDTO.CapturedPhoneInfo> phoneInfoList = new ArrayList<>();
         if (capturedPhones != null) {
+            final Set<String> customerPhones = phones;
             phoneInfoList = capturedPhones.stream()
+                    .filter(phone -> customerPhones.contains(phone.getPhoneNumber()))
                     .map(phone -> CustomerDataDTO.CapturedPhoneInfo.builder()
                             .phoneNumber(phone.getPhoneNumber())
                             .capturedAt(phone.getCreatedAt())
@@ -63,16 +76,15 @@ public class CustomerDataServiceMapper {
                 .ownerId(staging.getOwnerId())
                 .pageId(staging.getPageId())
                 .phones(phones)
+                .email(email)
                 .dataJson(staging.getDataJson())
                 .status(staging.getStatus())
-                .odooId(staging.getOdooId())
                 .createdAt(staging.getCreatedAt())
                 .updatedAt(staging.getUpdatedAt())
 
                 // From Facebook user
                 .facebookName(facebookUser != null ? facebookUser.getName() : null)
                 .facebookAvatar(facebookUser != null ? facebookUser.getProfilePic() : null)
-                .odooPartnerId(facebookUser != null ? facebookUser.getOdooPartnerId() : null)
                 .lastInteraction(facebookUser != null ? facebookUser.getLastInteraction() : null)
 
                 // From captured phones

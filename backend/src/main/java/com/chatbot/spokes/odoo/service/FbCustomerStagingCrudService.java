@@ -35,8 +35,6 @@ public class FbCustomerStagingCrudService {
                 current.setPageId(customer.getPageId());
             if (customer.getStatus() != null)
                 current.setStatus(customer.getStatus());
-            if (customer.getOdooId() != null)
-                current.setOdooId(customer.getOdooId());
 
             // ⭐️ BỔ SUNG: CẬP NHẬT TRƯỜNG PHONES ⭐️
             if (customer.getPhones() != null) {

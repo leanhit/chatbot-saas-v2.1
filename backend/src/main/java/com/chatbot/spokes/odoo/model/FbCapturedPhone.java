@@ -10,7 +10,9 @@ import com.chatbot.shared.utils.DateUtils;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "fb_captured_phone")
+@Table(name = "fb_captured_phone", uniqueConstraints = {
+    @UniqueConstraint(columnNames = {"tenant_id", "phone_number"})
+})
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -24,8 +26,8 @@ public class FbCapturedPhone extends BaseTenantEntity {
     @Column(name = "owner_id")
     private String ownerId;
 
-    // QUAN TRỌNG: unique = true đảm bảo không có SĐT trùng lặp
-    @Column(name = "phone_number", unique = true, nullable = false)
+    // Không còn dùng unique ở cấp cột, chuyển sang composite unique ở cấp bảng
+    @Column(name = "phone_number", nullable = false)
     private String phoneNumber;
 
     @CreationTimestamp

@@ -14,56 +14,73 @@ import java.util.stream.Collectors;
 @Slf4j
 public class CustomerInfoExtractor {
 
-    // SỬA PHONE_PATTERN: Đơn giản hóa. Tìm (0 hoặc +84) theo sau là 9 đến 15 ký tự là số, khoảng trắng, chấm hoặc gạch ngang.
-    // \d tương đương [0-9]. Dùng \b để bắt chuỗi số độc lập.
+    // Regex tìm số điện thoại Việt Nam (0... hoặc +84...) có khoảng trắng, chấm, gạch ngang
     private static final Pattern PHONE_PATTERN = Pattern.compile(
-        "\\b(0|\\+84)[\\d\\s.-]{9,15}\\b" 
+        "(?:\\+84|0)(?:\\s*\\d){9,10}\\b"
+    );
+
+    // Regex tìm email chuẩn
+    private static final Pattern EMAIL_PATTERN = Pattern.compile(
+        "[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}"
     );
     
     /**
-     * 🎯 Chỉ trích xuất SỐ ĐIỆN THOẠI.
+     * 🎯 Trích xuất SỐ ĐIỆN THOẠI và EMAIL từ tin nhắn.
      */
     public CustomerInfo extractInfo(String text) {
         if (text == null || text.isBlank()) return new CustomerInfo();
         
-        // Chuẩn hóa văn bản đầu vào cho an toàn
-        String lowerCaseText = text.toLowerCase(Locale.ROOT);
+        String phone = extractPhone(text); 
+        String email = extractEmail(text);
         
-        // 1. TRÍCH XUẤT PHONE
-        String phone = extractPhone(lowerCaseText); 
-        
-        // Trả về CustomerInfo (name, phone, email) với name và email là null
-        return new CustomerInfo(null, phone, null); 
+        return new CustomerInfo(null, phone, email); 
     }
     
     /**
-     * Trích xuất SĐT và chuẩn hóa nó (chỉ giữ lại số và dấu +)
+     * Trích xuất SĐT và chuẩn hóa nó
      */
     private String extractPhone(String text) {
-        log.info("📞 Extract message='{}'", text);
-
+        log.debug("🔍 Extract phone from text='{}'", text);
         if (text == null || text.isBlank()) return null;
-        String cleaned = text.replaceAll("[^0-9+]", ""); // chỉ giữ số và dấu +
-        Matcher matcher = PHONE_PATTERN.matcher(text);
-        String rawPhone = null;
 
-        // Ưu tiên khớp theo pattern chính
+        // Chuẩn hóa văn bản bằng cách xóa các ký tự gạch nối, chấm để gom chuỗi số lại gần nhau
+        String normalizedText = text.replaceAll("[-.]", " ");
+        Matcher matcher = PHONE_PATTERN.matcher(normalizedText);
         if (matcher.find()) {
-            rawPhone = matcher.group().replaceAll("[^0-9+]", "");
-        } else if (cleaned.matches("^(0|\\+84)[0-9]{8,12}$")) {
-            rawPhone = cleaned;
-        }
-
-        // Chuẩn hóa: thay +84 thành 0 cho đồng nhất (tùy bạn)
-        if (rawPhone != null) {
-            rawPhone = rawPhone.replaceFirst("^\\+84", "0");
-            if (rawPhone.length() >= 9 && rawPhone.length() <= 11) {
-                log.info("📞 Extracted phone={} from message='{}'", rawPhone, text);
+            String rawPhone = matcher.group().replaceAll("\\s+", "");
+            if (rawPhone.startsWith("+84")) {
+                rawPhone = "0" + rawPhone.substring(3);
+            }
+            if (rawPhone.length() >= 10 && rawPhone.length() <= 11) {
+                log.info("📞 Extracted phone={} from text='{}'", rawPhone, text);
                 return rawPhone;
             }
         }
-        log.info("📞 No phone to extract");
 
+        // Dự phòng (fallback) nếu đầu vào chỉ chứa mỗi chuỗi số sạch
+        String cleaned = text.replaceAll("[^0-9+]", "");
+        if (cleaned.matches("^(0|\\+84)[0-9]{9,10}$")) {
+            String rawPhone = cleaned.startsWith("+84") ? "0" + cleaned.substring(3) : cleaned;
+            log.info("📞 Extracted phone (fallback)={} from text='{}'", rawPhone, text);
+            return rawPhone;
+        }
+
+        return null;
+    }
+
+    /**
+     * Trích xuất Email
+     */
+    private String extractEmail(String text) {
+        log.debug("🔍 Extract email from text='{}'", text);
+        if (text == null || text.isBlank()) return null;
+
+        Matcher matcher = EMAIL_PATTERN.matcher(text);
+        if (matcher.find()) {
+            String email = matcher.group().toLowerCase(Locale.ROOT).trim();
+            log.info("📧 Extracted email={} from text='{}'", email, text);
+            return email;
+        }
         return null;
     }
 

@@ -43,8 +43,7 @@ public class FbCustomerStaging extends BaseTenantEntity {
     @Column(name = "status", length = 50)
     private CustomerStatus status;
 
-    @Column(name = "odoo_id")
-    private Integer odooId;
+
 
     // ✅ Thêm 2 cột thời gian
     @CreationTimestamp

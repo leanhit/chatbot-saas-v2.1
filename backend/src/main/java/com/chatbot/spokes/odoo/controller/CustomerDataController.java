@@ -25,7 +25,7 @@ import java.util.Optional;
  */
 @Slf4j
 @RestController
-@RequestMapping("/api/odoo/customers")
+@RequestMapping("/api/customers")
 @RequiredArgsConstructor
 @Tag(name = "Customer Data", description = "Customer data management - Combined from staging, facebook users, and captured phones")
 public class CustomerDataController {

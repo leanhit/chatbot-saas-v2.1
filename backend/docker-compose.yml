@@ -248,28 +248,6 @@ services:
     networks:
       - internal
 
-  # ========================================
-  # Odoo
-  # ========================================
-  odoo:
-    image: odoo:17
-    container_name: odoo
-    restart: always
-    depends_on:
-      - db
-    environment:
-      POSTGRES_HOST: db
-      POSTGRES_USER: traloitudong_user
-      POSTGRES_PASSWORD: traloitudong_Admin_2025
-      POSTGRES_DB: traloitudong_db
-    ports:
-      - "3005:8069"
-    volumes:
-      - odoo_data:/var/lib/odoo
-      - ./app-setup/odoo-init.sh:/usr/local/bin/odoo-init.sh
-    command: ["/usr/local/bin/odoo-init.sh"]
-    networks:
-      - internal
 
 volumes:
   postgres_data:
@@ -281,7 +259,7 @@ volumes:
   wallet_postgres_data:
   config_postgres_data:
   message_postgres_data:
-  odoo_data:
+
   minio_data:
 
 networks:

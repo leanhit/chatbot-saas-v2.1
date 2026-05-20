@@ -13,10 +13,7 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Customer Data DTO - Gộp thông tin từ 3 bảng:
- * - fb_customer_staging
- * - facebook_users  
- * - fb_captured_phone
+ * Customer Data DTO - Gộp thông tin từ các bảng lưu trữ khách hàng Facebook
  */
 @Data
 @Builder
@@ -35,6 +32,11 @@ public class CustomerDataDTO {
     private Set<String> phones;
     
     /**
+     * Email trích xuất từ tin nhắn
+     */
+    private String email;
+    
+    /**
      * Data JSON trích xuất từ tin nhắn
      */
     private String dataJson;
@@ -43,11 +45,6 @@ public class CustomerDataDTO {
      * Trạng thái xử lý
      */
     private CustomerStatus status;
-    
-    /**
-     * ID sau khi sync với Odoo
-     */
-    private Integer odooId;
     
     /**
      * Thời gian tạo record
@@ -73,11 +70,6 @@ public class CustomerDataDTO {
     private String facebookAvatar;
     
     /**
-     * ID partner trong Odoo (nếu có)
-     */
-    private Integer odooPartnerId;
-    
-    /**
      * Lần cuối tương tác
      */
     @JsonFormat(pattern = DateUtils.STANDARD_JSON_FORMAT, timezone = DateUtils.STANDARD_TIMEZONE)
@@ -85,7 +77,7 @@ public class CustomerDataDTO {
 
     // ===== FROM FB_CAPTURED_PHONE =====
     /**
-     * Danh sách tất cả SĐT đã được capture cho owner này
+     * Danh sách số điện thoại đã capture của khách hàng này
      */
     private List<CapturedPhoneInfo> capturedPhones;
 
@@ -150,10 +142,10 @@ public class CustomerDataDTO {
     }
     
     /**
-     * Kiểm tra đã sync với Odoo chưa
+     * Kiểm tra đã sync với Odoo chưa (Luôn trả về false do đã loại bỏ Odoo)
      */
     public boolean isSyncedWithOdoo() {
-        return odooId != null || odooPartnerId != null;
+        return false;
     }
     
     /**
@@ -184,7 +176,7 @@ public class CustomerDataDTO {
         if (facebookAvatar != null && !facebookAvatar.trim().isEmpty()) {
             return facebookAvatar;
         }
-        return null; // Could return default avatar URL
+        return null;
     }
     
     /**

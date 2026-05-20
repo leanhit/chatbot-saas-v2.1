@@ -76,6 +76,9 @@ public interface FbCustomerStagingRepository extends JpaRepository<FbCustomerSta
     // Lấy theo danh sách psid và tenantId
     List<FbCustomerStaging> findByPsidInAndTenantId(Set<String> psids, Long tenantId);
     
+    // Lấy theo danh sách psid và tenantId có phân trang
+    Page<FbCustomerStaging> findByPsidInAndTenantId(Set<String> psids, Long tenantId, Pageable pageable);
+    
     // Tìm theo phone chứa keyword và tenantId
     @Query("SELECT fcs FROM FbCustomerStaging fcs WHERE fcs.phones LIKE %:keyword% AND fcs.tenantId = :tenantId")
     List<FbCustomerStaging> findByPhonesContainingAndTenantId(@Param("keyword") String keyword, @Param("tenantId") Long tenantId);

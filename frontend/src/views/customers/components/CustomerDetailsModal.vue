@@ -55,6 +55,10 @@
                 <Icon icon="mdi:phone" class="text-gray-400" />
                 <span class="text-gray-900 dark:text-white">{{ customer.primaryPhone }}</span>
               </div>
+              <div v-if="customer.email" class="flex items-center space-x-2">
+                <Icon icon="mdi:email" class="text-gray-400" />
+                <span class="text-gray-900 dark:text-white">{{ customer.email }}</span>
+              </div>
               <div class="flex items-center space-x-2">
                 <Icon icon="mdi:identifier" class="text-gray-400" />
                 <span class="text-gray-900 dark:text-white">Page ID: {{ customer.pageId }}</span>
@@ -66,7 +70,7 @@
             </div>
           </div>
 
-          <!-- Status & Sync Section -->
+          <!-- Status Section -->
           <div class="space-y-4">
             <h3 class="font-semibold text-gray-900 dark:text-white border-b pb-2">
               {{ $t('customers.details.statusInfo') }}
@@ -82,24 +86,6 @@
                 >
                   {{ $t(`customers.status.${customer.status}`) }}
                 </span>
-              </div>
-              
-              <div v-if="customer.isSyncedWithOdoo" class="flex items-center justify-between">
-                <span class="text-gray-600 dark:text-gray-400">{{ $t('customers.details.odooSync') }}</span>
-                <span class="text-green-600 flex items-center gap-1">
-                  <Icon icon="mdi:check-circle" />
-                  {{ $t('customers.details.synced') }}
-                </span>
-              </div>
-              
-              <div v-if="customer.odooId" class="flex items-center justify-between">
-                <span class="text-gray-600 dark:text-gray-400">Odoo ID</span>
-                <span class="text-gray-900 dark:text-white">{{ customer.odooId }}</span>
-              </div>
-              
-              <div v-if="customer.odooPartnerId" class="flex items-center justify-between">
-                <span class="text-gray-600 dark:text-gray-400">Odoo Partner ID</span>
-                <span class="text-gray-900 dark:text-white">{{ customer.odooPartnerId }}</span>
               </div>
             </div>
 
@@ -226,7 +212,6 @@ export default {
       const classes = {
         'PENDING': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
         'COMPLETED': 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
-        'PUSHED_TO_ODOO': 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
         'FAILED': 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
       }
       return classes[status] || 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'

@@ -18,7 +18,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * Service để query và gộp data từ 3 bảng customer
+ * Service để query và gộp data từ các bảng customer
  */
 @Service
 @Slf4j
@@ -47,10 +47,13 @@ public class CustomerDataQueryService {
         Set<String> psids = stagingPage.getContent().stream()
                 .map(FbCustomerStaging::getPsid)
                 .collect(Collectors.toSet());
-        Map<String, FacebookUser> facebookUserMap = facebookUserRepository
-                .findByPsidInAndTenantId(psids, tenantId)
-                .stream()
-                .collect(Collectors.toMap(FacebookUser::getPsid, user -> user));
+        Map<String, FacebookUser> facebookUserMap = new HashMap<>();
+        if (!psids.isEmpty()) {
+            facebookUserMap = facebookUserRepository
+                    .findByPsidInAndTenantId(psids, tenantId)
+                    .stream()
+                    .collect(Collectors.toMap(FacebookUser::getPsid, user -> user));
+        }
 
         // 3. Lấy captured phones cho các owners
         Set<String> ownerIds = stagingPage.getContent().stream()
@@ -119,21 +122,21 @@ public class CustomerDataQueryService {
             return getAllCustomers(pageable);
         }
 
-        // 2. Tìm trong Facebook users theo tên
+        // 1. Tìm trong Facebook users theo tên
         List<FacebookUser> facebookUsers = facebookUserRepository
                 .findByNameContainingIgnoreCaseAndTenantId(keyword, tenantId);
         Set<String> psidsFromName = facebookUsers.stream()
                 .map(FacebookUser::getPsid)
                 .collect(Collectors.toSet());
 
-        // 3. Tìm trong staging data theo phone
+        // 2. Tìm trong staging data theo phone
         List<FbCustomerStaging> stagingByPhone = stagingRepository
                 .findByPhonesContainingAndTenantId(keyword, tenantId);
         Set<String> psidsFromPhone = stagingByPhone.stream()
                 .map(FbCustomerStaging::getPsid)
                 .collect(Collectors.toSet());
 
-        // 4. Gộp tất cả PSID
+        // 3. Gộp tất cả PSID
         Set<String> allPsids = new HashSet<>(psidsFromName);
         allPsids.addAll(psidsFromPhone);
 
@@ -141,14 +144,21 @@ public class CustomerDataQueryService {
             return Page.empty(pageable);
         }
 
-        // 5. Lấy staging data cho các PSID tìm được
-        List<FbCustomerStaging> stagingList = stagingRepository.findByPsidInAndTenantId(allPsids, tenantId);
+        // 4. Lấy staging data cho các PSID tìm được có PHÂN TRANG CẤP DB để tránh OOM
+        Page<FbCustomerStaging> stagingPage = stagingRepository.findByPsidInAndTenantId(allPsids, tenantId, pageable);
 
-        // 6. Map sang DTO (tương tự như getAllCustomers)
-        Map<String, FacebookUser> facebookUserMap = facebookUsers.stream()
-                .collect(Collectors.toMap(FacebookUser::getPsid, user -> user));
+        // 5. Lấy Facebook users của toàn bộ PSID tìm được (SỬA LỖI Unknown User)
+        Set<String> pagePsids = stagingPage.getContent().stream()
+                .map(FbCustomerStaging::getPsid)
+                .collect(Collectors.toSet());
+        Map<String, FacebookUser> facebookUserMap = new HashMap<>();
+        if (!pagePsids.isEmpty()) {
+            facebookUserMap = facebookUserRepository.findByPsidInAndTenantId(pagePsids, tenantId)
+                    .stream()
+                    .collect(Collectors.toMap(FacebookUser::getPsid, user -> user));
+        }
 
-        Set<String> ownerIds = stagingList.stream()
+        Set<String> ownerIds = stagingPage.getContent().stream()
                 .map(FbCustomerStaging::getOwnerId)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
@@ -161,15 +171,15 @@ public class CustomerDataQueryService {
         }
 
         List<CustomerDataDTO> customerDataList = mapper.mapToCustomerDataList(
-                stagingList,
+                stagingPage.getContent(),
                 facebookUserMap,
                 capturedPhoneMap
         );
 
         return new org.springframework.data.domain.PageImpl<>(
                 customerDataList,
-                pageable,
-                customerDataList.size()
+                stagingPage.getPageable(),
+                stagingPage.getTotalElements()
         );
     }
 
@@ -188,10 +198,13 @@ public class CustomerDataQueryService {
         Set<String> psids = stagingPage.getContent().stream()
                 .map(FbCustomerStaging::getPsid)
                 .collect(Collectors.toSet());
-        Map<String, FacebookUser> facebookUserMap = facebookUserRepository
-                .findByPsidInAndTenantId(psids, tenantId)
-                .stream()
-                .collect(Collectors.toMap(FacebookUser::getPsid, user -> user));
+        Map<String, FacebookUser> facebookUserMap = new HashMap<>();
+        if (!psids.isEmpty()) {
+            facebookUserMap = facebookUserRepository
+                    .findByPsidInAndTenantId(psids, tenantId)
+                    .stream()
+                    .collect(Collectors.toMap(FacebookUser::getPsid, user -> user));
+        }
 
         Set<String> ownerIds = stagingPage.getContent().stream()
                 .map(FbCustomerStaging::getOwnerId)
@@ -218,7 +231,7 @@ public class CustomerDataQueryService {
     }
 
     /**
-     * Lấy thống kê customer data
+     * Lấy thống kê customer data (đã loại bỏ Odoo)
      */
     public Map<String, Object> getCustomerStats() {
         Long tenantId = getCurrentTenantId();
@@ -229,7 +242,6 @@ public class CustomerDataQueryService {
         long totalCustomers = stagingRepository.countByTenantId(tenantId);
         long pendingCustomers = stagingRepository.countByTenantIdAndStatus(tenantId, com.chatbot.spokes.odoo.model.CustomerStatus.PENDING);
         long completedCustomers = stagingRepository.countByTenantIdAndStatus(tenantId, com.chatbot.spokes.odoo.model.CustomerStatus.COMPLETED);
-        long syncedCustomers = stagingRepository.countByTenantIdAndStatus(tenantId, com.chatbot.spokes.odoo.model.CustomerStatus.PUSHED_TO_ODOO);
         long totalCapturedPhones = capturedPhoneRepository.countByTenantId(tenantId);
         long totalFacebookUsers = facebookUserRepository.countByTenantId(tenantId);
 
@@ -237,7 +249,6 @@ public class CustomerDataQueryService {
         stats.put("totalCustomers", totalCustomers);
         stats.put("pendingCustomers", pendingCustomers);
         stats.put("completedCustomers", completedCustomers);
-        stats.put("syncedCustomers", syncedCustomers);
         stats.put("totalCapturedPhones", totalCapturedPhones);
         stats.put("totalFacebookUsers", totalFacebookUsers);
 

@@ -198,42 +198,6 @@ services:
           memory: 256M
           cpus: '0.1'
 
-  # Odoo ERP System
-  odoo:
-    image: odoo:17
-    container_name: chatbot_saas_odoo
-    restart: always
-    depends_on:
-      - db
-    environment:
-      POSTGRES_HOST: db
-      POSTGRES_USER: ${ODOO_USER:-odoo_user}
-      POSTGRES_PASSWORD: ${ODOO_PASSWORD}
-      POSTGRES_DB: ${ODOO_DB:-odoo_db}
-      ODOO_RC: /etc/odoo/odoo.conf
-    volumes:
-      - odoo_data:/var/lib/odoo
-      - ./app-setup/odoo-init.sh:/usr/local/bin/odoo-init.sh
-      - ./app-setup/data/odoo/odoo.conf:/etc/odoo/odoo.conf
-      - ./app-setup/data/odoo/addons:/mnt/extra-addons
-    ports:
-      - "3005:8069"
-    command: ["/usr/local/bin/odoo-init.sh"]
-    networks:
-      - internal
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8069/web/session/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-    deploy:
-      resources:
-        limits:
-          memory: 2G
-          cpus: '1.0'
-        reservations:
-          memory: 512M
-          cpus: '0.25'
 
   # Nginx Reverse Proxy
   nginx:
@@ -284,9 +248,7 @@ volumes:
   botpress_data:
     driver: local
     name: chatbot_saas_botpress_data
-  odoo_data:
-    driver: local
-    name: chatbot_saas_odoo_data
+
   app_logs:
     driver: local
     name: chatbot_saas_app_logs

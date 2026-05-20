@@ -6,44 +6,34 @@ import com.chatbot.core.tenant.infra.TenantContext;
 import com.chatbot.spokes.odoo.model.CustomerStatus;
 import com.chatbot.spokes.odoo.model.FbCapturedPhone;
 import com.chatbot.spokes.odoo.model.FbCustomerStaging;
-import com.chatbot.spokes.odoo.client.OdooApiClient;
 import com.chatbot.spokes.odoo.model.CustomerInfo;
 import lombok.extern.slf4j.Slf4j;
 import com.chatbot.spokes.odoo.service.FbCapturedPhoneService;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 @Service
 @Slf4j
 public class CustomerDataService {
 
-    // Bộ nhớ tạm cho từng người (PSID)
-    private final Map<String, Map<String, String>> tempStorage = new ConcurrentHashMap<>();
-
     private final FacebookConnectionRepository connectionRepository;
     private final FbCustomerStagingCrudService crudService;
-    private final OdooApiClient odooClient;
     private final CustomerInfoExtractor infoExtractor;
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final FbCapturedPhoneService phoneService;
 
     public CustomerDataService(
             FbCustomerStagingCrudService crudService,
-            OdooApiClient odooClient,
             FacebookConnectionRepository connectionRepository,
             CustomerInfoExtractor infoExtractor,
             FbCapturedPhoneService phoneService
     ) {
         this.crudService = crudService;
-        this.odooClient = odooClient;
         this.connectionRepository = connectionRepository;
         this.infoExtractor = infoExtractor;
         this.phoneService = phoneService;
@@ -80,40 +70,21 @@ public class CustomerDataService {
             final String finalOwnerId = currentOwnerId;
             log.debug("👤 [OWNER] pageId={} thuộc ownerId={}", pageId, finalOwnerId);
 
-            // B2. Trích xuất phone
+            // B2. Trích xuất thông tin SĐT và Email
             log.debug("🔍 [EXTRACT] Bắt đầu trích xuất thông tin từ text='{}'", text);
             CustomerInfo info = infoExtractor.extractInfo(text);
             String newPhone = info.getPhone();
+            String newEmail = info.getEmail();
 
-            log.info("📞 [EXTRACT RESULT] PSID={} | phone={}", senderId, newPhone);
+            log.info("📞📧 [EXTRACT RESULT] PSID={} | phone={} | email={}", senderId, newPhone, newEmail);
 
-            // B3. Chuẩn bị và Kiểm tra
-            if (newPhone == null) {
-                log.debug("ℹ️ [NO PHONE] Không trích xuất được số điện thoại hợp lệ từ text='{}'", text);
+            // B3. Bỏ qua nếu không bắt được thông tin nào hữu ích
+            if (newPhone == null && newEmail == null) {
+                log.debug("ℹ️ [NO INFO] Không trích xuất được số điện thoại hoặc email hợp lệ từ text='{}'", text);
                 return false;
             }
-            
-            // 💡 SỬA ĐỔI CỐT LÕI: Ghi vào fb_captured_phone NHƯNG KHÔNG DỪNG NẾU TRÙNG LẶP.
-            // Mục đích: Đảm bảo SĐT ít nhất 1 lần được ghi nhận vào bảng CapturedPhone.
-            boolean isNewPhoneForOwner = phoneService.saveNewPhoneNumber(finalOwnerId, newPhone);
-            
-            if (isNewPhoneForOwner) {
-                log.info("✅ [FB_PHONE_NEW] SĐT '{}' đã được ghi nhận mới vào fb_captured_phone. TIẾP TỤC xử lý Staging.", newPhone);
-            } else {
-                // SĐT cũ, không cần lưu lại vào CapturedPhone, NHƯNG VẪN CẦN XỬ LÝ STAGING (B6)
-                log.warn("ℹ️ [PHONE EXISTS] SĐT '{}' đã tồn tại trong fb_captured_phone. Vẫn TIẾP TỤC xử lý Staging.", newPhone);
-                // ❌ ĐÃ XÓA: return false;
-            }
-            
-            // --- LOGIC STAGING TIẾP TỤC ---
-            
-            // 🔹 B4. Lưu thông tin tạm thời
-            Map<String, String> extracted = new HashMap<>();
-            extracted.put("phone", newPhone);
-            Map<String, String> current = tempStorage.computeIfAbsent(senderId, k -> new HashMap<>());
-            current.put("phone", newPhone); 
 
-            // 🔹 B5. Lấy hoặc tạo mới record
+            // 🔹 B4. Lấy hoặc tạo mới record staging từ DB để giữ luồng hoàn toàn Stateless
             FbCustomerStaging staging = crudService
                     .getByPsid(senderId, finalOwnerId)
                     .orElseGet(() -> {
@@ -125,36 +96,59 @@ public class CustomerDataService {
                         return c;
                     });
 
-            // 🔹 B6. Xử lý danh sách phones (Luôn thêm SĐT duy nhất vào Set)
-            Set<String> phonesSet;
-            try {
-                String existingPhonesJson = staging.getPhones() != null ? staging.getPhones() : "[]";
-                phonesSet = objectMapper.readValue(existingPhonesJson, new TypeReference<Set<String>>() {});
-            } catch (Exception e) {
-                log.error("💥 [JSON ERROR] Parse phones JSON lỗi cho PSID={} | msg={}", senderId, e.getMessage());
-                phonesSet = new HashSet<>();
-            }
-            
-            // Logic Set đảm bảo chỉ lưu SĐT không giống nhau (duy nhất) vào Staging.phones
-            boolean phoneAddedToStaging = phonesSet.add(newPhone); 
-            if (phoneAddedToStaging) {
-                log.info("📲 [PHONES UPDATED] Thêm SĐT '{}' vào Staging.phones cho PSID={}", newPhone, senderId);
+            // 🔹 B5. Đọc dữ liệu tạm từ DB
+            Map<String, String> current = new HashMap<>();
+            if (staging.getDataJson() != null && !staging.getDataJson().trim().isEmpty()) {
+                try {
+                    current = objectMapper.readValue(staging.getDataJson(), new TypeReference<Map<String, String>>() {});
+                } catch (Exception e) {
+                    log.error("💥 [JSON ERROR] Parse dataJson cũ lỗi cho PSID={} | msg={}", senderId, e.getMessage());
+                }
             }
 
-            try {// 💡 Thêm log để kiểm tra chuỗi JSON trước khi gán
-                String newPhonesJson = objectMapper.writeValueAsString(phonesSet);
-                log.info("💾 [DEBUG JSON] Chuỗi JSON mới sẵn sàng lưu: {}", newPhonesJson);
-                staging.setPhones(newPhonesJson);
-            } catch (Exception e) {
-                log.error("💥 [JSON ERROR] Serialize phonesSet lỗi cho PSID={} | msg={}", senderId, e.getMessage());
+            // Cập nhật dữ liệu mới thu thập
+            if (newPhone != null) {
+                current.put("phone", newPhone);
+            }
+            if (newEmail != null) {
+                current.put("email", newEmail);
             }
 
-            // 🔹 B8-B11. Ghi dataJson, Kiểm tra Complete, Upsert và Sync Odoo (Giữ nguyên)
+            // 🔹 B6. Lưu SĐT vào bảng captured_phone (nếu có SĐT mới)
+            if (newPhone != null) {
+                boolean isNewPhoneForOwner = phoneService.saveNewPhoneNumber(finalOwnerId, newPhone);
+                if (isNewPhoneForOwner) {
+                    log.info("✅ [FB_PHONE_NEW] SĐT '{}' đã được ghi nhận mới vào fb_captured_phone.", newPhone);
+                } else {
+                    log.warn("ℹ️ [PHONE EXISTS] SĐT '{}' đã tồn tại trong fb_captured_phone.", newPhone);
+                }
+
+                // Cập nhật danh sách phonesSet tích lũy trong staging
+                Set<String> phonesSet;
+                try {
+                    String existingPhonesJson = staging.getPhones() != null ? staging.getPhones() : "[]";
+                    phonesSet = objectMapper.readValue(existingPhonesJson, new TypeReference<Set<String>>() {});
+                } catch (Exception e) {
+                    log.error("💥 [JSON ERROR] Parse phones JSON lỗi cho PSID={} | msg={}", senderId, e.getMessage());
+                    phonesSet = new HashSet<>();
+                }
+
+                if (phonesSet.add(newPhone)) {
+                    log.info("📲 [PHONES UPDATED] Thêm SĐT '{}' vào Staging.phones cho PSID={}", newPhone, senderId);
+                }
+
+                try {
+                    staging.setPhones(objectMapper.writeValueAsString(phonesSet));
+                } catch (Exception e) {
+                    log.error("💥 [JSON ERROR] Serialize phonesSet lỗi cho PSID={} | msg={}", senderId, e.getMessage());
+                }
+            }
+
+            // 🔹 B7. Cập nhật dataJson và trạng thái hoàn thành
             staging.setDataJson(toJson(current));
 
-            boolean isComplete = isDataComplete(current);
-            CustomerStatus oldStatus = staging.getStatus();
-
+            // Trạng thái được coi là COMPLETED khi có ít nhất SĐT hoặc Email
+            boolean isComplete = current.containsKey("phone") || current.containsKey("email");
             if (isComplete) {
                 staging.setStatus(CustomerStatus.COMPLETED);
             } else {
@@ -165,21 +159,14 @@ public class CustomerDataService {
             crudService.upsert(staging);
             log.info("💾 [OK] Đã ghi CSDL thành công cho PSID={} | status={}", senderId, staging.getStatus());
 
-            if (isComplete && oldStatus != CustomerStatus.COMPLETED) {
-                log.info("📢 [ASYNC SYNC] Kích hoạt đồng bộ Odoo ngay cho PSID={}", senderId);
-                syncCustomerToOdoo(staging);
-            }
-            
-            return true; 
+            return true;
 
         } catch (Exception e) {
-            // ... (Logic xử lý lỗi FAILED giữ nguyên) ...
             log.error("❌ [EXCEPTION] Lỗi khi xử lý PSID={} | msg={}", senderId, e.getMessage(), e);
 
             try {
                 final String finalOwnerId = currentOwnerId != null ? currentOwnerId : "UNKNOWN_OWNER";
                 FbCustomerStaging failedRecord = crudService.getByPsid(senderId, finalOwnerId)
-                        // ... (Khởi tạo/cập nhật Failed record) ...
                         .orElseGet(() -> {
                             FbCustomerStaging c = new FbCustomerStaging(senderId);
                             c.setOwnerId(finalOwnerId);
@@ -201,28 +188,19 @@ public class CustomerDataService {
         return false;
     }
     
-    // ⚠️ HÀM processNameByContext ĐÃ BỊ XÓA/KHÔNG SỬ DỤNG
-    // Nếu bạn muốn giữ lại class này, bạn cần xóa hàm processNameByContext khỏi file.
-    
-    /** Kiểm tra chỉ cần phone là đủ */
+    /** Kiểm tra chỉ cần phone hoặc email là đủ */
     private boolean isDataComplete(Map<String, String> data) {
-        return data.containsKey("phone");
+        return data.containsKey("phone") || data.containsKey("email");
     }
 
-    /** Chuyển map → JSON (SỬ DỤNG ObjectMapper AN TOÀN) */
+    /** Chuyển map → JSON */
     private String toJson(Map<String, String> map) {
         try {
-            return objectMapper.writeValueAsString(map); // ✅ SỬ DỤNG OBJECTMAPPER
+            return objectMapper.writeValueAsString(map);
         } catch (Exception e) {
             log.error("💥 [JSON SERIALIZE ERROR] Không thể chuyển Map thành JSON: {}", e.getMessage());
-            // Trả về JSON trống hoặc ném ra RuntimeException tùy theo yêu cầu xử lý lỗi của ứng dụng
             return "{}"; 
         }
-    }
-
-    /** Debug: Lấy dữ liệu tạm */
-    public Map<String, String> getTempData(String senderId) {
-        return tempStorage.getOrDefault(senderId, Map.of());
     }
 
     /** * 🛠️ [MULTI-TENANT SAFE] Lấy danh sách khách hàng hoàn tất CỦA MỘT OWNER CỤ THỂ. */
@@ -232,84 +210,17 @@ public class CustomerDataService {
                 .toList();
     }
 
-    /**
-     * 🚀 [SCHEDULER USE] Lấy danh sách khách hàng hoàn tất CỦA TẤT CẢ CÁC OWNER.
-     * KHÔNG CẦN THIẾT DÙNG NỮA SAU KHI GỌI ASYNC NGAY LẬP TỨC
-     */
+    /** Lấy danh sách khách hàng hoàn tất CỦA TẤT CẢ CÁC OWNER. */
     public List<FbCustomerStaging> getCompletedCustomers() { 
         return crudService.getAll().stream()
                 .filter(c -> c.getStatus() == CustomerStatus.COMPLETED)
                 .toList();
     }
 
-    /**
-     * 🚀 [SCHEDULER USE] Lấy danh sách khách hàng thất bại CỦA TẤT CẢ CÁC OWNER.
-     */
+    /** Lấy danh sách khách hàng thất bại CỦA TẤT CẢ CÁC OWNER. */
     public List<FbCustomerStaging> getFailedCustomers() {
         return crudService.getAll().stream()
                 .filter(c -> c.getStatus() == CustomerStatus.FAILED)
                 .toList();
-    }
-
-    /** Đồng bộ từng khách hàng sang Odoo (chạy async) */
-    @Async
-    public void syncCustomerToOdoo(FbCustomerStaging customer) {
-        log.info("🚀 Đồng bộ PSID={} sang Odoo CRM Lead...", customer.getPsid());
-        try {
-            Map<String, String> data = objectMapper.readValue(customer.getDataJson(), new TypeReference<>() {});
-            Map<String, Object> payload = new HashMap<>();
-            
-            // -------------------------------------------------------------------------
-            // 💡 LOGIC: Dùng trường `phones` để tạo Description
-            // -------------------------------------------------------------------------
-            Set<String> phonesSet = new HashSet<>();
-            try {
-                String existingPhonesJson = customer.getPhones() != null ? customer.getPhones() : "[]";
-                phonesSet = objectMapper.readValue(existingPhonesJson, new TypeReference<Set<String>>() {});
-            } catch (Exception e) {
-                log.error("Lỗi parse trường `phones` (JSON) khi đồng bộ PSID {}: {}. Sử dụng SĐT chính.", customer.getPsid(), e.getMessage());
-                if(data.containsKey("phone")) phonesSet.add(data.get("phone"));
-            }
-            
-            String phoneListDesc = phonesSet.isEmpty() 
-                                   ? "Không có SĐT tích lũy." 
-                                   : "Các SĐT đã bắt: " + String.join(", ", phonesSet);
-            // -------------------------------------------------------------------------
-
-            // Lấy SĐT cuối cùng được bắt (SĐT quan trọng nhất)
-            String mainPhone = data.get("phone");
-            
-            // 💡 SỬA: Tạo tên Lead bằng cách kết hợp SĐT chính + Ngày/Giờ
-            String leadName = String.format(
-                "Lead %s (%s) - %s", 
-                mainPhone,
-                customer.getPsid(),
-                LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"))
-            );
-
-            // Mapping trường cho CRM Lead
-            payload.put("name", leadName); // 💡 Dùng tên mới được gán
-            payload.put("phone", mainPhone);
-            
-            // Cập nhật Description với danh sách SĐT tích lũy
-            payload.put("description", "Tự động tạo từ Facebook PSID: " + customer.getPsid() + "\n" + phoneListDesc);
-            
-            payload.put("x_facebook_psid", customer.getPsid());
-            payload.put("type", "lead"); 
-
-            // Gọi API Odoo để tạo/cập nhật lead
-            Integer odooId = odooClient.createOrUpdateLead(customer.getPsid(), payload);
-
-            // Cập nhật DB
-            customer.setOdooId(odooId);
-            customer.setStatus(CustomerStatus.PENDING); 
-            crudService.upsert(customer);
-
-            log.info("✅ Đồng bộ Lead thành công PSID={} -> Odoo ID={}. Chuyển trạng thái sang PENDING.", customer.getPsid(), odooId);
-        } catch (Exception e) {
-            customer.setStatus(CustomerStatus.FAILED);
-            crudService.upsert(customer);
-            log.error("❌ Lỗi đồng bộ Odoo Lead cho PSID {}: {}", customer.getPsid(), e.getMessage(), e);
-        }
     }
 }

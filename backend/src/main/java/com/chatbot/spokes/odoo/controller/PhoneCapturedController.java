@@ -12,7 +12,7 @@ import java.util.List;
 
 @Slf4j
 @RestController
-@RequestMapping("/api/odoo/phone-captured")
+@RequestMapping("/api/phone-captured")
 @RequiredArgsConstructor
 public class PhoneCapturedController {
 

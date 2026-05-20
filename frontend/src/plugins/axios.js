@@ -28,7 +28,7 @@ const EXCLUDED_PATHS = [
     '/tenants/members/my-invitations', // User's own invitations
     '/tenants/members/join-requests', // Join requests - user doesn't have active tenant yet
     '/images', // Image API không cần tenant ID
-    '/api/odoo/customers/statuses' // Only statuses endpoint doesn't need tenant context
+    '/api/customers/statuses' // Only statuses endpoint doesn't need tenant context
 ];
 
 let isRefreshing = false;
