@@ -32,22 +32,27 @@ public class IntentAnalyzer {
      * Analyze intent and entities from message
      */
     public IntentAnalysisResult analyze(MiddlewareRequest request, ConversationContext context) {
-        String message = request.getMessage().toLowerCase().trim();
+        String originalMessage = request.getMessage();
+        String message = VietnameseTextNormalizer.normalize(originalMessage);
+        String unaccentedMessage = VietnameseTextNormalizer.removeAccents(originalMessage);
         
-        log.debug("🧠 Analyzing intent for message: {}", message);
+        log.debug("🧠 Analyzing intent for message: {} (unaccented: {})", message, unaccentedMessage);
         
-        // Extract entities first
+        // Extract entities first from normalized message
         Map<String, Object> entities = extractEntities(message);
+        // Also extract from unaccented message to be thorough
+        Map<String, Object> unaccentedEntities = extractEntities(unaccentedMessage);
+        unaccentedEntities.forEach(entities::putIfAbsent);
         
         // Detect intent
-        String primaryIntent = detectPrimaryIntent(message, entities, context);
-        double confidence = calculateConfidence(message, primaryIntent, entities);
+        String primaryIntent = detectPrimaryIntent(message, unaccentedMessage, entities, context);
+        double confidence = calculateConfidence(message, unaccentedMessage, primaryIntent, entities);
         
         // Get all possible intents
-        List<String> allIntents = detectAllIntents(message, entities);
+        List<String> allIntents = detectAllIntents(message, unaccentedMessage, entities);
         
         // Determine message type
-        String messageType = determineMessageType(message, entities);
+        String messageType = determineMessageType(message, unaccentedMessage, entities);
         
         // Calculate complexity
         String complexity = calculateComplexity(message, entities, allIntents);
@@ -86,7 +91,7 @@ public class IntentAnalyzer {
         }
         
         // Price/money extraction
-        if (message.matches(".*[0-9]+[,.]?[0-9]*\\s*(vnđ|đ|k|nghìn|triệu|tỷ).*")) {
+        if (message.matches(".*[0-9]+[,.]?[0-9]*\\s*(vnđ|đ|d|k|nghìn|nghin|triệu|trieu|tỷ|ty).*")) {
             entities.put("price", extractPrice(message));
         }
         
@@ -97,17 +102,17 @@ public class IntentAnalyzer {
         }
         
         // Order ID extraction
-        if (message.matches(".*\\b(order|đơn|mã)[#\\s]*([a-zA-Z0-9]+)\\b.*")) {
+        if (message.matches(".*\\b(order|đơn|don|mã|ma)[#\\s]*([a-zA-Z0-9]+)\\b.*")) {
             entities.put("order_id", extractOrderId(message));
         }
         
         // Location/address extraction
-        if (message.matches(".*\\b(địa chỉ|tại|ở)\\s+[^.!?]+.*")) {
+        if (message.matches(".*\\b(địa chỉ|dia chi|tại|tai|ở|o)\\s+[^.!?]+.*")) {
             entities.put("location", extractLocation(message));
         }
         
         // Time/date extraction
-        if (message.matches(".*\\b(hôm nay|ngày mai|tuần này|tháng này)\\b.*")) {
+        if (message.matches(".*\\b(hôm nay|hom nay|ngày mai|ngay mai|tuần này|tuan nay|tháng này|thang nay)\\b.*")) {
             entities.put("time", extractTime(message));
         }
         
@@ -117,7 +122,7 @@ public class IntentAnalyzer {
     /**
      * Detect primary intent
      */
-    private String detectPrimaryIntent(String message, Map<String, Object> entities, ConversationContext context) {
+    private String detectPrimaryIntent(String message, String unaccentedMessage, Map<String, Object> entities, ConversationContext context) {
         // Check for specific intents based on entities first
         if (entities.containsKey("order_id")) {
             return "order_inquiry";
@@ -141,7 +146,7 @@ public class IntentAnalyzer {
             List<Pattern> patterns = entry.getValue();
             
             for (Pattern pattern : patterns) {
-                if (pattern.matcher(message).find()) {
+                if (pattern.matcher(message).find() || pattern.matcher(unaccentedMessage).find()) {
                     return intent;
                 }
             }
@@ -150,7 +155,7 @@ public class IntentAnalyzer {
         // Consider conversation context
         if (context != null && context.getLastIntent() != null) {
             String lastIntent = context.getLastIntent();
-            if (isFollowUpMessage(message, lastIntent)) {
+            if (isFollowUpMessage(message, lastIntent) || isFollowUpMessage(unaccentedMessage, lastIntent)) {
                 return lastIntent + "_followup";
             }
         }
@@ -162,7 +167,7 @@ public class IntentAnalyzer {
     /**
      * Calculate confidence score
      */
-    private double calculateConfidence(String message, String intent, Map<String, Object> entities) {
+    private double calculateConfidence(String message, String unaccentedMessage, String intent, Map<String, Object> entities) {
         double confidence = 0.5; // Base confidence
         
         // Boost confidence based on entities
@@ -175,7 +180,7 @@ public class IntentAnalyzer {
             List<Pattern> patterns = VIETNAMESE_INTENT_PATTERNS.get(intent);
             int matchCount = 0;
             for (Pattern pattern : patterns) {
-                if (pattern.matcher(message).find()) {
+                if (pattern.matcher(message).find() || pattern.matcher(unaccentedMessage).find()) {
                     matchCount++;
                 }
             }
@@ -193,11 +198,11 @@ public class IntentAnalyzer {
     /**
      * Detect all possible intents
      */
-    private List<String> detectAllIntents(String message, Map<String, Object> entities) {
+    private List<String> detectAllIntents(String message, String unaccentedMessage, Map<String, Object> entities) {
         List<String> intents = new ArrayList<>();
         
         // Add primary intent
-        String primaryIntent = detectPrimaryIntent(message, entities, null);
+        String primaryIntent = detectPrimaryIntent(message, unaccentedMessage, entities, null);
         intents.add(primaryIntent);
         
         // Add other matching intents
@@ -206,7 +211,7 @@ public class IntentAnalyzer {
             if (!intent.equals(primaryIntent)) {
                 List<Pattern> patterns = entry.getValue();
                 for (Pattern pattern : patterns) {
-                    if (pattern.matcher(message).find()) {
+                    if (pattern.matcher(message).find() || pattern.matcher(unaccentedMessage).find()) {
                         intents.add(intent);
                         break;
                     }
@@ -220,7 +225,7 @@ public class IntentAnalyzer {
     /**
      * Determine message type
      */
-    private String determineMessageType(String message, Map<String, Object> entities) {
+    private String determineMessageType(String message, String unaccentedMessage, Map<String, Object> entities) {
         if (entities.containsKey("phone_number") || entities.containsKey("email")) {
             return "contact_info";
         }
@@ -230,13 +235,16 @@ public class IntentAnalyzer {
         if (entities.containsKey("order_id")) {
             return "order_related";
         }
-        if (message.contains("?") || message.matches(".*(làm thế nào|cách|như thế nào).*")) {
+        if (message.contains("?") || message.matches(".*(làm thế nào|cách|như thế nào).*") ||
+            unaccentedMessage.matches(".*(lam the nao|cach|nhu the nao).*")) {
             return "question";
         }
-        if (message.matches(".*(xin chào|chào|hello|hi).*")) {
+        if (message.matches(".*(xin chào|chào|hello|hi).*") ||
+            unaccentedMessage.matches(".*(xin chao|chao|hello|hi).*")) {
             return "greeting";
         }
-        if (message.matches(".*(cảm ơn|thanks|thank).*")) {
+        if (message.matches(".*(cảm ơn|thanks|thank).*") ||
+            unaccentedMessage.matches(".*(cam on|thanks|thank).*")) {
             return "gratitude";
         }
         return "general_chat";
@@ -279,14 +287,17 @@ public class IntentAnalyzer {
     }
     
     private String extractPrice(String message) {
-        java.util.regex.Matcher matcher = java.util.regex.Pattern.compile("[0-9]+[,.]?[0-9]*\\s*(vnđ|đ|k|nghìn|triệu|tỷ)").matcher(message);
+        java.util.regex.Matcher matcher = java.util.regex.Pattern.compile("[0-9]+[,.]?[0-9]*\\s*(vnđ|đ|d|k|nghìn|nghin|triệu|trieu|tỷ|ty)").matcher(message);
         return matcher.find() ? matcher.group() : null;
     }
     
     private List<String> extractProducts(String message) {
         List<String> products = new ArrayList<>();
-        // Common product keywords in Vietnamese
-        String[] productKeywords = {"sản phẩm", "hàng", "sách", "điện thoại", "laptop", "quần áo", "giày"};
+        // Common product keywords in Vietnamese (both accented and unaccented)
+        String[] productKeywords = {
+            "sản phẩm", "san pham", "hàng", "hang", "sách", "sach", 
+            "điện thoại", "dien thoai", "laptop", "quần áo", "quan ao", "giày", "giay"
+        };
         
         for (String keyword : productKeywords) {
             if (message.contains(keyword)) {
@@ -298,28 +309,28 @@ public class IntentAnalyzer {
     }
     
     private String extractOrderId(String message) {
-        java.util.regex.Matcher matcher = java.util.regex.Pattern.compile("\\b(order|đơn|mã)[#\\s]*([a-zA-Z0-9]+)\\b").matcher(message);
+        java.util.regex.Matcher matcher = java.util.regex.Pattern.compile("\\b(order|đơn|don|mã|ma)[#\\s]*([a-zA-Z0-9]+)\\b").matcher(message);
         return matcher.find() ? matcher.group(2) : null;
     }
     
     private String extractLocation(String message) {
-        java.util.regex.Matcher matcher = java.util.regex.Pattern.compile("\\b(địa chỉ|tại|ở)\\s+([^,.!?]+)").matcher(message);
+        java.util.regex.Matcher matcher = java.util.regex.Pattern.compile("\\b(địa chỉ|dia chi|tại|tai|ở|o)\\s+([^,.!?]+)").matcher(message);
         return matcher.find() ? matcher.group(2).trim() : null;
     }
     
     private String extractTime(String message) {
-        if (message.contains("hôm nay")) return "hôm nay";
-        if (message.contains("ngày mai")) return "ngày mai";
-        if (message.contains("tuần này")) return "tuần này";
-        if (message.contains("tháng này")) return "tháng này";
+        if (message.contains("hôm nay") || message.contains("hom nay")) return "hôm nay";
+        if (message.contains("ngày mai") || message.contains("ngay mai")) return "ngày mai";
+        if (message.contains("tuần này") || message.contains("tuan nay")) return "tuần này";
+        if (message.contains("tháng này") || message.contains("thang nay")) return "tháng này";
         return null;
     }
     
     private boolean isFollowUpMessage(String message, String lastIntent) {
         // Simple follow-up detection
         return message.length() < 20 && 
-               (message.matches(".*\\b(đúng|vâng|ok|có)\\b.*") || 
-                message.matches(".*\\b(không|ko)\\b.*"));
+               (message.matches(".*\\b(đúng|vâng|ok|có|dung|vang|co)\\b.*") || 
+                message.matches(".*\\b(không|ko|khong)\\b.*"));
     }
     
     // Initialize patterns
