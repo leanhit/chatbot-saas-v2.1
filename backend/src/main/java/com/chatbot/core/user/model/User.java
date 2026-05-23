@@ -47,6 +47,7 @@ public class User {
 
     // --- relationships ---
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @com.fasterxml.jackson.annotation.JsonIgnore
     private UserProfile profile;
 
     // --- Optimistic Locking Version ---
