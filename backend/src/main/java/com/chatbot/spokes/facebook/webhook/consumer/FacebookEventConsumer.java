@@ -1,0 +1,440 @@
+package com.chatbot.spokes.facebook.webhook.consumer;
+
+import com.chatbot.config.KafkaConfig;
+import com.chatbot.core.message.store.model.Conversation;
+import com.chatbot.core.message.store.model.Channel;
+import com.chatbot.core.message.store.model.Message;
+import com.chatbot.spokes.facebook.connection.model.FacebookConnection;
+import com.chatbot.spokes.facebook.connection.repository.FacebookConnectionRepository;
+import com.chatbot.spokes.facebook.messenger.service.FacebookMessengerService;
+import com.chatbot.spokes.facebook.webhook.dto.WebhookRequest;
+import com.chatbot.spokes.facebook.webhook.dto.FacebookKafkaEvent;
+import com.chatbot.spokes.facebook.webhook.model.FacebookMessageType;
+import com.chatbot.shared.penny.service.PennyBotManager;
+import com.chatbot.core.message.store.service.ConversationService;
+import com.chatbot.core.message.store.service.MessageService;
+import com.chatbot.core.message.decision.service.TakeoverService;
+import com.chatbot.core.message.decision.model.TakeoverMessage;
+import com.chatbot.spokes.odoo.service.CustomerDataService;
+import com.chatbot.core.tenant.infra.TenantContext;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.stereotype.Service;
+import org.springframework.data.redis.core.RedisTemplate;
+
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+
+/**
+ * Kafka consumer that processes Facebook webhook events asynchronously with full business logic.
+ * Guaranteed ordered processing per conversation partition (runs synchronously on consumer thread).
+ */
+@Service
+@Slf4j
+public class FacebookEventConsumer {
+
+    private final FacebookConnectionRepository connectionRepository;
+    private final PennyBotManager pennyBotManager;
+    private final FacebookMessengerService facebookMessengerService;
+    private final ConversationService conversationService;
+    private final MessageService messageService;
+    private final TakeoverService takeoverService;
+    private final CustomerDataService customerDataService;
+    private final ObjectMapper objectMapper;
+    private final RedisTemplate<String, String> redisTemplate;
+
+    private final Set<String> processedMessageIds = ConcurrentHashMap.newKeySet();
+    private static final long CLEANUP_INTERVAL_MS = 60 * 60 * 1000; // 1 hour
+    private volatile long lastCleanupTime = System.currentTimeMillis();
+
+    @Autowired
+    public FacebookEventConsumer(FacebookConnectionRepository connectionRepository,
+                                 PennyBotManager pennyBotManager,
+                                 FacebookMessengerService facebookMessengerService,
+                                 ConversationService conversationService,
+                                 MessageService messageService,
+                                 TakeoverService takeoverService,
+                                 CustomerDataService customerDataService,
+                                 RedisTemplate<String, String> redisTemplate) {
+        this.connectionRepository = connectionRepository;
+        this.pennyBotManager = pennyBotManager;
+        this.facebookMessengerService = facebookMessengerService;
+        this.conversationService = conversationService;
+        this.messageService = messageService;
+        this.takeoverService = takeoverService;
+        this.customerDataService = customerDataService;
+        this.redisTemplate = redisTemplate;
+        this.objectMapper = new ObjectMapper();
+    }
+
+    private boolean tryDedup(String mid) {
+        if (mid == null) return false;
+        try {
+            String key = "facebook:dedup:mid:" + mid;
+            Boolean acquired = redisTemplate.opsForValue().setIfAbsent(key, "true", java.time.Duration.ofMinutes(15));
+            return Boolean.TRUE.equals(acquired);
+        } catch (Exception e) {
+            log.error("❌ Failed to check deduplication in Redis: {}, falling back to in-memory check", e.getMessage());
+            return processedMessageIds.add(mid);
+        }
+    }
+
+    @KafkaListener(topics = KafkaConfig.FACEBOOK_EVENT_TOPIC, groupId = "facebook-consumer-group")
+    public void consume(String messageJson) {
+        FacebookKafkaEvent event;
+        try {
+            event = objectMapper.readValue(messageJson, FacebookKafkaEvent.class);
+        } catch (Exception e) {
+            log.error("❌ [Kafka Consumer] Failed to deserialize JSON: {}", e.getMessage(), e);
+            return;
+        }
+
+        if (event == null || event.getMessaging() == null) {
+            log.warn("⚠️ [Kafka Consumer] Received empty or invalid event.");
+            return;
+        }
+
+        // Set tenant context for thread-safety and partition routing
+        TenantContext.setTenantId(event.getTenantId());
+        log.info("📥 [Kafka Consumer] Processing event. Tenant: {}, User: {}", event.getTenantId(), event.getSenderId());
+
+        try {
+            // Get connection with tenantId and pageId
+            Optional<FacebookConnection> connectionOpt = connectionRepository.findByTenantIdAndPageId(
+                    event.getTenantId(), event.getPageId()
+            );
+
+            if (connectionOpt.isEmpty() || !connectionOpt.get().isEnabled()) {
+                log.warn("⚠️ Connection disabled or not found for Tenant: {}, Page: {}", event.getTenantId(), event.getPageId());
+                return;
+            }
+
+            FacebookConnection connection = connectionOpt.get();
+            WebhookRequest.Messaging messaging = event.getMessaging();
+            FacebookMessageType type = classifyMessage(messaging);
+
+            switch (type) {
+                case TEXT:
+                    handleTextMessage(connection, event.getSenderId(), messaging.getMessage());
+                    break;
+                case IMAGE:
+                case VIDEO:
+                case AUDIO:
+                case FILE:
+                case ATTACHMENT:
+                    handleAttachmentMessage(connection, event.getSenderId(), messaging);
+                    break;
+                case QUICK_REPLY:
+                    handleQuickReply(connection, event.getSenderId(), messaging);
+                    break;
+                case POSTBACK:
+                    handlePostback(connection, event.getSenderId(), messaging);
+                    break;
+                case REACTION:
+                    handleReaction(connection, event.getSenderId(), messaging);
+                    break;
+                case READ:
+                    handleRead(messaging);
+                    break;
+                case DELIVERY:
+                    handleDelivery(messaging);
+                    break;
+                default:
+                    log.info("⚠️ Unknown message type, skipping.");
+            }
+        } catch (Exception e) {
+            log.error("❌ [Kafka Consumer] Processing exception: {}", e.getMessage(), e);
+        } finally {
+            // Guarantee TenantContext clean-up to prevent context leaking
+            TenantContext.clear();
+        }
+    }
+
+    // ========== MESSAGE HANDLERS ==========
+
+    private void handleTextMessage(FacebookConnection connection, String senderId, WebhookRequest.Message message) {
+        String mid = message.getMid();
+        String text = message.getText();
+        if (text == null || text.isEmpty() || mid == null) return;
+
+        if (!tryDedup(mid)) {
+            log.info("⚠️ Skipping duplicate message mid=" + mid);
+            return;
+        }
+
+        cleanupOldMessageIds();
+        log.info("✉️ Processing TEXT: " + text);
+
+        UUID connectionId = connection.getId();
+        Channel channel = Channel.FACEBOOK;
+
+        Optional<Conversation> existingConvOpt = conversationService.findByConnectionIdAndExternalUserId(connectionId, senderId);
+        Conversation conversation = existingConvOpt.orElseGet(() -> conversationService.findOrCreate(connectionId, senderId, channel));
+        Long conversationId = conversation.getId();
+
+        try {
+            messageService.saveMessage(
+                    conversationId,
+                    "user",
+                    text,
+                    FacebookMessageType.TEXT.name(),
+                    Map.of("mid", mid)
+            );
+            log.info("✅ Saved user text message to DB. Conversation ID: " + conversationId);
+        } catch (Exception e) {
+            log.error("❌ Failed to save user text message to DB: " + e.getMessage());
+        }
+
+        try {
+            customerDataService.processAndAccumulate(connection.getPageId(), senderId, text);
+        } catch (Exception e) {
+            log.error("❌ Customer data sync failed: {}", e.getMessage());
+        }
+
+        routeToPennyBot(connection, senderId, text, "text", conversationId);
+    }
+
+    private void handleAttachmentMessage(FacebookConnection connection, String senderId, WebhookRequest.Messaging messaging) {
+        String mid = messaging.getMessage().getMid();
+        if (mid == null || !tryDedup(mid)) {
+            log.info("⚠️ Skipping duplicate attachment mid=" + mid);
+            return;
+        }
+
+        UUID connectionId = connection.getId();
+        Channel channel = Channel.FACEBOOK;
+        Conversation conversation = conversationService.findOrCreate(connectionId, senderId, channel);
+        Long conversationId = conversation.getId();
+
+        messaging.getMessage().getAttachments().forEach(attachment -> {
+            String type = attachment.getType();
+            String url = attachment.getPayload() != null ? attachment.getPayload().getUrl() : null;
+
+            if (url != null) {
+                log.info("🖼 ATTACHMENT: type=" + type + ", url=" + url);
+
+                try {
+                    messageService.saveMessage(
+                            conversationId,
+                            "user",
+                            "[" + type.toUpperCase() + "]",
+                            FacebookMessageType.ATTACHMENT.name(),
+                            Map.of("mid", mid, "url", url, "type", type)
+                    );
+                    log.info("✅ Saved attachment message to DB.");
+                } catch (Exception e) {
+                    log.error("❌ Failed to save attachment to DB: " + e.getMessage());
+                }
+
+                String attachmentText = "[" + type.toUpperCase() + "]";
+                routeToPennyBot(connection, senderId, attachmentText + " (" + url + ")", type, conversationId);
+            }
+        });
+    }
+
+    private void handleQuickReply(FacebookConnection connection, String senderId, WebhookRequest.Messaging messaging) {
+        String payload = messaging.getMessage().getQuickReply().getPayload();
+        String text = messaging.getMessage().getText();
+        String messageContent = text != null && !text.isEmpty() ? text : payload;
+        String mid = messaging.getMessage().getMid();
+
+        UUID connectionId = connection.getId();
+        Channel channel = Channel.FACEBOOK;
+        Conversation conversation = conversationService.findOrCreate(connectionId, senderId, channel);
+        Long conversationId = conversation.getId();
+
+        try {
+            messageService.saveMessage(
+                    conversationId,
+                    "user",
+                    messageContent,
+                    FacebookMessageType.QUICK_REPLY.name(),
+                    Map.of("payload", payload, "mid", mid)
+            );
+            log.info("✅ Saved QuickReply to DB.");
+        } catch (Exception e) {
+            log.error("❌ Failed to save QuickReply to DB: " + e.getMessage());
+        }
+
+        try {
+            customerDataService.processAndAccumulate(connection.getPageId(), senderId, messageContent);
+        } catch (Exception e) {
+            log.error("❌ Customer data sync failed: {}", e.getMessage());
+        }
+
+        routeToPennyBot(connection, senderId, "[QuickReply] " + payload, "quick_reply", conversationId);
+    }
+
+    private void handlePostback(FacebookConnection connection, String senderId, WebhookRequest.Messaging messaging) {
+        String payload = messaging.getPostback().getPayload();
+        String title = messaging.getPostback().getTitle();
+        String text = title != null ? title : "[Postback]";
+
+        UUID connectionId = connection.getId();
+        Channel channel = Channel.FACEBOOK;
+        Conversation conversation = conversationService.findOrCreate(connectionId, senderId, channel);
+        Long conversationId = conversation.getId();
+
+        try {
+            messageService.saveMessage(
+                    conversationId,
+                    "user",
+                    text,
+                    FacebookMessageType.POSTBACK.name(),
+                    Map.of("payload", payload)
+            );
+            log.info("✅ Saved Postback to DB.");
+        } catch (Exception e) {
+            log.error("❌ Failed to save Postback to DB: " + e.getMessage());
+        }
+
+        try {
+            customerDataService.processAndAccumulate(connection.getPageId(), senderId, text);
+        } catch (Exception e) {
+            log.error("❌ Customer data sync failed: {}", e.getMessage());
+        }
+
+        routeToPennyBot(connection, senderId, "[Postback] " + payload, "postback", conversationId);
+    }
+
+    private void handleReaction(FacebookConnection connection, String senderId, WebhookRequest.Messaging messaging) {
+        if (messaging.getReaction() == null || messaging.getReaction().getEmoji() == null) return;
+        String action = messaging.getReaction().getAction();
+        String emoji = messaging.getReaction().getEmoji();
+        String mid = messaging.getReaction().getMid();
+
+        if (mid == null || !tryDedup(mid)) return;
+        log.info("❤️ REACTION: action=" + action + ", emoji=" + emoji);
+    }
+
+    private void handleRead(WebhookRequest.Messaging messaging) {
+        log.info("👀 READ: watermark=" + messaging.getRead().getWatermark());
+    }
+
+    private void handleDelivery(WebhookRequest.Messaging messaging) {
+        log.info("📬 DELIVERY: mids=" + messaging.getDelivery().getMids());
+    }
+
+    /**
+     * Route event to PennyBot if not taken over by human Agent
+     */
+    private void routeToPennyBot(FacebookConnection connection, String senderId, String messageText, String messageType, Long conversationId) {
+        log.info("🤖 [Penny] Starting message processing...");
+        Conversation conversation = null;
+
+        try {
+            // Save to Redis for Takeover history
+            TakeoverMessage takeoverMessage = new TakeoverMessage(
+                    "user_" + System.currentTimeMillis() + "_" + (int) (Math.random() * 10000),
+                    String.valueOf(conversationId),
+                    "user",
+                    messageText,
+                    System.currentTimeMillis()
+            );
+            takeoverService.saveMessage(takeoverMessage);
+
+            // Publish via WebSocket to UI
+            try {
+                takeoverService.sendToConversation(takeoverMessage);
+            } catch (Exception e) {
+                log.error("❌ WebSocket push error for user message: {}", e.getMessage());
+            }
+
+            // Check if conversation is taken over by Agent
+            UUID connectionId = connection.getId();
+            conversation = conversationService.findOrCreate(connectionId, senderId, Channel.FACEBOOK);
+            boolean isTakenOver = conversation.getIsTakenOverByAgent();
+
+            if (isTakenOver) {
+                log.info("🛑 Conversation {} is taken over by Agent. Skipping Bot reply.", conversationId);
+                return;
+            }
+
+            // Route to Penny Bot
+            if (connection.getBotId() == null || connection.getBotId().trim().isEmpty()) {
+                log.warn("⚠️ Connection has no botId. Skipping bot processing.");
+                return;
+            }
+
+            UUID botId = UUID.fromString(connection.getBotId());
+            String botReply = pennyBotManager.processMessage(botId, messageText, connection.getOwnerId(), false);
+
+            if (botReply != null && !botReply.trim().isEmpty()) {
+                log.info("✅ [Penny] Bot handled message. Sending response...");
+
+                // Save Bot Message to DB
+                try {
+                    messageService.saveMessage(
+                            conversation.getId(),
+                            "bot",
+                            botReply,
+                            FacebookMessageType.TEXT.name(),
+                            null
+                    );
+                } catch (Exception e) {
+                    log.error("❌ Failed to save bot message to DB: {}", e.getMessage());
+                }
+
+                // Save Bot Message to Redis and Push via WebSocket
+                try {
+                    TakeoverMessage botMessage = new TakeoverMessage(
+                            "bot_" + System.currentTimeMillis() + "_" + (int) (Math.random() * 10000),
+                            String.valueOf(conversation.getId()),
+                            "bot",
+                            botReply,
+                            System.currentTimeMillis()
+                    );
+                    takeoverService.saveMessage(botMessage);
+                    takeoverService.sendToConversation(botMessage);
+                } catch (Exception e) {
+                    log.error("❌ WebSocket push error for bot reply: {}", e.getMessage());
+                }
+
+                // Send message back to Facebook User
+                facebookMessengerService.sendMessageToUser(connection.getPageId(), senderId, botReply, connection.getPageAccessToken());
+                log.info("📤 Response sent to Facebook user: {}", botReply);
+            }
+        } catch (Exception e) {
+            log.error("❌ Penny processing error: {}", e.getMessage(), e);
+        }
+    }
+
+    private FacebookMessageType classifyMessage(WebhookRequest.Messaging messaging) {
+        if (messaging.getMessage() != null) {
+            if (Boolean.TRUE.equals(messaging.getMessage().getIsEcho())) return FacebookMessageType.ECHO;
+            if (messaging.getMessage().getQuickReply() != null) return FacebookMessageType.QUICK_REPLY;
+            if (messaging.getMessage().getText() != null) return FacebookMessageType.TEXT;
+            if (messaging.getMessage().getAttachments() != null && !messaging.getMessage().getAttachments().isEmpty()) {
+                String type = messaging.getMessage().getAttachments().get(0).getType();
+                switch (type) {
+                    case "image": return FacebookMessageType.IMAGE;
+                    case "video": return FacebookMessageType.VIDEO;
+                    case "audio": return FacebookMessageType.AUDIO;
+                    case "file": return FacebookMessageType.FILE;
+                    default: return FacebookMessageType.ATTACHMENT;
+                }
+            }
+        } else if (messaging.getPostback() != null) return FacebookMessageType.POSTBACK;
+        else if (messaging.getReaction() != null) return FacebookMessageType.REACTION;
+        else if (messaging.getRead() != null) return FacebookMessageType.READ;
+        else if (messaging.getDelivery() != null) return FacebookMessageType.DELIVERY;
+
+        return FacebookMessageType.UNKNOWN;
+    }
+
+    private void cleanupOldMessageIds() {
+        long currentTime = System.currentTimeMillis();
+        if (currentTime - lastCleanupTime > CLEANUP_INTERVAL_MS) {
+            if (processedMessageIds.size() > 10000) {
+                processedMessageIds.clear();
+                log.info("🧹 Cleared processed message IDs cache.");
+            }
+            lastCleanupTime = currentTime;
+        }
+    }
+}

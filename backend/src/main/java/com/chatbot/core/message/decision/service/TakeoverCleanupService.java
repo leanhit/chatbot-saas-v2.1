@@ -28,6 +28,7 @@ public class TakeoverCleanupService {
     private final ConversationRepository conversationRepository;
     private final ConversationService conversationService;
     private final MessageService messageService;
+    private final org.springframework.data.redis.core.RedisTemplate<String, String> redisTemplate;
     
     private final ExecutorService cleanupExecutor = Executors.newFixedThreadPool(5);
 
@@ -41,6 +42,13 @@ public class TakeoverCleanupService {
      */
     @Scheduled(fixedRate = SCHEDULE_INTERVAL_MS)
     public void autoReleaseIdleConversations() {
+        String lockKey = "lock:scheduler:autoReleaseIdleConversations";
+        Boolean acquired = redisTemplate.opsForValue().setIfAbsent(lockKey, "locked", java.time.Duration.ofSeconds(25));
+        if (!Boolean.TRUE.equals(acquired)) {
+            log.debug("⏰ [TakeoverCleanup] Lock already held by another instance. Skipping check.");
+            return;
+        }
+
         log.info("⏰ [TakeoverCleanup] Starting idle conversation cleanup check...");
         
         try {
@@ -79,6 +87,8 @@ public class TakeoverCleanupService {
             
         } catch (Exception e) {
             log.error("❌ [TakeoverCleanup] Critical error in cleanup process", e);
+        } finally {
+            redisTemplate.delete(lockKey);
         }
     }
     

@@ -101,6 +101,11 @@ public class MessageService {
                 .build();
         Message savedMessage = messageRepo.save(m);
 
+        // Increment message usage count in Redis
+        if (savedMessage.getTenantId() != null) {
+            messageUsageService.incrementMessageCount(savedMessage.getTenantId());
+        }
+
         // 2. Cập nhật lastMessageId và updatedAt cho Conversation
         conversationRepo.findById(conversationId)
                 .ifPresent(c -> {
@@ -148,6 +153,10 @@ public class MessageService {
             throw new RuntimeException("Message not found with id: " + messageId);
         }
         messageRepo.deleteById(messageId);
+        Long tenantId = TenantContext.getTenantId();
+        if (tenantId != null) {
+            messageUsageService.evictMessageCountCache(tenantId);
+        }
     }
 
     /**
@@ -162,6 +171,12 @@ public class MessageService {
             if (messageRepo.existsById(id)) {
                 messageRepo.deleteById(id);
                 count++;
+            }
+        }
+        if (count > 0) {
+            Long tenantId = TenantContext.getTenantId();
+            if (tenantId != null) {
+                messageUsageService.evictMessageCountCache(tenantId);
             }
         }
         return count;
@@ -181,6 +196,9 @@ public class MessageService {
         List<Message> messages = messageRepo.findByConversationIdAndTenantId(conversationId, tenantId);
         int count = messages.size();
         messageRepo.deleteAll(messages);
+        if (count > 0) {
+            messageUsageService.evictMessageCountCache(tenantId);
+        }
         return count;
     }
 

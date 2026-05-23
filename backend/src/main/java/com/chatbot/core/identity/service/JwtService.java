@@ -126,6 +126,11 @@ public class JwtService {
             }
             
             String emailFromToken = extractEmail(token);
+            if (tokenBlacklistService != null && tokenBlacklistService.areUserTokensBlacklisted(emailFromToken)) {
+                log.warn("User tokens are blacklisted for email: {}", emailFromToken);
+                return false;
+            }
+            
             return (emailFromToken.equals(userDetails.getUsername()) && !isTokenExpired(token));
         } catch (Exception e) {
             log.error("Token validation failed: " + e.getMessage());

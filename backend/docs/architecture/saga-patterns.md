@@ -65,15 +65,7 @@ public class UserRegistrationSaga {
                     .retryPolicy(RetryPolicy.exponential(3, Duration.ofSeconds(1)))
                     .build(),
                 
-                // Step 3: Create default wallet in Wallet Hub
-                SagaStep.builder()
-                    .stepName("create-default-wallet")
-                    .service("wallet-service")
-                    .action("CREATE_WALLET")
-                    .compensation("DELETE_WALLET")
-                    .timeout(Duration.ofSeconds(30))
-                    .retryPolicy(RetryPolicy.exponential(3, Duration.ofSeconds(1)))
-                    .build(),
+                // Step 3: Deprecated/Removed (User wallet is no longer managed in Wallet Hub)
                 
                 // Step 4: Send welcome notification
                 SagaStep.builder()
@@ -109,11 +101,11 @@ public class AppSubscriptionSaga {
                     .timeout(Duration.ofSeconds(10))
                     .build(),
                 
-                // Step 2: Check billing entitlement
+                // Step 2: Validate subscription package limit (SimplePayment Hub)
                 SagaStep.builder()
-                    .stepName("check-billing-entitlement")
-                    .service("billing-service")
-                    .action("CHECK_ENTITLEMENT")
+                    .stepName("check-package-limits")
+                    .service("simple-payment-service")
+                    .action("VALIDATE_PACKAGE_LIMITS")
                     .timeout(Duration.ofSeconds(10))
                     .build(),
                 
@@ -149,65 +141,10 @@ public class AppSubscriptionSaga {
 }
 ```
 
-### Wallet Transaction Saga
-```java
-@Component
-public class WalletTransactionSaga {
-    
-    @SagaDefinition("wallet-transaction")
-    public SagaDefinition createWalletTransactionSaga() {
-        return SagaDefinition.builder()
-            .sagaType("WALLET_TRANSACTION")
-            .description("Process wallet transaction with double-entry")
-            .steps(Arrays.asList(
-                // Step 1: Validate wallet
-                SagaStep.builder()
-                    .stepName("validate-wallet")
-                    .service("wallet-service")
-                    .action("VALIDATE_WALLET")
-                    .timeout(Duration.ofSeconds(10))
-                    .build(),
-                
-                // Step 2: Reserve funds
-                SagaStep.builder()
-                    .stepName("reserve-funds")
-                    .service("wallet-service")
-                    .action("RESERVE_FUNDS")
-                    .compensation("RELEASE_FUNDS")
-                    .timeout(Duration.ofSeconds(30))
-                    .build(),
-                
-                // Step 3: Process payment
-                SagaStep.builder()
-                    .stepName("process-payment")
-                    .service("payment-service")
-                    .action("PROCESS_PAYMENT")
-                    .compensation("REFUND_PAYMENT")
-                    .timeout(Duration.ofSeconds(60))
-                    .build(),
-                
-                // Step 4: Create ledger entries
-                SagaStep.builder()
-                    .stepName("create-ledger-entries")
-                    .service("wallet-service")
-                    .action("CREATE_LEDGER_ENTRIES")
-                    .compensation("REVERSE_LEDGER_ENTRIES")
-                    .timeout(Duration.ofSeconds(30))
-                    .build(),
-                
-                // Step 5: Update wallet balance
-                SagaStep.builder()
-                    .stepName("update-wallet-balance")
-                    .service("wallet-service")
-                    .action("UPDATE_WALLET_BALANCE")
-                    .compensation("RESTORE_WALLET_BALANCE")
-                    .timeout(Duration.ofSeconds(30))
-                    .build()
-            ))
-            .build();
-    }
-}
-```
+### Wallet Transaction Saga (Deprecated)
+
+> [!NOTE]
+> Nghiệp vụ Wallet Transaction Saga đã bị **bãi bỏ**. Việc nạp tiền (Deposit) và nâng cấp gói cước (Package Upgrade) hiện nay được thực hiện đồng bộ và gói gọn trong một Transaction cơ sở dữ liệu duy nhất (`@Transactional`) thuộc **SimplePayment Hub**. Do tất cả các bảng dữ liệu thanh toán và gói cước đều nằm chung trong database `traloitudong_db`, hệ thống không còn cần điều phối phân tán phức tạp bằng Saga.
 
 ## Saga Manager Implementation
 

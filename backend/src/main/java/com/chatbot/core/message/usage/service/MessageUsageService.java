@@ -5,6 +5,7 @@ import com.chatbot.core.tenant.service.TenantPackageService;
 import com.chatbot.core.message.store.repository.MessageRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,6 +18,39 @@ public class MessageUsageService {
 
     private final MessageRepository messageRepository;
     private final TenantPackageService tenantPackageService;
+    private final RedisTemplate<String, String> redisTemplate;
+
+    private String getMessageCountKey(Long tenantId) {
+        java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern("yyyy-MM");
+        String period = java.time.LocalDate.now().format(formatter);
+        return "tenant:" + tenantId + ":message_count:" + period;
+    }
+
+    /**
+     * Increment message count for tenant (Redis only)
+     */
+    public void incrementMessageCount(Long tenantId) {
+        try {
+            String key = getMessageCountKey(tenantId);
+            redisTemplate.opsForValue().increment(key);
+            log.debug("📈 [MessageUsageService] Incremented message count key: {}", key);
+        } catch (Exception e) {
+            log.error("Failed to increment message count in Redis: {}", e.getMessage());
+        }
+    }
+
+    /**
+     * Invalidate message count cache (Redis only)
+     */
+    public void evictMessageCountCache(Long tenantId) {
+        try {
+            String key = getMessageCountKey(tenantId);
+            redisTemplate.delete(key);
+            log.debug("🧹 [MessageUsageService] Evicted message count key: {}", key);
+        } catch (Exception e) {
+            log.error("Failed to evict message count in Redis: {}", e.getMessage());
+        }
+    }
 
     /**
      * Get current message usage for tenant in current billing period
@@ -39,7 +73,23 @@ public class MessageUsageService {
         // Get start of current billing period (simplified: start of current month)
         LocalDateTime periodStart = LocalDateTime.now().withDayOfMonth(1).withHour(0).withMinute(0).withSecond(0);
         
-        Long currentCount = messageRepository.countByConversationTenantIdAndCreatedAtAfter(tenantId, periodStart);
+        String key = getMessageCountKey(tenantId);
+        String cachedCount = redisTemplate.opsForValue().get(key);
+        Long currentCount;
+
+        if (cachedCount != null) {
+            try {
+                currentCount = Long.parseLong(cachedCount);
+            } catch (NumberFormatException e) {
+                log.warn("Invalid message count in Redis cache for tenant {}: {}", tenantId, cachedCount);
+                currentCount = messageRepository.countByConversationTenantIdAndCreatedAtAfter(tenantId, periodStart);
+                redisTemplate.opsForValue().set(key, String.valueOf(currentCount), java.time.Duration.ofDays(32));
+            }
+        } else {
+            currentCount = messageRepository.countByConversationTenantIdAndCreatedAtAfter(tenantId, periodStart);
+            redisTemplate.opsForValue().set(key, String.valueOf(currentCount), java.time.Duration.ofDays(32));
+        }
+
         boolean isUnlimited = currentPackage.getMessageLimit() >= Integer.MAX_VALUE;
         
         int remaining;

@@ -58,7 +58,13 @@ class TakeoverWebSocketService {
       // Remove any potential fragments or invalid characters
       const cleanUrl = wsUrl.split('#')[0].trim()
       
-      this.socket = new WebSocket(cleanUrl)
+      // Append JWT token and active tenant key for handshake authentication
+      const token = localStorage.getItem('accessToken') || ''
+      const tenantKey = localStorage.getItem('active_tenant_id') || ''
+      const separator = cleanUrl.includes('?') ? '&' : '?'
+      const finalUrl = `${cleanUrl}${separator}token=${encodeURIComponent(token)}&tenantKey=${encodeURIComponent(tenantKey)}`
+      
+      this.socket = new WebSocket(finalUrl)
       
       this.socket.onopen = () => {
         this.connectionStatus.value = 'connected'

@@ -72,17 +72,11 @@ The chatbot SaaS platform follows a Hub & Spoke architecture pattern to achieve:
 - **Key Features**: App management, guards, subscriptions
 - **gRPC Port**: 50054
 
-### Billing Hub
-- **Purpose**: Billing and entitlement management
-- **Database**: `chatbot_billing_db`
-- **Key Features**: READ-ONLY billing data, entitlements
-- **gRPC Port**: 50055
-
-### Wallet Hub
-- **Purpose**: Financial transactions
-- **Database**: `chatbot_wallet_db`
-- **Key Features**: Wallets, transactions, ledger
-- **gRPC Port**: 50056
+### SimplePayment Hub
+- **Purpose**: Unified package management & VietQR automated banking payments (Replaces Billing & Wallet)
+- **Database**: Shared `traloitudong_db`
+- **Key Features**: VietQR code generation, automated balance deposits, bank transactions polling, subscription packages, package validation, and automated package upgrades.
+- **gRPC Port**: N/A (Exposes REST APIs on `/api/simple-payment/...` and `/api/v1/packages/...`)
 
 ### Config Hub
 - **Purpose**: Runtime configuration

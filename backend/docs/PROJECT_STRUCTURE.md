@@ -11,15 +11,14 @@ chatbot-saas-v2.1/backend/
 ├── 📄 Dockerfile
 │
 ├── 📁 docs/                           # 📚 Documentation
-│   ├── api/                           # API documentation
-│   │   ├── identity-hub.md
-│   │   ├── user-hub.md
-│   │   ├── tenant-hub.md
-│   │   ├── app-hub.md
-│   │   ├── billing-hub.md
-│   │   ├── wallet-hub.md
-│   │   ├── config-hub.md
-│   │   └── message-hub.md
+    ├── api/                           # API documentation
+    │   ├── identity-hub.md
+    │   ├── user-hub.md
+    │   ├── tenant-hub.md
+    │   ├── app-hub.md
+    │   ├── simple-payment-hub.md      # SimplePayment Hub (VietQR, Packages)
+    │   ├── config-hub.md
+    │   └── message-hub.md
 │   ├── architecture/                  # Architecture docs
 │   │   ├── hub-spoke-design.md
 │   │   ├── database-schema.md
@@ -37,8 +36,6 @@ chatbot-saas-v2.1/backend/
 │   │   │   ├── user-hub/
 │   │   │   ├── tenant-hub/
 │   │   │   ├── app-hub/
-│   │   │   ├── billing-hub/
-│   │   │   ├── wallet-hub/
 │   │   │   ├── config-hub/
 │   │   │   └── message-hub/
 │   │   ├── setup-databases.sh         # Create separate databases
@@ -204,76 +201,15 @@ chatbot-saas-v2.1/backend/
 │   │   │       │   └── 📄 GuardType.java
 │   │   │       └── 📁 dto/
 │   │   │
-│   │   ├── 📁 billing/               # 💰 Billing Hub (READ-ONLY)
-│   │   │   ├── 📁 account/
-│   │   │   │   ├── 📁 controller/
-│   │   │   │   ├── 📁 service/
-│   │   │   │   ├── 📁 repository/
-│   │   │   │   ├── 📁 model/
-│   │   │   │   │   ├── 📄 BillingAccount.java
-│   │   │   │   │   └── 📄 BillingType.java
-│   │   │   │   └── 📁 dto/
-│   │   │   ├── 📁 subscription/
-│   │   │   │   ├── 📁 controller/
-│   │   │   │   ├── 📁 service/
-│   │   │   │   ├── 📁 repository/
-│   │   │   │   ├── 📁 model/
-│   │   │   │   │   └── 📄 BillingSubscription.java
-│   │   │   │   └── 📁 dto/
-│   │   │   └── 📁 entitlement/
-│   │   │       ├── 📁 controller/
-│   │   │       ├── 📁 service/
-│   │   │       │   ├── 📄 EntitlementService.java
-│   │   │       │   └── 📄 EntitlementValidationService.java
-│   │   │       ├── 📁 repository/
-│   │   │       ├── 📁 model/
-│   │   │       │   ├── 📄 Entitlement.java
-│   │   │       │   ├── 📄 Feature.java
-│   │   │       │   └── 📄 UsageLimit.java
-│   │   │       └── 📁 dto/
-│   │   │
-│   │   ├── 📁 wallet/                # 💳 Wallet Hub
-│   │   │   ├── 📁 wallet/
-│   │   │   │   ├── 📁 controller/
-│   │   │   │   ├── 📁 service/
-│   │   │   │   │   ├── 📄 WalletService.java
-│   │   │   │   │   └── 📄 BalanceService.java
-│   │   │   │   ├── 📁 repository/
-│   │   │   │   │   └── 📄 WalletRepository.java
-│   │   │   │   ├── 📁 model/
-│   │   │   │   │   ├── 📄 Wallet.java
-│   │   │   │   │   ├── 📄 WalletStatus.java
-│   │   │   │   │   └── 📄 Currency.java
-│   │   │   │   └── 📁 dto/
-│   │   │   │       ├── 📄 CreateWalletRequest.java
-│   │   │   │       ├── 📄 WalletResponse.java
-│   │   │   │       └── 📄 BalanceDto.java
-│   │   │   ├── 📁 transaction/
-│   │   │   │   ├── 📁 controller/
-│   │   │   │   ├── 📁 service/
-│   │   │   │   │   ├── 📄 TransactionService.java
-│   │   │   │   │   └── 📄 TopupPurchaseService.java
-│   │   │   │   ├── 📁 repository/
-│   │   │   │   │   └── 📄 TransactionRepository.java
-│   │   │   │   ├── 📁 model/
-│   │   │   │   │   ├── 📄 Transaction.java
-│   │   │   │   │   ├── 📄 TransactionType.java
-│   │   │   │   │   └── 📄 TransactionStatus.java
-│   │   │   │   └── 📁 dto/
-│   │   │   │       ├── 📄 TopupRequest.java
-│   │   │   │       ├── 📄 PurchaseRequest.java
-│   │   │   │       └── 📄 TransactionResponse.java
-│   │   │   └── 📁 ledger/
-│   │   │       ├── 📁 service/
-│   │   │       │   ├── 📄 LedgerService.java
-│   │   │       │   └── 📄 DoubleEntryService.java
-│   │   │       ├── 📁 repository/
-│   │   │       │   └── 📄 LedgerRepository.java
-│   │   │       ├── 📁 model/
-│   │   │       │   ├── 📄 Ledger.java
-│   │   │       │   ├── 📄 LedgerEntry.java
-│   │   │       │   └── 📄 AccountType.java
-│   │   │       └── 📁 dto/
+│   │   ├── 📁 simplepayment/         # 💵 SimplePayment Hub (Replaced Billing & Wallet)
+│   │   │   ├── 📁 config/            # Cache, Database Seeder, Config Loaders
+│   │   │   ├── 📁 controller/        # Package, PackageUpgrade, SimplePayment controllers
+│   │   │   ├── 📁 dto/               # DepositRequest, PaymentStatusResponse, etc.
+│   │   │   ├── 📁 listener/          # Event listeners (e.g. PaymentEventListener)
+│   │   │   ├── 📁 model/             # Package, SimplePayment, PaymentStatus, PackageUpgradeAudit
+│   │   │   ├── 📁 repository/        # PackageRepository, SimplePaymentRepository
+│   │   │   ├── 📁 scheduler/         # Automated polling and payment checker
+│   │   │   └── 📁 service/           # SimplePaymentService, PackageService, BankApiService
 │   │   │
 │   │   ├── 📁 config/                # ⚙️ Config Hub
 │   │   │   ├── 📁 runtime/
@@ -470,18 +406,17 @@ chatbot-saas-v2.1/backend/
 │   ├── 📁 application-identity.yml  # Identity hub config
 │   ├── 📁 application-user.yml     # User hub config
 │   ├── 📁 application-tenant.yml   # Tenant hub config
-│   ├── 📁 application-app.yml      # App hub config
-│   ├── 📁 application-billing.yml  # Billing hub config
-│   ├── 📁 application-wallet.yml   # Wallet hub config
-│   ├── 📁 application-config.yml   # Config hub config
-│   ├── 📁 application-message.yml  # Message hub config
-│   ├── 📁 proto/                  # gRPC proto files
+    ├── 📁 application-app.yml      # App hub config
+    ├── 📁 application-config.yml   # Config hub config
+    ├── 📁 application-message.yml  # Message hub config
+    ├── 📄 packages-config.yml      # Subscription package config (SimplePayment)
+    ├── 📁 proto/                  # gRPC proto files
 │   │   ├── 📄 identity-service.proto
 │   │   ├── 📄 user-service.proto
 │   │   ├── 📄 tenant-service.proto
 │   │   ├── 📄 app-service.proto
-│   │   ├── 📄 billing-service.proto
-│   │   ├── 📄 wallet-service.proto
+        ├── 📄 billing-service.proto   # (Legacy/Disabled)
+        ├── 📄 wallet-service.proto    # (Legacy/Disabled)
 │   │   ├── 📄 config-service.proto
 │   │   └── 📄 message-service.proto
 │   └── 📁 static/                  # Static resources
@@ -491,10 +426,9 @@ chatbot-saas-v2.1/backend/
 │   │   ├── 📁 identity/
 │   │   ├── 📁 user/
 │   │   ├── 📁 tenant/
-│   │   ├── 📁 app/
-│   │   ├── 📁 billing/
-│   │   ├── 📁 wallet/
-│   │   ├── 📁 config/
+        ├── 📁 app/
+        ├── 📁 simplepayment/          # SimplePayment tests
+        ├── 📁 config/
 │   │   └── 📁 message/
 │   ├── 📁 spokes/                 # Spoke tests
 │   │   ├── 📁 facebook/
@@ -525,8 +459,7 @@ chatbot-saas-v2.1/backend/
 - **User Hub**: User profiles, preferences, activities, analytics
 - **Tenant Hub**: Workspace, membership management
 - **App Hub**: Enable/Disable apps, Guard functionality
-- **Billing Hub**: Entitlement (READ-ONLY)
-- **Wallet Hub**: Ledger TOPUP/PURCHASE operations
+- **SimplePayment Hub**: Replaces Billing & Wallet. Manages packages, limits, and VietQR transfers.
 - **Config Hub**: Runtime configuration management
 - **Message Hub**: Single Decision Point for routing
 
@@ -553,8 +486,7 @@ com.chatbot.core.identity.*
 com.chatbot.core.user.*
 com.chatbot.core.tenant.*
 com.chatbot.core.app.*
-com.chatbot.core.billing.*
-com.chatbot.core.wallet.*
+com.chatbot.core.simplepayment.*
 com.chatbot.core.config.*
 com.chatbot.core.message.*
 
@@ -600,15 +532,10 @@ chatbot_app_db        # App Hub
 ├── app_subscriptions
 └── app_guards
 
-chatbot_billing_db    # Billing Hub (READ-ONLY)
-├── billing_accounts
-├── billing_subscriptions
-└── entitlements
-
-chatbot_wallet_db     # Wallet Hub
-├── wallets
-├── transactions
-└── ledger
+traloitudong_db       # Shared / SimplePayment tables
+├── packages
+├── package_upgrade_audits
+└── simple_payments
 
 chatbot_config_db     # Config Hub
 ├── runtime_configs
@@ -636,8 +563,6 @@ chatbot-system/
 ├── user-hub/
 ├── tenant-hub/
 ├── app-hub/
-├── billing-hub/
-├── wallet-hub/
 ├── config-hub/
 ├── message-hub/
 ├── facebook-spoke/

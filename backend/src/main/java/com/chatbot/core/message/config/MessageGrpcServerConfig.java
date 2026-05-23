@@ -1,44 +1,52 @@
 package com.chatbot.core.message.config;
 
+import com.chatbot.core.message.grpc.MessageServiceGrpcImpl;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 
 import javax.annotation.PreDestroy;
 import java.io.IOException;
 
 /**
- * Message gRPC Server Configuration - DISABLED
- * Note: Enable when MessageServiceGrpcImpl properly implements gRPC service interface
+ * Message gRPC Server Configuration
+ * Controlled via conditional property message.grpc.server.enabled
  */
-//@Configuration
-//@Slf4j
+@Configuration
+@Slf4j
+@ConditionalOnProperty(name = "message.grpc.server.enabled", havingValue = "true", matchIfMissing = false)
 public class MessageGrpcServerConfig {
 
     @Value("${message.grpc.server.port:50058}")
     private int grpcPort;
 
+    private final MessageServiceGrpcImpl messageServiceGrpcImpl;
     private Server grpcServer;
 
-    //@Bean
+    public MessageGrpcServerConfig(MessageServiceGrpcImpl messageServiceGrpcImpl) {
+        this.messageServiceGrpcImpl = messageServiceGrpcImpl;
+    }
+
+    @Bean
     public Server messageGrpcServer() throws IOException {
-        // log.info("Starting Message gRPC server on port: {}", grpcPort);
+        log.info("Starting Message gRPC server on port: {}", grpcPort);
         
-        // Service will be added when MessageServiceGrpcImpl properly implements BindableService
         grpcServer = ServerBuilder.forPort(grpcPort)
+                .addService(messageServiceGrpcImpl)
                 .maxInboundMessageSize(10 * 1024 * 1024) // 10MB
                 .maxInboundMetadataSize(10 * 1024 * 1024) // 10MB
                 .build()
                 .start();
         
-        // log.info("Message gRPC server started successfully on port: {}", grpcPort);
+        log.info("Message gRPC server started successfully on port: {}", grpcPort);
         
         // Add shutdown hook
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            // log.info("Shutting down Message gRPC server...");
+            log.info("Shutting down Message gRPC server...");
             stopGrpcServer();
         }));
         
@@ -57,7 +65,7 @@ public class MessageGrpcServerConfig {
                 grpcServer.shutdownNow();
                 Thread.currentThread().interrupt();
             }
-            // log.info("Message gRPC server stopped");
+            log.info("Message gRPC server stopped");
         }
     }
 }

@@ -22,6 +22,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.security.access.prepost.PreAuthorize;
 
+import org.springframework.cache.annotation.Cacheable;
+
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -42,6 +44,7 @@ public class AuthService implements UserDetailsService {
     private final RefreshTokenService refreshTokenService;
 
     @Override
+    @Cacheable(value = "userSessions", key = "#email")
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
         User user = authRepository.findByEmail(email)
                 .orElseThrow(() -> new UserNotFoundException(IdentityConstants.USER_NOT_FOUND + ": " + email));

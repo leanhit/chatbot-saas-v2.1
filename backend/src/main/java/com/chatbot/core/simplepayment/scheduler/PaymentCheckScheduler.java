@@ -12,6 +12,7 @@ import org.springframework.stereotype.Component;
 public class PaymentCheckScheduler {
 
     private final SimplePaymentService simplePaymentService;
+    private final org.springframework.data.redis.core.RedisTemplate<String, String> redisTemplate;
 
     /**
      * ENABLED - Payment checking for automatic payment completion
@@ -19,12 +20,21 @@ public class PaymentCheckScheduler {
      */
     @Scheduled(fixedDelay = 30000) // ENABLED - Check every 30 seconds
     public void checkPendingPayments() {
+        String lockKey = "lock:scheduler:checkPendingPayments";
+        Boolean acquired = redisTemplate.opsForValue().setIfAbsent(lockKey, "locked", java.time.Duration.ofSeconds(25));
+        if (!Boolean.TRUE.equals(acquired)) {
+            log.debug("🏦 [PaymentCheckScheduler] Lock already held by another instance. Skipping check.");
+            return;
+        }
+
         log.debug("🏦 Running scheduled payment check...");
         
         try {
             simplePaymentService.checkPendingPayments();
         } catch (Exception e) {
             log.error("❌ Error in scheduled payment check: {}", e.getMessage(), e);
+        } finally {
+            redisTemplate.delete(lockKey);
         }
     }
 

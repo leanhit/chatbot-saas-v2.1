@@ -9,8 +9,7 @@
 - **User Hub**: ✅ Complete with profile subdirectory
 - **Tenant Hub**: ✅ Complete with membership, profile, professional subdirectories
 - **App Hub**: ✅ Complete with registry, subscription, guard subdirectories
-- **Billing Hub**: ✅ Complete with account, subscription, entitlement subdirectories
-- **Wallet Hub**: ✅ Complete with wallet, transaction, ledger subdirectories
+- **SimplePayment Hub**: ✅ Replaced Billing & Wallet, managing packages & VietQR bank transfers
 - **Config Hub**: ✅ Complete with runtime, environment subdirectories
 - **Message Hub**: ✅ Complete with router, decision, processor, store subdirectories
 

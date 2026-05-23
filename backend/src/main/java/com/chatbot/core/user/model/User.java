@@ -12,6 +12,7 @@ import java.time.LocalDateTime;
  */
 @Entity
 @Table(name = "users")
+@EntityListeners(UserEntityListener.class)
 @Getter
 @Setter
 @NoArgsConstructor
