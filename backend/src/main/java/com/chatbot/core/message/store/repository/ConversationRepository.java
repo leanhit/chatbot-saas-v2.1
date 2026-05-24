@@ -145,4 +145,18 @@ public interface ConversationRepository extends JpaRepository<Conversation, Long
            "GROUP BY DATE_TRUNC('month', created_at) " +
            "ORDER BY date", nativeQuery = true)
     List<Object[]> getMonthlyChartStats(@Param("tenantId") Long tenantId, @Param("startDate") java.time.LocalDateTime startDate, @Param("endDate") java.time.LocalDateTime endDate);
+    // Count distinct active users
+    @Query("SELECT COUNT(DISTINCT c.externalUserId) FROM Conversation c WHERE c.tenantId = :tenantId AND c.updatedAt >= :since")
+    Long countDistinctActiveUsers(@Param("tenantId") Long tenantId, @Param("since") java.time.LocalDateTime since);
+
+    // Search conversations by query
+    @Query("SELECT c FROM Conversation c WHERE c.ownerId = :ownerId AND c.tenantId = :tenantId AND " +
+           "(LOWER(c.userName) LIKE LOWER(CONCAT('%', :query, '%')) OR LOWER(c.externalUserId) LIKE LOWER(CONCAT('%', :query, '%'))) " +
+           "ORDER BY c.updatedAt DESC")
+    Page<Conversation> searchByOwnerIdAndTenantId(
+        @Param("ownerId") String ownerId,
+        @Param("tenantId") Long tenantId,
+        @Param("query") String query,
+        Pageable pageable
+    );
 }

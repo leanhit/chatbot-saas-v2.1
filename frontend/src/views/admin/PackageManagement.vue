@@ -107,7 +107,7 @@
                   <Icon icon="mdi:pencil" class="w-4 h-4" />
                 </button>
                 <button
-                  @click="deletePackage(pkg)"
+                  @click="promptDelete(pkg)"
                   class="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300"
                 >
                   <Icon icon="mdi:delete" class="w-4 h-4" />
@@ -336,6 +336,20 @@
       </div>
     </div>
   </div>
+
+    <div v-if="showDeleteConfirmModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 flex items-center justify-center">
+      <div class="relative mx-auto p-6 border w-96 shadow-lg rounded-md bg-white dark:bg-gray-900 text-center">
+        <Icon icon="mdi:alert-circle-outline" class="mx-auto text-red-500 text-5xl mb-4" />
+        <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-2">Xác nhận xóa</h3>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">
+          Bạn có chắc chắn muốn xóa gói dịch vụ <span class="font-semibold text-gray-700 dark:text-gray-300">"{{ packageToDelete?.name }}"</span> không? Hành động này không thể hoàn tác.
+        </p>
+        <div class="flex justify-center space-x-3">
+          <button @click="cancelDelete" class="px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-400 dark:hover:bg-gray-500 text-sm font-medium">Hủy</button>
+          <button @click="confirmDelete" class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 text-sm font-medium">Xác nhận xóa</button>
+        </div>
+      </div>
+    </div>
 </template>
 
 <script>
@@ -356,6 +370,8 @@ export default {
       messageType: 'success',
       showCreateModal: false,
       showEditModal: false,
+      showDeleteConfirmModal: false,
+      packageToDelete: null,
       editingPackage: null,
       formData: {
         packageId: '',
@@ -442,18 +458,28 @@ export default {
       }
     },
 
-    async deletePackage(pkg) {
-      if (!confirm(`Are you sure you want to delete package "${pkg.name}"?`)) {
-        return
-      }
+    promptDelete(pkg) {
+      this.packageToDelete = pkg
+      this.showDeleteConfirmModal = true
+    },
+
+    cancelDelete() {
+      this.packageToDelete = null
+      this.showDeleteConfirmModal = false
+    },
+
+    async confirmDelete() {
+      if (!this.packageToDelete) return
 
       try {
-        await packageApi.deletePackage(pkg.id)
+        await packageApi.deletePackage(this.packageToDelete.id)
         this.setMessage('Package deleted successfully!', 'success')
         await this.loadPackages()
       } catch (error) {
         console.error('Error deleting package:', error)
         this.setMessage('Error deleting package: ' + (error.message || 'Unknown error'), 'error')
+      } finally {
+        this.cancelDelete()
       }
     },
 

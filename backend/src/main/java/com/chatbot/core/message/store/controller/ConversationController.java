@@ -3,6 +3,7 @@ package com.chatbot.core.message.store.controller;
 import com.chatbot.core.message.store.dto.ConversationDTO;
 import com.chatbot.core.message.store.dto.ConversationStatisticsDTO;
 import com.chatbot.core.message.store.dto.ChartDataPointDTO;
+import com.chatbot.core.message.store.dto.ActivityDTO;
 import com.chatbot.core.message.store.model.Conversation;
 import com.chatbot.core.message.store.model.Channel;
 import com.chatbot.core.message.store.mapper.ConversationMapper;
@@ -239,7 +240,6 @@ public class ConversationController {
             @PathVariable Long conversationId,
             @RequestParam Boolean isTakenOver,
             Principal principal) {
-        
         try {
             String ownerId = principal.getName();
             Conversation updatedConversation = conversationService.updateTakenOverStatus(conversationId, isTakenOver, ownerId);
@@ -400,6 +400,31 @@ public class ConversationController {
             return ResponseEntity.ok(chartData);
         } catch (Exception e) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to retrieve chart data", e);
+        }
+    }
+
+    // --------------------------------------------------------------------------
+    // ENDPOINT MỚI: GET RECENT ACTIVITY
+    // --------------------------------------------------------------------------
+    @GetMapping("/activity")
+    @Operation(
+        summary = "Get recent activities for dashboard",
+        description = "Retrieve list of recent activities for current tenant based on recent conversations",
+        responses = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Activities retrieved successfully")
+        }
+    )
+    public ResponseEntity<List<ActivityDTO>> getRecentActivity(
+            @RequestParam(defaultValue = "10") int limit,
+            Principal principal) {
+        try {
+            String ownerId = principal.getName();
+            Long tenantId = com.chatbot.core.tenant.infra.TenantContext.getTenantId();
+            org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(0, limit);
+            List<ActivityDTO> activities = conversationService.getRecentActivity(ownerId, tenantId, pageable);
+            return ResponseEntity.ok(activities);
+        } catch (Exception e) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to retrieve recent activity", e);
         }
     }
 

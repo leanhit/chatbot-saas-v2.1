@@ -847,6 +847,40 @@
       "viewHistory": "View History",
       "downloadQR": "Download QR",
       "copySuccess": "Reference code copied successfully!"
+    },
+    "history": {
+      "title": "Deposit History",
+      "refresh": "Refresh",
+      "loading": "Loading...",
+      "totalAmount": "Total Amount",
+      "completed": "Completed",
+      "pending": "Pending",
+      "failed": "Failed",
+      "expired": "Expired",
+      "filterByStatus": "Filter by status:",
+      "all": "All",
+      "displayCount": "Displaying {count} / {total} transactions",
+      "noTransactions": "No transactions found",
+      "table": {
+        "referenceCode": "Reference Code",
+        "amount": "Amount",
+        "status": "Status",
+        "description": "Description",
+        "createdAt": "Created At",
+        "completedAt": "Completed At",
+        "actions": "Actions"
+      },
+      "actions": {
+        "checkStatus": "Check Status",
+        "simulate": "Simulate Payment",
+        "copyCode": "Copy Code"
+      },
+      "messages": {
+        "statusUpdated": "Status updated successfully!",
+        "checkFailed": "Failed to check status",
+        "simulateSuccess": "Payment simulated! Check status in 10-15 seconds...",
+        "simulateFailed": "Payment simulation failed"
+      }
     }
   },
   "error": {

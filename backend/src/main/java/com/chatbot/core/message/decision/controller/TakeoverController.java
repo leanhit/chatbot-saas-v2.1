@@ -8,6 +8,7 @@ import com.chatbot.core.message.store.service.ConversationService;
 import com.chatbot.core.message.store.model.Conversation;
 import com.chatbot.core.message.store.repository.ConversationRepository;
 import com.chatbot.core.message.router.service.AgentMessageService;
+import com.chatbot.core.tenant.infra.TenantContext;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -168,30 +169,57 @@ public class TakeoverController {
     }
 
     // --------------------------------------------------------------------------
-    // ENDPOINT MỚI: GET TAKEOVER STATUS
+    // ENDPOINT: GET TAKEOVER STATUS — trả trạng thái thực từ DB
     // --------------------------------------------------------------------------
     @GetMapping("/status/{conversationId}")
     public ResponseEntity<?> getTakeoverStatus(@PathVariable Long conversationId) {
         try {
-            // Logic để check takeover status
-            // Cần implement status check logic trong service
-            return ResponseEntity.ok().body("{\"isTakenOver\": false, \"agentId\": null}");
+            return conversationRepo.findById(conversationId)
+                .map(c -> ResponseEntity.ok().body((Object) Map.of(
+                    "conversationId", conversationId,
+                    "isTakenOver", c.getIsTakenOverByAgent() != null && c.getIsTakenOverByAgent(),
+                    "agentId", c.getAgentAssignedId() != null ? c.getAgentAssignedId().toString() : "",
+                    "status", c.getStatus() != null ? c.getStatus() : "open"
+                )))
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Conversation not found"));
+        } catch (ResponseStatusException e) {
+            throw e;
         } catch (Exception e) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Cannot get takeover status", e);
         }
     }
 
     // --------------------------------------------------------------------------
-    // ENDPOINT MỚI: GET ACTIVE TAKEOVERS
+    // ENDPOINT: GET ACTIVE TAKEOVERS — lấy danh sách conversations đang bị agent takeover
     // --------------------------------------------------------------------------
     @GetMapping("/active")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<?> getActiveTakeovers() {
         try {
-            // Logic để get active takeovers
-            // Cần implement active takeovers logic trong service
-            return ResponseEntity.ok().body("[]");
+            Long tenantId = TenantContext.getTenantId();
+            if (tenantId == null) {
+                return ResponseEntity.ok().body(List.of());
+            }
+            List<Conversation> activeTakeovers = conversationRepo
+                .findByIsTakenOverByAgentAndTenantId(true, tenantId);
+
+            List<Map<String, Object>> result = activeTakeovers.stream()
+                .map(c -> {
+                    Map<String, Object> m = new java.util.HashMap<>();
+                    m.put("conversationId", c.getId());
+                    m.put("externalUserId", c.getExternalUserId());
+                    m.put("userName", c.getUserName() != null ? c.getUserName() : "");
+                    m.put("agentAssignedId", c.getAgentAssignedId() != null ? c.getAgentAssignedId() : "");
+                    m.put("status", c.getStatus());
+                    m.put("takenAt", c.getUpdatedAt() != null ? c.getUpdatedAt().toString() : "");
+                    return m;
+                })
+                .collect(Collectors.toList());
+
+            log.info("📋 Found {} active takeovers for tenant {}", result.size(), tenantId);
+            return ResponseEntity.ok(result);
         } catch (Exception e) {
+            log.error("Cannot get active takeovers: {}", e.getMessage());
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Cannot get active takeovers", e);
         }
     }

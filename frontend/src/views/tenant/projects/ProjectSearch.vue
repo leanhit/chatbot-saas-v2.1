@@ -1,5 +1,16 @@
 <template>
   <div class="project-search-container">
+    <!-- Verification Status Banner -->
+    <div class="mb-6 bg-amber-50 dark:bg-amber-900/20 border-l-4 border-amber-500 p-4 rounded shadow-sm flex items-start">
+      <Icon icon="mdi:alert-decagram" class="h-6 w-6 text-amber-600 dark:text-amber-400 mr-3 flex-shrink-0 mt-0.5" />
+      <div>
+        <h4 class="font-semibold text-amber-800 dark:text-amber-200">Database Schema Verification Pending</h4>
+        <p class="text-sm text-amber-700 dark:text-amber-300 mt-1">
+          The "Projects" entity is currently operating on temporary UI-level definitions and is pending final database schema alignment and validation by the backend systems team.
+        </p>
+      </div>
+    </div>
+
     <!-- Search Header -->
     <div class="mb-6">
       <div class="flex items-center justify-between mb-4">

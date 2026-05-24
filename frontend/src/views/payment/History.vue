@@ -4,7 +4,7 @@
       <div class="flex items-center">
         <Icon icon="mdi:history" class="text-2xl text-blue-600 dark:text-blue-400 mr-3" />
         <h1 class="text-2xl font-bold text-gray-800 dark:text-white">
-          Lịch Sử Nạp Tiền
+          {{ $t('payment.history.title') }}
         </h1>
       </div>
       <button
@@ -14,9 +14,9 @@
       >
         <span v-if="paymentStore.loading" class="flex items-center">
           <Icon icon="eos-icons:loading" class="animate-spin mr-2" />
-          Loading...
+          {{ $t('payment.history.loading') }}
         </span>
-        <span v-else>Làm mới</span>
+        <span v-else>{{ $t('payment.history.refresh') }}</span>
       </button>
     </div>
 
@@ -30,7 +30,7 @@
       <div class="bg-white dark:bg-gray-900 rounded-lg shadow p-4">
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-sm text-gray-600 dark:text-gray-400">Tổng số tiền</p>
+            <p class="text-sm text-gray-600 dark:text-gray-400">{{ $t('payment.history.totalAmount') }}</p>
             <p class="text-xl font-bold text-green-600 dark:text-green-400">
               {{ formatCurrency(paymentStore.paymentStats.totalAmount) }}
             </p>
@@ -42,7 +42,7 @@
       <div class="bg-white dark:bg-gray-900 rounded-lg shadow p-4">
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-sm text-gray-600 dark:text-gray-400">Đã hoàn thành</p>
+            <p class="text-sm text-gray-600 dark:text-gray-400">{{ $t('payment.history.completed') }}</p>
             <p class="text-xl font-bold text-green-600 dark:text-green-400">
               {{ paymentStore.paymentStats.completed }}
             </p>
@@ -54,7 +54,7 @@
       <div class="bg-white dark:bg-gray-900 rounded-lg shadow p-4">
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-sm text-gray-600 dark:text-gray-400">Đang chờ</p>
+            <p class="text-sm text-gray-600 dark:text-gray-400">{{ $t('payment.history.pending') }}</p>
             <p class="text-xl font-bold text-yellow-600 dark:text-yellow-400">
               {{ paymentStore.paymentStats.pending }}
             </p>
@@ -66,7 +66,7 @@
       <div class="bg-white dark:bg-gray-900 rounded-lg shadow p-4">
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-sm text-gray-600 dark:text-gray-400">Thất bại</p>
+            <p class="text-sm text-gray-600 dark:text-gray-400">{{ $t('payment.history.failed') }}</p>
             <p class="text-xl font-bold text-red-600 dark:text-red-400">
               {{ paymentStore.paymentStats.failed }}
             </p>
@@ -78,7 +78,7 @@
       <div class="bg-white dark:bg-gray-900 rounded-lg shadow p-4">
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-sm text-gray-600 dark:text-gray-400">Hết hạn</p>
+            <p class="text-sm text-gray-600 dark:text-gray-400">{{ $t('payment.history.expired') }}</p>
             <p class="text-xl font-bold text-gray-600 dark:text-gray-400">
               {{ paymentStore.paymentStats.expired }}
             </p>
@@ -92,21 +92,21 @@
     <div class="bg-white dark:bg-gray-900 rounded-lg shadow p-4 mb-6">
       <div class="flex items-center justify-between">
         <div class="flex items-center space-x-4">
-          <label class="text-sm font-medium text-gray-700 dark:text-gray-300">Lọc theo trạng thái:</label>
+          <label class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ $t('payment.history.filterByStatus') }}</label>
           <select 
             v-model="paymentStore.filterStatus" 
             @change="paymentStore.setFilterStatus(paymentStore.filterStatus)"
             class="border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-white"
           >
-            <option value="">Tất cả</option>
-            <option value="COMPLETED">Đã hoàn thành</option>
-            <option value="PENDING">Đang chờ</option>
-            <option value="FAILED">Thất bại</option>
-            <option value="EXPIRED">Hết hạn</option>
+            <option value="">{{ $t('payment.history.all') }}</option>
+            <option value="COMPLETED">{{ $t('payment.history.completed') }}</option>
+            <option value="PENDING">{{ $t('payment.history.pending') }}</option>
+            <option value="FAILED">{{ $t('payment.history.failed') }}</option>
+            <option value="EXPIRED">{{ $t('payment.history.expired') }}</option>
           </select>
         </div>
         <div class="text-sm text-gray-600 dark:text-gray-400">
-          Hiển thị {{ paymentStore.filteredPayments.length }} / {{ paymentStore.paymentStats.total }} giao dịch
+          {{ $t('payment.history.displayCount', { count: paymentStore.filteredPayments.length, total: paymentStore.paymentStats.total }) }}
         </div>
       </div>
     </div>
@@ -118,25 +118,25 @@
           <thead class="bg-gray-50 dark:bg-gray-800">
             <tr>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                Mã tham chiếu
+                {{ $t('payment.history.table.referenceCode') }}
               </th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                Số tiền
+                {{ $t('payment.history.table.amount') }}
               </th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                Trạng thái
+                {{ $t('payment.history.table.status') }}
               </th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                Mô tả
+                {{ $t('payment.history.table.description') }}
               </th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                Tạo lúc
+                {{ $t('payment.history.table.createdAt') }}
               </th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                Hoàn thành
+                {{ $t('payment.history.table.completedAt') }}
               </th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                Thao tác
+                {{ $t('payment.history.table.actions') }}
               </th>
             </tr>
           </thead>
@@ -144,13 +144,13 @@
             <tr v-if="paymentStore.loading">
               <td colspan="7" class="px-6 py-4 text-center">
                 <Icon icon="eos-icons:loading" class="animate-spin text-2xl text-blue-500" />
-                <span class="ml-2 text-gray-600 dark:text-gray-400">Đang tải...</span>
+                <span class="ml-2 text-gray-600 dark:text-gray-400">{{ $t('payment.history.loading') }}</span>
               </td>
             </tr>
             
             <tr v-else-if="paymentStore.filteredPayments.length === 0">
               <td colspan="7" class="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
-                Không có giao dịch nào
+                {{ $t('payment.history.noTransactions') }}
               </td>
             </tr>
             
@@ -178,7 +178,7 @@
               
               <td class="px-6 py-4">
                 <span class="text-sm text-gray-600 dark:text-gray-400">
-                  {{ payment.description || 'Nạp tiền vào tài khoản' }}
+                  {{ payment.description || $t('payment.deposit.title') }}
                 </span>
               </td>
               
@@ -195,7 +195,7 @@
                   <button
                     @click="checkPaymentStatus(payment.referenceCode)"
                     class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
-                    title="Kiểm tra trạng thái"
+                    :title="$t('payment.history.actions.checkStatus')"
                   >
                     <Icon icon="mdi:refresh" />
                   </button>
@@ -203,14 +203,14 @@
                     v-if="payment.status === 'PENDING'"
                     @click="simulatePayment(payment.referenceCode, payment.amount)"
                     class="text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300"
-                    title="Giả lập thanh toán"
+                    :title="$t('payment.history.actions.simulate')"
                   >
                     <Icon icon="mdi:play-circle" />
                   </button>
                   <button
                     @click="paymentStore.copyReferenceCode(payment.referenceCode)"
                     class="text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-300"
-                    title="Sao chép mã"
+                    :title="$t('payment.history.actions.copyCode')"
                   >
                     <Icon icon="mdi:content-copy" />
                   </button>
@@ -228,6 +228,8 @@
 import { Icon } from '@iconify/vue'
 import { formatDateTime } from '@/utils/dateUtils'
 import { usePaymentStore } from '@/stores/paymentStore'
+import axios from '@/plugins/axios'
+import { useI18n } from 'vue-i18n'
 
 export default {
   name: 'PaymentHistory',
@@ -236,6 +238,7 @@ export default {
   },
   setup() {
     const paymentStore = usePaymentStore()
+    const { t } = useI18n()
 
     // Load payment history on mount
     paymentStore.loadPaymentHistory()
@@ -262,46 +265,39 @@ export default {
 
     const checkPaymentStatus = async (referenceCode) => {
       try {
-        const response = await fetch(`http://localhost:8080/api/public/simple-payment/status/${referenceCode}`)
+        const response = await axios.get(`/api/public/simple-payment/status/${referenceCode}`)
         
-        if (response.ok) {
-          const updatedPayment = await response.json()
-          paymentStore.updatePaymentInHistory(updatedPayment)
-          paymentStore.setMessage('Trạng thái đã cập nhật!', 'success')
+        if (response.data) {
+          paymentStore.updatePaymentInHistory(response.data)
+          paymentStore.setMessage(t('payment.history.messages.statusUpdated'), 'success')
         } else {
           throw new Error('Failed to check status')
         }
       } catch (error) {
-        paymentStore.setMessage('Kiểm tra trạng thái thất bại', 'error')
+        paymentStore.setMessage(t('payment.history.messages.checkFailed'), 'error')
         console.error('Error checking status:', error)
       }
     }
 
     const simulatePayment = async (referenceCode, amount) => {
       try {
-        const response = await fetch('http://localhost:8080/api/public/simple-payment/test/simulate-payment', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            referenceCode,
-            amount
-          })
+        const response = await axios.post('/api/public/simple-payment/test/simulate-payment', {
+          referenceCode,
+          amount
         })
 
-        if (response.ok) {
-          paymentStore.setMessage('Đã giả lập thanh toán! Kiểm tra trạng thái sau 10-15 giây...', 'success')
+        if (response.data || response.status === 200) {
+          paymentStore.setMessage(t('payment.history.messages.simulateSuccess'), 'success')
           
           // Auto check status after 15 seconds
           setTimeout(() => {
             checkPaymentStatus(referenceCode)
           }, 15000)
         } else {
-          throw new Error('Failed to simulate payment')
+          throw new Error('Simulation failed')
         }
       } catch (error) {
-        paymentStore.setMessage('Giả lập thanh toán thất bại', 'error')
+        paymentStore.setMessage(t('payment.history.messages.simulateFailed'), 'error')
         console.error('Error simulating payment:', error)
       }
     }

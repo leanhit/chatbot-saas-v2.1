@@ -52,7 +52,7 @@
             class="absolute -top-3 left-4 bg-green-500 dark:bg-green-600 text-white dark:text-white px-3 py-1 rounded-full text-xs font-semibold"
           >
             <Icon icon="mdi:check-circle" class="w-3 h-3 mr-1" />
-            {{ $t('payment.currentlyUsing', 'Ðang dùng') || 'Ðang dùng' }}
+            {{ $t('payment.currentlyUsing', 'Đang dùng') || 'Đang dùng' }}
           </div>
           <div 
             v-else-if="isSelectedPackage(pkg)"
@@ -300,33 +300,33 @@
       
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div>
-          <h3 class="font-semibold text-white dark:text-white mb-4">{{ $t('payment.bankInfo.transferInfo') }}</h3>
+          <h3 class="font-semibold text-gray-800 dark:text-white mb-4">{{ $t('payment.bankInfo.transferInfo') }}</h3>
           <div class="space-y-3">
             <div class="flex justify-between">
-              <span class="text-white dark:text-white">{{ $t('payment.bankInfo.bankName') }}:</span>
-              <span class="font-semibold text-white dark:text-white">{{ paymentStore.bankInfo.bankName }}</span>
+              <span class="text-gray-600 dark:text-gray-400">{{ $t('payment.bankInfo.bankName') }}:</span>
+              <span class="font-semibold text-gray-800 dark:text-white">{{ paymentStore.bankInfo.bankName }}</span>
             </div>
             <div class="flex justify-between">
-              <span class="text-white dark:text-white">{{ $t('payment.bankInfo.accountNumber') }}:</span>
-              <span class="font-mono font-semibold text-white dark:text-white">{{ paymentStore.bankInfo.accountNumber }}</span>
+              <span class="text-gray-600 dark:text-gray-400">{{ $t('payment.bankInfo.accountNumber') }}:</span>
+              <span class="font-mono font-semibold text-gray-800 dark:text-white">{{ paymentStore.bankInfo.accountNumber }}</span>
             </div>
             <div class="flex justify-between">
-              <span class="text-white dark:text-white">{{ $t('payment.bankInfo.accountName') }}:</span>
-              <span class="font-semibold text-white dark:text-white">{{ paymentStore.bankInfo.accountName }}</span>
+              <span class="text-gray-600 dark:text-gray-400">{{ $t('payment.bankInfo.accountName') }}:</span>
+              <span class="font-semibold text-gray-800 dark:text-white">{{ paymentStore.bankInfo.accountName }}</span>
             </div>
           </div>
         </div>
         
         <div>
-          <h3 class="font-semibold text-white dark:text-white mb-4">{{ $t('payment.bankInfo.instructions') }}</h3>
-          <ul class="space-y-2 text-sm text-white dark:text-white">
+          <h3 class="font-semibold text-gray-800 dark:text-white mb-4">{{ $t('payment.bankInfo.instructions') }}</h3>
+          <ul class="space-y-2 text-sm text-gray-600 dark:text-gray-400">
             <li class="flex items-start">
               <Icon icon="mdi:numeric-1-circle" class="text-blue-500 dark:text-blue-400 mr-2 mt-0.5" />
               <span>{{ $t('payment.bankInfo.step1') }}</span>
             </li>
             <li class="flex items-start">
               <Icon icon="mdi:numeric-2-circle" class="text-blue-500 dark:text-blue-400 mr-2 mt-0.5" />
-              <span>{{ $t('payment.bankInfo.step2') }}<strong v-if="paymentStore.currentPayment" class="text-white dark:text-white">{{ paymentStore.currentPayment.referenceCode }}</strong><span v-else class="text-white dark:text-white">[{{ $t('payment.referencePlaceholder') }}]</span></span>
+              <span>{{ $t('payment.bankInfo.step2') }}<strong v-if="paymentStore.currentPayment" class="text-gray-800 dark:text-white">{{ paymentStore.currentPayment.referenceCode }}</strong><span v-else class="text-gray-800 dark:text-white">[{{ $t('payment.referencePlaceholder') }}]</span></span>
             </li>
             <li class="flex items-start">
               <Icon icon="mdi:numeric-3-circle" class="text-blue-500 dark:text-blue-400 mr-2 mt-0.5" />
@@ -568,18 +568,7 @@ export default {
       loadAllData()
     })
 
-    // Debug: Log current package
-    // Debug function to check package matching
-    const debugPackageMatch = () => {
-      if (paymentStore.currentPackage) {
-        paymentStore.packages.forEach(pkg => {
-          const match = paymentStore.currentPackage.id === pkg.packageId || paymentStore.currentPackage.packageId === pkg.packageId
-          })
-      }
-    }
-    
-    // Call debug function
-    debugPackageMatch()
+
 
     return {
       paymentStore,

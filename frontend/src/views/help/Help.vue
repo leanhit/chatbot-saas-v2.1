@@ -118,7 +118,7 @@
           </div>
           <div>
             <h3 class="font-medium text-gray-900 dark:text-white mb-2">{{ $t('help.support.documentation') }}</h3>
-            <a href="#" class="text-sm text-blue-600 dark:text-blue-400 hover:underline">
+            <a href="https://github.com/sahrullahh/windzo#readme" target="_blank" rel="noopener noreferrer" class="text-sm text-blue-600 dark:text-blue-400 hover:underline">
               {{ $t('help.support.viewFullDoc') }}
             </a>
           </div>

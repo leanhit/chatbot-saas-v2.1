@@ -90,7 +90,7 @@
           <div class="flex items-center mt-2">
             <span class="text-blue-500 text-sm flex items-center">
               <Icon icon="mdi:check-circle" class="mr-1" />
-              {{ $t('dashboard.successRate') }}%
+              {{ $t('dashboard.successRate') }}: {{ stats.responseRate?.toFixed(1) || '0.0' }}%
             </span>
           </div>
         </div>
@@ -128,7 +128,7 @@
             <h1 class="font-semibold text-2xl text-gray-800 dark:text-gray-200">
               {{ stats.totalConversations }}
             </h1>
-            <p class="text-gray-400 font-normal">{{ $t('dashboard.last7Days') }}</p>
+            <p class="text-gray-400 font-normal">{{ getPeriodLabel() }}</p>
           </div>
           <div class="flex gap-2">
             <button
@@ -153,25 +153,12 @@
             <Icon icon="mdi:loading" class="text-6xl text-gray-300 animate-spin" />
             <p class="mt-2 text-gray-500">Loading chart data...</p>
           </div>
-          <div v-else-if="chartData.length === 0" class="text-center">
-            <Icon icon="mdi:chart-line" class="text-6xl text-gray-300" />
+          <div v-else-if="chartData.length === 0" class="text-center py-10">
+            <Icon icon="mdi:chart-line" class="text-6xl text-gray-300 mx-auto" />
             <p class="mt-2 text-gray-500">No data available for {{ periods.find(p => p.value === selectedPeriod)?.label }}</p>
           </div>
-          <div v-else class="w-full">
-            <!-- Simple chart visualization -->
-            <div class="flex items-end justify-between h-full px-4 pb-4">
-              <div 
-                v-for="(point, index) in chartData" 
-                :key="index"
-                class="flex flex-col items-center flex-1"
-              >
-                <div 
-                  class="w-full bg-primary rounded-t"
-                  :style="{ height: `${(point.value / Math.max(...chartData.map(d => d.value))) * 100}%` }"
-                ></div>
-                <span class="text-xs text-gray-500 mt-2">{{ point.label }}</span>
-              </div>
-            </div>
+          <div v-else class="w-full px-4 pb-4 flex justify-center">
+            <canvas ref="canvasRef" style="width: 100%; height: 200px; max-width: 100%;"></canvas>
           </div>
         </div>
       </div>
@@ -258,7 +245,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, watch, nextTick } from 'vue'
 import { Icon } from '@iconify/vue'
 import { useRouter } from 'vue-router'
 import { getRelativeTime } from '@/utils/dateUtils'
@@ -271,6 +258,7 @@ const selectedPeriod = ref('7d')
 const loading = ref(false)
 const chartData = ref([])
 const chartLoading = ref(false)
+const canvasRef = ref(null)
 
 const periods = [
   { label: '7D', value: '7d' },
@@ -289,48 +277,23 @@ const stats = ref({
   activeConnections: 0
 })
 
-const recentActivity = ref([
-  {
-    id: 1,
-    type: 'conversation',
-    title: 'New conversation started',
-    description: 'User from Facebook Messenger started new chat',
-    timestamp: new Date(Date.now() - 5 * 60000)
-  },
-  {
-    id: 2,
-    type: 'bot_response',
-    title: 'Bot responded successfully',
-    description: 'PennyBot answered user query about pricing',
-    timestamp: new Date(Date.now() - 15 * 60000)
-  },
-  {
-    id: 3,
-    type: 'connection',
-    title: 'Facebook connection active',
-    description: 'Page "Customer Support" is online',
-    timestamp: new Date(Date.now() - 30 * 60000)
-  },
-  {
-    id: 4,
-    type: 'takeover',
-    title: 'Agent took over conversation',
-    description: 'Agent John assumed control of conversation #1234',
-    timestamp: new Date(Date.now() - 45 * 60000)
-  }
-])
+const recentActivity = ref([])
 
 // Methods
 const refreshData = async () => {
   loading.value = true
   try {
-    // Fetch real statistics from API
-    const [conversationStats, takeoverStats] = await Promise.all([
+    // Fetch real statistics, takeover and activities from API
+    const [conversationStats, takeoverStats, activityStats] = await Promise.all([
       axios.get('/conversations/statistics').then(res => {
         return res.data
       }).catch(() => ({ totalConversations: 0, growthRate: 0, activeUsers: 0, userGrowth: 0, botResponses: 0, responseRate: 0, activeConnections: 0 })),
       
       axios.get('/takeover/active').then(res => {
+        return res.data
+      }).catch(() => []),
+
+      axios.get('/conversations/activity?limit=10').then(res => {
         return res.data
       }).catch(() => [])
     ])
@@ -345,8 +308,16 @@ const refreshData = async () => {
       responseRate: conversationStats.responseRate || 0,
       activeConnections: conversationStats.activeConnections || 0
     }
+
+    recentActivity.value = activityStats.map((act, index) => ({
+      id: act.id || index,
+      type: act.type || 'conversation',
+      title: act.title || 'Activity',
+      description: act.description || '',
+      timestamp: act.timestamp ? new Date(act.timestamp) : new Date()
+    }))
     
-    } catch (error) {
+  } catch (error) {
     console.error('Failed to fetch dashboard data:', error)
   } finally {
     loading.value = false
@@ -358,8 +329,8 @@ const openSettings = () => {
 }
 
 const testBot = () => {
-  // TODO: Open bot test modal or navigate to test page
-  }
+  router.push('/penny-bots')
+}
 
 const viewAllActivity = () => {
   router.push('/messages')
@@ -385,12 +356,95 @@ const getActivityColor = (type) => {
   return colors[type] || 'bg-gray-500'
 }
 
+const getPeriodLabel = () => {
+  const labels = {
+    '7d': 'Last 7 Days',
+    '1m': 'Last 30 Days',
+    '3m': 'Last 3 Months',
+    '1y': 'Last 1 Year'
+  }
+  return labels[selectedPeriod.value] || 'Last 7 Days'
+}
+
+const drawChart = () => {
+  if (!canvasRef.value || !chartData.value || chartData.value.length === 0) return
+  const canvas = canvasRef.value
+  const ctx = canvas.getContext('2d')
+  if (!ctx) return
+
+  const dpr = window.devicePixelRatio || 1
+  const width = canvas.clientWidth
+  const height = 200
+  
+  canvas.width = width * dpr
+  canvas.height = height * dpr
+  ctx.scale(dpr, dpr)
+
+  ctx.clearRect(0, 0, width, height)
+
+  const values = chartData.value.map(d => d.value)
+  const maxVal = Math.max(...values, 5)
+
+  // Draw Grid Lines
+  ctx.strokeStyle = '#f3f4f6' // gray-100
+  ctx.lineWidth = 1
+  const gridRows = 4
+  for (let i = 0; i <= gridRows; i++) {
+    const y = 20 + (height - 60) * (i / gridRows)
+    ctx.beginPath()
+    ctx.moveTo(40, y)
+    ctx.lineTo(width - 10, y)
+    ctx.stroke()
+
+    // Y Axis Text
+    ctx.fillStyle = '#9ca3af' // gray-400
+    ctx.font = '10px sans-serif'
+    ctx.textAlign = 'right'
+    ctx.fillText(Math.round(maxVal * (1 - i / gridRows)).toString(), 30, y + 3)
+  }
+
+  // Draw Bars
+  const barPadding = 12
+  const chartWidth = width - 50
+  const barWidth = (chartWidth / chartData.value.length) - barPadding
+  
+  chartData.value.forEach((point, index) => {
+    const val = point.value
+    const barHeight = (val / maxVal) * (height - 60)
+    const x = 40 + index * (barWidth + barPadding)
+    const y = height - 40 - barHeight
+
+    // Draw Gradient Bar
+    const gradient = ctx.createLinearGradient(x, y, x, height - 40)
+    gradient.addColorStop(0, '#3b82f6') // primary blue
+    gradient.addColorStop(1, '#60a5fa')
+    ctx.fillStyle = gradient
+    
+    ctx.beginPath()
+    if (ctx.roundRect) {
+      ctx.roundRect(x, y, barWidth, barHeight, [4, 4, 0, 0])
+    } else {
+      ctx.rect(x, y, barWidth, barHeight)
+    }
+    ctx.fill()
+
+    // Draw X Label
+    ctx.fillStyle = '#6b7280' // gray-500
+    ctx.textAlign = 'center'
+    ctx.font = '10px sans-serif'
+    ctx.fillText(point.label, x + barWidth / 2, height - 20)
+  })
+}
+
 // Load chart data based on selected period
 const loadChartData = async () => {
   chartLoading.value = true
   try {
     const { data } = await axios.get(`/conversations/chart?period=${selectedPeriod.value}`)
     chartData.value = data
+    nextTick(() => {
+      drawChart()
+    })
   } catch (error) {
     console.error('Failed to load chart data:', error)
     chartData.value = []
@@ -408,6 +462,7 @@ watch(selectedPeriod, () => {
 onMounted(() => {
   refreshData()
   loadChartData()
+  window.addEventListener('resize', drawChart)
 })
 </script>
 

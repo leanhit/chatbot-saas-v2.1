@@ -1084,6 +1084,40 @@
       "viewHistory": "Lịch sử",
       "downloadQR": "Tải mã QR",
       "copySuccess": "Đã sao chép thành công"
+    },
+    "history": {
+      "title": "Lịch Sử Nạp Tiền",
+      "refresh": "Làm mới",
+      "loading": "Đang tải...",
+      "totalAmount": "Tổng số tiền",
+      "completed": "Đã hoàn thành",
+      "pending": "Đang chờ",
+      "failed": "Thất bại",
+      "expired": "Hết hạn",
+      "filterByStatus": "Lọc theo trạng thái:",
+      "all": "Tất cả",
+      "displayCount": "Hiển thị {count} / {total} giao dịch",
+      "noTransactions": "Không có giao dịch nào",
+      "table": {
+        "referenceCode": "Mã tham chiếu",
+        "amount": "Số tiền",
+        "status": "Trạng thái",
+        "description": "Mô tả",
+        "createdAt": "Tạo lúc",
+        "completedAt": "Hoàn thành",
+        "actions": "Thao tác"
+      },
+      "actions": {
+        "checkStatus": "Kiểm tra trạng thái",
+        "simulate": "Giả lập thanh toán",
+        "copyCode": "Sao chép mã"
+      },
+      "messages": {
+        "statusUpdated": "Trạng thái đã cập nhật!",
+        "checkFailed": "Kiểm tra trạng thái thất bại",
+        "simulateSuccess": "Đã giả lập thanh toán! Kiểm tra trạng thái sau 10-15 giây...",
+        "simulateFailed": "Giả lập thanh toán thất bại"
+      }
     }
   },
   "sidebar": {

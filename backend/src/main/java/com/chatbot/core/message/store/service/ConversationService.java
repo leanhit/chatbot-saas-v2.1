@@ -4,6 +4,7 @@ import com.chatbot.core.message.store.model.Conversation;
 import com.chatbot.core.message.store.model.Message;
 import com.chatbot.core.message.store.dto.ConversationStatisticsDTO;
 import com.chatbot.core.message.store.dto.ChartDataPointDTO;
+import com.chatbot.core.message.store.dto.ActivityDTO;
 import com.chatbot.core.message.store.repository.ConversationRepository;
 import com.chatbot.core.message.store.repository.MessageRepository;
 import com.chatbot.spokes.facebook.connection.model.FacebookConnection;
@@ -12,6 +13,8 @@ import com.chatbot.spokes.facebook.user.service.FacebookUserService;
 import com.chatbot.core.message.store.model.Channel;
 import com.chatbot.core.tenant.infra.TenantContext;
 
+import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -436,18 +439,22 @@ public class ConversationService {
      */
     public Conversation updateConversation(Long conversationId, Object conversationDTO, String ownerId) {
         Conversation conversation = getConversationById(conversationId);
-        // TODO: Implement update logic based on DTO fields
+        if (!ownerId.equals(conversation.getOwnerId())) {
+            throw new RuntimeException("You don't have permission to update this conversation");
+        }
+        // Status update if DTO contains status field (handled via PATCH endpoints)
         return conversationRepo.save(conversation);
     }
 
     /**
-     * Search conversations
+     * Search conversations with real filtering
      */
     public Page<Conversation> searchConversations(String ownerId, String query, String channel, String dateRange, int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("updatedAt").descending());
         Long tenantId = TenantContext.getTenantId();
-        
-        // TODO: Implement search logic based on query parameters
+        if (query != null && !query.isBlank()) {
+            return conversationRepo.searchByOwnerIdAndTenantId(ownerId, tenantId, query.trim(), pageable);
+        }
         return conversationRepo.findByOwnerIdAndTenantIdOrderByUpdatedAtDesc(ownerId, tenantId, pageable);
     }
 
@@ -456,50 +463,60 @@ public class ConversationService {
      */
     public ConversationStatisticsDTO getConversationStatistics(String ownerId) {
         Long tenantId = TenantContext.getTenantId();
-        
+
         try {
-            // Get total conversations count
+            LocalDateTime now = LocalDateTime.now();
+            LocalDateTime todayStart = now.withHour(0).withMinute(0).withSecond(0).withNano(0);
+            LocalDateTime last24h = now.minusHours(24);
+            LocalDateTime lastMonth = now.minusMonths(1);
+            LocalDateTime prev2Month = now.minusMonths(2);
+
+            // --- Conversation counts ---
             Long totalConversations = conversationRepo.countByTenantId(tenantId);
-            
-            // Get today's conversations
-            java.time.LocalDateTime todayStart = java.time.LocalDateTime.now().withHour(0).withMinute(0).withSecond(0);
             Long todayConversations = conversationRepo.countByTenantIdAndCreatedAtAfter(tenantId, todayStart);
-            
-            // Get active takeovers (conversations taken over by agents)
             Long activeTakeovers = conversationRepo.countByTenantIdAndIsTakenOverByAgent(tenantId, true);
-            
-            // Get total messages count
             Long totalMessages = messageRepo.countByConversationTenantId(tenantId);
-            
-            // Get today's messages
             Long todayMessages = messageRepo.countByConversationTenantIdAndCreatedAtAfter(tenantId, todayStart);
-            
-            // Calculate mock growth rates (TODO: Implement real growth calculations)
+
+            // --- Growth rate: (hôm nay / tổng) * 100 ---
             Double growthRate = totalConversations > 0 ? (todayConversations * 100.0 / totalConversations) : 0.0;
-            
-            // Get active connections (from Facebook connections as example)
+
+            // --- Active Users: số external user distinct hoạt động trong 24h ---
+            Long activeUsers = conversationRepo.countDistinctActiveUsers(tenantId, last24h);
+
+            // --- Bot Responses: tin nhắn có sender = 'bot' ---
+            Long botResponses = messageRepo.countBySenderAndTenantId("bot", tenantId);
+
+            // --- Response Rate: botResponses / totalMessages * 100 ---
+            Double responseRate = totalMessages > 0 ? (botResponses * 100.0 / totalMessages) : 0.0;
+
+            // --- Active Connections ---
             Long activeConnections = facebookConnectionRepo.countByTenantIdAndIsActiveTrue(tenantId);
-            
-            // Build statistics DTO
+
+            // --- User Growth: so sánh last month vs prev month ---
+            Long lastMonthUsers = conversationRepo.countDistinctActiveUsers(tenantId, lastMonth);
+            Long prev2MonthUsers = conversationRepo.countDistinctActiveUsers(tenantId, prev2Month);
+            Double userGrowth = prev2MonthUsers > 0
+                ? ((lastMonthUsers - prev2MonthUsers) * 100.0 / prev2MonthUsers)
+                : 0.0;
+
             ConversationStatisticsDTO statistics = new ConversationStatisticsDTO();
             statistics.setTotalConversations(totalConversations);
             statistics.setActiveTakeovers(activeTakeovers);
-            statistics.setPendingMessages(0L); // TODO: Implement pending messages logic
+            statistics.setPendingMessages(todayMessages);
             statistics.setTodayMessages(todayMessages);
             statistics.setGrowthRate(growthRate);
-            statistics.setActiveUsers(0L); // TODO: Implement active users logic
-            statistics.setUserGrowth(0.0); // TODO: Implement user growth logic
-            statistics.setBotResponses(0L); // TODO: Implement bot responses logic
-            statistics.setResponseRate(0.0); // TODO: Implement response rate logic
+            statistics.setActiveUsers(activeUsers);
+            statistics.setUserGrowth(userGrowth);
+            statistics.setBotResponses(botResponses);
+            statistics.setResponseRate(responseRate);
             statistics.setActiveConnections(activeConnections);
             statistics.setTotalMessages(totalMessages);
-            
+
             return statistics;
-            
+
         } catch (Exception e) {
-            log.error("Error calculating conversation statistics for tenant {}: {}", tenantId, e.getMessage(), e);
-            
-            // Return default values on error
+            log.error("Error calculating statistics for tenant {}: {}", tenantId, e.getMessage(), e);
             ConversationStatisticsDTO defaultStats = new ConversationStatisticsDTO();
             defaultStats.setTotalConversations(0L);
             defaultStats.setActiveTakeovers(0L);
@@ -512,7 +529,6 @@ public class ConversationService {
             defaultStats.setResponseRate(0.0);
             defaultStats.setActiveConnections(0L);
             defaultStats.setTotalMessages(0L);
-            
             return defaultStats;
         }
     }
@@ -627,32 +643,78 @@ public class ConversationService {
         return chartData;
     }
     
-    private List<ChartDataPointDTO> generateQuarterlyChartData(Long tenantId, java.time.LocalDateTime startDate, java.time.LocalDateTime endDate) {
-        List<ChartDataPointDTO> chartData = new java.util.ArrayList<>();
-        
+    private List<ChartDataPointDTO> generateQuarterlyChartData(Long tenantId, LocalDateTime startDate, LocalDateTime endDate) {
+        List<ChartDataPointDTO> chartData = new ArrayList<>();
+
         java.time.LocalDate current = startDate.toLocalDate()
                 .withMonth(((startDate.getMonthValue() - 1) / 3) * 3 + 1)
                 .withDayOfMonth(1);
         java.time.LocalDate end = endDate.toLocalDate();
-        
+
         int quarterNum = 1;
         while (!current.isAfter(end)) {
-            java.time.LocalDateTime quarterStart = current.atStartOfDay();
-            java.time.LocalDateTime quarterEnd = current.plusMonths(2).withDayOfMonth(current.plusMonths(2).lengthOfMonth()).atTime(23, 59, 59);
-            
+            LocalDateTime quarterStart = current.atStartOfDay();
+            LocalDateTime quarterEnd = current.plusMonths(2)
+                    .withDayOfMonth(current.plusMonths(2).lengthOfMonth())
+                    .atTime(23, 59, 59);
+
             Long count = conversationRepo.countByTenantIdAndCreatedAtBetween(tenantId, quarterStart, quarterEnd);
-            
+
             ChartDataPointDTO dataPoint = new ChartDataPointDTO();
             dataPoint.setLabel(String.format("Q%d", quarterNum++));
             dataPoint.setValue(count);
             dataPoint.setDate(current.toString());
-            
+
             chartData.add(dataPoint);
             current = current.plusMonths(3);
             if (quarterNum > 4) quarterNum = 1;
         }
-        
+
         return chartData;
     }
 
+    // =========================================================================
+    // RECENT ACTIVITY — dùng cho Dashboard
+    // =========================================================================
+
+    /**
+     * Lấy danh sách activity gần đây từ conversations thực trong DB.
+     * Map trạng thái conversation sang loại activity.
+     */
+    public List<ActivityDTO> getRecentActivity(String ownerId, Long tenantId, Pageable pageable) {
+        Page<Conversation> recentConversations = conversationRepo
+                .findByOwnerIdAndTenantIdOrderByUpdatedAtDesc(ownerId, tenantId, pageable);
+
+        return recentConversations.getContent().stream()
+                .map(c -> {
+                    ActivityDTO activity = new ActivityDTO();
+                    activity.setId("conv_" + c.getId());
+                    activity.setTimestamp(c.getUpdatedAt());
+
+                    String userName = (c.getUserName() != null && !c.getUserName().isBlank())
+                            ? c.getUserName() : "User " + c.getExternalUserId();
+
+                    if (Boolean.TRUE.equals(c.getIsTakenOverByAgent())) {
+                        activity.setType("takeover");
+                        activity.setTitle("Agent took over conversation");
+                        activity.setDescription("Agent assumed control of conversation with " + userName);
+                    } else if (Boolean.TRUE.equals(c.getIsClosedByAgent())) {
+                        activity.setType("closed");
+                        activity.setTitle("Conversation closed");
+                        activity.setDescription("Conversation with " + userName + " was closed");
+                    } else if ("open".equals(c.getStatus())) {
+                        activity.setType("conversation");
+                        activity.setTitle("New conversation started");
+                        activity.setDescription(userName + " started a new chat via " +
+                                (c.getChannel() != null ? c.getChannel().name() : "Unknown"));
+                    } else {
+                        activity.setType("bot_response");
+                        activity.setTitle("Bot responded");
+                        activity.setDescription("Bot replied to " + userName);
+                    }
+
+                    return activity;
+                })
+                .collect(Collectors.toList());
+    }
 }

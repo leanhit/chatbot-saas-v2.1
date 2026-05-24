@@ -87,9 +87,13 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
            "WHERE c.tenant_id = :tenantId AND m.created_at >= :startDate", nativeQuery = true)
     Long countByConversationTenantIdAndCreatedAtAfter(@Param("tenantId") Long tenantId, @Param("startDate") java.time.LocalDateTime startDate);
     
-    // Tìm message theo ID và tenantId
+    // Find message by ID and tenantId
     Optional<Message> findByIdAndTenantId(Long messageId, Long tenantId);
     
-    // Tìm message theo external message ID và tenantId (for idempotency)
+    // Find message by external message ID and tenantId (for idempotency)
     Optional<Message> findByExternalMessageIdAndTenantId(String externalMessageId, Long tenantId);
+
+    // Count messages by sender and tenantId
+    @Query("SELECT COUNT(m) FROM Message m WHERE m.sender = :sender AND m.tenantId = :tenantId")
+    Long countBySenderAndTenantId(@Param("sender") String sender, @Param("tenantId") Long tenantId);
 }
