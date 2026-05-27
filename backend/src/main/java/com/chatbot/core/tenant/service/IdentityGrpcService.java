@@ -28,10 +28,10 @@ public class IdentityGrpcService {
                 return response.getValid();
             }
             
-            return false;
+            throw new RuntimeException("No response from Identity Hub for token validation");
         } catch (Exception e) {
             log.error("Lỗi khi validate token với Identity Hub", e);
-            return false;
+            throw new RuntimeException("Failed to validate token with Identity Hub", e);
         }
     }
 
@@ -49,10 +49,10 @@ public class IdentityGrpcService {
                 return response.getValid();
             }
             
-            return false;
+            throw new RuntimeException("No response from Identity Hub for user validation");
         } catch (Exception e) {
             log.error("Lỗi khi validate user {} với Identity Hub", userId, e);
-            return false;
+            throw new RuntimeException("Failed to validate user with Identity Hub", e);
         }
     }
 
@@ -69,10 +69,10 @@ public class IdentityGrpcService {
                 return response.getRole();
             }
             
-            return null;
+            throw new RuntimeException("Role not found or empty from Identity Hub");
         } catch (Exception e) {
             log.error("Lỗi khi get role cho user {} từ Identity Hub", userId, e);
-            return null;
+            throw new RuntimeException("Failed to get user role from Identity Hub", e);
         }
     }
 
@@ -89,10 +89,10 @@ public class IdentityGrpcService {
                 return response.getIsActive();
             }
             
-            return false;
+            throw new RuntimeException("No response from Identity Hub for active status");
         } catch (Exception e) {
             log.error("Lỗi khi check active status cho user {} với Identity Hub", userId, e);
-            return false;
+            throw new RuntimeException("Failed to check active status with Identity Hub", e);
         }
     }
 
@@ -107,12 +107,13 @@ public class IdentityGrpcService {
             if (response != null) {
                 log.info("Got profile cho user {}: email={}, role={}, active={}", 
                         userId, response.getEmail(), response.getRole(), response.getIsActive());
+                return response;
             }
             
-            return response;
+            throw new RuntimeException("No profile response from Identity Hub");
         } catch (Exception e) {
             log.error("Lỗi khi get profile cho user {} từ Identity Hub", userId, e);
-            return null;
+            throw new RuntimeException("Failed to get user profile from Identity Hub", e);
         }
     }
 }

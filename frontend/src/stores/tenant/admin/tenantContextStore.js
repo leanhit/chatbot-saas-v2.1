@@ -23,10 +23,12 @@ export const useTenantAdminContextStore = defineStore('tenantAdminContext', () =
       loading.value = false
     }
   }
+  const activeTenantId = computed(() => activeTenantKey.value)
   return {
     tenant,
     loading,
     loadTenant,
-    activeTenantKey
+    activeTenantKey,
+    activeTenantId
   }
 })

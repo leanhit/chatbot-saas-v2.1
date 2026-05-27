@@ -5,6 +5,7 @@ import com.chatbot.core.tenant.membership.dto.*;
 import com.chatbot.core.tenant.membership.model.*;
 import com.chatbot.core.tenant.membership.repository.TenantJoinRequestRepository;
 import com.chatbot.core.tenant.membership.repository.TenantMemberRepository;
+import com.chatbot.core.tenant.service.TenantAuditLogService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,6 +19,7 @@ public class TenantSelfService {
 
     private final TenantMemberRepository memberRepo;
     private final TenantJoinRequestRepository joinRequestRepo;
+    private final TenantAuditLogService auditLogService;
 
     /* ================= MY PENDING ================= */
 
@@ -30,8 +32,9 @@ public class TenantSelfService {
                         .status(request.getTenant().getStatus())
                         .visibility(request.getTenant().getVisibility())
                         .requestedAt(request.getCreatedAt())
-                        .logoUrl(request.getTenant().getProfile() != null ? 
-                                request.getTenant().getProfile().getLogoUrl() : null)
+                        .logoUrl(request.getTenant().getProfile() != null
+                                ? request.getTenant().getProfile().getLogoUrl()
+                                : null)
                         .build())
                 .toList();
     }
@@ -41,12 +44,15 @@ public class TenantSelfService {
     @Transactional
     public void leaveTenant(Long tenantId, User user) {
         TenantMember member = memberRepo.findByTenant_IdAndUser_Id(tenantId, user.getId())
-                .orElseThrow(() -> new IllegalStateException("Not a member"));
+                .orElseThrow(() -> new IllegalStateException("Bạn không phải thành viên của tenant này"));
 
         if (member.getRole() == TenantRole.OWNER) {
-            throw new IllegalStateException("OWNER must transfer ownership first");
+            throw new IllegalStateException("OWNER phải chuyển quyền sở hữu trước khi rời tổ chức");
         }
 
         memberRepo.delete(member);
+
+        auditLogService.logAction(tenantId, user.getEmail(), "LEAVE_TENANT",
+            "User left the tenant");
     }
 }

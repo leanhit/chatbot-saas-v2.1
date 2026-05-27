@@ -5,6 +5,8 @@ import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -61,14 +63,15 @@ public abstract class BaseTenantEntity {
             tenantKey = TenantContext.getCurrentTenant();
         }
         
-        // Set tenant_id from context if null and field exists
+        // Set tenant_id from context — NEVER fallback to a hardcoded ID
         if (this.getTenantId() == null) {
             Long currentTenantId = TenantContext.getTenantId();
             if (currentTenantId != null) {
                 this.setTenantId(currentTenantId);
             } else {
-                // Fallback to default tenant ID if no context
-                this.setTenantId(1L);
+                throw new IllegalStateException(
+                    "TenantContext không được set — không thể tạo entity " +
+                    this.getClass().getSimpleName() + " mà không có tenant scope.");
             }
         }
         
@@ -84,7 +87,11 @@ public abstract class BaseTenantEntity {
     }
     
     private String getCurrentUserId() {
-        // TODO: Get current user from security context
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.isAuthenticated() && 
+            !authentication.getName().equals("anonymousUser")) {
+            return authentication.getName();
+        }
         return "system";
     }
     

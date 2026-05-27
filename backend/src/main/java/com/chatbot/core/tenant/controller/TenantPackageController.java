@@ -3,12 +3,9 @@ package com.chatbot.core.tenant.controller;
 import com.chatbot.core.tenant.service.TenantPackageService;
 import com.chatbot.core.simplepayment.model.Package;
 import com.chatbot.core.tenant.dto.TenantPackageInfo;
-import com.chatbot.core.tenant.model.Tenant;
-import com.chatbot.core.tenant.repository.TenantRepository;
 import com.chatbot.core.tenant.infra.TenantContext;
-import com.chatbot.core.user.model.User;
-import com.chatbot.core.identity.repository.AuthRepository;
-import com.chatbot.core.simplepayment.repository.PackageRepository;
+import com.chatbot.shared.constants.ApiConstants;
+import com.chatbot.shared.dto.ApiResponse;
 import com.chatbot.shared.constants.ApiConstants;
 import com.chatbot.shared.dto.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -34,9 +31,6 @@ import java.util.Map;
 public class TenantPackageController {
 
     private final TenantPackageService tenantPackageService;
-    private final TenantRepository tenantRepository;
-    private final AuthRepository authRepository;
-    private final PackageRepository packageRepository;
 
     /**
      * Get current package info with expiration details
@@ -126,7 +120,7 @@ public class TenantPackageController {
      * Upgrade tenant package (admin only)
      */
     @PostMapping("/upgrade/{tenantId}")
-    @PreAuthorize("hasRole('SYSTEM_ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Upgrade tenant package", description = "Upgrade a tenant to a specific package (Admin only)")
     public ResponseEntity<ApiResponse<String>> upgradeTenantPackage(
             @PathVariable Long tenantId,
@@ -162,7 +156,7 @@ public class TenantPackageController {
      * Initialize existing tenants with free package (admin only)
      */
     @PostMapping("/initialize-existing")
-    @PreAuthorize("hasRole('SYSTEM_ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Initialize existing tenants", description = "Assign free package to all existing tenants without packages (Admin only)")
     public ResponseEntity<ApiResponse<String>> initializeExistingTenants() {
         try {
@@ -206,40 +200,7 @@ public class TenantPackageController {
         try {
             Long tenantId = extractTenantId(userDetails, httpRequest);
             
-            // Get tenant info directly
-            Tenant tenant = tenantRepository.findById(tenantId)
-                    .orElseThrow(() -> new RuntimeException("Tenant not found"));
-            
-            // Get package info directly from repository to avoid caching issues
-            Package currentPackage = null;
-            if (tenant.getCurrentPackageId() != null) {
-                currentPackage = packageRepository.findByPackageId(tenant.getCurrentPackageId())
-                        .orElse(null);
-            }
-            
-            // Create response manually
-            Map<String, Object> response = new java.util.HashMap<>();
-            response.put("tenantId", tenantId);
-            response.put("tenantKey", tenant.getTenantKey());
-            response.put("currentPackageId", tenant.getCurrentPackageId());
-            response.put("packageActivatedAt", tenant.getPackageActivatedAt());
-            response.put("expiresAt", tenant.getExpiresAt());
-            
-            if (currentPackage != null) {
-                response.put("packageName", currentPackage.getName());
-                response.put("packagePrice", currentPackage.getPrice());
-                response.put("packageCurrency", currentPackage.getCurrency());
-                response.put("packageDuration", currentPackage.getDuration());
-                response.put("chatbotLimit", currentPackage.getChatbotLimit());
-                response.put("messageLimit", currentPackage.getMessageLimit());
-            } else {
-                response.put("packageName", null);
-                response.put("packagePrice", null);
-                response.put("packageCurrency", null);
-                response.put("packageDuration", null);
-                response.put("chatbotLimit", null);
-                response.put("messageLimit", null);
-            }
+            java.util.Map<String, Object> response = tenantPackageService.getMyPackageInfo(tenantId);
             
             return ResponseEntity.ok(ApiResponse.success(response, "Package info retrieved successfully"));
         } catch (Exception e) {
@@ -248,22 +209,7 @@ public class TenantPackageController {
         }
     }
 
-    /**
-     * Test time accumulation logic (for debugging)
-     */
-    @PostMapping("/tenant/{tenantId}/test-accumulation")
-    @PreAuthorize("hasRole('SYSTEM_ADMIN')")
-    @Operation(summary = "Test time accumulation", description = "Test time accumulation logic for debugging")
-    public ResponseEntity<ApiResponse<String>> testTimeAccumulation(@PathVariable Long tenantId) {
-        try {
-            tenantPackageService.testTimeAccumulation(tenantId);
-            return ResponseEntity.ok(ApiResponse.success("Time accumulation test completed", "Check logs for details"));
-        } catch (Exception e) {
-            log.error("Error testing time accumulation: {}", e.getMessage(), e);
-            return ResponseEntity.internalServerError()
-                    .body(ApiResponse.error("Test failed: " + e.getMessage()));
-        }
-    }
+
 
     // Helper methods
     private Long extractTenantId(UserDetails userDetails, HttpServletRequest httpRequest) {
@@ -274,49 +220,9 @@ public class TenantPackageController {
             return tenantId;
         }
         
-        // Fallback: extract from X-Tenant-Key header
         String tenantKey = httpRequest.getHeader("X-Tenant-Key");
-        if (tenantKey != null && !tenantKey.isBlank()) {
-            try {
-                Long foundTenantId = tenantRepository.findByTenantKey(tenantKey)
-                        .map(Tenant::getId)
-                        .orElseThrow(() -> new RuntimeException("Tenant not found: " + tenantKey));
-                log.debug("Found tenant ID from header {}: {}", tenantKey, foundTenantId);
-                return foundTenantId;
-            } catch (Exception e) {
-                log.warn("Could not extract tenant ID from header {}: {}", tenantKey, e.getMessage());
-            }
-        }
+        String username = userDetails != null ? userDetails.getUsername() : null;
         
-        // Fallback: get tenant from user
-        try {
-            if (userDetails != null) {
-                Long userId = extractUserId(userDetails);
-                Tenant tenant = tenantRepository.findByUserId(userId)
-                        .orElseThrow(() -> new RuntimeException("No tenant found for user: " + userId));
-                log.debug("Found tenant ID from user {}: {}", userId, tenant.getId());
-                return tenant.getId();
-            }
-        } catch (Exception e) {
-            log.warn("Could not extract tenant ID from user: {}", e.getMessage());
-        }
-        
-        log.error("Tenant ID not found in context, header, or user");
-        throw new RuntimeException("Tenant ID not found in context or request");
-    }
-
-    private Long extractUserId(UserDetails userDetails) {
-        try {
-            String username = userDetails.getUsername();
-            
-            // Get user from database using the auth repository
-            User user = authRepository.findByEmail(username)
-                    .orElseThrow(() -> new RuntimeException("User not found: " + username));
-            
-            return user.getId();
-        } catch (Exception e) {
-            log.error("Failed to extract user ID for user: {}", userDetails.getUsername(), e);
-            throw new RuntimeException("Failed to extract user ID", e);
-        }
+        return tenantPackageService.extractTenantIdWithFallback(tenantKey, username);
     }
 }

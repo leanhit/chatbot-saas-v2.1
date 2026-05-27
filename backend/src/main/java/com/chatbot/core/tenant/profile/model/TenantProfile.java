@@ -57,6 +57,9 @@ public class TenantProfile {
 
     @Column(name = "contact_phone")
     private String contactPhone;
+    
+    @Column(length = 255)
+    private String website;
 
     // ===== Branding / White-label =====
     @Column(name = "logo_url")

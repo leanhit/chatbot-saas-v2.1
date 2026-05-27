@@ -73,6 +73,33 @@ export const tenantApi = {
       throw error;
     }
   },
+  async suspendTenant(tenantKey) {
+    try {
+      const response = await axios.post(`/tenants/key/${tenantKey}/suspend`);
+      return response;
+    } catch (error) {
+      handleTenantError(error);
+      throw error;
+    }
+  },
+  async activateTenant(tenantKey) {
+    try {
+      const response = await axios.post(`/tenants/key/${tenantKey}/activate`);
+      return response;
+    } catch (error) {
+      handleTenantError(error);
+      throw error;
+    }
+  },
+  async deactivateTenant(tenantKey) {
+    try {
+      const response = await axios.post(`/tenants/key/${tenantKey}/deactivate`);
+      return response;
+    } catch (error) {
+      handleTenantError(error);
+      throw error;
+    }
+  },
   async updateTenant(tenantKey, data) {
     // Validate basic info request
     const errors = validateTenantBasicInfoRequest(data);

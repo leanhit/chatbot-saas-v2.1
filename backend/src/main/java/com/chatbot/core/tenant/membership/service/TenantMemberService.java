@@ -6,8 +6,11 @@ import com.chatbot.core.tenant.membership.model.*;
 import com.chatbot.core.tenant.membership.repository.TenantMemberRepository;
 import com.chatbot.core.tenant.model.Tenant;
 import com.chatbot.core.tenant.repository.TenantRepository;
-import com.chatbot.core.tenant.infra.TenantContext;
+import com.chatbot.core.tenant.service.TenantAuditLogService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.data.domain.Page;
@@ -18,10 +21,12 @@ import java.util.Optional;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
+@Slf4j
 public class TenantMemberService {
 
     private final TenantMemberRepository memberRepo;
     private final TenantRepository tenantRepo;
+    private final TenantAuditLogService auditLogService;
 
     /* ================= LIST ================= */
 
@@ -39,7 +44,7 @@ public class TenantMemberService {
                 .orElseThrow(() -> new IllegalStateException("Member not found"));
     }
 
-    /** ✅ SPEC: GET /tenants/{tenantId}/members/me */
+    /** GET /tenants/{tenantId}/members/me */
     public MemberResponse getMyMember(Long tenantId, User user) {
         return getMember(tenantId, user.getId());
     }
@@ -47,42 +52,52 @@ public class TenantMemberService {
     /* ================= UPDATE ================= */
 
     @Transactional
-    public void updateRole(Long tenantId, Long userId, TenantRole newRole) {
-        // Check permissions
-        if (!canManageMembers(tenantId, userId)) {
-            throw new IllegalStateException("Insufficient privileges to manage member roles");
-        }
-        
-        TenantMember member = getMemberEntityRequired(tenantId, userId);
+    public void updateRole(Long tenantId, Long targetUserId, TenantRole newRole) {
+        // Lấy actor (người thực hiện request) từ SecurityContext
+        String actorEmail = getCurrentUserEmail();
 
-        if (member.getRole() == TenantRole.OWNER) {
-            throw new IllegalStateException("Cannot change OWNER role");
+        // Kiểm tra quyền của ACTOR, không phải của target
+        if (!canManageMembers(tenantId, actorEmail)) {
+            throw new IllegalStateException("Không đủ quyền để quản lý thành viên");
         }
 
-        // Check if user is trying to assign higher role than their own
-        if (!canAssignRole(tenantId, userId, newRole)) {
-            throw new IllegalStateException("Cannot assign role higher than your own privileges");
+        // Kiểm tra actor có thể gán role này không
+        if (!canAssignRole(tenantId, actorEmail, newRole)) {
+            throw new IllegalStateException("Không thể gán role cao hơn quyền hiện tại của bạn");
         }
 
-        member.setRole(newRole);
+        TenantMember targetMember = getMemberEntityRequired(tenantId, targetUserId);
+
+        if (targetMember.getRole() == TenantRole.OWNER) {
+            throw new IllegalStateException("Không thể thay đổi role của OWNER");
+        }
+
+        targetMember.setRole(newRole);
+
+        auditLogService.logAction(tenantId, actorEmail, "UPDATE_MEMBER_ROLE",
+                "Changed userId=" + targetUserId + " role to " + newRole);
     }
 
     /* ================= DELETE ================= */
 
     @Transactional
-    public void removeMember(Long tenantId, Long userId) {
-        // Check permissions
-        if (!canManageMembers(tenantId, userId)) {
-            throw new IllegalStateException("Insufficient privileges to remove members");
-        }
-        
-        TenantMember member = getMemberEntityRequired(tenantId, userId);
+    public void removeMember(Long tenantId, Long targetUserId) {
+        String actorEmail = getCurrentUserEmail();
 
-        if (member.getRole() == TenantRole.OWNER) {
-            throw new IllegalStateException("Cannot remove OWNER");
+        if (!canManageMembers(tenantId, actorEmail)) {
+            throw new IllegalStateException("Không đủ quyền để xóa thành viên");
         }
 
-        memberRepo.delete(member);
+        TenantMember targetMember = getMemberEntityRequired(tenantId, targetUserId);
+
+        if (targetMember.getRole() == TenantRole.OWNER) {
+            throw new IllegalStateException("Không thể xóa OWNER khỏi tenant");
+        }
+
+        memberRepo.delete(targetMember);
+
+        auditLogService.logAction(tenantId, actorEmail, "REMOVE_MEMBER",
+                "Removed userId=" + targetUserId);
     }
 
     /* ================= HELPERS ================= */
@@ -96,58 +111,74 @@ public class TenantMemberService {
                 .orElseThrow(() -> new IllegalStateException("Member not found"));
     }
 
-    private boolean canManageMembers(Long tenantId, Long userId) {
+    /**
+     * Kiểm tra ACTOR (người thực hiện request) có quyền quản lý members không.
+     * Phải check role của actor, không phải target.
+     */
+    private boolean canManageMembers(Long tenantId, String actorEmail) {
         try {
-            // System ADMIN can manage any tenant
-            Optional<TenantMember> memberOpt = getMemberEntity(tenantId, userId);
-            if (memberOpt.isEmpty()) return false;
-            
-            TenantMember member = memberOpt.get();
-            User user = member.getUser();
-            
-            if (user.getSystemRole() == com.chatbot.core.identity.model.SystemRole.ADMIN) {
+            Optional<TenantMember> actorMembership = memberRepo
+                    .findByTenantIdAndUserEmailAndStatus(tenantId, actorEmail, MembershipStatus.ACTIVE);
+            if (actorMembership.isEmpty()) return false;
+
+            TenantMember actor = actorMembership.get();
+            User actorUser = actor.getUser();
+
+            // System ADMIN luôn có quyền
+            if (actorUser.getSystemRole() == com.chatbot.core.identity.model.SystemRole.ADMIN) {
                 return true;
             }
-            
-            // OWNER and ADMIN can manage members
-            return member.getRole() == TenantRole.OWNER || member.getRole() == TenantRole.ADMIN;
-            
+            // OWNER và ADMIN của tenant có quyền quản lý member
+            return actor.getRole() == TenantRole.OWNER || actor.getRole() == TenantRole.ADMIN;
+
         } catch (Exception e) {
+            log.error("Error checking manage-member permission for actor={}: {}", actorEmail, e.getMessage());
             return false;
         }
     }
 
-    private boolean canAssignRole(Long tenantId, Long userId, TenantRole targetRole) {
+    /**
+     * Kiểm tra ACTOR có thể gán targetRole cho người khác không.
+     */
+    private boolean canAssignRole(Long tenantId, String actorEmail, TenantRole targetRole) {
         try {
-            Optional<TenantMember> memberOpt = getMemberEntity(tenantId, userId);
-            if (memberOpt.isEmpty()) return false;
-            
-            TenantMember member = memberOpt.get();
-            User user = member.getUser();
-            
-            // System ADMIN can assign any role
-            if (user.getSystemRole() == com.chatbot.core.identity.model.SystemRole.ADMIN) {
+            Optional<TenantMember> actorMembership = memberRepo
+                    .findByTenantIdAndUserEmailAndStatus(tenantId, actorEmail, MembershipStatus.ACTIVE);
+            if (actorMembership.isEmpty()) return false;
+
+            TenantMember actor = actorMembership.get();
+            User actorUser = actor.getUser();
+
+            // System ADMIN có thể gán bất kỳ role nào
+            if (actorUser.getSystemRole() == com.chatbot.core.identity.model.SystemRole.ADMIN) {
                 return true;
             }
-            
-            TenantRole currentRole = member.getRole();
-            
-            // OWNER can assign any role except another OWNER
-            if (currentRole == TenantRole.OWNER) {
+
+            TenantRole actorRole = actor.getRole();
+
+            // OWNER có thể gán bất kỳ role nào trừ OWNER khác
+            if (actorRole == TenantRole.OWNER) {
                 return targetRole != TenantRole.OWNER;
             }
-            
-            // ADMIN can assign EDITOR, MEMBER, but not OWNER or ADMIN
-            if (currentRole == TenantRole.ADMIN) {
+            // ADMIN có thể gán EDITOR và MEMBER
+            if (actorRole == TenantRole.ADMIN) {
                 return targetRole == TenantRole.EDITOR || targetRole == TenantRole.MEMBER;
             }
-            
-            // EDITOR and MEMBER cannot assign roles
+            // EDITOR và MEMBER không có quyền gán role
             return false;
-            
+
         } catch (Exception e) {
+            log.error("Error checking assign-role permission for actor={}: {}", actorEmail, e.getMessage());
             return false;
         }
+    }
+
+    private String getCurrentUserEmail() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !auth.isAuthenticated()) {
+            throw new IllegalStateException("User chưa được xác thực");
+        }
+        return auth.getName();
     }
 
     private MemberResponse toResponse(TenantMember m) {

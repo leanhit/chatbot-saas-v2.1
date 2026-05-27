@@ -7,6 +7,7 @@ import com.chatbot.core.tenant.membership.dto.*;
 import com.chatbot.core.tenant.membership.model.*;
 import com.chatbot.core.tenant.membership.repository.TenantMemberRepository;
 import com.chatbot.core.tenant.membership.repository.TenantJoinRequestRepository;
+import com.chatbot.core.tenant.service.TenantAuditLogService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -25,27 +26,25 @@ public class TenantJoinRequestService {
     private final TenantJoinRequestRepository joinRequestRepo;
     private final TenantRepository tenantRepo;
     private final TenantNotificationService notificationService;
+    private final TenantAuditLogService auditLogService;
 
     /* ================= REQUEST ================= */
 
     @Transactional
     public void requestToJoin(Long tenantId, User user) {
-        // Check if user already has an active membership
         if (memberRepo.existsByTenant_IdAndUser_IdAndStatus(
                 tenantId, user.getId(), MembershipStatus.ACTIVE)) {
             throw new IllegalStateException("Bạn đã là thành viên của tenant này");
         }
 
-        // Check for existing pending join request
         if (joinRequestRepo.existsByTenant_IdAndUser_IdAndStatus(
                 tenantId, user.getId(), MembershipStatus.PENDING)) {
-            throw new IllegalStateException("Bạn đã gửi yêu cầu tham gia tenant này");
+            throw new IllegalStateException("Bạn đã gửi yêu cầu tham gia tenant này rồi");
         }
 
         Tenant tenant = tenantRepo.findById(tenantId)
                 .orElseThrow(() -> new IllegalStateException("Không tìm thấy tenant"));
 
-        // Create new join request
         joinRequestRepo.save(TenantJoinRequest.builder()
                 .tenant(tenant)
                 .user(user)
@@ -53,13 +52,15 @@ public class TenantJoinRequestService {
                 .createdAt(LocalDateTime.now())
                 .build());
 
-        // Send notification to tenant admins
         notificationService.sendJoinRequestNotification(
             tenantId,
             tenant.getName(),
             user.getEmail(),
-            user.getEmail() // Could be enhanced with user's display name
+            user.getEmail()
         );
+
+        auditLogService.logAction(tenantId, user.getEmail(), "REQUEST_JOIN",
+            "User requested to join tenant");
     }
 
     /* ================= LIST ================= */
@@ -71,66 +72,66 @@ public class TenantJoinRequestService {
                 .toList();
     }
 
-    /* ================= UPDATE (SPEC) ================= */
-    /**
-     * PATCH /join-requests/{id}
-     * { status: APPROVED | REJECTED }
-     */
+    /* ================= UPDATE ================= */
+
     @Transactional
     public void updateStatus(Long tenantId, Long requestId, MembershipStatus status) {
         TenantJoinRequest request = getPendingRequest(tenantId, requestId);
-        
+
+        String actorEmail = getCurrentUserEmailSafe();
+
         if (status == MembershipStatus.ACTIVE) {
-            // Check if user already has ACTIVE membership
             if (!memberRepo.existsByTenant_IdAndUser_IdAndStatus(
                     tenantId, request.getUser().getId(), MembershipStatus.ACTIVE)) {
-                // Add user as active member
                 memberRepo.save(TenantMember.builder()
                         .tenant(request.getTenant())
                         .user(request.getUser())
-                        .role(TenantRole.MEMBER) // Default role for join requests
+                        .role(TenantRole.MEMBER)
                         .status(MembershipStatus.ACTIVE)
                         .joinedAt(LocalDateTime.now())
                         .build());
 
-                // Send notification to user
                 notificationService.sendJoinRequestApprovedNotification(
                     request.getTenant().getId(),
                     request.getTenant().getName(),
                     request.getUser().getEmail()
                 );
+
+                auditLogService.logAction(tenantId, actorEmail, "APPROVE_JOIN_REQUEST",
+                    "Approved join request from " + request.getUser().getEmail());
             }
-            
-            // Delete the join request
             joinRequestRepo.delete(request);
-            
+
         } else if (status == MembershipStatus.REJECTED) {
-            // Just delete the request
             joinRequestRepo.delete(request);
+            auditLogService.logAction(tenantId, actorEmail, "REJECT_JOIN_REQUEST",
+                "Rejected join request from " + request.getUser().getEmail());
         } else {
-            throw new IllegalStateException("Trạng thái không hợp lệ");
+            throw new IllegalStateException("Trạng thái không hợp lệ: " + status);
         }
     }
 
     /**
-     * Cancel/withdraw user's own join request
+     * User tự hủy yêu cầu tham gia của mình.
      */
+    @Transactional
     public void cancelUserRequest(Long requestId, User user) {
         TenantJoinRequest request = joinRequestRepo.findById(requestId)
                 .orElseThrow(() -> new IllegalStateException("Không tìm thấy yêu cầu"));
 
-        // Verify that the request belongs to the user
         if (!request.getUser().getId().equals(user.getId())) {
             throw new IllegalStateException("Bạn không thể hủy yêu cầu của người khác");
         }
 
-        // Verify that the request is still pending
         if (request.getStatus() != MembershipStatus.PENDING) {
             throw new IllegalStateException("Chỉ có thể hủy yêu cầu đang chờ xử lý");
         }
 
-        // Delete the request
+        Long tenantId = request.getTenant().getId();
         joinRequestRepo.delete(request);
+
+        auditLogService.logAction(tenantId, user.getEmail(), "CANCEL_JOIN_REQUEST",
+            "User cancelled their own join request");
     }
 
     /* ================= HELPERS ================= */
@@ -153,5 +154,14 @@ public class TenantJoinRequestService {
                 .status(request.getStatus())
                 .requestedAt(request.getCreatedAt())
                 .build();
+    }
+
+    private String getCurrentUserEmailSafe() {
+        try {
+            org.springframework.security.core.Authentication auth =
+                org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+            if (auth != null && auth.isAuthenticated()) return auth.getName();
+        } catch (Exception ignored) {}
+        return "system";
     }
 }

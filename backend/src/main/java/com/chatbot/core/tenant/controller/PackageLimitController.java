@@ -28,8 +28,10 @@ public class PackageLimitController {
     @Operation(summary = "Get chatbot limit info", description = "Get current chatbot usage and limits for the authenticated tenant")
     public ResponseEntity<ApiResponse<PackageLimitValidationService.ChatbotLimitInfo>> getChatbotLimitInfo() {
         try {
-            // TODO: Get tenant ID from security context
-            Long tenantId = 1L; // TODO: Get from security context
+            Long tenantId = com.chatbot.core.tenant.infra.TenantContext.getTenantId();
+            if (tenantId == null) {
+                throw new RuntimeException("Tenant ID not found in context");
+            }
             
             PackageLimitValidationService.ChatbotLimitInfo limitInfo = 
                     limitValidationService.getChatbotLimitInfo(tenantId);
@@ -45,7 +47,7 @@ public class PackageLimitController {
      * Get chatbot limit information for specific tenant
      */
     @GetMapping("/chatbot-info/{tenantId}")
-    @PreAuthorize("hasRole('SYSTEM_ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Get chatbot limit info by tenant", description = "Get current chatbot usage and limits for a specific tenant (Admin only)")
     public ResponseEntity<ApiResponse<PackageLimitValidationService.ChatbotLimitInfo>> getChatbotLimitInfoByTenant(
             @PathVariable Long tenantId) {
@@ -64,7 +66,7 @@ public class PackageLimitController {
      * Check if tenant can create more chatbots
      */
     @GetMapping("/can-create-chatbot/{tenantId}")
-    @PreAuthorize("hasRole('SYSTEM_ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Check if can create chatbot", description = "Check if tenant can create more chatbots (Admin only)")
     public ResponseEntity<ApiResponse<Boolean>> canCreateMoreChatbots(@PathVariable Long tenantId) {
         try {
@@ -82,7 +84,7 @@ public class PackageLimitController {
      * Get remaining chatbot slots for tenant
      */
     @GetMapping("/remaining-slots/{tenantId}")
-    @PreAuthorize("hasRole('SYSTEM_ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Get remaining chatbot slots", description = "Get number of remaining chatbot slots for tenant (Admin only)")
     public ResponseEntity<ApiResponse<Integer>> getRemainingChatbotSlots(@PathVariable Long tenantId) {
         try {
@@ -99,7 +101,7 @@ public class PackageLimitController {
      * Validate chatbot creation (will throw exception if limit exceeded)
      */
     @PostMapping("/validate-chatbot-creation/{tenantId}")
-    @PreAuthorize("hasRole('SYSTEM_ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Validate chatbot creation", description = "Validate if tenant can create chatbot (Admin only)")
     public ResponseEntity<ApiResponse<String>> validateChatbotCreation(@PathVariable Long tenantId) {
         try {

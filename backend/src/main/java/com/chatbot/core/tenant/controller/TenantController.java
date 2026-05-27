@@ -23,6 +23,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 
 import java.util.List;
 import java.util.Map;
@@ -45,19 +46,22 @@ public class TenantController {
     private final UserRepository userRepository;
     private final TenantMemberRepository tenantMemberRepository;
     private final TenantMembershipFacade tenantMembershipFacade;
+    private final com.chatbot.core.tenant.service.TenantPermissionValidator permissionValidator;
 
     public TenantController(TenantService tenantService, 
                           TenantProfileService tenantProfileService, 
                           TenantRepository tenantRepository,
                           UserRepository userRepository,
                           TenantMemberRepository tenantMemberRepository,
-                          TenantMembershipFacade tenantMembershipFacade) {
+                          TenantMembershipFacade tenantMembershipFacade,
+                          com.chatbot.core.tenant.service.TenantPermissionValidator permissionValidator) {
         this.tenantService = tenantService;
         this.tenantProfileService = tenantProfileService;
         this.tenantRepository = tenantRepository;
         this.userRepository = userRepository;
         this.tenantMemberRepository = tenantMemberRepository;
         this.tenantMembershipFacade = tenantMembershipFacade;
+        this.permissionValidator = permissionValidator;
     }
 
     /**
@@ -115,12 +119,47 @@ public class TenantController {
         tenantService.suspendTenant(id);
     }
 
+    @PostMapping("/key/{tenantKey}/suspend")
+    public void suspendByKey(@PathVariable String tenantKey) {
+        Long id = tenantService.getTenantIdByKey(tenantKey);
+        if (id == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Tenant not found");
+        }
+        tenantService.suspendTenant(id);
+    }
+
     /**
      * Activate tenant.
      */
     @PostMapping("/{id}/activate")
     public void activate(@PathVariable Long id) {
         tenantService.activateTenant(id);
+    }
+
+    @PostMapping("/key/{tenantKey}/activate")
+    public void activateByKey(@PathVariable String tenantKey) {
+        Long id = tenantService.getTenantIdByKey(tenantKey);
+        if (id == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Tenant not found");
+        }
+        tenantService.activateTenant(id);
+    }
+
+    /**
+     * Deactivate tenant.
+     */
+    @PostMapping("/{id}/deactivate")
+    public void deactivate(@PathVariable Long id) {
+        tenantService.deactivateTenant(id);
+    }
+
+    @PostMapping("/key/{tenantKey}/deactivate")
+    public void deactivateByKey(@PathVariable String tenantKey) {
+        Long id = tenantService.getTenantIdByKey(tenantKey);
+        if (id == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Tenant not found");
+        }
+        tenantService.deactivateTenant(id);
     }
 
     /**
@@ -204,9 +243,9 @@ public class TenantController {
     @PutMapping("/key/{tenantKey}/contact")
     public TenantResponse updateContactInfo(
             @PathVariable String tenantKey,
-            @RequestBody Map<String, Object> contactData
+            @RequestBody TenantContactInfoRequest request
     ) {
-        return tenantService.updateContactInfo(tenantKey, contactData);
+        return tenantService.updateContactInfo(tenantKey, request);
     }
 
     /**
@@ -577,5 +616,46 @@ public class TenantController {
             log.error("Debug packages error: {}", e.getMessage(), e);
         }
         return result;
+    }
+
+    /**
+     * Bulk invite users
+     */
+    @PostMapping("/key/{tenantKey}/invitations/bulk")
+    @Operation(summary = "Bulk invite users", description = "Send multiple invitations to users for a tenant")
+    public ResponseEntity<List<InvitationResponse>> bulkInvite(
+            @PathVariable String tenantKey,
+            @RequestBody BulkInvitationRequest request) {
+        List<InvitationResponse> results = tenantService.bulkInviteUsers(tenantKey, request.getInvitations());
+        return ResponseEntity.ok(results);
+    }
+
+    /**
+     * Soft-delete tenant
+     */
+    @DeleteMapping("/{id}")
+    @Operation(summary = "Delete tenant", description = "Soft-delete a tenant")
+    public ResponseEntity<Void> deleteTenant(@PathVariable Long id) {
+        String currentUserEmail = permissionValidator.getCurrentUserEmail();
+        if (!permissionValidator.isAdminOrOwner(id, currentUserEmail)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Insufficient permission");
+        }
+        tenantService.deleteTenant(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/key/{tenantKey}")
+    @Operation(summary = "Delete tenant by key", description = "Soft-delete a tenant using its tenantKey")
+    public ResponseEntity<Void> deleteTenantByKey(@PathVariable String tenantKey) {
+        Long id = tenantService.getTenantIdByKey(tenantKey);
+        if (id == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Tenant not found");
+        }
+        String currentUserEmail = permissionValidator.getCurrentUserEmail();
+        if (!permissionValidator.isAdminOrOwner(id, currentUserEmail)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Insufficient permission");
+        }
+        tenantService.deleteTenant(id);
+        return ResponseEntity.noContent().build();
     }
 }

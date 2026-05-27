@@ -10,6 +10,7 @@ import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
+import org.springframework.beans.factory.annotation.Value;
 
 @Component
 @DependsOn("grpcServerConfig")
@@ -19,6 +20,12 @@ public class TenantGrpcClient {
     private ManagedChannel channel;
     private TenantServiceGrpc.TenantServiceBlockingStub blockingStub;
 
+    @Value("${grpc.server.identity.host:localhost}")
+    private String grpcHost;
+
+    @Value("${grpc.server.identity.port:50053}")
+    private int grpcPort;
+
     @PostConstruct
     public void init() {
         try {
@@ -26,13 +33,13 @@ public class TenantGrpcClient {
             Thread.sleep(1000);
             
             // Tạo channel kết nối đến gRPC server
-            channel = ManagedChannelBuilder.forAddress("localhost", 50053)
+            channel = ManagedChannelBuilder.forAddress(grpcHost, grpcPort)
                     .usePlaintext()
                     .build();
             
             blockingStub = TenantServiceGrpc.newBlockingStub(channel);
             
-            log.info("gRPC Client đã khởi tạo thành công và kết nối đến port 50053");
+            log.info("gRPC Client đã khởi tạo thành công và kết nối đến {}:{}", grpcHost, grpcPort);
             
             // Test kết nối
             testConnection();

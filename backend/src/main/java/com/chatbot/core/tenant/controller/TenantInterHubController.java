@@ -8,12 +8,17 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import java.util.Map;
 
 @RestController
 @RequestMapping("/api/tenant-inter-hub")
 @Slf4j
 public class TenantInterHubController {
+
+    @Value("${app.internal.api-key:default-secret-for-dev}")
+    private String internalApiKey;
 
     @Autowired
     private IdentityGrpcService identityGrpcService;
@@ -22,7 +27,12 @@ public class TenantInterHubController {
      * Tenant Hub gọi Identity Hub để validate token
      */
     @PostMapping("/tenant/validate-token")
-    public ResponseEntity<Map<String, Object>> validateToken(@RequestBody Map<String, String> request) {
+    public ResponseEntity<Map<String, Object>> validateToken(
+            @RequestHeader("X-Internal-Secret") String internalSecret,
+            @RequestBody Map<String, String> request) {
+        if (!internalApiKey.equals(internalSecret)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Unauthorized access"));
+        }
         try {
             String token = request.get("token");
             boolean isValid = identityGrpcService.validateToken(token);
@@ -42,7 +52,12 @@ public class TenantInterHubController {
      * Tenant Hub gọi Identity Hub để validate user
      */
     @PostMapping("/tenant/validate-user")
-    public ResponseEntity<Map<String, Object>> validateUser(@RequestBody Map<String, String> request) {
+    public ResponseEntity<Map<String, Object>> validateUser(
+            @RequestHeader("X-Internal-Secret") String internalSecret,
+            @RequestBody Map<String, String> request) {
+        if (!internalApiKey.equals(internalSecret)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Unauthorized access"));
+        }
         try {
             String userId = request.get("userId");
             boolean isValid = identityGrpcService.validateUser(userId);
@@ -63,7 +78,12 @@ public class TenantInterHubController {
      * Tenant Hub gọi Identity Hub để get user role
      */
     @GetMapping("/tenant/user-role/{userId}")
-    public ResponseEntity<Map<String, Object>> getUserRole(@PathVariable String userId) {
+    public ResponseEntity<Map<String, Object>> getUserRole(
+            @RequestHeader("X-Internal-Secret") String internalSecret,
+            @PathVariable String userId) {
+        if (!internalApiKey.equals(internalSecret)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Unauthorized access"));
+        }
         try {
             String role = identityGrpcService.getUserRole(userId);
             
@@ -83,7 +103,12 @@ public class TenantInterHubController {
      * Tenant Hub gọi Identity Hub để check user active
      */
     @GetMapping("/tenant/user-active/{userId}")
-    public ResponseEntity<Map<String, Object>> isUserActive(@PathVariable String userId) {
+    public ResponseEntity<Map<String, Object>> isUserActive(
+            @RequestHeader("X-Internal-Secret") String internalSecret,
+            @PathVariable String userId) {
+        if (!internalApiKey.equals(internalSecret)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Unauthorized access"));
+        }
         try {
             boolean isActive = identityGrpcService.isUserActive(userId);
             
@@ -103,7 +128,12 @@ public class TenantInterHubController {
      * Tenant Hub gọi Identity Hub để get user profile
      */
     @GetMapping("/tenant/user-profile/{userId}")
-    public ResponseEntity<GetUserResponse> getUserProfile(@PathVariable String userId) {
+    public ResponseEntity<GetUserResponse> getUserProfile(
+            @RequestHeader("X-Internal-Secret") String internalSecret,
+            @PathVariable String userId) {
+        if (!internalApiKey.equals(internalSecret)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
         try {
             GetUserResponse profile = identityGrpcService.getUserProfile(userId);
             
