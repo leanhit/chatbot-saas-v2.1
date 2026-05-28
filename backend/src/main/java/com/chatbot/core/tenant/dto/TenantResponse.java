@@ -5,12 +5,14 @@ import com.chatbot.core.tenant.model.TenantVisibility;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.time.Instant;
 
 @Getter
 @Setter
 @Builder
 public class TenantResponse {
+    @JsonIgnore
     private Long id;
     private String tenantKey;
     private String name;

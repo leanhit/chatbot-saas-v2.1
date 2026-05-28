@@ -66,7 +66,7 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div
             v-for="tenant in results"
-            :key="tenant.id"
+            :key="tenant.tenantKey"
             class="search-item-card"
           >
             <div class="search-item-content">
@@ -83,7 +83,6 @@
                     {{ tenant.name }}
                   </div>
                   <div class="tenant-meta">
-                    <span>ID: {{ tenant.id }}</span><br />
                     <span v-if="tenant.province">
                       Province: {{ tenant.province }}
                     </span>

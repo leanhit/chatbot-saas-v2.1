@@ -34,7 +34,7 @@
       <div v-else class="tenant-grid">
         <div
           v-for="tenant in tenantList"
-          :key="tenant.id"
+          :key="tenant.tenantKey"
           class="bg-white dark:bg-gray-800 rounded-lg shadow-md border border-gray-200 dark:border-gray-700 hover:shadow-lg transition-shadow duration-200 p-6"
         >
           <div class="card-header">

@@ -11,7 +11,8 @@ import java.time.LocalDateTime;
 @Data
 @Builder
 public class TenantPendingResponse {
-    private Long id;
+    private Long id; // This is the Join Request ID
+    private String tenantKey; // Obfuscated unique key for tenant
     private String name;    
     private TenantStatus status;
     private TenantVisibility visibility;

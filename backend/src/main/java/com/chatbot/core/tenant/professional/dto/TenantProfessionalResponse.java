@@ -1,5 +1,6 @@
 package com.chatbot.core.tenant.professional.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.*;
 
 import java.time.LocalDateTime;
@@ -10,7 +11,9 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Builder
 public class TenantProfessionalResponse {
+    @JsonIgnore
     private Long id;
+    @JsonIgnore
     private Long tenantId;
     private String jobTitle;
     private String department;

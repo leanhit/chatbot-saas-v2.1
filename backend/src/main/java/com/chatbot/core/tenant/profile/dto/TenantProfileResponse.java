@@ -1,11 +1,13 @@
 package com.chatbot.core.tenant.profile.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Builder;
 import lombok.Getter;
 
 @Getter
 @Builder
 public class TenantProfileResponse {
+    @JsonIgnore
     private Long tenantId;
     private String description;
     private String industry;

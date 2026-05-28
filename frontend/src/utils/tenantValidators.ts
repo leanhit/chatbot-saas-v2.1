@@ -99,7 +99,7 @@ export function isPendingStatus(status: MembershipStatus): boolean {
 export function validateTenantResponse(data: any): data is TenantResponse {
   return (
     data &&
-    typeof data.id === 'number' &&
+    (data.id === undefined || data.id === null || typeof data.id === 'number') &&
     typeof data.tenantKey === 'string' &&
     typeof data.name === 'string' &&
     ['ACTIVE', 'INACTIVE', 'PENDING'].includes(data.status) &&
@@ -115,12 +115,12 @@ export function validateMemberResponse(data: any): data is MemberResponse {
     data &&
     typeof data.id === 'number' &&
     typeof data.userId === 'number' &&
-    typeof data.tenantId === 'number' &&
-    typeof data.name === 'string' &&
+    (data.tenantId === undefined || data.tenantId === null || typeof data.tenantId === 'number') &&
+    (data.name === undefined || data.name === null || typeof data.name === 'string') &&
     typeof data.email === 'string' &&
     isValidTenantRole(data.role) &&
-    isValidMembershipStatus(data.status) &&
-    typeof data.joinedAt === 'string'
+    (data.status === undefined || data.status === null || isValidMembershipStatus(data.status)) &&
+    (data.joinedAt === undefined || data.joinedAt === null || typeof data.joinedAt === 'string')
   )
 }
 
@@ -131,10 +131,10 @@ export function validateInvitationResponse(data: any): data is InvitationRespons
   return (
     data &&
     typeof data.id === 'number' &&
-    typeof data.tenantId === 'number' &&
+    (data.tenantId === undefined || data.tenantId === null || typeof data.tenantId === 'number') &&
     typeof data.email === 'string' &&
     isValidTenantRole(data.role) &&
-    isValidMembershipStatus(data.status) &&
+    (data.status === undefined || data.status === null || isValidMembershipStatus(data.status)) &&
     typeof data.token === 'string' &&
     typeof data.invitedBy === 'string' &&
     typeof data.invitedAt === 'string' &&
