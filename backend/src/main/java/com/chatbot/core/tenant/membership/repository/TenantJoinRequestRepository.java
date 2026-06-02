@@ -8,8 +8,8 @@ import java.util.List;
 import java.util.Optional;
 
 public interface TenantJoinRequestRepository extends JpaRepository<TenantJoinRequest, Long> {
-    List<TenantJoinRequest> findByUser_IdAndStatus(Long userId, MembershipStatus status);
+    List<TenantJoinRequest> findByUserIdAndStatus(Long userId, MembershipStatus status);
     List<TenantJoinRequest> findByTenant_IdAndStatus(Long tenantId, MembershipStatus status);
-    Optional<TenantJoinRequest> findByTenant_IdAndUser_Id(Long tenantId, Long userId);
-    boolean existsByTenant_IdAndUser_IdAndStatus(Long tenantId, Long userId, MembershipStatus status);
+    Optional<TenantJoinRequest> findByTenant_IdAndUserId(Long tenantId, Long userId);
+    boolean existsByTenant_IdAndUserIdAndStatus(Long tenantId, Long userId, MembershipStatus status);
 }

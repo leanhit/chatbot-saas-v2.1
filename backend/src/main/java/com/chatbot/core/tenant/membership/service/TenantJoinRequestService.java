@@ -1,6 +1,7 @@
 package com.chatbot.core.tenant.membership.service;
 
 import com.chatbot.core.user.model.User;
+import com.chatbot.core.user.repository.UserRepository;
 import com.chatbot.core.tenant.model.Tenant;
 import com.chatbot.core.tenant.repository.TenantRepository;
 import com.chatbot.core.tenant.membership.dto.*;
@@ -27,17 +28,18 @@ public class TenantJoinRequestService {
     private final TenantRepository tenantRepo;
     private final TenantNotificationService notificationService;
     private final TenantAuditLogService auditLogService;
+    private final UserRepository userRepo; // Added for application-level join
 
     /* ================= REQUEST ================= */
 
     @Transactional
     public void requestToJoin(Long tenantId, User user) {
-        if (memberRepo.existsByTenant_IdAndUser_IdAndStatus(
+        if (memberRepo.existsByTenant_IdAndUserIdAndStatus(
                 tenantId, user.getId(), MembershipStatus.ACTIVE)) {
             throw new IllegalStateException("Bạn đã là thành viên của tenant này");
         }
 
-        if (joinRequestRepo.existsByTenant_IdAndUser_IdAndStatus(
+        if (joinRequestRepo.existsByTenant_IdAndUserIdAndStatus(
                 tenantId, user.getId(), MembershipStatus.PENDING)) {
             throw new IllegalStateException("Bạn đã gửi yêu cầu tham gia tenant này rồi");
         }
@@ -47,7 +49,7 @@ public class TenantJoinRequestService {
 
         joinRequestRepo.save(TenantJoinRequest.builder()
                 .tenant(tenant)
-                .user(user)
+                .userId(user.getId()) // Application-level join: store userId instead of User object
                 .status(MembershipStatus.PENDING)
                 .createdAt(LocalDateTime.now())
                 .build());
@@ -81,11 +83,14 @@ public class TenantJoinRequestService {
         String actorEmail = getCurrentUserEmailSafe();
 
         if (status == MembershipStatus.ACTIVE) {
-            if (!memberRepo.existsByTenant_IdAndUser_IdAndStatus(
-                    tenantId, request.getUser().getId(), MembershipStatus.ACTIVE)) {
+            // Application-level join: fetch user by userId
+            User user = userRepo.findById(request.getUserId()).orElse(null);
+            
+            if (user != null && !memberRepo.existsByTenant_IdAndUserIdAndStatus(
+                    tenantId, request.getUserId(), MembershipStatus.ACTIVE)) {
                 memberRepo.save(TenantMember.builder()
                         .tenant(request.getTenant())
-                        .user(request.getUser())
+                        .userId(request.getUserId()) // Application-level join: store userId instead of User object
                         .role(TenantRole.MEMBER)
                         .status(MembershipStatus.ACTIVE)
                         .joinedAt(LocalDateTime.now())
@@ -94,18 +99,22 @@ public class TenantJoinRequestService {
                 notificationService.sendJoinRequestApprovedNotification(
                     request.getTenant().getId(),
                     request.getTenant().getName(),
-                    request.getUser().getEmail()
+                    user.getEmail()
                 );
 
                 auditLogService.logAction(tenantId, actorEmail, "APPROVE_JOIN_REQUEST",
-                    "Approved join request from " + request.getUser().getEmail());
+                    "Approved join request from " + user.getEmail());
             }
             joinRequestRepo.delete(request);
 
         } else if (status == MembershipStatus.REJECTED) {
+            // Application-level join: fetch user by userId
+            User user = userRepo.findById(request.getUserId()).orElse(null);
+            String userEmail = user != null ? user.getEmail() : "unknown";
+            
             joinRequestRepo.delete(request);
             auditLogService.logAction(tenantId, actorEmail, "REJECT_JOIN_REQUEST",
-                "Rejected join request from " + request.getUser().getEmail());
+                "Rejected join request from " + userEmail);
         } else {
             throw new IllegalStateException("Trạng thái không hợp lệ: " + status);
         }
@@ -119,7 +128,7 @@ public class TenantJoinRequestService {
         TenantJoinRequest request = joinRequestRepo.findById(requestId)
                 .orElseThrow(() -> new IllegalStateException("Không tìm thấy yêu cầu"));
 
-        if (!request.getUser().getId().equals(user.getId())) {
+        if (!request.getUserId().equals(user.getId())) {
             throw new IllegalStateException("Bạn không thể hủy yêu cầu của người khác");
         }
 
@@ -148,9 +157,12 @@ public class TenantJoinRequestService {
     }
 
     private MemberResponse toResponse(TenantJoinRequest request) {
+        // Application-level join: fetch user by userId
+        User user = userRepo.findById(request.getUserId()).orElse(null);
+        
         return MemberResponse.builder()
-                .id(request.getUser().getId())
-                .email(request.getUser().getEmail())
+                .id(request.getUserId())
+                .email(user != null ? user.getEmail() : null)
                 .status(request.getStatus())
                 .requestedAt(request.getCreatedAt())
                 .build();

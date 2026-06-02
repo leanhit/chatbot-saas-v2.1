@@ -3,7 +3,7 @@ package com.chatbot.spokes.minio.storage.controller;
 import com.chatbot.core.tenant.infra.TenantContext;
 import com.chatbot.spokes.minio.storage.service.AvatarStorageService;
 import com.chatbot.core.user.model.User;
-import com.chatbot.core.identity.repository.AuthRepository;
+import com.chatbot.core.user.repository.AuthRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;

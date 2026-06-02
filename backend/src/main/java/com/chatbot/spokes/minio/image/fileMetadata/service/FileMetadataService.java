@@ -1,7 +1,7 @@
 package com.chatbot.spokes.minio.image.fileMetadata.service;
 
 import com.chatbot.core.user.model.User;
-import com.chatbot.core.identity.repository.AuthRepository;
+import com.chatbot.core.user.repository.AuthRepository;
 import com.chatbot.core.tenant.infra.TenantContext;
 import com.chatbot.spokes.minio.image.category.model.Category;
 import com.chatbot.spokes.minio.image.category.service.CategoryService;
@@ -158,7 +158,7 @@ public class FileMetadataService {
         metadata.setDescription(request.getDescription());
         metadata.setCategory(category);
         metadata.setTags(request.getTags());
-        metadata.setUser(user);
+        metadata.setUserId(user.getId()); // Application-level join: store userId instead of User object
         metadata.setCode(request.getCode());
 
         fileMetadataRepository.save(metadata);
@@ -214,7 +214,7 @@ public class FileMetadataService {
             metadata.setDescription(request.getDescription());
             metadata.setCategory(category);
             metadata.setTags(request.getTags());
-            metadata.setUser(user);
+            metadata.setUserId(user.getId()); // Application-level join: store userId instead of User object
             metadata.setCode(request.getCode());
 
             fileMetadataRepository.save(metadata);

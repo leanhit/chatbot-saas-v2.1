@@ -20,6 +20,7 @@ import com.chatbot.core.tenant.membership.model.TenantMember;
 import com.chatbot.core.tenant.profile.model.TenantProfile;
 import com.chatbot.core.tenant.profile.dto.TenantProfileResponse;
 import com.chatbot.core.tenant.profile.repository.TenantProfileRepository;
+import com.chatbot.core.user.repository.AuthRepository;
 import com.chatbot.core.tenant.profile.service.TenantProfileService;
 
 import com.chatbot.shared.address.dto.AddressDetailResponseDTO;
@@ -29,10 +30,12 @@ import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -45,6 +48,7 @@ import java.util.Collections;
 public class TenantService {
 
     private final TenantRepository tenantRepository;
+    private final AuthRepository authRepository;
     private final UserRepository userRepository;
     private final TenantMemberRepository tenantMemberRepository;
     private final TenantMembershipFacade tenantMembershipFacade;
@@ -89,26 +93,22 @@ public class TenantService {
         // Tạo membership OWNER
         TenantMember owner = TenantMember.builder()
                 .tenant(savedTenant)
-                .user(currentUser)
+                .userId(currentUser.getId()) // Application-level join: store userId instead of User object
                 .role(TenantRole.OWNER)
                 .status(MembershipStatus.ACTIVE)
                 .build();
         tenantMemberRepository.save(owner);
 
-        // Tạo profile rỗng
-        try {
-            createEmptyTenantProfile(savedTenant);
-        } catch (Exception e) {
-            log.error("[TenantService] Failed to create profile for tenant {}: {}", savedTenant.getId(), e.getMessage(), e);
-            throw new TenantProfileException("Không thể tạo tenant profile: " + e.getMessage(), e);
-        }
+        // Profile creation removed - will be created via separate API call to avoid transaction rollback issues
+        log.info("[TenantService] Skipping profile creation for tenant: {}", savedTenant.getId());
 
-        // Tạo địa chỉ rỗng
+        // Tạo địa chỉ rỗng - non-critical
         try {
             createEmptyAddressForTenant(savedTenant.getId());
+            log.info("[TenantService] Created empty address for tenant: {}", savedTenant.getId());
         } catch (Exception e) {
             log.error("[TenantService] Failed to create address for tenant {}: {}", savedTenant.getId(), e.getMessage(), e);
-            throw new TenantProfileException("Không thể tạo địa chỉ tenant: " + e.getMessage(), e);
+            // Address creation is non-critical, continue with tenant creation
         }
 
         // Gán gói mặc định — lỗi ở đây không rollback tenant creation
@@ -145,8 +145,11 @@ public class TenantService {
     @Transactional(readOnly = true)
     public TenantResponse getTenantForCurrentUser(Long tenantId) {
         String currentUserEmail = getCurrentUserEmail();
+        Long userId = authRepository.findByEmail(currentUserEmail)
+                .map(User::getId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
         TenantMember member = tenantMemberRepository
-                .findByTenantIdAndUserEmailAndStatus(tenantId, currentUserEmail, MembershipStatus.ACTIVE)
+                .findByTenantIdAndUserIdAndStatus(tenantId, userId, MembershipStatus.ACTIVE)
                 .orElseThrow(() -> new InsufficientPermissionException("Bạn không có quyền truy cập tenant này"));
         return TenantMapper.toResponse(member.getTenant());
     }
@@ -170,17 +173,23 @@ public class TenantService {
      * Lấy chi tiết tenant theo tenantKey.
      * PUBLIC tenant: bất kỳ user đã đăng nhập đều xem được.
      * PRIVATE tenant: chỉ member mới xem được.
+     * NOTE: No @Transactional because this method uses cross-datasource operations (tenant, user, shared)
      */
-    @Transactional(readOnly = true)
     public TenantDetailResponse getTenantDetailByTenantKey(String tenantKey) {
         Tenant tenant = tenantRepository.findByTenantKey(tenantKey)
                 .orElseThrow(() -> new TenantNotFoundException("Tenant not found with key: " + tenantKey));
 
+        log.info("📝 [DEBUG] getTenantDetailByTenantKey - tenantKey: {}, tenantId: {}, currentPackageId: {}",
+                tenantKey, tenant.getId(), tenant.getCurrentPackageId());
+
         // Kiểm tra quyền truy cập cho PRIVATE tenant
         if (tenant.getVisibility() == TenantVisibility.PRIVATE) {
             String currentUserEmail = getCurrentUserEmail();
+            Long userId = authRepository.findByEmail(currentUserEmail)
+                    .map(User::getId)
+                    .orElseThrow(() -> new RuntimeException("User not found"));
             boolean isMember = tenantMemberRepository
-                    .findByTenantIdAndUserEmailAndStatus(tenant.getId(), currentUserEmail, MembershipStatus.ACTIVE)
+                    .findByTenantIdAndUserIdAndStatus(tenant.getId(), userId, MembershipStatus.ACTIVE)
                     .isPresent();
             if (!isMember) {
                 throw new InsufficientPermissionException("Bạn không có quyền truy cập tenant này");
@@ -188,13 +197,24 @@ public class TenantService {
         }
 
         TenantResponse tenantResponse = TenantMapper.toResponse(tenant);
-        TenantProfileResponse profile = tenantProfileService.getProfile(tenant.getId());
+        
+        TenantProfileResponse profile = null;
+        try {
+            profile = tenantProfileService.getProfile(tenant.getId());
+        } catch (ResponseStatusException e) {
+            // Tenant chưa có profile — bỏ qua
+            log.info("[TenantService] Profile not found for tenant {}, treating as null", tenant.getId());
+        } catch (Exception e) {
+            log.error("[TenantService] Unexpected error getting profile for tenant {}: {}", tenant.getId(), e.getMessage(), e);
+            throw e;
+        }
 
         AddressDetailResponseDTO addressDetail = null;
         try {
             addressDetail = addressService.getSingleAddressByOwner(tenant.getId(), OwnerType.TENANT, tenant.getId());
         } catch (RuntimeException e) {
             // Tenant chưa có địa chỉ — bỏ qua
+            log.info("[TenantService] Address not found for tenant {}, treating as null", tenant.getId());
         }
 
         return TenantDetailResponse.from(tenantResponse, profile, addressDetail);
@@ -203,9 +223,12 @@ public class TenantService {
     @Transactional(readOnly = true)
     public List<TenantDetailResponse> getUserTenantsDetail() {
         String currentUserEmail = getCurrentUserEmail();
+        Long userId = authRepository.findByEmail(currentUserEmail)
+                .map(User::getId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
 
         List<Tenant> tenants = tenantMemberRepository
-                .findByUserEmailWithTenant(currentUserEmail)
+                .findByUserIdWithTenant(userId)
                 .stream()
                 .map(TenantMember::getTenant)
                 .collect(Collectors.toList());
@@ -231,7 +254,10 @@ public class TenantService {
                 request.toPageable()
         );
 
-        List<TenantMember> userMemberships = tenantMemberRepository.findByUserEmail(currentUserEmail);
+        Long userId = authRepository.findByEmail(currentUserEmail)
+                .map(User::getId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        List<TenantMember> userMemberships = tenantMemberRepository.findByUserId(userId);
 
         List<Long> tenantIds = tenantsPage.getContent().stream()
                 .map(Tenant::getId).collect(Collectors.toList());
@@ -477,24 +503,6 @@ public class TenantService {
     // =========================================================================
     // PRIVATE HELPERS
     // =========================================================================
-
-    private void createEmptyTenantProfile(Tenant tenant) {
-        com.chatbot.core.tenant.profile.dto.TenantProfileRequest profileRequest =
-                new com.chatbot.core.tenant.profile.dto.TenantProfileRequest();
-        profileRequest.setDescription("");
-        profileRequest.setIndustry("");
-        profileRequest.setPlan("");
-        profileRequest.setCompanySize("");
-        profileRequest.setLegalName(tenant.getName());
-        profileRequest.setTaxCode("");
-        profileRequest.setContactEmail("");
-        profileRequest.setContactPhone("");
-        profileRequest.setLogoUrl("");
-        profileRequest.setFaviconUrl("");
-        profileRequest.setPrimaryColor("");
-        tenantProfileService.upsertProfile(tenant.getId(), profileRequest);
-        log.info("[TenantService] Created empty profile for tenant: {}", tenant.getId());
-    }
 
     private void createEmptyAddressForTenant(Long tenantId) {
         com.chatbot.shared.address.dto.AddressRequestDTO emptyAddress =

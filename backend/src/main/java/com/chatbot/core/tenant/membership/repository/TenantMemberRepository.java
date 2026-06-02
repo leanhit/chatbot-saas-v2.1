@@ -12,106 +12,72 @@ import org.springframework.data.repository.query.Param;
 import java.util.List;
 import java.util.Optional;
 
-public interface TenantMemberRepository
-        extends JpaRepository<TenantMember, Long> {
+public interface TenantMemberRepository extends JpaRepository<TenantMember, Long> {
 
     /* =========================
        BASIC FIND / EXISTS
        ========================= */
 
-    Optional<TenantMember> findByTenant_IdAndUser_Id(Long tenantId, Long userId);
-
-    boolean existsByTenant_IdAndUser_Id(Long tenantId, Long userId);
-
+    Optional<TenantMember> findByTenant_IdAndUserId(Long tenantId, Long userId);
+    boolean existsByTenant_IdAndUserId(Long tenantId, Long userId);
     boolean existsByTenant_IdAndRole(Long tenantId, TenantRole role);
-
-    boolean existsByTenant_IdAndUser_IdAndRole(
-            Long tenantId,
-            Long userId,
-            TenantRole role
-    );
+    boolean existsByTenant_IdAndUserIdAndRole(Long tenantId, Long userId, TenantRole role);
 
     @Query("SELECT COUNT(tm) > 0 FROM TenantMember tm " +
-           "JOIN tm.user u " +
            "WHERE tm.tenant.id = :tenantId " +
-           "AND u.email = :userEmail " +
+           "AND tm.userId = :userId " +
            "AND tm.role = :role " +
            "AND tm.status = :status")
-    boolean existsByTenantIdAndUserEmailAndRoleAndStatus(
-            @Param("tenantId") Long tenantId,
-            @Param("userEmail") String userEmail,
-            @Param("role") TenantRole role,
-            @Param("status") MembershipStatus status
-    );
+    boolean existsByTenantIdAndUserIdAndRoleAndStatus(@Param("tenantId") Long tenantId,
+                                                       @Param("userId") Long userId,
+                                                       @Param("role") TenantRole role,
+                                                       @Param("status") MembershipStatus status);
 
     /* =========================
        STATUS AWARE (IMPORTANT)
        ========================= */
 
-    Optional<TenantMember> findByTenant_IdAndUser_IdAndStatus(
-            Long tenantId,
-            Long userId,
-            MembershipStatus status
-    );
+    Optional<TenantMember> findByTenant_IdAndUserIdAndStatus(Long tenantId, Long userId, MembershipStatus status);
+    boolean existsByTenant_IdAndUserIdAndStatus(Long tenantId, Long userId, MembershipStatus status);
 
-    boolean existsByTenant_IdAndUser_IdAndStatus(
-            Long tenantId,
-            Long userId,
-            MembershipStatus status
-    );
-
-    Page<TenantMember> findByTenant_IdAndStatus(
-            Long tenantId,
-            MembershipStatus status,
-            Pageable pageable
-    );
-
-    List<TenantMember> findByTenant_IdAndStatus(
-            Long tenantId,
-            MembershipStatus status
-    );
+    Page<TenantMember> findByTenant_IdAndStatus(Long tenantId, MembershipStatus status, Pageable pageable);
+    List<TenantMember> findByTenant_IdAndStatus(Long tenantId, MembershipStatus status);
 
     @Query("SELECT tm FROM TenantMember tm " +
-           "JOIN tm.user u " +
            "WHERE tm.tenant.id = :tenantId " +
-           "AND u.email = :userEmail " +
+           "AND tm.userId = :userId " +
            "AND tm.status = :status")
-    Optional<TenantMember> findByTenantIdAndUserEmailAndStatus(
-            @Param("tenantId") Long tenantId,
-            @Param("userEmail") String userEmail,
-            @Param("status") MembershipStatus status
-    );
+    Optional<TenantMember> findByTenantIdAndUserIdAndStatus(@Param("tenantId") Long tenantId,
+                                                             @Param("userId") Long userId,
+                                                             @Param("status") MembershipStatus status);
 
-    List<TenantMember> findByUser_IdAndStatus(
-            Long userId,
-            MembershipStatus status
-    );
+    // Updated derived method name
+    List<TenantMember> findByUserIdAndStatus(Long userId, MembershipStatus status);
 
     /* =========================
        LIST MEMBERS
        ========================= */
 
     Page<TenantMember> findByTenant_Id(Long tenantId, Pageable pageable);
-
     List<TenantMember> findByTenant_Id(Long tenantId);
 
     /* =========================
        USER ↔ TENANT QUERIES
        ========================= */
 
-    List<TenantMember> findByUserEmail(String email);
+    List<TenantMember> findByUserId(Long userId);
 
     @Query("""
         SELECT tm FROM TenantMember tm
         JOIN FETCH tm.tenant
-        WHERE tm.user.email = :email
+        WHERE tm.userId = :userId
     """)
-    List<TenantMember> findByUserEmailWithTenant(@Param("email") String email);
+    List<TenantMember> findByUserIdWithTenant(@Param("userId") Long userId);
 
     @Query("""
         SELECT tm FROM TenantMember tm
         JOIN FETCH tm.tenant
-        WHERE tm.user.id = :userId
+        WHERE tm.userId = :userId
           AND tm.status = 'ACTIVE'
     """)
     List<TenantMember> findActiveTenantsOfUser(@Param("userId") Long userId);
@@ -120,12 +86,10 @@ public interface TenantMemberRepository
         SELECT tm FROM TenantMember tm
         JOIN FETCH tm.tenant
         WHERE tm.tenant.id = :tenantId
-          AND tm.user.email = :userEmail
+          AND tm.userId = :userId
     """)
-    Optional<TenantMember> findByTenantIdAndUserEmail(
-            @Param("tenantId") Long tenantId,
-            @Param("userEmail") String userEmail
-    );
+    Optional<TenantMember> findByTenantIdAndUserId(@Param("tenantId") Long tenantId,
+                                                   @Param("userId") Long userId);
 
     /* =========================
        ROLE / PERMISSION
@@ -136,17 +100,14 @@ public interface TenantMemberRepository
     @Query("""
         SELECT COUNT(tm) > 0 FROM TenantMember tm
         WHERE tm.tenant.id = :tenantId
-          AND tm.user.id = :userId
+          AND tm.userId = :userId
           AND tm.role IN :roles
           AND tm.status = 'ACTIVE'
     """)
-    boolean hasAnyRole(
-            @Param("tenantId") Long tenantId,
-            @Param("userId") Long userId,
-            @Param("roles") List<TenantRole> roles
-    );
+    boolean hasAnyRole(@Param("tenantId") Long tenantId,
+                       @Param("userId") Long userId,
+                       @Param("roles") List<TenantRole> roles);
 
-    
     // Kiểm tra tồn tại lời mời để tránh gửi trùng
     boolean existsByTenantIdAndUserId(Long tenantId, Long userId);
 }

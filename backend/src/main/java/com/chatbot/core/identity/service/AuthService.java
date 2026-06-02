@@ -5,7 +5,7 @@ import com.chatbot.core.identity.dto.*;
 import com.chatbot.core.identity.exception.*;
 import com.chatbot.core.identity.model.SystemRole;
 import com.chatbot.core.identity.model.RefreshToken;
-import com.chatbot.core.identity.repository.AuthRepository;
+import com.chatbot.core.user.repository.AuthRepository;
 import com.chatbot.core.identity.security.CustomUserDetails;
 import com.chatbot.core.user.model.User;
 import com.chatbot.core.user.service.UserService;
@@ -52,7 +52,7 @@ public class AuthService implements UserDetailsService {
         return new CustomUserDetails(user);
     }
 
-    @Transactional(rollbackFor = Exception.class)
+    @Transactional(value = "userTransactionManager", rollbackFor = Exception.class)
     public UserResponse register(RegisterRequest request) {
         
         // Validate password confirmation
@@ -212,7 +212,7 @@ public class AuthService implements UserDetailsService {
         return rateLimitService.getRemainingAttempts(email);
     }
 
-    @Transactional
+    @Transactional("userTransactionManager")
     public TokenRefreshResponse refreshToken(String refreshToken) {
         String newAccessToken = refreshTokenService.refreshAccessToken(refreshToken);
         
@@ -221,7 +221,7 @@ public class AuthService implements UserDetailsService {
                 .orElseThrow(() -> new InvalidTokenException("Refresh token không hợp lệ"));
         
         // Create new refresh token (rotate for security)
-        RefreshToken newRefreshToken = refreshTokenService.createRefreshToken(refresh.getUser());
+        RefreshToken newRefreshToken = refreshTokenService.createRefreshToken(refresh.getUserId());
         
         return new TokenRefreshResponse(
                 newAccessToken,
@@ -230,7 +230,7 @@ public class AuthService implements UserDetailsService {
         );
     }
 
-    @Transactional
+    @Transactional("userTransactionManager")
     public void logout(String email) {
         User user = authRepository.findByEmail(email)
                 .orElseThrow(() -> new UserNotFoundException(IdentityConstants.USER_NOT_FOUND + ": " + email));

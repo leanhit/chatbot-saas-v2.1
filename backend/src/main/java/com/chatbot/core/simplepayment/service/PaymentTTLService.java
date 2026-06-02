@@ -2,13 +2,17 @@ package com.chatbot.core.simplepayment.service;
 
 import com.chatbot.core.simplepayment.dto.PaymentEvent;
 import com.chatbot.core.simplepayment.model.PaymentStatus;
+import com.chatbot.core.simplepayment.model.SimplePayment;
+import com.chatbot.core.simplepayment.repository.SimplePaymentRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.scheduling.TaskScheduler;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.concurrent.TimeUnit;
 
@@ -20,6 +24,8 @@ public class PaymentTTLService {
     private final RedisTemplate<String, Object> redisTemplate;
     private final BankApiService bankApiService;
     private final RedisPaymentService redisPaymentService;
+    private final TaskScheduler taskScheduler;
+    private final SimplePaymentRepository paymentRepository;
 
     private static final String PAYMENT_TTL_PREFIX = "payment:ttl:";
     private static final String PAYMENT_CHECK_PREFIX = "payment:check:";
@@ -34,24 +40,18 @@ public class PaymentTTLService {
         // Set TTL key với expiration time
         redisTemplate.opsForValue().set(key, "active", DEFAULT_TTL);
         
-        // Schedule immediate check
+        // Schedule immediate check using TaskScheduler (non-blocking)
         scheduleImmediateCheck(referenceCode);
         
         log.info("⏰ Set TTL for payment {}: {}", referenceCode, DEFAULT_TTL);
     }
 
     /**
-     * Schedule immediate check
+     * Schedule immediate check using TaskScheduler (non-blocking)
      */
-    @Async
-    public void scheduleImmediateCheck(String referenceCode) {
-        try {
-            // Check ngay lập tức
-            Thread.sleep(1000); // 1 second delay
-            checkPaymentWithTTL(referenceCode);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-        }
+    private void scheduleImmediateCheck(String referenceCode) {
+        taskScheduler.schedule(() -> checkPaymentWithTTL(referenceCode), Instant.now().plusSeconds(1));
+        log.debug("📅 Scheduled immediate check for payment {} in 1 second", referenceCode);
     }
 
     /**
@@ -59,8 +59,17 @@ public class PaymentTTLService {
      */
     private void checkPaymentWithTTL(String referenceCode) {
         try {
+            // Check if payment is still PENDING before calling bank API
+            SimplePayment payment = paymentRepository.findByReferenceCode(referenceCode)
+                    .orElse(null);
+            if (payment == null || payment.getStatus() != PaymentStatus.PENDING) {
+                log.info("⏰ Payment {} already completed or not found, skipping TTL check", referenceCode);
+                removePaymentTTL(referenceCode);
+                return;
+            }
+
             String bankTransactionId = bankApiService.findTransactionByReference(referenceCode);
-            
+
             if (bankTransactionId != null) {
                 // Payment completed
                 completePaymentWithTTL(referenceCode, bankTransactionId);
@@ -69,7 +78,7 @@ public class PaymentTTLService {
                 scheduleNextCheck(referenceCode);
             }
         } catch (Exception e) {
-            log.error("❌ Error checking payment {} with TTL: {}", referenceCode, e.getMessage());
+            log.error("❌ Error checking payment {} with TTL: {}", referenceCode, e.getMessage(), e);
         }
     }
 
@@ -96,8 +105,18 @@ public class PaymentTTLService {
     private void scheduleNextCheck(String referenceCode) {
         String checkKey = PAYMENT_CHECK_PREFIX + referenceCode;
         
-        // Get current attempt count
-        Integer attempts = (Integer) redisTemplate.opsForValue().get(checkKey);
+        // Get current attempt count - handle both String and Integer types from Redis
+        Object attemptsObj = redisTemplate.opsForValue().get(checkKey);
+        Integer attempts = null;
+        if (attemptsObj != null) {
+            if (attemptsObj instanceof Integer) {
+                attempts = (Integer) attemptsObj;
+            } else if (attemptsObj instanceof String) {
+                attempts = Integer.parseInt((String) attemptsObj);
+            } else if (attemptsObj instanceof Number) {
+                attempts = ((Number) attemptsObj).intValue();
+            }
+        }
         if (attempts == null) attempts = 0;
         
         if (attempts >= 5) {
@@ -111,7 +130,7 @@ public class PaymentTTLService {
         int nextDelay = attempts < delays.length ? delays[attempts] : 1800;
         
         // Increment attempt counter
-        redisTemplate.opsForValue().set(checkKey, attempts + 1, Duration.ofHours(25));
+        redisTemplate.opsForValue().set(checkKey, String.valueOf(attempts + 1), Duration.ofHours(25));
         
         // Schedule next check
         scheduleDelayedCheck(referenceCode, nextDelay);
@@ -120,16 +139,11 @@ public class PaymentTTLService {
     }
 
     /**
-     * Schedule delayed check
+     * Schedule delayed check using TaskScheduler (non-blocking)
      */
-    @Async
     private void scheduleDelayedCheck(String referenceCode, int delaySeconds) {
-        try {
-            Thread.sleep(delaySeconds * 1000L);
-            checkPaymentWithTTL(referenceCode);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-        }
+        taskScheduler.schedule(() -> checkPaymentWithTTL(referenceCode), Instant.now().plusSeconds(delaySeconds));
+        log.debug("📅 Scheduled delayed check for payment {} in {} seconds", referenceCode, delaySeconds);
     }
 
     /**

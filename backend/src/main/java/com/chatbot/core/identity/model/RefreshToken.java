@@ -21,9 +21,9 @@ public class RefreshToken {
     @Column(nullable = false, unique = true)
     private String token;
     
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    private com.chatbot.core.user.model.User user;
+    // Application-level join: store userId as Long instead of @ManyToOne relationship
+    @Column(name = "user_id", nullable = false)
+    private Long userId;
     
     @Column(nullable = false)
     private Instant expiryDate;

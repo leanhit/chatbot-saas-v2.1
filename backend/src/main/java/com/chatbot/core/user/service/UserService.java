@@ -96,12 +96,10 @@ public class UserService {
         UserProfile profile = userProfileRepository.findByUserId(userId)
                 .orElseGet(() -> {
                     log.info("Auto-creating UserProfile for user ID: {}", userId);
-                    User user = userRepository.findById(userId)
-                            .orElseThrow(() -> new RuntimeException("User not found with ID: " + userId));
-                    UserProfile newProfile = UserProfile.builder()
-                            .user(user)
-                            .build();
-                    return userProfileRepository.save(newProfile);
+                    // Insert directly using native query to avoid detached entity issues
+                    userProfileRepository.insertProfile(userId);
+                    // Now fetch the newly created profile
+                    return userProfileRepository.findByUserId(userId).orElseThrow();
                 });
         
         // Update basic info
@@ -166,12 +164,10 @@ public class UserService {
             UserProfile profile = userProfileRepository.findByUserId(userId)
                     .orElseGet(() -> {
                         log.info("🆕 [AVATAR UPDATE] Auto-creating UserProfile for user ID: {}", userId);
-                        User user = userRepository.findById(userId)
-                                .orElseThrow(() -> new RuntimeException("User not found with ID: " + userId));
-                        UserProfile newProfile = UserProfile.builder()
-                                .user(user)
-                                .build();
-                        return userProfileRepository.save(newProfile);
+                        // Insert directly using native query to avoid detached entity issues
+                        userProfileRepository.insertProfile(userId);
+                        // Now fetch the newly created profile
+                        return userProfileRepository.findByUserId(userId).orElseThrow();
                     });
 
             log.info("👤 [AVATAR UPDATE] Found/created profile for userId: {}", userId);
@@ -265,15 +261,8 @@ public class UserService {
      */
     @Transactional
     public void createEmptyProfile(User user) {
-        // Fetch managed User entity to avoid detached entity issue
-        User managedUser = userRepository.findById(user.getId())
-                .orElseThrow(() -> new RuntimeException("User not found: " + user.getId()));
-                
-        UserProfile profile = UserProfile.builder()
-                .user(managedUser)  // Use managed User entity
-                .build();
-        
-        userProfileRepository.save(profile);
+        // Insert directly using native query to avoid detached entity issues
+        userProfileRepository.insertProfile(user.getId());
         log.info("Created empty profile for user ID: {}", user.getId());
     }
 
@@ -300,7 +289,7 @@ public class UserService {
                 .orElseThrow(() -> new RuntimeException("Join request not found: " + requestId));
 
         // Verify that the request belongs to the user
-        if (!request.getUser().getId().equals(user.getId())) {
+        if (!request.getUserId().equals(user.getId())) {
             throw new RuntimeException("You can only cancel your own join requests");
         }
 
@@ -380,10 +369,10 @@ public class UserService {
         UserProfile profile = userProfileRepository.findById(userId)
                 .orElseGet(() -> {
                     log.info("Auto-creating UserProfile for user ID: {}", userId);
-                    UserProfile newProfile = UserProfile.builder()
-                            .user(user)
-                            .build();
-                    return userProfileRepository.save(newProfile);
+                    // Insert directly using native query to avoid detached entity issues
+                    userProfileRepository.insertProfile(userId);
+                    // Now fetch the newly created profile
+                    return userProfileRepository.findById(userId).orElseThrow();
                 });
         
         // Get user address (single address) - không cần tenant
@@ -436,12 +425,10 @@ public class UserService {
         return userProfileRepository.findByUserId(userId)
                 .orElseGet(() -> {
                     log.info("Auto-creating UserProfile for user ID: {}", userId);
-                    User user = userRepository.findById(userId)
-                            .orElseThrow(() -> new RuntimeException("User not found with ID: " + userId));
-                    UserProfile newProfile = UserProfile.builder()
-                            .user(user)
-                            .build();
-                    return userProfileRepository.save(newProfile);
+                    // Insert directly using native query to avoid detached entity issues
+                    userProfileRepository.insertProfile(userId);
+                    // Now fetch the newly created profile
+                    return userProfileRepository.findByUserId(userId).orElseThrow();
                 });
     }
 
@@ -454,12 +441,10 @@ public class UserService {
         UserProfile profile = userProfileRepository.findByUserId(userId)
                 .orElseGet(() -> {
                     log.info("Auto-creating UserProfile for user ID: {}", userId);
-                    User user = userRepository.findById(userId)
-                            .orElseThrow(() -> new RuntimeException("User not found with ID: " + userId));
-                    UserProfile newProfile = UserProfile.builder()
-                            .user(user)
-                            .build();
-                    return userProfileRepository.save(newProfile);
+                    // Insert directly using native query to avoid detached entity issues
+                    userProfileRepository.insertProfile(userId);
+                    // Now fetch the newly created profile
+                    return userProfileRepository.findByUserId(userId).orElseThrow();
                 });
         
         // Update professional info only

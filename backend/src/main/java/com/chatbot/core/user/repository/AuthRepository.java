@@ -1,4 +1,4 @@
-package com.chatbot.core.identity.repository;
+package com.chatbot.core.user.repository;
 
 import com.chatbot.core.user.model.User;
 import com.chatbot.core.identity.model.SystemRole;

@@ -29,7 +29,8 @@ import java.util.List;
 import java.util.Map;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
-// import io.swagger.v3.oas.annotations.responses.ApiResponse; // Use fully qualified name to avoid conflict
+import com.chatbot.core.user.repository.AuthRepository;
+import io.swagger.v3.oas.annotations.responses.ApiResponse; // import io.swagger.v3.oas.annotations.responses.ApiResponse; // Use fully qualified name to avoid conflict
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -47,6 +48,7 @@ public class TenantController {
     private final TenantMemberRepository tenantMemberRepository;
     private final TenantMembershipFacade tenantMembershipFacade;
     private final com.chatbot.core.tenant.service.TenantPermissionValidator permissionValidator;
+    private final AuthRepository authRepository;
 
     public TenantController(TenantService tenantService, 
                           TenantProfileService tenantProfileService, 
@@ -54,7 +56,8 @@ public class TenantController {
                           UserRepository userRepository,
                           TenantMemberRepository tenantMemberRepository,
                           TenantMembershipFacade tenantMembershipFacade,
-                          com.chatbot.core.tenant.service.TenantPermissionValidator permissionValidator) {
+                          com.chatbot.core.tenant.service.TenantPermissionValidator permissionValidator,
+                          AuthRepository authRepository) {
         this.tenantService = tenantService;
         this.tenantProfileService = tenantProfileService;
         this.tenantRepository = tenantRepository;
@@ -62,6 +65,7 @@ public class TenantController {
         this.tenantMemberRepository = tenantMemberRepository;
         this.tenantMembershipFacade = tenantMembershipFacade;
         this.permissionValidator = permissionValidator;
+        this.authRepository = authRepository;
     }
 
     /**
@@ -315,13 +319,19 @@ public class TenantController {
             boolean isAdmin = userRepository.findByEmail(currentUserEmail)
                     .map(user -> user.getSystemRole() == SystemRole.ADMIN)
                     .orElse(false);
-                    
-            boolean isOwner = tenantMemberRepository.findByTenantIdAndUserEmailAndStatus(
-                    tenant.getId(), 
-                    currentUserEmail, 
-                    MembershipStatus.ACTIVE
-            ).map(member -> member.getRole() == TenantRole.OWNER)
-            .orElse(false);
+            
+            Long userId = authRepository.findByEmail(currentUserEmail)
+                    .map(User::getId)
+                    .orElse(null);
+            boolean isOwner = false;
+            if (userId != null) {
+                isOwner = tenantMemberRepository.findByTenantIdAndUserIdAndStatus(
+                        tenant.getId(), 
+                        userId, 
+                        MembershipStatus.ACTIVE
+                ).map(member -> member.getRole() == TenantRole.OWNER)
+                .orElse(false);
+            }
             
             if (!isAdmin && !isOwner) {
                 throw new ResponseStatusException(HttpStatus.FORBIDDEN, 

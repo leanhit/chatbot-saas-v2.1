@@ -3,20 +3,15 @@ package com.chatbot.core.simplepayment.service;
 import com.chatbot.core.simplepayment.dto.PaymentEvent;
 import com.chatbot.core.simplepayment.model.PaymentStatus;
 import com.chatbot.core.simplepayment.model.SimplePayment;
-import com.chatbot.core.simplepayment.repository.SimplePaymentRepository;
-import com.chatbot.core.simplepayment.service.BankApiService;
-import com.chatbot.core.simplepayment.service.PaymentPackageUpgradeService;
-import com.chatbot.core.simplepayment.service.RedisPaymentService;
-import com.chatbot.core.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.context.event.EventListener;
+import org.springframework.scheduling.TaskScheduler;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.event.TransactionPhase;
+import org.springframework.transaction.event.TransactionalEventListener;
 
-import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.LocalDateTime;
 
 @Service
@@ -25,16 +20,14 @@ import java.time.LocalDateTime;
 public class PaymentEventService {
 
     private final BankApiService bankApiService;
-    private final RedisPaymentService redisPaymentService;
-    private final SimplePaymentRepository paymentRepository;
-    private final PaymentPackageUpgradeService packageUpgradeService;
-    private final UserRepository userRepository;
-    private final ApplicationEventPublisher eventPublisher;
+    private final SimplePaymentService simplePaymentService;
+    private final TaskScheduler taskScheduler;
 
     /**
      * Event khi payment mới được tạo
+     * Processed AFTER transaction commits to ensure payment exists in database
      */
-    @EventListener
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @Async
     public void handlePaymentCreated(PaymentCreatedEvent event) {
         log.info("🎯 Payment created event: {}", event.getReferenceCode());
@@ -59,6 +52,13 @@ public class PaymentEventService {
      */
     private void checkSinglePayment(String referenceCode) {
         try {
+            // Check if payment is still PENDING before calling bank API
+            SimplePayment payment = simplePaymentService.getPaymentByReference(referenceCode);
+            if (payment.getStatus() != PaymentStatus.PENDING) {
+                log.info("🎯 Payment {} already completed, skipping bank API check", referenceCode);
+                return;
+            }
+
             String bankTransactionId = bankApiService.findTransactionByReference(referenceCode);
             
             if (bankTransactionId != null) {
@@ -71,76 +71,11 @@ public class PaymentEventService {
     }
 
     /**
-     * Complete payment directly without circular dependency
+     * Complete payment directly delegating to SimplePaymentService
      */
-    @Transactional
     private void completePaymentDirectly(String referenceCode, String bankTransactionId) {
-        SimplePayment payment = paymentRepository.findByReferenceCode(referenceCode)
-                .orElseThrow(() -> new RuntimeException("Payment not found: " + referenceCode));
-
-        if (payment.getStatus() != PaymentStatus.PENDING) {
-            log.warn("Payment {} is not pending: {}", referenceCode, payment.getStatus());
-            return;
-        }
-
-        // Update payment status
-        payment.setStatus(PaymentStatus.COMPLETED);
-        payment.setBankTransactionId(bankTransactionId);
-        payment.setCompletedAt(LocalDateTime.now());
-        paymentRepository.save(payment);
-
-        // Update user balance
-        updateUserBalanceDirectly(payment.getUserId(), payment.getAmount());
-
-        // Process package upgrade if needed
-        if (payment.getTargetPackageId() != null) {
-            processPackageUpgradeDirectly(payment.getUserId(), payment.getTenantId(), 
-                    payment.getTargetPackageId(), referenceCode);
-        }
-
-        // Publish completion event
-        PaymentEvent event = redisPaymentService.createStatusUpdateEvent(
-                referenceCode, PaymentStatus.COMPLETED, bankTransactionId
-        );
-        redisPaymentService.publishPaymentEvent(event);
-
-        log.info("✅ Payment completed via event: {}", referenceCode);
-    }
-
-    /**
-     * Update user balance directly
-     */
-    private void updateUserBalanceDirectly(Long userId, BigDecimal amount) {
-        userRepository.findById(userId).ifPresent(user -> {
-            if (user.getBalance() == null) {
-                user.setBalance(BigDecimal.ZERO);
-            }
-            user.setBalance(user.getBalance().add(amount));
-            userRepository.save(user);
-            log.info("💸 Updated user balance: {} + {} = {}", userId, amount, user.getBalance());
-        });
-    }
-
-    /**
-     * Process package upgrade directly (for testing)
-     */
-    @Transactional(propagation = org.springframework.transaction.annotation.Propagation.REQUIRES_NEW)
-    public void processPackageUpgradeDirectly(Long userId, Long tenantId, String packageId, String referenceCode) {
-        log.info("🔄 Processing package upgrade directly for user: {}, tenant: {}, package: {}", userId, tenantId, packageId);
-        
-        try {
-            // Create a mock SimplePayment object for the upgrade service
-            SimplePayment mockPayment = SimplePayment.builder()
-                    .userId(userId)
-                    .tenantId(tenantId)
-                    .referenceCode(referenceCode)
-                    .build();
-                    
-            packageUpgradeService.executeUpgradeWithBalanceDeduction(mockPayment, packageId);
-            log.info("📦 Package upgraded via event: {} for user: {}", packageId, userId);
-        } catch (Exception e) {
-            log.error("❌ Failed to upgrade package {}: {}", packageId, e.getMessage());
-        }
+        simplePaymentService.completePayment(referenceCode, bankTransactionId);
+        log.info("✅ Payment completed via event delegation: {}", referenceCode);
     }
 
     /**
@@ -157,17 +92,14 @@ public class PaymentEventService {
     }
 
     /**
-     * Schedule single retry
+     * Schedule single retry using TaskScheduler (non-blocking)
      */
-    @Async
     private void scheduleRetry(String referenceCode, int delaySeconds, int attempt) {
-        try {
-            Thread.sleep(delaySeconds * 1000L);
+        taskScheduler.schedule(() -> {
             checkSinglePayment(referenceCode);
             log.debug("🔄 Retry attempt {} for payment {}", attempt, referenceCode);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-        }
+        }, Instant.now().plusSeconds(delaySeconds));
+        log.debug("📅 Scheduled retry attempt {} for payment {} in {} seconds", attempt, referenceCode, delaySeconds);
     }
 
     /**

@@ -1,6 +1,5 @@
 package com.chatbot.core.tenant.profile.service;
 
-import com.chatbot.core.tenant.model.Tenant;
 import com.chatbot.core.tenant.repository.TenantRepository;
 import com.chatbot.core.tenant.profile.dto.TenantProfileRequest;
 import com.chatbot.core.tenant.profile.dto.TenantProfileResponse;
@@ -49,11 +48,11 @@ public class TenantProfileService {
         // Check if tenant exists
         if (!tenantRepo.existsById(tenantId)) {
             throw new ResponseStatusException(
-                HttpStatus.NOT_FOUND, 
+                HttpStatus.NOT_FOUND,
                 "Không tìm thấy tenant với ID: " + tenantId
             );
         }
-        
+
         // Get profile or throw 404 if not found
         return profileRepo.findById(tenantId)
             .map(this::map)
@@ -68,16 +67,27 @@ public class TenantProfileService {
             Long tenantId,
             TenantProfileRequest req
     ) {
-        Tenant tenant = tenantRepo.findById(tenantId)
-                .orElseThrow(() ->
-                        new IllegalStateException("Tenant not found"));
+        log.info("[TenantProfileService] ===== START upsertProfile: tenantId={}", tenantId);
+        log.info("[TenantProfileService] Request: description={}, primaryColor={}", req.getDescription(), req.getPrimaryColor());
+
+        // Check if tenant exists
+        if (!tenantRepo.existsById(tenantId)) {
+            throw new ResponseStatusException(
+                HttpStatus.NOT_FOUND,
+                "Không tìm thấy tenant với ID: " + tenantId
+            );
+        }
 
         TenantProfile profile = profileRepo.findById(tenantId)
                 .orElseGet(() -> {
-                    TenantProfile p = new TenantProfile();
-                    p.setTenant(tenant); // MapsId
-                    return p;
+                    log.info("[TenantProfileService] Creating new profile for tenant: {}", tenantId);
+                    // Insert directly using native query to avoid detached entity issues with @MapsId
+                    profileRepo.insertProfile(tenantId);
+                    // Now fetch the newly created profile
+                    return profileRepo.findById(tenantId).orElseThrow();
                 });
+
+        log.info("[TenantProfileService] Profile: id={}, existing={}", profile.getId(), profile.getId() != null);
 
         // update fields only if not null (preserve existing values)
         if (req.getDescription() != null) {
@@ -114,8 +124,14 @@ public class TenantProfileService {
             profile.setPrimaryColor(req.getPrimaryColor());
         }
 
-        profileRepo.save(profile);
-        return map(profile);
+        log.info("[TenantProfileService] Saving profile...");
+        // Use repository save method - the profile is now managed after fetch
+        TenantProfile savedProfile = profileRepo.save(profile);
+        log.info("[TenantProfileService] Profile saved successfully");
+
+        TenantProfileResponse response = map(savedProfile);
+        log.info("[TenantProfileService] ===== END upsertProfile successfully");
+        return response;
     }
 
     @Transactional(rollbackFor = Exception.class)
@@ -161,9 +177,13 @@ public class TenantProfileService {
                 throw new RuntimeException("Không thể tạo hoặc tìm category cho tenant logo");
             }
 
-            // 3. Upload file to MinIO using FileMetadataService
+            // 3. Set tenant context for file upload
+            log.debug("🏢 [CONTEXT] Setting tenant context for file upload: tenantId={}", tenantId);
+            TenantContext.setTenantId(tenantId);
+
+            // 4. Upload file to MinIO using FileMetadataService
             log.debug("📤 [UPLOAD] Preparing file upload to MinIO");
-            com.chatbot.spokes.minio.image.fileMetadata.dto.FileRequestDTO fileRequest = 
+            com.chatbot.spokes.minio.image.fileMetadata.dto.FileRequestDTO fileRequest =
                 new com.chatbot.spokes.minio.image.fileMetadata.dto.FileRequestDTO();
             fileRequest.setCategoryId(logoCategory.getId());
             fileRequest.setTitle("Tenant logo");
@@ -172,7 +192,7 @@ public class TenantProfileService {
             fileRequest.setFiles(List.of(file));
 
             log.debug("📤 [UPLOAD] Calling FileMetadataService.processUploadRequest");
-            List<com.chatbot.spokes.minio.image.fileMetadata.dto.FileResponseDTO> uploadedFiles = 
+            List<com.chatbot.spokes.minio.image.fileMetadata.dto.FileResponseDTO> uploadedFiles =
                 fileMetadataService.processUploadRequest(fileRequest, getCurrentUserEmail());
 
             if (uploadedFiles.isEmpty()) {
@@ -201,16 +221,19 @@ public class TenantProfileService {
 
     private TenantProfileResponse map(TenantProfile p) {
         String logoUrl = p.getLogoUrl();
-        
+
         // Convert existing private URLs to public URLs if needed
         if (logoUrl != null && !logoUrl.startsWith("/api/images/public/")) {
             // If it's an old private URL, we need to extract file ID and convert to public URL
             // This is a fallback - ideally existing logos should be migrated
             logoUrl = logoUrl; // Keep existing URL for now, migration needed
         }
-        
+
+        // With @MapsId, the profile ID is the same as tenant ID
+        Long tenantId = p.getId();
+
         return TenantProfileResponse.builder()
-                .tenantId(p.getId()) // = tenantId
+                .tenantId(tenantId)
                 .description(p.getDescription())
                 .industry(p.getIndustry())
                 .plan(p.getPlan())

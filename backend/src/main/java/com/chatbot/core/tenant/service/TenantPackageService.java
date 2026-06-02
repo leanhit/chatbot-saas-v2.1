@@ -13,7 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.chatbot.core.user.model.User;
-import com.chatbot.core.identity.repository.AuthRepository;
+import com.chatbot.core.user.repository.AuthRepository;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -39,7 +39,7 @@ public class TenantPackageService {
     /**
      * Gán gói mặc định (free) cho tenant mới.
      */
-    @Transactional
+    @Transactional("tenantTransactionManager")
     public void assignDefaultPackageToTenant(Tenant tenant) {
         log.info("[TenantPackageService] Assigning default package '{}' to tenant: {}",
                 defaultPackageId, tenant.getTenantKey());
@@ -61,12 +61,15 @@ public class TenantPackageService {
     /**
      * Nâng cấp tenant lên gói cụ thể.
      */
-    @Transactional
+    @Transactional(propagation = org.springframework.transaction.annotation.Propagation.REQUIRES_NEW, transactionManager = "tenantTransactionManager")
     public void upgradeTenantPackage(Long tenantId, String packageId) {
         log.info("[TenantPackageService] Upgrading tenant {} to package: {}", tenantId, packageId);
 
         Tenant tenant = tenantRepository.findById(tenantId)
                 .orElseThrow(() -> new RuntimeException("Tenant not found: " + tenantId));
+
+        log.info("📝 [DEBUG] Before upgrade - tenantId: {}, currentPackageId: {}, targetPackageId: {}",
+                tenantId, tenant.getCurrentPackageId(), packageId);
 
         Package newPackage = packageRepository.findByPackageId(packageId)
                 .orElseThrow(() -> new RuntimeException("Package not found: " + packageId));
@@ -97,6 +100,9 @@ public class TenantPackageService {
         }
 
         tenantRepository.save(tenant);
+
+        log.info("📝 [DEBUG] After save - tenantId: {}, currentPackageId: {}, expiresAt: {}",
+                tenantId, tenant.getCurrentPackageId(), tenant.getExpiresAt());
 
         auditLogService.logAction(tenantId, "system", "UPGRADE_PACKAGE",
             "Package changed from '" + oldPackageId + "' to '" + packageId +
@@ -133,7 +139,7 @@ public class TenantPackageService {
     /**
      * Fallback: tìm tenantId từ header hoặc từ user.
      */
-    @Transactional(readOnly = true)
+    @Transactional(readOnly = true, transactionManager = "tenantTransactionManager")
     public Long extractTenantIdWithFallback(String tenantKey, String username) {
         if (tenantKey != null && !tenantKey.isBlank()) {
             try {
@@ -163,7 +169,7 @@ public class TenantPackageService {
     /**
      * Lấy thông tin gói dịch vụ hiện tại của tenant (dạng Map cho API response).
      */
-    @Transactional(readOnly = true)
+    @Transactional(readOnly = true, transactionManager = "tenantTransactionManager")
     public Map<String, Object> getMyPackageInfo(Long tenantId) {
         Tenant tenant = tenantRepository.findById(tenantId)
                 .orElseThrow(() -> new RuntimeException("Tenant not found"));
@@ -201,7 +207,7 @@ public class TenantPackageService {
     /**
      * Lấy thông tin gói dịch vụ kèm ngày hết hạn — dùng trong TenantPackageInfo DTO.
      */
-    @Transactional(readOnly = true)
+    @Transactional(readOnly = true, transactionManager = "tenantTransactionManager")
     public TenantPackageInfo getCurrentTenantPackageInfo(Long tenantId) {
         Tenant tenant = tenantRepository.findById(tenantId)
                 .orElseThrow(() -> new RuntimeException("Tenant not found: " + tenantId));
@@ -210,7 +216,7 @@ public class TenantPackageService {
         return TenantPackageInfo.from(tenantId, currentPackage, tenant.getPackageActivatedAt(), tenant.getExpiresAt());
     }
 
-    @Transactional(readOnly = true)
+    @Transactional(readOnly = true, transactionManager = "tenantTransactionManager")
     public TenantPackageInfo getCurrentTenantPackageInfoByKey(String tenantKey) {
         Tenant tenant = tenantRepository.findByTenantKey(tenantKey)
                 .orElseThrow(() -> new RuntimeException("Tenant not found: " + tenantKey));
@@ -219,7 +225,7 @@ public class TenantPackageService {
         return TenantPackageInfo.from(tenant.getId(), currentPackage, tenant.getPackageActivatedAt(), tenant.getExpiresAt());
     }
 
-    @Transactional(readOnly = true)
+    @Transactional(readOnly = true, transactionManager = "tenantTransactionManager")
     public Package getCurrentTenantPackage(Long tenantId) {
         Tenant tenant = tenantRepository.findById(tenantId)
                 .orElseThrow(() -> new RuntimeException("Tenant not found: " + tenantId));
@@ -231,7 +237,7 @@ public class TenantPackageService {
         return resolvePackage(tenant.getCurrentPackageId());
     }
 
-    @Transactional(readOnly = true)
+    @Transactional(readOnly = true, transactionManager = "tenantTransactionManager")
     public Package getCurrentTenantPackageByKey(String tenantKey) {
         Tenant tenant = tenantRepository.findByTenantKey(tenantKey)
                 .orElseThrow(() -> new RuntimeException("Tenant not found: " + tenantKey));
@@ -243,7 +249,7 @@ public class TenantPackageService {
         return resolvePackage(tenant.getCurrentPackageId());
     }
 
-    @Transactional(readOnly = true)
+    @Transactional(readOnly = true, transactionManager = "tenantTransactionManager")
     public boolean hasTenantPackage(Long tenantId, String packageId) {
         Tenant tenant = tenantRepository.findById(tenantId)
                 .orElseThrow(() -> new RuntimeException("Tenant not found: " + tenantId));
@@ -253,7 +259,7 @@ public class TenantPackageService {
     /**
      * Khởi tạo gói mặc định cho tất cả tenant chưa có gói.
      */
-    @Transactional
+    @Transactional("tenantTransactionManager")
     public void initializeExistingTenants() {
         log.info("[TenantPackageService] Initializing tenants without packages...");
         int updatedCount = 0;

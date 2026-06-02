@@ -7,6 +7,7 @@ import io.grpc.ManagedChannelBuilder;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.springframework.beans.factory.annotation.Value;
 
 import javax.annotation.PostConstruct;
 
@@ -17,13 +18,16 @@ public class GrpcHealthCheck {
     @Autowired
     private TenantServiceGrpcImpl grpcService;
 
-    @PostConstruct
+    @Value("${tenant.grpc.server.port:50057}")
+private int grpcPort;
+
+@PostConstruct
     public void performHealthCheck() {
         try {
             log.info("=== Bắt đầu Health Check cho gRPC Tenant Service ===");
             
             // Tạo channel để test
-            ManagedChannel channel = ManagedChannelBuilder.forAddress("localhost", 50053)
+            ManagedChannel channel = ManagedChannelBuilder.forAddress("localhost", grpcPort)
                     .usePlaintext()
                     .build();
             
@@ -40,7 +44,7 @@ public class GrpcHealthCheck {
             log.info("   - Response valid: {}", response.getValid());
             log.info("   - Response status: {}", response.getStatus());
             log.info("   - Response message: {}", response.getMessage());
-            log.info("   - gRPC Server đang chạy trên port 50053");
+            log.info("   - gRPC Server đang chạy trên port {}", grpcPort);
             
             channel.shutdown();
             

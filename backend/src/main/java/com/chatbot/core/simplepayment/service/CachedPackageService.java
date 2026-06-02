@@ -25,7 +25,7 @@ public class CachedPackageService {
      * Get all active packages ordered by sort order (cached)
      */
     @Cacheable(value = ACTIVE_PACKAGES_CACHE, key = "'all'")
-    @Transactional(readOnly = true)
+    @Transactional(readOnly = true, transactionManager = "sharedTransactionManager")
     public List<Package> getActivePackages() {
         log.debug("🔄 Fetching active packages from database (cache miss)");
         return packageRepository.findActivePackagesOrdered();
@@ -35,7 +35,7 @@ public class CachedPackageService {
      * Get all packages including inactive (cached)
      */
     @Cacheable(value = PACKAGE_CACHE, key = "'all'")
-    @Transactional(readOnly = true)
+    @Transactional(readOnly = true, transactionManager = "sharedTransactionManager")
     public List<Package> getAllPackages() {
         log.debug("🔄 Fetching all packages from database (cache miss)");
         return packageRepository.findAllByOrderBySortOrderAsc();
@@ -45,7 +45,7 @@ public class CachedPackageService {
      * Get package by ID (cached)
      */
     @Cacheable(value = PACKAGE_CACHE, key = "#id")
-    @Transactional(readOnly = true)
+    @Transactional(readOnly = true, transactionManager = "sharedTransactionManager")
     public Optional<Package> getPackageById(Long id) {
         log.debug("🔄 Fetching package by ID {} from database (cache miss)", id);
         return packageRepository.findById(id);
@@ -55,7 +55,7 @@ public class CachedPackageService {
      * Get package by package ID (cached)
      */
     @Cacheable(value = PACKAGE_CACHE, key = "'packageId:' + #packageId")
-    @Transactional(readOnly = true)
+    @Transactional(readOnly = true, transactionManager = "sharedTransactionManager")
     public Optional<Package> getPackageByPackageId(String packageId) {
         log.debug("🔄 Fetching package by package ID {} from database (cache miss)", packageId);
         return packageRepository.findByPackageId(packageId);
@@ -65,7 +65,7 @@ public class CachedPackageService {
      * Check if package exists by package ID (cached)
      */
     @Cacheable(value = PACKAGE_CACHE, key = "'exists:' + #packageId")
-    @Transactional(readOnly = true)
+    @Transactional(readOnly = true, transactionManager = "sharedTransactionManager")
     public boolean existsByPackageId(String packageId) {
         log.debug("🔄 Checking if package {} exists (cache miss)", packageId);
         return packageRepository.existsByPackageId(packageId);
@@ -106,7 +106,7 @@ public class CachedPackageService {
     /**
      * Warm up package caches
      */
-    @Transactional(readOnly = true)
+    @Transactional(readOnly = true, transactionManager = "sharedTransactionManager")
     public void warmUpCaches() {
         log.info("🔥 Warming up package caches...");
         

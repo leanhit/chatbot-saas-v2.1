@@ -37,7 +37,8 @@ public class LicenseService {
         }
         
         License license = licenseOpt.get();
-        User user = license.getUser();
+        // Application-level join: fetch user by userId
+        User user = userService.getUser(license.getUserId());
         
         // Check if license is still valid
         if (!license.isValid()) {
@@ -62,7 +63,7 @@ public class LicenseService {
         }
         
         License license = License.builder()
-                .user(user)
+                .userId(user.getId()) // Application-level join: store userId instead of User object
                 .planName(request.getPlanName())
                 .isActive(request.getIsActive())
                 .expiresAt(request.getExpiresAt())
@@ -110,7 +111,9 @@ public class LicenseService {
         License updatedLicense = licenseRepository.save(license);
         log.info("License updated successfully: {}", licenseId);
         
-        return LicenseResponse.from(updatedLicense, license.getUser().getEmail());
+        // Application-level join: fetch user by userId
+        User user = userService.getUser(license.getUserId());
+        return LicenseResponse.from(updatedLicense, user.getEmail());
     }
 
     public void revokeLicense(Long licenseId) {

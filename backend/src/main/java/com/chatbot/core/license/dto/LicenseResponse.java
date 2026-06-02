@@ -42,7 +42,7 @@ public class LicenseResponse {
                 .createdAt(license.getCreatedAt())
                 .updatedAt(license.getUpdatedAt())
                 .exp(license.getExpiresAt() != null ? license.getExpiresAt().getEpochSecond() : null)
-                .sub(license.getUser().getId().toString())
+                .sub(license.getUserId().toString()) // Application-level join: use userId instead of User object
                 .email(userEmail)
                 .build();
     }

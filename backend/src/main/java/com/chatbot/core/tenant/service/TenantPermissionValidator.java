@@ -5,6 +5,7 @@ import com.chatbot.core.tenant.membership.model.MembershipStatus;
 import com.chatbot.core.tenant.membership.model.TenantRole;
 import com.chatbot.core.user.model.User;
 import com.chatbot.core.user.repository.UserRepository;
+import com.chatbot.core.user.repository.AuthRepository;
 import com.chatbot.core.tenant.membership.repository.TenantMemberRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
@@ -21,6 +22,7 @@ import org.springframework.stereotype.Component;
 public class TenantPermissionValidator {
 
     private final UserRepository userRepository;
+    private final AuthRepository authRepository;
     private final TenantMemberRepository tenantMemberRepository;
 
     /**
@@ -48,8 +50,12 @@ public class TenantPermissionValidator {
      * Kiểm tra user có phải OWNER của tenant không.
      */
     public boolean isOwner(Long tenantId, String userEmail) {
+        Long userId = authRepository.findByEmail(userEmail)
+                .map(User::getId)
+                .orElse(null);
+        if (userId == null) return false;
         return tenantMemberRepository
-                .findByTenantIdAndUserEmailAndStatus(tenantId, userEmail, MembershipStatus.ACTIVE)
+                .findByTenantIdAndUserIdAndStatus(tenantId, userId, MembershipStatus.ACTIVE)
                 .map(member -> member.getRole() == TenantRole.OWNER)
                 .orElse(false);
     }
@@ -66,8 +72,12 @@ public class TenantPermissionValidator {
      * Kiểm tra user có phải TENANT ADMIN (admin trong tenant, không phải system admin) không.
      */
     public boolean isTenantAdmin(Long tenantId, String userEmail) {
+        Long userId = authRepository.findByEmail(userEmail)
+                .map(User::getId)
+                .orElse(null);
+        if (userId == null) return false;
         return tenantMemberRepository
-                .findByTenantIdAndUserEmailAndStatus(tenantId, userEmail, MembershipStatus.ACTIVE)
+                .findByTenantIdAndUserIdAndStatus(tenantId, userId, MembershipStatus.ACTIVE)
                 .map(member -> member.getRole() == TenantRole.ADMIN || member.getRole() == TenantRole.OWNER)
                 .orElse(false);
     }
@@ -76,8 +86,12 @@ public class TenantPermissionValidator {
      * Kiểm tra user có phải ACTIVE member của tenant không.
      */
     public boolean isActiveMember(Long tenantId, String userEmail) {
+        Long userId = authRepository.findByEmail(userEmail)
+                .map(User::getId)
+                .orElse(null);
+        if (userId == null) return false;
         return tenantMemberRepository
-                .findByTenantIdAndUserEmailAndStatus(tenantId, userEmail, MembershipStatus.ACTIVE)
+                .findByTenantIdAndUserIdAndStatus(tenantId, userId, MembershipStatus.ACTIVE)
                 .isPresent();
     }
 }

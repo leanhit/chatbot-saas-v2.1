@@ -1,7 +1,6 @@
 package com.chatbot.spokes.minio.image.fileMetadata.model;
 
 import com.chatbot.spokes.minio.image.category.model.Category;
-import com.chatbot.core.user.model.User;
 import com.chatbot.core.tenant.infra.BaseTenantEntity;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.*;
@@ -62,9 +61,9 @@ public class FileMetadata extends BaseTenantEntity {
     @Column(name = "tag")
     private List<String> tags;
 
-    @ManyToOne
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+    // Application-level join: store userId instead of @ManyToOne relationship
+    @Column(name = "user_id", nullable = false)
+    private Long userId;
 
     @Column(length = 100)   // để filter sau này
     private String code;
@@ -114,9 +113,6 @@ public class FileMetadata extends BaseTenantEntity {
     
     public List<String> getTags() { return tags; }
     public void setTags(List<String> tags) { this.tags = tags; }
-    
-    public User getUser() { return user; }
-    public void setUser(User user) { this.user = user; }
     
     public String getCode() { return code; }
     public void setCode(String code) { this.code = code; }

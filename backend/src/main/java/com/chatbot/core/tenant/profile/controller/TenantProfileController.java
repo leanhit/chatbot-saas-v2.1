@@ -63,11 +63,19 @@ public class TenantProfileController {
             @PathVariable String tenantKey,
             @RequestBody TenantProfileRequest request
     ) {
-        Tenant tenant = tenantRepository.findByTenantKey(tenantKey)
-                .orElseThrow(() -> new RuntimeException("Tenant not found with key: " + tenantKey));
-        return ResponseEntity.ok(
-                tenantProfileService.upsertProfile(tenant.getId(), request)
-        );
+        log.info("[TenantProfileController] ===== START updateProfile: tenantKey={}", tenantKey);
+        try {
+            Tenant tenant = tenantRepository.findByTenantKey(tenantKey)
+                    .orElseThrow(() -> new RuntimeException("Tenant not found with key: " + tenantKey));
+            log.info("[TenantProfileController] Found tenant: id={}, name={}", tenant.getId(), tenant.getName());
+            
+            TenantProfileResponse response = tenantProfileService.upsertProfile(tenant.getId(), request);
+            log.info("[TenantProfileController] ===== END updateProfile successfully");
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            log.error("[TenantProfileController] ERROR in updateProfile: {}", e.getMessage(), e);
+            throw e;
+        }
     }
 
     @PutMapping("/{tenantKey}/logo")

@@ -94,11 +94,46 @@ show_status() {
     echo "Service Health Checks:"
     echo "------------------------"
     
-    # PostgreSQL
-    if nc -z localhost 5432 2>/dev/null; then
-        echo -e "PostgreSQL (5432): ${GREEN}✅ Running${NC}"
+    # PostgreSQL Identity Hub
+    if nc -z localhost 5433 2>/dev/null; then
+        echo -e "PostgreSQL Identity (5433): ${GREEN}✅ Running${NC}"
     else
-        echo -e "PostgreSQL (5432): ${RED}❌ Stopped${NC}"
+        echo -e "PostgreSQL Identity (5433): ${RED}❌ Stopped${NC}"
+    fi
+    
+    # PostgreSQL User Hub
+    if nc -z localhost 5434 2>/dev/null; then
+        echo -e "PostgreSQL User (5434): ${GREEN}✅ Running${NC}"
+    else
+        echo -e "PostgreSQL User (5434): ${RED}❌ Stopped${NC}"
+    fi
+    
+    # PostgreSQL Tenant Hub
+    if nc -z localhost 5435 2>/dev/null; then
+        echo -e "PostgreSQL Tenant (5435): ${GREEN}✅ Running${NC}"
+    else
+        echo -e "PostgreSQL Tenant (5435): ${RED}❌ Stopped${NC}"
+    fi
+    
+    # PostgreSQL App Hub
+    if nc -z localhost 5436 2>/dev/null; then
+        echo -e "PostgreSQL App (5436): ${GREEN}✅ Running${NC}"
+    else
+        echo -e "PostgreSQL App (5436): ${RED}❌ Stopped${NC}"
+    fi
+    
+    # PostgreSQL Config Hub
+    if nc -z localhost 5439 2>/dev/null; then
+        echo -e "PostgreSQL Config (5439): ${GREEN}✅ Running${NC}"
+    else
+        echo -e "PostgreSQL Config (5439): ${RED}❌ Stopped${NC}"
+    fi
+    
+    # PostgreSQL Message Hub
+    if nc -z localhost 5440 2>/dev/null; then
+        echo -e "PostgreSQL Message (5440): ${GREEN}✅ Running${NC}"
+    else
+        echo -e "PostgreSQL Message (5440): ${RED}❌ Stopped${NC}"
     fi
     
     # Redis
@@ -130,13 +165,26 @@ show_service_info() {
     echo "📊 MinIO Console: http://localhost:9090 (minioadmin/minioadmin)"
     echo "📁 MinIO API: http://localhost:9000"
     echo "🐰 RabbitMQ Management: http://localhost:15672 (admin/admin123)"
-    echo "🗄️  PostgreSQL: localhost:5432"
-    echo "🔴 Redis: localhost:6380"
+    echo "� Redis: localhost:6380"
+    echo ""
+    echo "�🗄️  Multi-Database Setup:"
+    echo "========================"
+    echo "Identity Hub:   localhost:5433 (chatbot_identity_db)"
+    echo "User Hub:       localhost:5434 (chatbot_user_db)"
+    echo "Tenant Hub:     localhost:5435 (chatbot_tenant_db)"
+    echo "App Hub:        localhost:5436 (chatbot_app_db)"
+    echo "Config Hub:     localhost:5439 (chatbot_config_db)"
+    echo "Message Hub:    localhost:5440 (chatbot_message_db)"
     echo ""
     echo "📋 Quick Commands:"
     echo "=================="
     echo "Redis CLI: redis-cli -p 6380"
-    echo "PostgreSQL: psql -h localhost -p 5432 -U traloitudong_user -d traloitudong_db"
+    echo "PostgreSQL Identity: psql -h localhost -p 5433 -U chatbot_user -d chatbot_identity_db"
+    echo "PostgreSQL User: psql -h localhost -p 5434 -U chatbot_user -d chatbot_user_db"
+    echo "PostgreSQL Tenant: psql -h localhost -p 5435 -U chatbot_user -d chatbot_tenant_db"
+    echo "PostgreSQL App: psql -h localhost -p 5436 -U chatbot_user -d chatbot_app_db"
+    echo "PostgreSQL Config: psql -h localhost -p 5439 -U chatbot_user -d chatbot_config_db"
+    echo "PostgreSQL Message: psql -h localhost -p 5440 -U chatbot_user -d chatbot_message_db"
     echo ""
 }
 

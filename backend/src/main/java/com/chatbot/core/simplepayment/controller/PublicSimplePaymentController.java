@@ -110,7 +110,7 @@ public class PublicSimplePaymentController {
             Long tenantId = TenantContext.getTenantId();
             if (tenantId == null) {
                 // Fallback to user's primary tenant - get from TenantJoinRequest
-                List<TenantJoinRequest> activeMemberships = tenantJoinRequestRepository.findByUser_IdAndStatus(user.getId(), MembershipStatus.ACTIVE);
+                List<TenantJoinRequest> activeMemberships = tenantJoinRequestRepository.findByUserIdAndStatus(user.getId(), MembershipStatus.ACTIVE);
                 if (!activeMemberships.isEmpty()) {
                     tenantId = activeMemberships.get(0).getTenant().getId();
                 } else {

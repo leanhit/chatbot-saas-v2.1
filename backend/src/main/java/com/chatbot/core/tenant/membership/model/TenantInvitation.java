@@ -1,7 +1,6 @@
 package com.chatbot.core.tenant.membership.model;
 
 import com.chatbot.core.tenant.model.Tenant;
-import com.chatbot.core.user.model.User;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -49,7 +48,7 @@ public class TenantInvitation {
     @Column
     private LocalDateTime expiresAt;
     
-    @ManyToOne
-    @JoinColumn(name = "invited_by")
-    private User invitedBy;
+    // Application-level join: store invitedByUserId instead of @ManyToOne relationship
+    @Column(name = "invited_by")
+    private Long invitedByUserId;
 }

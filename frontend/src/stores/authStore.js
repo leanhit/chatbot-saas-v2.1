@@ -64,8 +64,8 @@ export const useAuthStore = defineStore('auth', () => {
     try {
       // 1. Gọi API Login
       const res = await usersApi.login(credentials)
-      // API returns { data: UserResponse } so we need to access res.data
-      const authData = res.data
+      // API returns { data: { data: UserResponse } } so we need to access res.data.data
+      const authData = res.data.data || res.data
       if (!authData.token) {
         throw new Error("No token received")
       }
@@ -122,7 +122,7 @@ export const useAuthStore = defineStore('auth', () => {
     error.value = null
     try {
       const response = await usersApi.register(userData)
-      const authData = response.data
+      const authData = response.data.data || response.data
       if (!authData.token) {
         throw new Error("No token received")
       }
@@ -130,45 +130,49 @@ export const useAuthStore = defineStore('auth', () => {
       // Login with received token
       await login(authData)
       
-      // Auto-create workspace with email-based name
+      // Auto-create tenant after successful registration
+      const tenantStore = useGatewayTenantStore();
+      
+      // Extract tenant name from email (e.g., user@example.com -> "user")
+      const email = userData.email;
+      const tenantName = email.split('@')[0];
+      
+      console.log('🚀 Auto-creating tenant for:', email, 'with name:', tenantName);
+      
       try {
-        const tenantStore = useGatewayTenantStore()
+        // Create tenant with name based on email
+        const createTenantResponse = await tenantApi.createTenant({
+          name: tenantName,
+          visibility: 'PUBLIC',
+          description: `Workspace for ${email}`
+        });
         
-        // Extract username from email for workspace name
-        const email = userData.email
-        const workspaceName = email.substring(0, email.indexOf('@')) + "'s Workspace"
+        console.log('✅ Create tenant response:', createTenantResponse);
         
-        // Create workspace
-        const createResponse = await tenantApi.createTenant({
-          name: workspaceName,
-          visibility: 'PUBLIC'
-        })
+        const newTenantKey = createTenantResponse.data?.data?.tenantKey || 
+                             createTenantResponse.data?.tenantKey ||
+                             createTenantResponse.data?.key;
         
-        // Fetch updated tenant list
-        await tenantStore.fetchUserTenants()
+        console.log('🔑 Extracted tenantKey:', newTenantKey);
         
-        // Auto-switch to newly created tenant
-        let newTenant = tenantStore.userTenants.find(tenant => tenant.name === workspaceName)
-        
-        // If not found by name, try to get the first tenant (fallback)
-        if (!newTenant && tenantStore.userTenants.length > 0) {
-          newTenant = tenantStore.userTenants[0]
-          }
-        
-        if (newTenant) {
-          // Apply same logic as Enter tenant button
-          await tenantStore.switchTenant(newTenant.tenantKey)
-          // Redirect to dashboard (same as Enter tenant button)
-          await router.push('/dashboard')
+        if (newTenantKey) {
+          // Switch to the newly created tenant
+          await tenantStore.switchTenant(newTenantKey);
+          // Redirect to dashboard
+          await router.push('/dashboard');
+          console.log('✅ Successfully switched to tenant and redirected to dashboard');
         } else {
-          // Fallback to tenant gateway if something goes wrong
-          await router.push({ name: 'tenant-gateway' })
+          console.error('❌ No tenantKey found in response');
+          // Fallback to tenant gateway if tenant creation failed
+          await tenantStore.fetchUserTenants();
+          await router.push({ name: 'tenant-gateway' });
         }
-        
-      } catch (workspaceErr) {
-        console.error('Failed to create workspace:', workspaceErr)
-        // Still consider registration successful, redirect to tenant gateway
-        await router.push({ name: 'tenant-gateway' })
+      } catch (tenantErr) {
+        console.error('❌ Auto-create tenant failed:', tenantErr);
+        console.error('Error response:', tenantErr.response?.data);
+        // Fallback: refresh tenant list and go to tenant gateway
+        await tenantStore.fetchUserTenants();
+        await router.push({ name: 'tenant-gateway' });
       }
       
       return { success: true, data: authData }

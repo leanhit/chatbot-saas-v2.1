@@ -1,6 +1,5 @@
 package com.chatbot.core.license.model;
 
-import com.chatbot.core.user.model.User;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -24,9 +23,9 @@ public class License {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+    // Application-level join: store userId instead of @ManyToOne relationship
+    @Column(name = "user_id", nullable = false)
+    private Long userId;
 
     @Column(name = "plan_name", nullable = false)
     private String planName;

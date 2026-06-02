@@ -58,7 +58,7 @@ public interface TenantRepository extends JpaRepository<Tenant, Long> {
     // Tìm tenant theo user ID (thông qua tenant membership)
     @Query("SELECT t FROM Tenant t WHERE EXISTS (" +
            "  SELECT 1 FROM TenantMember tm " +
-           "  WHERE tm.tenant.id = t.id AND tm.user.id = :userId" +
+           "  WHERE tm.tenant.id = t.id AND tm.userId = :userId" +
            ")")
     Optional<Tenant> findByUserId(@Param("userId") Long userId);
 
@@ -66,7 +66,7 @@ public interface TenantRepository extends JpaRepository<Tenant, Long> {
     @Query("SELECT COUNT(t) > 0 FROM Tenant t " +
            "WHERE t.id = :tenantId AND EXISTS (" +
            "  SELECT 1 FROM TenantMember tm " +
-           "  WHERE tm.tenant.id = t.id AND tm.user.id = :userId" +
+           "  WHERE tm.tenant.id = t.id AND tm.userId = :userId" +
            ")")
     boolean existsByUserIdAndTenantId(@Param("userId") Long userId, @Param("tenantId") Long tenantId);
 

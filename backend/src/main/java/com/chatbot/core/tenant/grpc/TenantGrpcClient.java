@@ -23,7 +23,7 @@ public class TenantGrpcClient {
     @Value("${grpc.server.identity.host:localhost}")
     private String grpcHost;
 
-    @Value("${grpc.server.identity.port:50053}")
+    @Value("${tenant.grpc.server.port:50057}")
     private int grpcPort;
 
     @PostConstruct

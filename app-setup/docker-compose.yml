@@ -1,24 +1,144 @@
 services:
   # ----------------------------------------
-  # PostgreSQL Shared (pgvector)
+  # PostgreSQL Identity Hub (pgvector)
   # ----------------------------------------
-  db:
+  db-identity:
     image: ankane/pgvector:latest
-    container_name: chatbot_saas_postgres
+    container_name: chatbot_saas_postgres_identity
     restart: always
     environment:
-      POSTGRES_DB: traloitudong_db
-      POSTGRES_USER: traloitudong_user
-      POSTGRES_PASSWORD: traloitudong_Admin_2025
+      POSTGRES_DB: chatbot_identity_db
+      POSTGRES_USER: chatbot_user
+      POSTGRES_PASSWORD: chatbot_Admin_2025
     volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./postgres-init.sql:/docker-entrypoint-initdb.d/init.sql
+      - postgres_identity_data:/var/lib/postgresql/data
+      - ./postgres-init-identity.sql:/docker-entrypoint-initdb.d/init.sql
     ports:
-    - "5432:5432" 
+    - "5433:5432"
     networks:
       - internal
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U traloitudong_user -d traloitudong_db"]
+      test: ["CMD-SHELL", "pg_isready -U chatbot_user -d chatbot_identity_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  # ----------------------------------------
+  # PostgreSQL User Hub (pgvector)
+  # ----------------------------------------
+  db-user:
+    image: ankane/pgvector:latest
+    container_name: chatbot_saas_postgres_user
+    restart: always
+    environment:
+      POSTGRES_DB: chatbot_user_db
+      POSTGRES_USER: chatbot_user
+      POSTGRES_PASSWORD: chatbot_Admin_2025
+    volumes:
+      - postgres_user_data:/var/lib/postgresql/data
+      - ./postgres-init-user.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+    - "5434:5432"
+    networks:
+      - internal
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U chatbot_user -d chatbot_user_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  # ----------------------------------------
+  # PostgreSQL Tenant Hub (pgvector)
+  # ----------------------------------------
+  db-tenant:
+    image: ankane/pgvector:latest
+    container_name: chatbot_saas_postgres_tenant
+    restart: always
+    environment:
+      POSTGRES_DB: chatbot_tenant_db
+      POSTGRES_USER: chatbot_user
+      POSTGRES_PASSWORD: chatbot_Admin_2025
+    volumes:
+      - postgres_tenant_data:/var/lib/postgresql/data
+      - ./postgres-init-tenant.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+    - "5435:5432"
+    networks:
+      - internal
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U chatbot_user -d chatbot_tenant_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  # ----------------------------------------
+  # PostgreSQL App Hub (pgvector)
+  # ----------------------------------------
+  db-app:
+    image: ankane/pgvector:latest
+    container_name: chatbot_saas_postgres_app
+    restart: always
+    environment:
+      POSTGRES_DB: chatbot_app_db
+      POSTGRES_USER: chatbot_user
+      POSTGRES_PASSWORD: chatbot_Admin_2025
+    volumes:
+      - postgres_app_data:/var/lib/postgresql/data
+      - ./postgres-init-app.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+    - "5436:5432"
+    networks:
+      - internal
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U chatbot_user -d chatbot_app_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  # ----------------------------------------
+  # PostgreSQL Config Hub (pgvector)
+  # ----------------------------------------
+  db-config:
+    image: ankane/pgvector:latest
+    container_name: chatbot_saas_postgres_config
+    restart: always
+    environment:
+      POSTGRES_DB: chatbot_config_db
+      POSTGRES_USER: chatbot_user
+      POSTGRES_PASSWORD: chatbot_Admin_2025
+    volumes:
+      - postgres_config_data:/var/lib/postgresql/data
+      - ./postgres-init-config.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+    - "5439:5432"
+    networks:
+      - internal
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U chatbot_user -d chatbot_config_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  # ----------------------------------------
+  # PostgreSQL Message Hub (pgvector)
+  # ----------------------------------------
+  db-message:
+    image: ankane/pgvector:latest
+    container_name: chatbot_saas_postgres_message
+    restart: always
+    environment:
+      POSTGRES_DB: chatbot_message_db
+      POSTGRES_USER: chatbot_user
+      POSTGRES_PASSWORD: chatbot_Admin_2025
+    volumes:
+      - postgres_message_data:/var/lib/postgresql/data
+      - ./postgres-init-message.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+    - "5440:5432"
+    networks:
+      - internal
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U chatbot_user -d chatbot_message_db"]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -116,9 +236,24 @@ services:
       - internal
 
 volumes:
-  postgres_data:
+  postgres_identity_data:
     driver: local
-    name: chatbot_saas_postgres_data
+    name: chatbot_saas_postgres_identity_data
+  postgres_user_data:
+    driver: local
+    name: chatbot_saas_postgres_user_data
+  postgres_tenant_data:
+    driver: local
+    name: chatbot_saas_postgres_tenant_data
+  postgres_app_data:
+    driver: local
+    name: chatbot_saas_postgres_app_data
+  postgres_config_data:
+    driver: local
+    name: chatbot_saas_postgres_config_data
+  postgres_message_data:
+    driver: local
+    name: chatbot_saas_postgres_message_data
 
   minio_data:
     driver: local

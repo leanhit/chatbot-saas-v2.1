@@ -1,6 +1,8 @@
 package com.chatbot.core.tenant.security;
 
 import com.chatbot.core.tenant.membership.repository.TenantMemberRepository;
+import com.chatbot.core.user.repository.AuthRepository;
+import com.chatbot.core.user.model.User;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
@@ -14,6 +16,7 @@ public class TenantSecurityEvaluator {
 
     private final TenantMemberRepository tenantMemberRepository;
     private final com.chatbot.core.tenant.service.TenantService tenantService;
+    private final AuthRepository authRepository;
 
     /**
      * Check if current user is member of tenant
@@ -26,8 +29,13 @@ public class TenantSecurityEvaluator {
             }
 
             String userEmail = auth.getName();
-            return tenantMemberRepository.findByTenantIdAndUserEmailAndStatus(
-                tenantId, userEmail, com.chatbot.core.tenant.membership.model.MembershipStatus.ACTIVE
+            Long userId = authRepository.findByEmail(userEmail)
+                    .map(User::getId)
+                    .orElse(null);
+            if (userId == null) return false;
+            
+            return tenantMemberRepository.findByTenantIdAndUserIdAndStatus(
+                tenantId, userId, com.chatbot.core.tenant.membership.model.MembershipStatus.ACTIVE
             ).isPresent();
         } catch (Exception e) {
             log.error("Error checking tenant membership", e);
@@ -62,9 +70,14 @@ public class TenantSecurityEvaluator {
             }
 
             String userEmail = auth.getName();
+            Long userId = authRepository.findByEmail(userEmail)
+                    .map(User::getId)
+                    .orElse(null);
+            if (userId == null) return false;
+            
             // Find member and check role
-            return tenantMemberRepository.findByTenantIdAndUserEmailAndStatus(
-                tenantId, userEmail, com.chatbot.core.tenant.membership.model.MembershipStatus.ACTIVE
+            return tenantMemberRepository.findByTenantIdAndUserIdAndStatus(
+                tenantId, userId, com.chatbot.core.tenant.membership.model.MembershipStatus.ACTIVE
             ).map(member -> member.getRole() == com.chatbot.core.tenant.membership.model.TenantRole.OWNER)
             .orElse(false);
         } catch (Exception e) {

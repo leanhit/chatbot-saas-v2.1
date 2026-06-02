@@ -27,7 +27,7 @@ public class PackageService {
     /**
      * Get all active packages ordered by sort order
      */
-    @Transactional(readOnly = true)
+    @Transactional(readOnly = true, transactionManager = "sharedTransactionManager")
     public List<Package> getActivePackages() {
         log.debug("Fetching all active packages (cached)");
         return cachedPackageService.getActivePackages();
@@ -36,7 +36,7 @@ public class PackageService {
     /**
      * Get all packages (including inactive) for admin
      */
-    @Transactional(readOnly = true)
+    @Transactional(readOnly = true, transactionManager = "sharedTransactionManager")
     public List<Package> getAllPackages() {
         log.debug("Fetching all packages for admin (cached)");
         return cachedPackageService.getAllPackages();
@@ -45,7 +45,7 @@ public class PackageService {
     /**
      * Get package by ID
      */
-    @Transactional(readOnly = true)
+    @Transactional(readOnly = true, transactionManager = "sharedTransactionManager")
     public Optional<Package> getPackageById(Long id) {
         log.debug("Fetching package by ID: {} (cached)", id);
         return cachedPackageService.getPackageById(id);
@@ -54,7 +54,7 @@ public class PackageService {
     /**
      * Get package by package ID (e.g., 'free', 'pro')
      */
-    @Transactional(readOnly = true)
+    @Transactional(readOnly = true, transactionManager = "sharedTransactionManager")
     public Optional<Package> getPackageByPackageId(String packageId) {
         log.debug("Fetching package by package ID: {} (cached)", packageId);
         return cachedPackageService.getPackageByPackageId(packageId);
@@ -63,7 +63,7 @@ public class PackageService {
     /**
      * Create new package
      */
-    @Transactional
+    @Transactional("sharedTransactionManager")
     public Package createPackage(Package packageData) {
         log.info("Creating new package: {}", packageData.getPackageId());
         
@@ -95,7 +95,7 @@ public class PackageService {
     /**
      * Update existing package
      */
-    @Transactional
+    @Transactional("sharedTransactionManager")
     public Package updatePackage(Long id, Package packageData) {
         log.info("Updating package ID: {}", id);
         
@@ -134,7 +134,7 @@ public class PackageService {
     /**
      * Delete package (soft delete by setting inactive)
      */
-    @Transactional
+    @Transactional("sharedTransactionManager")
     public void deletePackage(Long id) {
         log.info("Deleting package ID: {}", id);
         
@@ -155,7 +155,7 @@ public class PackageService {
     /**
      * Permanently delete package
      */
-    @Transactional
+    @Transactional("sharedTransactionManager")
     public void permanentlyDeletePackage(Long id) {
         log.info("Permanently deleting package ID: {}", id);
         
@@ -173,7 +173,7 @@ public class PackageService {
     /**
      * Check if packages table is empty (for seeding)
      */
-    @Transactional(readOnly = true)
+    @Transactional(readOnly = true, transactionManager = "sharedTransactionManager")
     public boolean isEmpty() {
         return !packageRepository.hasAnyPackages();
     }
@@ -181,7 +181,7 @@ public class PackageService {
     /**
      * Initialize default packages if table is empty
      */
-    @Transactional
+    @Transactional("sharedTransactionManager")
     public void initializeDefaultPackages() {
         if (!isEmpty()) {
             log.info("Packages already initialized, skipping seeding");
@@ -198,7 +198,7 @@ public class PackageService {
     /**
      * Force reinitialize packages (delete all and recreate)
      */
-    @Transactional
+    @Transactional("sharedTransactionManager")
     public void forceReinitializePackages() {
         log.info("🔄 Force reinitializing packages - deleting existing packages...");
         packageRepository.deleteAll();
@@ -213,7 +213,7 @@ public class PackageService {
     /**
      * Create default packages from configuration
      */
-    @Transactional
+    @Transactional("sharedTransactionManager")
     private void createDefaultPackages() {
         log.info("📦 Creating packages from configuration...");
         

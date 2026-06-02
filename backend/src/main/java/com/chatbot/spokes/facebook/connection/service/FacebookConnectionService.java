@@ -404,7 +404,7 @@ public class FacebookConnectionService {
             Long tenantId = TenantContext.getTenantId();
             if (tenantId != null) {
                 TenantMember tenantMember = tenantMemberRepository
-                        .findByTenant_IdAndUser_Id(tenantId, user.getId())
+                        .findByTenant_IdAndUserId(tenantId, user.getId())
                         .orElse(null);
                 
                 return tenantMember != null && 
@@ -434,7 +434,7 @@ public class FacebookConnectionService {
             if (tenantId == null) return false;
             
             TenantMember member = tenantMemberRepository
-                    .findByTenant_IdAndUser_Id(tenantId, user.getId())
+                    .findByTenant_IdAndUserId(tenantId, user.getId())
                     .orElse(null);
             
             if (member == null || member.getStatus() != MembershipStatus.ACTIVE) {
@@ -480,7 +480,7 @@ public class FacebookConnectionService {
             if (tenantId == null) return false;
             
             TenantMember member = tenantMemberRepository
-                    .findByTenant_IdAndUser_Id(tenantId, user.getId())
+                    .findByTenant_IdAndUserId(tenantId, user.getId())
                     .orElse(null);
             
             if (member == null || member.getStatus() != MembershipStatus.ACTIVE) {
@@ -510,7 +510,7 @@ public class FacebookConnectionService {
             if (tenantId == null) return false;
             
             TenantMember member = tenantMemberRepository
-                    .findByTenant_IdAndUser_Id(tenantId, user.getId())
+                    .findByTenant_IdAndUserId(tenantId, user.getId())
                     .orElse(null);
             
             return member != null && member.getStatus() == MembershipStatus.ACTIVE;

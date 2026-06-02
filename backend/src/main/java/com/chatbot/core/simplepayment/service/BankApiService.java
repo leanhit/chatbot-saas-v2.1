@@ -50,8 +50,6 @@ public class BankApiService {
             BankTransaction transaction = mockTransactionDatabase.get(referenceCode);
             
             if (transaction != null && !transaction.isProcessed()) {
-                // Mark as processed to avoid duplicate processing
-                transaction.setProcessed(true);
                 log.info("✅ Found bank transaction: {} for reference: {}", transaction.getTransactionId(), referenceCode);
                 return transaction.getTransactionId();
             }
@@ -77,6 +75,17 @@ public class BankApiService {
         } catch (Exception e) {
             log.error("❌ Error checking bank API: {}", e.getMessage(), e);
             return null;
+        }
+    }
+
+    /**
+     * Mark a transaction as processed in mock bank database
+     */
+    public void markTransactionAsProcessed(String referenceCode) {
+        BankTransaction transaction = mockTransactionDatabase.get(referenceCode);
+        if (transaction != null) {
+            transaction.setProcessed(true);
+            log.info("🏦 Marked bank transaction as processed: {}", referenceCode);
         }
     }
 

@@ -3,6 +3,7 @@ package com.chatbot.core.simplepayment.service;
 import com.chatbot.core.simplepayment.dto.DepositRequest;
 import com.chatbot.core.simplepayment.dto.DepositResponse;
 import com.chatbot.core.simplepayment.dto.PaymentEvent;
+
 import com.chatbot.core.simplepayment.dto.PaymentStatusResponse;
 import com.chatbot.core.simplepayment.model.PaymentStatus;
 import com.chatbot.core.simplepayment.model.SimplePayment;
@@ -10,22 +11,20 @@ import com.chatbot.core.simplepayment.model.Package;
 import com.chatbot.core.simplepayment.repository.SimplePaymentRepository;
 import com.chatbot.core.simplepayment.repository.PackageRepository;
 import com.chatbot.core.tenant.infra.TenantContext;
-import com.chatbot.core.user.repository.UserRepository;
+import com.chatbot.core.simplepayment.service.UserBalanceService;
 import com.chatbot.core.user.model.User;
+import com.chatbot.core.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -34,20 +33,20 @@ public class SimplePaymentService {
 
     private final SimplePaymentRepository paymentRepository;
     private final PackageRepository packageRepository;
+    private final UserBalanceService userBalanceService;
     private final UserRepository userRepository;
     private final QRCodeService qrCodeService;
     private final BankApiService bankApiService;
     private final RedisPaymentService redisPaymentService;
     private final PaymentPackageUpgradeService packageUpgradeService;
     private final PackageValidationService packageValidationService;
-    private final PaymentEventService paymentEventService;
     private final PaymentTTLService paymentTTLService;
     private final ApplicationEventPublisher eventPublisher;
 
     /**
      * Tạo yêu cầu nạp tiền mới
      */
-    @Transactional
+    @Transactional("sharedTransactionManager")
     public DepositResponse createDeposit(DepositRequest request, Long userId, Long tenantId) {
         log.info("📱 Creating deposit request for user: {}, amount: {}, targetPackage: {}", 
                 userId, request.getAmount(), request.getTargetPackageId());
@@ -95,13 +94,8 @@ public class SimplePaymentService {
         savedPayment.setQrContent(qrContent);
         paymentRepository.save(savedPayment);
 
-        // Publish Redis event for real-time notification
-        PaymentEvent event = redisPaymentService.createPaymentEvent(
-            referenceCode, userId, tenantId, 
-            request.getAmount().toString(), request.getCurrency(), 
-            request.getDescription()
-        );
-        redisPaymentService.publishPaymentEvent(event);
+        // Redis event publishing removed to avoid blocking during deposit creation
+        log.debug("Redis event publishing skipped for deposit {}", referenceCode);
 
         // Publish event for event-driven processing
         eventPublisher.publishEvent(new PaymentEventService.PaymentCreatedEvent(
@@ -118,7 +112,7 @@ public class SimplePaymentService {
     /**
      * Get current deposit limits for user/tenant (using PackageValidationService)
      */
-    @Transactional(readOnly = true)
+    @Transactional(readOnly = true, transactionManager = "sharedTransactionManager")
     public Map<String, Object> getCurrentDepositLimits(Long userId, Long tenantId) {
         return packageValidationService.getPackageUsageStats(userId, tenantId);
     }
@@ -133,7 +127,7 @@ public class SimplePaymentService {
     /**
      * Kiểm tra trạng thái thanh toán
      */
-    @Transactional(readOnly = true)
+    @Transactional(readOnly = true, transactionManager = "sharedTransactionManager")
     public PaymentStatusResponse checkPaymentStatus(String referenceCode) {
         log.info("🔍 Checking payment status: {}", referenceCode);
 
@@ -156,45 +150,22 @@ public class SimplePaymentService {
     }
 
     /**
-     * Complete payment in same transaction for proper rollback support
+     * Get payment by reference code (for other services to check status without circular dependency)
      */
-    @Transactional
-    public void completePaymentInNewTransaction(String referenceCode, String bankTransactionId) {
-        log.info("✅ Completing payment: {}", referenceCode);
-
-        SimplePayment payment = paymentRepository.findByReferenceCode(referenceCode)
+    @Transactional(readOnly = true, transactionManager = "sharedTransactionManager")
+    public SimplePayment getPaymentByReference(String referenceCode) {
+        return paymentRepository.findByReferenceCode(referenceCode)
                 .orElseThrow(() -> new RuntimeException("Payment not found: " + referenceCode));
-
-        if (payment.getStatus() != PaymentStatus.PENDING) {
-            log.warn("Payment {} is not pending: {}", referenceCode, payment.getStatus());
-            return;
-        }
-
-        // Update payment status
-        payment.setStatus(PaymentStatus.COMPLETED);
-        payment.setBankTransactionId(bankTransactionId);
-        payment.setCompletedAt(LocalDateTime.now());
-        paymentRepository.save(payment);
-
-        // Update user balance
-        updateUserBalance(payment.getUserId(), payment.getAmount());
-
-        // Publish Redis event for real-time notification
-        PaymentEvent event = redisPaymentService.createStatusUpdateEvent(
-                referenceCode, PaymentStatus.COMPLETED, bankTransactionId
-        );
-        redisPaymentService.publishPaymentEvent(event);
-
-        log.info("✅ Payment completed successfully: {}", referenceCode);
     }
 
     /**
      * Hoàn thành thanh toán (khi nhìn transaction o bank)
      * Atomic transaction: payment + balance + package upgrade
+     * Uses REQUIRES_NEW to ensure transaction context from Redis listener
      */
-    @Transactional
+    @Transactional(propagation = org.springframework.transaction.annotation.Propagation.REQUIRES_NEW, transactionManager = "sharedTransactionManager")
     public void completePayment(String referenceCode, String bankTransactionId) {
-        log.info(" Completing payment: {}", referenceCode);
+        log.info("✅ Completing payment: {}", referenceCode);
 
         SimplePayment payment = paymentRepository.findByReferenceCode(referenceCode)
                 .orElseThrow(() -> new RuntimeException("Payment not found: " + referenceCode));
@@ -211,10 +182,10 @@ public class SimplePaymentService {
             payment.setCompletedAt(LocalDateTime.now());
             paymentRepository.save(payment);
 
-            // Update user balance
-            updateUserBalance(payment.getUserId(), payment.getAmount());
+            log.info("📝 [DEBUG] Payment status updated to COMPLETED for: {}, targetPackage: {}",
+                    referenceCode, payment.getTargetPackageId());
 
-            // Process automatic package upgrade in same transaction
+            // 1. Process package upgrade if a target package is requested (it handles balance crediting internally)
             if (payment.getTargetPackageId() != null && !payment.getTargetPackageId().trim().isEmpty()) {
                 log.info(" [SimplePaymentService] Processing package upgrade for payment: {}, targetPackage: {}", 
                         referenceCode, payment.getTargetPackageId());
@@ -224,12 +195,18 @@ public class SimplePaymentService {
                     () -> packageUpgradeService.processPackageUpgrade(payment)
                 );
                 
+                log.info("📝 [DEBUG] Package upgrade result for payment {}: {}", referenceCode, upgradeSuccess);
+                
                 if (!upgradeSuccess) {
                     throw new RuntimeException("Package upgrade failed for payment: " + referenceCode);
                 }
                 
                 log.info(" [SimplePaymentService] Package upgrade completed successfully for payment: {}", 
                         referenceCode);
+            } else {
+                // 2. Otherwise, this is a standard deposit, credit the user balance directly
+                log.info(" [SimplePaymentService] Standard deposit. Crediting user balance for payment: {}", referenceCode);
+                userBalanceService.updateUserBalanceInSeparateTransaction(payment.getUserId(), payment.getAmount());
             }
 
             // Publish Redis event for real-time notification
@@ -238,11 +215,13 @@ public class SimplePaymentService {
             );
             redisPaymentService.publishPaymentEvent(event);
 
-            log.info(" Payment completed successfully: {}", referenceCode);
+            // Mark transaction as processed in mock bank api to avoid checking it again
+            bankApiService.markTransactionAsProcessed(referenceCode);
+
+            log.info("✅ Payment completed successfully: {}", referenceCode);
             
         } catch (Exception e) {
-            log.error(" Payment completion failed for {}: {}", referenceCode, e.getMessage(), e);
-            // Transaction will rollback automatically
+            log.error("❌ Payment completion failed for {}: {}", referenceCode, e.getMessage(), e);
             throw e;
         }
     }
@@ -250,7 +229,7 @@ public class SimplePaymentService {
     /**
      * Lấy danh sách thanh toán của user
      */
-    @Transactional(readOnly = true)
+    @Transactional(readOnly = true, transactionManager = "sharedTransactionManager")
     public List<PaymentStatusResponse> getUserPayments(Long userId, Long tenantId) {
         List<SimplePayment> payments = paymentRepository.findByUserIdAndTenantIdOrderByCreatedAtDesc(userId, tenantId);
         
@@ -276,7 +255,7 @@ public class SimplePaymentService {
     /**
      * Job để check các pending payments
      */
-    @Transactional
+    @Transactional("sharedTransactionManager")
     public void checkPendingPayments() {
         log.info("🏦 Checking pending payments...");
 
@@ -288,8 +267,8 @@ public class SimplePaymentService {
                 String bankTransactionId = bankApiService.findTransactionByReference(payment.getReferenceCode());
                 
                 if (bankTransactionId != null) {
-                    // Use new transaction for each payment completion
-                    completePaymentInNewTransaction(payment.getReferenceCode(), bankTransactionId);
+                    // Call the unified completePayment
+                    completePayment(payment.getReferenceCode(), bankTransactionId);
                 }
             } catch (Exception e) {
                 log.error("❌ Error checking payment {}: {}", payment.getReferenceCode(), e.getMessage());
@@ -303,7 +282,7 @@ public class SimplePaymentService {
     /**
      * Expire old pending payments
      */
-    @Transactional
+    @Transactional("sharedTransactionManager")
     public void expireOldPayments() {
         log.info("⏰ Expiring old pending payments...");
 
@@ -325,7 +304,23 @@ public class SimplePaymentService {
         log.info("✅ Expired {} pending payments", expiredPayments.size());
     }
 
-    private void updateUserBalance(Long userId, BigDecimal amount) {
+    @Transactional(propagation = org.springframework.transaction.annotation.Propagation.REQUIRES_NEW, transactionManager = "userTransactionManager")
+    public void updateUserBalanceInSeparateTransaction(Long userId, BigDecimal amount) {
+        User user = userRepository.findByIdWithLock(userId)
+                .orElseThrow(() -> new RuntimeException("User not found: " + userId));
+
+        // Initialize balance if null
+        if (user.getBalance() == null) {
+            user.setBalance(BigDecimal.ZERO);
+        }
+
+        user.setBalance(user.getBalance().add(amount));
+        userRepository.save(user);
+
+        log.info("💸 Updated user balance: {} + {} = {}", userId, amount, user.getBalance());
+    }
+
+    public void updateUserBalance(Long userId, BigDecimal amount) {
         User user = userRepository.findByIdWithLock(userId)
                 .orElseThrow(() -> new RuntimeException("User not found: " + userId));
 
@@ -343,6 +338,7 @@ public class SimplePaymentService {
     /**
      * Deduct balance from user when purchasing package
      */
+    @Transactional(propagation = org.springframework.transaction.annotation.Propagation.REQUIRES_NEW, transactionManager = "userTransactionManager")
     public void deductUserBalance(Long userId, BigDecimal amount) {
         User user = userRepository.findByIdWithLock(userId)
                 .orElseThrow(() -> new RuntimeException("User not found: " + userId));

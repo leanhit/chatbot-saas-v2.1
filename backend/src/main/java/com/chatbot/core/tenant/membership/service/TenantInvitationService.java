@@ -67,7 +67,7 @@ public class TenantInvitationService {
             .status(InvitationStatus.PENDING)
             .createdAt(LocalDateTime.now())
             .expiresAt(LocalDateTime.now().plusDays(7))
-            .invitedBy(admin)
+            .invitedByUserId(admin.getId()) // Application-level join: store userId instead of User object
             .build();
 
         invitation = invitationRepo.save(invitation);
@@ -129,7 +129,7 @@ public class TenantInvitationService {
 
         memberRepo.save(TenantMember.builder()
             .tenant(invitation.getTenant())
-            .user(user)
+            .userId(user.getId()) // Application-level join: store userId instead of User object
             .role(invitation.getRole())
             .status(MembershipStatus.ACTIVE)
             .joinedAt(LocalDateTime.now())
@@ -190,6 +190,17 @@ public class TenantInvitationService {
     /* ================= HELPERS ================= */
 
     private InvitationResponse convertToResponse(TenantInvitation invitation) {
+        // Application-level join: fetch invitedBy user when needed
+        String invitedByName = null;
+        if (invitation.getInvitedByUserId() != null) {
+            User invitedByUser = userRepo.findById(invitation.getInvitedByUserId()).orElse(null);
+            if (invitedByUser != null) {
+                invitedByName = invitedByUser.getProfile() != null 
+                    ? invitedByUser.getProfile().getFullName()
+                    : invitedByUser.getEmail();
+            }
+        }
+        
         return InvitationResponse.builder()
                 .id(invitation.getId())
                 .name(invitation.getTenant() != null ? invitation.getTenant().getName() : null)
@@ -197,10 +208,7 @@ public class TenantInvitationService {
                 .role(invitation.getRole())
                 .status(invitation.getStatus())
                 .expiresAt(invitation.getExpiresAt())
-                .invitedByName(invitation.getInvitedBy() != null &&
-                    invitation.getInvitedBy().getProfile() != null
-                    ? invitation.getInvitedBy().getProfile().getFullName()
-                    : (invitation.getInvitedBy() != null ? invitation.getInvitedBy().getEmail() : null))
+                .invitedByName(invitedByName)
                 .token(invitation.getToken())
                 .build();
     }

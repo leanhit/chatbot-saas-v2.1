@@ -24,7 +24,7 @@ public class TenantSelfService {
     /* ================= MY PENDING ================= */
 
     public List<TenantPendingResponse> getMyPending(User user) {
-        return joinRequestRepo.findByUser_IdAndStatus(user.getId(), MembershipStatus.PENDING)
+        return joinRequestRepo.findByUserIdAndStatus(user.getId(), MembershipStatus.PENDING)
                 .stream()
                 .map(request -> TenantPendingResponse.builder()
                         .id(request.getId())
@@ -44,7 +44,7 @@ public class TenantSelfService {
 
     @Transactional
     public void leaveTenant(Long tenantId, User user) {
-        TenantMember member = memberRepo.findByTenant_IdAndUser_Id(tenantId, user.getId())
+        TenantMember member = memberRepo.findByTenant_IdAndUserId(tenantId, user.getId())
                 .orElseThrow(() -> new IllegalStateException("Bạn không phải thành viên của tenant này"));
 
         if (member.getRole() == TenantRole.OWNER) {

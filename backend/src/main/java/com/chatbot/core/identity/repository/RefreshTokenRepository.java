@@ -15,9 +15,9 @@ public interface RefreshTokenRepository extends JpaRepository<RefreshToken, Long
     Optional<RefreshToken> findByToken(String token);
     
     @Modifying
-    @Query("DELETE FROM RefreshToken rt WHERE rt.user.id = :userId")
+    @Query("DELETE FROM RefreshToken rt WHERE rt.userId = :userId")
     int deleteByUserId(Long userId);
     
-    @Query("SELECT COUNT(rt) > 0 FROM RefreshToken rt WHERE rt.user.id = :userId AND rt.token = :token")
+    @Query("SELECT COUNT(rt) > 0 FROM RefreshToken rt WHERE rt.userId = :userId AND rt.token = :token")
     boolean existsByUserIdAndToken(Long userId, String token);
 }

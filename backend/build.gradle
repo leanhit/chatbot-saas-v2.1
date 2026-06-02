@@ -141,6 +141,14 @@ springBoot {
     mainClass = 'com.chatbot.ChatbotApplication'
 }
 
+sourceSets {
+    main {
+        proto {
+            srcDir 'src/main/proto'
+        }
+    }
+}
+
 tasks.withType(JavaCompile).configureEach {
     options.compilerArgs += "--enable-preview"
     options.annotationProcessorGeneratedSourcesDirectory = file("build/generated/sources/annotationProcessor/java/main")
@@ -149,6 +157,12 @@ tasks.withType(JavaCompile).configureEach {
 tasks.withType(JavaExec).configureEach {
     jvmArgs += "--enable-preview"
 }
+
+processResources {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+
+
 
 protobuf {
     protoc {
@@ -170,18 +184,6 @@ protobuf {
         }
         all()*.plugins {
             grpc {}
-        }
-    }
-}
-
-sourceSets {
-    main {
-        proto {
-            srcDir 'src/main/resources/proto'
-        }
-        java {
-            srcDirs 'build/generated/source/proto/main/grpc'
-            srcDirs 'build/generated/source/proto/main/java'
         }
     }
 }

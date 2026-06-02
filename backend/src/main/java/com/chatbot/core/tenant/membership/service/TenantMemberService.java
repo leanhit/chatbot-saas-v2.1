@@ -1,6 +1,8 @@
 package com.chatbot.core.tenant.membership.service;
 
 import com.chatbot.core.user.model.User;
+import com.chatbot.core.user.repository.UserRepository;
+import com.chatbot.core.user.repository.AuthRepository;
 import com.chatbot.core.tenant.membership.dto.*;
 import com.chatbot.core.tenant.membership.model.*;
 import com.chatbot.core.tenant.membership.repository.TenantMemberRepository;
@@ -27,6 +29,8 @@ public class TenantMemberService {
     private final TenantMemberRepository memberRepo;
     private final TenantRepository tenantRepo;
     private final TenantAuditLogService auditLogService;
+    private final UserRepository userRepository; // Added for application-level join
+    private final AuthRepository authRepository;
 
     /* ================= LIST ================= */
 
@@ -103,7 +107,7 @@ public class TenantMemberService {
     /* ================= HELPERS ================= */
 
     Optional<TenantMember> getMemberEntity(Long tenantId, Long userId) {
-        return memberRepo.findByTenant_IdAndUser_Id(tenantId, userId);
+        return memberRepo.findByTenant_IdAndUserId(tenantId, userId);
     }
 
     TenantMember getMemberEntityRequired(Long tenantId, Long userId) {
@@ -117,15 +121,22 @@ public class TenantMemberService {
      */
     private boolean canManageMembers(Long tenantId, String actorEmail) {
         try {
+            Long actorUserId = authRepository.findByEmail(actorEmail)
+                    .map(User::getId)
+                    .orElse(null);
+            if (actorUserId == null) return false;
+
             Optional<TenantMember> actorMembership = memberRepo
-                    .findByTenantIdAndUserEmailAndStatus(tenantId, actorEmail, MembershipStatus.ACTIVE);
+                    .findByTenantIdAndUserIdAndStatus(tenantId, actorUserId, MembershipStatus.ACTIVE);
             if (actorMembership.isEmpty()) return false;
 
             TenantMember actor = actorMembership.get();
-            User actorUser = actor.getUser();
+            // Application-level join: fetch user by userId
+            User actorUser = userRepository.findById(actor.getUserId())
+                    .orElse(null);
 
             // System ADMIN luôn có quyền
-            if (actorUser.getSystemRole() == com.chatbot.core.identity.model.SystemRole.ADMIN) {
+            if (actorUser != null && actorUser.getSystemRole() == com.chatbot.core.identity.model.SystemRole.ADMIN) {
                 return true;
             }
             // OWNER và ADMIN của tenant có quyền quản lý member
@@ -142,15 +153,22 @@ public class TenantMemberService {
      */
     private boolean canAssignRole(Long tenantId, String actorEmail, TenantRole targetRole) {
         try {
+            Long actorUserId = authRepository.findByEmail(actorEmail)
+                    .map(User::getId)
+                    .orElse(null);
+            if (actorUserId == null) return false;
+
             Optional<TenantMember> actorMembership = memberRepo
-                    .findByTenantIdAndUserEmailAndStatus(tenantId, actorEmail, MembershipStatus.ACTIVE);
+                    .findByTenantIdAndUserIdAndStatus(tenantId, actorUserId, MembershipStatus.ACTIVE);
             if (actorMembership.isEmpty()) return false;
 
             TenantMember actor = actorMembership.get();
-            User actorUser = actor.getUser();
+            // Application-level join: fetch user by userId
+            User actorUser = userRepository.findById(actor.getUserId())
+                    .orElse(null);
 
             // System ADMIN có thể gán bất kỳ role nào
-            if (actorUser.getSystemRole() == com.chatbot.core.identity.model.SystemRole.ADMIN) {
+            if (actorUser != null && actorUser.getSystemRole() == com.chatbot.core.identity.model.SystemRole.ADMIN) {
                 return true;
             }
 
@@ -182,10 +200,14 @@ public class TenantMemberService {
     }
 
     private MemberResponse toResponse(TenantMember m) {
+        // Application-level join: fetch user by userId
+        User user = userRepository.findById(m.getUserId())
+                .orElse(null);
+        
         return MemberResponse.builder()
                 .id(m.getId())
-                .userId(m.getUser().getId())
-                .email(m.getUser().getEmail())
+                .userId(m.getUserId())
+                .email(user != null ? user.getEmail() : null)
                 .role(m.getRole())
                 .joinedAt(m.getJoinedAt() != null ? m.getJoinedAt() : m.getCreatedAt())
                 .build();

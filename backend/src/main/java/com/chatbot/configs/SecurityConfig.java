@@ -110,7 +110,7 @@ public class SecurityConfig {
 
                 // ================= PUBLIC APIs =================
                 // Most specific paths first
-                .requestMatchers("/auth/**", "/api/auth/**", "/error").permitAll()
+                .requestMatchers("/auth/**", "/api/auth/**", "/api/api/auth/**", "/error").permitAll()
                 .requestMatchers("/penny/bots/*/chat/public").permitAll()
                 .requestMatchers("/webhooks/facebook/botpress/**").permitAll()
                 .requestMatchers("/webhooks/facebook/pennybot/**").permitAll()
@@ -127,6 +127,8 @@ public class SecurityConfig {
                 .requestMatchers("/api/simple-payment/public/**").permitAll()
                 .requestMatchers("/api/simple-payment/bank-info").permitAll()
                 .requestMatchers("/api/simple-payment/health").permitAll()
+                // Allow deposit endpoint without authentication for external clients
+                .requestMatchers(HttpMethod.POST, "/api/simple-payment/deposit").permitAll()
                 
                 // ================= PACKAGES APIs (PUBLIC) =================
                 .requestMatchers("/api/v1/packages/active").permitAll()

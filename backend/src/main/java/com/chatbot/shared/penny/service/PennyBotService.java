@@ -378,7 +378,7 @@ public class PennyBotService {
             if (tenantId == null) return false;
             
             TenantMember member = tenantMemberRepository
-                    .findByTenant_IdAndUser_Id(tenantId, user.getId())
+                    .findByTenant_IdAndUserId(tenantId, user.getId())
                     .orElse(null);
             
             if (member == null || member.getStatus() != MembershipStatus.ACTIVE) {

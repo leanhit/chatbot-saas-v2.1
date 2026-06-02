@@ -4,6 +4,7 @@ import com.chatbot.core.identity.exception.InvalidTokenException;
 import com.chatbot.core.identity.model.RefreshToken;
 import com.chatbot.core.identity.repository.RefreshTokenRepository;
 import com.chatbot.core.user.model.User;
+import com.chatbot.core.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -24,14 +25,15 @@ public class RefreshTokenService {
     
     private final RefreshTokenRepository refreshTokenRepository;
     private final JwtService jwtService;
+    private final UserRepository userRepository; // Added for application-level join
     
-    @Transactional
+    @Transactional("identityTransactionManager")
     public RefreshToken createRefreshToken(User user) {
         // Delete existing refresh tokens for this user
         refreshTokenRepository.deleteByUserId(user.getId());
         
         RefreshToken refreshToken = RefreshToken.builder()
-                .user(user)
+                .userId(user.getId()) // Application-level join: store userId instead of User object
                 .token(UUID.randomUUID().toString())
                 .expiryDate(Instant.now().plusSeconds(refreshTokenExpirationMs))
                 .build();
@@ -42,12 +44,29 @@ public class RefreshTokenService {
         return refreshToken;
     }
     
-    @Transactional
+    @Transactional("identityTransactionManager")
+    public RefreshToken createRefreshToken(Long userId) {
+        // Delete existing refresh tokens for this user
+        refreshTokenRepository.deleteByUserId(userId);
+        
+        RefreshToken refreshToken = RefreshToken.builder()
+                .userId(userId) // Application-level join: store userId instead of User object
+                .token(UUID.randomUUID().toString())
+                .expiryDate(Instant.now().plusSeconds(refreshTokenExpirationMs))
+                .build();
+        
+        refreshToken = refreshTokenRepository.save(refreshToken);
+        log.info("Created refresh token for user ID: {}", userId);
+        
+        return refreshToken;
+    }
+    
+    @Transactional("identityTransactionManager")
     public Optional<RefreshToken> findByToken(String token) {
         return refreshTokenRepository.findByToken(token);
     }
     
-    @Transactional
+    @Transactional("identityTransactionManager")
     public RefreshToken verifyExpiration(RefreshToken token) {
         if (token.isExpired()) {
             refreshTokenRepository.delete(token);
@@ -56,22 +75,26 @@ public class RefreshTokenService {
         return token;
     }
     
-    @Transactional
+    @Transactional("identityTransactionManager")
     public String refreshAccessToken(String refreshToken) {
         RefreshToken refresh = findByToken(refreshToken)
                 .orElseThrow(() -> new InvalidTokenException("Refresh token không hợp lệ"));
         
         verifyExpiration(refresh);
         
-        // Generate new access token
-        String newAccessToken = jwtService.generateToken(refresh.getUser().getEmail());
+        // Application-level join: fetch user by userId
+        User user = userRepository.findById(refresh.getUserId())
+                .orElseThrow(() -> new InvalidTokenException("User not found for refresh token"));
         
-        log.info("Refreshed access token for user: {}", refresh.getUser().getEmail());
+        // Generate new access token
+        String newAccessToken = jwtService.generateToken(user.getEmail());
+        
+        log.info("Refreshed access token for user: {}", user.getEmail());
         
         return newAccessToken;
     }
     
-    @Transactional
+    @Transactional("identityTransactionManager")
     public void deleteByUserId(Long userId) {
         refreshTokenRepository.deleteByUserId(userId);
         log.info("Deleted refresh tokens for user ID: {}", userId);

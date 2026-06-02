@@ -3,7 +3,7 @@ package com.chatbot.core.identity.grpc;
 import com.chatbot.core.identity.grpc.IdentityServiceOuterClass.*;
 import com.chatbot.core.identity.grpc.IdentityServiceGrpc;
 import com.chatbot.core.user.model.User;
-import com.chatbot.core.identity.repository.AuthRepository;
+import com.chatbot.core.user.repository.AuthRepository;
 import com.chatbot.core.identity.service.JwtService;
 import io.grpc.stub.StreamObserver;
 import lombok.extern.slf4j.Slf4j;

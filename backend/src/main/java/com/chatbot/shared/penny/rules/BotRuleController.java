@@ -48,7 +48,7 @@ public class BotRuleController {
         try {
             BotRule rule = botRuleManager.createRule(
                 botUuid,
-                (String) request.get("name"),
+                (String) request.getOrDefault("ruleName", request.get("name")),
                 (String) request.get("description"),
                 (String) request.get("condition"),
                 (String) request.get("action"),
@@ -98,7 +98,7 @@ public class BotRuleController {
         try {
             BotRule rule = botRuleManager.updateRule(
                 ruleUuid,
-                (String) request.get("name"),
+                (String) request.getOrDefault("ruleName", request.get("name")),
                 (String) request.get("description"),
                 (String) request.get("condition"),
                 (String) request.get("action"),

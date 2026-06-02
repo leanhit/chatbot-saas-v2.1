@@ -12,6 +12,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.chatbot.core.simplepayment.service.BalanceService;
+import com.chatbot.core.simplepayment.service.PackageService;
 
 import jakarta.servlet.http.HttpServletRequest;
 import java.time.LocalDateTime;
@@ -27,7 +29,10 @@ public class PaymentPackageUpgradeService {
     private final PackageService packageService;
     private final PackageRepository packageRepository;
     private final PackageUpgradeAuditRepository auditRepository;
+    private final BalanceService balanceService;
     private final UserRepository userRepository;
+
+
 
     // Allowed package IDs for auto-upgrade
     private static final List<String> ALLOWED_UPGRADE_PACKAGES = Arrays.asList(
@@ -37,15 +42,18 @@ public class PaymentPackageUpgradeService {
     /**
      * Validate and execute package upgrade after payment completion
      */
-    @Transactional
+    @Transactional("sharedTransactionManager")
     public boolean processPackageUpgrade(SimplePayment payment) {
+        log.info("📝 [DEBUG] processPackageUpgrade called - referenceCode: {}, targetPackageId: {}, tenantId: {}",
+                payment.getReferenceCode(), payment.getTargetPackageId(), payment.getTenantId());
+
         if (payment.getTargetPackageId() == null || payment.getTargetPackageId().trim().isEmpty()) {
             log.debug("💳 Payment {} has no target package, skipping upgrade", payment.getReferenceCode());
             return false;
         }
 
         String targetPackageId = payment.getTargetPackageId().trim();
-        
+
         // Create audit record
         PackageUpgradeAudit audit = createAuditRecord(payment, targetPackageId);
         
@@ -95,8 +103,9 @@ public class PaymentPackageUpgradeService {
             log.info("🔄 [PaymentPackageUpgradeService] About to upgrade tenant {} from {} to {}", 
                     payment.getTenantId(), currentPackageId, targetPackageId);
 
-            // Execute upgrade with balance deduction
-            executeUpgradeWithBalanceDeduction(payment, targetPackageId);
+            // Credit user balance with payment amount before upgrading
+            balanceService.creditUserBalance(payment.getUserId(), targetPackage.getPrice());
+            tenantPackageService.upgradeTenantPackage(payment.getTenantId(), targetPackageId);
             
             log.info("✅ [PaymentPackageUpgradeService] Successfully called upgrade for tenant {} to {}", 
                     payment.getTenantId(), targetPackageId);
@@ -209,68 +218,69 @@ public class PaymentPackageUpgradeService {
     /**
      * Get upgrade history for tenant
      */
-    @Transactional(readOnly = true)
+    @Transactional(readOnly = true, transactionManager = "sharedTransactionManager")
     public List<PackageUpgradeAudit> getTenantUpgradeHistory(Long tenantId) {
         return auditRepository.findByTenantIdOrderByCreatedAtDesc(tenantId);
     }
 
     /**
      * Execute package upgrade with balance deduction
+     * Note: This method should be called within tenant context from the caller
      */
-    @Transactional(propagation = org.springframework.transaction.annotation.Propagation.REQUIRES_NEW)
+    @Transactional(propagation = org.springframework.transaction.annotation.Propagation.REQUIRES_NEW, transactionManager = "userTransactionManager")
     public void executeUpgradeWithBalanceDeduction(SimplePayment payment, String targetPackageId) {
-        log.info(" executing upgrade with balance deduction for payment: {}, targetPackage: {}", 
+        log.info(" executing upgrade with balance deduction for payment: {}, targetPackage: {}",
                 payment.getReferenceCode(), targetPackageId);
-        
+
         try {
             // Get package price - use direct repository access to avoid caching issues
             Package targetPackage = packageRepository.findByPackageId(targetPackageId)
                     .orElseThrow(() -> new RuntimeException("Package not found: " + targetPackageId));
-            
+
             // Check and deduct user balance directly with pessimistic locking
             User user = userRepository.findByIdWithLock(payment.getUserId())
                     .orElseThrow(() -> new RuntimeException("User not found: " + payment.getUserId()));
-            
+
             // Initialize balance if null
             if (user.getBalance() == null) {
                 user.setBalance(java.math.BigDecimal.ZERO);
                 userRepository.save(user);
             }
-            
+
             // Check sufficient balance
             if (user.getBalance().compareTo(targetPackage.getPrice()) < 0) {
                 throw new RuntimeException(
-                    String.format("Insufficient balance for package upgrade. Required: %s, Available: %s", 
+                    String.format("Insufficient balance for package upgrade. Required: %s, Available: %s",
                         targetPackage.getPrice(), user.getBalance())
                 );
             }
-            
+
             // Deduct balance
             java.math.BigDecimal oldBalance = user.getBalance();
             user.setBalance(user.getBalance().subtract(targetPackage.getPrice()));
             userRepository.save(user);
-            
-            log.info(" Deducted balance for user {}: {} - {} = {}", 
+
+            log.info(" Deducted balance for user {}: {} - {} = {}",
                     payment.getUserId(), oldBalance, targetPackage.getPrice(), user.getBalance());
-            
+
             // Then upgrade package
             log.info(" Upgrading tenant {} to package {}", payment.getTenantId(), targetPackageId);
             tenantPackageService.upgradeTenantPackage(payment.getTenantId(), targetPackageId);
-            
-            log.info(" Successfully completed upgrade with balance deduction for payment: {}", 
+
+            log.info(" Successfully completed upgrade with balance deduction for payment: {}",
                     payment.getReferenceCode());
-                    
+
         } catch (Exception e) {
-            log.error(" Failed to execute upgrade with balance deduction for payment {}: {}", 
+            log.error(" Failed to execute upgrade with balance deduction for payment {}: {}",
                     payment.getReferenceCode(), e.getMessage(), e);
-            throw e; // Re-throw to mark audit as failed
+            throw new RuntimeException(e); // Re-throw to mark audit as failed
         }
     }
 
     /**
      * Get upgrade statistics
      */
-    @Transactional(readOnly = true)
+    @Transactional(readOnly = true, transactionManager = "sharedTransactionManager")
     public List<Object[]> getUpgradeStatistics() {
         return auditRepository.countUpgradesByPackage();
     }

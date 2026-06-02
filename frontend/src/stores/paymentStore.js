@@ -332,7 +332,9 @@ export const usePaymentStore = defineStore('payment', {
         
         if (this.currentPayment.status === 'COMPLETED') {
           this.setMessage('Thanh toán thành công! Gói dịch vụ đã được kích hoạt.', 'success')
-          // Refresh current package after successful payment
+          // Refresh gateway tenant store FIRST to get updated package info
+          await this.refreshGatewayTenant()
+          // Then refresh current package from updated gateway tenant data
           await this.loadCurrentPackage()
         } else if (this.currentPayment.status === 'EXPIRED') {
           this.setMessage('Yêu cầu thanh toán đã hết hạn. Vui lòng tạo yêu cầu mới.', 'error')
@@ -365,7 +367,9 @@ export const usePaymentStore = defineStore('payment', {
         // Check status after simulation
         await this.checkPaymentStatus()
         
-        // Refresh current package to get updated package after payment
+        // Refresh gateway tenant store FIRST to get updated package info
+        await this.refreshGatewayTenant()
+        // Then refresh current package from updated gateway tenant data
         await this.loadCurrentPackage()
         
         this.setMessage('Giả lập thanh toán thành công! Gói dịch vụ đã được kích hoạt.', 'success')
@@ -431,9 +435,8 @@ export const usePaymentStore = defineStore('payment', {
         const gatewayStore = useGatewayTenantStore()
         
         if (gatewayStore.currentTenant?.tenantKey) {
-          // Get specific tenant data with cache-busting
-          const response = await tenantApi.getTenant(gatewayStore.currentTenant.tenantKey)
-          const tenant = response.data
+          // Use the already-refreshed tenant data from gateway store instead of calling API again
+          const tenant = gatewayStore.currentTenant
           
           if (tenant.currentPackageId && tenant.currentPackageName) {
             // Map backend tenant data to frontend package format
@@ -449,6 +452,7 @@ export const usePaymentStore = defineStore('payment', {
                 description: `${tenant.currentPackageName} package`
               })
             }
+            console.log('✅ Current package loaded from gateway store:', this.currentPackage)
             } else {
             console.warn('No package info found in tenant data')
             // Fallback to free package if available
@@ -562,6 +566,36 @@ export const usePaymentStore = defineStore('payment', {
       } catch (error) {
         console.error('❌ Error copying to clipboard:', error)
         this.setMessage('Lỗi sao chép mã tham chiếu', 'error')
+      }
+    },
+
+    /**
+     * Refresh gateway tenant store to update package info for all components
+     */
+    async refreshGatewayTenant() {
+      try {
+        const { useGatewayTenantStore } = await import('@/stores/tenant/gateway/myTenantStore')
+        const gatewayStore = useGatewayTenantStore()
+        
+        if (gatewayStore.currentTenant?.tenantKey) {
+          // Refresh tenant data with cache-busting
+          const response = await tenantApi.getTenant(gatewayStore.currentTenant.tenantKey)
+          gatewayStore.currentTenant = response.data
+          
+          // Update localStorage
+          try {
+            if (typeof localStorage !== 'undefined') {
+              localStorage.setItem('tenant_data', JSON.stringify(response.data))
+            }
+          } catch (error) {
+            console.error('Error updating localStorage:', error)
+          }
+          
+          console.log('✅ Gateway tenant refreshed with updated package info')
+        }
+      } catch (error) {
+        console.error('❌ Error refreshing gateway tenant:', error)
+        // Don't throw error - this is a nice-to-have refresh
       }
     }
   }

@@ -1,9 +1,11 @@
-// AuthController.java
 package com.chatbot.core.identity.controller;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import com.chatbot.core.identity.dto.*;
@@ -12,24 +14,17 @@ import com.chatbot.core.identity.service.AuthService;
 import com.chatbot.core.identity.service.JwtService;
 import com.chatbot.shared.dto.ApiResponse;
 
-import jakarta.servlet.http.HttpServletRequest;
-import java.util.Map;
-
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
-// import io.swagger.v3.oas.annotations.responses.ApiResponse; // Use fully qualified name to avoid conflict
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.transaction.annotation.Transactional;
-
-import lombok.extern.slf4j.Slf4j;
+import jakarta.servlet.http.HttpServletRequest;
+import java.util.Map;
 
 @RestController
-@RequestMapping("/api/auth")
+@RequestMapping({"/api/auth", "/api/api/auth"})
 @RequiredArgsConstructor
 @Slf4j
 @Tag(name = "Authentication", description = "Identity and authentication management APIs")
@@ -39,7 +34,6 @@ public class AuthController {
     private final JwtService jwtService;
 
     @PostMapping("/register")
-    @Transactional
     @Operation(
         summary = "Register new user",
         description = "Register a new user with email and password. Returns user information and JWT token.",
@@ -48,21 +42,13 @@ public class AuthController {
                 content = @Content(schema = @Schema(implementation = UserResponse.class))),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Invalid input data"),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "409", description = "Email already exists")
-        }
-    )
-    public ResponseEntity<UserResponse> register(
+        })
+    public ResponseEntity<ApiResponse<UserResponse>> register(
             @Parameter(description = "User registration details", required = true)
             @RequestBody RegisterRequest request) {
         log.info("Received registration request for email: {}", request.getEmail());
-        try {
-            log.debug("Starting user registration process...");
-            UserResponse response = authService.register(request);
-            log.info("User registered successfully with email: {}", request.getEmail());
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            log.error("Registration failed for email: {}. Error: {}", request.getEmail(), e.getMessage(), e);
-            throw e; // Re-throw to let the global exception handler handle it
-        }
+        UserResponse response = authService.register(request);
+        return ResponseEntity.ok(ApiResponse.success(response, "Registration successful"));
     }
 
     @PostMapping("/login")
@@ -74,13 +60,12 @@ public class AuthController {
                 content = @Content(schema = @Schema(implementation = UserResponse.class))),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "Invalid credentials"),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "User not found")
-        }
-    )
-    public ResponseEntity<UserResponse> login(
+        })
+    public ResponseEntity<ApiResponse<UserResponse>> login(
             @Parameter(description = "Login credentials", required = true)
             @RequestBody LoginRequest request) {
         UserResponse response = authService.login(request);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(ApiResponse.success(response, "Login successful"));
     }
 
     @PostMapping("/change-password")
@@ -92,20 +77,16 @@ public class AuthController {
                 content = @Content(schema = @Schema(implementation = UserResponse.class))),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Invalid current password or passwords don't match"),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "Unauthorized")
-        }
-    )
-    public ResponseEntity<UserResponse> changePassword(
+        })
+    public ResponseEntity<ApiResponse<UserResponse>> changePassword(
             @Parameter(hidden = true) @AuthenticationPrincipal(expression = "user") CustomUserDetails currentUser,
             @Parameter(description = "Password change details", required = true)
             @RequestBody ChangePasswordRequest request) {
-        
-        // Kiểm tra khớp mật khẩu mới ở tầng Controller để giảm tải cho Service
         if (!request.getNewPassword().equals(request.getConfirmPassword())) {
-            throw new RuntimeException("Xác nhận mật khẩu mới không khớp");
+            throw new RuntimeException("New password confirmation does not match");
         }
-
         UserResponse response = authService.changePassword(currentUser.getUser().getEmail(), request);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(ApiResponse.success(response, "Password changed successfully"));
     }
 
     @PutMapping("/change-role")
@@ -118,13 +99,12 @@ public class AuthController {
                 content = @Content(schema = @Schema(implementation = UserDto.class))),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "Access denied - Admin role required"),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "User not found")
-        }
-    )
-    public ResponseEntity<UserDto> changeRole(
+        })
+    public ResponseEntity<ApiResponse<UserDto>> changeRole(
             @Parameter(description = "Role change details", required = true)
             @RequestBody ChangeRoleRequest request) {
         UserDto updatedUser = authService.changeRole(request.getUserId(), request.getNewRole());
-        return ResponseEntity.ok(updatedUser);
+        return ResponseEntity.ok(ApiResponse.success(updatedUser, "Role changed successfully"));
     }
 
     @PostMapping("/refresh-token")
@@ -134,67 +114,51 @@ public class AuthController {
         responses = {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Token refreshed successfully"),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "Invalid or expired refresh token")
-        }
-    )
-    public ResponseEntity<TokenRefreshResponse> refreshToken(
+        })
+    public ResponseEntity<ApiResponse<TokenRefreshResponse>> refreshToken(
             @Parameter(description = "Refresh token", required = true)
             @RequestBody RefreshTokenRequest request) {
         TokenRefreshResponse response = authService.refreshToken(request.getRefreshToken());
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(ApiResponse.success(response, "Token refreshed"));
     }
 
     @PostMapping("/logout")
-    @Operation(
-        summary = "Logout user",
-        description = "Revoke refresh token and logout user"
-    )
-    public ResponseEntity<String> logout(
+    @Operation(summary = "Logout user", description = "Revoke refresh token and logout user")
+    public ResponseEntity<ApiResponse<String>> logout(
             @Parameter(hidden = true) @AuthenticationPrincipal(expression = "user") CustomUserDetails currentUser) {
-        try {
-            if (currentUser == null) {
-                return ResponseEntity.badRequest().body("User not authenticated");
-            }
-            authService.logout(currentUser.getUser().getEmail());
-            return ResponseEntity.ok("Logout successful");
-        } catch (Exception e) {
-            log.error("Logout failed for user: {}", currentUser != null ? currentUser.getUser().getEmail() : "unknown", e);
-            return ResponseEntity.badRequest().body("Logout failed: " + e.getMessage());
+        if (currentUser == null) {
+            return ResponseEntity.badRequest().body(ApiResponse.error("User not authenticated"));
         }
+        authService.logout(currentUser.getUser().getEmail());
+        return ResponseEntity.ok(ApiResponse.success("Logout successful"));
     }
 
     @PostMapping("/logout-simple")
-    @Operation(
-        summary = "Logout user (alternative)",
-        description = "Logout user using token from Authorization header"
-    )
-    public ResponseEntity<String> logoutSimple(HttpServletRequest request) {
+    @Operation(summary = "Logout user (alternative)", description = "Logout user using token from Authorization header")
+    public ResponseEntity<ApiResponse<String>> logoutSimple(HttpServletRequest request) {
         try {
             String authHeader = request.getHeader("Authorization");
             if (authHeader != null && authHeader.startsWith("Bearer ")) {
                 String token = authHeader.substring(7);
                 String email = jwtService.extractEmail(token);
                 authService.logout(email);
-                return ResponseEntity.ok("Logout successful");
+                return ResponseEntity.ok(ApiResponse.success("Logout successful"));
             } else {
-                return ResponseEntity.badRequest().body("Invalid authorization header");
+                return ResponseEntity.badRequest().body(ApiResponse.error("Invalid authorization header"));
             }
         } catch (Exception e) {
             log.error("Simple logout failed", e);
-            return ResponseEntity.badRequest().body("Logout failed: " + e.getMessage());
+            return ResponseEntity.badRequest().body(ApiResponse.error("Logout failed: " + e.getMessage()));
         }
     }
 
     @PostMapping("/logout-by-token")
-    @Operation(
-        summary = "Logout by access token",
-        description = "Revoke specific access token"
-    )
-    public ResponseEntity<String> logoutByToken(
+    @Operation(summary = "Logout by access token", description = "Revoke specific access token")
+    public ResponseEntity<ApiResponse<String>> logoutByToken(
             @Parameter(description = "Access token to revoke", required = true)
             @RequestBody Map<String, String> request) {
         String token = request.get("token");
         authService.logoutByToken(token);
-        return ResponseEntity.ok("Token revoked successfully");
+        return ResponseEntity.ok(ApiResponse.success("Token revoked successfully"));
     }
-
 }
