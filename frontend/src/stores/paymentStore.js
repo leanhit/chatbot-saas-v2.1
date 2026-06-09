@@ -32,6 +32,12 @@ export const usePaymentStore = defineStore('payment', {
     customAmount: '',
     customDescription: 'Nạp tiền vào tài khoản',
     
+    // Discount code
+    discountCode: '',
+    discountValidation: null,
+    discountApplied: false,
+    discountAmount: 0,
+    
     // Messages
     message: '',
     messageType: 'success', // 'success' | 'error'
@@ -118,6 +124,33 @@ export const usePaymentStore = defineStore('payment', {
      */
     hasPendingPayment: (state) => {
       return state.currentPayment && state.currentPayment.status === 'PENDING'
+    },
+
+    /**
+     * Check if payment can be cancelled
+     */
+    canCancelPayment: (state) => {
+      return state.currentPayment && 
+             state.currentPayment.status === 'PENDING' &&
+             !state.loading
+    },
+
+    /**
+     * Check if payment can be retried
+     */
+    canRetryPayment: (state) => {
+      return state.currentPayment && 
+             (state.currentPayment.status === 'FAILED' || state.currentPayment.status === 'EXPIRED') &&
+             !state.loading
+    },
+
+    /**
+     * Get final amount after discount
+     */
+    finalAmount: (state) => {
+      if (!state.selectedPackage) return 0
+      const amount = state.selectedPackage.price
+      return state.discountApplied ? amount - state.discountAmount : amount
     }
   },
 
@@ -299,7 +332,8 @@ export const usePaymentStore = defineStore('payment', {
           amount: this.selectedPackage.price,
           currency: 'VND',
           description: `Thanh toán gói ${this.selectedPackage.name}`,
-          targetPackageId: this.selectedPackage.id // Add targetPackageId
+          targetPackageId: this.selectedPackage.id,
+          discountCode: this.discountCode || undefined
         }
 
         const response = await paymentAPI.createDeposit(depositRequest)
@@ -310,6 +344,95 @@ export const usePaymentStore = defineStore('payment', {
       } catch (error) {
         console.error('❌ Error creating deposit:', error)
         this.setMessage('Lỗi tạo yêu cầu nạp tiền: ' + (error.response?.data?.message || error.message || 'Unknown error'), 'error')
+        throw error
+      } finally {
+        this.loading = false
+      }
+    },
+
+    /**
+     * Validate discount code
+     */
+    async validateDiscountCode() {
+      if (!this.discountCode || !this.selectedPackage) {
+        return
+      }
+
+      try {
+        const response = await paymentAPI.validateDiscount(
+          this.discountCode,
+          this.selectedPackage.price,
+          this.selectedPackage.id
+        )
+        this.discountValidation = response.data
+        
+        if (response.data.valid) {
+          this.discountApplied = true
+          this.discountAmount = response.data.discountAmount
+          this.setMessage(`Discount applied: ${response.data.discountAmount} ${this.selectedPackage.currency}`, 'success')
+        } else {
+          this.discountApplied = false
+          this.discountAmount = 0
+          this.setMessage(response.data.message || 'Invalid discount code', 'error')
+        }
+      } catch (error) {
+        console.error('❌ Error validating discount:', error)
+        this.discountApplied = false
+        this.discountAmount = 0
+        this.setMessage('Invalid discount code', 'error')
+      }
+    },
+
+    /**
+     * Clear discount code
+     */
+    clearDiscountCode() {
+      this.discountCode = ''
+      this.discountValidation = null
+      this.discountApplied = false
+      this.discountAmount = 0
+    },
+
+    /**
+     * Cancel payment
+     */
+    async cancelPayment(reason = 'User requested') {
+      if (!this.currentPayment?.referenceCode) {
+        this.setMessage('No payment to cancel', 'error')
+        return
+      }
+
+      this.loading = true
+      try {
+        await paymentAPI.cancelPayment(this.currentPayment.referenceCode, reason)
+        this.currentPayment.status = 'CANCELLED'
+        this.setMessage('Payment cancelled successfully', 'success')
+      } catch (error) {
+        console.error('❌ Error cancelling payment:', error)
+        this.setMessage('Error cancelling payment: ' + (error.response?.data?.message || error.message), 'error')
+        throw error
+      } finally {
+        this.loading = false
+      }
+    },
+
+    /**
+     * Retry payment
+     */
+    async retryPayment() {
+      if (!this.currentPayment?.referenceCode) {
+        this.setMessage('No payment to retry', 'error')
+        return
+      }
+
+      this.loading = true
+      try {
+        const response = await paymentAPI.retryPayment(this.currentPayment.referenceCode)
+        this.currentPayment = response.data
+        this.setMessage('Payment retry created successfully', 'success')
+      } catch (error) {
+        console.error('❌ Error retrying payment:', error)
+        this.setMessage('Error retrying payment: ' + (error.response?.data?.message || error.message), 'error')
         throw error
       } finally {
         this.loading = false

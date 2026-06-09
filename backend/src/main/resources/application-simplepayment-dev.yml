@@ -1,0 +1,78 @@
+# Development Configuration for SimplePayment Module
+simplepayment:
+  # Bank Account Configuration
+  bank:
+    name: "Vietcombank"
+    account-number: "1234567890"
+    account-name: "CHATBOT SaaS"
+    
+  # Bank API Configuration
+  bank-api:
+    provider: mock
+    api-url: http://localhost:3000/mock-bank
+    api-key: dev-mock-key-12345
+    timeout: 30000
+    retry-attempts: 3
+    retry-delay: 1000
+    
+  # QR Code Configuration
+  qr-code:
+    provider: vietqr
+    template: compact
+    size: 300
+    logo-enabled: true
+    
+  # Payment Configuration
+  payment:
+    qr-expiry-hours: 24
+    min-amount: 10000
+    max-amount: 50000000
+    allowed-currencies: VND
+    
+  # Webhook Configuration
+  webhook:
+    enabled: true
+    signature-secret: dev-webhook-secret-change-in-production
+    timeout: 10000
+    retry-attempts: 3
+    retry-delay: 5000
+    
+  # Rate Limiting Configuration
+  rate-limit:
+    enabled: true
+    public-endpoints:
+      requests-per-minute: 60
+      burst-capacity: 100
+    authenticated-endpoints:
+      requests-per-minute: 120
+      burst-capacity: 200
+      
+  # Email Notification Configuration
+  email:
+    enabled: true
+    from: noreply@chatbot-saas-dev.local
+    template-path: classpath:/templates/payment/
+    
+  # Invoice Configuration
+  invoice:
+    enabled: true
+    storage-path: /tmp/invoices/dev/
+    template: default
+    
+  # Discount Configuration
+  discount:
+    enabled: true
+    max-discount-percentage: 50
+    min-amount-for-discount: 100000
+    
+  # Monitoring Configuration
+  monitoring:
+    metrics-enabled: true
+    audit-logging-enabled: true
+    slow-query-threshold-ms: 1000
+    
+  # Security Configuration
+  security:
+    mask-sensitive-data: true
+    log-payment-details: true
+    require-https: false

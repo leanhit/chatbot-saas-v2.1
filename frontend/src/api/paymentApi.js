@@ -45,6 +45,16 @@ class PaymentAPI {
     }
   }
 
+  // Update bank information (admin only)
+  async updateBankInfo(bankInfo) {
+    try {
+      const response = await axios.put('/simple-payment/admin/bank-info', bankInfo)
+      return response
+    } catch (error) {
+      throw error
+    }
+  }
+
   // Simulate payment (test endpoint)
   async simulatePayment(referenceCode, amount) {
     try {
@@ -89,9 +99,13 @@ class PaymentAPI {
     return this.getPaymentHistory(params)
   }
 
-  async cancelPayment(referenceCode) {
-    // Not implemented in backend yet
-    throw new Error('Cancel payment not implemented')
+  async cancelPayment(referenceCode, reason) {
+    try {
+      const response = await axios.post(`/simple-payment/cancel/${referenceCode}`, { reason })
+      return response
+    } catch (error) {
+      throw error
+    }
   }
 
   async validateAmount(amount) {
@@ -110,8 +124,202 @@ class PaymentAPI {
   }
 
   async refundPayment(referenceCode, reason) {
-    // Not implemented in backend yet
-    throw new Error('Refund payment not implemented')
+    try {
+      const response = await axios.post(`/simple-payment/admin/refund/${referenceCode}`, { reason })
+      return response
+    } catch (error) {
+      throw error
+    }
+  }
+
+  // Retry payment
+  async retryPayment(referenceCode) {
+    try {
+      const response = await axios.post(`/simple-payment/retry/${referenceCode}`)
+      return response
+    } catch (error) {
+      throw error
+    }
+  }
+
+  // Validate discount code
+  async validateDiscount(code, amount, packageId) {
+    try {
+      const response = await axios.get('/discounts/validate', {
+        params: { code, amount, packageId }
+      })
+      return response
+    } catch (error) {
+      throw error
+    }
+  }
+
+  // Get user invoices
+  async getUserInvoices(userId) {
+    try {
+      const response = await axios.get(`/invoices/user/${userId}`)
+      return response
+    } catch (error) {
+      throw error
+    }
+  }
+
+  // Get invoice by number
+  async getInvoiceByNumber(invoiceNumber) {
+    try {
+      const response = await axios.get(`/invoices/number/${invoiceNumber}`)
+      return response
+    } catch (error) {
+      throw error
+    }
+  }
+
+  // Get payment analytics (admin)
+  async getRevenueSummary(startDate, endDate) {
+    try {
+      const response = await axios.get('/analytics/payments/revenue-summary', {
+        params: { startDate, endDate }
+      })
+      return response
+    } catch (error) {
+      throw error
+    }
+  }
+
+  async getDailyRevenue(year, month) {
+    try {
+      const response = await axios.get('/analytics/payments/daily-revenue', {
+        params: { year, month }
+      })
+      return response
+    } catch (error) {
+      throw error
+    }
+  }
+
+  async getPaymentTrends(days) {
+    try {
+      const response = await axios.get('/analytics/payments/trends', {
+        params: { days }
+      })
+      return response
+    } catch (error) {
+      throw error
+    }
+  }
+
+  async getPackagePerformance(startDate, endDate) {
+    try {
+      const response = await axios.get('/analytics/payments/package-performance', {
+        params: { startDate, endDate }
+      })
+      return response
+    } catch (error) {
+      throw error
+    }
+  }
+
+  async getTopUsers(limit, startDate, endDate) {
+    try {
+      const response = await axios.get('/analytics/payments/top-users', {
+        params: { limit, startDate, endDate }
+      })
+      return response
+    } catch (error) {
+      throw error
+    }
+  }
+
+  async getDashboardAnalytics() {
+    try {
+      const response = await axios.get('/analytics/payments/dashboard')
+      return response
+    } catch (error) {
+      throw error
+    }
+  }
+
+  // Discount management (admin)
+  async getActiveDiscounts() {
+    try {
+      const response = await axios.get('/discounts/active')
+      return response
+    } catch (error) {
+      throw error
+    }
+  }
+
+  async createDiscount(discount) {
+    try {
+      const response = await axios.post('/discounts', discount)
+      return response
+    } catch (error) {
+      throw error
+    }
+  }
+
+  async updateDiscount(id, discount) {
+    try {
+      const response = await axios.put(`/discounts/${id}`, discount)
+      return response
+    } catch (error) {
+      throw error
+    }
+  }
+
+  async deleteDiscount(id) {
+    try {
+      const response = await axios.delete(`/discounts/${id}`)
+      return response
+    } catch (error) {
+      throw error
+    }
+  }
+
+  // Webhook management (admin)
+  async getActiveWebhooks() {
+    try {
+      const response = await axios.get('/webhooks')
+      return response
+    } catch (error) {
+      throw error
+    }
+  }
+
+  async createWebhook(webhook) {
+    try {
+      const response = await axios.post('/webhooks', webhook)
+      return response
+    } catch (error) {
+      throw error
+    }
+  }
+
+  async updateWebhook(id, webhook) {
+    try {
+      const response = await axios.put(`/webhooks/${id}`, webhook)
+      return response
+    } catch (error) {
+      throw error
+    }
+  }
+
+  async deleteWebhook(id) {
+    try {
+      const response = await axios.delete(`/webhooks/${id}`)
+      return response
+    } catch (error) {
+      throw error
+    }
+  }
+
+  async testWebhook(id) {
+    try {
+      const response = await axios.post(`/webhooks/${id}/test`)
+      return response
+    } catch (error) {
+      throw error
+    }
   }
 }
 

@@ -1,65 +1,66 @@
 package com.chatbot.core.identity.grpc;
 
 import com.chatbot.core.identity.grpc.IdentityServiceOuterClass.*;
-import com.chatbot.core.identity.grpc.IdentityServiceGrpc;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.annotation.DependsOn;
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.PostConstruct;
-
+/**
+ * Identity gRPC Health Check
+ *
+ * Runs AFTER the entire Spring context has finished initializing (ApplicationReadyEvent)
+ * to avoid bean singleton lock contention with userTransactionManager.
+ */
 @Component
+@DependsOn("identityGrpcServer")
 @Slf4j
 public class IdentityGrpcHealthCheck {
 
     @Autowired
     private IdentityServiceGrpcImpl grpcService;
 
-    @PostConstruct
+    @EventListener(ApplicationReadyEvent.class)
     public void performHealthCheck() {
+        ManagedChannel channel = null;
         try {
             log.info("=== Bắt đầu Health Check cho Identity gRPC Service ===");
-            
-            // Đợi 5 giây để gRPC server kịp khởi động
-            Thread.sleep(5000);
-            
-            // Tạo channel để test
-            ManagedChannel channel = ManagedChannelBuilder.forAddress("localhost", 50051)
+
+            channel = ManagedChannelBuilder.forAddress("localhost", 50051)
                     .usePlaintext()
                     .build();
-            
-            IdentityServiceGrpc.IdentityServiceBlockingStub blockingStub = IdentityServiceGrpc.newBlockingStub(channel);
-            
+
+            IdentityServiceGrpc.IdentityServiceBlockingStub blockingStub =
+                    IdentityServiceGrpc.newBlockingStub(channel);
+
             // Test validateUser với user ID không tồn tại
-            ValidateUserRequest validateRequest = ValidateUserRequest.newBuilder()
-                    .setUserId("999")
-                    .build();
-            
-            ValidateUserResponse validateResponse = blockingStub.validateUser(validateRequest);
-            log.info("Validate User Response: valid={}, isActive={}, message={}", 
-                    validateResponse.getValid(), 
-                    validateResponse.getIsActive(), 
+            ValidateUserResponse validateResponse = blockingStub.validateUser(
+                    ValidateUserRequest.newBuilder().setUserId("999").build());
+            log.info("Validate User Response: valid={}, isActive={}, message={}",
+                    validateResponse.getValid(),
+                    validateResponse.getIsActive(),
                     validateResponse.getMessage());
-            
+
             // Test isUserActive
-            IsUserActiveRequest activeRequest = IsUserActiveRequest.newBuilder()
-                    .setUserId("999")
-                    .build();
-            
-            IsUserActiveResponse activeResponse = blockingStub.isUserActive(activeRequest);
-            log.info("Is User Active Response: userId={}, isActive={}, errorMessage={}", 
-                    activeResponse.getUserId(), 
-                    activeResponse.getIsActive(), 
+            IsUserActiveResponse activeResponse = blockingStub.isUserActive(
+                    IsUserActiveRequest.newBuilder().setUserId("999").build());
+            log.info("Is User Active Response: userId={}, isActive={}, errorMessage={}",
+                    activeResponse.getUserId(),
+                    activeResponse.getIsActive(),
                     activeResponse.getErrorMessage());
-            
+
             log.info("=== Identity gRPC Service Health Check Completed ===");
-            
-            channel.shutdown();
-            
+
         } catch (Exception e) {
             log.error("Lỗi khi health check Identity gRPC", e);
+        } finally {
+            if (channel != null) {
+                channel.shutdown();
+            }
         }
     }
 }

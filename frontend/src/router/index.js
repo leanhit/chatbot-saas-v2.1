@@ -24,6 +24,8 @@ const ForgotPassword = () => import("../views/auth/ForgotPassword.vue");
 // Payment Pages (SimplePayment Only)
 const PaymentDeposit = () => import("../views/payment/Deposit.vue");
 const PaymentHistory = () => import("../views/payment/History.vue");
+// Admin Pages
+const BankAccountManagement = () => import("../views/admin/BankAccountManagement.vue");
 var appname = " - Windzo Dashboard Admin Template";
 const routes = [
   // Root route - redirect to login
@@ -137,6 +139,13 @@ const routes = [
     name: "payment-history",
     component: PaymentHistory,
     meta: { requiresAuth: true, title: "Payment History" + appname },
+  },
+  // Admin Routes
+  {
+    path: "/admin/bank-account",
+    name: "admin-bank-account",
+    component: BankAccountManagement,
+    meta: { requiresAuth: true, title: "Bank Account Management" + appname },
   },
 ];
 const router = createRouter({

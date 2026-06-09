@@ -10,6 +10,7 @@ import com.chatbot.core.simplepayment.model.SimplePayment;
 import com.chatbot.core.simplepayment.model.Package;
 import com.chatbot.core.simplepayment.repository.SimplePaymentRepository;
 import com.chatbot.core.simplepayment.repository.PackageRepository;
+import com.chatbot.core.simplepayment.metrics.PaymentMetricsService;
 import com.chatbot.core.tenant.infra.TenantContext;
 import com.chatbot.core.simplepayment.service.UserBalanceService;
 import com.chatbot.core.user.model.User;
@@ -42,14 +43,20 @@ public class SimplePaymentService {
     private final PackageValidationService packageValidationService;
     private final PaymentTTLService paymentTTLService;
     private final ApplicationEventPublisher eventPublisher;
+    private final PaymentEmailNotificationService emailNotificationService;
+    private final WebhookService webhookService;
+    private final InvoiceService invoiceService;
+    private final DiscountService discountService;
+    private final PaymentAuditService paymentAuditService;
+    private final PaymentMetricsService paymentMetricsService;
 
     /**
      * Tạo yêu cầu nạp tiền mới
      */
     @Transactional("sharedTransactionManager")
     public DepositResponse createDeposit(DepositRequest request, Long userId, Long tenantId) {
-        log.info("📱 Creating deposit request for user: {}, amount: {}, targetPackage: {}", 
-                userId, request.getAmount(), request.getTargetPackageId());
+        log.info("📱 Creating deposit request for user: {}, amount: {}, targetPackage: {}, discountCode: {}", 
+                userId, request.getAmount(), request.getTargetPackageId(), request.getDiscountCode());
 
         // Validate package using PackageValidationService
         PackageValidationService.PackageValidationResult validationResult = null;
@@ -67,6 +74,32 @@ public class SimplePaymentService {
             log.info("   Package validated for QR creation: {} (balance check skipped)", targetPackage.getName());
         }
 
+        // Apply discount code if provided
+        java.math.BigDecimal finalAmount = request.getAmount();
+        String appliedDiscountCode = null;
+        
+        if (request.getDiscountCode() != null && !request.getDiscountCode().isBlank()) {
+            var discountResult = discountService.validateDiscount(
+                request.getDiscountCode(), 
+                request.getAmount(), 
+                request.getTargetPackageId(), 
+                userId
+            );
+            
+            if (discountResult.isValid()) {
+                finalAmount = discountResult.getFinalAmount();
+                appliedDiscountCode = request.getDiscountCode();
+                log.info("🎟️ Discount applied: {} - Original: {}, Discount: {}, Final: {}", 
+                    request.getDiscountCode(), request.getAmount(), discountResult.getDiscountAmount(), finalAmount);
+                
+                // Mark discount as used
+                discountService.useDiscount(request.getDiscountCode(), userId);
+            } else {
+                log.warn("⚠️ Discount code invalid: {} - {}", request.getDiscountCode(), discountResult.getMessage());
+                // Continue without discount - don't fail the deposit
+            }
+        }
+
         // Generate unique reference code
         String referenceCode = generateReferenceCode();
 
@@ -74,11 +107,11 @@ public class SimplePaymentService {
         SimplePayment payment = SimplePayment.builder()
                 .userId(userId)
                 .tenantId(tenantId)
-                .amount(request.getAmount())
+                .amount(finalAmount)
                 .currency(request.getCurrency())
                 .referenceCode(referenceCode)
                 .status(PaymentStatus.PENDING)
-                .description(request.getDescription())
+                .description(request.getDescription() + (appliedDiscountCode != null ? " [DISCOUNT: " + appliedDiscountCode + "]" : ""))
                 .targetPackageId(request.getTargetPackageId())
                 .build();
 
@@ -104,6 +137,23 @@ public class SimplePaymentService {
 
         // Set TTL for automatic expiration
         paymentTTLService.setPaymentTTL(referenceCode, savedPayment.getCreatedAt());
+
+        // Log audit
+        paymentAuditService.logPaymentAction(
+            referenceCode,
+            userId,
+            tenantId,
+            com.chatbot.core.simplepayment.model.PaymentAuditLog.AuditAction.PAYMENT_CREATED,
+            null,
+            "PENDING",
+            finalAmount,
+            "Deposit request created" + (appliedDiscountCode != null ? " with discount: " + appliedDiscountCode : ""),
+            null
+        );
+
+        // Track metrics
+        paymentMetricsService.incrementPaymentCreated();
+        paymentMetricsService.recordPaymentAmount(finalAmount);
 
         log.info("✅ Deposit request created: {}", referenceCode);
         return DepositResponse.from(savedPayment, qrContent);
@@ -218,6 +268,55 @@ public class SimplePaymentService {
             // Mark transaction as processed in mock bank api to avoid checking it again
             bankApiService.markTransactionAsProcessed(referenceCode);
 
+            // Trigger email notification
+            emailNotificationService.sendPaymentSuccessEmail(referenceCode);
+
+            // Trigger webhook notification
+            webhookService.triggerWebhook(com.chatbot.core.simplepayment.model.Webhook.WebhookEventType.PAYMENT_COMPLETED, payment);
+
+            // Generate invoice
+            try {
+                invoiceService.generateInvoice(referenceCode);
+            } catch (Exception e) {
+                log.warn("⚠️ Failed to generate invoice for payment {}: {}", referenceCode, e.getMessage());
+            }
+
+            // Send package upgrade email if applicable
+            if (payment.getTargetPackageId() != null && !payment.getTargetPackageId().trim().isEmpty()) {
+                emailNotificationService.sendPackageUpgradeEmail(referenceCode, payment.getTargetPackageId());
+                webhookService.triggerWebhook(com.chatbot.core.simplepayment.model.Webhook.WebhookEventType.PACKAGE_UPGRADED, payment);
+                
+                // Log audit for package upgrade
+                paymentAuditService.logPaymentAction(
+                    referenceCode,
+                    payment.getUserId(),
+                    payment.getTenantId(),
+                    com.chatbot.core.simplepayment.model.PaymentAuditLog.AuditAction.PACKAGE_UPGRADED,
+                    "COMPLETED",
+                    "COMPLETED",
+                    payment.getAmount(),
+                    "Package upgraded: " + payment.getTargetPackageId(),
+                    null
+                );
+            }
+
+            // Log audit for payment completion
+            paymentAuditService.logPaymentAction(
+                referenceCode,
+                payment.getUserId(),
+                payment.getTenantId(),
+                com.chatbot.core.simplepayment.model.PaymentAuditLog.AuditAction.PAYMENT_COMPLETED,
+                "PENDING",
+                "COMPLETED",
+                payment.getAmount(),
+                "Payment completed successfully",
+                null
+            );
+
+            // Track metrics
+            paymentMetricsService.incrementPaymentCompleted();
+            paymentMetricsService.recordPaymentAmount(payment.getAmount());
+
             log.info("✅ Payment completed successfully: {}", referenceCode);
             
         } catch (Exception e) {
@@ -293,12 +392,34 @@ public class SimplePaymentService {
         for (SimplePayment payment : expiredPayments) {
             payment.setStatus(PaymentStatus.EXPIRED);
             paymentRepository.save(payment);
-            
+
             // Publish Redis event for real-time notification
             PaymentEvent event = redisPaymentService.createStatusUpdateEvent(
                 payment.getReferenceCode(), PaymentStatus.EXPIRED, null
             );
             redisPaymentService.publishPaymentEvent(event);
+
+            // Trigger email notification
+            emailNotificationService.sendPaymentExpiredEmail(payment.getReferenceCode());
+
+            // Trigger webhook notification
+            webhookService.triggerWebhook(com.chatbot.core.simplepayment.model.Webhook.WebhookEventType.PAYMENT_EXPIRED, payment);
+
+            // Log audit
+            paymentAuditService.logPaymentAction(
+                payment.getReferenceCode(),
+                payment.getUserId(),
+                payment.getTenantId(),
+                com.chatbot.core.simplepayment.model.PaymentAuditLog.AuditAction.PAYMENT_EXPIRED,
+                "PENDING",
+                "EXPIRED",
+                payment.getAmount(),
+                "Payment expired automatically",
+                null
+            );
+
+            // Track metrics
+            paymentMetricsService.incrementPaymentExpired();
         }
 
         log.info("✅ Expired {} pending payments", expiredPayments.size());

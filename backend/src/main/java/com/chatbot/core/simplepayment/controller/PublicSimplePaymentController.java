@@ -40,6 +40,7 @@ public class PublicSimplePaymentController {
     private final BankApiService bankApiService;
     private final TenantPackageService tenantPackageService;
     private final TenantJoinRequestRepository tenantJoinRequestRepository;
+    private final com.chatbot.core.simplepayment.validation.PaymentValidationService paymentValidationService;
 
     /**
      * Public health check - no authentication required
@@ -95,6 +96,9 @@ public class PublicSimplePaymentController {
         log.info("📱 Creating public deposit request: {} VND", request.getAmount());
 
         try {
+            // Validate deposit request
+            paymentValidationService.validateDepositRequest(request);
+
             // Get authenticated user ID from security context
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             if (authentication == null || !authentication.isAuthenticated()) {

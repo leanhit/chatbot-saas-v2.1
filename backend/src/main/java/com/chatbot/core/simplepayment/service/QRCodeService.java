@@ -9,11 +9,10 @@ import java.util.Locale;
 
 @Service
 @Slf4j
+@lombok.RequiredArgsConstructor
 public class QRCodeService {
 
-    private static final String BANK_ACCOUNT_NUMBER = "1234567890";
-    private static final String BANK_ACCOUNT_NAME = "CHATBOT SaaS";
-    private static final String BANK_NAME = "Vietcombank";
+    private final com.chatbot.core.simplepayment.config.SimplePaymentBankConfig bankConfig;
 
     /**
      * Generate QR code content for bank transfer
@@ -25,14 +24,14 @@ public class QRCodeService {
             // Simple QR content format (VietQR compatible)
             String qrContent = String.format(
                 "00020101021238630010A000000712010011970436%s520400005303%s5802VN5904%s6009HOCHIMINH6207%s6304",
-                BANK_ACCOUNT_NUMBER,
+                bankConfig.getAccountNumber(),
                 formatAmount(amount),
-                BANK_ACCOUNT_NAME,
+                bankConfig.getAccountName(),
                 generateDescription(referenceCode, description)
             );
 
-            // Add CRC (simplified)
-            qrContent += "1234";
+            // Add CRC (calculated accurately using CRC-16 CCITT False)
+            qrContent += calculateCRC16(qrContent);
 
             log.info("✅ QR code generated successfully");
             return qrContent;
@@ -53,9 +52,9 @@ public class QRCodeService {
             "Chủ tài khoản: %s\n" +
             "Số tiền: %s VNĐ\n" +
             "Nội dung: %s",
-            BANK_NAME,
-            BANK_ACCOUNT_NUMBER,
-            BANK_ACCOUNT_NAME,
+            bankConfig.getName(),
+            bankConfig.getAccountNumber(),
+            bankConfig.getAccountName(),
             formatAmountDisplay(amount),
             referenceCode
         );
@@ -66,10 +65,42 @@ public class QRCodeService {
      */
     public BankInfo getBankInfo() {
         BankInfo info = new BankInfo();
-        info.setBankName(BANK_NAME);
-        info.setAccountNumber(BANK_ACCOUNT_NUMBER);
-        info.setAccountName(BANK_ACCOUNT_NAME);
+        info.setBankName(bankConfig.getName());
+        info.setAccountNumber(bankConfig.getAccountNumber());
+        info.setAccountName(bankConfig.getAccountName());
         return info;
+    }
+
+    /**
+     * Update bank information (admin only)
+     */
+    public void updateBankInfo(BankInfo bankInfo) {
+        log.info("🏦 Updating bank info: {} - {}", bankInfo.getBankName(), bankInfo.getAccountNumber());
+        bankConfig.setName(bankInfo.getBankName());
+        bankConfig.setAccountNumber(bankInfo.getAccountNumber());
+        bankConfig.setAccountName(bankInfo.getAccountName());
+        log.info("✅ Bank info updated successfully");
+    }
+
+    /**
+     * Calculate CRC-16 CCITT False checksum
+     */
+    private String calculateCRC16(String input) {
+        int crc = 0xFFFF;          // initial value
+        int polynomial = 0x1021;   // 0001 0000 0010 0001
+
+        for (byte b : input.getBytes(java.nio.charset.StandardCharsets.US_ASCII)) {
+            for (int i = 0; i < 8; i++) {
+                boolean bit = ((b >> (7 - i) & 1) == 1);
+                boolean c15 = ((crc >> 15 & 1) == 1);
+                crc <<= 1;
+                if (c15 ^ bit) {
+                    crc ^= polynomial;
+                }
+            }
+        }
+        crc &= 0xFFFF;
+        return String.format("%04X", crc);
     }
 
     private String formatAmount(BigDecimal amount) {

@@ -18,4 +18,6 @@ public class DepositRequest {
     private String description = "Nạp tiền vào tài khoản";
     
     private String targetPackageId; // Package to upgrade to after payment
+    
+    private String discountCode; // Discount/promotion code
 }

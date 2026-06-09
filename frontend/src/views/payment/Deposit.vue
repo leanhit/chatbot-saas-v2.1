@@ -111,6 +111,38 @@
                 {{ paymentStore.formattedAmount }}
               </div>
             </div>
+
+            <!-- Discount Code Input -->
+            <div>
+              <span class="text-gray-700 dark:text-gray-300 text-sm">Mã giảm giá:</span>
+              <div class="mt-1 flex gap-2">
+                <input
+                  v-model="paymentStore.discountCode"
+                  type="text"
+                  placeholder="Nhập mã giảm giá"
+                  class="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-white"
+                  :disabled="paymentStore.discountApplied"
+                />
+                <button
+                  v-if="!paymentStore.discountApplied"
+                  @click="paymentStore.validateDiscountCode()"
+                  :disabled="!paymentStore.discountCode"
+                  class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+                >
+                  Áp dụng
+                </button>
+                <button
+                  v-else
+                  @click="paymentStore.clearDiscountCode()"
+                  class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
+                >
+                  Xóa
+                </button>
+              </div>
+              <div v-if="paymentStore.discountApplied" class="mt-1 text-sm text-green-600 dark:text-green-400">
+                Đã giảm: {{ formatCurrency(paymentStore.discountAmount) }}
+              </div>
+            </div>
             
             <div v-if="paymentStore.selectedPackage">
               <span class="text-gray-700 dark:text-gray-300 text-sm">{{ $t('payment.duration') }}:</span>
@@ -259,6 +291,29 @@
             >
               <Icon icon="mdi:content-copy" class="mr-2" />
               {{ $t('payment.copyCode') }}
+            </button>
+          </div>
+
+          <!-- Additional Actions -->
+          <div class="mt-3 flex flex-col sm:flex-row gap-3">
+            <button
+              v-if="paymentStore.canCancelPayment"
+              @click="paymentStore.cancelPayment('User requested')"
+              :disabled="paymentStore.loading"
+              class="flex-1 bg-red-500 text-white py-2 px-4 rounded hover:bg-red-600 disabled:opacity-50"
+            >
+              <Icon icon="mdi:cancel" class="mr-2" />
+              Hủy thanh toán
+            </button>
+            
+            <button
+              v-if="paymentStore.canRetryPayment"
+              @click="paymentStore.retryPayment()"
+              :disabled="paymentStore.loading"
+              class="flex-1 bg-orange-500 text-white py-2 px-4 rounded hover:bg-orange-600 disabled:opacity-50"
+            >
+              <Icon icon="mdi:refresh" class="mr-2" />
+              Thử lại
             </button>
           </div>
         </div>

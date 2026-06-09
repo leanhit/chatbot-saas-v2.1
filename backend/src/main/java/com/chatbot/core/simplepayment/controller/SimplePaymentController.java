@@ -6,6 +6,9 @@ import com.chatbot.core.simplepayment.dto.PaymentStatusResponse;
 import com.chatbot.core.simplepayment.service.BankApiService;
 import com.chatbot.core.simplepayment.service.QRCodeService;
 import com.chatbot.core.simplepayment.service.SimplePaymentService;
+import com.chatbot.core.simplepayment.service.PaymentCancellationService;
+import com.chatbot.core.simplepayment.service.PaymentRefundService;
+import com.chatbot.core.simplepayment.service.PaymentRetryService;
 import com.chatbot.core.tenant.infra.TenantContext;
 import com.chatbot.core.tenant.model.Tenant;
 import com.chatbot.core.tenant.repository.TenantRepository;
@@ -18,6 +21,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -43,6 +47,10 @@ public class SimplePaymentController {
     private final BankApiService bankApiService;
     private final TenantRepository tenantRepository;
     private final AuthRepository authRepository;
+    private final PaymentCancellationService paymentCancellationService;
+    private final PaymentRefundService paymentRefundService;
+    private final PaymentRetryService paymentRetryService;
+    private final com.chatbot.core.simplepayment.validation.PaymentValidationService paymentValidationService;
 
     /**
      * Tạo yêu cầu nạp tiền mới
@@ -60,6 +68,9 @@ public class SimplePaymentController {
         log.info("📱 Creating deposit request for user: {}", userDetails.getUsername());
 
         try {
+            // Validate deposit request
+            paymentValidationService.validateDepositRequest(request);
+
             // Extract user ID and tenant ID from user details (simplified)
             Long userId = extractUserId(userDetails);
             Long tenantId = extractTenantId(httpRequest);
@@ -105,10 +116,13 @@ public class SimplePaymentController {
         description = "Check the status of a payment by reference code"
     )
     public ResponseEntity<PaymentStatusResponse> checkPaymentStatus(@PathVariable String referenceCode) {
-        
+
         log.info("🔍 Checking payment status: {}", referenceCode);
 
         try {
+            // Validate reference code
+            paymentValidationService.validateReferenceCode(referenceCode);
+
             PaymentStatusResponse response = simplePaymentService.checkPaymentStatus(referenceCode);
             // Apply DateUtils formatting
             response.withFormattedDates();
@@ -177,6 +191,29 @@ public class SimplePaymentController {
         } catch (Exception e) {
             log.error("❌ Failed to get bank info: {}", e.getMessage(), e);
             return ResponseEntity.badRequest().build();
+        }
+    }
+
+    /**
+     * Cập nhật thông tin ngân hàng (admin only)
+     */
+    @PutMapping("/admin/bank-info")
+    @PreAuthorize("hasAnyRole('ADMIN','SYSTEM_ADMIN')")
+    @Operation(
+        summary = "Update bank information (admin)",
+        description = "Update bank account information (Admin only)"
+    )
+    public ResponseEntity<String> updateBankInfo(@RequestBody QRCodeService.BankInfo bankInfo) {
+        
+        log.info("🏦 Updating bank information");
+
+        try {
+            qrCodeService.updateBankInfo(bankInfo);
+            return ResponseEntity.ok("Bank information updated successfully");
+
+        } catch (Exception e) {
+            log.error("❌ Failed to update bank info: {}", e.getMessage(), e);
+            return ResponseEntity.badRequest().body("Failed to update bank info: " + e.getMessage());
         }
     }
 
@@ -334,6 +371,107 @@ public class SimplePaymentController {
         }
         
         return debug;
+    }
+
+    /**
+     * Cancel payment (user can cancel their own pending payments)
+     */
+    @PostMapping("/cancel/{referenceCode}")
+    @Operation(
+        summary = "Cancel payment",
+        description = "Cancel a pending payment before it expires"
+    )
+    public ResponseEntity<String> cancelPayment(
+            @PathVariable String referenceCode,
+            @RequestBody Map<String, String> request,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        
+        log.info("🚫 User cancelling payment: {}", referenceCode);
+        
+        try {
+            Long userId = extractUserId(userDetails);
+            String reason = request.getOrDefault("reason", "User requested cancellation");
+            
+            com.chatbot.core.simplepayment.model.SimplePayment payment = 
+                simplePaymentService.getPaymentByReference(referenceCode);
+            
+            // Security check: user can only cancel their own payments
+            if (!payment.getUserId().equals(userId)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You can only cancel your own payments");
+            }
+            
+            com.chatbot.core.simplepayment.model.SimplePayment cancelled = 
+                paymentCancellationService.cancelPayment(referenceCode, reason);
+            
+            return ResponseEntity.ok("Payment cancelled successfully");
+            
+        } catch (Exception e) {
+            log.error("❌ Failed to cancel payment {}: {}", referenceCode, e.getMessage());
+            return ResponseEntity.badRequest().body("Failed to cancel payment: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Refund payment (admin only)
+     */
+    @PostMapping("/admin/refund/{referenceCode}")
+    @PreAuthorize("hasRole('SYSTEM_ADMIN')")
+    @Operation(
+        summary = "Refund payment (admin)",
+        description = "Refund a completed payment (Admin only)"
+    )
+    public ResponseEntity<String> refundPayment(
+            @PathVariable String referenceCode,
+            @RequestBody Map<String, String> request,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        
+        log.info("💰 Admin refunding payment: {}", referenceCode);
+        
+        try {
+            Long adminUserId = extractUserId(userDetails);
+            String reason = request.getOrDefault("reason", "Admin refund");
+            
+            com.chatbot.core.simplepayment.model.SimplePayment refunded = 
+                paymentRefundService.refundPayment(referenceCode, reason, adminUserId);
+            
+            return ResponseEntity.ok("Payment refunded successfully");
+            
+        } catch (Exception e) {
+            log.error("❌ Failed to refund payment {}: {}", referenceCode, e.getMessage());
+            return ResponseEntity.badRequest().body("Failed to refund payment: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Retry failed payment
+     */
+    @PostMapping("/retry/{referenceCode}")
+    @Operation(
+        summary = "Retry payment",
+        description = "Retry a failed or expired payment"
+    )
+    public ResponseEntity<Object> retryPayment(
+            @PathVariable String referenceCode,
+            @AuthenticationPrincipal UserDetails userDetails,
+            HttpServletRequest httpRequest) {
+        
+        log.info("🔄 Retrying payment: {}", referenceCode);
+        
+        try {
+            Long userId = extractUserId(userDetails);
+            Long tenantId = extractTenantId(httpRequest);
+            
+            com.chatbot.core.simplepayment.dto.DepositResponse response = 
+                paymentRetryService.retryPayment(referenceCode, userId, tenantId);
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            log.error("❌ Failed to retry payment {}: {}", referenceCode, e.getMessage());
+            Map<String, String> error = new HashMap<>();
+            error.put("error", e.getMessage());
+            return ResponseEntity.badRequest().body(error);
+        }
     }
 
     /**

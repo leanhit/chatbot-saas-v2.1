@@ -53,4 +53,12 @@ public interface SimplePaymentRepository extends JpaRepository<SimplePayment, Lo
 
     @Query("SELECT COALESCE(SUM(p.amount), 0) FROM SimplePayment p WHERE p.tenantId = :tenantId AND p.status = :status")
     BigDecimal sumAmountByTenantIdAndStatus(@Param("tenantId") Long tenantId, @Param("status") PaymentStatus status);
+
+    // Methods for payment analytics
+    List<SimplePayment> findByCreatedAtBetween(LocalDateTime startDate, LocalDateTime endDate);
+
+    List<SimplePayment> findByStatusAndCreatedAtAfter(PaymentStatus status, LocalDateTime since);
+
+    @Query("SELECT COUNT(p) FROM SimplePayment p WHERE p.status = :status")
+    Long countByStatus(@Param("status") PaymentStatus status);
 }

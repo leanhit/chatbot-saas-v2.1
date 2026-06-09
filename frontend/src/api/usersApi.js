@@ -4,16 +4,16 @@ import { useAuthStore } from '@/stores/authStore';
 import { getUserIdFromJWT, debugJWT } from '@/utils/jwtHelper';
 export const usersApi = {
     login(params) {
-        return axios.post('/api/auth/login', params);
+        return axios.post('/auth/login', params);
     },
     register(params) {
-        return axios.post('/api/auth/register', params);
+        return axios.post('/auth/register', params);
     },
     refreshToken(params) {
-        return axios.post('/api/auth/refresh-token', params);
+        return axios.post('/auth/refresh-token', params);
     },
     logout() {
-        return axios.post('/api/auth/logout');
+        return axios.post('/auth/logout');
     },
     getProfile() {
         // Get current user ID from auth store
@@ -46,7 +46,7 @@ export const usersApi = {
         });
     },
     changePassword(params) {
-        return axios.post('/api/auth/change-password', params);
+        return axios.post('/auth/change-password', params);
     },
     updateTenantLogo(formData) {
         return axios.put('/v1/tenant/logo', formData, {

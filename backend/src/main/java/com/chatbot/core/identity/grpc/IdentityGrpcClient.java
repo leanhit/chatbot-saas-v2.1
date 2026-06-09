@@ -4,12 +4,13 @@ import com.chatbot.core.identity.grpc.IdentityServiceOuterClass.*;
 import com.chatbot.core.identity.grpc.IdentityServiceGrpc;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.annotation.DependsOn;
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
-
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
 
 import java.util.concurrent.TimeUnit;
 
@@ -23,25 +24,21 @@ public class IdentityGrpcClient {
 
     @PostConstruct
     public void init() {
-        try {
-            // Reduced delay since @DependsOn ensures server starts first
-            Thread.sleep(1000);
-            
-            // Tạo channel kết nối đến Identity gRPC server
-            channel = ManagedChannelBuilder.forAddress("localhost", 50051)
-                    .usePlaintext()
-                    .build();
-            
-            blockingStub = IdentityServiceGrpc.newBlockingStub(channel);
-            
-            log.info("Identity gRPC Client đã khởi tạo thành công và kết nối đến port 50051");
-            
-            // Test kết nối
-            testConnection();
-            
-        } catch (Exception e) {
-            log.error("Lỗi khi khởi tạo Identity gRPC client", e);
-        }
+        // Build the channel immediately — no delay needed since @DependsOn("identityGrpcServer") guarantees order
+        channel = ManagedChannelBuilder.forAddress("localhost", 50051)
+                .usePlaintext()
+                .build();
+        blockingStub = IdentityServiceGrpc.newBlockingStub(channel);
+        log.info("Identity gRPC Client đã khởi tạo thành công và kết nối đến port 50051");
+    }
+
+    /**
+     * Connection test runs after full context is ready to avoid singleton lock contention
+     * with beans like userTransactionManager that are initialized on the main thread.
+     */
+    @EventListener(ApplicationReadyEvent.class)
+    public void testConnectionOnReady() {
+        testConnection();
     }
 
     public void testConnection() {

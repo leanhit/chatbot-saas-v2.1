@@ -180,6 +180,13 @@
                 >
                   {{ $t('sidebar.history') }}
                 </router-link>
+                <router-link
+                  to="/admin/bank-account"
+                  @click.stop
+                  class="w-full text-left block rounded-md p-3 hover:bg-gray-200 dark:hover:bg-gray-700"
+                >
+                  Quản lý tài khoản
+                </router-link>
               </template>
             </menu-accordion>
           </div>

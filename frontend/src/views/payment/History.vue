@@ -208,6 +208,14 @@
                     <Icon icon="mdi:play-circle" />
                   </button>
                   <button
+                    v-if="payment.status === 'COMPLETED' && isAdmin"
+                    @click="refundPayment(payment.referenceCode)"
+                    class="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"
+                    title="Hoàn tiền (Admin)"
+                  >
+                    <Icon icon="mdi:cash-refund" />
+                  </button>
+                  <button
                     @click="paymentStore.copyReferenceCode(payment.referenceCode)"
                     class="text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-300"
                     :title="$t('payment.history.actions.copyCode')"
@@ -229,7 +237,9 @@ import { Icon } from '@iconify/vue'
 import { formatDateTime } from '@/utils/dateUtils'
 import { usePaymentStore } from '@/stores/paymentStore'
 import axios from '@/plugins/axios'
+import paymentAPI from '@/api/paymentApi'
 import { useI18n } from 'vue-i18n'
+import { ref } from 'vue'
 
 export default {
   name: 'PaymentHistory',
@@ -240,8 +250,16 @@ export default {
     const paymentStore = usePaymentStore()
     const { t } = useI18n()
 
+    // Check if user is admin
+    const isAdmin = ref(false)
+    const checkAdminRole = () => {
+      const user = JSON.parse(localStorage.getItem('user') || '{}')
+      isAdmin.value = user.systemRole === 'SYSTEM_ADMIN'
+    }
+
     // Load payment history on mount
     paymentStore.loadPaymentHistory()
+    checkAdminRole()
 
     // Methods
     const formatCurrency = (amount) => {
@@ -302,12 +320,28 @@ export default {
       }
     }
 
+    const refundPayment = async (referenceCode) => {
+      const reason = prompt('Lý do hoàn tiền:')
+      if (!reason) return
+
+      try {
+        await paymentAPI.refundPayment(referenceCode, reason)
+        paymentStore.setMessage('Hoàn tiền thành công', 'success')
+        paymentStore.loadPaymentHistory()
+      } catch (error) {
+        paymentStore.setMessage('Lỗi hoàn tiền: ' + (error.response?.data?.message || error.message), 'error')
+        console.error('Error refunding payment:', error)
+      }
+    }
+
     return {
       paymentStore,
+      isAdmin,
       formatCurrency,
       formatPaymentDateTime,
       checkPaymentStatus,
-      simulatePayment
+      simulatePayment,
+      refundPayment
     }
   }
 }

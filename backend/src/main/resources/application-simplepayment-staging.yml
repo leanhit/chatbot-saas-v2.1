@@ -1,0 +1,78 @@
+# Staging Configuration for SimplePayment Module
+simplepayment:
+  # Bank Account Configuration
+  bank:
+    name: ${PAYMENT_BANK_NAME:Vietcombank}
+    account-number: ${PAYMENT_BANK_ACCOUNT_NUMBER:1234567890}
+    account-name: ${PAYMENT_BANK_ACCOUNT_NAME:CHATBOT SaaS}
+    
+  # Bank API Configuration
+  bank-api:
+    provider: vietqr
+    api-url: ${BANK_API_URL:https://api.vietqr.io}
+    api-key: ${BANK_API_KEY}
+    timeout: 30000
+    retry-attempts: 3
+    retry-delay: 2000
+    
+  # QR Code Configuration
+  qr-code:
+    provider: vietqr
+    template: compact
+    size: 300
+    logo-enabled: true
+    
+  # Payment Configuration
+  payment:
+    qr-expiry-hours: 24
+    min-amount: 10000
+    max-amount: 50000000
+    allowed-currencies: VND
+    
+  # Webhook Configuration
+  webhook:
+    enabled: true
+    signature-secret: ${WEBHOOK_SIGNATURE_SECRET}
+    timeout: 10000
+    retry-attempts: 5
+    retry-delay: 5000
+    
+  # Rate Limiting Configuration
+  rate-limit:
+    enabled: true
+    public-endpoints:
+      requests-per-minute: 30
+      burst-capacity: 50
+    authenticated-endpoints:
+      requests-per-minute: 100
+      burst-capacity: 150
+      
+  # Email Notification Configuration
+  email:
+    enabled: true
+    from: ${EMAIL_FROM:noreply@chatbot-saas-staging.com}
+    template-path: classpath:/templates/payment/
+    
+  # Invoice Configuration
+  invoice:
+    enabled: true
+    storage-path: ${INVOICE_STORAGE_PATH:/app/invoices/staging/}
+    template: default
+    
+  # Discount Configuration
+  discount:
+    enabled: true
+    max-discount-percentage: 30
+    min-amount-for-discount: 100000
+    
+  # Monitoring Configuration
+  monitoring:
+    metrics-enabled: true
+    audit-logging-enabled: true
+    slow-query-threshold-ms: 500
+    
+  # Security Configuration
+  security:
+    mask-sensitive-data: true
+    log-payment-details: false
+    require-https: true
