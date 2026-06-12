@@ -35,7 +35,7 @@ authStore.initialize()
 authStore.$subscribe(async (state, prevState) => {
   if (state.isAuthenticated && !prevState.isAuthenticated) {
     // User just logged in, initialize WebSocket
-    const token = localStorage.getItem('accessToken')
+    const token = authStore.token
     if (token) {
       websocketService.connect(token)
     }

@@ -39,7 +39,7 @@ public class PackageController {
      * Get all packages (admin only)
      */
     @GetMapping
-    @PreAuthorize("hasRole('SYSTEM_ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Get all packages", description = "Retrieve all packages including inactive ones (Admin only)")
     public ResponseEntity<ApiResponse<List<Package>>> getAllPackages() {
         log.info("🔧 Admin fetching all packages");
@@ -51,7 +51,7 @@ public class PackageController {
      * Get package by ID (admin only)
      */
     @GetMapping("/{id}")
-    @PreAuthorize("hasRole('SYSTEM_ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Get package by ID", description = "Retrieve a specific package by ID (Admin only)")
     public ResponseEntity<ApiResponse<Package>> getPackageById(@PathVariable Long id) {
         log.info("🔧 Admin fetching package ID: {}", id);
@@ -76,7 +76,7 @@ public class PackageController {
      * Create new package (admin only)
      */
     @PostMapping
-    @PreAuthorize("hasRole('SYSTEM_ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Create new package", description = "Create a new subscription package (Admin only)")
     public ResponseEntity<ApiResponse<Package>> createPackage(@Valid @RequestBody Package packageData) {
         log.info("🔧 Admin creating new package: {}", packageData.getPackageId());
@@ -92,7 +92,7 @@ public class PackageController {
      * Update existing package (admin only)
      */
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('SYSTEM_ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Update package", description = "Update an existing subscription package (Admin only)")
     public ResponseEntity<ApiResponse<Package>> updatePackage(
             @PathVariable Long id, 
@@ -110,7 +110,7 @@ public class PackageController {
      * Delete package (soft delete - admin only)
      */
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('SYSTEM_ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Delete package", description = "Soft delete a package (Admin only)")
     public ResponseEntity<ApiResponse<Void>> deletePackage(@PathVariable Long id) {
         log.info("🔧 Admin deleting package ID: {}", id);
@@ -126,7 +126,7 @@ public class PackageController {
      * Permanently delete package (admin only)
      */
     @DeleteMapping("/{id}/permanent")
-    @PreAuthorize("hasRole('SYSTEM_ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Permanently delete package", description = "Permanently delete a package (Admin only)")
     public ResponseEntity<ApiResponse<Void>> permanentlyDeletePackage(@PathVariable Long id) {
         log.info("🔧 Admin permanently deleting package ID: {}", id);
@@ -164,7 +164,7 @@ public class PackageController {
      * Check if packages are initialized (admin only)
      */
     @GetMapping("/check-initialized")
-    @PreAuthorize("hasRole('SYSTEM_ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Check packages initialization", description = "Check if packages table is empty (Admin only)")
     public ResponseEntity<ApiResponse<Boolean>> checkInitialized() {
         log.info("🔧 Admin checking packages initialization");
@@ -176,7 +176,7 @@ public class PackageController {
      * Warm up package caches (admin only)
      */
     @PostMapping("/warmup-cache")
-    @PreAuthorize("hasRole('SYSTEM_ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Warm up package caches", description = "Warm up package caches for performance (Admin only)")
     public ResponseEntity<ApiResponse<String>> warmupCache() {
         log.info("🔥 Admin warming up package caches");
@@ -192,7 +192,7 @@ public class PackageController {
      * Clear package caches (admin only)
      */
     @PostMapping("/clear-cache")
-    @PreAuthorize("hasRole('SYSTEM_ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Clear package caches", description = "Clear all package caches (Admin only)")
     public ResponseEntity<ApiResponse<String>> clearCache() {
         log.info("🗑️ Admin clearing package caches");
@@ -208,7 +208,7 @@ public class PackageController {
      * Get cache statistics (admin only)
      */
     @GetMapping("/cache-stats")
-    @PreAuthorize("hasRole('SYSTEM_ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Get cache statistics", description = "Get package cache statistics (Admin only)")
     public ResponseEntity<ApiResponse<String>> getCacheStats() {
         log.info("📊 Admin getting cache statistics");

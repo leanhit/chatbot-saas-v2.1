@@ -1134,6 +1134,36 @@
     "conversations": "Cuộc trò chuyện",
     "payments": "Thanh toán",
     "deposit": "Nạp tiền",
-    "history": "Lịch sử giao dịch"
+    "history": "Lịch sử giao dịch",
+    "admin": "Quản trị",
+    "bankAccount": "Quản lý tài khoản",
+    "packages": "Quản lý gói nạp",
+    "discounts": "Quản lý giảm giá",
+    "analytics": "Phân tích thanh toán",
+    "webhooks": "Quản lý Webhook",
+    "userManagement": "Quản lý người dùng"
+  },
+  "admin": {
+    "user": {
+      "loadingUsers": "Đang tải người dùng...",
+      "searchPlaceholder": "Tìm kiếm người dùng theo email hoặc ID...",
+      "allRoles": "Tất cả vai trò",
+      "email": "Email",
+      "systemRole": "Vai trò hệ thống",
+      "status": "Trạng thái",
+      "createdAt": "Ngày tạo",
+      "actions": "Hành động",
+      "changeRole": "Thay đổi vai trò",
+      "user": "Người dùng",
+      "currentRole": "Vai trò hiện tại",
+      "newRole": "Vai trò mới",
+      "changing": "Đang thay đổi...",
+      "change": "Thay đổi",
+      "deactivate": "Vô hiệu hóa",
+      "activate": "Kích hoạt",
+      "active": "Hoạt động",
+      "inactive": "Không hoạt động",
+      "noUsersFound": "Không tìm thấy người dùng nào"
+    }
   }
 }

@@ -22,6 +22,14 @@ public interface UserRepository extends JpaRepository<User, Long> {
     
     Optional<User> findByEmailAndIsActive(String email, Boolean isActive);
     
+    @Query("SELECT u FROM User u WHERE " +
+           "(:keyword IS NULL OR :keyword = '' OR LOWER(u.email) LIKE LOWER(CONCAT('%', :keyword, '%')) OR CAST(u.id AS string) LIKE CONCAT('%', :keyword, '%')) " +
+           "AND (:role IS NULL OR u.systemRole = :role)")
+    org.springframework.data.domain.Page<User> searchUsers(
+        @Param("keyword") String keyword, 
+        @Param("role") com.chatbot.core.identity.model.SystemRole role, 
+        org.springframework.data.domain.Pageable pageable);
+    
     /**
      * Find user by ID with pessimistic write lock to prevent race conditions
      * Used for balance operations

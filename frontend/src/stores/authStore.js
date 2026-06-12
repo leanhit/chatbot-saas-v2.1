@@ -8,17 +8,29 @@ import axios from '@/plugins/axios'
 // Import constants from tenant store (giống frontend)
 const TENANT_DATA = 'tenant_data'
 const ACTIVE_TENANT_ID = 'active_tenant_id'
+// Immediate cleanup of "null" strings in localStorage before store initialization
+const savedToken = localStorage.getItem('accessToken')
+if (savedToken === 'null' || savedToken === null) {
+  localStorage.removeItem('accessToken')
+}
+const savedRefreshToken = localStorage.getItem('refreshToken')
+if (savedRefreshToken === 'null' || savedRefreshToken === null) {
+  localStorage.removeItem('refreshToken')
+}
+
 export const useAuthStore = defineStore('auth', () => {
   // State
   const user = ref(null)
-  const token = ref(localStorage.getItem('accessToken') || null)
-  const refreshToken = ref(localStorage.getItem('refreshToken') || null)
+  const token = ref(null)
+  const refreshToken = ref(null)
   const isLoading = ref(false)
   const error = ref(null)
   const isRefreshing = ref(false)
   // Getters
   const isLoggedIn = computed(() => !!token.value)
   const isAdmin = computed(() => user.value?.systemRole === 'ADMIN')
+  const isSystemAdmin = computed(() => user.value?.systemRole === 'SYSTEM_ADMIN')
+  const isAnyAdmin = computed(() => isAdmin.value || isSystemAdmin.value)
   const userId = computed(() => user.value?.id)
   const currentUser = computed(() => user.value)
   // Actions
@@ -30,12 +42,22 @@ export const useAuthStore = defineStore('auth', () => {
     const savedToken = localStorage.getItem('accessToken')
     const savedRefreshToken = localStorage.getItem('refreshToken')
     const savedUser = localStorage.getItem('user')
-    if (savedToken) {
+    
+    // Clean up invalid "null" string values
+    if (savedToken === 'null' || savedToken === null || savedToken === '') {
+      localStorage.removeItem('accessToken')
+      token.value = null
+    } else if (savedToken) {
       token.value = savedToken
     }
-    if (savedRefreshToken) {
+    
+    if (savedRefreshToken === 'null' || savedRefreshToken === null || savedRefreshToken === '') {
+      localStorage.removeItem('refreshToken')
+      refreshToken.value = null
+    } else if (savedRefreshToken) {
       refreshToken.value = savedRefreshToken
     }
+    
     if (savedUser) {
       try {
         user.value = JSON.parse(savedUser)
@@ -48,11 +70,26 @@ export const useAuthStore = defineStore('auth', () => {
    * Xử lý đăng nhập thành công
    */
   const login = async (authData) => {
-    token.value = authData.token
-    refreshToken.value = authData.refreshToken
+    // Ensure token is not the string "null"
+    const validToken = authData.token && authData.token !== 'null' ? authData.token : null
+    const validRefreshToken = authData.refreshToken && authData.refreshToken !== 'null' ? authData.refreshToken : null
+    
+    token.value = validToken
+    refreshToken.value = validRefreshToken
     user.value = authData.user
-    localStorage.setItem('accessToken', authData.token)
-    localStorage.setItem('refreshToken', authData.refreshToken)
+    
+    if (validToken) {
+      localStorage.setItem('accessToken', validToken)
+    } else {
+      localStorage.removeItem('accessToken')
+    }
+    
+    if (validRefreshToken) {
+      localStorage.setItem('refreshToken', validRefreshToken)
+    } else {
+      localStorage.removeItem('refreshToken')
+    }
+    
     localStorage.setItem('user', JSON.stringify(authData.user))
   }
   /**
@@ -196,13 +233,27 @@ export const useAuthStore = defineStore('auth', () => {
       const response = await usersApi.refreshToken({ refreshToken: refreshToken.value })
       const authData = response.data
       
-      // Update tokens
-      token.value = authData.accessToken
-      refreshToken.value = authData.refreshToken
-      localStorage.setItem('accessToken', authData.accessToken)
-      localStorage.setItem('refreshToken', authData.refreshToken)
+      // Ensure tokens are not the string "null"
+      const validAccessToken = authData.accessToken && authData.accessToken !== 'null' ? authData.accessToken : null
+      const validRefreshToken = authData.refreshToken && authData.refreshToken !== 'null' ? authData.refreshToken : null
       
-      return authData.accessToken
+      // Update tokens
+      token.value = validAccessToken
+      refreshToken.value = validRefreshToken
+      
+      if (validAccessToken) {
+        localStorage.setItem('accessToken', validAccessToken)
+      } else {
+        localStorage.removeItem('accessToken')
+      }
+      
+      if (validRefreshToken) {
+        localStorage.setItem('refreshToken', validRefreshToken)
+      } else {
+        localStorage.removeItem('refreshToken')
+      }
+      
+      return validAccessToken
     } catch (error) {
       console.error('Refresh token failed:', error)
       // Refresh token expired or invalid - logout
@@ -289,6 +340,8 @@ export const useAuthStore = defineStore('auth', () => {
     // Getters
     isLoggedIn,
     isAdmin,
+    isSystemAdmin,
+    isAnyAdmin,
     userId,
     currentUser,
     // Actions

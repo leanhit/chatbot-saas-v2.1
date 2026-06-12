@@ -48,9 +48,12 @@ const processQueue = (error, token = null) => {
 
 instance.interceptors.request.use(
     (config) => {
-        // 1. Xử lý JWT
-        const token = localStorage.getItem('accessToken');
-        if (token) {
+        // 1. Xử lý JWT - Use authStore token instead of localStorage to avoid race conditions
+        const authStore = useAuthStore();
+        const token = authStore.token;
+        // Only add Authorization header if token exists and is valid (not null, not 'null' string, not empty)
+        // Also check if token is a valid string (not the literal string "null")
+        if (token && token !== 'null' && token !== '' && token !== null && typeof token === 'string' && token.length > 0) {
             config.headers.Authorization = `Bearer ${token}`;
         }
         

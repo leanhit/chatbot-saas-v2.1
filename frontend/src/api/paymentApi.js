@@ -145,7 +145,7 @@ class PaymentAPI {
   // Validate discount code
   async validateDiscount(code, amount, packageId) {
     try {
-      const response = await axios.get('/discounts/validate', {
+      const response = await axios.get('/v1/discounts/validate', {
         params: { code, amount, packageId }
       })
       return response
@@ -157,7 +157,7 @@ class PaymentAPI {
   // Get user invoices
   async getUserInvoices(userId) {
     try {
-      const response = await axios.get(`/invoices/user/${userId}`)
+      const response = await axios.get(`/v1/invoices/user/${userId}`)
       return response
     } catch (error) {
       throw error
@@ -167,7 +167,7 @@ class PaymentAPI {
   // Get invoice by number
   async getInvoiceByNumber(invoiceNumber) {
     try {
-      const response = await axios.get(`/invoices/number/${invoiceNumber}`)
+      const response = await axios.get(`/v1/invoices/number/${invoiceNumber}`)
       return response
     } catch (error) {
       throw error
@@ -177,7 +177,7 @@ class PaymentAPI {
   // Get payment analytics (admin)
   async getRevenueSummary(startDate, endDate) {
     try {
-      const response = await axios.get('/analytics/payments/revenue-summary', {
+      const response = await axios.get('/v1/analytics/payments/revenue-summary', {
         params: { startDate, endDate }
       })
       return response
@@ -188,7 +188,7 @@ class PaymentAPI {
 
   async getDailyRevenue(year, month) {
     try {
-      const response = await axios.get('/analytics/payments/daily-revenue', {
+      const response = await axios.get('/v1/analytics/payments/daily-revenue', {
         params: { year, month }
       })
       return response
@@ -199,7 +199,7 @@ class PaymentAPI {
 
   async getPaymentTrends(days) {
     try {
-      const response = await axios.get('/analytics/payments/trends', {
+      const response = await axios.get('/v1/analytics/payments/trends', {
         params: { days }
       })
       return response
@@ -210,7 +210,7 @@ class PaymentAPI {
 
   async getPackagePerformance(startDate, endDate) {
     try {
-      const response = await axios.get('/analytics/payments/package-performance', {
+      const response = await axios.get('/v1/analytics/payments/package-performance', {
         params: { startDate, endDate }
       })
       return response
@@ -221,7 +221,7 @@ class PaymentAPI {
 
   async getTopUsers(limit, startDate, endDate) {
     try {
-      const response = await axios.get('/analytics/payments/top-users', {
+      const response = await axios.get('/v1/analytics/payments/top-users', {
         params: { limit, startDate, endDate }
       })
       return response
@@ -232,7 +232,7 @@ class PaymentAPI {
 
   async getDashboardAnalytics() {
     try {
-      const response = await axios.get('/analytics/payments/dashboard')
+      const response = await axios.get('/v1/analytics/payments/dashboard')
       return response
     } catch (error) {
       throw error
@@ -242,7 +242,7 @@ class PaymentAPI {
   // Discount management (admin)
   async getActiveDiscounts() {
     try {
-      const response = await axios.get('/discounts/active')
+      const response = await axios.get('/v1/discounts/active')
       return response
     } catch (error) {
       throw error
@@ -251,7 +251,7 @@ class PaymentAPI {
 
   async createDiscount(discount) {
     try {
-      const response = await axios.post('/discounts', discount)
+      const response = await axios.post('/v1/discounts', discount)
       return response
     } catch (error) {
       throw error
@@ -260,7 +260,7 @@ class PaymentAPI {
 
   async updateDiscount(id, discount) {
     try {
-      const response = await axios.put(`/discounts/${id}`, discount)
+      const response = await axios.put(`/v1/discounts/${id}`, discount)
       return response
     } catch (error) {
       throw error
@@ -269,7 +269,7 @@ class PaymentAPI {
 
   async deleteDiscount(id) {
     try {
-      const response = await axios.delete(`/discounts/${id}`)
+      const response = await axios.delete(`/v1/discounts/${id}`)
       return response
     } catch (error) {
       throw error
@@ -279,7 +279,7 @@ class PaymentAPI {
   // Webhook management (admin)
   async getActiveWebhooks() {
     try {
-      const response = await axios.get('/webhooks')
+      const response = await axios.get('/v1/webhooks')
       return response
     } catch (error) {
       throw error
@@ -288,7 +288,7 @@ class PaymentAPI {
 
   async createWebhook(webhook) {
     try {
-      const response = await axios.post('/webhooks', webhook)
+      const response = await axios.post('/v1/webhooks', webhook)
       return response
     } catch (error) {
       throw error
@@ -297,7 +297,7 @@ class PaymentAPI {
 
   async updateWebhook(id, webhook) {
     try {
-      const response = await axios.put(`/webhooks/${id}`, webhook)
+      const response = await axios.put(`/v1/webhooks/${id}`, webhook)
       return response
     } catch (error) {
       throw error
@@ -306,7 +306,7 @@ class PaymentAPI {
 
   async deleteWebhook(id) {
     try {
-      const response = await axios.delete(`/webhooks/${id}`)
+      const response = await axios.delete(`/v1/webhooks/${id}`)
       return response
     } catch (error) {
       throw error
@@ -315,7 +315,7 @@ class PaymentAPI {
 
   async testWebhook(id) {
     try {
-      const response = await axios.post(`/webhooks/${id}/test`)
+      const response = await axios.post(`/v1/webhooks/${id}/test`)
       return response
     } catch (error) {
       throw error

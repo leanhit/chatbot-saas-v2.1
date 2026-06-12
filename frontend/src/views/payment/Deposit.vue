@@ -14,8 +14,49 @@
       {{ paymentStore.message }}
     </div>
 
+    <!-- Payment Success Screen -->
+    <div v-if="paymentStore.currentPayment?.status === 'COMPLETED'" class="max-w-2xl mx-auto bg-white dark:bg-gray-900 rounded-lg shadow-md p-8 text-center my-8 border border-green-200 dark:border-green-800">
+      <div class="inline-flex items-center justify-center w-20 h-20 bg-green-100 dark:bg-green-900 rounded-full mb-6">
+        <Icon icon="mdi:check-circle" class="text-5xl text-green-600 dark:text-green-400" />
+      </div>
+      <h2 class="text-2xl font-bold text-gray-800 dark:text-white mb-2">
+        Thanh toán thành công!
+      </h2>
+      <p class="text-gray-600 dark:text-gray-400 mb-6">
+        Yêu cầu nạp tiền đã hoàn tất và gói dịch vụ của bạn đã được kích hoạt.
+      </p>
+      
+      <div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-6 mb-8 max-w-md mx-auto text-left space-y-3">
+        <div class="flex justify-between border-b border-gray-200 dark:border-gray-700 pb-2">
+          <span class="text-gray-500 dark:text-gray-400">Mã giao dịch:</span>
+          <span class="font-mono font-semibold text-gray-800 dark:text-white">{{ paymentStore.currentPayment.referenceCode }}</span>
+        </div>
+        <div class="flex justify-between border-b border-gray-200 dark:border-gray-700 pb-2">
+          <span class="text-gray-500 dark:text-gray-400">Số tiền nạp:</span>
+          <span class="font-semibold text-gray-800 dark:text-white">{{ formatCurrency(paymentStore.currentPayment.amount) }}</span>
+        </div>
+        <div class="flex justify-between border-b border-gray-200 dark:border-gray-700 pb-2">
+          <span class="text-gray-500 dark:text-gray-400">Gói thanh toán:</span>
+          <span class="font-semibold text-gray-800 dark:text-white">{{ paymentStore.selectedPackage ? paymentStore.selectedPackage.name : 'N/A' }}</span>
+        </div>
+        <div class="flex justify-between pt-1" v-if="paymentStore.currentPackage">
+          <span class="text-gray-500 dark:text-gray-400">Gói hiện tại của Workspace:</span>
+          <span class="font-semibold text-green-600 dark:text-green-400">{{ paymentStore.currentPackage.name }}</span>
+        </div>
+      </div>
+      
+      <div class="flex justify-center gap-4">
+        <button
+          @click="resetPaymentFlow"
+          class="bg-blue-600 hover:bg-blue-700 text-white py-3 px-6 rounded-md font-semibold transition-colors duration-200"
+        >
+          Tạo giao dịch mới
+        </button>
+      </div>
+    </div>
+
     <!-- Package Selection -->
-    <div class="mb-8">
+    <div v-if="paymentStore.currentPayment?.status !== 'COMPLETED'" class="mb-8">
       <div class="flex items-center justify-center mb-6">
         <Icon icon="mdi:package-variant" class="text-2xl text-blue-600 dark:text-blue-400 mr-3" />
         <h2 class="text-xl font-semibold text-gray-800 dark:text-white">
@@ -86,7 +127,7 @@
     </div>
 
     <!-- Payment Container: 1/4 + 3/4 Layout -->
-    <div v-if="paymentStore.selectedPackage && paymentStore.selectedPackage.price > 0" class="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-8">
+    <div v-if="paymentStore.selectedPackage && paymentStore.selectedPackage.price > 0 && paymentStore.currentPayment?.status !== 'COMPLETED'" class="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-8">
       <!-- Selected Package Summary - 1/4 width -->
       <div class="lg:col-span-1">
         <div class="flex items-center justify-center mb-6">
@@ -322,7 +363,7 @@
     </div>
 
     <!-- Free Package Confirmation -->
-    <div v-if="paymentStore.selectedPackage && paymentStore.selectedPackage.price === 0" class="mt-6 bg-white dark:bg-gray-900 rounded-lg shadow p-6">
+    <div v-if="paymentStore.selectedPackage && paymentStore.selectedPackage.price === 0 && paymentStore.currentPayment?.status !== 'COMPLETED'" class="mt-6 bg-white dark:bg-gray-900 rounded-lg shadow p-6">
       <div class="flex items-center justify-center mb-6">
         <Icon icon="mdi:gift" class="text-2xl text-green-600 dark:text-green-400 mr-3" />
         <h3 class="text-lg font-semibold text-gray-800 dark:text-white">
@@ -345,7 +386,7 @@
     </div>
 
     <!-- Payment Instructions - MOVED TO BOTTOM -->
-    <div v-if="paymentStore.bankInfo" class="mt-6 bg-white dark:bg-gray-900 rounded-lg shadow p-6">
+    <div v-if="paymentStore.bankInfo && paymentStore.currentPayment?.status !== 'COMPLETED'" class="mt-6 bg-white dark:bg-gray-900 rounded-lg shadow p-6">
       <div class="flex items-center justify-center mb-6">
         <Icon icon="mdi:bank" class="text-2xl text-blue-600 dark:text-blue-400 mr-3" />
         <h2 class="text-xl font-semibold text-gray-800 dark:text-white">
@@ -625,6 +666,14 @@ export default {
 
 
 
+    const resetPaymentFlow = () => {
+      paymentStore.currentPayment = null
+      paymentStore.selectedPackage = null
+      paymentStore.discountCode = ''
+      paymentStore.discountApplied = false
+      paymentStore.discountAmount = 0
+    }
+
     return {
       paymentStore,
       formatCurrency,
@@ -635,7 +684,8 @@ export default {
       getLocalizedDuration,
       getLocalizedPrice,
       isCurrentPackage,
-      isSelectedPackage
+      isSelectedPackage,
+      resetPaymentFlow
     }
   }
 }

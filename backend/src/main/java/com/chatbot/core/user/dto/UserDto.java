@@ -17,4 +17,5 @@ public class UserDto {
     private String email;
     private String systemRole;
     private Boolean isActive;
+    private java.time.LocalDateTime createdAt;
 }

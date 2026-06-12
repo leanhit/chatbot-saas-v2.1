@@ -26,6 +26,11 @@ const PaymentDeposit = () => import("../views/payment/Deposit.vue");
 const PaymentHistory = () => import("../views/payment/History.vue");
 // Admin Pages
 const BankAccountManagement = () => import("../views/admin/BankAccountManagement.vue");
+const PackageManagement = () => import("../views/admin/PackageManagement.vue");
+const DiscountManagement = () => import("../views/admin/DiscountManagement.vue");
+const PaymentAnalytics = () => import("../views/admin/PaymentAnalytics.vue");
+const WebhookManagement = () => import("../views/admin/WebhookManagement.vue");
+const UserManagement = () => import("../views/admin/UserManagement.vue");
 var appname = " - Windzo Dashboard Admin Template";
 const routes = [
   // Root route - redirect to login
@@ -146,6 +151,36 @@ const routes = [
     name: "admin-bank-account",
     component: BankAccountManagement,
     meta: { requiresAuth: true, title: "Bank Account Management" + appname },
+  },
+  {
+    path: "/admin/packages",
+    name: "admin-packages",
+    component: PackageManagement,
+    meta: { requiresAuth: true, title: "Package Management" + appname },
+  },
+  {
+    path: "/admin/discounts",
+    name: "admin-discounts",
+    component: DiscountManagement,
+    meta: { requiresAuth: true, title: "Discount Management" + appname },
+  },
+  {
+    path: "/admin/analytics",
+    name: "admin-analytics",
+    component: PaymentAnalytics,
+    meta: { requiresAuth: true, title: "Payment Analytics" + appname },
+  },
+  {
+    path: "/admin/webhooks",
+    name: "admin-webhooks",
+    component: WebhookManagement,
+    meta: { requiresAuth: true, title: "Webhook Management" + appname },
+  },
+  {
+    path: "/admin/users",
+    name: "admin-users",
+    component: UserManagement,
+    meta: { requiresAuth: true, title: "User Management" + appname },
   },
 ];
 const router = createRouter({

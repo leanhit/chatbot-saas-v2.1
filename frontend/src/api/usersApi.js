@@ -21,7 +21,7 @@ export const usersApi = {
         let userId = authStore.userId;
         // Fallback: get from JWT token
         if (!userId) {
-            const token = localStorage.getItem('accessToken') || '';
+            const token = authStore.token || '';
             debugJWT(token); // Debug JWT content
             userId = getUserIdFromJWT(token);
         }

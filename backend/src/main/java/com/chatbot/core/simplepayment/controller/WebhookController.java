@@ -29,7 +29,7 @@ public class WebhookController {
      * Create new webhook (admin only)
      */
     @PostMapping
-    @PreAuthorize("hasRole('SYSTEM_ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Create webhook", description = "Create a new webhook (Admin only)")
     public ResponseEntity<ApiResponse<Webhook>> createWebhook(@Valid @RequestBody Webhook webhook) {
         log.info("🪝 Creating webhook: {}", webhook.getName());
@@ -45,7 +45,7 @@ public class WebhookController {
      * Get all active webhooks (admin only)
      */
     @GetMapping
-    @PreAuthorize("hasRole('SYSTEM_ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Get active webhooks", description = "Get all active webhooks (Admin only)")
     public ResponseEntity<ApiResponse<List<Webhook>>> getActiveWebhooks() {
         log.info("📋 Fetching active webhooks");
@@ -57,7 +57,7 @@ public class WebhookController {
      * Update webhook (admin only)
      */
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('SYSTEM_ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Update webhook", description = "Update an existing webhook (Admin only)")
     public ResponseEntity<ApiResponse<Webhook>> updateWebhook(
             @PathVariable Long id,
@@ -75,7 +75,7 @@ public class WebhookController {
      * Delete webhook (admin only)
      */
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('SYSTEM_ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Delete webhook", description = "Delete a webhook (Admin only)")
     public ResponseEntity<ApiResponse<Void>> deleteWebhook(@PathVariable Long id) {
         log.info("🗑️ Deleting webhook: {}", id);
@@ -91,7 +91,7 @@ public class WebhookController {
      * Test webhook (admin only)
      */
     @PostMapping("/{id}/test")
-    @PreAuthorize("hasRole('SYSTEM_ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Test webhook", description = "Test a webhook endpoint (Admin only)")
     public ResponseEntity<ApiResponse<String>> testWebhook(@PathVariable Long id) {
         log.info("🧪 Testing webhook: {}", id);

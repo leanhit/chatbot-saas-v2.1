@@ -69,6 +69,49 @@ public class UserService {
     }
 
     /**
+     * Get all users
+     */
+    @Transactional(readOnly = true)
+    public List<UserDto> getAllUsers() {
+        return userRepository.findAll().stream()
+                .map(user -> UserDto.builder()
+                        .id(user.getId())
+                        .email(user.getEmail())
+                        .systemRole(user.getSystemRole().name())
+                        .isActive(user.getIsActive())
+                        .createdAt(user.getCreatedAt())
+                        .build())
+                .toList();
+    }
+
+    /**
+     * Search users with pagination
+     */
+    @Transactional(readOnly = true)
+    public org.springframework.data.domain.Page<UserDto> searchUsers(String keyword, com.chatbot.core.identity.model.SystemRole role, org.springframework.data.domain.Pageable pageable) {
+        return userRepository.searchUsers(keyword, role, pageable)
+                .map(user -> UserDto.builder()
+                        .id(user.getId())
+                        .email(user.getEmail())
+                        .systemRole(user.getSystemRole().name())
+                        .isActive(user.getIsActive())
+                        .createdAt(user.getCreatedAt())
+                        .build());
+    }
+
+    /**
+     * Update user active status
+     */
+    @Transactional
+    public void updateUserStatus(Long userId, boolean isActive) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found with ID: " + userId));
+        user.setIsActive(isActive);
+        userRepository.save(user);
+        log.info("Updated status for user {}: isActive={}", userId, isActive);
+    }
+
+    /**
      * Get user profile by ID
      */
     @Transactional(readOnly = true)

@@ -1134,6 +1134,36 @@
     "conversations": "Conversations",
     "payments": "Payments",
     "deposit": "Deposit",
-    "history": "History"
+    "history": "History",
+    "admin": "Admin",
+    "bankAccount": "Bank Account Management",
+    "packages": "Package Management",
+    "discounts": "Discount Management",
+    "analytics": "Payment Analytics",
+    "webhooks": "Webhook Management",
+    "userManagement": "User Management"
+  },
+  "admin": {
+    "user": {
+      "loadingUsers": "Loading users...",
+      "searchPlaceholder": "Search users by email or ID...",
+      "allRoles": "All Roles",
+      "email": "Email",
+      "systemRole": "System Role",
+      "status": "Status",
+      "createdAt": "Created At",
+      "actions": "Actions",
+      "changeRole": "Change Role",
+      "user": "User",
+      "currentRole": "Current Role",
+      "newRole": "New Role",
+      "changing": "Changing...",
+      "change": "Change",
+      "deactivate": "Deactivate",
+      "activate": "Activate",
+      "active": "Active",
+      "inactive": "Inactive",
+      "noUsersFound": "No users found"
+    }
   }
 }

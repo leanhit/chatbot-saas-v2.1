@@ -68,7 +68,7 @@ public class InvoiceController {
      * Get tenant invoices
      */
     @GetMapping("/tenant/{tenantId}")
-    @PreAuthorize("hasRole('SYSTEM_ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Get tenant invoices", description = "Get all invoices for a tenant (Admin only)")
     public ResponseEntity<ApiResponse<List<Invoice>>> getTenantInvoices(@PathVariable Long tenantId) {
         log.info("📋 Fetching invoices for tenant: {}", tenantId);
@@ -80,7 +80,7 @@ public class InvoiceController {
      * Update invoice status (admin only)
      */
     @PutMapping("/{id}/status")
-    @PreAuthorize("hasRole('SYSTEM_ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Update invoice status", description = "Update invoice status (Admin only)")
     public ResponseEntity<ApiResponse<Invoice>> updateInvoiceStatus(
             @PathVariable Long id,
@@ -98,7 +98,7 @@ public class InvoiceController {
      * Get invoice statistics (admin only)
      */
     @GetMapping("/statistics")
-    @PreAuthorize("hasRole('SYSTEM_ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Get invoice statistics", description = "Get invoice statistics (Admin only)")
     public ResponseEntity<ApiResponse<String>> getInvoiceStatistics() {
         log.info("📊 Fetching invoice statistics");

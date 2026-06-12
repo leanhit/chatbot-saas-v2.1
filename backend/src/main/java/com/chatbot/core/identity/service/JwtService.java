@@ -218,11 +218,23 @@ public class JwtService {
                         .parseClaimsJws(token)
                         .getBody();
             }
-        } catch (SignatureException e) {
-            log.error("Invalid JWT signature: {}", e.getMessage());
+        } catch (io.jsonwebtoken.security.SignatureException e) {
+            log.debug("Invalid JWT signature: {}", e.getMessage());
             throw new InvalidTokenException("Token signature is invalid", e);
+        } catch (io.jsonwebtoken.MalformedJwtException e) {
+            log.debug("Invalid JWT token: {}", e.getMessage());
+            throw new InvalidTokenException("Invalid JWT token", e);
+        } catch (io.jsonwebtoken.ExpiredJwtException e) {
+            log.debug("JWT token is expired: {}", e.getMessage());
+            throw e; // re-throw ExpiredJwtException so JwtFilter can catch it specifically
+        } catch (io.jsonwebtoken.UnsupportedJwtException e) {
+            log.debug("JWT token is unsupported: {}", e.getMessage());
+            throw new InvalidTokenException("JWT token is unsupported", e);
+        } catch (IllegalArgumentException e) {
+            log.debug("JWT claims string is empty: {}", e.getMessage());
+            throw new InvalidTokenException("JWT claims string is empty", e);
         } catch (Exception e) {
-            log.error("Token parsing failed: {}", e.getMessage(), e);
+            log.error("Token parsing failed: {}", e.getMessage());
             throw new InvalidTokenException("Token không hợp lệ hoặc đã hết hạn", e);
         }
     }

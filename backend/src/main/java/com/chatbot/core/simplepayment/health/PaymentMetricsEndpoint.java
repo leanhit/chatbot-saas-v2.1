@@ -32,7 +32,7 @@ public class PaymentMetricsEndpoint {
         summary = "Get payment overview metrics",
         description = "Get overall payment metrics for monitoring"
     )
-    @PreAuthorize("hasRole('SYSTEM_ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Map<String, Object>> getPaymentOverview() {
         Map<String, Object> metrics = new HashMap<>();
         
@@ -108,7 +108,7 @@ public class PaymentMetricsEndpoint {
         summary = "Get payment metrics by date range",
         description = "Get payment metrics for a specific date range"
     )
-    @PreAuthorize("hasRole('SYSTEM_ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Map<String, Object>> getMetricsByDateRange(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate) {
@@ -152,7 +152,7 @@ public class PaymentMetricsEndpoint {
         summary = "Get detailed health status",
         description = "Get detailed health status of payment system"
     )
-    @PreAuthorize("hasRole('SYSTEM_ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Map<String, Object>> getDetailedHealth() {
         Map<String, Object> health = new HashMap<>();
         

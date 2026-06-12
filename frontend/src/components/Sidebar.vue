@@ -1,6 +1,6 @@
 <template>
   <!-- sidebar -->
-  <nav class="sidebar bg-white dark:bg-gray-800">
+  <nav class="sidebar bg-white dark:bg-gray-800 overflow-y-auto h-screen">
     <!-- sidebar head -->
     <div class="sidebar-head p-4">
       <router-link
@@ -180,12 +180,57 @@
                 >
                   {{ $t('sidebar.history') }}
                 </router-link>
+              </template>
+            </menu-accordion>
+          </div>
+          <div class="item mt-3" v-if="authStore.isAnyAdmin">
+            <menu-accordion>
+              <template v-slot:icon>
+                <Icon icon="mdi:shield-account" />
+              </template>
+              <template v-slot:title> {{ $t('sidebar.admin') }} </template>
+              <template v-slot:content>
                 <router-link
                   to="/admin/bank-account"
                   @click.stop
                   class="w-full text-left block rounded-md p-3 hover:bg-gray-200 dark:hover:bg-gray-700"
                 >
-                  Quản lý tài khoản
+                  {{ $t('sidebar.bankAccount') }}
+                </router-link>
+                <router-link
+                  to="/admin/packages"
+                  @click.stop
+                  class="w-full text-left block rounded-md p-3 hover:bg-gray-200 dark:hover:bg-gray-700"
+                >
+                  {{ $t('sidebar.packages') }}
+                </router-link>
+                <router-link
+                  to="/admin/discounts"
+                  @click.stop
+                  class="w-full text-left block rounded-md p-3 hover:bg-gray-200 dark:hover:bg-gray-700"
+                >
+                  {{ $t('sidebar.discounts') }}
+                </router-link>
+                <router-link
+                  to="/admin/analytics"
+                  @click.stop
+                  class="w-full text-left block rounded-md p-3 hover:bg-gray-200 dark:hover:bg-gray-700"
+                >
+                  {{ $t('sidebar.analytics') }}
+                </router-link>
+                <router-link
+                  to="/admin/webhooks"
+                  @click.stop
+                  class="w-full text-left block rounded-md p-3 hover:bg-gray-200 dark:hover:bg-gray-700"
+                >
+                  {{ $t('sidebar.webhooks') }}
+                </router-link>
+                <router-link
+                  to="/admin/users"
+                  @click.stop
+                  class="w-full text-left block rounded-md p-3 hover:bg-gray-200 dark:hover:bg-gray-700"
+                >
+                  {{ $t('sidebar.userManagement') }}
                 </router-link>
               </template>
             </menu-accordion>
@@ -198,10 +243,17 @@
 <script>
   import { Icon } from "@iconify/vue";
   import MenuAccordion from "./MenuAccordion.vue";
+  import { useAuthStore } from "@/stores/authStore";
   export default {
     components: {
       Icon,
       MenuAccordion,
+    },
+    setup() {
+      const authStore = useAuthStore();
+      return {
+        authStore,
+      };
     },
   };
 </script>

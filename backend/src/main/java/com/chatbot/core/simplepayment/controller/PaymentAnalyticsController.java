@@ -29,7 +29,7 @@ public class PaymentAnalyticsController {
      * Get revenue summary for date range (admin only)
      */
     @GetMapping("/revenue-summary")
-    @PreAuthorize("hasRole('SYSTEM_ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Get revenue summary", description = "Get revenue summary for a date range (Admin only)")
     public ResponseEntity<ApiResponse<PaymentAnalyticsService.RevenueSummary>> getRevenueSummary(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
@@ -47,7 +47,7 @@ public class PaymentAnalyticsController {
      * Get daily revenue for a month (admin only)
      */
     @GetMapping("/daily-revenue")
-    @PreAuthorize("hasRole('SYSTEM_ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Get daily revenue", description = "Get daily revenue for a specific month (Admin only)")
     public ResponseEntity<ApiResponse<List<PaymentAnalyticsService.DailyRevenue>>> getDailyRevenue(
             @RequestParam int year,
@@ -65,7 +65,7 @@ public class PaymentAnalyticsController {
      * Get payment trends (admin only)
      */
     @GetMapping("/trends")
-    @PreAuthorize("hasRole('SYSTEM_ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Get payment trends", description = "Get payment trends for the last N days (Admin only)")
     public ResponseEntity<ApiResponse<PaymentAnalyticsService.PaymentTrends>> getPaymentTrends(
             @RequestParam(defaultValue = "30") int days) {
@@ -82,7 +82,7 @@ public class PaymentAnalyticsController {
      * Get package performance (admin only)
      */
     @GetMapping("/package-performance")
-    @PreAuthorize("hasRole('SYSTEM_ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Get package performance", description = "Get package performance metrics (Admin only)")
     public ResponseEntity<ApiResponse<List<PaymentAnalyticsService.PackagePerformance>>> getPackagePerformance(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
@@ -100,7 +100,7 @@ public class PaymentAnalyticsController {
      * Get top users by spending (admin only)
      */
     @GetMapping("/top-users")
-    @PreAuthorize("hasRole('SYSTEM_ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Get top users by spending", description = "Get top users by total spending (Admin only)")
     public ResponseEntity<ApiResponse<List<PaymentAnalyticsService.UserSpending>>> getTopUsersBySpending(
             @RequestParam(defaultValue = "10") int limit,
@@ -119,7 +119,7 @@ public class PaymentAnalyticsController {
      * Get quick analytics for dashboard (admin only)
      */
     @GetMapping("/dashboard")
-    @PreAuthorize("hasRole('SYSTEM_ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Get dashboard analytics", description = "Get quick analytics for admin dashboard (Admin only)")
     public ResponseEntity<ApiResponse<Object>> getDashboardAnalytics() {
         log.info("📊 Getting dashboard analytics");

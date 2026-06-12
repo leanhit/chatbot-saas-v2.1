@@ -38,6 +38,31 @@ public class UserController {
     // ===== NEW ENDPOINTS (/api/users) =====
     
     /**
+     * Search all users with pagination
+     */
+    @GetMapping
+    public ResponseEntity<org.springframework.data.domain.Page<UserDto>> searchUsers(
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) com.chatbot.core.identity.model.SystemRole role,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(page, size, org.springframework.data.domain.Sort.by("id").descending());
+        return ResponseEntity.ok(userService.searchUsers(search, role, pageable));
+    }
+
+    /**
+     * Update user active status
+     */
+    @PutMapping("/{id}/status")
+    public ResponseEntity<Void> updateUserStatus(@PathVariable Long id, @RequestBody Map<String, Boolean> request) {
+        Boolean isActive = request.get("isActive");
+        if (isActive != null) {
+            userService.updateUserStatus(id, isActive);
+        }
+        return ResponseEntity.ok().build();
+    }
+
+    /**
      * Get current user profile
      */
     @GetMapping("/me")

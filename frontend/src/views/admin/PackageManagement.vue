@@ -1,5 +1,6 @@
 <template>
-  <div class="p-6">
+  <div>
+    <div class="p-6">
     <div class="flex justify-between items-center mb-6">
       <div class="flex items-center">
         <Icon icon="mdi:package-variant-closed" class="text-2xl text-blue-600 dark:text-blue-400 mr-3" />
@@ -350,6 +351,7 @@
         </div>
       </div>
     </div>
+  </div>
 </template>
 
 <script>

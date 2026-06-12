@@ -30,7 +30,7 @@ public class DiscountController {
      * Create new discount code (admin only)
      */
     @PostMapping
-    @PreAuthorize("hasRole('SYSTEM_ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Create discount code", description = "Create a new discount/promotion code (Admin only)")
     public ResponseEntity<ApiResponse<Discount>> createDiscount(@Valid @RequestBody DiscountRequest request) {
         log.info("🎟️ Creating discount code: {}", request.getCode());
@@ -91,7 +91,7 @@ public class DiscountController {
      * Update discount (admin only)
      */
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('SYSTEM_ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Update discount", description = "Update an existing discount code (Admin only)")
     public ResponseEntity<ApiResponse<Discount>> updateDiscount(
             @PathVariable Long id,
@@ -110,7 +110,7 @@ public class DiscountController {
      * Delete discount (admin only)
      */
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('SYSTEM_ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Delete discount", description = "Delete a discount code (Admin only)")
     public ResponseEntity<ApiResponse<Void>> deleteDiscount(@PathVariable Long id) {
         log.info("🗑️ Deleting discount: {}", id);
@@ -126,7 +126,7 @@ public class DiscountController {
      * Deactivate expired discounts (admin only)
      */
     @PostMapping("/deactivate-expired")
-    @PreAuthorize("hasRole('SYSTEM_ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Deactivate expired discounts", description = "Deactivate all expired discount codes (Admin only)")
     public ResponseEntity<ApiResponse<String>> deactivateExpiredDiscounts() {
         log.info("⏰ Deactivating expired discounts");
