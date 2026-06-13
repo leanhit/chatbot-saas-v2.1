@@ -444,7 +444,7 @@ import { Icon } from '@iconify/vue'
 import { usePaymentStore } from '@/stores/paymentStore'
 import QRCode from 'qrcode'
 import { useI18n } from 'vue-i18n'
-import { watch, onMounted } from 'vue'
+import { watch, onMounted, onBeforeUnmount } from 'vue'
 
 export default {
   name: 'PaymentDeposit',
@@ -477,6 +477,53 @@ export default {
     const paymentStore = usePaymentStore()
     const { t, locale } = useI18n()
 
+    // Temporarily disabled automatic payment detection via SSE
+    /*
+    let eventSource = null
+
+    const stopSseConnection = () => {
+      if (eventSource) {
+        eventSource.close()
+        eventSource = null
+        console.log('📶 SSE connection closed')
+      }
+    }
+
+    const startSseConnection = (referenceCode) => {
+      stopSseConnection()
+      
+      console.log('📶 SSE: Connecting for reference', referenceCode)
+      eventSource = new EventSource(`/api/public/simple-payment/events/${referenceCode}`)
+      
+      eventSource.addEventListener('payment_completed', (event) => {
+        try {
+          const paymentData = JSON.parse(event.data)
+          console.log('✅ SSE payment completed event received:', paymentData)
+          paymentStore.currentPayment = paymentData
+          stopSseConnection()
+        } catch (e) {
+          console.error('❌ SSE event parsing error:', e)
+        }
+      })
+
+      eventSource.onerror = (err) => {
+        console.warn('⚠️ SSE connection error or timeout:', err)
+      }
+    }
+
+    // Watch for new payment creations to subscribe immediately
+    watch(() => paymentStore.currentPayment?.referenceCode, (newRef) => {
+      if (newRef && paymentStore.currentPayment?.status === 'PENDING') {
+        startSseConnection(newRef)
+      } else {
+        stopSseConnection()
+      }
+    })
+    */
+
+    // Dummy helper functions to prevent runtime errors if referenced elsewhere
+    const stopSseConnection = () => {}
+
     // Watch for language changes and reload packages
     watch(locale, async (newLocale) => {
       await paymentStore.loadPackages()
@@ -486,12 +533,11 @@ export default {
     watch(() => paymentStore.currentPayment?.status, async (newStatus, oldStatus) => {
       if (newStatus === 'COMPLETED' && oldStatus !== 'COMPLETED') {
         await paymentStore.loadCurrentPackage()
-        }
+      }
     })
 
     // Format currency function
     const formatCurrency = (amount) => {
-      // Ensure amount is a number
       const numAmount = typeof amount === 'number' ? amount : parseFloat(amount) || 0
       
       return new Intl.NumberFormat('vi-VN', {
@@ -516,7 +562,6 @@ export default {
       const features = []
       const isVietnamese = locale.value === 'vi'
       
-      // Message limit
       if (pkg.messageLimit && pkg.messageLimit > 0) {
         if (pkg.messageLimit >= 2147483647) {
           const unlimitedText = isVietnamese ? 'Không giới hạn' : 'Unlimited'
@@ -528,7 +573,6 @@ export default {
         }
       }
       
-      // Chatbot limit
       if (pkg.chatbotLimit && pkg.chatbotLimit > 0) {
         if (pkg.chatbotLimit >= 2147483647) {
           const unlimitedText = isVietnamese ? 'Không giới hạn' : 'Unlimited'
@@ -540,11 +584,9 @@ export default {
         }
       }
       
-      // User tenant creation limit (per user)
       const userTenantLimitText = isVietnamese ? 'Tối đa 4 tenant/user' : 'Maximum 4 tenants per user'
       features.push(userTenantLimitText)
       
-      // Support features
       if (pkg.hasPrioritySupport) {
         features.push(isVietnamese ? 'Hỗ trợ ưu tiên' : 'Priority Support')
       }
@@ -573,12 +615,10 @@ export default {
         features.push(isVietnamese ? 'Đảm bảo SLA' : 'SLA guarantee')
       }
       
-      // Add basic support for free packages
       if (pkg.price === 0) {
         features.push(isVietnamese ? 'Hỗ trợ cơ bản' : 'Basic Support')
       }
       
-      // Add connection limit
       if (pkg.connectionLimit && pkg.connectionLimit > 0) {
         if (pkg.connectionLimit >= 2147483647) {
           features.push(isVietnamese ? 'Kết nối không giới hạn' : 'Unlimited connections')
@@ -590,7 +630,6 @@ export default {
       return features
     }
     
-    // Helper functions for localization
     const getLocalizedPackageName = (pkg) => {
       const isVietnamese = locale.value === 'vi'
       const nameMap = {
@@ -629,10 +668,8 @@ export default {
       return isVietnamese ? 'Miễn phí' : 'Free'
     }
     
-    // Helper methods for package matching
     const isCurrentPackage = (pkg) => {
       if (!paymentStore.currentPackage) return false
-      // Check both possible ID fields for robust matching
       return paymentStore.currentPackage.id === pkg.packageId || 
              paymentStore.currentPackage.packageId === pkg.packageId ||
              paymentStore.currentPackage.id === pkg.id ||
@@ -641,32 +678,32 @@ export default {
     
     const isSelectedPackage = (pkg) => {
       if (!paymentStore.selectedPackage) return false
-      // Check both possible ID fields for robust matching
       return paymentStore.selectedPackage.id === pkg.packageId || 
              paymentStore.selectedPackage.packageId === pkg.packageId ||
              paymentStore.selectedPackage.id === pkg.id ||
              paymentStore.selectedPackage.packageId === pkg.id
     }
 
-    // Load data on mount
     const loadAllData = async () => {
       try {
         await paymentStore.loadPackages()
         await paymentStore.loadBankInfo()
         await paymentStore.loadCurrentPackage()
-        } catch (error) {
+      } catch (error) {
         console.error('❌ [Deposit] Error loading payment data:', error)
       }
     }
     
-    // Load data on mount
     onMounted(() => {
       loadAllData()
     })
 
-
+    onBeforeUnmount(() => {
+      stopSseConnection()
+    })
 
     const resetPaymentFlow = () => {
+      stopSseConnection()
       paymentStore.currentPayment = null
       paymentStore.selectedPackage = null
       paymentStore.discountCode = ''

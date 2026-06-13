@@ -9,6 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import com.chatbot.core.tenant.infra.TenantContext;
 
 @RestController
 @RequestMapping("/api/message-usage")
@@ -27,8 +28,10 @@ public class MessageUsageController {
     @Operation(summary = "Get current message usage", description = "Get current message usage and limits for the authenticated tenant")
     public ResponseEntity<ApiResponse<MessageUsageService.MessageUsageInfo>> getCurrentUsage() {
         try {
-            // TODO: Get tenant ID from security context
-            Long tenantId = 1L; // Mock tenant ID
+            Long tenantId = TenantContext.getTenantId();
+            if (tenantId == null) {
+                return ResponseEntity.badRequest().body(ApiResponse.error("Tenant context not found"));
+            }
             
             MessageUsageService.MessageUsageInfo usage = messageUsageService.getCurrentUsage(tenantId);
             
@@ -47,8 +50,10 @@ public class MessageUsageController {
     @Operation(summary = "Check if can send messages", description = "Check if tenant can send more messages based on their package limits")
     public ResponseEntity<ApiResponse<Boolean>> canSendMoreMessages() {
         try {
-            // TODO: Get tenant ID from security context
-            Long tenantId = 1L; // Mock tenant ID
+            Long tenantId = TenantContext.getTenantId();
+            if (tenantId == null) {
+                return ResponseEntity.badRequest().body(ApiResponse.error("Tenant context not found"));
+            }
             
             boolean canSend = messageUsageService.canSendMoreMessages(tenantId);
             
@@ -68,8 +73,10 @@ public class MessageUsageController {
     @Operation(summary = "Get message statistics", description = "Get detailed message usage statistics for dashboard")
     public ResponseEntity<ApiResponse<MessageUsageService.MessageUsageStats>> getUsageStatistics() {
         try {
-            // TODO: Get tenant ID from security context
-            Long tenantId = 1L; // Mock tenant ID
+            Long tenantId = TenantContext.getTenantId();
+            if (tenantId == null) {
+                return ResponseEntity.badRequest().body(ApiResponse.error("Tenant context not found"));
+            }
             
             MessageUsageService.MessageUsageStats stats = messageUsageService.getUsageStats(tenantId);
             

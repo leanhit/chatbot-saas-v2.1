@@ -22,6 +22,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
+import com.chatbot.core.simplepayment.service.PaymentNotificationService;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -41,6 +43,7 @@ public class PublicSimplePaymentController {
     private final TenantPackageService tenantPackageService;
     private final TenantJoinRequestRepository tenantJoinRequestRepository;
     private final com.chatbot.core.simplepayment.validation.PaymentValidationService paymentValidationService;
+    private final PaymentNotificationService paymentNotificationService;
 
     /**
      * Public health check - no authentication required
@@ -160,6 +163,19 @@ public class PublicSimplePaymentController {
             log.error("❌ Failed to check public payment status: {}", e.getMessage(), e);
             return ResponseEntity.badRequest().build();
         }
+    }
+
+    /**
+     * Subscribe to payment status events (SSE)
+     */
+    @GetMapping(value = "/events/{referenceCode}", produces = org.springframework.http.MediaType.TEXT_EVENT_STREAM_VALUE)
+    @Operation(
+        summary = "Subscribe to payment status events (SSE)",
+        description = "Listen to real-time events for a payment by reference code (no auth required)"
+    )
+    public SseEmitter subscribePaymentEvents(@PathVariable String referenceCode) {
+        log.info("📶 SSE Subscription request received for reference: {}", referenceCode);
+        return paymentNotificationService.subscribe(referenceCode);
     }
 
     /**

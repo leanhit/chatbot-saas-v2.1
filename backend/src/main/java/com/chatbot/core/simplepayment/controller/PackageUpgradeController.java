@@ -10,6 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import com.chatbot.core.tenant.infra.TenantContext;
 
 import java.util.List;
 
@@ -30,8 +31,10 @@ public class PackageUpgradeController {
     @Operation(summary = "Get upgrade history", description = "Get package upgrade history for the current tenant")
     public ResponseEntity<ApiResponse<List<PackageUpgradeAudit>>> getUpgradeHistory() {
         try {
-            // TODO: Get tenant ID from security context
-            Long tenantId = 1L; // Mock tenant ID
+            Long tenantId = TenantContext.getTenantId();
+            if (tenantId == null) {
+                return ResponseEntity.badRequest().body(ApiResponse.error("Tenant context not found"));
+            }
             
             List<PackageUpgradeAudit> history = packageUpgradeService.getTenantUpgradeHistory(tenantId);
             

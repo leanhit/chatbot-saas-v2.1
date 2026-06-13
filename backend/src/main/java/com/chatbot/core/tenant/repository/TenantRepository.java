@@ -11,6 +11,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -73,4 +74,8 @@ public interface TenantRepository extends JpaRepository<Tenant, Long> {
     // Tìm tenants chưa có gói dịch vụ
     @Query("SELECT t FROM Tenant t WHERE t.currentPackageId IS NULL")
     List<Tenant> findByCurrentPackageIdIsNull();
+
+    // Tìm các tenant có gói đã hết hạn (không phải free)
+    @Query("SELECT t FROM Tenant t WHERE t.expiresAt IS NOT NULL AND t.expiresAt <= :now AND t.currentPackageId != 'free'")
+    List<Tenant> findExpiredTenants(@Param("now") LocalDateTime now);
 }

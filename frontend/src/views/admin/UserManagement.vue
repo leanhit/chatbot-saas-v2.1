@@ -122,7 +122,7 @@
       <!-- Pagination Controls -->
       <div v-if="totalPages > 1" class="px-6 py-4 border-t dark:border-gray-700 flex items-center justify-between bg-gray-50 dark:bg-gray-800">
         <div class="text-sm text-gray-500 dark:text-gray-400">
-          Hiển thị {{ users.length }} / {{ totalElements }} người dùng
+          {{ $t('admin.user.showing', { count: users.length, total: totalElements }) }}
         </div>
         <div class="flex gap-2">
           <button 
@@ -130,15 +130,15 @@
             :disabled="currentPage === 0"
             class="px-3 py-1 border border-gray-300 rounded hover:bg-gray-100 disabled:opacity-50 dark:border-gray-600 dark:hover:bg-gray-700 dark:text-white"
           >
-            Trang trước
+            {{ $t('admin.user.prevPage') }}
           </button>
-          <span class="px-3 py-1 dark:text-white">Trang {{ currentPage + 1 }} / {{ totalPages }}</span>
+          <span class="px-3 py-1 dark:text-white">{{ $t('admin.user.pageStatus', { current: currentPage + 1, total: totalPages }) }}</span>
           <button 
             @click="nextPage" 
             :disabled="currentPage >= totalPages - 1"
             class="px-3 py-1 border border-gray-300 rounded hover:bg-gray-100 disabled:opacity-50 dark:border-gray-600 dark:hover:bg-gray-700 dark:text-white"
           >
-            Trang sau
+            {{ $t('admin.user.nextPage') }}
           </button>
         </div>
       </div>
@@ -214,6 +214,7 @@ import { Icon } from '@iconify/vue'
 import { useSearchStore } from '@/stores/searchStore'
 import { onMounted, onUnmounted, ref, computed, watch } from 'vue'
 import axios from '@/plugins/axios'
+import { useI18n } from 'vue-i18n'
 
 export default {
   name: 'UserManagement',
@@ -221,6 +222,7 @@ export default {
     Icon
   },
   setup() {
+    const { t } = useI18n()
     const searchStore = useSearchStore()
     const users = ref([])
     const loading = ref(false)
@@ -283,7 +285,7 @@ export default {
         totalElements.value = pageData.totalElements || 0
       } catch (error) {
         console.error('Error loading users:', error)
-        setMessage('Error loading users: ' + (error.message || 'Unknown error'), 'error')
+        setMessage(t('admin.user.loadingError') + ': ' + (error.message || 'Unknown error'), 'error')
       } finally {
         loading.value = false
       }
@@ -339,11 +341,11 @@ export default {
           users.value[userIndex].systemRole = newRole.value
         }
 
-        setMessage('Role changed successfully', 'success')
+        setMessage(t('admin.user.roleUpdateSuccess'), 'success')
         closeRoleModal()
       } catch (error) {
         console.error('Error changing role:', error)
-        setMessage('Error changing role: ' + (error.response?.data?.message || error.message || 'Unknown error'), 'error')
+        setMessage(t('admin.user.roleUpdateError') + ': ' + (error.response?.data?.message || error.message || 'Unknown error'), 'error')
       } finally {
         changingRole.value = false
       }
@@ -362,10 +364,10 @@ export default {
           users.value[userIndex].isActive = newStatus
         }
 
-        setMessage(`User ${newStatus ? 'activated' : 'deactivated'} successfully`, 'success')
+        setMessage(t('admin.user.statusUpdateSuccess'), 'success')
       } catch (error) {
         console.error('Error toggling user status:', error)
-        setMessage('Error toggling user status: ' + (error.response?.data?.message || error.message || 'Unknown error'), 'error')
+        setMessage(t('admin.user.statusUpdateError') + ': ' + (error.response?.data?.message || error.message || 'Unknown error'), 'error')
       }
     }
 
@@ -407,6 +409,7 @@ export default {
     }
 
     return {
+      t,
       users,
       loading,
       message,

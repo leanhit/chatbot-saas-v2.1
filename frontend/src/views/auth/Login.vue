@@ -171,7 +171,7 @@ export default {
         return
       }
       if (!isValidEmail(form.email)) {
-        authStore.error = $t('auth.login.invalidEmail')
+        authStore.error = t('auth.login.invalidEmail')
         return
       }
       // Attempt login

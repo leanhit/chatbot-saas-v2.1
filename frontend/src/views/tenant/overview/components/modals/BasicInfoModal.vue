@@ -46,8 +46,13 @@
           <input
             v-model="form.expiresAt"
             type="datetime-local"
-            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+            disabled
+            class="w-full px-3 py-2 border border-gray-200 rounded-md bg-gray-100 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-400 text-gray-500 cursor-not-allowed"
           />
+          <p class="mt-1 text-xs text-gray-400 dark:text-gray-500">
+            <Icon icon="mdi:information-outline" class="inline mr-1" />
+            {{ $t('tenant.overview.expiresAtNote') || 'Managed automatically by the payment system' }}
+          </p>
         </div>
         <div class="flex justify-end space-x-3 pt-4">
           <button

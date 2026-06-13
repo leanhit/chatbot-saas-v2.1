@@ -3,11 +3,11 @@
     <div class="flex justify-between items-center mb-6">
       <div class="flex items-center">
         <Icon icon="mdi:webhook" class="text-2xl text-blue-600 dark:text-blue-400 mr-3" />
-        <h1 class="text-2xl font-bold text-gray-800 dark:text-white">Quản lý Webhooks</h1>
+        <h1 class="text-2xl font-bold text-gray-800 dark:text-white">{{ $t('admin.webhook.title') }}</h1>
       </div>
-      <button @click="showCreateModal = true" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
+      <button @click="showCreateModal = true" class="inline-flex items-center bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
         <Icon icon="mdi:plus" class="mr-2" />
-        Thêm Webhook
+        {{ $t('admin.webhook.add') }}
       </button>
     </div>
 
@@ -19,11 +19,11 @@
       <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
         <thead class="bg-gray-50 dark:bg-gray-800">
           <tr>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Tên</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">URL</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Sự kiện</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Trạng thái</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Hành động</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">{{ $t('admin.webhook.name') }}</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">{{ $t('admin.webhook.url') }}</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">{{ $t('admin.webhook.events') }}</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">{{ $t('admin.webhook.status') }}</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">{{ $t('admin.webhook.actions') }}</th>
           </tr>
         </thead>
         <tbody class="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
@@ -33,13 +33,13 @@
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ webhook.eventTypes ? webhook.eventTypes.join(', ') : '-' }}</td>
             <td class="px-6 py-4 whitespace-nowrap">
               <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full" :class="getStatusClass(webhook)">
-                {{ webhook.isActive ? 'Active' : 'Inactive' }}
+                {{ webhook.isActive ? $t('common.active') : $t('common.inactive') }}
               </span>
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-              <button @click="testWebhook(webhook.id)" class="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300 mr-3">Test</button>
-              <button @click="editWebhook(webhook)" class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 mr-3">Sửa</button>
-              <button @click="deleteWebhook(webhook.id)" class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300">Xóa</button>
+              <button @click="testWebhook(webhook.id)" class="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300 mr-3">{{ $t('admin.webhook.test') }}</button>
+              <button @click="editWebhook(webhook)" class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 mr-3">{{ $t('admin.webhook.editBtn') }}</button>
+              <button @click="deleteWebhook(webhook.id)" class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300">{{ $t('admin.webhook.deleteBtn') }}</button>
             </td>
           </tr>
         </tbody>
@@ -50,20 +50,20 @@
     <div v-if="showCreateModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
       <div class="bg-white dark:bg-gray-900 rounded-lg p-6 w-full max-w-md">
         <h2 class="text-xl font-bold text-gray-800 dark:text-white mb-4">
-          {{ editingWebhook ? 'Sửa Webhook' : 'Thêm Webhook' }}
+          {{ editingWebhook ? $t('admin.webhook.edit') : $t('admin.webhook.add') }}
         </h2>
         <form @submit.prevent="saveWebhook">
           <div class="space-y-4">
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Tên</label>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('admin.webhook.name') }}</label>
               <input v-model="formData.name" type="text" required class="w-full px-3 py-2 border rounded-md dark:bg-gray-800 dark:text-white" />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">URL</label>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('admin.webhook.url') }}</label>
               <input v-model="formData.url" type="url" required class="w-full px-3 py-2 border rounded-md dark:bg-gray-800 dark:text-white" />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Sự kiện</label>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('admin.webhook.events') }}</label>
               <div class="space-y-2">
                 <label v-for="event in eventTypes" :key="event" class="flex items-center">
                   <input type="checkbox" v-model="formData.eventTypes" :value="event" class="mr-2" />
@@ -72,13 +72,13 @@
               </div>
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Secret (optional)</label>
-              <input v-model="formData.secret" type="text" class="w-full px-3 py-2 border rounded-md dark:bg-gray-800 dark:text-white" placeholder="Để trống để tự động tạo" />
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('admin.webhook.secret') }}</label>
+              <input v-model="formData.secret" type="text" class="w-full px-3 py-2 border rounded-md dark:bg-gray-800 dark:text-white" :placeholder="$t('admin.webhook.secretPlaceholder')" />
             </div>
           </div>
           <div class="mt-6 flex justify-end gap-3">
-            <button type="button" @click="closeModal" class="px-4 py-2 border rounded-md hover:bg-gray-100 dark:hover:bg-gray-800">Hủy</button>
-            <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">Lưu</button>
+            <button type="button" @click="closeModal" class="px-4 py-2 border rounded-md hover:bg-gray-100 dark:hover:bg-gray-800">{{ $t('common.cancel') }}</button>
+            <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">{{ $t('common.save') }}</button>
           </div>
         </form>
       </div>
@@ -90,11 +90,13 @@
 import { Icon } from '@iconify/vue'
 import paymentAPI from '@/api/paymentApi'
 import { ref, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 export default {
   name: 'WebhookManagement',
   components: { Icon },
   setup() {
+    const { t } = useI18n()
     const webhooks = ref([])
     const loading = ref(false)
     const showCreateModal = ref(false)
@@ -140,7 +142,7 @@ export default {
     }
 
     const deleteWebhook = async (id) => {
-      if (confirm('Bạn có chắc muốn xóa webhook này?')) {
+      if (confirm(t('admin.webhook.deleteConfirm'))) {
         try {
           await paymentAPI.deleteWebhook(id)
           loadWebhooks()
@@ -153,10 +155,10 @@ export default {
     const testWebhook = async (id) => {
       try {
         await paymentAPI.testWebhook(id)
-        alert('Webhook test thành công!')
+        alert(t('admin.webhook.testSuccess'))
       } catch (error) {
         console.error('Error testing webhook:', error)
-        alert('Webhook test thất bại: ' + (error.response?.data?.message || error.message))
+        alert(t('admin.webhook.testFailed') + (error.response?.data?.message || error.message))
       }
     }
 
@@ -180,6 +182,7 @@ export default {
     })
 
     return {
+      t,
       webhooks,
       loading,
       showCreateModal,

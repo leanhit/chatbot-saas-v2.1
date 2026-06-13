@@ -49,6 +49,7 @@ public class SimplePaymentService {
     private final DiscountService discountService;
     private final PaymentAuditService paymentAuditService;
     private final PaymentMetricsService paymentMetricsService;
+    private final PaymentNotificationService paymentNotificationService;
 
     /**
      * Tạo yêu cầu nạp tiền mới
@@ -318,6 +319,27 @@ public class SimplePaymentService {
             paymentMetricsService.recordPaymentAmount(payment.getAmount());
 
             log.info("✅ Payment completed successfully: {}", referenceCode);
+            
+            // Trigger SSE live update if connection is active
+            try {
+                PaymentStatusResponse sseResponse = new PaymentStatusResponse();
+                sseResponse.setReferenceCode(payment.getReferenceCode());
+                sseResponse.setStatus(payment.getStatus().name());
+                sseResponse.setAmount(payment.getAmount());
+                sseResponse.setCurrency(payment.getCurrency());
+                sseResponse.setDescription(payment.getDescription());
+                sseResponse.setBankTransactionId(payment.getBankTransactionId());
+                sseResponse.setTargetPackageId(payment.getTargetPackageId());
+                sseResponse.setCreatedAt(payment.getCreatedAt());
+                sseResponse.setCompletedAt(payment.getCompletedAt());
+                sseResponse.setExpiresAt(payment.getExpiresAt());
+                sseResponse.setUpdatedAt(payment.getUpdatedAt());
+                sseResponse.withFormattedDates();
+                
+                paymentNotificationService.notifyPaymentSuccess(payment.getReferenceCode(), sseResponse);
+            } catch (Exception e) {
+                log.error("⚠️ Failed to send SSE notification: {}", e.getMessage());
+            }
             
         } catch (Exception e) {
             log.error("❌ Payment completion failed for {}: {}", referenceCode, e.getMessage(), e);

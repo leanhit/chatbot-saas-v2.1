@@ -33,7 +33,7 @@ public class TenantPackageService {
     @Value("${tenant.default.package:free}")
     private String defaultPackageId;
 
-    @Value("${tenant.package.max-duration-years:2}")
+    @Value("${tenant.package.max-duration-years:10}")
     private int maxDurationYears;
 
     /**

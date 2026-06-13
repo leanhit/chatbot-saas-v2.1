@@ -417,9 +417,9 @@ public class TenantService {
         if (req.getVisibility() != null) {
             tenant.setVisibility(req.getVisibility());
         }
-        if (req.getExpiresAt() != null) {
-            tenant.setExpiresAt(req.getExpiresAt());
-        }
+        // NOTE: expiresAt is intentionally NOT updated here.
+        // It is managed exclusively by TenantPackageService via the payment flow.
+        // Allowing direct modification would bypass payment validation and the cap logic.
 
         tenantRepository.save(tenant);
         auditLogService.logAction(tenant.getId(), currentUserEmail, "UPDATE_BASIC_INFO",

@@ -3,11 +3,11 @@
     <div class="flex justify-between items-center mb-6">
       <div class="flex items-center">
         <Icon icon="mdi:tag" class="text-2xl text-blue-600 dark:text-blue-400 mr-3" />
-        <h1 class="text-2xl font-bold text-gray-800 dark:text-white">Quản lý mã giảm giá</h1>
+        <h1 class="text-2xl font-bold text-gray-800 dark:text-white">{{ $t('admin.discount.title') }}</h1>
       </div>
-      <button @click="showCreateModal = true" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
+      <button @click="showCreateModal = true" class="inline-flex items-center bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
         <Icon icon="mdi:plus" class="mr-2" />
-        Thêm mã giảm giá
+        {{ $t('admin.discount.add') }}
       </button>
     </div>
 
@@ -19,13 +19,13 @@
       <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
         <thead class="bg-gray-50 dark:bg-gray-800">
           <tr>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Mã</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Loại</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Giá trị</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Sử dụng</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Hết hạn</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Trạng thái</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Hành động</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">{{ $t('admin.discount.code') }}</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">{{ $t('admin.discount.type') }}</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">{{ $t('admin.discount.value') }}</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">{{ $t('admin.discount.usage') }}</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">{{ $t('admin.discount.expires') }}</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">{{ $t('admin.discount.status') }}</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">{{ $t('admin.discount.actions') }}</th>
           </tr>
         </thead>
         <tbody class="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
@@ -41,12 +41,12 @@
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ formatDate(discount.expiresAt) }}</td>
             <td class="px-6 py-4 whitespace-nowrap">
               <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full" :class="getStatusClass(discount)">
-                {{ discount.isActive ? 'Active' : 'Inactive' }}
+                {{ discount.isActive ? $t('common.active') : $t('common.inactive') }}
               </span>
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-              <button @click="editDiscount(discount)" class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 mr-3">Sửa</button>
-              <button @click="deleteDiscount(discount.id)" class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300">Xóa</button>
+              <button @click="editDiscount(discount)" class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 mr-3">{{ $t('admin.discount.editBtn') }}</button>
+              <button @click="deleteDiscount(discount.id)" class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300">{{ $t('admin.discount.deleteBtn') }}</button>
             </td>
           </tr>
         </tbody>
@@ -57,37 +57,37 @@
     <div v-if="showCreateModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
       <div class="bg-white dark:bg-gray-900 rounded-lg p-6 w-full max-w-md">
         <h2 class="text-xl font-bold text-gray-800 dark:text-white mb-4">
-          {{ editingDiscount ? 'Sửa mã giảm giá' : 'Thêm mã giảm giá' }}
+          {{ editingDiscount ? $t('admin.discount.edit') : $t('admin.discount.add') }}
         </h2>
         <form @submit.prevent="saveDiscount">
           <div class="space-y-4">
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Mã</label>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('admin.discount.code') }}</label>
               <input v-model="formData.code" type="text" required class="w-full px-3 py-2 border rounded-md dark:bg-gray-800 dark:text-white" />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Loại</label>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('admin.discount.type') }}</label>
               <select v-model="formData.type" class="w-full px-3 py-2 border rounded-md dark:bg-gray-800 dark:text-white">
-                <option value="PERCENTAGE">Phần trăm (%)</option>
-                <option value="FIXED_AMOUNT">Số tiền cố định</option>
+                <option value="PERCENTAGE">{{ $t('admin.discount.percentage') }}</option>
+                <option value="FIXED_AMOUNT">{{ $t('admin.discount.fixedAmount') }}</option>
               </select>
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Giá trị</label>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('admin.discount.value') }}</label>
               <input v-model.number="formData.value" type="number" required class="w-full px-3 py-2 border rounded-md dark:bg-gray-800 dark:text-white" />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Số lần sử dụng tối đa</label>
-              <input v-model.number="formData.maxUses" type="number" class="w-full px-3 py-2 border rounded-md dark:bg-gray-800 dark:text-white" placeholder="Để trống nếu không giới hạn" />
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('admin.discount.maxUses') }}</label>
+              <input v-model.number="formData.maxUses" type="number" class="w-full px-3 py-2 border rounded-md dark:bg-gray-800 dark:text-white" :placeholder="$t('admin.discount.maxUsesPlaceholder')" />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Ngày hết hạn</label>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('admin.discount.expiresAt') }}</label>
               <input v-model="formData.expiresAt" type="datetime-local" class="w-full px-3 py-2 border rounded-md dark:bg-gray-800 dark:text-white" />
             </div>
           </div>
           <div class="mt-6 flex justify-end gap-3">
-            <button type="button" @click="closeModal" class="px-4 py-2 border rounded-md hover:bg-gray-100 dark:hover:bg-gray-800">Hủy</button>
-            <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">Lưu</button>
+            <button type="button" @click="closeModal" class="px-4 py-2 border rounded-md hover:bg-gray-100 dark:hover:bg-gray-800">{{ $t('common.cancel') }}</button>
+            <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">{{ $t('common.save') }}</button>
           </div>
         </form>
       </div>
@@ -99,11 +99,13 @@
 import { Icon } from '@iconify/vue'
 import paymentAPI from '@/api/paymentApi'
 import { ref, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 export default {
   name: 'DiscountManagement',
   components: { Icon },
   setup() {
+    const { t } = useI18n()
     const discounts = ref([])
     const loading = ref(false)
     const showCreateModal = ref(false)
@@ -149,7 +151,7 @@ export default {
     }
 
     const deleteDiscount = async (id) => {
-      if (confirm('Bạn có chắc muốn xóa mã giảm giá này?')) {
+      if (confirm(t('admin.discount.deleteConfirm'))) {
         try {
           await paymentAPI.deleteDiscount(id)
           loadDiscounts()
@@ -191,6 +193,7 @@ export default {
     })
 
     return {
+      t,
       discounts,
       loading,
       showCreateModal,

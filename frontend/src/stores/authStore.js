@@ -280,6 +280,38 @@ export const useAuthStore = defineStore('auth', () => {
       tenantStore.clearTenant()
       tenantStore.userTenants = [] // Clear tenant list in memory
       
+      // Reset all other Pinia stores to avoid memory state pollution
+      try {
+        const { usePaymentStore } = await import('@/stores/paymentStore')
+        usePaymentStore().resetState()
+      } catch (e) {
+        console.warn('Failed to reset payment store:', e)
+      }
+      try {
+        const { usePennyBotStore } = await import('@/stores/pennyBotStore')
+        usePennyBotStore().resetStore()
+      } catch (e) {
+        console.warn('Failed to reset penny bot store:', e)
+      }
+      try {
+        const { usePennyConnectionStore } = await import('@/stores/pennyConnectionStore')
+        usePennyConnectionStore().resetStore()
+      } catch (e) {
+        console.warn('Failed to reset penny connection store:', e)
+      }
+      try {
+        const { usePennyRuleStore } = await import('@/stores/pennyRuleStore')
+        usePennyRuleStore().resetStore()
+      } catch (e) {
+        console.warn('Failed to reset penny rule store:', e)
+      }
+      try {
+        const { useSearchStore } = await import('@/stores/searchStore')
+        useSearchStore().resetSearch()
+      } catch (e) {
+        console.warn('Failed to reset search store:', e)
+      }
+      
       // Clear ALL auth data
       token.value = null
       refreshToken.value = null
@@ -295,8 +327,8 @@ export const useAuthStore = defineStore('auth', () => {
       // Prevent tenant store from hydrating old data on next login
       localStorage.setItem('should_hydrate_tenant', 'false')
       
-      // Redirect to login
-      await router.push({ name: 'login' })
+      // Force page reload to clear all in-memory Pinia state completely
+      window.location.href = '/login'
     }
   }
   /**
