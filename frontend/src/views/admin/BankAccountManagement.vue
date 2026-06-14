@@ -23,45 +23,178 @@
     <!-- Bank Account Form -->
     <div v-else class="bg-white dark:bg-gray-900 rounded-lg shadow p-6">
       <form @submit.prevent="saveBankInfo" class="space-y-6">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              {{ $t('admin.bank.bankName') }}
-            </label>
-            <input
-              v-model="formData.bankName"
-              type="text"
-              required
-              class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:text-white"
-              :placeholder="$t('admin.bank.bankNamePlaceholder')"
-            />
-          </div>
+        
+        <!-- Bank Account Info Section -->
+        <div class="border border-gray-200 dark:border-gray-700 rounded-lg">
+          <button
+            type="button"
+            @click="toggleSection('bankAccount')"
+            class="w-full px-4 py-3 flex items-center justify-between bg-gray-50 dark:bg-gray-800 rounded-t-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+          >
+            <div class="flex items-center">
+              <Icon icon="mdi:bank" class="text-xl text-blue-600 dark:text-blue-400 mr-3" />
+              <h3 class="text-lg font-semibold text-gray-800 dark:text-white">
+                {{ $t('admin.bank.bankAccountInfoTitle') }}
+              </h3>
+            </div>
+            <Icon :icon="sections.bankAccount ? 'mdi:chevron-up' : 'mdi:chevron-down'" class="text-gray-500" />
+          </button>
           
-          <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              {{ $t('admin.bank.accountNumber') }}
-            </label>
-            <input
-              v-model="formData.accountNumber"
-              type="text"
-              required
-              class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:text-white font-mono"
-              :placeholder="$t('admin.bank.accountNumberPlaceholder')"
-            />
+          <div v-show="sections.bankAccount" class="p-4 space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  {{ $t('admin.bank.bankName') }}
+                </label>
+                <input
+                  v-model="formData.bankName"
+                  type="text"
+                  required
+                  class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:text-white"
+                  :placeholder="$t('admin.bank.bankNamePlaceholder')"
+                />
+              </div>
+              
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  {{ $t('admin.bank.accountNumber') }}
+                </label>
+                <input
+                  v-model="formData.accountNumber"
+                  type="text"
+                  required
+                  class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:text-white font-mono"
+                  :placeholder="$t('admin.bank.accountNumberPlaceholder')"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                {{ $t('admin.bank.accountName') }}
+              </label>
+              <input
+                v-model="formData.accountName"
+                type="text"
+                required
+                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:text-white"
+                :placeholder="$t('admin.bank.accountNamePlaceholder')"
+              />
+            </div>
           </div>
         </div>
 
-        <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            {{ $t('admin.bank.accountName') }}
-          </label>
-          <input
-            v-model="formData.accountName"
-            type="text"
-            required
-            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:text-white"
-            :placeholder="$t('admin.bank.accountNamePlaceholder')"
-          />
+        <!-- Bank API Configuration Section -->
+        <div class="border border-gray-200 dark:border-gray-700 rounded-lg">
+          <button
+            type="button"
+            @click="toggleSection('apiConfig')"
+            class="w-full px-4 py-3 flex items-center justify-between bg-gray-50 dark:bg-gray-800 rounded-t-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+          >
+            <div class="flex items-center">
+              <Icon icon="mdi:api" class="text-xl text-blue-600 dark:text-blue-400 mr-3" />
+              <h3 class="text-lg font-semibold text-gray-800 dark:text-white">
+                {{ $t('admin.bank.apiConfigTitle') }}
+              </h3>
+            </div>
+            <Icon :icon="sections.apiConfig ? 'mdi:chevron-up' : 'mdi:chevron-down'" class="text-gray-500" />
+          </button>
+          
+          <div v-show="sections.apiConfig" class="p-4 space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  {{ $t('admin.bank.provider') }}
+                </label>
+                <select
+                  v-model="formData.provider"
+                  class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:text-white"
+                >
+                  <option value="mock">{{ $t('admin.bank.providerMock') }}</option>
+                  <option value="vietqr">{{ $t('admin.bank.providerVietQR') }}</option>
+                  <option value="nganluong">{{ $t('admin.bank.providerNganLuong') }}</option>
+                  <option value="custom">{{ $t('admin.bank.providerCustom') }}</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  {{ $t('admin.bank.apiUrl') }}
+                </label>
+                <input
+                  v-model="formData.apiUrl"
+                  type="url"
+                  class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:text-white font-mono"
+                  :placeholder="$t('admin.bank.apiUrlPlaceholder')"
+                />
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  {{ $t('admin.bank.apiKey') }}
+                </label>
+                <div class="relative">
+                  <input
+                    v-model="formData.apiKey"
+                    :type="showApiKey ? 'text' : 'password'"
+                    class="w-full px-3 py-2 pr-10 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:text-white font-mono"
+                    :placeholder="$t('admin.bank.apiKeyPlaceholder')"
+                  />
+                  <button
+                    type="button"
+                    @click="showApiKey = !showApiKey"
+                    class="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                  >
+                    <Icon :icon="showApiKey ? 'mdi:eye-off' : 'mdi:eye'" />
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  {{ $t('admin.bank.timeout') }}
+                </label>
+                <input
+                  v-model.number="formData.timeout"
+                  type="number"
+                  min="1000"
+                  step="1000"
+                  class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:text-white"
+                  :placeholder="$t('admin.bank.timeoutPlaceholder')"
+                />
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">{{ $t('admin.bank.timeoutHint') }}</p>
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  {{ $t('admin.bank.retryAttempts') }}
+                </label>
+                <input
+                  v-model.number="formData.retryAttempts"
+                  type="number"
+                  min="0"
+                  max="10"
+                  class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:text-white"
+                  :placeholder="$t('admin.bank.retryAttemptsPlaceholder')"
+                />
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  {{ $t('admin.bank.retryDelay') }}
+                </label>
+                <input
+                  v-model.number="formData.retryDelay"
+                  type="number"
+                  min="0"
+                  step="100"
+                  class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:text-white"
+                  :placeholder="$t('admin.bank.retryDelayPlaceholder')"
+                />
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">{{ $t('admin.bank.retryDelayHint') }}</p>
+              </div>
+            </div>
+          </div>
         </div>
 
         <!-- Preview Section -->
@@ -79,9 +212,33 @@
               <span class="text-gray-600 dark:text-gray-400">{{ $t('admin.bank.accountNumber') }}:</span>
               <span class="font-mono font-semibold text-gray-800 dark:text-white">{{ formData.accountNumber || '-' }}</span>
             </div>
-            <div class="flex justify-between items-center py-2">
+            <div class="flex justify-between items-center py-2 border-b border-gray-200 dark:border-gray-700">
               <span class="text-gray-600 dark:text-gray-400">{{ $t('admin.bank.accountName') }}:</span>
               <span class="font-semibold text-gray-800 dark:text-white">{{ formData.accountName || '-' }}</span>
+            </div>
+            <div class="flex justify-between items-center py-2 border-b border-gray-200 dark:border-gray-700">
+              <span class="text-gray-600 dark:text-gray-400">{{ $t('admin.bank.provider') }}:</span>
+              <span class="font-semibold text-gray-800 dark:text-white">{{ formData.provider || '-' }}</span>
+            </div>
+            <div class="flex justify-between items-center py-2 border-b border-gray-200 dark:border-gray-700">
+              <span class="text-gray-600 dark:text-gray-400">{{ $t('admin.bank.apiUrl') }}:</span>
+              <span class="font-mono text-sm text-gray-800 dark:text-white">{{ formData.apiUrl || '-' }}</span>
+            </div>
+            <div class="flex justify-between items-center py-2 border-b border-gray-200 dark:border-gray-700">
+              <span class="text-gray-600 dark:text-gray-400">{{ $t('admin.bank.apiKey') }}:</span>
+              <span class="font-mono text-sm text-gray-800 dark:text-white">{{ formData.apiKey ? '••••••••' : '-' }}</span>
+            </div>
+            <div class="flex justify-between items-center py-2 border-b border-gray-200 dark:border-gray-700">
+              <span class="text-gray-600 dark:text-gray-400">{{ $t('admin.bank.timeout') }}:</span>
+              <span class="font-semibold text-gray-800 dark:text-white">{{ formData.timeout ? formData.timeout + 'ms' : '-' }}</span>
+            </div>
+            <div class="flex justify-between items-center py-2 border-b border-gray-200 dark:border-gray-700">
+              <span class="text-gray-600 dark:text-gray-400">{{ $t('admin.bank.retryAttempts') }}:</span>
+              <span class="font-semibold text-gray-800 dark:text-white">{{ formData.retryAttempts || '-' }}</span>
+            </div>
+            <div class="flex justify-between items-center py-2">
+              <span class="text-gray-600 dark:text-gray-400">{{ $t('admin.bank.retryDelay') }}:</span>
+              <span class="font-semibold text-gray-800 dark:text-white">{{ formData.retryDelay ? formData.retryDelay + 'ms' : '-' }}</span>
             </div>
           </div>
         </div>
@@ -147,15 +304,32 @@ export default {
     const saving = ref(false)
     const message = ref('')
     const messageType = ref('success')
+    const showApiKey = ref(false)
+    const sections = ref({
+      bankAccount: true,
+      apiConfig: false
+    })
     const formData = ref({
       bankName: '',
       accountNumber: '',
-      accountName: ''
+      accountName: '',
+      provider: 'mock',
+      apiUrl: '',
+      apiKey: '',
+      timeout: 30000,
+      retryAttempts: 3,
+      retryDelay: 1000
     })
     const originalData = ref({
       bankName: '',
       accountNumber: '',
-      accountName: ''
+      accountName: '',
+      provider: 'mock',
+      apiUrl: '',
+      apiKey: '',
+      timeout: 30000,
+      retryAttempts: 3,
+      retryDelay: 1000
     })
 
     const loadBankInfo = async () => {
@@ -165,7 +339,13 @@ export default {
         formData.value = {
           bankName: response.data.bankName || '',
           accountNumber: response.data.accountNumber || '',
-          accountName: response.data.accountName || ''
+          accountName: response.data.accountName || '',
+          provider: response.data.provider || 'mock',
+          apiUrl: response.data.apiUrl || '',
+          apiKey: response.data.apiKey || '',
+          timeout: response.data.timeout || 30000,
+          retryAttempts: response.data.retryAttempts || 3,
+          retryDelay: response.data.retryDelay || 1000
         }
         originalData.value = { ...formData.value }
       } catch (error) {
@@ -217,6 +397,10 @@ export default {
       return `${baseClasses} ${typeClasses[messageType.value] || typeClasses.info}`
     }
 
+    const toggleSection = (sectionName) => {
+      sections.value[sectionName] = !sections.value[sectionName]
+    }
+
     onMounted(() => {
       loadBankInfo()
     })
@@ -227,10 +411,13 @@ export default {
       saving,
       message,
       messageType,
+      showApiKey,
+      sections,
       formData,
       saveBankInfo,
       resetForm,
-      getMessageClass
+      getMessageClass,
+      toggleSection
     }
   }
 }

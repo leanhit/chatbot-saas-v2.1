@@ -4,6 +4,7 @@ import com.chatbot.core.simplepayment.model.Discount;
 import com.chatbot.core.simplepayment.repository.DiscountRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import com.chatbot.shared.exceptions.ResourceNotFoundException;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
@@ -110,8 +111,8 @@ public class DiscountService {
     public void useDiscount(String code, Long userId) {
         log.info("🎟️ Using discount code: {} by user: {}", code, userId);
 
-        Discount discount = discountRepository.findByCode(code)
-                .orElseThrow(() -> new RuntimeException("Discount not found: " + code));
+        Discount discount = discountRepository.findByCodeWithLock(code)
+                .orElseThrow(() -> new ResourceNotFoundException("Discount not found: " + code));
 
         // Increment usage count
         discount.setUsageCount(discount.getUsageCount() + 1);
@@ -155,7 +156,7 @@ public class DiscountService {
         log.info("🔄 Updating discount: {}", id);
 
         Discount existing = discountRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Discount not found: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Discount not found: " + id));
 
         existing.setName(discount.getName());
         existing.setDiscountType(discount.getDiscountType());
@@ -184,7 +185,7 @@ public class DiscountService {
         log.info("🗑️ Deleting discount: {}", id);
 
         Discount discount = discountRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Discount not found: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Discount not found: " + id));
 
         discountRepository.delete(discount);
         log.info("✅ Discount deleted: {}", discount.getCode());

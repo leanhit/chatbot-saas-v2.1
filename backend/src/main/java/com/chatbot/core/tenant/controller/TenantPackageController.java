@@ -3,6 +3,7 @@ package com.chatbot.core.tenant.controller;
 import com.chatbot.core.tenant.service.TenantPackageService;
 import com.chatbot.core.simplepayment.model.Package;
 import com.chatbot.core.tenant.dto.TenantPackageInfo;
+import com.chatbot.core.tenant.dto.TenantPackageDetailResponse;
 import com.chatbot.core.tenant.infra.TenantContext;
 import com.chatbot.shared.constants.ApiConstants;
 import com.chatbot.shared.dto.ApiResponse;
@@ -194,13 +195,13 @@ public class TenantPackageController {
     @GetMapping("/my-package")
     @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Get my package info", description = "Get current user's package info")
-    public ResponseEntity<ApiResponse<Object>> getMyPackage(
+    public ResponseEntity<ApiResponse<TenantPackageDetailResponse>> getMyPackage(
             @AuthenticationPrincipal UserDetails userDetails,
             HttpServletRequest httpRequest) {
         try {
             Long tenantId = extractTenantId(userDetails, httpRequest);
             
-            java.util.Map<String, Object> response = tenantPackageService.getMyPackageInfo(tenantId);
+            TenantPackageDetailResponse response = tenantPackageService.getMyPackageInfo(tenantId);
             
             return ResponseEntity.ok(ApiResponse.success(response, "Package info retrieved successfully"));
         } catch (Exception e) {

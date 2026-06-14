@@ -12,6 +12,10 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 
 import java.security.MessageDigest;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.chatbot.shared.exceptions.ResourceNotFoundException;
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
@@ -24,6 +28,7 @@ import java.util.UUID;
 public class WebhookService {
 
     private final WebhookRepository webhookRepository;
+    private final ObjectMapper objectMapper;
     private final RestTemplate restTemplate = new RestTemplate();
 
     /**
@@ -52,7 +57,7 @@ public class WebhookService {
      * Trigger webhook for payment event
      */
     @Async
-    @Transactional(readOnly = true, transactionManager = "sharedTransactionManager")
+    @Transactional(transactionManager = "sharedTransactionManager")
     public void triggerWebhook(Webhook.WebhookEventType eventType, SimplePayment payment) {
         log.info("🪝 Triggering webhooks for event: {}, payment: {}", eventType, payment.getReferenceCode());
 
@@ -109,8 +114,7 @@ public class WebhookService {
         payload.put("data", buildPaymentData(payment));
         
         try {
-            com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
-            return mapper.writeValueAsString(payload);
+            return objectMapper.writeValueAsString(payload);
         } catch (Exception e) {
             throw new RuntimeException("Failed to build webhook payload", e);
         }
@@ -138,8 +142,10 @@ public class WebhookService {
      */
     private String generateSignature(String payload, String secret) {
         try {
-            MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            byte[] hash = digest.digest((payload + secret).getBytes("UTF-8"));
+            Mac mac = Mac.getInstance("HmacSHA256");
+            SecretKeySpec secretKeySpec = new SecretKeySpec(secret.getBytes("UTF-8"), "HmacSHA256");
+            mac.init(secretKeySpec);
+            byte[] hash = mac.doFinal(payload.getBytes("UTF-8"));
             StringBuilder hexString = new StringBuilder();
             for (byte b : hash) {
                 String hex = Integer.toHexString(0xff & b);
@@ -175,7 +181,7 @@ public class WebhookService {
         log.info("🔄 Updating webhook: {}", id);
 
         Webhook existing = webhookRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Webhook not found: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Webhook not found: " + id));
 
         existing.setName(webhook.getName());
         existing.setUrl(webhook.getUrl());
@@ -199,7 +205,7 @@ public class WebhookService {
         log.info("🗑️ Deleting webhook: {}", id);
 
         Webhook webhook = webhookRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Webhook not found: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Webhook not found: " + id));
 
         webhookRepository.delete(webhook);
         log.info("✅ Webhook deleted: {}", webhook.getName());
@@ -212,7 +218,7 @@ public class WebhookService {
         log.info("🧪 Testing webhook: {}", webhookId);
 
         Webhook webhook = webhookRepository.findById(webhookId)
-                .orElseThrow(() -> new RuntimeException("Webhook not found: " + webhookId));
+                .orElseThrow(() -> new ResourceNotFoundException("Webhook not found: " + webhookId));
 
         // Create test payment
         SimplePayment testPayment = SimplePayment.builder()

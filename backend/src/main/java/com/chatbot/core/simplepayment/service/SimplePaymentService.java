@@ -12,9 +12,9 @@ import com.chatbot.core.simplepayment.repository.SimplePaymentRepository;
 import com.chatbot.core.simplepayment.repository.PackageRepository;
 import com.chatbot.core.simplepayment.metrics.PaymentMetricsService;
 import com.chatbot.core.tenant.infra.TenantContext;
-import com.chatbot.core.simplepayment.service.UserBalanceService;
-import com.chatbot.core.user.model.User;
-import com.chatbot.core.user.repository.UserRepository;
+import com.chatbot.shared.exceptions.ResourceNotFoundException;
+import com.chatbot.core.simplepayment.exception.PaymentNotFoundException;
+import com.chatbot.core.simplepayment.exception.PaymentException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -35,7 +35,6 @@ public class SimplePaymentService {
     private final SimplePaymentRepository paymentRepository;
     private final PackageRepository packageRepository;
     private final UserBalanceService userBalanceService;
-    private final UserRepository userRepository;
     private final QRCodeService qrCodeService;
     private final BankApiService bankApiService;
     private final RedisPaymentService redisPaymentService;
@@ -183,7 +182,7 @@ public class SimplePaymentService {
         log.info("🔍 Checking payment status: {}", referenceCode);
 
         SimplePayment payment = paymentRepository.findByReferenceCode(referenceCode)
-                .orElseThrow(() -> new RuntimeException("Payment not found: " + referenceCode));
+                .orElseThrow(() -> new PaymentNotFoundException("Payment not found: " + referenceCode));
 
         PaymentStatusResponse response = new PaymentStatusResponse();
         response.setReferenceCode(payment.getReferenceCode());
@@ -206,7 +205,7 @@ public class SimplePaymentService {
     @Transactional(readOnly = true, transactionManager = "sharedTransactionManager")
     public SimplePayment getPaymentByReference(String referenceCode) {
         return paymentRepository.findByReferenceCode(referenceCode)
-                .orElseThrow(() -> new RuntimeException("Payment not found: " + referenceCode));
+                .orElseThrow(() -> new PaymentNotFoundException("Payment not found: " + referenceCode));
     }
 
     /**
@@ -219,7 +218,7 @@ public class SimplePaymentService {
         log.info("✅ Completing payment: {}", referenceCode);
 
         SimplePayment payment = paymentRepository.findByReferenceCode(referenceCode)
-                .orElseThrow(() -> new RuntimeException("Payment not found: " + referenceCode));
+                .orElseThrow(() -> new PaymentNotFoundException("Payment not found: " + referenceCode));
 
         if (payment.getStatus() != PaymentStatus.PENDING) {
             log.warn("Payment {} is not pending: {}", referenceCode, payment.getStatus());
@@ -233,7 +232,7 @@ public class SimplePaymentService {
             payment.setCompletedAt(LocalDateTime.now());
             paymentRepository.save(payment);
 
-            log.info("📝 [DEBUG] Payment status updated to COMPLETED for: {}, targetPackage: {}",
+            log.debug("📝 [DEBUG] Payment status updated to COMPLETED for: {}, targetPackage: {}",
                     referenceCode, payment.getTargetPackageId());
 
             // 1. Process package upgrade if a target package is requested (it handles balance crediting internally)
@@ -246,10 +245,10 @@ public class SimplePaymentService {
                     () -> packageUpgradeService.processPackageUpgrade(payment)
                 );
                 
-                log.info("📝 [DEBUG] Package upgrade result for payment {}: {}", referenceCode, upgradeSuccess);
+                log.debug("📝 [DEBUG] Package upgrade result for payment {}: {}", referenceCode, upgradeSuccess);
                 
                 if (!upgradeSuccess) {
-                    throw new RuntimeException("Package upgrade failed for payment: " + referenceCode);
+                    throw new PaymentException("Package upgrade failed for payment: " + referenceCode);
                 }
                 
                 log.info(" [SimplePaymentService] Package upgrade completed successfully for payment: {}", 
@@ -447,82 +446,24 @@ public class SimplePaymentService {
         log.info("✅ Expired {} pending payments", expiredPayments.size());
     }
 
-    @Transactional(propagation = org.springframework.transaction.annotation.Propagation.REQUIRES_NEW, transactionManager = "userTransactionManager")
     public void updateUserBalanceInSeparateTransaction(Long userId, BigDecimal amount) {
-        User user = userRepository.findByIdWithLock(userId)
-                .orElseThrow(() -> new RuntimeException("User not found: " + userId));
-
-        // Initialize balance if null
-        if (user.getBalance() == null) {
-            user.setBalance(BigDecimal.ZERO);
-        }
-
-        user.setBalance(user.getBalance().add(amount));
-        userRepository.save(user);
-
-        log.info("💸 Updated user balance: {} + {} = {}", userId, amount, user.getBalance());
+        userBalanceService.updateUserBalanceInSeparateTransaction(userId, amount);
     }
 
+    /**
+     * @deprecated Use updateUserBalanceInSeparateTransaction for proper transaction isolation.
+     * This non-transactional version is kept only for compatibility; prefer the annotated variant.
+     */
+    @Deprecated
     public void updateUserBalance(Long userId, BigDecimal amount) {
-        User user = userRepository.findByIdWithLock(userId)
-                .orElseThrow(() -> new RuntimeException("User not found: " + userId));
-
-        // Initialize balance if null
-        if (user.getBalance() == null) {
-            user.setBalance(BigDecimal.ZERO);
-        }
-
-        user.setBalance(user.getBalance().add(amount));
-        userRepository.save(user);
-
-        log.info("💸 Updated user balance: {} + {} = {}", userId, amount, user.getBalance());
+        userBalanceService.updateUserBalanceInSeparateTransaction(userId, amount);
     }
 
-    /**
-     * Deduct balance from user when purchasing package
-     */
-    @Transactional(propagation = org.springframework.transaction.annotation.Propagation.REQUIRES_NEW, transactionManager = "userTransactionManager")
     public void deductUserBalance(Long userId, BigDecimal amount) {
-        User user = userRepository.findByIdWithLock(userId)
-                .orElseThrow(() -> new RuntimeException("User not found: " + userId));
-
-        // Initialize balance if null
-        if (user.getBalance() == null) {
-            user.setBalance(BigDecimal.ZERO);
-        }
-
-        // Check sufficient balance
-        if (user.getBalance().compareTo(amount) < 0) {
-            throw new RuntimeException(
-                String.format("Insufficient balance. Required: %s, Available: %s", 
-                    amount, user.getBalance())
-            );
-        }
-
-        BigDecimal oldBalance = user.getBalance();
-        user.setBalance(user.getBalance().subtract(amount));
-        userRepository.save(user);
-
-        log.info("💸 Deducted user balance: {} - {} = {}", userId, amount, user.getBalance());
-        log.info("💰 Balance change for user {}: {} → {}", userId, oldBalance, user.getBalance());
+        userBalanceService.deductUserBalance(userId, amount);
     }
 
-    /**
-     * Check if user has sufficient balance for package purchase
-     */
     public boolean hasSufficientBalance(Long userId, BigDecimal requiredAmount) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found: " + userId));
-
-        if (user.getBalance() == null) {
-            user.setBalance(BigDecimal.ZERO);
-            userRepository.save(user);
-        }
-
-        boolean sufficient = user.getBalance().compareTo(requiredAmount) >= 0;
-        log.info("🔍 Balance check for user {}: required={}, available={}, sufficient={}", 
-                userId, requiredAmount, user.getBalance(), sufficient);
-        
-        return sufficient;
+        return userBalanceService.hasSufficientBalance(userId, requiredAmount);
     }
 }

@@ -125,6 +125,14 @@ public class QRCodeService {
         private String bankName;
         private String accountNumber;
         private String accountName;
+        
+        // Bank API Configuration
+        private String provider;
+        private String apiUrl;
+        private String apiKey;
+        private Integer timeout;
+        private Integer retryAttempts;
+        private Integer retryDelay;
 
         // Getters and setters
         public String getBankName() { return bankName; }
@@ -133,5 +141,18 @@ public class QRCodeService {
         public void setAccountNumber(String accountNumber) { this.accountNumber = accountNumber; }
         public String getAccountName() { return accountName; }
         public void setAccountName(String accountName) { this.accountName = accountName; }
+        
+        public String getProvider() { return provider; }
+        public void setProvider(String provider) { this.provider = provider; }
+        public String getApiUrl() { return apiUrl; }
+        public void setApiUrl(String apiUrl) { this.apiUrl = apiUrl; }
+        public String getApiKey() { return apiKey; }
+        public void setApiKey(String apiKey) { this.apiKey = apiKey; }
+        public Integer getTimeout() { return timeout; }
+        public void setTimeout(Integer timeout) { this.timeout = timeout; }
+        public Integer getRetryAttempts() { return retryAttempts; }
+        public void setRetryAttempts(Integer retryAttempts) { this.retryAttempts = retryAttempts; }
+        public Integer getRetryDelay() { return retryDelay; }
+        public void setRetryDelay(Integer retryDelay) { this.retryDelay = retryDelay; }
     }
 }

@@ -1,6 +1,9 @@
 package com.chatbot.core.tenant.service;
 
 import com.chatbot.core.tenant.dto.TenantPackageInfo;
+import com.chatbot.core.tenant.dto.TenantPackageDetailResponse;
+import com.chatbot.shared.exceptions.ResourceNotFoundException;
+import com.chatbot.core.tenant.exception.TenantNotFoundException;
 import com.chatbot.core.tenant.model.Tenant;
 import com.chatbot.core.tenant.repository.TenantRepository;
 import com.chatbot.core.simplepayment.service.PackageService;
@@ -45,7 +48,7 @@ public class TenantPackageService {
                 defaultPackageId, tenant.getTenantKey());
 
         Package freePackage = packageRepository.findByPackageId(defaultPackageId)
-                .orElseThrow(() -> new RuntimeException(
+                .orElseThrow(() -> new ResourceNotFoundException(
                         "Default package not found in database: " + defaultPackageId));
 
         tenant.setCurrentPackageId(defaultPackageId);
@@ -66,13 +69,13 @@ public class TenantPackageService {
         log.info("[TenantPackageService] Upgrading tenant {} to package: {}", tenantId, packageId);
 
         Tenant tenant = tenantRepository.findById(tenantId)
-                .orElseThrow(() -> new RuntimeException("Tenant not found: " + tenantId));
+                .orElseThrow(() -> new TenantNotFoundException("Tenant not found: " + tenantId));
 
-        log.info("📝 [DEBUG] Before upgrade - tenantId: {}, currentPackageId: {}, targetPackageId: {}",
+        log.debug("📝 [DEBUG] Before upgrade - tenantId: {}, currentPackageId: {}, targetPackageId: {}",
                 tenantId, tenant.getCurrentPackageId(), packageId);
 
         Package newPackage = packageRepository.findByPackageId(packageId)
-                .orElseThrow(() -> new RuntimeException("Package not found: " + packageId));
+                .orElseThrow(() -> new ResourceNotFoundException("Package not found: " + packageId));
 
         String oldPackageId = tenant.getCurrentPackageId();
 
@@ -101,7 +104,7 @@ public class TenantPackageService {
 
         tenantRepository.save(tenant);
 
-        log.info("📝 [DEBUG] After save - tenantId: {}, currentPackageId: {}, expiresAt: {}",
+        log.debug("📝 [DEBUG] After save - tenantId: {}, currentPackageId: {}, expiresAt: {}",
                 tenantId, tenant.getCurrentPackageId(), tenant.getExpiresAt());
 
         auditLogService.logAction(tenantId, "system", "UPGRADE_PACKAGE",
@@ -145,7 +148,7 @@ public class TenantPackageService {
             try {
                 return tenantRepository.findByTenantKey(tenantKey)
                         .map(Tenant::getId)
-                        .orElseThrow(() -> new RuntimeException("Tenant not found: " + tenantKey));
+                        .orElseThrow(() -> new TenantNotFoundException("Tenant not found: " + tenantKey));
             } catch (Exception e) {
                 log.warn("[TenantPackageService] Cannot resolve tenant from key {}: {}", tenantKey, e.getMessage());
             }
@@ -154,54 +157,44 @@ public class TenantPackageService {
         if (username != null) {
             try {
                 User user = authRepository.findByEmail(username)
-                        .orElseThrow(() -> new RuntimeException("User not found: " + username));
+                        .orElseThrow(() -> new ResourceNotFoundException("User not found: " + username));
                 return tenantRepository.findByUserId(user.getId())
                         .map(Tenant::getId)
-                        .orElseThrow(() -> new RuntimeException("No tenant for user: " + user.getId()));
+                        .orElseThrow(() -> new TenantNotFoundException("No tenant for user: " + user.getId()));
             } catch (Exception e) {
                 log.warn("[TenantPackageService] Cannot resolve tenant from user {}: {}", username, e.getMessage());
             }
         }
 
-        throw new RuntimeException("Tenant ID không tìm thấy qua header hay user context");
+        throw new TenantNotFoundException("Tenant ID không tìm thấy qua header hay user context");
     }
 
     /**
      * Lấy thông tin gói dịch vụ hiện tại của tenant (dạng Map cho API response).
      */
     @Transactional(readOnly = true, transactionManager = "tenantTransactionManager")
-    public Map<String, Object> getMyPackageInfo(Long tenantId) {
+    public TenantPackageDetailResponse getMyPackageInfo(Long tenantId) {
         Tenant tenant = tenantRepository.findById(tenantId)
-                .orElseThrow(() -> new RuntimeException("Tenant not found"));
+                .orElseThrow(() -> new TenantNotFoundException("Tenant not found"));
 
         Package currentPackage = null;
         if (tenant.getCurrentPackageId() != null) {
             currentPackage = packageRepository.findByPackageId(tenant.getCurrentPackageId()).orElse(null);
         }
 
-        Map<String, Object> response = new HashMap<>();
-        response.put("tenantId", tenantId);
-        response.put("tenantKey", tenant.getTenantKey());
-        response.put("currentPackageId", tenant.getCurrentPackageId());
-        response.put("packageActivatedAt", tenant.getPackageActivatedAt());
-        response.put("expiresAt", tenant.getExpiresAt());
-
-        if (currentPackage != null) {
-            response.put("packageName", currentPackage.getName());
-            response.put("packagePrice", currentPackage.getPrice());
-            response.put("packageCurrency", currentPackage.getCurrency());
-            response.put("packageDuration", currentPackage.getDuration());
-            response.put("chatbotLimit", currentPackage.getChatbotLimit());
-            response.put("messageLimit", currentPackage.getMessageLimit());
-        } else {
-            response.put("packageName", null);
-            response.put("packagePrice", null);
-            response.put("packageCurrency", null);
-            response.put("packageDuration", null);
-            response.put("chatbotLimit", null);
-            response.put("messageLimit", null);
-        }
-        return response;
+        return TenantPackageDetailResponse.builder()
+                .tenantId(tenantId)
+                .tenantKey(tenant.getTenantKey())
+                .currentPackageId(tenant.getCurrentPackageId())
+                .packageActivatedAt(tenant.getPackageActivatedAt())
+                .expiresAt(tenant.getExpiresAt())
+                .packageName(currentPackage != null ? currentPackage.getName() : null)
+                .packagePrice(currentPackage != null ? currentPackage.getPrice() : null)
+                .packageCurrency(currentPackage != null ? currentPackage.getCurrency() : null)
+                .packageDuration(currentPackage != null ? currentPackage.getDuration() : null)
+                .chatbotLimit(currentPackage != null ? currentPackage.getChatbotLimit() : null)
+                .messageLimit(currentPackage != null ? currentPackage.getMessageLimit() : null)
+                .build();
     }
 
     /**
@@ -210,7 +203,7 @@ public class TenantPackageService {
     @Transactional(readOnly = true, transactionManager = "tenantTransactionManager")
     public TenantPackageInfo getCurrentTenantPackageInfo(Long tenantId) {
         Tenant tenant = tenantRepository.findById(tenantId)
-                .orElseThrow(() -> new RuntimeException("Tenant not found: " + tenantId));
+                .orElseThrow(() -> new TenantNotFoundException("Tenant not found: " + tenantId));
 
         Package currentPackage = resolvePackage(tenant.getCurrentPackageId());
         return TenantPackageInfo.from(tenantId, currentPackage, tenant.getPackageActivatedAt(), tenant.getExpiresAt());
@@ -219,7 +212,7 @@ public class TenantPackageService {
     @Transactional(readOnly = true, transactionManager = "tenantTransactionManager")
     public TenantPackageInfo getCurrentTenantPackageInfoByKey(String tenantKey) {
         Tenant tenant = tenantRepository.findByTenantKey(tenantKey)
-                .orElseThrow(() -> new RuntimeException("Tenant not found: " + tenantKey));
+                .orElseThrow(() -> new TenantNotFoundException("Tenant not found: " + tenantKey));
 
         Package currentPackage = resolvePackage(tenant.getCurrentPackageId());
         return TenantPackageInfo.from(tenant.getId(), currentPackage, tenant.getPackageActivatedAt(), tenant.getExpiresAt());
@@ -228,7 +221,7 @@ public class TenantPackageService {
     @Transactional(readOnly = true, transactionManager = "tenantTransactionManager")
     public Package getCurrentTenantPackage(Long tenantId) {
         Tenant tenant = tenantRepository.findById(tenantId)
-                .orElseThrow(() -> new RuntimeException("Tenant not found: " + tenantId));
+                .orElseThrow(() -> new TenantNotFoundException("Tenant not found: " + tenantId));
 
         if (tenant.getCurrentPackageId() == null) {
             log.warn("[TenantPackageService] Tenant {} has no package assigned", tenant.getTenantKey());
@@ -240,7 +233,7 @@ public class TenantPackageService {
     @Transactional(readOnly = true, transactionManager = "tenantTransactionManager")
     public Package getCurrentTenantPackageByKey(String tenantKey) {
         Tenant tenant = tenantRepository.findByTenantKey(tenantKey)
-                .orElseThrow(() -> new RuntimeException("Tenant not found: " + tenantKey));
+                .orElseThrow(() -> new TenantNotFoundException("Tenant not found: " + tenantKey));
 
         if (tenant.getCurrentPackageId() == null) {
             log.warn("[TenantPackageService] Tenant {} has no package assigned", tenantKey);
@@ -252,7 +245,7 @@ public class TenantPackageService {
     @Transactional(readOnly = true, transactionManager = "tenantTransactionManager")
     public boolean hasTenantPackage(Long tenantId, String packageId) {
         Tenant tenant = tenantRepository.findById(tenantId)
-                .orElseThrow(() -> new RuntimeException("Tenant not found: " + tenantId));
+                .orElseThrow(() -> new TenantNotFoundException("Tenant not found: " + tenantId));
         return packageId.equals(tenant.getCurrentPackageId());
     }
 
@@ -261,18 +254,14 @@ public class TenantPackageService {
      */
     @Transactional("tenantTransactionManager")
     public void initializeExistingTenants() {
-        log.info("[TenantPackageService] Initializing tenants without packages...");
-        int updatedCount = 0;
-        for (Tenant tenant : tenantRepository.findByCurrentPackageIdIsNull()) {
-            try {
-                assignDefaultPackageToTenant(tenant);
-                updatedCount++;
-            } catch (Exception e) {
-                log.error("[TenantPackageService] Failed to init tenant {}: {}",
-                        tenant.getTenantKey(), e.getMessage());
-            }
+        log.info("[TenantPackageService] Initializing tenants without packages in batch...");
+        try {
+            int updatedCount = tenantRepository.initializeTenantsWithDefaultPackage(defaultPackageId, LocalDateTime.now());
+            log.info("[TenantPackageService] Initialized {} tenants with default package '{}'", updatedCount, defaultPackageId);
+        } catch (Exception e) {
+            log.error("[TenantPackageService] Failed to batch initialize tenants: {}", e.getMessage(), e);
+            throw e;
         }
-        log.info("[TenantPackageService] Initialized {} tenants with free package", updatedCount);
     }
 
     /* ================= PRIVATE HELPERS ================= */

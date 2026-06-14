@@ -51,6 +51,7 @@ public class SimplePaymentController {
     private final PaymentRefundService paymentRefundService;
     private final PaymentRetryService paymentRetryService;
     private final com.chatbot.core.simplepayment.validation.PaymentValidationService paymentValidationService;
+    private final com.chatbot.core.simplepayment.service.SystemConfigService systemConfigService;
 
     /**
      * Tạo yêu cầu nạp tiền mới
@@ -201,14 +202,21 @@ public class SimplePaymentController {
     @PreAuthorize("hasAnyRole('ADMIN','SYSTEM_ADMIN')")
     @Operation(
         summary = "Update bank information (admin)",
-        description = "Update bank account information (Admin only)"
+        description = "Update bank account information and bank API configuration (Admin only)"
     )
-    public ResponseEntity<String> updateBankInfo(@RequestBody QRCodeService.BankInfo bankInfo) {
+    public ResponseEntity<String> updateBankInfo(
+            @RequestBody QRCodeService.BankInfo bankInfo,
+            @AuthenticationPrincipal UserDetails userDetails) {
         
-        log.info("🏦 Updating bank information");
+        log.info("🏦 Updating bank information by admin: {}", userDetails.getUsername());
 
         try {
+            // Update in-memory config for immediate effect
             qrCodeService.updateBankInfo(bankInfo);
+            
+            // Persist to database for runtime configuration
+            systemConfigService.saveBankConfig(bankInfo, userDetails.getUsername());
+            
             return ResponseEntity.ok("Bank information updated successfully");
 
         } catch (Exception e) {

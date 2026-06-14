@@ -38,19 +38,8 @@ public class PaymentCheckScheduler {
         }
     }
 
-    /**
-     * DISABLED - Payment expiration handled by Redis TTL and events
-     */
-    // @Scheduled(fixedDelay = 600000) // DISABLED - Use Redis TTL instead
-    public void expireOldPayments() {
-        log.debug("⏰ Running scheduled payment expiration...");
-        
-        try {
-            simplePaymentService.expireOldPayments();
-        } catch (Exception e) {
-            log.error("❌ Error in scheduled payment expiration: {}", e.getMessage(), e);
-        }
-    }
+    // NOTE: Payment expiration is handled by Redis TTL via PaymentTTLService.
+    // DB-based expireOldPayments() removed to avoid duplicate expiration logic.
 
     /**
      * Health check every minute

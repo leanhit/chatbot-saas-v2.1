@@ -17,7 +17,6 @@ import com.chatbot.core.simplepayment.service.PackageService;
 
 import jakarta.servlet.http.HttpServletRequest;
 import java.time.LocalDateTime;
-import java.util.Arrays;
 import java.util.List;
 
 @Service
@@ -34,10 +33,8 @@ public class PaymentPackageUpgradeService {
 
 
 
-    // Allowed package IDs for auto-upgrade
-    private static final List<String> ALLOWED_UPGRADE_PACKAGES = Arrays.asList(
-            "3months", "6months", "12months"
-    );
+    // NOTE: Package validation is now done dynamically against the database.
+    // The old static whitelist was removed to avoid requiring redeploys when new packages are added.
 
     /**
      * Validate and execute package upgrade after payment completion
@@ -88,7 +85,8 @@ public class PaymentPackageUpgradeService {
             }
 
             // Validate payment amount matches package price
-            if (!payment.getAmount().equals(targetPackage.getPrice())) {
+            // Use compareTo instead of equals to avoid BigDecimal scale mismatch (e.g. 500000 vs 500000.00)
+            if (payment.getAmount().compareTo(targetPackage.getPrice()) != 0) {
                 String error = String.format("Payment amount %s doesn't match package price %s", 
                         payment.getAmount(), targetPackage.getPrice());
                 log.error("❌ {} for payment {}", error, payment.getReferenceCode());
@@ -172,10 +170,13 @@ public class PaymentPackageUpgradeService {
     }
 
     /**
-     * Validate that the target package is allowed for auto-upgrade
+     * Validate that the target package is allowed for auto-upgrade.
+     * Checks against active packages in the database (dynamic, no hardcoded whitelist).
      */
     private boolean isValidUpgradePackage(String packageId) {
-        return ALLOWED_UPGRADE_PACKAGES.contains(packageId);
+        return packageRepository.findByPackageId(packageId)
+                .map(pkg -> Boolean.TRUE.equals(pkg.getIsActive()))
+                .orElse(false);
     }
 
     /**

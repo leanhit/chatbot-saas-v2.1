@@ -75,6 +75,10 @@ public interface TenantRepository extends JpaRepository<Tenant, Long> {
     @Query("SELECT t FROM Tenant t WHERE t.currentPackageId IS NULL")
     List<Tenant> findByCurrentPackageIdIsNull();
 
+    @org.springframework.data.jpa.repository.Modifying
+    @Query("UPDATE Tenant t SET t.currentPackageId = :defaultPackageId, t.packageActivatedAt = :activatedAt, t.expiresAt = null WHERE t.currentPackageId IS NULL")
+    int initializeTenantsWithDefaultPackage(@Param("defaultPackageId") String defaultPackageId, @Param("activatedAt") LocalDateTime activatedAt);
+
     // Tìm các tenant có gói đã hết hạn (không phải free)
     @Query("SELECT t FROM Tenant t WHERE t.expiresAt IS NOT NULL AND t.expiresAt <= :now AND t.currentPackageId != 'free'")
     List<Tenant> findExpiredTenants(@Param("now") LocalDateTime now);

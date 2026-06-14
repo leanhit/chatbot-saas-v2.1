@@ -27,6 +27,9 @@ public class RateLimitingFilter extends OncePerRequestFilter {
     @Value("${rate.limit.window:60}")
     private int windowSeconds;
 
+    @Value("${rate.limit.trust-proxy-headers:false}")
+    private boolean trustProxyHeaders;
+
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
@@ -56,14 +59,16 @@ public class RateLimitingFilter extends OncePerRequestFilter {
     }
 
     private String getClientId(HttpServletRequest request) {
-        String xForwardedFor = request.getHeader("X-Forwarded-For");
-        if (xForwardedFor != null && !xForwardedFor.isEmpty()) {
-            return xForwardedFor.split(",")[0].trim();
-        }
-        
-        String xRealIp = request.getHeader("X-Real-IP");
-        if (xRealIp != null && !xRealIp.isEmpty()) {
-            return xRealIp;
+        if (trustProxyHeaders) {
+            String xForwardedFor = request.getHeader("X-Forwarded-For");
+            if (xForwardedFor != null && !xForwardedFor.isEmpty()) {
+                return xForwardedFor.split(",")[0].trim();
+            }
+            
+            String xRealIp = request.getHeader("X-Real-IP");
+            if (xRealIp != null && !xRealIp.isEmpty()) {
+                return xRealIp;
+            }
         }
         
         return request.getRemoteAddr();

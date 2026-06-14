@@ -83,6 +83,7 @@ public class PaymentAuditLog {
         PACKAGE_UPGRADED,
         DISCOUNT_APPLIED,
         WEBHOOK_SENT,
-        WEBHOOK_FAILED
+        WEBHOOK_FAILED,
+        CONFIG_CHANGED
     }
 }

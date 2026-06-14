@@ -19,6 +19,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
@@ -179,16 +180,18 @@ public class PublicSimplePaymentController {
     }
 
     /**
-     * Public simulate payment
+     * Simulate bank payment - ADMIN only, for testing purposes.
+     * WARNING: This endpoint completes a payment without real bank verification.
      */
     @PostMapping("/test/simulate-payment")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(
-        summary = "Simulate bank payment (public test)",
-        description = "Simulate a bank transaction for testing purposes - no authentication required"
+        summary = "Simulate bank payment (ADMIN only)",
+        description = "Simulate a bank transaction for testing purposes - requires ADMIN role"
     )
     public ResponseEntity<String> simulatePayment(@RequestBody Map<String, Object> request) {
         
-        log.info("🧪 Simulating public bank payment");
+        log.info("🧪 Simulating bank payment (ADMIN)");
 
         try {
             String referenceCode = (String) request.get("referenceCode");
@@ -199,33 +202,41 @@ public class PublicSimplePaymentController {
             return ResponseEntity.ok("Payment simulated successfully");
 
         } catch (Exception e) {
-            log.error("❌ Failed to simulate public payment: {}", e.getMessage(), e);
+            log.error("❌ Failed to simulate payment: {}", e.getMessage(), e);
             return ResponseEntity.badRequest().body("Simulation failed: " + e.getMessage());
         }
     }
 
     /**
-     * Public payment history
+     * Payment history for the authenticated user's current tenant.
      */
     @GetMapping("/history")
     @Operation(
-        summary = "Get payment history (public)",
-        description = "Get all payments for mock user - no authentication required"
+        summary = "Get payment history",
+        description = "Get payment history for the authenticated user"
     )
     public ResponseEntity<List<PaymentStatusResponse>> getPaymentHistory() {
-
         try {
-            // Mock user and tenant IDs for public testing
-            Long userId = 1L;
-            Long tenantId = 1L;
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication == null || !authentication.isAuthenticated()) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            }
 
-            List<PaymentStatusResponse> payments = simplePaymentService.getUserPayments(userId, tenantId);
-            // Apply DateUtils formatting to all payments
+            String userEmail = authentication.getName();
+            User user = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new RuntimeException("User not found: " + userEmail));
+
+            Long tenantId = TenantContext.getTenantId();
+            if (tenantId == null) {
+                return ResponseEntity.badRequest().build();
+            }
+
+            List<PaymentStatusResponse> payments = simplePaymentService.getUserPayments(user.getId(), tenantId);
             payments.forEach(PaymentStatusResponse::withFormattedDates);
             return ResponseEntity.ok(payments);
 
         } catch (Exception e) {
-            log.error("❌ Failed to get public payment history: {}", e.getMessage(), e);
+            log.error("❌ Failed to get payment history: {}", e.getMessage(), e);
             return ResponseEntity.badRequest().build();
         }
     }

@@ -4,15 +4,11 @@ import com.chatbot.core.simplepayment.model.SimplePayment;
 import com.chatbot.core.simplepayment.repository.SimplePaymentRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -23,59 +19,38 @@ public class BankApiService {
 
     // Mock database for demo - in real implementation, call actual bank API
     private final Map<String, BankTransaction> mockTransactionDatabase = new ConcurrentHashMap<>();
-    
-    @Autowired
-    private RedisTemplate<String, Object> redisTemplate;
-    
-    @Autowired
-    private RedisPaymentService redisPaymentService;
-    
-    @Autowired
-    private SimplePaymentRepository paymentRepository;
-    
+
+    private final RedisTemplate<String, Object> redisTemplate;
+    private final RedisPaymentService redisPaymentService;
+    private final SimplePaymentRepository paymentRepository;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
+    public BankApiService(
+            RedisTemplate<String, Object> redisTemplate,
+            RedisPaymentService redisPaymentService,
+            SimplePaymentRepository paymentRepository) {
+        this.redisTemplate = redisTemplate;
+        this.redisPaymentService = redisPaymentService;
+        this.paymentRepository = paymentRepository;
+    }
+
     /**
-     * Find transaction by reference code
-     * In real implementation, this would call bank's API
+     * Find transaction by reference code.
+     * Only returns transactions that were explicitly simulated via simulateBankTransaction().
+     * In real production, this should call the actual bank's webhook/polling API.
      */
     public String findTransactionByReference(String referenceCode) {
-        log.info("🏦 Checking bank API for reference: {}", referenceCode);
+        log.debug("🏦 Checking bank mock database for reference: {}", referenceCode);
 
-        try {
-            // Simulate API call delay
-            Thread.sleep(500);
+        BankTransaction transaction = mockTransactionDatabase.get(referenceCode);
 
-            // Mock implementation - check if transaction exists
-            BankTransaction transaction = mockTransactionDatabase.get(referenceCode);
-            
-            if (transaction != null && !transaction.isProcessed()) {
-                log.info("✅ Found bank transaction: {} for reference: {}", transaction.getTransactionId(), referenceCode);
-                return transaction.getTransactionId();
-            }
-
-            // Simulate random transaction found (for demo)
-            if (Math.random() > 0.7) { // 30% chance to find transaction
-                String transactionId = "BANK" + System.currentTimeMillis();
-                BankTransaction newTransaction = new BankTransaction(
-                    transactionId, 
-                    referenceCode, 
-                    getMockAmount(referenceCode),
-                    LocalDateTime.now()
-                );
-                mockTransactionDatabase.put(referenceCode, newTransaction);
-                
-                log.info("🎲 Simulated bank transaction found: {} for reference: {}", transactionId, referenceCode);
-                return transactionId;
-            }
-
-            log.info("📭 No transaction found for reference: {}", referenceCode);
-            return null;
-
-        } catch (Exception e) {
-            log.error("❌ Error checking bank API: {}", e.getMessage(), e);
-            return null;
+        if (transaction != null && !transaction.isProcessed()) {
+            log.info("✅ Found bank transaction: {} for reference: {}", transaction.getTransactionId(), referenceCode);
+            return transaction.getTransactionId();
         }
+
+        log.debug("📭 No transaction found for reference: {}", referenceCode);
+        return null;
     }
 
     /**
@@ -90,85 +65,36 @@ public class BankApiService {
     }
 
     /**
-     * Get recent transactions from bank
-     * In real implementation, this would call bank's API
+     * Get recent unprocessed transactions from mock database.
+     * In real production, this should call the actual bank's API.
      */
     public List<BankTransaction> getRecentTransactions() {
-        log.info("🏦 Fetching recent transactions from bank");
-
-        try {
-            // Simulate API call
-            Thread.sleep(1000);
-
-            // Return mock transactions
-            List<BankTransaction> transactions = new ArrayList<>();
-            
-            // Add some mock transactions for demo
-            for (int i = 0; i < 5; i++) {
-                String referenceCode = "NAP" + (1000 + i);
-                if (Math.random() > 0.5) {
-                    transactions.add(new BankTransaction(
-                        "BANK" + System.currentTimeMillis() + i,
-                        referenceCode,
-                        new BigDecimal(100000 * (i + 1)),
-                        LocalDateTime.now().minusMinutes(i * 10)
-                    ));
-                }
-            }
-
-            log.info("✅ Found {} recent transactions", transactions.size());
-            return transactions;
-
-        } catch (Exception e) {
-            log.error("❌ Error fetching recent transactions: {}", e.getMessage(), e);
-            return new ArrayList<>();
-        }
+        List<BankTransaction> transactions = mockTransactionDatabase.values().stream()
+                .filter(tx -> !tx.isProcessed())
+                .toList();
+        log.debug("🏦 Mock DB has {} unprocessed transactions", transactions.size());
+        return transactions;
     }
 
     /**
-     * Validate transaction with bank
-     * In real implementation, this would validate transaction details
+     * Validate that the given transaction exists in mock database with matching reference.
+     * In real production, this should verify against the bank's API.
      */
     public boolean validateTransaction(String transactionId, String referenceCode, BigDecimal amount) {
-        log.info("🔍 Validating transaction: {} for reference: {} amount: {}", transactionId, referenceCode, amount);
-
-        try {
-            // Simulate validation
-            Thread.sleep(300);
-
-            // Mock validation - always return true for demo
-            boolean isValid = Math.random() > 0.1; // 90% success rate
-
-            log.info("✅ Transaction validation result: {}", isValid);
-            return isValid;
-
-        } catch (Exception e) {
-            log.error("❌ Error validating transaction: {}", e.getMessage(), e);
-            return false;
-        }
+        BankTransaction transaction = mockTransactionDatabase.get(referenceCode);
+        boolean isValid = transaction != null && transaction.getTransactionId().equals(transactionId);
+        log.debug("🔍 Validating transaction {} for reference {}: {}", transactionId, referenceCode, isValid);
+        return isValid;
     }
 
     /**
-     * Get bank balance
-     * In real implementation, this would get actual bank balance
+     * Get mock bank balance.
+     * In real production, this should call the actual bank's balance API.
      */
     public BigDecimal getBankBalance() {
-        log.info("💰 Checking bank balance");
-
-        try {
-            // Simulate API call
-            Thread.sleep(500);
-
-            // Mock balance
-            BigDecimal balance = new BigDecimal("500000000"); // 500 million VND
-
-            log.info("✅ Bank balance: {}", balance);
-            return balance;
-
-        } catch (Exception e) {
-            log.error("❌ Error checking bank balance: {}", e.getMessage(), e);
-            return BigDecimal.ZERO;
-        }
+        BigDecimal balance = new BigDecimal("500000000"); // 500 million VND (mock)
+        log.debug("💰 Mock bank balance: {}", balance);
+        return balance;
     }
 
     /**

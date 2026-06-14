@@ -14,6 +14,7 @@ import com.chatbot.core.tenant.membership.model.TenantRole;
 import com.chatbot.core.tenant.membership.model.MembershipStatus;
 import com.chatbot.core.tenant.membership.repository.TenantMemberRepository;
 import com.chatbot.core.tenant.membership.service.TenantMembershipFacade;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.data.domain.Page;
@@ -30,13 +31,16 @@ import java.util.Map;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import com.chatbot.core.user.repository.AuthRepository;
+import com.chatbot.core.tenant.service.TenantPermissionValidator;
 import io.swagger.v3.oas.annotations.responses.ApiResponse; // import io.swagger.v3.oas.annotations.responses.ApiResponse; // Use fully qualified name to avoid conflict
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 @RestController
 @RequestMapping("/api/tenants")
+@RequiredArgsConstructor
 @Slf4j
 @Tag(name = "Tenant Management", description = "Multi-tenant operations and management")
 public class TenantController {
@@ -47,26 +51,9 @@ public class TenantController {
     private final UserRepository userRepository;
     private final TenantMemberRepository tenantMemberRepository;
     private final TenantMembershipFacade tenantMembershipFacade;
-    private final com.chatbot.core.tenant.service.TenantPermissionValidator permissionValidator;
+    private final TenantPermissionValidator permissionValidator;
     private final AuthRepository authRepository;
 
-    public TenantController(TenantService tenantService, 
-                          TenantProfileService tenantProfileService, 
-                          TenantRepository tenantRepository,
-                          UserRepository userRepository,
-                          TenantMemberRepository tenantMemberRepository,
-                          TenantMembershipFacade tenantMembershipFacade,
-                          com.chatbot.core.tenant.service.TenantPermissionValidator permissionValidator,
-                          AuthRepository authRepository) {
-        this.tenantService = tenantService;
-        this.tenantProfileService = tenantProfileService;
-        this.tenantRepository = tenantRepository;
-        this.userRepository = userRepository;
-        this.tenantMemberRepository = tenantMemberRepository;
-        this.tenantMembershipFacade = tenantMembershipFacade;
-        this.permissionValidator = permissionValidator;
-        this.authRepository = authRepository;
-    }
 
     /**
      * Lấy danh sách tenant đầy đủ thông tin để hiển thị lựa chọn (Profile, Address)
@@ -592,9 +579,10 @@ public class TenantController {
     }
 
     /**
-     * Debug packages database query
+     * Debug packages database query - ADMIN only
      */
     @GetMapping("/debug/packages")
+    @PreAuthorize("hasRole('ADMIN')")
     public Map<String, Object> debugPackages() {
         Map<String, Object> result = new java.util.HashMap<>();
         try {

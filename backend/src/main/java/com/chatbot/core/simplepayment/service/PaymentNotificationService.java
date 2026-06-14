@@ -15,8 +15,18 @@ import java.util.concurrent.ConcurrentHashMap;
 @Slf4j
 public class PaymentNotificationService {
 
+    private static class SseEmitterHolder {
+        private final SseEmitter emitter;
+        private final long createdAt;
+
+        public SseEmitterHolder(SseEmitter emitter) {
+            this.emitter = emitter;
+            this.createdAt = System.currentTimeMillis();
+        }
+    }
+
     // Manage active SSE connections mapped by referenceCode
-    private final Map<String, SseEmitter> emitters = new ConcurrentHashMap<>();
+    private final Map<String, SseEmitterHolder> emitters = new ConcurrentHashMap<>();
 
     /**
      * Subscribe to payment event stream for a specific reference code
@@ -26,7 +36,7 @@ public class PaymentNotificationService {
         
         // Timeout 10 minutes (600,000 ms)
         SseEmitter emitter = new SseEmitter(600000L);
-        emitters.put(referenceCode, emitter);
+        emitters.put(referenceCode, new SseEmitterHolder(emitter));
 
         // Send an initial ping event to establish the connection immediately
         try {
@@ -62,8 +72,9 @@ public class PaymentNotificationService {
      * Notify subscribers that payment has completed successfully
      */
     public void notifyPaymentSuccess(String referenceCode, Object paymentInfo) {
-        SseEmitter emitter = emitters.get(referenceCode);
-        if (emitter != null) {
+        SseEmitterHolder holder = emitters.get(referenceCode);
+        if (holder != null) {
+            SseEmitter emitter = holder.emitter;
             try {
                 log.info("✅ [PaymentNotificationService] Payment success event triggered. Notifying SSE client for reference: {}", referenceCode);
                 emitter.send(SseEmitter.event()
@@ -79,5 +90,26 @@ public class PaymentNotificationService {
         } else {
             log.debug("ℹ️ [PaymentNotificationService] No active SSE emitter found for reference: {}", referenceCode);
         }
+    }
+
+    /**
+     * Periodic cleanup of stale emitters
+     */
+    @org.springframework.scheduling.annotation.Scheduled(fixedDelay = 60000)
+    public void cleanupExpiredEmitters() {
+        long now = System.currentTimeMillis();
+        emitters.entrySet().removeIf(entry -> {
+            // If connection exists longer than 11 minutes, complete and remove it
+            if (now - entry.getValue().createdAt > 660000L) {
+                log.warn("🧹 [PaymentNotificationService] Cleaning up stale SSE connection for reference: {}", entry.getKey());
+                try {
+                    entry.getValue().emitter.complete();
+                } catch (Exception e) {
+                    // Ignore
+                }
+                return true;
+            }
+            return false;
+        });
     }
 }

@@ -123,4 +123,45 @@ public class PaymentAuditService {
     private String generateRequestId() {
         return java.util.UUID.randomUUID().toString();
     }
+
+    @Async
+    @Transactional(propagation = Propagation.REQUIRES_NEW, transactionManager = "sharedTransactionManager")
+    public void logConfigChange(String configKey, String oldValue, String newValue, String updatedBy) {
+        try {
+            String description = String.format("Config changed: %s", configKey);
+            if (oldValue != null && newValue != null) {
+                description += String.format(" from '%s' to '%s'", 
+                    isSensitive(configKey) ? "***" : oldValue, 
+                    isSensitive(configKey) ? "***" : newValue);
+            } else if (oldValue != null) {
+                description += String.format(" deleted (was '%s')", isSensitive(configKey) ? "***" : oldValue);
+            } else if (newValue != null) {
+                description += String.format(" set to '%s'", isSensitive(configKey) ? "***" : newValue);
+            }
+
+            PaymentAuditLog auditLog = PaymentAuditLog.builder()
+                    .paymentReferenceCode("CONFIG")
+                    .userId(null)
+                    .tenantId(null)
+                    .action(AuditAction.CONFIG_CHANGED)
+                    .description(description)
+                    .requestId(generateRequestId())
+                    .build();
+
+            auditLogRepository.save(auditLog);
+            log.debug("Config change audit log saved for: {}", configKey);
+
+        } catch (Exception e) {
+            log.error("Failed to save config change audit log for: {}", configKey, e);
+        }
+    }
+
+    private boolean isSensitive(String configKey) {
+        return configKey != null && (
+            configKey.contains("api-key") || 
+            configKey.contains("secret") || 
+            configKey.contains("password") ||
+            configKey.contains("token")
+        );
+    }
 }

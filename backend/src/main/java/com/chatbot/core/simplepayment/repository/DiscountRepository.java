@@ -15,6 +15,10 @@ public interface DiscountRepository extends JpaRepository<Discount, Long> {
     
     Optional<Discount> findByCode(String code);
     
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT d FROM Discount d WHERE d.code = :code")
+    Optional<Discount> findByCodeWithLock(@Param("code") String code);
+    
     List<Discount> findByIsActiveTrueOrderByCreatedAtDesc();
     
     @Query("SELECT d FROM Discount d WHERE d.isActive = true AND d.validFrom <= :now AND d.validUntil >= :now")
