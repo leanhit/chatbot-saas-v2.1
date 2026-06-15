@@ -19,7 +19,7 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-@Transactional(readOnly = true)
+@Transactional(readOnly = true, transactionManager = "tenantTransactionManager")
 @Slf4j
 public class TenantJoinRequestService {
 
@@ -32,7 +32,7 @@ public class TenantJoinRequestService {
 
     /* ================= REQUEST ================= */
 
-    @Transactional
+    @Transactional(transactionManager = "tenantTransactionManager")
     public void requestToJoin(Long tenantId, User user) {
         if (memberRepo.existsByTenant_IdAndUserIdAndStatus(
                 tenantId, user.getId(), MembershipStatus.ACTIVE)) {
@@ -76,7 +76,7 @@ public class TenantJoinRequestService {
 
     /* ================= UPDATE ================= */
 
-    @Transactional
+    @Transactional(transactionManager = "tenantTransactionManager")
     public void updateStatus(Long tenantId, Long requestId, MembershipStatus status) {
         TenantJoinRequest request = getPendingRequest(tenantId, requestId);
 
@@ -123,7 +123,7 @@ public class TenantJoinRequestService {
     /**
      * User tự hủy yêu cầu tham gia của mình.
      */
-    @Transactional
+    @Transactional(transactionManager = "tenantTransactionManager")
     public void cancelUserRequest(Long requestId, User user) {
         TenantJoinRequest request = joinRequestRepo.findById(requestId)
                 .orElseThrow(() -> new IllegalStateException("Không tìm thấy yêu cầu"));
@@ -161,7 +161,8 @@ public class TenantJoinRequestService {
         User user = userRepo.findById(request.getUserId()).orElse(null);
         
         return MemberResponse.builder()
-                .id(request.getUserId())
+                .id(request.getId()) // ID của yêu cầu để duyệt/hủy
+                .userId(request.getUserId()) // ID của User gửi yêu cầu
                 .email(user != null ? user.getEmail() : null)
                 .status(request.getStatus())
                 .requestedAt(request.getCreatedAt())

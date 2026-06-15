@@ -107,15 +107,20 @@ public class TenantService {
             createEmptyAddressForTenant(savedTenant.getId());
             log.info("[TenantService] Created empty address for tenant: {}", savedTenant.getId());
         } catch (Exception e) {
-            log.error("[TenantService] Failed to create address for tenant {}: {}", savedTenant.getId(), e.getMessage(), e);
+            log.error("[TenantService] [MONITORING] Failed to create address for tenant {}: {} - Tenant created but without address. Manual intervention may be required.", 
+                    savedTenant.getId(), e.getMessage(), e);
             // Address creation is non-critical, continue with tenant creation
+            // TODO: Consider adding alerting mechanism for monitoring systems
         }
 
         // Gán gói mặc định — lỗi ở đây không rollback tenant creation
         try {
             tenantPackageService.assignDefaultPackageToTenant(savedTenant);
         } catch (Exception e) {
-            log.error("[TenantService] Failed to assign default package to {}: {}", savedTenant.getTenantKey(), e.getMessage());
+            log.error("[TenantService] [MONITORING] Failed to assign default package to {}: {} - Tenant created but without package assignment. Manual intervention may be required.", 
+                    savedTenant.getTenantKey(), e.getMessage(), e);
+            // TODO: Consider adding alerting mechanism for monitoring systems
+            // TODO: Add to retry queue for background processing
         }
 
         auditLogService.logAction(savedTenant.getId(), currentUserEmail, "CREATE_TENANT",
@@ -129,20 +134,20 @@ public class TenantService {
     // READ
     // =========================================================================
 
-    @Transactional(readOnly = true)
+    @Transactional(readOnly = true, transactionManager = "tenantTransactionManager")
     public Tenant getTenant(Long tenantId) {
         return tenantRepository.findById(tenantId)
                 .orElseThrow(() -> new TenantNotFoundException("Tenant not found with ID: " + tenantId));
     }
 
-    @Transactional(readOnly = true)
+    @Transactional(readOnly = true, transactionManager = "tenantTransactionManager")
     public Long getTenantIdByKey(String tenantKey) {
         return tenantRepository.findByTenantKey(tenantKey)
                 .map(Tenant::getId)
                 .orElse(null);
     }
 
-    @Transactional(readOnly = true)
+    @Transactional(readOnly = true, transactionManager = "tenantTransactionManager")
     public TenantResponse getTenantForCurrentUser(Long tenantId) {
         String currentUserEmail = getCurrentUserEmail();
         Long userId = authRepository.findByEmail(currentUserEmail)
@@ -154,7 +159,7 @@ public class TenantService {
         return TenantMapper.toResponse(member.getTenant());
     }
 
-    @Transactional(readOnly = true)
+    @Transactional(readOnly = true, transactionManager = "tenantTransactionManager")
     public TenantDetailResponse getTenantDetail(Long tenantId) {
         TenantResponse tenantResponse = getTenantForCurrentUser(tenantId);
         TenantProfileResponse profile = tenantProfileService.getProfile(tenantId);
@@ -220,7 +225,7 @@ public class TenantService {
         return TenantDetailResponse.from(tenantResponse, profile, addressDetail);
     }
 
-    @Transactional(readOnly = true)
+    @Transactional(readOnly = true, transactionManager = "tenantTransactionManager")
     public List<TenantDetailResponse> getUserTenantsDetail() {
         String currentUserEmail = getCurrentUserEmail();
         Long userId = authRepository.findByEmail(currentUserEmail)
@@ -245,7 +250,7 @@ public class TenantService {
         )).collect(Collectors.toList());
     }
 
-    @Transactional(readOnly = true)
+    @Transactional(readOnly = true, transactionManager = "tenantTransactionManager")
     public Page<TenantSearchResponse> searchTenants(TenantSearchRequest request, String currentUserEmail) {
         Page<Tenant> tenantsPage = tenantRepository.findByVisibilityAndStatusAndNameContainingIgnoreCase(
                 TenantVisibility.PUBLIC,
@@ -296,7 +301,7 @@ public class TenantService {
     // STATUS TRANSITIONS
     // =========================================================================
 
-    @Transactional
+    @Transactional(transactionManager = "tenantTransactionManager")
     public void suspendTenant(Long tenantId) {
         Tenant tenant = getTenant(tenantId);
         String currentUserEmail = getCurrentUserEmail();
@@ -314,7 +319,7 @@ public class TenantService {
         log.info("[TenantService] Tenant {} suspended by {}", tenantId, currentUserEmail);
     }
 
-    @Transactional
+    @Transactional(transactionManager = "tenantTransactionManager")
     public void activateTenant(Long tenantId) {
         Tenant tenant = getTenant(tenantId);
         String currentUserEmail = getCurrentUserEmail();
@@ -332,7 +337,7 @@ public class TenantService {
         log.info("[TenantService] Tenant {} activated by {}", tenantId, currentUserEmail);
     }
 
-    @Transactional
+    @Transactional(transactionManager = "tenantTransactionManager")
     public void deactivateTenant(Long tenantId) {
         Tenant tenant = getTenant(tenantId);
         String currentUserEmail = getCurrentUserEmail();
@@ -353,7 +358,7 @@ public class TenantService {
     /**
      * Soft-delete tenant — chỉ ADMIN hoặc OWNER.
      */
-    @Transactional
+    @Transactional(transactionManager = "tenantTransactionManager")
     public void deleteTenant(Long tenantId) {
         Tenant tenant = tenantRepository.findById(tenantId)
                 .orElseThrow(() -> new TenantNotFoundException("Tenant not found with ID: " + tenantId));
@@ -377,12 +382,12 @@ public class TenantService {
     // SWITCH
     // =========================================================================
 
-    @Transactional(readOnly = true)
+    @Transactional(readOnly = true, transactionManager = "tenantTransactionManager")
     public TenantResponse switchTenant(Long tenantId) {
         return getTenantForCurrentUser(tenantId);
     }
 
-    @Transactional(readOnly = true)
+    @Transactional(readOnly = true, transactionManager = "tenantTransactionManager")
     public TenantResponse switchTenantByKey(String tenantKey) {
         Tenant tenant = tenantRepository.findByTenantKey(tenantKey)
                 .orElseThrow(() -> new TenantNotFoundException("Tenant not found with key: " + tenantKey));
@@ -393,7 +398,7 @@ public class TenantService {
     // UPDATE
     // =========================================================================
 
-    @Transactional(rollbackFor = Exception.class)
+    @Transactional(rollbackFor = Exception.class, transactionManager = "tenantTransactionManager")
     public TenantResponse updateBasicInfo(String tenantKey, TenantBasicInfoRequest req) {
         if (tenantKey == null || tenantKey.trim().isEmpty()) {
             throw new InvalidTenantKeyException("Tenant key không được để trống");
@@ -430,7 +435,7 @@ public class TenantService {
     /**
      * Cập nhật thông tin liên hệ. Dùng typed DTO thay vì Map<String,Object>.
      */
-    @Transactional(rollbackFor = Exception.class)
+    @Transactional(rollbackFor = Exception.class, transactionManager = "tenantTransactionManager")
     public TenantResponse updateContactInfo(String tenantKey, TenantContactInfoRequest req) {
         if (tenantKey == null || tenantKey.trim().isEmpty()) {
             throw new InvalidTenantKeyException("Tenant key không được để trống");
@@ -471,7 +476,7 @@ public class TenantService {
     // BULK INVITE
     // =========================================================================
 
-    @Transactional
+    @Transactional(transactionManager = "tenantTransactionManager")
     public List<InvitationResponse> bulkInviteUsers(String tenantKey, List<BulkInvitationRequest.Invitation> invitations) {
         String currentUserEmail = getCurrentUserEmail();
 

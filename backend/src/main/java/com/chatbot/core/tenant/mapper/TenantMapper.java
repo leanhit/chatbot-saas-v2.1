@@ -7,7 +7,6 @@ import com.chatbot.core.tenant.model.TenantStatus;
 import com.chatbot.core.tenant.profile.model.TenantProfile;
 
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.time.Instant;
 
 public class TenantMapper {
@@ -66,10 +65,10 @@ public class TenantMapper {
         return builder.build();
     }
 
-    // Helper: LocalDateTime → Instant (timezone hệ thống)
+    // Helper: LocalDateTime → Instant (UTC timezone)
     private static Instant toInstant(LocalDateTime localDateTime) {
         return localDateTime != null
-                ? localDateTime.atZone(ZoneId.systemDefault()).toInstant()
+                ? localDateTime.atZone(java.time.ZoneOffset.UTC).toInstant()
                 : null;
     }
 }

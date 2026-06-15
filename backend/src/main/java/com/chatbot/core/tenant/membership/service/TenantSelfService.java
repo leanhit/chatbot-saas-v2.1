@@ -14,7 +14,7 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-@Transactional(readOnly = true)
+@Transactional(readOnly = true, transactionManager = "tenantTransactionManager")
 public class TenantSelfService {
 
     private final TenantMemberRepository memberRepo;
@@ -42,7 +42,7 @@ public class TenantSelfService {
 
     /* ================= LEAVE ================= */
 
-    @Transactional
+    @Transactional(transactionManager = "tenantTransactionManager")
     public void leaveTenant(Long tenantId, User user) {
         TenantMember member = memberRepo.findByTenant_IdAndUserId(tenantId, user.getId())
                 .orElseThrow(() -> new IllegalStateException("Bạn không phải thành viên của tenant này"));

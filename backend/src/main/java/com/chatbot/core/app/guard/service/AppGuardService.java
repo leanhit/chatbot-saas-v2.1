@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
-@Transactional
+@Transactional(transactionManager = "tenantTransactionManager")
 public class AppGuardService {
     
     @Autowired
@@ -48,23 +48,23 @@ public class AppGuardService {
         return appGuardRepository.save(guard);
     }
     
-    @Transactional(readOnly = true)
+    @Transactional(readOnly = true, transactionManager = "tenantTransactionManager")
     public AppGuard getGuardById(Long id) {
         return appGuardRepository.findById(id)
             .orElseThrow(() -> new ResourceNotFoundException("Guard not found with id: " + id));
     }
     
-    @Transactional(readOnly = true)
+    @Transactional(readOnly = true, transactionManager = "tenantTransactionManager")
     public List<AppGuard> getGuardsByAppId(Long appId) {
         return appGuardRepository.findByAppId(appId);
     }
     
-    @Transactional(readOnly = true)
+    @Transactional(readOnly = true, transactionManager = "tenantTransactionManager")
     public List<AppGuard> getActiveGuardsByAppId(Long appId) {
         return appGuardRepository.findByAppIdAndIsActive(appId, true);
     }
     
-    @Transactional(readOnly = true)
+    @Transactional(readOnly = true, transactionManager = "tenantTransactionManager")
     public List<AppGuard> getGuardsByType(GuardType guardType) {
         return appGuardRepository.findByGuardType(guardType);
     }

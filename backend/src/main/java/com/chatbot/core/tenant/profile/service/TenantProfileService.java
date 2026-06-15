@@ -43,7 +43,7 @@ public class TenantProfileService {
         return SecurityContextHolder.getContext().getAuthentication().getName();
     }
 
-    @Transactional(readOnly = true)
+    @Transactional(readOnly = true, transactionManager = "tenantTransactionManager")
     public TenantProfileResponse getProfile(Long tenantId) {
         // Check if tenant exists
         if (!tenantRepo.existsById(tenantId)) {
@@ -62,7 +62,7 @@ public class TenantProfileService {
             ));
     }
 
-    @Transactional
+    @Transactional(transactionManager = "tenantTransactionManager")
     public TenantProfileResponse upsertProfile(
             Long tenantId,
             TenantProfileRequest req

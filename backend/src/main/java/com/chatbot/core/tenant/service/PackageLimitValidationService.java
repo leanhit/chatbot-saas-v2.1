@@ -20,7 +20,7 @@ public class PackageLimitValidationService {
     /**
      * Check if tenant can create more chatbots based on their Simple Payment package
      */
-    @Transactional(readOnly = true)
+    @Transactional(readOnly = true, transactionManager = "tenantTransactionManager")
     public boolean canCreateMoreChatbots(Long tenantId) {
         try {
             log.info("🔍 [STEP 1] Starting chatbot limit validation for tenant: {}", tenantId);
@@ -72,7 +72,7 @@ public class PackageLimitValidationService {
     /**
      * Get remaining chatbot slots for tenant
      */
-    @Transactional(readOnly = true)
+    @Transactional(readOnly = true, transactionManager = "tenantTransactionManager")
     public int getRemainingChatbotSlots(Long tenantId) {
         try {
             Package currentPackage = tenantPackageService.getCurrentTenantPackage(tenantId);
@@ -100,7 +100,7 @@ public class PackageLimitValidationService {
     /**
      * Validate chatbot creation and throw exception if limit exceeded
      */
-    @Transactional(readOnly = true)
+    @Transactional(readOnly = true, transactionManager = "tenantTransactionManager")
     public void validateChatbotCreation(Long tenantId) {
         log.info("🚀 [VALIDATION START] Starting chatbot creation validation for tenant: {}", tenantId);
         
@@ -141,7 +141,7 @@ public class PackageLimitValidationService {
     /**
      * Get chatbot limit information for tenant
      */
-    @Transactional(readOnly = true)
+    @Transactional(readOnly = true, transactionManager = "tenantTransactionManager")
     public ChatbotLimitInfo getChatbotLimitInfo(Long tenantId) {
         try {
             Package currentPackage = tenantPackageService.getCurrentTenantPackage(tenantId);

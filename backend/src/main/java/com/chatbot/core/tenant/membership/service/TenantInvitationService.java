@@ -27,7 +27,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-@Transactional
+@Transactional(transactionManager = "tenantTransactionManager")
 @Slf4j
 public class TenantInvitationService {
 
@@ -41,7 +41,7 @@ public class TenantInvitationService {
     /**
      * Admin thực hiện mời user vào tenant.
      */
-    @Transactional
+    @Transactional(transactionManager = "tenantTransactionManager")
     public void inviteMember(Long tenantId, InviteMemberRequest request, User admin) {
         Tenant tenant = tenantRepo.findById(tenantId)
             .orElseThrow(() -> new RuntimeException("Tenant không tồn tại"));
@@ -88,7 +88,7 @@ public class TenantInvitationService {
     /**
      * Lấy danh sách lời mời của một Tenant.
      */
-    @Transactional(readOnly = true)
+    @Transactional(readOnly = true, transactionManager = "tenantTransactionManager")
     public List<InvitationResponse> listInvitations(Long tenantId) {
         return invitationRepo.findByTenantId(tenantId).stream()
                 .map(this::convertToResponse)
@@ -98,7 +98,7 @@ public class TenantInvitationService {
     /**
      * Lấy danh sách lời mời đang chờ xử lý của user (chỉ hiển thị chưa hết hạn).
      */
-    @Transactional(readOnly = true)
+    @Transactional(readOnly = true, transactionManager = "tenantTransactionManager")
     public List<InvitationResponse> getMyPendingInvitations(User user) {
         return invitationRepo.findByEmailAndStatus(user.getEmail(), InvitationStatus.PENDING)
                 .stream()
@@ -110,7 +110,7 @@ public class TenantInvitationService {
     /**
      * User chấp nhận lời mời qua token.
      */
-    @Transactional
+    @Transactional(transactionManager = "tenantTransactionManager")
     public void acceptInvitation(String token, User user) {
         TenantInvitation invitation = invitationRepo.findByToken(token)
             .orElseThrow(() -> new RuntimeException("Lời mời không hợp lệ hoặc đã bị thu hồi."));
@@ -154,7 +154,7 @@ public class TenantInvitationService {
     /**
      * User từ chối lời mời.
      */
-    @Transactional
+    @Transactional(transactionManager = "tenantTransactionManager")
     public void rejectInvitation(String token, User user) {
         TenantInvitation invitation = invitationRepo.findByToken(token)
             .orElseThrow(() -> new RuntimeException("Lời mời không tồn tại."));
@@ -173,7 +173,7 @@ public class TenantInvitationService {
     /**
      * Admin thu hồi lời mời.
      */
-    @Transactional
+    @Transactional(transactionManager = "tenantTransactionManager")
     public void revokeInvitation(Long tenantId, Long invitationId) {
         TenantInvitation invitation = invitationRepo.findByIdAndTenantId(invitationId, tenantId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy lời mời trong tổ chức này."));

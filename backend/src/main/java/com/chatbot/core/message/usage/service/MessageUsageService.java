@@ -55,7 +55,7 @@ public class MessageUsageService {
     /**
      * Get current message usage for tenant in current billing period
      */
-    @Transactional(readOnly = true)
+    @Transactional(readOnly = true, transactionManager = "tenantTransactionManager")
     public MessageUsageInfo getCurrentUsage(Long tenantId) {
         Package currentPackage = tenantPackageService.getCurrentTenantPackage(tenantId);
         if (currentPackage == null) {
@@ -115,7 +115,7 @@ public class MessageUsageService {
     /**
      * Check if tenant can send more messages
      */
-    @Transactional(readOnly = true)
+    @Transactional(readOnly = true, transactionManager = "tenantTransactionManager")
     public boolean canSendMoreMessages(Long tenantId) {
         MessageUsageInfo usage = getCurrentUsage(tenantId);
         return usage.getCanSendMore();
@@ -124,7 +124,7 @@ public class MessageUsageService {
     /**
      * Validate message sending and throw exception if limit exceeded
      */
-    @Transactional(readOnly = true)
+    @Transactional(readOnly = true, transactionManager = "tenantTransactionManager")
     public void validateMessageSending(Long tenantId) {
         if (!canSendMoreMessages(tenantId)) {
             MessageUsageInfo usage = getCurrentUsage(tenantId);
@@ -149,7 +149,7 @@ public class MessageUsageService {
     /**
      * Get message usage statistics for dashboard
      */
-    @Transactional(readOnly = true)
+    @Transactional(readOnly = true, transactionManager = "tenantTransactionManager")
     public MessageUsageStats getUsageStats(Long tenantId) {
         Package currentPackage = tenantPackageService.getCurrentTenantPackage(tenantId);
         if (currentPackage == null) {

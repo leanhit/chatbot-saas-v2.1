@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
-@Transactional
+@Transactional(transactionManager = "tenantTransactionManager")
 public class AppRegistryService {
     
     @Autowired
@@ -46,21 +46,21 @@ public class AppRegistryService {
         return convertToResponse(savedApp);
     }
     
-    @Transactional(readOnly = true)
+    @Transactional(readOnly = true, transactionManager = "tenantTransactionManager")
     public AppResponse getAppById(Long id) {
         AppRegistry app = appRegistryRepository.findById(id)
             .orElseThrow(() -> new ResourceNotFoundException("App not found with id: " + id));
         return convertToResponse(app);
     }
     
-    @Transactional(readOnly = true)
+    @Transactional(readOnly = true, transactionManager = "tenantTransactionManager")
     public AppResponse getAppByName(String name) {
         AppRegistry app = appRegistryRepository.findByName(name)
             .orElseThrow(() -> new ResourceNotFoundException("App not found with name: " + name));
         return convertToResponse(app);
     }
     
-    @Transactional(readOnly = true)
+    @Transactional(readOnly = true, transactionManager = "tenantTransactionManager")
     public Page<AppResponse> searchApps(String name, String appType, String status, Boolean isActive, Pageable pageable) {
         return appRegistryRepository.searchApps(name, 
             appType != null ? com.chatbot.core.app.registry.model.AppType.valueOf(appType.toUpperCase()) : null,
@@ -69,20 +69,20 @@ public class AppRegistryService {
             .map(this::convertToResponse);
     }
     
-    @Transactional(readOnly = true)
+    @Transactional(readOnly = true, transactionManager = "tenantTransactionManager")
     public List<AppResponse> getAppsByType(String appType) {
         List<AppRegistry> apps = appRegistryRepository.findByAppType(
             com.chatbot.core.app.registry.model.AppType.valueOf(appType.toUpperCase()));
         return apps.stream().map(this::convertToResponse).collect(Collectors.toList());
     }
     
-    @Transactional(readOnly = true)
+    @Transactional(readOnly = true, transactionManager = "tenantTransactionManager")
     public List<AppResponse> getActiveApps() {
         List<AppRegistry> apps = appRegistryRepository.findByIsActive(true);
         return apps.stream().map(this::convertToResponse).collect(Collectors.toList());
     }
     
-    @Transactional(readOnly = true)
+    @Transactional(readOnly = true, transactionManager = "tenantTransactionManager")
     public List<AppResponse> getPublicApps() {
         List<AppRegistry> apps = appRegistryRepository.findByIsPublic(true);
         return apps.stream().map(this::convertToResponse).collect(Collectors.toList());

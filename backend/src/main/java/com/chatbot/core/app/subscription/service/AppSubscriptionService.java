@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
-@Transactional
+@Transactional(transactionManager = "tenantTransactionManager")
 public class AppSubscriptionService {
     
     @Autowired
@@ -72,33 +72,33 @@ public class AppSubscriptionService {
         return convertToResponse(savedSubscription);
     }
     
-    @Transactional(readOnly = true)
+    @Transactional(readOnly = true, transactionManager = "tenantTransactionManager")
     public SubscriptionResponse getSubscriptionById(Long id) {
         AppSubscription subscription = subscriptionRepository.findById(id)
             .orElseThrow(() -> new ResourceNotFoundException("Subscription not found with id: " + id));
         return convertToResponse(subscription);
     }
     
-    @Transactional(readOnly = true)
+    @Transactional(readOnly = true, transactionManager = "tenantTransactionManager")
     public SubscriptionResponse getSubscriptionByAppAndTenant(Long appId, Long tenantId) {
         AppSubscription subscription = subscriptionRepository.findByAppIdAndTenantId(appId, tenantId)
             .orElseThrow(() -> new ResourceNotFoundException("Subscription not found for app and tenant"));
         return convertToResponse(subscription);
     }
     
-    @Transactional(readOnly = true)
+    @Transactional(readOnly = true, transactionManager = "tenantTransactionManager")
     public List<SubscriptionResponse> getSubscriptionsByTenant(Long tenantId) {
         List<AppSubscription> subscriptions = subscriptionRepository.findByTenantId(tenantId);
         return subscriptions.stream().map(this::convertToResponse).collect(Collectors.toList());
     }
     
-    @Transactional(readOnly = true)
+    @Transactional(readOnly = true, transactionManager = "tenantTransactionManager")
     public List<SubscriptionResponse> getSubscriptionsByUser(Long userId) {
         List<AppSubscription> subscriptions = subscriptionRepository.findByUserId(userId);
         return subscriptions.stream().map(this::convertToResponse).collect(Collectors.toList());
     }
     
-    @Transactional(readOnly = true)
+    @Transactional(readOnly = true, transactionManager = "tenantTransactionManager")
     public List<SubscriptionResponse> getSubscriptionsByApp(Long appId) {
         List<AppSubscription> subscriptions = subscriptionRepository.findByAppId(appId);
         return subscriptions.stream().map(this::convertToResponse).collect(Collectors.toList());

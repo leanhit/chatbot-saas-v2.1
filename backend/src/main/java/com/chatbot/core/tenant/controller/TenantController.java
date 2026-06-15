@@ -48,11 +48,8 @@ public class TenantController {
     private final TenantService tenantService;
     private final TenantProfileService tenantProfileService;
     private final TenantRepository tenantRepository;
-    private final UserRepository userRepository;
-    private final TenantMemberRepository tenantMemberRepository;
     private final TenantMembershipFacade tenantMembershipFacade;
     private final TenantPermissionValidator permissionValidator;
-    private final AuthRepository authRepository;
 
 
     /**
@@ -300,27 +297,9 @@ public class TenantController {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, 
                     "Tenant không tồn tại với key: " + tenantKey));
             
-            // Check authorization - user must be OWNER or ADMIN
+            // Check authorization using centralized validator
             String currentUserEmail = SecurityContextHolder.getContext().getAuthentication().getName();
-            
-            boolean isAdmin = userRepository.findByEmail(currentUserEmail)
-                    .map(user -> user.getSystemRole() == SystemRole.ADMIN)
-                    .orElse(false);
-            
-            Long userId = authRepository.findByEmail(currentUserEmail)
-                    .map(User::getId)
-                    .orElse(null);
-            boolean isOwner = false;
-            if (userId != null) {
-                isOwner = tenantMemberRepository.findByTenantIdAndUserIdAndStatus(
-                        tenant.getId(), 
-                        userId, 
-                        MembershipStatus.ACTIVE
-                ).map(member -> member.getRole() == TenantRole.OWNER)
-                .orElse(false);
-            }
-            
-            if (!isAdmin && !isOwner) {
+            if (!permissionValidator.isAdminOrOwner(tenant.getId(), currentUserEmail)) {
                 throw new ResponseStatusException(HttpStatus.FORBIDDEN, 
                     "Bạn không có quyền cập nhật logo tenant này");
             }

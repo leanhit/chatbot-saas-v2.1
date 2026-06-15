@@ -22,7 +22,7 @@ import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
-@Transactional(readOnly = true)
+@Transactional(readOnly = true, transactionManager = "tenantTransactionManager")
 @Slf4j
 public class TenantMemberService {
 
@@ -55,7 +55,7 @@ public class TenantMemberService {
 
     /* ================= UPDATE ================= */
 
-    @Transactional
+    @Transactional(transactionManager = "tenantTransactionManager")
     public void updateRole(Long tenantId, Long targetUserId, TenantRole newRole) {
         // Lấy actor (người thực hiện request) từ SecurityContext
         String actorEmail = getCurrentUserEmail();
@@ -84,7 +84,7 @@ public class TenantMemberService {
 
     /* ================= DELETE ================= */
 
-    @Transactional
+    @Transactional(transactionManager = "tenantTransactionManager")
     public void removeMember(Long tenantId, Long targetUserId) {
         String actorEmail = getCurrentUserEmail();
 

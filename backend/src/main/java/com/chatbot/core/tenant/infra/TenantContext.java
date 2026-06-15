@@ -63,6 +63,8 @@ public class TenantContext {
         Long originalTenantId = getTenantId();
         try {
             setCurrentTenant(tenantKey);
+            // Note: tenantId resolution requires repository lookup, which cannot be done here
+            // Caller should use executeWithTenantId if tenantId is needed
             return operation.execute();
         } finally {
             if (originalTenant != null) {
