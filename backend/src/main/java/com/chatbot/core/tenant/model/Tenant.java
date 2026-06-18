@@ -1,7 +1,5 @@
 package com.chatbot.core.tenant.model;
 
-import com.chatbot.core.tenant.model.TenantStatus;
-import com.chatbot.core.tenant.model.TenantVisibility;
 import com.chatbot.core.tenant.profile.model.TenantProfile;
 import com.chatbot.core.tenant.professional.model.TenantProfessional;
 import com.chatbot.shared.utils.DateUtils;

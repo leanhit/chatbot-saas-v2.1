@@ -1,12 +1,8 @@
 package com.chatbot.core.tenant.security;
 
-import com.chatbot.core.tenant.membership.repository.TenantMemberRepository;
-import com.chatbot.core.user.repository.AuthRepository;
-import com.chatbot.core.user.model.User;
+import com.chatbot.core.tenant.service.TenantService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
 @Slf4j
@@ -14,29 +10,16 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class TenantSecurityEvaluator {
 
-    private final TenantMemberRepository tenantMemberRepository;
-    private final com.chatbot.core.tenant.service.TenantService tenantService;
-    private final AuthRepository authRepository;
+    private final TenantService tenantService;
+    private final com.chatbot.core.tenant.service.TenantPermissionValidator permissionValidator;
 
     /**
      * Check if current user is member of tenant
      */
     public boolean isTenantMember(Long tenantId) {
         try {
-            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-            if (auth == null || !auth.isAuthenticated()) {
-                return false;
-            }
-
-            String userEmail = auth.getName();
-            Long userId = authRepository.findByEmail(userEmail)
-                    .map(User::getId)
-                    .orElse(null);
-            if (userId == null) return false;
-            
-            return tenantMemberRepository.findByTenantIdAndUserIdAndStatus(
-                tenantId, userId, com.chatbot.core.tenant.membership.model.MembershipStatus.ACTIVE
-            ).isPresent();
+            String userEmail = permissionValidator.getCurrentUserEmail();
+            return permissionValidator.isActiveMember(tenantId, userEmail);
         } catch (Exception e) {
             log.error("Error checking tenant membership", e);
             return false;
@@ -64,22 +47,8 @@ public class TenantSecurityEvaluator {
      */
     public boolean isTenantOwner(Long tenantId) {
         try {
-            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-            if (auth == null || !auth.isAuthenticated()) {
-                return false;
-            }
-
-            String userEmail = auth.getName();
-            Long userId = authRepository.findByEmail(userEmail)
-                    .map(User::getId)
-                    .orElse(null);
-            if (userId == null) return false;
-            
-            // Find member and check role
-            return tenantMemberRepository.findByTenantIdAndUserIdAndStatus(
-                tenantId, userId, com.chatbot.core.tenant.membership.model.MembershipStatus.ACTIVE
-            ).map(member -> member.getRole() == com.chatbot.core.tenant.membership.model.TenantRole.OWNER)
-            .orElse(false);
+            String userEmail = permissionValidator.getCurrentUserEmail();
+            return permissionValidator.isOwner(tenantId, userEmail);
         } catch (Exception e) {
             log.error("Error checking tenant ownership", e);
             return false;
@@ -90,7 +59,13 @@ public class TenantSecurityEvaluator {
      * Check if current user can manage tenant
      */
     public boolean canManageTenant(Long tenantId) {
-        return isTenantOwner(tenantId) || isAdmin();
+        try {
+            String userEmail = permissionValidator.getCurrentUserEmail();
+            return permissionValidator.isAdminOrOwner(tenantId, userEmail);
+        } catch (Exception e) {
+            log.error("Error checking tenant management permission", e);
+            return false;
+        }
     }
 
     /**
@@ -98,13 +73,8 @@ public class TenantSecurityEvaluator {
      */
     public boolean isAdmin() {
         try {
-            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-            if (auth == null || !auth.isAuthenticated()) {
-                return false;
-            }
-
-            return auth.getAuthorities().stream()
-                .anyMatch(authority -> authority.getAuthority().equals("ROLE_ADMIN"));
+            String userEmail = permissionValidator.getCurrentUserEmail();
+            return permissionValidator.isAdmin(userEmail);
         } catch (Exception e) {
             log.error("Error checking admin role", e);
             return false;

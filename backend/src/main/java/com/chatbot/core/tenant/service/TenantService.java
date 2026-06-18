@@ -2,6 +2,7 @@ package com.chatbot.core.tenant.service;
 
 import com.chatbot.shared.address.model.OwnerType;
 import com.chatbot.shared.address.service.AddressService;
+import com.chatbot.shared.exceptions.ResourceNotFoundException;
 import com.chatbot.core.tenant.exception.*;
 
 import java.util.stream.Collectors;
@@ -30,9 +31,6 @@ import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
-import org.springframework.http.HttpStatus;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
@@ -66,14 +64,6 @@ public class TenantService {
     // HELPERS
     // =========================================================================
 
-    private String getCurrentUserEmail() {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth == null || !auth.isAuthenticated()) {
-            throw new InsufficientPermissionException("User not authenticated");
-        }
-        return auth.getName();
-    }
-
     // =========================================================================
     // CREATE
     // =========================================================================
@@ -82,9 +72,9 @@ public class TenantService {
     public TenantResponse createTenant(CreateTenantRequest request) {
         log.info("[TenantService] Starting tenant creation");
 
-        String currentUserEmail = getCurrentUserEmail();
+        String currentUserEmail = permissionValidator.getCurrentUserEmail();
         User currentUser = userRepository.findByEmail(currentUserEmail)
-                .orElseThrow(() -> new RuntimeException("User not found: " + currentUserEmail));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + currentUserEmail));
 
         Tenant tenant = TenantMapper.toEntity(request, trialDays);
         Tenant savedTenant = tenantRepository.save(tenant);
@@ -113,14 +103,13 @@ public class TenantService {
             // TODO: Consider adding alerting mechanism for monitoring systems
         }
 
-        // Gán gói mặc định — lỗi ở đây không rollback tenant creation
+        // Gán gói mặc định — critical operation, rollback if fails
         try {
             tenantPackageService.assignDefaultPackageToTenant(savedTenant);
         } catch (Exception e) {
-            log.error("[TenantService] [MONITORING] Failed to assign default package to {}: {} - Tenant created but without package assignment. Manual intervention may be required.", 
+            log.error("[TenantService] Failed to assign default package to {}: {}", 
                     savedTenant.getTenantKey(), e.getMessage(), e);
-            // TODO: Consider adding alerting mechanism for monitoring systems
-            // TODO: Add to retry queue for background processing
+            throw new BusinessLogicException("Failed to assign default package. Tenant creation rolled back: " + e.getMessage());
         }
 
         auditLogService.logAction(savedTenant.getId(), currentUserEmail, "CREATE_TENANT",
@@ -149,10 +138,10 @@ public class TenantService {
 
     @Transactional(readOnly = true, transactionManager = "tenantTransactionManager")
     public TenantResponse getTenantForCurrentUser(Long tenantId) {
-        String currentUserEmail = getCurrentUserEmail();
+        String currentUserEmail = permissionValidator.getCurrentUserEmail();
         Long userId = authRepository.findByEmail(currentUserEmail)
                 .map(User::getId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
         TenantMember member = tenantMemberRepository
                 .findByTenantIdAndUserIdAndStatus(tenantId, userId, MembershipStatus.ACTIVE)
                 .orElseThrow(() -> new InsufficientPermissionException("Bạn không có quyền truy cập tenant này"));
@@ -189,10 +178,10 @@ public class TenantService {
 
         // Kiểm tra quyền truy cập cho PRIVATE tenant
         if (tenant.getVisibility() == TenantVisibility.PRIVATE) {
-            String currentUserEmail = getCurrentUserEmail();
+            String currentUserEmail = permissionValidator.getCurrentUserEmail();
             Long userId = authRepository.findByEmail(currentUserEmail)
                     .map(User::getId)
-                    .orElseThrow(() -> new RuntimeException("User not found"));
+                    .orElseThrow(() -> new ResourceNotFoundException("User not found"));
             boolean isMember = tenantMemberRepository
                     .findByTenantIdAndUserIdAndStatus(tenant.getId(), userId, MembershipStatus.ACTIVE)
                     .isPresent();
@@ -227,10 +216,10 @@ public class TenantService {
 
     @Transactional(readOnly = true, transactionManager = "tenantTransactionManager")
     public List<TenantDetailResponse> getUserTenantsDetail() {
-        String currentUserEmail = getCurrentUserEmail();
+        String currentUserEmail = permissionValidator.getCurrentUserEmail();
         Long userId = authRepository.findByEmail(currentUserEmail)
                 .map(User::getId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         List<Tenant> tenants = tenantMemberRepository
                 .findByUserIdWithTenant(userId)
@@ -261,11 +250,16 @@ public class TenantService {
 
         Long userId = authRepository.findByEmail(currentUserEmail)
                 .map(User::getId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-        List<TenantMember> userMemberships = tenantMemberRepository.findByUserId(userId);
-
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        
         List<Long> tenantIds = tenantsPage.getContent().stream()
                 .map(Tenant::getId).collect(Collectors.toList());
+        
+        // Fix N+1 query: fetch only memberships for the tenants in the current page
+        List<TenantMember> userMemberships = tenantIds.isEmpty() 
+                ? Collections.emptyList() 
+                : tenantMemberRepository.findByUserIdAndTenantIdIn(userId, tenantIds);
+
         Map<Long, com.chatbot.core.tenant.profile.dto.TenantProfileResponse> profilesMap =
                 tenantProfileService.getProfilesByTenantIds(tenantIds);
 
@@ -282,6 +276,17 @@ public class TenantService {
 
             com.chatbot.core.tenant.profile.dto.TenantProfileResponse profile = profilesMap.get(tenant.getId());
 
+            // Fetch province from address if available
+            String province = "";
+            try {
+                AddressDetailResponseDTO address = addressService.getSingleAddressByOwner(tenant.getId(), OwnerType.TENANT, tenant.getId());
+                if (address != null && address.getProvince() != null) {
+                    province = address.getProvince();
+                }
+            } catch (Exception e) {
+                // Address not available, leave province empty
+            }
+
             return TenantSearchResponse.builder()
                     .id(tenant.getId())
                     .tenantKey(tenant.getTenantKey())
@@ -292,7 +297,7 @@ public class TenantService {
                     .membershipStatus(status)
                     .logoUrl(profile != null ? profile.getLogoUrl() : null)
                     .contactEmail(profile != null ? profile.getContactEmail() : null)
-                    .province("")
+                    .province(province)
                     .build();
         });
     }
@@ -304,7 +309,7 @@ public class TenantService {
     @Transactional(transactionManager = "tenantTransactionManager")
     public void suspendTenant(Long tenantId) {
         Tenant tenant = getTenant(tenantId);
-        String currentUserEmail = getCurrentUserEmail();
+        String currentUserEmail = permissionValidator.getCurrentUserEmail();
 
         if (!permissionValidator.isAdmin(currentUserEmail)) {
             throw new InsufficientPermissionException("Chỉ admin mới có quyền tạm dừng tenant");
@@ -322,7 +327,7 @@ public class TenantService {
     @Transactional(transactionManager = "tenantTransactionManager")
     public void activateTenant(Long tenantId) {
         Tenant tenant = getTenant(tenantId);
-        String currentUserEmail = getCurrentUserEmail();
+        String currentUserEmail = permissionValidator.getCurrentUserEmail();
 
         if (!permissionValidator.isAdmin(currentUserEmail)) {
             throw new InsufficientPermissionException("Chỉ admin mới có quyền kích hoạt tenant");
@@ -340,7 +345,7 @@ public class TenantService {
     @Transactional(transactionManager = "tenantTransactionManager")
     public void deactivateTenant(Long tenantId) {
         Tenant tenant = getTenant(tenantId);
-        String currentUserEmail = getCurrentUserEmail();
+        String currentUserEmail = permissionValidator.getCurrentUserEmail();
 
         if (!permissionValidator.isOwner(tenantId, currentUserEmail)) {
             throw new InsufficientPermissionException("Chỉ chủ sở hữu mới có quyền vô hiệu hóa tenant");
@@ -363,7 +368,7 @@ public class TenantService {
         Tenant tenant = tenantRepository.findById(tenantId)
                 .orElseThrow(() -> new TenantNotFoundException("Tenant not found with ID: " + tenantId));
 
-        String currentUserEmail = getCurrentUserEmail();
+        String currentUserEmail = permissionValidator.getCurrentUserEmail();
 
         // Defense-in-depth: kiểm tra quyền ngay tại tầng service
         if (!permissionValidator.isAdminOrOwner(tenantId, currentUserEmail)) {
@@ -407,7 +412,7 @@ public class TenantService {
         Tenant tenant = tenantRepository.findByTenantKey(tenantKey)
                 .orElseThrow(() -> new TenantNotFoundException("Tenant không tồn tại với key: " + tenantKey));
 
-        String currentUserEmail = getCurrentUserEmail();
+        String currentUserEmail = permissionValidator.getCurrentUserEmail();
         if (!permissionValidator.isAdminOrOwner(tenant.getId(), currentUserEmail)) {
             throw new InsufficientPermissionException("Bạn không có quyền cập nhật thông tin tenant này");
         }
@@ -444,7 +449,7 @@ public class TenantService {
         Tenant tenant = tenantRepository.findByTenantKey(tenantKey)
                 .orElseThrow(() -> new TenantNotFoundException("Tenant không tồn tại với key: " + tenantKey));
 
-        String currentUserEmail = getCurrentUserEmail();
+        String currentUserEmail = permissionValidator.getCurrentUserEmail();
         if (!permissionValidator.isAdminOrOwner(tenant.getId(), currentUserEmail)) {
             throw new InsufficientPermissionException("Bạn không có quyền cập nhật thông tin liên hệ tenant này");
         }
@@ -478,7 +483,7 @@ public class TenantService {
 
     @Transactional(transactionManager = "tenantTransactionManager")
     public List<InvitationResponse> bulkInviteUsers(String tenantKey, List<BulkInvitationRequest.Invitation> invitations) {
-        String currentUserEmail = getCurrentUserEmail();
+        String currentUserEmail = permissionValidator.getCurrentUserEmail();
 
         Tenant tenant = tenantRepository.findByTenantKey(tenantKey)
                 .orElseThrow(() -> new TenantNotFoundException("Tenant not found"));

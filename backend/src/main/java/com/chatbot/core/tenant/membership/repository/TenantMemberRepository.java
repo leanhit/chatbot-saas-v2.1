@@ -85,6 +85,15 @@ public interface TenantMemberRepository extends JpaRepository<TenantMember, Long
     @Query("""
         SELECT tm FROM TenantMember tm
         JOIN FETCH tm.tenant
+        WHERE tm.userId = :userId
+          AND tm.tenant.id IN :tenantIds
+    """)
+    List<TenantMember> findByUserIdAndTenantIdIn(@Param("userId") Long userId, 
+                                                  @Param("tenantIds") List<Long> tenantIds);
+
+    @Query("""
+        SELECT tm FROM TenantMember tm
+        JOIN FETCH tm.tenant
         WHERE tm.tenant.id = :tenantId
           AND tm.userId = :userId
     """)

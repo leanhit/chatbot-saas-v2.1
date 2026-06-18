@@ -2,6 +2,7 @@ package com.chatbot.core.tenant.controller;
 
 import com.chatbot.core.tenant.service.TenantPackageService;
 import com.chatbot.core.simplepayment.model.Package;
+import com.chatbot.core.simplepayment.dto.PackageResponse;
 import com.chatbot.core.tenant.dto.TenantPackageInfo;
 import com.chatbot.core.tenant.dto.TenantPackageDetailResponse;
 import com.chatbot.core.tenant.infra.TenantContext;
@@ -30,6 +31,7 @@ import java.util.Map;
 public class TenantPackageController {
 
     private final TenantPackageService tenantPackageService;
+    private final com.chatbot.core.tenant.service.TenantPermissionValidator permissionValidator;
 
     /**
      * Get current package info with expiration details
@@ -75,7 +77,7 @@ public class TenantPackageController {
     @GetMapping("/current")
     @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Get current tenant package", description = "Get the current package for the authenticated tenant")
-    public ResponseEntity<ApiResponse<Package>> getCurrentPackage(
+    public ResponseEntity<ApiResponse<PackageResponse>> getCurrentPackage(
             @AuthenticationPrincipal UserDetails userDetails,
             HttpServletRequest httpRequest) {
         try {
@@ -87,7 +89,8 @@ public class TenantPackageController {
                 return ResponseEntity.ok(ApiResponse.success(null, "No package assigned"));
             }
             
-            return ResponseEntity.ok(ApiResponse.success(currentPackage, "Current package retrieved successfully"));
+            PackageResponse packageResponse = PackageResponse.fromEntity(currentPackage);
+            return ResponseEntity.ok(ApiResponse.success(packageResponse, "Current package retrieved successfully"));
         } catch (Exception e) {
             log.error("❌ Error getting current package: {}", e.getMessage(), e);
             return ResponseEntity.badRequest().body(ApiResponse.error("Error getting current package: " + e.getMessage()));
@@ -100,7 +103,7 @@ public class TenantPackageController {
     @GetMapping("/current/{tenantKey}")
     @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Get current tenant package by key", description = "Get the current package for a specific tenant by key")
-    public ResponseEntity<ApiResponse<Package>> getCurrentPackageByKey(@PathVariable String tenantKey) {
+    public ResponseEntity<ApiResponse<PackageResponse>> getCurrentPackageByKey(@PathVariable String tenantKey) {
         try {
             Package currentPackage = tenantPackageService.getCurrentTenantPackageByKey(tenantKey);
             
@@ -108,7 +111,8 @@ public class TenantPackageController {
                 return ResponseEntity.ok(ApiResponse.success(null, "No package assigned"));
             }
             
-            return ResponseEntity.ok(ApiResponse.success(currentPackage, "Current package retrieved successfully"));
+            PackageResponse packageResponse = PackageResponse.fromEntity(currentPackage);
+            return ResponseEntity.ok(ApiResponse.success(packageResponse, "Current package retrieved successfully"));
         } catch (Exception e) {
             log.error("❌ Error getting current package for tenant {}: {}", tenantKey, e.getMessage(), e);
             return ResponseEntity.badRequest().body(ApiResponse.error("Error getting current package: " + e.getMessage()));
@@ -179,6 +183,14 @@ public class TenantPackageController {
             HttpServletRequest httpRequest) {
         try {
             Long tenantId = extractTenantId(userDetails, httpRequest);
+            
+            // Check if user has permission to upgrade package (must be admin or owner)
+            String currentUserEmail = userDetails != null ? userDetails.getUsername() : null;
+            if (!permissionValidator.isAdminOrOwner(tenantId, currentUserEmail)) {
+                return ResponseEntity.status(org.springframework.http.HttpStatus.FORBIDDEN)
+                    .body(ApiResponse.error("You don't have permission to upgrade the package for this tenant"));
+            }
+            
             tenantPackageService.upgradeTenantPackage(tenantId, packageId);
             return ResponseEntity.ok(ApiResponse.success("Package upgraded successfully", "Your package has been upgraded to " + packageId));
         } catch (Exception e) {

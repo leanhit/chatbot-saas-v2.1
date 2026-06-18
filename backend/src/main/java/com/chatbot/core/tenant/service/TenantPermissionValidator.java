@@ -7,6 +7,7 @@ import com.chatbot.core.user.model.User;
 import com.chatbot.core.user.repository.UserRepository;
 import com.chatbot.core.user.repository.AuthRepository;
 import com.chatbot.core.tenant.membership.repository.TenantMemberRepository;
+import com.chatbot.core.tenant.exception.InsufficientPermissionException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -31,7 +32,7 @@ public class TenantPermissionValidator {
     public String getCurrentUserEmail() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth == null || !auth.isAuthenticated()) {
-            throw new RuntimeException("User not authenticated");
+            throw new InsufficientPermissionException("User not authenticated");
         }
         return auth.getName();
     }

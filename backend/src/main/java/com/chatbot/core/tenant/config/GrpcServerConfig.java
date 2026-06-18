@@ -1,8 +1,10 @@
 package com.chatbot.core.tenant.config;
 
 import com.chatbot.core.tenant.grpc.TenantServiceGrpcImpl;
+import com.chatbot.core.tenant.grpc.GrpcAuthInterceptor;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
+import io.grpc.ServerInterceptors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -23,6 +25,9 @@ public class GrpcServerConfig {
     @Autowired
     private TenantServiceGrpcImpl tenantServiceGrpcImpl;
 
+    @Autowired
+    private GrpcAuthInterceptor grpcAuthInterceptor;
+
     private Server grpcServer;
 
     @PostConstruct
@@ -30,13 +35,13 @@ public class GrpcServerConfig {
         log.info("Starting gRPC server on port: {}", grpcPort);
         
         grpcServer = ServerBuilder.forPort(grpcPort)
-                .addService(tenantServiceGrpcImpl)
+                .addService(ServerInterceptors.intercept(tenantServiceGrpcImpl, grpcAuthInterceptor))
                 .maxInboundMessageSize(10 * 1024 * 1024) // 10MB
                 .maxInboundMetadataSize(10 * 1024 * 1024) // 10MB
                 .build()
                 .start();
         
-        log.info("gRPC server started successfully on port: {}", grpcPort);
+        log.info("gRPC server started successfully on port: {} with authentication enabled", grpcPort);
         
         // Add shutdown hook
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {

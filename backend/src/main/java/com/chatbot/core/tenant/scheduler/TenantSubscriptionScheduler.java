@@ -7,7 +7,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -26,9 +25,9 @@ public class TenantSubscriptionScheduler {
     /**
      * Periodically check and downgrade expired tenant subscriptions to 'free' package.
      * Runs every hour at the start of the hour.
+     * Note: Transaction scope is limited to individual tenant downgrades to prevent batch rollback
      */
     @Scheduled(cron = "0 0 * * * *")
-    @Transactional(transactionManager = "tenantTransactionManager")
     public void downgradeExpiredTenants() {
         log.info("⏰ [TenantSubscriptionScheduler] Checking for expired tenant subscriptions...");
         try {
@@ -46,6 +45,7 @@ public class TenantSubscriptionScheduler {
                     log.warn("🚨 [TenantSubscriptionScheduler] Tenant '{}' (ID: {}, Key: {}) has expired (Expiry: {}). Downgrading to free package.",
                             tenant.getName(), tenant.getId(), tenant.getTenantKey(), tenant.getExpiresAt());
                     
+                    // Each tenant downgrade runs in its own transaction (REQUIRES_NEW in upgradeTenantPackage)
                     tenantPackageService.upgradeTenantPackage(tenant.getId(), "free");
                 } catch (Exception e) {
                     log.error("❌ [TenantSubscriptionScheduler] Failed to downgrade tenant ID {}: {}", tenant.getId(), e.getMessage(), e);

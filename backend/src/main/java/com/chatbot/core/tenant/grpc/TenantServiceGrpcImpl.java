@@ -20,9 +20,8 @@ import java.util.stream.Collectors;
 /**
  * gRPC service implementation cho Tenant operations.
  *
- * SECURITY NOTE: Các endpoint gRPC hiện chưa có authentication/authorization
- * ở tầng gRPC metadata. TODO: thêm gRPC interceptor để validate JWT/service token
- * trước khi xử lý bất kỳ mutation nào (activate, suspend, delete, update).
+ * SECURITY: All gRPC endpoints are protected by GrpcAuthInterceptor which validates
+ * JWT tokens from metadata before processing any request.
  */
 @Service
 @Slf4j
@@ -214,7 +213,7 @@ public class TenantServiceGrpcImpl extends TenantServiceGrpc.TenantServiceImplBa
     }
 
     // =========================================================================
-    // MUTATIONS — TODO: thêm gRPC auth interceptor
+    // MUTATIONS — Protected by GrpcAuthInterceptor
     // =========================================================================
 
     @Override

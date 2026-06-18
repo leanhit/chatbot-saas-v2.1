@@ -5,6 +5,8 @@ import com.chatbot.core.tenant.profile.dto.TenantProfileResponse;
 import com.chatbot.core.tenant.profile.service.TenantProfileService;
 import com.chatbot.core.tenant.model.Tenant;
 import com.chatbot.core.tenant.repository.TenantRepository;
+import com.chatbot.core.tenant.exception.TenantNotFoundException;
+import com.chatbot.core.tenant.exception.BusinessLogicException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -42,7 +44,7 @@ public class TenantProfileController {
             @PathVariable String tenantKey
     ) {
         Tenant tenant = tenantRepository.findByTenantKey(tenantKey)
-                .orElseThrow(() -> new RuntimeException("Tenant not found with key: " + tenantKey));
+                .orElseThrow(() -> new TenantNotFoundException("Tenant not found with key: " + tenantKey));
         return ResponseEntity.ok(
                 tenantProfileService.getProfile(tenant.getId())
         );
@@ -143,7 +145,7 @@ public class TenantProfileController {
             throw e;
         } catch (Exception e) {
             log.error("💥 [TENANT PROFILE CONTROLLER] Unexpected error: {}", e.getMessage(), e);
-            throw new RuntimeException("Failed to update logo: " + e.getMessage(), e);
+            throw new BusinessLogicException("Failed to update logo: " + e.getMessage());
         }
     }
 
@@ -163,7 +165,7 @@ public class TenantProfileController {
             @RequestBody TenantProfileRequest request
     ) {
         Tenant tenant = tenantRepository.findByTenantKey(tenantKey)
-                .orElseThrow(() -> new RuntimeException("Tenant not found with key: " + tenantKey));
+                .orElseThrow(() -> new TenantNotFoundException("Tenant not found with key: " + tenantKey));
         
         return ResponseEntity.ok(
             tenantProfileService.upsertProfile(tenant.getId(), request)
@@ -187,7 +189,7 @@ public class TenantProfileController {
             @RequestParam(value = "logo", required = false) MultipartFile file
     ) {
         Tenant tenant = tenantRepository.findByTenantKey(tenantKey)
-                .orElseThrow(() -> new RuntimeException("Tenant not found with key: " + tenantKey));
+                .orElseThrow(() -> new TenantNotFoundException("Tenant not found with key: " + tenantKey));
         
         // Handle logo upload first if provided
         if (file != null && !file.isEmpty()) {

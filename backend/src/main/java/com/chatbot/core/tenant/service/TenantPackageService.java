@@ -6,7 +6,6 @@ import com.chatbot.shared.exceptions.ResourceNotFoundException;
 import com.chatbot.core.tenant.exception.TenantNotFoundException;
 import com.chatbot.core.tenant.model.Tenant;
 import com.chatbot.core.tenant.repository.TenantRepository;
-import com.chatbot.core.simplepayment.service.PackageService;
 import com.chatbot.core.simplepayment.model.Package;
 import com.chatbot.core.simplepayment.repository.PackageRepository;
 import lombok.RequiredArgsConstructor;
@@ -28,7 +27,6 @@ import java.util.Map;
 public class TenantPackageService {
 
     private final TenantRepository tenantRepository;
-    private final PackageService packageService;
     private final PackageRepository packageRepository;
     private final AuthRepository authRepository;
     private final TenantAuditLogService auditLogService;
@@ -268,12 +266,7 @@ public class TenantPackageService {
 
     private Package resolvePackage(String packageId) {
         if (packageId == null) return null;
-        try {
-            return packageService.getPackageByPackageId(packageId).orElse(null);
-        } catch (Exception e) {
-            log.warn("[TenantPackageService] getPackageByPackageId failed for '{}', falling back to repo: {}",
-                    packageId, e.getMessage());
-            return packageRepository.findByPackageId(packageId).orElse(null);
-        }
+        // Use repository directly to avoid redundant fallback (packageService likely calls repository internally)
+        return packageRepository.findByPackageId(packageId).orElse(null);
     }
 }

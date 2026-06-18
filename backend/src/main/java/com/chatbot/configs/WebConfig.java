@@ -3,35 +3,24 @@ package com.chatbot.configs;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
-import com.chatbot.core.tenant.guard.TenantStatusInterceptor;
 import com.chatbot.core.tenant.guard.TenantContextInterceptor;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
 
-    private final TenantStatusInterceptor statusInterceptor;
     private final TenantContextInterceptor tenantContextInterceptor;
 
-    public WebConfig(
-            TenantStatusInterceptor statusInterceptor,
-            TenantContextInterceptor tenantContextInterceptor
-    ) {
-        this.statusInterceptor = statusInterceptor;
+    public WebConfig(TenantContextInterceptor tenantContextInterceptor) {
         this.tenantContextInterceptor = tenantContextInterceptor;
     }
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
-        // Add TenantContextInterceptor first to set tenant context from X-Tenant-Key header
+        // Add TenantContextInterceptor (merged with TenantStatusInterceptor to reduce DB queries from 2 to 1)
         registry.addInterceptor(tenantContextInterceptor)
                 .addPathPatterns("/api/**")
                 .excludePathPatterns("/api/auth/**", "/api/error", "/api/actuator/**", "/api/public/**");
-        
-        // Add TenantStatusInterceptor to validate tenant status
-        registry.addInterceptor(statusInterceptor)
-                .addPathPatterns("/api/**")
-                .excludePathPatterns("/api/auth/**", "/api/error", "/api/actuator/**");
     }
 
     @Override

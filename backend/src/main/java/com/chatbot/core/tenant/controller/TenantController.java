@@ -32,11 +32,11 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import com.chatbot.core.user.repository.AuthRepository;
 import com.chatbot.core.tenant.service.TenantPermissionValidator;
-import io.swagger.v3.oas.annotations.responses.ApiResponse; // import io.swagger.v3.oas.annotations.responses.ApiResponse; // Use fully qualified name to avoid conflict
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
-import org.springframework.security.access.prepost.PreAuthorize;
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/tenants")
@@ -84,7 +84,7 @@ public class TenantController {
     )
     public TenantResponse create(
             @Parameter(description = "Tenant creation details", required = true)
-            @RequestBody CreateTenantRequest request) {
+            @Valid @RequestBody CreateTenantRequest request) {
         log.info("🏗️ [TenantController] Starting tenant creation");
         log.info("📋 [TenantController] Request data: name={}, visibility={}", request.getName(), request.getVisibility());
         
@@ -220,7 +220,7 @@ public class TenantController {
     @PutMapping("/key/{tenantKey}")
     public TenantResponse updateBasicInfo(
             @PathVariable String tenantKey,
-            @RequestBody TenantBasicInfoRequest request // Đảm bảo DTO này có name, status, expiresAt
+            @Valid @RequestBody TenantBasicInfoRequest request // Đảm bảo DTO này có name, status, expiresAt
     ) {
         return tenantService.updateBasicInfo(tenantKey, request);
     }
@@ -231,7 +231,7 @@ public class TenantController {
     @PutMapping("/key/{tenantKey}/contact")
     public TenantResponse updateContactInfo(
             @PathVariable String tenantKey,
-            @RequestBody TenantContactInfoRequest request
+            @Valid @RequestBody TenantContactInfoRequest request
     ) {
         return tenantService.updateContactInfo(tenantKey, request);
     }
@@ -344,7 +344,7 @@ public class TenantController {
      * Get tenant members
      */
     @GetMapping("/key/{tenantKey}/members")
-    public Object getTenantMembers(@PathVariable String tenantKey, Pageable pageable) {
+    public org.springframework.data.domain.Page<com.chatbot.core.tenant.membership.dto.MemberResponse> getTenantMembers(@PathVariable String tenantKey, Pageable pageable) {
         try {
             // Convert tenantKey to tenantId and delegate to membership facade
             Tenant tenant = tenantRepository.findByTenantKey(tenantKey)
@@ -363,7 +363,7 @@ public class TenantController {
      * Get tenant join requests
      */
     @GetMapping("/key/{tenantKey}/members/join-requests")
-    public Object getJoinRequests(@PathVariable String tenantKey) {
+    public java.util.List<com.chatbot.core.tenant.membership.dto.MemberResponse> getJoinRequests(@PathVariable String tenantKey) {
         try {
             // Convert tenantKey to tenantId and delegate to membership facade
             Tenant tenant = tenantRepository.findByTenantKey(tenantKey)
@@ -410,19 +410,15 @@ public class TenantController {
     @PostMapping("/key/{tenantKey}/invitations")
     public void createInvitation(
             @PathVariable String tenantKey,
-            @RequestBody Map<String, Object> inviteData,
+            @Valid @RequestBody com.chatbot.core.tenant.membership.dto.InviteMemberRequest inviteData,
             @AuthenticationPrincipal(expression = "user") User user
     ) {
         try {
             // Convert tenantKey to tenantId and delegate to invitation service
             Long tenantId = tenantMembershipFacade.getTenantIdByKey(tenantKey);
             
-            // Extract email and role from inviteData
-            String email = (String) inviteData.get("email");
-            String role = (String) inviteData.get("role");
-            
             // Delegate to TenantMembershipFacade
-            tenantMembershipFacade.createInvitation(tenantId, email, role, user);
+            tenantMembershipFacade.createInvitation(tenantId, inviteData.getEmail(), inviteData.getRole().name(), user);
         } catch (IllegalStateException e) {
             // Business logic errors - return 400 with specific message
             log.warn("Business logic error: {}", e.getMessage());
@@ -438,7 +434,7 @@ public class TenantController {
      * Get tenant invitations
      */
     @GetMapping("/key/{tenantKey}/invitations")
-    public Object getInvitations(@PathVariable String tenantKey) {
+    public java.util.List<com.chatbot.core.tenant.membership.dto.InvitationResponse> getInvitations(@PathVariable String tenantKey) {
         try {
             // Convert tenantKey to tenantId and delegate to invitation service
             Long tenantId = tenantMembershipFacade.getTenantIdByKey(tenantKey);
@@ -455,7 +451,7 @@ public class TenantController {
      * Get member by ID
      */
     @GetMapping("/key/{tenantKey}/members/{userId}")
-    public Object getMember(@PathVariable String tenantKey, @PathVariable Long userId) {
+    public com.chatbot.core.tenant.membership.dto.MemberResponse getMember(@PathVariable String tenantKey, @PathVariable Long userId) {
         try {
             Long tenantId = tenantMembershipFacade.getTenantIdByKey(tenantKey);
             return tenantMembershipFacade.getMember(tenantId, userId);
@@ -470,7 +466,7 @@ public class TenantController {
      * Get current member info
      */
     @GetMapping("/key/{tenantKey}/members/me")
-    public Object getMyMember(@PathVariable String tenantKey, @AuthenticationPrincipal User user) {
+    public com.chatbot.core.tenant.membership.dto.MemberResponse getMyMember(@PathVariable String tenantKey, @AuthenticationPrincipal User user) {
         try {
             Long tenantId = tenantMembershipFacade.getTenantIdByKey(tenantKey);
             return tenantMembershipFacade.myMember(tenantId, user);
@@ -555,44 +551,6 @@ public class TenantController {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, 
                 "Failed to update join request: " + e.getMessage(), e);
         }
-    }
-
-    /**
-     * Debug packages database query - ADMIN only
-     */
-    @GetMapping("/debug/packages")
-    @PreAuthorize("hasRole('ADMIN')")
-    public Map<String, Object> debugPackages() {
-        Map<String, Object> result = new java.util.HashMap<>();
-        try {
-            // Import Package classes
-            com.chatbot.core.simplepayment.repository.PackageRepository packageRepo = 
-                com.chatbot.core.simplepayment.config.ApplicationContextProvider.getBean(com.chatbot.core.simplepayment.repository.PackageRepository.class);
-            
-            long totalPackages = packageRepo.count();
-            result.put("totalPackages", totalPackages);
-            
-            if (totalPackages > 0) {
-                List<com.chatbot.core.simplepayment.model.Package> allPackages = packageRepo.findAll();
-                result.put("packages", allPackages.stream().map(p -> {
-                    Map<String, Object> pkg = new java.util.HashMap<>();
-                    pkg.put("id", p.getId());
-                    pkg.put("packageId", p.getPackageId());
-                    pkg.put("name", p.getName());
-                    pkg.put("price", p.getPrice());
-                    pkg.put("isActive", p.getIsActive());
-                    pkg.put("sortOrder", p.getSortOrder());
-                    return pkg;
-                }).toList());
-            }
-            
-            result.put("success", true);
-        } catch (Exception e) {
-            result.put("success", false);
-            result.put("error", e.getMessage());
-            log.error("Debug packages error: {}", e.getMessage(), e);
-        }
-        return result;
     }
 
     /**

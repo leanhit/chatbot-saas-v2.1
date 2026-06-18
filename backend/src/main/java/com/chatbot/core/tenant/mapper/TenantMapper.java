@@ -19,7 +19,7 @@ public class TenantMapper {
                 .name(request.getName())
                 .status(TenantStatus.ACTIVE)
                 .visibility(request.getVisibility())
-                .expiresAt(LocalDateTime.now().plusDays(trialDays))
+                // expiresAt is managed by TenantPackageService, not here
                 .build();
     }
 

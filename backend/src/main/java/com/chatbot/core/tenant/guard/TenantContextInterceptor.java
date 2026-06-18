@@ -1,7 +1,9 @@
 package com.chatbot.core.tenant.guard;
 
 import com.chatbot.core.tenant.infra.TenantContext;
-import com.chatbot.core.tenant.service.TenantService;
+import com.chatbot.core.tenant.model.Tenant;
+import com.chatbot.core.tenant.model.TenantStatus;
+import com.chatbot.core.tenant.repository.TenantRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
@@ -9,16 +11,17 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
 
 /**
- * Tenant Context Interceptor - Extracts tenant key from header and sets it in TenantContext
+ * Tenant Context Interceptor - Extracts tenant key from header, validates tenant status, and sets it in TenantContext
+ * Merged with TenantStatusInterceptor to reduce DB queries from 2 to 1 per request
  */
 @Component
 @Slf4j
 public class TenantContextInterceptor implements HandlerInterceptor {
 
-    private final TenantService tenantService;
+    private final TenantRepository tenantRepository;
 
-    public TenantContextInterceptor(TenantService tenantService) {
-        this.tenantService = tenantService;
+    public TenantContextInterceptor(TenantRepository tenantRepository) {
+        this.tenantRepository = tenantRepository;
     }
 
     @Override
@@ -35,16 +38,24 @@ public class TenantContextInterceptor implements HandlerInterceptor {
         
         if (tenantKey != null && !tenantKey.trim().isEmpty()) {
             try {
-                // Validate tenant exists and get tenant ID
-                Long tenantId = tenantService.getTenantIdByKey(tenantKey);
-                if (tenantId != null) {
+                // Get full tenant entity in one query (replaces 2 separate queries)
+                Tenant tenant = tenantRepository.findByTenantKey(tenantKey).orElse(null);
+                if (tenant != null) {
+                    // Check tenant status (merged from TenantStatusInterceptor)
+                    if (tenant.getStatus() != TenantStatus.ACTIVE) {
+                        throw new IllegalStateException("Tenant is not active: " + tenant.getStatus());
+                    }
+                    
                     // Set both tenant key and tenant ID in context
                     TenantContext.setCurrentTenant(tenantKey);
-                    TenantContext.setTenantId(tenantId);
-                    log.debug("🏢 Set tenant context: {} (ID: {})", tenantKey, tenantId);
+                    TenantContext.setTenantId(tenant.getId());
+                    log.debug("🏢 Set tenant context: {} (ID: {}, Status: {})", tenantKey, tenant.getId(), tenant.getStatus());
                 } else {
                     log.warn("⚠️ Tenant not found for key: {}", tenantKey);
                 }
+            } catch (IllegalStateException e) {
+                // Re-throw status check exceptions
+                throw e;
             } catch (Exception e) {
                 log.error("❌ Error setting tenant context for key: {}", tenantKey, e);
                 // Don't block the request, just log the error

@@ -7,6 +7,9 @@ import com.chatbot.core.tenant.membership.dto.InviteMemberRequest;
 import com.chatbot.core.tenant.membership.dto.InvitationResponse;
 import com.chatbot.core.tenant.model.Tenant;
 import com.chatbot.core.tenant.repository.TenantRepository;
+import com.chatbot.core.tenant.exception.TenantNotFoundException;
+import com.chatbot.core.tenant.exception.BusinessLogicException;
+import com.chatbot.core.tenant.exception.InsufficientPermissionException;
 import com.chatbot.core.tenant.membership.model.TenantInvitation;
 import com.chatbot.core.tenant.membership.model.TenantMember;
 import com.chatbot.core.tenant.membership.model.InvitationStatus;
@@ -44,7 +47,7 @@ public class TenantInvitationService {
     @Transactional(transactionManager = "tenantTransactionManager")
     public void inviteMember(Long tenantId, InviteMemberRequest request, User admin) {
         Tenant tenant = tenantRepo.findById(tenantId)
-            .orElseThrow(() -> new RuntimeException("Tenant không tồn tại"));
+            .orElseThrow(() -> new TenantNotFoundException("Tenant không tồn tại"));
 
         // Dùng message chung để tránh user enumeration vulnerability
         User userToBeInvited = userRepo.findByEmail(request.getEmail().toLowerCase())
@@ -113,18 +116,18 @@ public class TenantInvitationService {
     @Transactional(transactionManager = "tenantTransactionManager")
     public void acceptInvitation(String token, User user) {
         TenantInvitation invitation = invitationRepo.findByToken(token)
-            .orElseThrow(() -> new RuntimeException("Lời mời không hợp lệ hoặc đã bị thu hồi."));
+            .orElseThrow(() -> new BusinessLogicException("Lời mời không hợp lệ hoặc đã bị thu hồi."));
 
         if (invitation.getStatus() != InvitationStatus.PENDING) {
-            throw new RuntimeException("Lời mời này không còn ở trạng thái chờ.");
+            throw new BusinessLogicException("Lời mời này không còn ở trạng thái chờ.");
         }
 
         if (invitation.getExpiresAt() != null && invitation.getExpiresAt().isBefore(LocalDateTime.now())) {
-            throw new RuntimeException("Lời mời này đã hết hạn.");
+            throw new BusinessLogicException("Lời mời này đã hết hạn.");
         }
 
         if (!invitation.getEmail().equalsIgnoreCase(user.getEmail())) {
-            throw new RuntimeException("Bạn không có quyền chấp nhận lời mời này.");
+            throw new InsufficientPermissionException("Bạn không có quyền chấp nhận lời mời này.");
         }
 
         memberRepo.save(TenantMember.builder()
@@ -157,10 +160,10 @@ public class TenantInvitationService {
     @Transactional(transactionManager = "tenantTransactionManager")
     public void rejectInvitation(String token, User user) {
         TenantInvitation invitation = invitationRepo.findByToken(token)
-            .orElseThrow(() -> new RuntimeException("Lời mời không tồn tại."));
+            .orElseThrow(() -> new BusinessLogicException("Lời mời không tồn tại."));
 
         if (!invitation.getEmail().equalsIgnoreCase(user.getEmail())) {
-            throw new RuntimeException("Bạn không có quyền từ chối lời mời này.");
+            throw new InsufficientPermissionException("Bạn không có quyền từ chối lời mời này.");
         }
 
         invitation.setStatus(InvitationStatus.REJECTED);
@@ -176,7 +179,7 @@ public class TenantInvitationService {
     @Transactional(transactionManager = "tenantTransactionManager")
     public void revokeInvitation(Long tenantId, Long invitationId) {
         TenantInvitation invitation = invitationRepo.findByIdAndTenantId(invitationId, tenantId)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy lời mời trong tổ chức này."));
+                .orElseThrow(() -> new BusinessLogicException("Không tìm thấy lời mời trong tổ chức này."));
 
         invitation.setStatus(InvitationStatus.REVOKED);
         invitationRepo.save(invitation);
