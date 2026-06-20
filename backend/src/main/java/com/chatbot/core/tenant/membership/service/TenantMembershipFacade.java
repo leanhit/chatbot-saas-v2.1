@@ -30,8 +30,8 @@ public class TenantMembershipFacade {
     }
 
     /** ✅ SPEC: members/me */
-    public MemberResponse myMember(Long tenantId, User user) {
-        return memberService.getMyMember(tenantId, user);
+    public MemberResponse myMember(Long tenantId) {
+        return memberService.getMyMember(tenantId);
     }
 
     public void updateRole(Long tenantId, Long userId, TenantRole role) {
@@ -75,6 +75,20 @@ public class TenantMembershipFacade {
      */
     public List<InvitationResponse> getMyInvitations(User user) {
         return invitationService.getMyPendingInvitations(user);
+    }
+
+    /**
+     * Chấp nhận lời mời
+     */
+    public void acceptInvitation(String token, User user) {
+        invitationService.acceptInvitation(token, user);
+    }
+
+    /**
+     * Từ chối lời mời
+     */
+    public void rejectInvitation(String token, User user) {
+        invitationService.rejectInvitation(token, user);
     }
 
     /**

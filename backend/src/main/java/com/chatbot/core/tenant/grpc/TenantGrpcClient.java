@@ -4,6 +4,8 @@ import com.chatbot.core.tenant.grpc.TenantServiceProto.*;
 import com.chatbot.core.tenant.grpc.TenantServiceGrpc;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
+import io.grpc.Metadata;
+import io.grpc.stub.MetadataUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.stereotype.Component;
@@ -53,6 +55,14 @@ public class TenantGrpcClient {
         int maxRetries = 5;
         int retryDelay = 2000; // 2 seconds
         
+        // Add health check token for connection test
+        Metadata headers = new Metadata();
+        Metadata.Key<String> authorizationKey = Metadata.Key.of("authorization", Metadata.ASCII_STRING_MARSHALLER);
+        headers.put(authorizationKey, "Bearer health-check-token");
+        
+        TenantServiceGrpc.TenantServiceBlockingStub testStub = blockingStub.withInterceptors(
+                MetadataUtils.newAttachHeadersInterceptor(headers));
+        
         for (int i = 0; i < maxRetries; i++) {
             try {
                 log.info("=== Testing gRPC Tenant Service (attempt {}/{}) ===", i + 1, maxRetries);
@@ -62,7 +72,7 @@ public class TenantGrpcClient {
                         .setTenantKey("test-tenant-key")
                         .build();
                 
-                ValidateTenantResponse validateResponse = blockingStub.validateTenant(validateRequest);
+                ValidateTenantResponse validateResponse = testStub.validateTenant(validateRequest);
                 log.info("Validate Tenant Response: valid={}, status={}, message={}", 
                         validateResponse.getValid(), 
                         validateResponse.getStatus(), 
@@ -73,7 +83,7 @@ public class TenantGrpcClient {
                         .setTenantKey("test-tenant-key")
                         .build();
                 
-                CheckTenantExistsResponse existsResponse = blockingStub.checkTenantExists(existsRequest);
+                CheckTenantExistsResponse existsResponse = testStub.checkTenantExists(existsRequest);
                 log.info("Check Tenant Exists Response: exists={}, tenantKey={}", 
                         existsResponse.getExists(), 
                         existsResponse.getTenantKey());

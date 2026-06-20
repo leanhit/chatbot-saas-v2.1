@@ -233,10 +233,14 @@ export default {
         console.error('Failed to send invitation:', error)
         
         // Handle different error types
-        if (error.response?.status === 409) {
+        const serverMessage = error.response?.data?.message;
+        
+        if (serverMessage) {
+          errorMessage.value = serverMessage;
+        } else if (error.response?.status === 409) {
           errorMessage.value = 'This user has already been invited or is already a member'
         } else if (error.response?.status === 400) {
-          errorMessage.value = error.response?.data?.message || 'Invalid request data'
+          errorMessage.value = 'Invalid request data'
         } else if (error.response?.status === 403) {
           errorMessage.value = 'You do not have permission to invite members'
         } else if (error.response?.status === 404) {

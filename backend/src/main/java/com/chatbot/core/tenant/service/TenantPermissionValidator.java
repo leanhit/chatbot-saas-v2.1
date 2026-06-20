@@ -8,6 +8,7 @@ import com.chatbot.core.user.repository.UserRepository;
 import com.chatbot.core.user.repository.AuthRepository;
 import com.chatbot.core.tenant.membership.repository.TenantMemberRepository;
 import com.chatbot.core.tenant.exception.InsufficientPermissionException;
+import com.chatbot.shared.exceptions.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -35,6 +36,15 @@ public class TenantPermissionValidator {
             throw new InsufficientPermissionException("User not authenticated");
         }
         return auth.getName();
+    }
+
+    /**
+     * Trả về User entity của user đang authenticate.
+     */
+    public User getCurrentUser() {
+        String email = getCurrentUserEmail();
+        return authRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
     }
 
     /**
@@ -94,5 +104,33 @@ public class TenantPermissionValidator {
         return tenantMemberRepository
                 .findByTenantIdAndUserIdAndStatus(tenantId, userId, MembershipStatus.ACTIVE)
                 .isPresent();
+    }
+
+    /**
+     * Kiểm tra user có quyền gán một role cụ thể cho thành viên khác không.
+     * Áp dụng cho Update Role và Mời thành viên.
+     */
+    public boolean canAssignRole(Long tenantId, String actorEmail, TenantRole targetRole) {
+        if (isAdmin(actorEmail)) return true;
+
+        Long userId = authRepository.findByEmail(actorEmail)
+                .map(User::getId)
+                .orElse(null);
+        if (userId == null) return false;
+
+        TenantRole actorRole = tenantMemberRepository
+                .findByTenantIdAndUserIdAndStatus(tenantId, userId, MembershipStatus.ACTIVE)
+                .map(com.chatbot.core.tenant.membership.model.TenantMember::getRole)
+                .orElse(null);
+
+        if (actorRole == null) return false;
+
+        if (actorRole == TenantRole.OWNER) {
+            return targetRole != TenantRole.OWNER;
+        }
+        if (actorRole == TenantRole.ADMIN) {
+            return targetRole == TenantRole.EDITOR || targetRole == TenantRole.MEMBER;
+        }
+        return false;
     }
 }

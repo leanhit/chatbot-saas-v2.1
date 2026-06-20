@@ -22,7 +22,7 @@ public class Tenant {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(unique = true, nullable = false)
+    @Column(name = "tenantkey", unique = true, nullable = false)
     private String tenantKey; // UUID for frontend
 
     @Column(nullable = false)
@@ -50,11 +50,11 @@ public class Tenant {
     private LocalDateTime packageActivatedAt;
 
     // --- audit ---
-    @Column
+    @Column(name = "createdat")
     @JsonFormat(pattern = DateUtils.API_DATETIME_FORMAT, timezone = DateUtils.API_TIMEZONE)
     private LocalDateTime createdAt;
     
-    @Column
+    @Column(name = "updatedat")
     @JsonFormat(pattern = DateUtils.API_DATETIME_FORMAT, timezone = DateUtils.API_TIMEZONE)
     private LocalDateTime updatedAt;
 

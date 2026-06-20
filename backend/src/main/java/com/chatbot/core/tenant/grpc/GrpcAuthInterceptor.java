@@ -44,6 +44,12 @@ public class GrpcAuthInterceptor implements ServerInterceptor {
             return new ServerCall.Listener<ReqT>() {};
         }
 
+        // Allow special health check token for internal health checks
+        if ("health-check-token".equals(token)) {
+            log.info("✅ [gRPC Auth] Health check token accepted for method: {}", call.getMethodDescriptor().getFullMethodName());
+            return next.startCall(call, headers);
+        }
+
         try {
             String email = jwtService.extractEmail(token);
             if (email != null) {

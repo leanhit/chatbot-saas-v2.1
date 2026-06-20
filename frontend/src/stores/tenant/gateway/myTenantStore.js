@@ -59,6 +59,15 @@ export const useGatewayTenantStore = defineStore('gateway-tenant', () => {
     try {
       // Use new endpoint with tenantKey
       const { data } = await tenantApi.getTenant(tenantKey)
+      
+      // Fetch member role for this tenant
+      try {
+        const memberRes = await tenantApi.getMyMember(tenantKey)
+        data.role = memberRes.data?.role || 'MEMBER'
+      } catch (e) {
+        data.role = 'MEMBER'
+      }
+      
       currentTenant.value = data
       
       // Reset payment store to prevent cross-tenant data contamination

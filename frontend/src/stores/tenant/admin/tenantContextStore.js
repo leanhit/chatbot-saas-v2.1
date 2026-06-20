@@ -16,6 +16,15 @@ export const useTenantAdminContextStore = defineStore('tenantAdminContext', () =
         return
       }
       const { data } = await tenantApi.getTenant(activeTenantKey.value)
+      
+      // Fetch user's role in this tenant
+      try {
+        const memberRes = await tenantApi.getMyMember(activeTenantKey.value)
+        data.role = memberRes.data?.role || 'MEMBER'
+      } catch (e) {
+        data.role = 'MEMBER'
+      }
+      
       tenant.value = data
     } catch (error) {
       console.error('Failed to load tenant:', error)

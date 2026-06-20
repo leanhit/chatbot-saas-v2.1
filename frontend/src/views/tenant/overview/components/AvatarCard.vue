@@ -20,6 +20,7 @@
             {{ getInitials() }}
           </div>
           <button
+            v-if="canEdit"
             @click="$emit('update-logo')"
             class="absolute bottom-0 right-0 bg-primary text-white p-2 rounded-full shadow-lg hover:bg-primary/80 transition-colors"
             :title="$t('tenant.overview.updateLogo')"
@@ -114,6 +115,10 @@ export default {
     tenant: {
       type: Object,
       default: () => ({})
+    },
+    canEdit: {
+      type: Boolean,
+      default: false
     }
   },
   emits: ['manage-members', 'settings', 'update-logo'],

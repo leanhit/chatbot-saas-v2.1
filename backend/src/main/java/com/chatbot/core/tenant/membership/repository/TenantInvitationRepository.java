@@ -17,6 +17,9 @@ public interface TenantInvitationRepository extends JpaRepository<TenantInvitati
     // Kiểm tra tồn tại lời mời để tránh gửi trùng
     boolean existsByTenantIdAndEmailAndStatus(Long tenantId, String email, InvitationStatus status);
     
+    // Lấy danh sách lời mời theo tenant, email và status (để check expired)
+    List<TenantInvitation> findByTenantIdAndEmailAndStatus(Long tenantId, String email, InvitationStatus status);
+    
     // Lấy danh sách lời mời của một Tenant (Dùng cho API listInvitations)
     List<TenantInvitation> findByTenantId(Long tenantId);
     

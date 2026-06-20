@@ -13,6 +13,12 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
+
+@Slf4j
+@Order(Ordered.HIGHEST_PRECEDENCE)
 @RestControllerAdvice(basePackages = "com.chatbot.core.tenant")
 public class TenantExceptionHandler {
 
@@ -38,6 +44,19 @@ public class TenantExceptionHandler {
     public ResponseEntity<Map<String, Object>> handleStatusTransition(
             TenantStatusTransitionException ex, WebRequest request) {
         return createErrorResponse(ex, HttpStatus.BAD_REQUEST, request);
+    }
+
+    @ExceptionHandler(BusinessLogicException.class)
+    public ResponseEntity<Map<String, Object>> handleBusinessLogic(
+            BusinessLogicException ex, WebRequest request) {
+        Map<String, Object> response = new HashMap<>();
+        response.put("timestamp", LocalDateTime.now());
+        response.put("status", HttpStatus.BAD_REQUEST.value());
+        response.put("error", "Bad Request");
+        response.put("message", ex.getMessage());
+        response.put("path", request.getDescription(false).replace("uri=", ""));
+        
+        return ResponseEntity.badRequest().body(response);
     }
 
     @ExceptionHandler(TenantProfileException.class)
@@ -105,6 +124,7 @@ public class TenantExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> handleGlobalException(
             Exception ex, WebRequest request) {
+        log.error("❌ [TenantExceptionHandler] Unhandled Exception: ", ex);
         Map<String, Object> response = new HashMap<>();
         response.put("timestamp", LocalDateTime.now());
         response.put("status", HttpStatus.INTERNAL_SERVER_ERROR.value());

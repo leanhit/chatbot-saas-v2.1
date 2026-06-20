@@ -54,7 +54,7 @@
               <Icon icon="mdi:eye" class="h-4 w-4" />
             </button>
             <button
-              v-if="member?.role !== TenantRole.OWNER"
+              v-if="canManageMember(member)"
               @click="removeMember(member)"
               class="p-1 text-gray-400 hover:text-red-600 dark:hover:text-red-400"
               :title="$t('tenant.member.removeMember')"
@@ -77,10 +77,11 @@
               v-else
               v-model="member.role"
               @change="handleRoleChange(member, $event.target.value)"
-              :disabled="!canChangeRole(member?.role)"
+              :disabled="!canChangeRole(member)"
               class="text-xs border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-primary dark:bg-gray-700 dark:border-gray-600 dark:text-white"
             >
-              <option :value="TenantRole.ADMIN">{{ $t('tenant.member.admin') }}</option>
+              <option v-if="currentUserRole === TenantRole.OWNER" :value="TenantRole.ADMIN">{{ $t('tenant.member.admin') }}</option>
+              <option :value="TenantRole.EDITOR">{{ $t('tenant.member.editor') }}</option>
               <option :value="TenantRole.MEMBER">{{ $t('tenant.member.member') }}</option>
             </select>
           </div>
@@ -144,6 +145,10 @@ export default {
     searchQuery: {
       type: String,
       default: ''
+    },
+    currentUserRole: {
+      type: String,
+      default: null
     }
   },
   components: {
@@ -243,7 +248,8 @@ export default {
         emit('member-updated', member)
       } catch (error) {
         console.error('Failed to update member role:', error)
-        alert('Failed to update member role. Please try again.')
+        const errorMessage = error.response?.data?.message || error.message || 'Failed to update member role. Please try again.'
+        alert(errorMessage)
       }
     }
     const removeMember = async (member) => {
@@ -267,7 +273,8 @@ export default {
         emit('member-removed', member)
       } catch (error) {
         console.error('Failed to remove member:', error)
-        alert('Failed to remove member. Please try again.')
+        const errorMessage = error.response?.data?.message || error.message || 'Failed to remove member. Please try again.'
+        alert(errorMessage)
       }
     }
     const viewDetails = (member) => {
@@ -278,10 +285,20 @@ export default {
         event.target.src = defaultAvatar
       }
     }
-    const canChangeRole = (role) => {
-      // Only admin and above can change roles
-      if (!role) return false
-      return true
+    const canManageMember = (member) => {
+      if (!props.currentUserRole) return false;
+      if (member.role === TenantRole.OWNER) return false; // Nobody can remove an OWNER (not even another OWNER)
+      if (props.currentUserRole === TenantRole.OWNER) return true; // OWNER can remove anyone else
+      if (props.currentUserRole === TenantRole.ADMIN && (member.role === TenantRole.MEMBER || member.role === TenantRole.EDITOR)) return true;
+      return false;
+    }
+
+    const canChangeRole = (member) => {
+      if (!props.currentUserRole) return false;
+      if (member.role === TenantRole.OWNER) return false; // Cannot change OWNER role
+      if (props.currentUserRole === TenantRole.OWNER) return true; // OWNER can change anyone else
+      if (props.currentUserRole === TenantRole.ADMIN && (member.role === TenantRole.MEMBER || member.role === TenantRole.EDITOR)) return true;
+      return false;
     }
     const getStatusBadgeClass = (status) => {
       switch (status) {
@@ -321,6 +338,7 @@ export default {
       removeMember,
       viewDetails,
       handleAvatarError,
+      canManageMember,
       canChangeRole,
       getStatusBadgeClass,
       getStatusLabel,

@@ -9,6 +9,10 @@ import com.chatbot.core.tenant.membership.model.*;
 import com.chatbot.core.tenant.membership.repository.TenantMemberRepository;
 import com.chatbot.core.tenant.membership.repository.TenantJoinRequestRepository;
 import com.chatbot.core.tenant.service.TenantAuditLogService;
+import com.chatbot.core.tenant.exception.BusinessLogicException;
+import com.chatbot.core.tenant.exception.TenantNotFoundException;
+import com.chatbot.core.tenant.exception.InsufficientPermissionException;
+import com.chatbot.core.tenant.service.TenantPermissionValidator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -29,6 +33,7 @@ public class TenantJoinRequestService {
     private final TenantNotificationService notificationService;
     private final TenantAuditLogService auditLogService;
     private final UserRepository userRepo; // Added for application-level join
+    private final TenantPermissionValidator permissionValidator;
 
     /* ================= REQUEST ================= */
 
@@ -36,16 +41,16 @@ public class TenantJoinRequestService {
     public void requestToJoin(Long tenantId, User user) {
         if (memberRepo.existsByTenant_IdAndUserIdAndStatus(
                 tenantId, user.getId(), MembershipStatus.ACTIVE)) {
-            throw new IllegalStateException("Bạn đã là thành viên của tenant này");
+            throw new BusinessLogicException("Bạn đã là thành viên của tenant này");
         }
 
         if (joinRequestRepo.existsByTenant_IdAndUserIdAndStatus(
                 tenantId, user.getId(), MembershipStatus.PENDING)) {
-            throw new IllegalStateException("Bạn đã gửi yêu cầu tham gia tenant này rồi");
+            throw new BusinessLogicException("Bạn đã gửi yêu cầu tham gia tenant này rồi");
         }
 
         Tenant tenant = tenantRepo.findById(tenantId)
-                .orElseThrow(() -> new IllegalStateException("Không tìm thấy tenant"));
+                .orElseThrow(() -> new TenantNotFoundException("Không tìm thấy tenant"));
 
         joinRequestRepo.save(TenantJoinRequest.builder()
                 .tenant(tenant)
@@ -68,6 +73,11 @@ public class TenantJoinRequestService {
     /* ================= LIST ================= */
 
     public List<MemberResponse> getPendingRequests(Long tenantId) {
+        String currentUserEmail = permissionValidator.getCurrentUserEmail();
+        if (!permissionValidator.isAdmin(currentUserEmail) && !permissionValidator.isTenantAdmin(tenantId, currentUserEmail)) {
+            throw new InsufficientPermissionException("Chỉ Admin hoặc Chủ sở hữu của tổ chức mới có quyền xem danh sách yêu cầu tham gia.");
+        }
+
         return joinRequestRepo.findByTenant_IdAndStatus(tenantId, MembershipStatus.PENDING)
                 .stream()
                 .map(this::toResponse)
@@ -78,11 +88,14 @@ public class TenantJoinRequestService {
 
     @Transactional(transactionManager = "tenantTransactionManager")
     public void updateStatus(Long tenantId, Long requestId, MembershipStatus status) {
+        String actorEmail = permissionValidator.getCurrentUserEmail();
+        if (!permissionValidator.isAdmin(actorEmail) && !permissionValidator.isTenantAdmin(tenantId, actorEmail)) {
+            throw new InsufficientPermissionException("Chỉ Admin hoặc Chủ sở hữu của tổ chức mới có quyền duyệt yêu cầu tham gia.");
+        }
+
         TenantJoinRequest request = getPendingRequest(tenantId, requestId);
 
-        String actorEmail = getCurrentUserEmailSafe();
-
-        if (status == MembershipStatus.ACTIVE) {
+        if (status == MembershipStatus.ACTIVE || status == MembershipStatus.APPROVED) {
             // Application-level join: fetch user by userId
             User user = userRepo.findById(request.getUserId()).orElse(null);
             
@@ -116,7 +129,7 @@ public class TenantJoinRequestService {
             auditLogService.logAction(tenantId, actorEmail, "REJECT_JOIN_REQUEST",
                 "Rejected join request from " + userEmail);
         } else {
-            throw new IllegalStateException("Trạng thái không hợp lệ: " + status);
+            throw new BusinessLogicException("Trạng thái không hợp lệ: " + status);
         }
     }
 
@@ -126,14 +139,14 @@ public class TenantJoinRequestService {
     @Transactional(transactionManager = "tenantTransactionManager")
     public void cancelUserRequest(Long requestId, User user) {
         TenantJoinRequest request = joinRequestRepo.findById(requestId)
-                .orElseThrow(() -> new IllegalStateException("Không tìm thấy yêu cầu"));
+                .orElseThrow(() -> new BusinessLogicException("Không tìm thấy yêu cầu"));
 
         if (!request.getUserId().equals(user.getId())) {
-            throw new IllegalStateException("Bạn không thể hủy yêu cầu của người khác");
+            throw new InsufficientPermissionException("Bạn không thể hủy yêu cầu của người khác");
         }
 
         if (request.getStatus() != MembershipStatus.PENDING) {
-            throw new IllegalStateException("Chỉ có thể hủy yêu cầu đang chờ xử lý");
+            throw new BusinessLogicException("Chỉ có thể hủy yêu cầu đang chờ xử lý");
         }
 
         Long tenantId = request.getTenant().getId();
@@ -147,11 +160,11 @@ public class TenantJoinRequestService {
 
     private TenantJoinRequest getPendingRequest(Long tenantId, Long requestId) {
         TenantJoinRequest request = joinRequestRepo.findById(requestId)
-                .orElseThrow(() -> new IllegalStateException("Không tìm thấy yêu cầu"));
+                .orElseThrow(() -> new BusinessLogicException("Không tìm thấy yêu cầu"));
 
         if (!request.getTenant().getId().equals(tenantId)
                 || request.getStatus() != MembershipStatus.PENDING) {
-            throw new IllegalStateException("Yêu cầu tham gia không hợp lệ");
+            throw new BusinessLogicException("Yêu cầu tham gia không hợp lệ");
         }
         return request;
     }
@@ -169,12 +182,4 @@ public class TenantJoinRequestService {
                 .build();
     }
 
-    private String getCurrentUserEmailSafe() {
-        try {
-            org.springframework.security.core.Authentication auth =
-                org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
-            if (auth != null && auth.isAuthenticated()) return auth.getName();
-        } catch (Exception ignored) {}
-        return "system";
-    }
 }

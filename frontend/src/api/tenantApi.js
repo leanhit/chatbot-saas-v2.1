@@ -136,7 +136,7 @@ export const tenantApi = {
     formData.append('logo', file)
     
     try {
-      const response = await axios.put(`/tenant/${tenantKey}/logo`, formData, {
+      const response = await axios.put(`/tenants/key/${tenantKey}/logo`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
@@ -196,6 +196,9 @@ export const tenantApi = {
   // Tenant membership
   async getTenantMembers(tenantKey) {
     return axios.get(`/tenants/key/${tenantKey}/members`);
+  },
+  async getMyMember(tenantKey) {
+    return axios.get(`/tenants/key/${tenantKey}/members/me`);
   },
   async updateMemberRole(tenantKey, memberId, role) {
     return axios.put(`/tenants/key/${tenantKey}/members/${memberId}/role`, { role });

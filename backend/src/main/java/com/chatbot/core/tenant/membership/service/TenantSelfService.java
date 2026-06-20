@@ -6,6 +6,8 @@ import com.chatbot.core.tenant.membership.model.*;
 import com.chatbot.core.tenant.membership.repository.TenantJoinRequestRepository;
 import com.chatbot.core.tenant.membership.repository.TenantMemberRepository;
 import com.chatbot.core.tenant.service.TenantAuditLogService;
+import com.chatbot.core.tenant.exception.BusinessLogicException;
+import com.chatbot.shared.exceptions.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -45,10 +47,10 @@ public class TenantSelfService {
     @Transactional(transactionManager = "tenantTransactionManager")
     public void leaveTenant(Long tenantId, User user) {
         TenantMember member = memberRepo.findByTenant_IdAndUserId(tenantId, user.getId())
-                .orElseThrow(() -> new IllegalStateException("Bạn không phải thành viên của tenant này"));
+                .orElseThrow(() -> new ResourceNotFoundException("Bạn không phải thành viên của tenant này"));
 
         if (member.getRole() == TenantRole.OWNER) {
-            throw new IllegalStateException("OWNER phải chuyển quyền sở hữu trước khi rời tổ chức");
+            throw new BusinessLogicException("OWNER phải chuyển quyền sở hữu trước khi rời tổ chức");
         }
 
         memberRepo.delete(member);

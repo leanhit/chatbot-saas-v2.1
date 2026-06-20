@@ -17,6 +17,7 @@ import com.chatbot.core.tenant.membership.model.MembershipStatus;
 import com.chatbot.core.tenant.membership.repository.TenantInvitationRepository;
 import com.chatbot.core.tenant.membership.repository.TenantMemberRepository;
 import com.chatbot.core.tenant.service.TenantAuditLogService;
+import com.chatbot.core.tenant.service.TenantPermissionValidator;
 import com.chatbot.core.user.model.User;
 import com.chatbot.core.user.repository.UserRepository;
 
@@ -40,26 +41,41 @@ public class TenantInvitationService {
     private final UserRepository userRepo;
     private final TenantNotificationService notificationService;
     private final TenantAuditLogService auditLogService;
+    private final TenantPermissionValidator permissionValidator;
 
     /**
      * Admin thực hiện mời user vào tenant.
      */
     @Transactional(transactionManager = "tenantTransactionManager")
     public void inviteMember(Long tenantId, InviteMemberRequest request, User admin) {
+        if (!permissionValidator.isAdmin(admin.getEmail()) && !permissionValidator.isTenantAdmin(tenantId, admin.getEmail())) {
+            throw new InsufficientPermissionException("Chỉ Admin hoặc Chủ sở hữu của tổ chức mới có quyền mời thành viên.");
+        }
+
+        if (!permissionValidator.canAssignRole(tenantId, admin.getEmail(), request.getRole())) {
+            throw new InsufficientPermissionException("Bạn không có quyền mời người khác với vai trò " + request.getRole());
+        }
+
         Tenant tenant = tenantRepo.findById(tenantId)
             .orElseThrow(() -> new TenantNotFoundException("Tenant không tồn tại"));
 
         // Dùng message chung để tránh user enumeration vulnerability
         User userToBeInvited = userRepo.findByEmail(request.getEmail().toLowerCase())
-            .orElseThrow(() -> new IllegalStateException(
+            .orElseThrow(() -> new BusinessLogicException(
                 "Không tìm thấy tài khoản với email này. Người dùng cần tự đăng ký trước khi được mời."));
 
         if (memberRepo.existsByTenantIdAndUserId(tenantId, userToBeInvited.getId())) {
-            throw new IllegalStateException("Người dùng đã là thành viên của tổ chức này.");
+            throw new BusinessLogicException("Người dùng đã là thành viên của tổ chức này.");
         }
 
-        if (invitationRepo.existsByTenantIdAndEmailAndStatus(tenantId, request.getEmail(), InvitationStatus.PENDING)) {
-            throw new IllegalStateException("Đã có lời mời đang chờ xác nhận cho email này.");
+        // Check for pending invitations that are not expired
+        List<TenantInvitation> pendingInvitations = invitationRepo.findByTenantIdAndEmailAndStatus(
+            tenantId, request.getEmail().toLowerCase(), InvitationStatus.PENDING);
+        boolean hasValidPendingInvitation = pendingInvitations.stream()
+            .anyMatch(inv -> inv.getExpiresAt() == null || inv.getExpiresAt().isAfter(LocalDateTime.now()));
+        
+        if (hasValidPendingInvitation) {
+            throw new BusinessLogicException("Đã có lời mời đang chờ xác nhận cho email này.");
         }
 
         TenantInvitation invitation = TenantInvitation.builder()
@@ -93,6 +109,11 @@ public class TenantInvitationService {
      */
     @Transactional(readOnly = true, transactionManager = "tenantTransactionManager")
     public List<InvitationResponse> listInvitations(Long tenantId) {
+        String currentUserEmail = permissionValidator.getCurrentUserEmail();
+        if (!permissionValidator.isAdmin(currentUserEmail) && !permissionValidator.isTenantAdmin(tenantId, currentUserEmail)) {
+            throw new InsufficientPermissionException("Chỉ Admin hoặc Chủ sở hữu của tổ chức mới có quyền xem danh sách lời mời.");
+        }
+
         return invitationRepo.findByTenantId(tenantId).stream()
                 .map(this::convertToResponse)
                 .collect(Collectors.toList());
@@ -178,15 +199,18 @@ public class TenantInvitationService {
      */
     @Transactional(transactionManager = "tenantTransactionManager")
     public void revokeInvitation(Long tenantId, Long invitationId) {
+        String currentUserEmail = permissionValidator.getCurrentUserEmail();
+        if (!permissionValidator.isAdmin(currentUserEmail) && !permissionValidator.isTenantAdmin(tenantId, currentUserEmail)) {
+            throw new InsufficientPermissionException("Chỉ Admin hoặc Chủ sở hữu của tổ chức mới có quyền thu hồi lời mời.");
+        }
+
         TenantInvitation invitation = invitationRepo.findByIdAndTenantId(invitationId, tenantId)
                 .orElseThrow(() -> new BusinessLogicException("Không tìm thấy lời mời trong tổ chức này."));
 
         invitation.setStatus(InvitationStatus.REVOKED);
         invitationRepo.save(invitation);
 
-        // Lấy email actor từ SecurityContext nếu có
-        String actorEmail = getCurrentUserEmailSafe();
-        auditLogService.logAction(tenantId, actorEmail, "REVOKE_INVITATION",
+        auditLogService.logAction(tenantId, currentUserEmail, "REVOKE_INVITATION",
             "Revoked invitation id=" + invitationId + " for " + invitation.getEmail());
     }
 

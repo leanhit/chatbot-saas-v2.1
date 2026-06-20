@@ -22,6 +22,7 @@
           <!-- Avatar Card -->
           <AvatarCard 
             :tenant="tenant" 
+            :can-edit="canEdit"
             @manage-members="handleManageMembers"
             @settings="handleSettings"
             @update-logo="handleUpdateLogo"
@@ -90,6 +91,7 @@
                   v-if="activeTab === 'basic'"
                   :tenant="tenant"
                   :loading="loading"
+                  :can-edit="canEdit"
                   @edit="handleEditBasic"
                 />
                 
@@ -98,6 +100,7 @@
                   v-if="activeTab === 'contact'"
                   :tenant="tenant"
                   :loading="loading"
+                  :can-edit="canEdit"
                   @edit="handleEditContact"
                 />
                 
@@ -106,6 +109,7 @@
                   v-if="activeTab === 'address'"
                   :tenant-address="tenantAddress"
                   :loading="loading"
+                  :can-edit="canEdit"
                   @edit="handleEditAddress"
                 />
               </div>
@@ -246,16 +250,24 @@ export default {
       return addresses.length > 0 ? addresses[0] : null
     })
     
+    const canEdit = computed(() => {
+      const role = tenant.value?.role
+      return role === 'OWNER' || role === 'ADMIN'
+    })
+    
     // Methods
     const handleEditBasic = () => {
+      if (!canEdit.value) return
       showBasicModal.value = true
     }
     
     const handleEditContact = () => {
+      if (!canEdit.value) return
       showContactModal.value = true
     }
     
     const handleEditAddress = () => {
+      if (!canEdit.value) return
       if (!tenantAddress.value?.id) {
         // Don't allow adding new address since it's created during tenant creation
         toast?.error('Address not found. Please contact support.')
@@ -274,6 +286,10 @@ export default {
     }
     
     const handleUpdateLogo = () => {
+      if (!canEdit.value) {
+        toast?.error('You do not have permission to update the logo')
+        return
+      }
       // Trigger logo upload - similar to user profile
       const input = document.createElement('input')
       input.type = 'file'
@@ -575,6 +591,7 @@ export default {
       tenantAddress,
       stats,
       loading,
+      canEdit,
       // Methods
       handleEditBasic,
       handleEditContact,

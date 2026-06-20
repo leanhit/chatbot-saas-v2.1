@@ -137,13 +137,13 @@ const routes = [
     path: "/payment/deposit",
     name: "payment-deposit",
     component: PaymentDeposit,
-    meta: { requiresAuth: true, title: "Payment Deposit" + appname },
+    meta: { requiresAuth: true, requiresOwner: true, title: "Payment Deposit" + appname },
   },
   {
     path: "/payment/history",
     name: "payment-history",
     component: PaymentHistory,
-    meta: { requiresAuth: true, title: "Payment History" + appname },
+    meta: { requiresAuth: true, requiresOwner: true, title: "Payment History" + appname },
   },
   // Admin Routes
   {
@@ -219,6 +219,12 @@ router.beforeEach(async (to, from, next) => {
       query: { redirect: to.fullPath } 
     });
   }
+  
+  // 4. Role-based access control
+  if (to.meta.requiresOwner && tenantStore.currentTenant?.role !== 'OWNER') {
+    return next({ name: 'dasboard' }); // redirect to dashboard if not owner
+  }
+  
   next();
 });
 export default router;

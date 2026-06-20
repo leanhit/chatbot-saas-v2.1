@@ -487,15 +487,11 @@ export const usePaymentStore = defineStore('payment', {
         // Pass amount to simulate payment
         await paymentAPI.simulatePayment(this.currentPayment.referenceCode, this.currentPayment.amount)
         
+        // Add a small delay to allow backend async events to process
+        await new Promise(resolve => setTimeout(resolve, 1500))
+        
         // Check status after simulation
         await this.checkPaymentStatus()
-        
-        // Refresh gateway tenant store FIRST to get updated package info
-        await this.refreshGatewayTenant()
-        // Then refresh current package from updated gateway tenant data
-        await this.loadCurrentPackage()
-        
-        this.setMessage('Giả lập thanh toán thành công! Gói dịch vụ đã được kích hoạt.', 'success')
       } catch (error) {
         console.error('❌ Error simulating payment:', error)
         this.setMessage('Lỗi giả lập thanh toán: ' + (error.response?.data?.message || error.message || 'Unknown error'), 'error')
@@ -703,18 +699,24 @@ export const usePaymentStore = defineStore('payment', {
         if (gatewayStore.currentTenant?.tenantKey) {
           // Refresh tenant data with cache-busting
           const response = await tenantApi.getTenant(gatewayStore.currentTenant.tenantKey)
-          gatewayStore.currentTenant = response.data
+          // Preserve the role when refreshing
+          const currentRole = gatewayStore.currentTenant.role
+          
+          gatewayStore.currentTenant = {
+            ...response.data,
+            role: currentRole
+          }
+          
+          console.log('✅ Gateway tenant refreshed. New packageId:', gatewayStore.currentTenant.currentPackageId)
           
           // Update localStorage
           try {
             if (typeof localStorage !== 'undefined') {
-              localStorage.setItem('tenant_data', JSON.stringify(response.data))
+              localStorage.setItem('tenant_data', JSON.stringify(gatewayStore.currentTenant))
             }
           } catch (error) {
             console.error('Error updating localStorage:', error)
           }
-          
-          console.log('✅ Gateway tenant refreshed with updated package info')
         }
       } catch (error) {
         console.error('❌ Error refreshing gateway tenant:', error)

@@ -9,7 +9,7 @@ export const useGatewayUserInvitationStore = defineStore('gateway-user-invitatio
     loading.value = true
     error.value = null
     try {
-      const { data } = await tenantApi.getUserInvitations()
+      const { data } = await tenantApi.getMyInvitations()
       invitations.value = data || []
     } catch (error) {
       error.value = error.response?.data?.message || 'Không thể lấy lời mời'

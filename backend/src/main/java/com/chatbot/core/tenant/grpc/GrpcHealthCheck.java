@@ -1,9 +1,10 @@
 package com.chatbot.core.tenant.grpc;
 
 import com.chatbot.core.tenant.grpc.TenantServiceProto.*;
-import com.chatbot.core.tenant.grpc.TenantServiceGrpc;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
+import io.grpc.Metadata;
+import io.grpc.stub.MetadataUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -19,19 +20,27 @@ public class GrpcHealthCheck {
     private TenantServiceGrpcImpl grpcService;
 
     @Value("${tenant.grpc.server.port:50057}")
-private int grpcPort;
+    private int grpcPort;
 
-@PostConstruct
+    @PostConstruct
     public void performHealthCheck() {
+        ManagedChannel channel = null;
         try {
             log.info("=== Bắt đầu Health Check cho gRPC Tenant Service ===");
             
             // Tạo channel để test
-            ManagedChannel channel = ManagedChannelBuilder.forAddress("localhost", grpcPort)
+            channel = ManagedChannelBuilder.forAddress("localhost", grpcPort)
                     .usePlaintext()
                     .build();
             
-            TenantServiceGrpc.TenantServiceBlockingStub blockingStub = TenantServiceGrpc.newBlockingStub(channel);
+            // Add authorization metadata for health check
+            Metadata headers = new Metadata();
+            Metadata.Key<String> authorizationKey = Metadata.Key.of("authorization", Metadata.ASCII_STRING_MARSHALLER);
+            // Use special health check token that bypasses JWT validation
+            headers.put(authorizationKey, "Bearer health-check-token");
+            
+            TenantServiceGrpc.TenantServiceBlockingStub blockingStub = TenantServiceGrpc.newBlockingStub(channel)
+                    .withInterceptors(MetadataUtils.newAttachHeadersInterceptor(headers));
             
             // Test validateTenant với tenant key không tồn tại
             ValidateTenantRequest request = ValidateTenantRequest.newBuilder()
@@ -46,10 +55,17 @@ private int grpcPort;
             log.info("   - Response message: {}", response.getMessage());
             log.info("   - gRPC Server đang chạy trên port {}", grpcPort);
             
-            channel.shutdown();
-            
         } catch (Exception e) {
             log.error("❌ gRPC Health Check FAILED: {}", e.getMessage(), e);
+        } finally {
+            if (channel != null) {
+                try {
+                    channel.shutdown();
+                    channel.awaitTermination(5, java.util.concurrent.TimeUnit.SECONDS);
+                } catch (InterruptedException e) {
+                    log.warn("Failed to shutdown channel properly", e);
+                }
+            }
         }
     }
 }

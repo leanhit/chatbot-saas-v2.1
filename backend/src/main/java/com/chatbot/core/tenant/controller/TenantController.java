@@ -323,40 +323,12 @@ public class TenantController {
     }
 
     /**
-     * Cập nhật logo tenant (Alternative endpoint for frontend compatibility)
-     */
-    @PutMapping("/{tenantKey}/logo")
-    @Operation(
-        summary = "Update tenant logo (alternative endpoint)",
-        description = "Upload and update tenant logo image - alternative endpoint for frontend compatibility"
-    )
-    public TenantResponse updateLogoAlternative(
-            @PathVariable String tenantKey,
-            @Parameter(description = "Logo image file", required = true)
-            @RequestParam("logo") org.springframework.web.multipart.MultipartFile file
-    ) {
-        log.info("🔄 [ALTERNATIVE] Using alternative endpoint for tenant logo update: {}", tenantKey);
-        // Delegate to main method
-        return updateLogo(tenantKey, file);
-    }
-
-    /**
      * Get tenant members
      */
     @GetMapping("/key/{tenantKey}/members")
     public org.springframework.data.domain.Page<com.chatbot.core.tenant.membership.dto.MemberResponse> getTenantMembers(@PathVariable String tenantKey, Pageable pageable) {
-        try {
-            // Convert tenantKey to tenantId and delegate to membership facade
-            Tenant tenant = tenantRepository.findByTenantKey(tenantKey)
-                .orElseThrow(() -> new RuntimeException("Tenant not found with key: " + tenantKey));
-            
-            // Delegate to TenantMembershipFacade
-            return tenantMembershipFacade.listMembers(tenant.getId(), pageable);
-        } catch (Exception e) {
-            log.error("Failed to get tenant members: {}", e.getMessage(), e);
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, 
-                "Failed to get tenant members: " + e.getMessage(), e);
-        }
+        Long tenantId = tenantMembershipFacade.getTenantIdByKey(tenantKey);
+        return tenantMembershipFacade.listMembers(tenantId, pageable);
     }
 
     /**
@@ -364,18 +336,8 @@ public class TenantController {
      */
     @GetMapping("/key/{tenantKey}/members/join-requests")
     public java.util.List<com.chatbot.core.tenant.membership.dto.MemberResponse> getJoinRequests(@PathVariable String tenantKey) {
-        try {
-            // Convert tenantKey to tenantId and delegate to membership facade
-            Tenant tenant = tenantRepository.findByTenantKey(tenantKey)
-                .orElseThrow(() -> new RuntimeException("Tenant not found with key: " + tenantKey));
-            
-            // Delegate to TenantMembershipFacade
-            return tenantMembershipFacade.pending(tenant.getId());
-        } catch (Exception e) {
-            log.error("Failed to get join requests: {}", e.getMessage(), e);
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, 
-                "Failed to get join requests: " + e.getMessage(), e);
-        }
+        Long tenantId = tenantMembershipFacade.getTenantIdByKey(tenantKey);
+        return tenantMembershipFacade.pending(tenantId);
     }
 
     /**
@@ -383,25 +345,11 @@ public class TenantController {
      */
     @PostMapping("/key/{tenantKey}/members/join-requests")
     public void requestJoinByTenantKey(
-            @PathVariable String tenantKey,
-            @AuthenticationPrincipal(expression = "user") User user
+            @PathVariable String tenantKey
     ) {
-        try {
-            // Convert tenantKey to tenantId and delegate to membership facade
-            Tenant tenant = tenantRepository.findByTenantKey(tenantKey)
-                .orElseThrow(() -> new RuntimeException("Tenant not found with key: " + tenantKey));
-            
-            // Delegate to TenantMembershipFacade
-            tenantMembershipFacade.requestJoin(tenant.getId(), user);
-        } catch (IllegalStateException e) {
-            // Business logic errors - return 400 with specific message
-            log.warn("Business logic error: {}", e.getMessage());
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage(), e);
-        } catch (RuntimeException e) {
-            // System errors - return 500
-            log.error("Failed to request join: {}", e.getMessage(), e);
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage(), e);
-        }
+        Long tenantId = tenantMembershipFacade.getTenantIdByKey(tenantKey);
+        User user = permissionValidator.getCurrentUser();
+        tenantMembershipFacade.requestJoin(tenantId, user);
     }
 
     /**
@@ -410,24 +358,11 @@ public class TenantController {
     @PostMapping("/key/{tenantKey}/invitations")
     public void createInvitation(
             @PathVariable String tenantKey,
-            @Valid @RequestBody com.chatbot.core.tenant.membership.dto.InviteMemberRequest inviteData,
-            @AuthenticationPrincipal(expression = "user") User user
+            @Valid @RequestBody com.chatbot.core.tenant.membership.dto.InviteMemberRequest inviteData
     ) {
-        try {
-            // Convert tenantKey to tenantId and delegate to invitation service
-            Long tenantId = tenantMembershipFacade.getTenantIdByKey(tenantKey);
-            
-            // Delegate to TenantMembershipFacade
-            tenantMembershipFacade.createInvitation(tenantId, inviteData.getEmail(), inviteData.getRole().name(), user);
-        } catch (IllegalStateException e) {
-            // Business logic errors - return 400 with specific message
-            log.warn("Business logic error: {}", e.getMessage());
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage(), e);
-        } catch (RuntimeException e) {
-            // System errors - return 500
-            log.error("Failed to create invitation: {}", e.getMessage(), e);
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage(), e);
-        }
+        Long tenantId = tenantMembershipFacade.getTenantIdByKey(tenantKey);
+        User user = permissionValidator.getCurrentUser();
+        tenantMembershipFacade.createInvitation(tenantId, inviteData.getEmail(), inviteData.getRole().name(), user);
     }
 
     /**
@@ -435,16 +370,8 @@ public class TenantController {
      */
     @GetMapping("/key/{tenantKey}/invitations")
     public java.util.List<com.chatbot.core.tenant.membership.dto.InvitationResponse> getInvitations(@PathVariable String tenantKey) {
-        try {
-            // Convert tenantKey to tenantId and delegate to invitation service
-            Long tenantId = tenantMembershipFacade.getTenantIdByKey(tenantKey);
-            
-            // Delegate to TenantInvitationService through facade
-            return tenantMembershipFacade.getInvitations(tenantId);
-        } catch (Exception e) {
-            log.error("Failed to get invitations: {}", e.getMessage(), e);
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage(), e);
-        }
+        Long tenantId = tenantMembershipFacade.getTenantIdByKey(tenantKey);
+        return tenantMembershipFacade.getInvitations(tenantId);
     }
 
     /**
@@ -452,74 +379,48 @@ public class TenantController {
      */
     @GetMapping("/key/{tenantKey}/members/{userId}")
     public com.chatbot.core.tenant.membership.dto.MemberResponse getMember(@PathVariable String tenantKey, @PathVariable Long userId) {
-        try {
-            Long tenantId = tenantMembershipFacade.getTenantIdByKey(tenantKey);
-            return tenantMembershipFacade.getMember(tenantId, userId);
-        } catch (Exception e) {
-            log.error("Failed to get member: {}", e.getMessage(), e);
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, 
-                "Failed to get member: " + e.getMessage(), e);
-        }
+        Long tenantId = tenantMembershipFacade.getTenantIdByKey(tenantKey);
+        return tenantMembershipFacade.getMember(tenantId, userId);
     }
 
     /**
      * Get current member info
      */
     @GetMapping("/key/{tenantKey}/members/me")
-    public com.chatbot.core.tenant.membership.dto.MemberResponse getMyMember(@PathVariable String tenantKey, @AuthenticationPrincipal User user) {
-        try {
-            Long tenantId = tenantMembershipFacade.getTenantIdByKey(tenantKey);
-            return tenantMembershipFacade.myMember(tenantId, user);
-        } catch (Exception e) {
-            log.error("Failed to get my member: {}", e.getMessage(), e);
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, 
-                "Failed to get my member: " + e.getMessage(), e);
-        }
+    public com.chatbot.core.tenant.membership.dto.MemberResponse getMyMember(@PathVariable String tenantKey) {
+        Long tenantId = tenantMembershipFacade.getTenantIdByKey(tenantKey);
+        return tenantMembershipFacade.myMember(tenantId);
     }
 
     /**
      * Leave tenant
      */
     @DeleteMapping("/key/{tenantKey}/members/me")
-    public void leaveTenant(@PathVariable String tenantKey, @AuthenticationPrincipal User user) {
-        try {
-            Long tenantId = tenantMembershipFacade.getTenantIdByKey(tenantKey);
-            tenantMembershipFacade.leave(tenantId, user);
-        } catch (Exception e) {
-            log.error("Failed to leave tenant: {}", e.getMessage(), e);
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, 
-                "Failed to leave tenant: " + e.getMessage(), e);
-        }
+    public void leaveTenant(@PathVariable String tenantKey) {
+        Long tenantId = tenantMembershipFacade.getTenantIdByKey(tenantKey);
+        User user = permissionValidator.getCurrentUser();
+        tenantMembershipFacade.leave(tenantId, user);
     }
 
     /**
      * Cancel join request
      */
     @DeleteMapping("/key/{tenantKey}/members/join-requests/{requestId}")
-    public void cancelJoinRequest(@PathVariable String tenantKey, @PathVariable Long requestId, @AuthenticationPrincipal User user) {
-        try {
-            tenantMembershipFacade.cancelJoinRequest(requestId, user);
-        } catch (Exception e) {
-            log.error("Failed to cancel join request: {}", e.getMessage(), e);
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, 
-                "Failed to cancel join request: " + e.getMessage(), e);
-        }
+    public void cancelJoinRequest(@PathVariable String tenantKey, @PathVariable Long requestId) {
+        User user = permissionValidator.getCurrentUser();
+        tenantMembershipFacade.cancelJoinRequest(requestId, user);
     }
 
     /**
      * Update member role
      */
     @PutMapping("/key/{tenantKey}/members/{userId}/role")
-    public void updateMemberRole(@PathVariable String tenantKey, @PathVariable Long userId, @RequestBody Map<String, String> request) {
-        try {
-            Long tenantId = tenantMembershipFacade.getTenantIdByKey(tenantKey);
-            String role = request.get("role");
-            tenantMembershipFacade.updateRole(tenantId, userId, com.chatbot.core.tenant.membership.model.TenantRole.valueOf(role));
-        } catch (Exception e) {
-            log.error("Failed to update member role: {}", e.getMessage(), e);
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, 
-                "Failed to update member role: " + e.getMessage(), e);
-        }
+    public void updateMemberRole(
+            @PathVariable String tenantKey,
+            @PathVariable Long userId,
+            @Valid @RequestBody com.chatbot.core.tenant.membership.dto.UpdateMemberRoleRequest request) {
+        Long tenantId = tenantMembershipFacade.getTenantIdByKey(tenantKey);
+        tenantMembershipFacade.updateRole(tenantId, userId, request.getRole());
     }
 
     /**
@@ -527,30 +428,20 @@ public class TenantController {
      */
     @DeleteMapping("/key/{tenantKey}/members/{userId}")
     public void removeMember(@PathVariable String tenantKey, @PathVariable Long userId) {
-        try {
-            Long tenantId = tenantMembershipFacade.getTenantIdByKey(tenantKey);
-            tenantMembershipFacade.removeMember(tenantId, userId);
-        } catch (Exception e) {
-            log.error("Failed to remove member: {}", e.getMessage(), e);
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, 
-                "Failed to remove member: " + e.getMessage(), e);
-        }
+        Long tenantId = tenantMembershipFacade.getTenantIdByKey(tenantKey);
+        tenantMembershipFacade.removeMember(tenantId, userId);
     }
 
     /**
      * Update join request status
      */
     @PatchMapping("/key/{tenantKey}/members/join-requests/{requestId}")
-    public void updateJoinRequest(@PathVariable String tenantKey, @PathVariable Long requestId, @RequestBody Map<String, String> request) {
-        try {
-            Long tenantId = tenantMembershipFacade.getTenantIdByKey(tenantKey);
-            String status = request.get("status");
-            tenantMembershipFacade.updateJoinRequest(tenantId, requestId, com.chatbot.core.tenant.membership.model.MembershipStatus.valueOf(status));
-        } catch (Exception e) {
-            log.error("Failed to update join request: {}", e.getMessage(), e);
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, 
-                "Failed to update join request: " + e.getMessage(), e);
-        }
+    public void updateJoinRequest(
+            @PathVariable String tenantKey,
+            @PathVariable Long requestId,
+            @Valid @RequestBody com.chatbot.core.tenant.membership.dto.UpdateJoinRequest request) {
+        Long tenantId = tenantMembershipFacade.getTenantIdByKey(tenantKey);
+        tenantMembershipFacade.updateJoinRequest(tenantId, requestId, request.getStatus());
     }
 
     /**

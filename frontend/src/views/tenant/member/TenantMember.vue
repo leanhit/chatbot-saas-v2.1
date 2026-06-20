@@ -10,6 +10,7 @@
           </div>
           <div class="flex gap-3">
             <button
+              v-if="isAdminOrOwner"
               @click="openInviteModal"
               class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
             >
@@ -42,6 +43,7 @@
               {{ $t('tenant.member.activeMembers') }}
             </button>
             <button
+              v-if="isAdminOrOwner"
               @click="activeTab = 'pending-requests'"
               :class="[
                 activeTab === 'pending-requests'
@@ -53,6 +55,7 @@
               {{ $t('tenant.member.pendingRequests') }}
             </button>
             <button
+              v-if="isAdminOrOwner"
               @click="activeTab = 'pending-invitations'"
               :class="[
                 activeTab === 'pending-invitations'
@@ -76,6 +79,7 @@
         <div v-else-if="activeTab === 'active-members'" class="p-6">
           <ActiveMemberTab 
             :search-query="searchStore.searchQuery"
+            :current-user-role="currentUserRole"
             @member-removed="handleMemberRemoved"
             @member-updated="handleMemberUpdated"
           />
@@ -101,7 +105,9 @@
     </div>
     <!-- Invite Member Modal -->
     <InviteMemberModal
+      v-if="isAdminOrOwner"
       :visible="showInviteModal"
+      :current-user-role="currentUserRole"
       @close="showInviteModal = false"
       @invited="handleInviteMember"
     />
@@ -135,10 +141,11 @@ export default {
     const activeTab = ref('active-members')
     const loading = ref(false)
     const showInviteModal = ref(false)
-    // Real counts from API calls
     const activeMembersCount = ref(0)
     const pendingRequestsCount = ref(0)
     const pendingInvitationsCount = ref(0)
+    const currentUserRole = ref(null)
+    const isAdminOrOwner = computed(() => ['ADMIN', 'OWNER'].includes(currentUserRole.value))
     const currentTenant = computed(() => tenantStore.currentTenant)
     
     // Set search context when component mounts
@@ -171,7 +178,9 @@ export default {
         // Refresh data
         await refreshData()
       } catch (error) {
-        alert('Failed to send invitation. Please try again.')
+        console.error('Failed to process invitation:', error)
+        const errorMessage = error.response?.data?.message || error.message || 'Failed to process invitation. Please try again.'
+        alert(errorMessage)
       }
     }
     const refreshData = async () => {
@@ -213,17 +222,30 @@ export default {
     }
     const updateCounts = async (tenantKey) => {
       try {
-        // Get real counts from API calls
-        const [membersResponse, requestsResponse, invitationsResponse] = await Promise.all([
-          tenantApi.getTenantMembers(tenantKey),
-          tenantApi.getJoinRequests(tenantKey),
-          tenantApi.getTenantInvitations(tenantKey)
-        ])
+        // Fetch current user role first if not set
+        if (!currentUserRole.value) {
+           const roleRes = await tenantApi.getMyMember(tenantKey);
+           currentUserRole.value = roleRes.data.role;
+        }
 
+        const promises = [tenantApi.getTenantMembers(tenantKey)];
+        if (isAdminOrOwner.value) {
+            promises.push(tenantApi.getJoinRequests(tenantKey));
+            promises.push(tenantApi.getTenantInvitations(tenantKey));
+        }
+
+        const responses = await Promise.all(promises);
+        
         // Update counts with real data
+        const membersResponse = responses[0];
         activeMembersCount.value = (membersResponse.data?.content || membersResponse.data || []).length
-        pendingRequestsCount.value = (requestsResponse.data || []).length
-        pendingInvitationsCount.value = (invitationsResponse.data || []).length
+        
+        if (isAdminOrOwner.value) {
+            const requestsResponse = responses[1];
+            const invitationsResponse = responses[2];
+            pendingRequestsCount.value = (requestsResponse.data || []).length
+            pendingInvitationsCount.value = (invitationsResponse.data || []).length
+        }
       } catch (error) {
         console.error('Failed to update counts:', error)
         console.error('Error details:', {
@@ -283,6 +305,8 @@ export default {
       activeMembersCount,
       pendingRequestsCount,
       pendingInvitationsCount,
+      currentUserRole,
+      isAdminOrOwner,
       currentTenant,
       openInviteModal,
       handleInviteMember,

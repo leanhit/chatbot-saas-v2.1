@@ -529,13 +529,6 @@ export default {
       await paymentStore.loadPackages()
     })
 
-    // Watch for payment status changes and refresh current package when completed
-    watch(() => paymentStore.currentPayment?.status, async (newStatus, oldStatus) => {
-      if (newStatus === 'COMPLETED' && oldStatus !== 'COMPLETED') {
-        await paymentStore.loadCurrentPackage()
-      }
-    })
-
     // Format currency function
     const formatCurrency = (amount) => {
       const numAmount = typeof amount === 'number' ? amount : parseFloat(amount) || 0

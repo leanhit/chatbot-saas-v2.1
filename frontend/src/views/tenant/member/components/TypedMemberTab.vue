@@ -327,7 +327,8 @@ export default {
         
         } catch (error) {
         console.error('Failed to update member role:', error)
-        alert('Failed to update member role. Please try again.')
+        const errorMessage = error.response?.data?.message || error.message || 'Failed to update member role. Please try again.'
+        alert(errorMessage)
       }
     }
     
@@ -358,7 +359,8 @@ export default {
         emit('member-removed', member)
         } catch (error) {
         console.error('Failed to remove member:', error)
-        alert('Failed to remove member. Please try again.')
+        const errorMessage = error.response?.data?.message || error.message || 'Failed to remove member. Please try again.'
+        alert(errorMessage)
       }
     }
     

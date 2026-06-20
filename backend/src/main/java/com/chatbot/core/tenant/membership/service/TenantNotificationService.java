@@ -42,6 +42,7 @@ public class TenantNotificationService {
             log.info("Invitation notification sent for tenant {} to {}", tenantName, recipientEmail);
         } catch (Exception e) {
             log.error("Failed to send invitation notification", e);
+            throw new RuntimeException("Hệ thống gửi thông báo đang gặp sự cố, vui lòng thử lại sau.", e);
         }
     }
 
@@ -65,6 +66,7 @@ public class TenantNotificationService {
             log.info("Join request notification sent for tenant {} by {}", tenantName, requesterEmail);
         } catch (Exception e) {
             log.error("Failed to send join request notification", e);
+            throw new RuntimeException("Hệ thống gửi thông báo đang gặp sự cố, vui lòng thử lại sau.", e);
         }
     }
 
@@ -88,6 +90,7 @@ public class TenantNotificationService {
             log.info("Invitation accepted notification sent for tenant {} by {}", tenantName, memberEmail);
         } catch (Exception e) {
             log.error("Failed to send invitation accepted notification", e);
+            throw new RuntimeException("Hệ thống gửi thông báo đang gặp sự cố, vui lòng thử lại sau.", e);
         }
     }
 
@@ -109,6 +112,7 @@ public class TenantNotificationService {
             log.info("Join request approved notification sent for tenant {} to {}", tenantName, memberEmail);
         } catch (Exception e) {
             log.error("Failed to send join request approved notification", e);
+            throw new RuntimeException("Hệ thống gửi thông báo đang gặp sự cố, vui lòng thử lại sau.", e);
         }
     }
 }

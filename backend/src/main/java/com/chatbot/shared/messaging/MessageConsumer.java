@@ -3,7 +3,7 @@ package com.chatbot.shared.messaging;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.messaging.handler.annotation.Header;
+import org.springframework.messaging.handler.annotation.Headers;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.stereotype.Component;
 
@@ -21,7 +21,7 @@ public class MessageConsumer {
 
     @RabbitListener(queues = "${rabbitmq.queue.default:chatbot.queue.default}")
     public void handleDefaultMessage(@Payload Object message, 
-                                   @Header Map<String, Object> headers) {
+                                   @Headers Map<String, Object> headers) {
         try {
             processMessage(message, headers, "DEFAULT");
         } catch (Exception e) {
@@ -31,7 +31,7 @@ public class MessageConsumer {
 
     @RabbitListener(queues = "${rabbitmq.queue.high-priority:chatbot.queue.high-priority}")
     public void handleHighPriorityMessage(@Payload Object message, 
-                                       @Header Map<String, Object> headers) {
+                                       @Headers Map<String, Object> headers) {
         try {
             processMessage(message, headers, "HIGH_PRIORITY");
         } catch (Exception e) {
@@ -41,7 +41,7 @@ public class MessageConsumer {
 
     @RabbitListener(queues = "${rabbitmq.queue.low-priority:chatbot.queue.low-priority}")
     public void handleLowPriorityMessage(@Payload Object message, 
-                                      @Header Map<String, Object> headers) {
+                                      @Headers Map<String, Object> headers) {
         try {
             processMessage(message, headers, "LOW_PRIORITY");
         } catch (Exception e) {
@@ -51,7 +51,7 @@ public class MessageConsumer {
 
     @RabbitListener(queues = "${rabbitmq.queue.email:chatbot.queue.email}")
     public void handleEmailMessage(@Payload Object emailMessage, 
-                                  @Header Map<String, Object> headers) {
+                                  @Headers Map<String, Object> headers) {
         try {
             processEmailMessage(emailMessage, headers);
         } catch (Exception e) {
@@ -61,7 +61,7 @@ public class MessageConsumer {
 
     @RabbitListener(queues = "${rabbitmq.queue.sms:chatbot.queue.sms}")
     public void handleSmsMessage(@Payload Object smsMessage, 
-                                @Header Map<String, Object> headers) {
+                                @Headers Map<String, Object> headers) {
         try {
             processSmsMessage(smsMessage, headers);
         } catch (Exception e) {
@@ -71,7 +71,7 @@ public class MessageConsumer {
 
     @RabbitListener(queues = "${rabbitmq.queue.notification:chatbot.queue.notification}")
     public void handleNotificationMessage(@Payload Object notificationMessage, 
-                                        @Header Map<String, Object> headers) {
+                                        @Headers Map<String, Object> headers) {
         try {
             processNotificationMessage(notificationMessage, headers);
         } catch (Exception e) {
@@ -81,7 +81,7 @@ public class MessageConsumer {
 
     @RabbitListener(queues = "${rabbitmq.queue.report:chatbot.queue.report}")
     public void handleReportMessage(@Payload Object reportMessage, 
-                                  @Header Map<String, Object> headers) {
+                                   @Headers Map<String, Object> headers) {
         try {
             processReportMessage(reportMessage, headers);
         } catch (Exception e) {
@@ -91,7 +91,7 @@ public class MessageConsumer {
 
     @RabbitListener(queues = "${rabbitmq.queue.cleanup:chatbot.queue.cleanup}")
     public void handleCleanupMessage(@Payload Object cleanupMessage, 
-                                   @Header Map<String, Object> headers) {
+                                   @Headers Map<String, Object> headers) {
         try {
             processCleanupMessage(cleanupMessage, headers);
         } catch (Exception e) {

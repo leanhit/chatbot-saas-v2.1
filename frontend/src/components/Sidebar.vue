@@ -159,7 +159,7 @@
               </template>
             </menu-accordion>
           </div>
-          <div class="item mt-3">
+          <div class="item mt-3" v-if="tenantStore?.currentTenant?.role === 'OWNER'">
             <menu-accordion>
               <template v-slot:icon>
                 <Icon icon="mdi:bank-transfer" />
@@ -244,6 +244,8 @@
   import { Icon } from "@iconify/vue";
   import MenuAccordion from "./MenuAccordion.vue";
   import { useAuthStore } from "@/stores/authStore";
+  import { useGatewayTenantStore } from "@/stores/tenant/gateway/myTenantStore";
+
   export default {
     components: {
       Icon,
@@ -251,8 +253,10 @@
     },
     setup() {
       const authStore = useAuthStore();
+      const tenantStore = useGatewayTenantStore();
       return {
         authStore,
+        tenantStore,
       };
     },
   };

@@ -9,6 +9,11 @@ import com.chatbot.core.tenant.membership.repository.TenantMemberRepository;
 import com.chatbot.core.tenant.model.Tenant;
 import com.chatbot.core.tenant.repository.TenantRepository;
 import com.chatbot.core.tenant.service.TenantAuditLogService;
+import com.chatbot.core.tenant.service.TenantPermissionValidator;
+import com.chatbot.core.tenant.exception.BusinessLogicException;
+import com.chatbot.core.tenant.exception.InsufficientPermissionException;
+import com.chatbot.core.tenant.exception.TenantNotFoundException;
+import com.chatbot.shared.exceptions.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
@@ -29,6 +34,7 @@ public class TenantMemberService {
     private final TenantMemberRepository memberRepo;
     private final TenantRepository tenantRepo;
     private final TenantAuditLogService auditLogService;
+    private final TenantPermissionValidator permissionValidator;
     private final UserRepository userRepository; // Added for application-level join
     private final AuthRepository authRepository;
 
@@ -45,12 +51,16 @@ public class TenantMemberService {
     public MemberResponse getMember(Long tenantId, Long userId) {
         return getMemberEntity(tenantId, userId)
                 .map(this::toResponse)
-                .orElseThrow(() -> new IllegalStateException("Member not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Member not found"));
     }
 
     /** GET /tenants/{tenantId}/members/me */
-    public MemberResponse getMyMember(Long tenantId, User user) {
-        return getMember(tenantId, user.getId());
+    public MemberResponse getMyMember(Long tenantId) {
+        String email = permissionValidator.getCurrentUserEmail();
+        Long userId = authRepository.findByEmail(email)
+                .map(User::getId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        return getMember(tenantId, userId);
     }
 
     /* ================= UPDATE ================= */
@@ -62,18 +72,18 @@ public class TenantMemberService {
 
         // Kiểm tra quyền của ACTOR, không phải của target
         if (!canManageMembers(tenantId, actorEmail)) {
-            throw new IllegalStateException("Không đủ quyền để quản lý thành viên");
+            throw new InsufficientPermissionException("Không đủ quyền để quản lý thành viên");
         }
 
-        // Kiểm tra actor có thể gán role này không
-        if (!canAssignRole(tenantId, actorEmail, newRole)) {
-            throw new IllegalStateException("Không thể gán role cao hơn quyền hiện tại của bạn");
+        // Kiểm tra actor có thể gán role này không (Dùng Validator chung)
+        if (!permissionValidator.canAssignRole(tenantId, actorEmail, newRole)) {
+            throw new InsufficientPermissionException("Không thể gán role cao hơn quyền hiện tại của bạn");
         }
 
         TenantMember targetMember = getMemberEntityRequired(tenantId, targetUserId);
 
         if (targetMember.getRole() == TenantRole.OWNER) {
-            throw new IllegalStateException("Không thể thay đổi role của OWNER");
+            throw new BusinessLogicException("Không thể thay đổi role của OWNER");
         }
 
         targetMember.setRole(newRole);
@@ -89,13 +99,13 @@ public class TenantMemberService {
         String actorEmail = getCurrentUserEmail();
 
         if (!canManageMembers(tenantId, actorEmail)) {
-            throw new IllegalStateException("Không đủ quyền để xóa thành viên");
+            throw new InsufficientPermissionException("Không đủ quyền để xóa thành viên");
         }
 
         TenantMember targetMember = getMemberEntityRequired(tenantId, targetUserId);
 
         if (targetMember.getRole() == TenantRole.OWNER) {
-            throw new IllegalStateException("Không thể xóa OWNER khỏi tenant");
+            throw new BusinessLogicException("Không thể xóa OWNER khỏi tenant");
         }
 
         memberRepo.delete(targetMember);
@@ -112,7 +122,7 @@ public class TenantMemberService {
 
     TenantMember getMemberEntityRequired(Long tenantId, Long userId) {
         return getMemberEntity(tenantId, userId)
-                .orElseThrow(() -> new IllegalStateException("Member not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Member not found"));
     }
 
     /**
@@ -148,53 +158,12 @@ public class TenantMemberService {
         }
     }
 
-    /**
-     * Kiểm tra ACTOR có thể gán targetRole cho người khác không.
-     */
-    private boolean canAssignRole(Long tenantId, String actorEmail, TenantRole targetRole) {
-        try {
-            Long actorUserId = authRepository.findByEmail(actorEmail)
-                    .map(User::getId)
-                    .orElse(null);
-            if (actorUserId == null) return false;
 
-            Optional<TenantMember> actorMembership = memberRepo
-                    .findByTenantIdAndUserIdAndStatus(tenantId, actorUserId, MembershipStatus.ACTIVE);
-            if (actorMembership.isEmpty()) return false;
-
-            TenantMember actor = actorMembership.get();
-            // Application-level join: fetch user by userId
-            User actorUser = userRepository.findById(actor.getUserId())
-                    .orElse(null);
-
-            // System ADMIN có thể gán bất kỳ role nào
-            if (actorUser != null && actorUser.getSystemRole() == com.chatbot.core.identity.model.SystemRole.ADMIN) {
-                return true;
-            }
-
-            TenantRole actorRole = actor.getRole();
-
-            // OWNER có thể gán bất kỳ role nào trừ OWNER khác
-            if (actorRole == TenantRole.OWNER) {
-                return targetRole != TenantRole.OWNER;
-            }
-            // ADMIN có thể gán EDITOR và MEMBER
-            if (actorRole == TenantRole.ADMIN) {
-                return targetRole == TenantRole.EDITOR || targetRole == TenantRole.MEMBER;
-            }
-            // EDITOR và MEMBER không có quyền gán role
-            return false;
-
-        } catch (Exception e) {
-            log.error("Error checking assign-role permission for actor={}: {}", actorEmail, e.getMessage());
-            return false;
-        }
-    }
 
     private String getCurrentUserEmail() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth == null || !auth.isAuthenticated()) {
-            throw new IllegalStateException("User chưa được xác thực");
+            throw new InsufficientPermissionException("User chưa được xác thực");
         }
         return auth.getName();
     }
@@ -216,6 +185,6 @@ public class TenantMemberService {
     public Long getTenantIdByKey(String tenantKey) {
         return tenantRepo.findByTenantKey(tenantKey)
                 .map(Tenant::getId)
-                .orElseThrow(() -> new IllegalArgumentException("Tenant not found with key: " + tenantKey));
+                .orElseThrow(() -> new TenantNotFoundException("Tenant not found with key: " + tenantKey));
     }
 }
