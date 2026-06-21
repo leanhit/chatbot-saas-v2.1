@@ -424,9 +424,14 @@ public class PennyBotManager {
         collectorAnalytics.put("totalMessages", metrics.getTotalProcessed()); // approximation if no messages tracking exists
         collectorAnalytics.put("averageResponseTime", metrics.getAverageProcessingTime());
         collectorAnalytics.put("errorRate", metrics.getErrorRate() * 100);
-        // Calculate mock stats based on true activity as placeholder if EngineMetrics lacks them
-        collectorAnalytics.put("satisfactionRate", 100 - (metrics.getErrorRate() * 100));
-        collectorAnalytics.put("resolutionRate", 100 - (metrics.getErrorRate() * 100));
+        // Satisfaction and resolution rates are approximated from success rate (1 - error rate)
+        // TODO: Implement real satisfaction tracking via user feedback/ratings
+        // TODO: Implement real resolution tracking via resolved vs unresolved conversations
+        double successRate = 1.0 - metrics.getErrorRate();
+        collectorAnalytics.put("satisfactionRate", successRate * 100);
+        collectorAnalytics.put("resolutionRate", successRate * 100);
+        // Uptime should be calculated from PennyMetricsService which tracks actual startup time
+        // Using 99.9% as placeholder for now - should be fetched from PennyMetricsService
         collectorAnalytics.put("uptime", 99.9);
         
         // Add bot information

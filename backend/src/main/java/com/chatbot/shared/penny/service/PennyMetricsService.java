@@ -25,6 +25,9 @@ public class PennyMetricsService {
     // In-memory metrics cache
     private final Map<String, Object> metricsCache = new ConcurrentHashMap<>();
 
+    // Track application startup time for uptime calculation
+    private final long startupTime = System.currentTimeMillis();
+
     /**
      * Get current metrics
      */
@@ -158,9 +161,17 @@ public class PennyMetricsService {
     }
 
     private Map<String, Object> getEngineHealth() {
+        long uptimeMillis = System.currentTimeMillis() - startupTime;
+        long uptimeSeconds = uptimeMillis / 1000;
+        long uptimeMinutes = uptimeSeconds / 60;
+        long uptimeHours = uptimeMinutes / 60;
+
         return Map.of(
             "status", "HEALTHY",
-            "uptime", System.currentTimeMillis() - System.currentTimeMillis() / 2, // Placeholder
+            "uptimeMillis", uptimeMillis,
+            "uptimeSeconds", uptimeSeconds,
+            "uptimeMinutes", uptimeMinutes,
+            "uptimeHours", uptimeHours,
             "memoryUsage", getMemoryUsage(),
             "cpuUsage", getCpuUsage()
         );

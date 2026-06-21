@@ -13,6 +13,8 @@ public class MemberResponse {
     private Long id;
     private Long userId;
     private String email;
+    private String name;
+    private String avatar;
     private TenantRole role;
     private MembershipStatus status;
     private LocalDateTime joinedAt;

@@ -4,6 +4,7 @@ import com.chatbot.core.tenant.dto.TenantPackageInfo;
 import com.chatbot.core.tenant.dto.TenantPackageDetailResponse;
 import com.chatbot.shared.exceptions.ResourceNotFoundException;
 import com.chatbot.core.tenant.exception.TenantNotFoundException;
+import com.chatbot.core.tenant.exception.BusinessLogicException;
 import com.chatbot.core.tenant.model.Tenant;
 import com.chatbot.core.tenant.repository.TenantRepository;
 import com.chatbot.core.simplepayment.model.Package;
@@ -16,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.chatbot.core.user.model.User;
 import com.chatbot.core.user.repository.AuthRepository;
+import com.chatbot.shared.security.SecurityUtils;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -62,7 +64,7 @@ public class TenantPackageService {
     /**
      * Nâng cấp tenant lên gói cụ thể.
      */
-    @Transactional(propagation = org.springframework.transaction.annotation.Propagation.REQUIRES_NEW, transactionManager = "tenantTransactionManager")
+    @Transactional(transactionManager = "tenantTransactionManager")
     public void upgradeTenantPackage(Long tenantId, String packageId) {
         log.info("[TenantPackageService] Upgrading tenant {} to package: {}", tenantId, packageId);
 
@@ -105,7 +107,8 @@ public class TenantPackageService {
         log.debug("📝 [DEBUG] After save - tenantId: {}, currentPackageId: {}, expiresAt: {}",
                 tenantId, tenant.getCurrentPackageId(), tenant.getExpiresAt());
 
-        auditLogService.logAction(tenantId, "system", "UPGRADE_PACKAGE",
+        String actor = SecurityUtils.getCurrentUserId().orElse("system");
+        auditLogService.logAction(tenantId, actor, "UPGRADE_PACKAGE",
             "Package changed from '" + oldPackageId + "' to '" + packageId +
             "', new expiry=" + tenant.getExpiresAt());
 
@@ -118,13 +121,13 @@ public class TenantPackageService {
      * Hỗ trợ: "1 month", "3 months", "6 months", "12 months", "1 year", "2 years".
      */
     private LocalDateTime calculateExpirationDate(LocalDateTime startDate, String duration) {
-        if (startDate == null || duration == null) return null;
+        if (startDate == null || duration == null) throw new BusinessLogicException("Invalid duration: null");
 
         String lower = duration.toLowerCase().trim();
         String[] parts = lower.split("\\s+");
         if (parts.length < 2) {
             log.warn("[TenantPackageService] Cannot parse duration string: '{}'", duration);
-            return null;
+            throw new BusinessLogicException("Cannot parse duration string: " + duration);
         }
 
         try {
@@ -133,8 +136,9 @@ public class TenantPackageService {
             if (lower.contains("year"))  return startDate.plusYears(amount);
         } catch (NumberFormatException e) {
             log.warn("[TenantPackageService] Invalid duration number in: '{}'", duration);
+            throw new BusinessLogicException("Invalid duration number in: " + duration);
         }
-        return null;
+        throw new BusinessLogicException("Unsupported duration format: " + duration);
     }
 
     /**
@@ -176,16 +180,24 @@ public class TenantPackageService {
                 .orElseThrow(() -> new TenantNotFoundException("Tenant not found"));
 
         Package currentPackage = null;
-        if (tenant.getCurrentPackageId() != null) {
-            currentPackage = packageRepository.findByPackageId(tenant.getCurrentPackageId()).orElse(null);
+        String packageId = tenant.getCurrentPackageId();
+        LocalDateTime expiresAt = tenant.getExpiresAt();
+        
+        if (expiresAt != null && expiresAt.isBefore(LocalDateTime.now())) {
+            packageId = defaultPackageId;
+            expiresAt = null;
+        }
+
+        if (packageId != null) {
+            currentPackage = packageRepository.findByPackageId(packageId).orElse(null);
         }
 
         return TenantPackageDetailResponse.builder()
                 .tenantId(tenantId)
                 .tenantKey(tenant.getTenantKey())
-                .currentPackageId(tenant.getCurrentPackageId())
+                .currentPackageId(packageId)
                 .packageActivatedAt(tenant.getPackageActivatedAt())
-                .expiresAt(tenant.getExpiresAt())
+                .expiresAt(expiresAt)
                 .packageName(currentPackage != null ? currentPackage.getName() : null)
                 .packagePrice(currentPackage != null ? currentPackage.getPrice() : null)
                 .packageCurrency(currentPackage != null ? currentPackage.getCurrency() : null)
@@ -203,8 +215,15 @@ public class TenantPackageService {
         Tenant tenant = tenantRepository.findById(tenantId)
                 .orElseThrow(() -> new TenantNotFoundException("Tenant not found: " + tenantId));
 
-        Package currentPackage = resolvePackage(tenant.getCurrentPackageId());
-        return TenantPackageInfo.from(tenantId, currentPackage, tenant.getPackageActivatedAt(), tenant.getExpiresAt());
+        Package currentPackage;
+        LocalDateTime expiresAt = tenant.getExpiresAt();
+        if (expiresAt != null && expiresAt.isBefore(LocalDateTime.now())) {
+            currentPackage = resolvePackage(defaultPackageId);
+            expiresAt = null;
+        } else {
+            currentPackage = resolvePackage(tenant.getCurrentPackageId());
+        }
+        return TenantPackageInfo.from(tenantId, currentPackage, tenant.getPackageActivatedAt(), expiresAt);
     }
 
     @Transactional(readOnly = true, transactionManager = "tenantTransactionManager")
@@ -212,8 +231,15 @@ public class TenantPackageService {
         Tenant tenant = tenantRepository.findByTenantKey(tenantKey)
                 .orElseThrow(() -> new TenantNotFoundException("Tenant not found: " + tenantKey));
 
-        Package currentPackage = resolvePackage(tenant.getCurrentPackageId());
-        return TenantPackageInfo.from(tenant.getId(), currentPackage, tenant.getPackageActivatedAt(), tenant.getExpiresAt());
+        Package currentPackage;
+        LocalDateTime expiresAt = tenant.getExpiresAt();
+        if (expiresAt != null && expiresAt.isBefore(LocalDateTime.now())) {
+            currentPackage = resolvePackage(defaultPackageId);
+            expiresAt = null;
+        } else {
+            currentPackage = resolvePackage(tenant.getCurrentPackageId());
+        }
+        return TenantPackageInfo.from(tenant.getId(), currentPackage, tenant.getPackageActivatedAt(), expiresAt);
     }
 
     @Transactional(readOnly = true, transactionManager = "tenantTransactionManager")
@@ -224,6 +250,9 @@ public class TenantPackageService {
         if (tenant.getCurrentPackageId() == null) {
             log.warn("[TenantPackageService] Tenant {} has no package assigned", tenant.getTenantKey());
             return null;
+        }
+        if (tenant.getExpiresAt() != null && tenant.getExpiresAt().isBefore(LocalDateTime.now())) {
+            return resolvePackage(defaultPackageId);
         }
         return resolvePackage(tenant.getCurrentPackageId());
     }
@@ -236,6 +265,9 @@ public class TenantPackageService {
         if (tenant.getCurrentPackageId() == null) {
             log.warn("[TenantPackageService] Tenant {} has no package assigned", tenantKey);
             return null;
+        }
+        if (tenant.getExpiresAt() != null && tenant.getExpiresAt().isBefore(LocalDateTime.now())) {
+            return resolvePackage(defaultPackageId);
         }
         return resolvePackage(tenant.getCurrentPackageId());
     }

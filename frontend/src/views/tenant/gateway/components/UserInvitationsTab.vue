@@ -60,6 +60,7 @@ import { ref, computed, onMounted, getCurrentInstance } from 'vue'
 import { Icon } from '@iconify/vue'
 import { useI18n } from 'vue-i18n'
 import { useGatewayUserInvitationStore } from '@/stores/tenant/gateway/userInvitationStore'
+import { useGatewayTenantStore } from '@/stores/tenant/gateway/myTenantStore'
 import { formatDateTime } from '@/utils/dateUtils'
 import { secureImageUrl } from '@/utils/imageUtils'
 import { InvitationStatus, TenantRole } from '@/types/tenant'
@@ -79,6 +80,11 @@ export default {
     const acceptInvitation = async (invitationId, token) => {
       try {
         await invitationStore.acceptInvitation(invitationId, token)
+        
+        // Refresh the user's tenants list so the new workspace appears
+        const tenantStore = useGatewayTenantStore()
+        await tenantStore.fetchUserTenants()
+
         // Show success message
         const instance = getCurrentInstance()
         const toast = instance?.appContext.config.globalProperties.$toast

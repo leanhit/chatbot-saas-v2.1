@@ -173,11 +173,21 @@ public class TenantMemberService {
         User user = userRepository.findById(m.getUserId())
                 .orElse(null);
         
+        String name = null;
+        String avatar = null;
+        if (user != null && user.getProfile() != null) {
+            name = user.getProfile().getFullName();
+            avatar = user.getProfile().getAvatar();
+        }
+        
         return MemberResponse.builder()
                 .id(m.getId())
                 .userId(m.getUserId())
                 .email(user != null ? user.getEmail() : null)
+                .name(name)
+                .avatar(avatar)
                 .role(m.getRole())
+                .status(m.getStatus())
                 .joinedAt(m.getJoinedAt() != null ? m.getJoinedAt() : m.getCreatedAt())
                 .build();
     }

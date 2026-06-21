@@ -89,17 +89,6 @@ public class FacebookEventConsumer {
         }
     }
 
-    private void removeDedup(String mid) {
-        if (mid == null) return;
-        try {
-            String key = "facebook:dedup:mid:" + mid;
-            redisTemplate.delete(key);
-            dedupCache.invalidate(mid);
-        } catch (Exception e) {
-            log.error("❌ Failed to remove deduplication key: {}", e.getMessage());
-        }
-    }
-
     @KafkaListener(topics = KafkaConfig.FACEBOOK_EVENT_TOPIC, groupId = "facebook-consumer-group")
     public void consume(String messageJson) {
         FacebookKafkaEvent event;
@@ -165,15 +154,11 @@ public class FacebookEventConsumer {
             }
         } catch (Exception e) {
             log.error("❌ [Kafka Consumer] Processing exception: {}", e.getMessage(), e);
-            
-            // Remove dedup key to allow retry for this message
-            if (event.getMessaging() != null) {
-                String mid = null;
-                if (event.getMessaging().getMessage() != null) mid = event.getMessaging().getMessage().getMid();
-                else if (event.getMessaging().getReaction() != null) mid = event.getMessaging().getReaction().getMid();
-                if (mid != null) removeDedup(mid);
-            }
-            
+
+            // Do NOT remove dedup key - let it expire naturally after 15 minutes
+            // This preserves dedup protection when message goes to DLQ after retries
+            // Kafka's retry mechanism will handle retries without needing to remove the key
+
             throw new RuntimeException("Error processing Kafka event", e);
         } finally {
             // Guarantee TenantContext clean-up to prevent context leaking

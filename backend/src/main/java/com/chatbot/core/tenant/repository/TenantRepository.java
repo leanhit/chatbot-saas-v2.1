@@ -7,9 +7,12 @@ import com.chatbot.core.tenant.model.TenantVisibility;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+
+import jakarta.persistence.LockModeType;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -79,7 +82,11 @@ public interface TenantRepository extends JpaRepository<Tenant, Long> {
     @Query("UPDATE Tenant t SET t.currentPackageId = :defaultPackageId, t.packageActivatedAt = :activatedAt, t.expiresAt = null WHERE t.currentPackageId IS NULL")
     int initializeTenantsWithDefaultPackage(@Param("defaultPackageId") String defaultPackageId, @Param("activatedAt") LocalDateTime activatedAt);
 
-    // Tìm các tenant có gói đã hết hạn (không phải free)
-    @Query("SELECT t FROM Tenant t WHERE t.expiresAt IS NOT NULL AND t.expiresAt <= :now AND t.currentPackageId != 'free'")
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT t FROM Tenant t WHERE t.id = :id")
+    Optional<Tenant> findByIdWithPessimisticWriteLock(@Param("id") Long id);
+
+    // Tìm các tenant có gói đã hết hạn
+    @Query("SELECT t FROM Tenant t WHERE t.expiresAt IS NOT NULL AND t.expiresAt <= :now")
     List<Tenant> findExpiredTenants(@Param("now") LocalDateTime now);
 }

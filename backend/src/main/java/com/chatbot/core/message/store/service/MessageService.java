@@ -38,7 +38,7 @@ public class MessageService {
             Long tenantId = TenantContext.getTenantId();
             if (tenantId != null) {
                 try {
-                    messageUsageService.validateMessageSending(tenantId);
+                    messageUsageService.validateAndIncrementMessageCount(tenantId);
                     log.debug("✅ Message limit validation passed for tenant: {}", tenantId);
                 } catch (MessageUsageService.MessageLimitExceededException e) {
                     log.warn("❌ Message limit exceeded for tenant {}: {}", tenantId, e.getMessage());
@@ -101,8 +101,8 @@ public class MessageService {
                 .build();
         Message savedMessage = messageRepo.save(m);
 
-        // Increment message usage count in Redis
-        if (savedMessage.getTenantId() != null) {
+        // Increment message usage count in Redis for non-user messages
+        if (!"user".equals(sender) && savedMessage.getTenantId() != null) {
             messageUsageService.incrementMessageCount(savedMessage.getTenantId());
         }
 

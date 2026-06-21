@@ -78,6 +78,7 @@
           <!-- Active Members Tab -->
         <div v-else-if="activeTab === 'active-members'" class="p-6">
           <ActiveMemberTab 
+            :key="'active-' + refreshKey"
             :search-query="searchStore.searchQuery"
             :current-user-role="currentUserRole"
             @member-removed="handleMemberRemoved"
@@ -87,6 +88,7 @@
           <!-- Pending Requests Tab -->
         <div v-else-if="activeTab === 'pending-requests'" class="p-6">
           <PendingMemberTab 
+            :key="'requests-' + refreshKey"
             :search-query="searchStore.searchQuery"
             @request-approved="handleRequestApproved"
             @request-rejected="handleRequestRejected"
@@ -95,6 +97,7 @@
           <!-- Pending Invitations Tab -->
           <div v-else-if="activeTab === 'pending-invitations'" class="p-6">
             <InviteMemberTab 
+              :key="'invites-' + refreshKey"
               :search-query="searchStore.searchQuery"
               @invitation-revoked="handleInvitationRevoked"
               @invitation-sent="handleMemberInvited"
@@ -144,6 +147,7 @@ export default {
     const activeMembersCount = ref(0)
     const pendingRequestsCount = ref(0)
     const pendingInvitationsCount = ref(0)
+    const refreshKey = ref(0)
     const currentUserRole = ref(null)
     const isAdminOrOwner = computed(() => ['ADMIN', 'OWNER'].includes(currentUserRole.value))
     const currentTenant = computed(() => tenantStore.currentTenant)
@@ -157,31 +161,12 @@ export default {
       showInviteModal.value = true
     }
     const handleInviteMember = async (inviteData) => {
-      try {
-        // Use tenantKey from currentTenant object
-        const tenantKey = currentTenant.value?.tenantKey
-        if (!tenantKey) {
-          alert('No tenant selected')
-          return
-        }
-        
-        // Call API with tenantKey instead of ID
-        await tenantApi.inviteMember(tenantKey, {
-          email: inviteData.email,
-          role: inviteData.role
-        })
-        
-        // Show success message
-        alert(`Invitation sent to ${inviteData.email}`)
-        // Reset and close modal
-        showInviteModal.value = false
-        // Refresh data
-        await refreshData()
-      } catch (error) {
-        console.error('Failed to process invitation:', error)
-        const errorMessage = error.response?.data?.message || error.message || 'Failed to process invitation. Please try again.'
-        alert(errorMessage)
-      }
+      // Show success message
+      alert(`Invitation sent to ${inviteData.email}`)
+      // Reset and close modal
+      showInviteModal.value = false
+      // Refresh data
+      await refreshData()
     }
     const refreshData = async () => {
       loading.value = true
@@ -199,6 +184,7 @@ export default {
           // Refresh child components data by emitting events
           refreshChildComponents()
         ])
+        refreshKey.value += 1
       } catch (error) {
         console.error('Failed to refresh data:', error)
         console.error('Error details:', {
@@ -305,6 +291,7 @@ export default {
       activeMembersCount,
       pendingRequestsCount,
       pendingInvitationsCount,
+      refreshKey,
       currentUserRole,
       isAdminOrOwner,
       currentTenant,

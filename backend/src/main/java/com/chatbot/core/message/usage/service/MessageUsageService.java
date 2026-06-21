@@ -2,6 +2,8 @@ package com.chatbot.core.message.usage.service;
 
 import com.chatbot.core.simplepayment.model.Package;
 import com.chatbot.core.tenant.service.TenantPackageService;
+import com.chatbot.core.tenant.repository.TenantRepository;
+import com.chatbot.core.tenant.model.Tenant;
 import com.chatbot.core.message.store.repository.MessageRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -18,11 +20,40 @@ public class MessageUsageService {
 
     private final MessageRepository messageRepository;
     private final TenantPackageService tenantPackageService;
+    private final TenantRepository tenantRepository;
     private final RedisTemplate<String, String> redisTemplate;
 
+    private LocalDateTime getBillingPeriodStart(Long tenantId) {
+        LocalDateTime now = LocalDateTime.now();
+        try {
+            Tenant tenant = tenantRepository.findById(tenantId).orElse(null);
+            if (tenant != null && tenant.getPackageActivatedAt() != null) {
+                LocalDateTime activatedAt = tenant.getPackageActivatedAt();
+                int activationDay = activatedAt.getDayOfMonth();
+                int maxDayInMonth = java.time.YearMonth.from(now).lengthOfMonth();
+                int targetDay = Math.min(activationDay, maxDayInMonth);
+                
+                LocalDateTime periodStart;
+                if (now.getDayOfMonth() >= targetDay) {
+                    periodStart = now.withDayOfMonth(targetDay).withHour(activatedAt.getHour()).withMinute(activatedAt.getMinute()).withSecond(activatedAt.getSecond()).withNano(0);
+                } else {
+                    LocalDateTime lastMonth = now.minusMonths(1);
+                    int maxDayInLastMonth = java.time.YearMonth.from(lastMonth).lengthOfMonth();
+                    int targetDayLastMonth = Math.min(activationDay, maxDayInLastMonth);
+                    periodStart = lastMonth.withDayOfMonth(targetDayLastMonth).withHour(activatedAt.getHour()).withMinute(activatedAt.getMinute()).withSecond(activatedAt.getSecond()).withNano(0);
+                }
+                return periodStart;
+            }
+        } catch (Exception e) {
+            log.warn("Error getting billing period start for tenant {}: {}", tenantId, e.getMessage());
+        }
+        return now.withDayOfMonth(1).withHour(0).withMinute(0).withSecond(0).withNano(0);
+    }
+
     private String getMessageCountKey(Long tenantId) {
-        java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern("yyyy-MM");
-        String period = java.time.LocalDate.now().format(formatter);
+        LocalDateTime periodStart = getBillingPeriodStart(tenantId);
+        java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd_HH_mm_ss");
+        String period = periodStart.format(formatter);
         return "tenant:" + tenantId + ":message_count:" + period;
     }
 
@@ -70,8 +101,8 @@ public class MessageUsageService {
                     .build();
         }
 
-        // Get start of current billing period (simplified: start of current month)
-        LocalDateTime periodStart = LocalDateTime.now().withDayOfMonth(1).withHour(0).withMinute(0).withSecond(0);
+        // Get start of current billing period
+        LocalDateTime periodStart = getBillingPeriodStart(tenantId);
         
         String key = getMessageCountKey(tenantId);
         String cachedCount = redisTemplate.opsForValue().get(key);
@@ -90,7 +121,7 @@ public class MessageUsageService {
             redisTemplate.opsForValue().set(key, String.valueOf(currentCount), java.time.Duration.ofDays(32));
         }
 
-        boolean isUnlimited = currentPackage.getMessageLimit() >= Integer.MAX_VALUE;
+        boolean isUnlimited = currentPackage.getMessageLimit() == -1 || currentPackage.getMessageLimit() >= Integer.MAX_VALUE;
         
         int remaining;
         if (isUnlimited) {
@@ -122,25 +153,33 @@ public class MessageUsageService {
     }
 
     /**
-     * Validate message sending and throw exception if limit exceeded
+     * Validate message sending and increment atomically to prevent TOCTOU
      */
     @Transactional(readOnly = true, transactionManager = "tenantTransactionManager")
-    public void validateMessageSending(Long tenantId) {
-        if (!canSendMoreMessages(tenantId)) {
-            MessageUsageInfo usage = getCurrentUsage(tenantId);
+    public void validateAndIncrementMessageCount(Long tenantId) {
+        MessageUsageInfo usage = getCurrentUsage(tenantId);
+        
+        if (usage.getIsUnlimited()) {
+            incrementMessageCount(tenantId);
+            return;
+        }
+        
+        String key = getMessageCountKey(tenantId);
+        Long newCount = redisTemplate.opsForValue().increment(key);
+        
+        if (newCount != null && newCount == 1) {
+            redisTemplate.expire(key, java.time.Duration.ofDays(32));
+        }
+        
+        if (newCount != null && newCount > usage.getTotalLimit()) {
+            redisTemplate.opsForValue().decrement(key); // Rollback increment
             
-            String message;
-            if (usage.getIsUnlimited()) {
-                message = "Your package allows unlimited messages. You should be able to send more.";
-            } else {
-                message = String.format(
-                    "❌ Message limit exceeded! Your %s package allows %d messages per month. You have used %d messages. Remaining: %d", 
-                    usage.getPackageName(), 
-                    usage.getTotalLimit(), 
-                    usage.getCurrentCount(),
-                    usage.getRemainingMessages()
-                );
-            }
+            String message = String.format(
+                "❌ Message limit exceeded! Your %s package allows %d messages per billing cycle. You have used %d messages.", 
+                usage.getPackageName(), 
+                usage.getTotalLimit(), 
+                usage.getTotalLimit()
+            );
             
             throw new MessageLimitExceededException(message);
         }
@@ -176,7 +215,7 @@ public class MessageUsageService {
                 .thisMonth(thisMonth.intValue())
                 .thisWeek(thisWeek.intValue())
                 .today(today.intValue())
-                .isUnlimited(currentPackage.getMessageLimit() >= Integer.MAX_VALUE)
+                .isUnlimited(currentPackage.getMessageLimit() == -1 || currentPackage.getMessageLimit() >= Integer.MAX_VALUE)
                 .build();
     }
 

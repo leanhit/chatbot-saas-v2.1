@@ -173,10 +173,19 @@ public class TenantJoinRequestService {
         // Application-level join: fetch user by userId
         User user = userRepo.findById(request.getUserId()).orElse(null);
         
+        String name = null;
+        String avatar = null;
+        if (user != null && user.getProfile() != null) {
+            name = user.getProfile().getFullName();
+            avatar = user.getProfile().getAvatar();
+        }
+        
         return MemberResponse.builder()
                 .id(request.getId()) // ID của yêu cầu để duyệt/hủy
                 .userId(request.getUserId()) // ID của User gửi yêu cầu
                 .email(user != null ? user.getEmail() : null)
+                .name(name)
+                .avatar(avatar)
                 .status(request.getStatus())
                 .requestedAt(request.getCreatedAt())
                 .build();
