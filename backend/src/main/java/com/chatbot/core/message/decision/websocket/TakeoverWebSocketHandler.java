@@ -103,13 +103,25 @@ public class TakeoverWebSocketHandler extends TextWebSocketHandler {
             // Đây là một lệnh để Agent thông báo họ đang xem conversationId nào
             String newConversationId = payload.trim();
             
-            // Validate conversation exists
+            // Validate conversation exists and belongs to the agent's tenant
             try {
                 Long conversationIdLong = Long.parseLong(newConversationId);
-                if (!conversationRepository.existsById(conversationIdLong)) {
+                var conversationOpt = conversationRepository.findById(conversationIdLong);
+                
+                if (conversationOpt.isEmpty()) {
                     sendErrorMessage(session, "Conversation not found: " + newConversationId);
                     return;
                 }
+                
+                Long sessionTenantId = (Long) session.getAttributes().get("tenantId");
+                if (sessionTenantId == null || !sessionTenantId.equals(conversationOpt.get().getTenantId())) {
+                    log.warn("🚨 [SECURITY] IDOR attempt detected! Session {} (Tenant: {}) tried to access Conversation {} (Tenant: {})", 
+                        session.getId(), sessionTenantId, newConversationId, conversationOpt.get().getTenantId());
+                    sendErrorMessage(session, "Unauthorized access to conversation");
+                    session.close(org.springframework.web.socket.CloseStatus.POLICY_VIOLATION);
+                    return;
+                }
+                
             } catch (NumberFormatException e) {
                 log.error("❌ [WebSocket] Invalid conversation ID format from session {}: '{}'", session.getId(), payload);
                 sendErrorMessage(session, "Invalid conversation ID format");

@@ -26,9 +26,11 @@ import org.springframework.data.redis.core.RedisTemplate;
 
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 
 /**
  * Kafka consumer that processes Facebook webhook events asynchronously with full business logic.
@@ -48,9 +50,11 @@ public class FacebookEventConsumer {
     private final ObjectMapper objectMapper;
     private final RedisTemplate<String, String> redisTemplate;
 
-    private final Set<String> processedMessageIds = ConcurrentHashMap.newKeySet();
-    private static final long CLEANUP_INTERVAL_MS = 60 * 60 * 1000; // 1 hour
-    private volatile long lastCleanupTime = System.currentTimeMillis();
+    // Caffeine Cache with 15-minute TTL for in-memory deduplication fallback
+    private final Cache<String, Boolean> dedupCache = Caffeine.newBuilder()
+            .expireAfterWrite(15, TimeUnit.MINUTES)
+            .maximumSize(10000)
+            .build();
 
     @Autowired
     public FacebookEventConsumer(FacebookConnectionRepository connectionRepository,
@@ -79,8 +83,8 @@ public class FacebookEventConsumer {
             Boolean acquired = redisTemplate.opsForValue().setIfAbsent(key, "true", java.time.Duration.ofMinutes(15));
             return Boolean.TRUE.equals(acquired);
         } catch (Exception e) {
-            log.error("❌ Failed to check deduplication in Redis: {}, falling back to in-memory check", e.getMessage());
-            return processedMessageIds.add(mid);
+            log.error("❌ Failed to check deduplication in Redis: {}, falling back to Caffeine cache", e.getMessage());
+            return dedupCache.getIfPresent(mid) == null && dedupCache.asMap().putIfAbsent(mid, true) == null;
         }
     }
 
@@ -149,6 +153,7 @@ public class FacebookEventConsumer {
             }
         } catch (Exception e) {
             log.error("❌ [Kafka Consumer] Processing exception: {}", e.getMessage(), e);
+            throw new RuntimeException("Error processing Kafka event", e);
         } finally {
             // Guarantee TenantContext clean-up to prevent context leaking
             TenantContext.clear();
@@ -167,7 +172,6 @@ public class FacebookEventConsumer {
             return;
         }
 
-        cleanupOldMessageIds();
         log.info("✉️ Processing TEXT: " + text);
 
         UUID connectionId = connection.getId();
@@ -175,17 +179,17 @@ public class FacebookEventConsumer {
 
         Optional<Conversation> existingConvOpt = conversationService.findByConnectionIdAndExternalUserId(connectionId, senderId);
         Conversation conversation = existingConvOpt.orElseGet(() -> conversationService.findOrCreate(connectionId, senderId, channel));
-        Long conversationId = conversation.getId();
 
+        Message savedMessage = null;
         try {
-            messageService.saveMessage(
-                    conversationId,
+            savedMessage = messageService.saveMessage(
+                    conversation.getId(),
                     "user",
                     text,
                     FacebookMessageType.TEXT.name(),
                     Map.of("mid", mid)
             );
-            log.info("✅ Saved user text message to DB. Conversation ID: " + conversationId);
+            log.info("✅ Saved user text message to DB. Conversation ID: " + conversation.getId() + ", Message ID: " + savedMessage.getId());
         } catch (Exception e) {
             log.error("❌ Failed to save user text message to DB: " + e.getMessage());
         }
@@ -196,7 +200,7 @@ public class FacebookEventConsumer {
             log.error("❌ Customer data sync failed: {}", e.getMessage());
         }
 
-        routeToPennyBot(connection, senderId, text, "text", conversationId);
+        routeToPennyBot(connection, senderId, text, "text", conversation, savedMessage);
     }
 
     private void handleAttachmentMessage(FacebookConnection connection, String senderId, WebhookRequest.Messaging messaging) {
@@ -209,7 +213,6 @@ public class FacebookEventConsumer {
         UUID connectionId = connection.getId();
         Channel channel = Channel.FACEBOOK;
         Conversation conversation = conversationService.findOrCreate(connectionId, senderId, channel);
-        Long conversationId = conversation.getId();
 
         messaging.getMessage().getAttachments().forEach(attachment -> {
             String type = attachment.getType();
@@ -218,21 +221,22 @@ public class FacebookEventConsumer {
             if (url != null) {
                 log.info("🖼 ATTACHMENT: type=" + type + ", url=" + url);
 
+                Message savedMessage = null;
                 try {
-                    messageService.saveMessage(
-                            conversationId,
+                    savedMessage = messageService.saveMessage(
+                            conversation.getId(),
                             "user",
                             "[" + type.toUpperCase() + "]",
                             FacebookMessageType.ATTACHMENT.name(),
                             Map.of("mid", mid, "url", url, "type", type)
                     );
-                    log.info("✅ Saved attachment message to DB.");
+                    log.info("✅ Saved attachment message to DB. Message ID: " + savedMessage.getId());
                 } catch (Exception e) {
                     log.error("❌ Failed to save attachment to DB: " + e.getMessage());
                 }
 
                 String attachmentText = "[" + type.toUpperCase() + "]";
-                routeToPennyBot(connection, senderId, attachmentText + " (" + url + ")", type, conversationId);
+                routeToPennyBot(connection, senderId, attachmentText + " (" + url + ")", type, conversation, savedMessage);
             }
         });
     }
@@ -246,17 +250,17 @@ public class FacebookEventConsumer {
         UUID connectionId = connection.getId();
         Channel channel = Channel.FACEBOOK;
         Conversation conversation = conversationService.findOrCreate(connectionId, senderId, channel);
-        Long conversationId = conversation.getId();
 
+        Message savedMessage = null;
         try {
-            messageService.saveMessage(
-                    conversationId,
+            savedMessage = messageService.saveMessage(
+                    conversation.getId(),
                     "user",
                     messageContent,
                     FacebookMessageType.QUICK_REPLY.name(),
                     Map.of("payload", payload, "mid", mid)
             );
-            log.info("✅ Saved QuickReply to DB.");
+            log.info("✅ Saved QuickReply to DB. Message ID: " + savedMessage.getId());
         } catch (Exception e) {
             log.error("❌ Failed to save QuickReply to DB: " + e.getMessage());
         }
@@ -267,7 +271,7 @@ public class FacebookEventConsumer {
             log.error("❌ Customer data sync failed: {}", e.getMessage());
         }
 
-        routeToPennyBot(connection, senderId, "[QuickReply] " + payload, "quick_reply", conversationId);
+        routeToPennyBot(connection, senderId, "[QuickReply] " + payload, "quick_reply", conversation, savedMessage);
     }
 
     private void handlePostback(FacebookConnection connection, String senderId, WebhookRequest.Messaging messaging) {
@@ -278,17 +282,17 @@ public class FacebookEventConsumer {
         UUID connectionId = connection.getId();
         Channel channel = Channel.FACEBOOK;
         Conversation conversation = conversationService.findOrCreate(connectionId, senderId, channel);
-        Long conversationId = conversation.getId();
 
+        Message savedMessage = null;
         try {
-            messageService.saveMessage(
-                    conversationId,
+            savedMessage = messageService.saveMessage(
+                    conversation.getId(),
                     "user",
                     text,
                     FacebookMessageType.POSTBACK.name(),
                     Map.of("payload", payload)
             );
-            log.info("✅ Saved Postback to DB.");
+            log.info("✅ Saved Postback to DB. Message ID: " + savedMessage.getId());
         } catch (Exception e) {
             log.error("❌ Failed to save Postback to DB: " + e.getMessage());
         }
@@ -299,7 +303,7 @@ public class FacebookEventConsumer {
             log.error("❌ Customer data sync failed: {}", e.getMessage());
         }
 
-        routeToPennyBot(connection, senderId, "[Postback] " + payload, "postback", conversationId);
+        routeToPennyBot(connection, senderId, "[Postback] " + payload, "postback", conversation, savedMessage);
     }
 
     private void handleReaction(FacebookConnection connection, String senderId, WebhookRequest.Messaging messaging) {
@@ -323,85 +327,96 @@ public class FacebookEventConsumer {
     /**
      * Route event to PennyBot if not taken over by human Agent
      */
-    private void routeToPennyBot(FacebookConnection connection, String senderId, String messageText, String messageType, Long conversationId) {
+    private void routeToPennyBot(FacebookConnection connection, String senderId, String messageText, String messageType, Conversation conversation, Message userMessage) {
         log.info("🤖 [Penny] Starting message processing...");
-        Conversation conversation = null;
 
-        try {
-            // Save to Redis for Takeover history
-            TakeoverMessage takeoverMessage = new TakeoverMessage(
-                    "user_" + System.currentTimeMillis() + "_" + (int) (Math.random() * 10000),
-                    String.valueOf(conversationId),
-                    "user",
-                    messageText,
-                    System.currentTimeMillis()
-            );
-            takeoverService.saveMessage(takeoverMessage);
+        // Capture current tenant context for the async thread
+        Long currentTenantId = TenantContext.getTenantId();
 
-            // Publish via WebSocket to UI
+        CompletableFuture.runAsync(() -> {
             try {
-                takeoverService.sendToConversation(takeoverMessage);
+                // Restore tenant context in the new thread
+                TenantContext.setTenantId(currentTenantId);
+
+                // Save to Redis for Takeover history using real DB message ID
+                String messageId = (userMessage != null) ? String.valueOf(userMessage.getId()) : "user_" + System.currentTimeMillis() + "_" + (int) (Math.random() * 10000);
+                TakeoverMessage takeoverMessage = new TakeoverMessage(
+                        messageId,
+                        String.valueOf(conversation.getId()),
+                        "user",
+                        messageText,
+                        System.currentTimeMillis()
+                );
+                takeoverService.saveMessage(takeoverMessage);
+
+                // Publish via WebSocket to UI
+                try {
+                    takeoverService.sendToConversation(takeoverMessage);
+                } catch (Exception e) {
+                    log.error("❌ WebSocket push error for user message: {}", e.getMessage());
+                }
+
+                // Check if conversation is taken over by Agent (reuse conversation object)
+                boolean isTakenOver = conversation.getIsTakenOverByAgent();
+
+                if (isTakenOver) {
+                    log.info("🛑 Conversation {} is taken over by Agent. Skipping Bot reply.", conversation.getId());
+                    return;
+                }
+
+                // Route to Penny Bot
+                if (connection.getBotId() == null || connection.getBotId().trim().isEmpty()) {
+                    log.warn("⚠️ Connection has no botId. Skipping bot processing.");
+                    return;
+                }
+
+                UUID botId = UUID.fromString(connection.getBotId());
+                String botReply = pennyBotManager.processMessage(botId, messageText, connection.getOwnerId(), false);
+
+                if (botReply != null && !botReply.trim().isEmpty()) {
+                    log.info("✅ [Penny] Bot handled message. Sending response...");
+
+                    // Save Bot Message to DB
+                    Message botMessageSaved = null;
+                    try {
+                        botMessageSaved = messageService.saveMessage(
+                                conversation.getId(),
+                                "bot",
+                                botReply,
+                                FacebookMessageType.TEXT.name(),
+                                null
+                        );
+                    } catch (Exception e) {
+                        log.error("❌ Failed to save bot message to DB: {}", e.getMessage());
+                    }
+
+                    // Save Bot Message to Redis and Push via WebSocket using real DB message ID
+                    try {
+                        String botMessageId = (botMessageSaved != null) ? String.valueOf(botMessageSaved.getId()) : "bot_" + System.currentTimeMillis() + "_" + (int) (Math.random() * 10000);
+                        TakeoverMessage botMessage = new TakeoverMessage(
+                                botMessageId,
+                                String.valueOf(conversation.getId()),
+                                "bot",
+                                botReply,
+                                System.currentTimeMillis()
+                        );
+                        takeoverService.saveMessage(botMessage);
+                        takeoverService.sendToConversation(botMessage);
+                    } catch (Exception e) {
+                        log.error("❌ WebSocket push error for bot reply: {}", e.getMessage());
+                    }
+
+                    // Send message back to Facebook User
+                    facebookMessengerService.sendMessageToUser(connection.getPageId(), senderId, botReply, connection.getPageAccessToken());
+                    log.info("📤 Response sent to Facebook user: {}", botReply);
+                }
             } catch (Exception e) {
-                log.error("❌ WebSocket push error for user message: {}", e.getMessage());
+                log.error("❌ Penny processing error: {}", e.getMessage(), e);
+            } finally {
+                // Ensure context is cleared when thread completes to prevent leaks
+                TenantContext.clear();
             }
-
-            // Check if conversation is taken over by Agent
-            UUID connectionId = connection.getId();
-            conversation = conversationService.findOrCreate(connectionId, senderId, Channel.FACEBOOK);
-            boolean isTakenOver = conversation.getIsTakenOverByAgent();
-
-            if (isTakenOver) {
-                log.info("🛑 Conversation {} is taken over by Agent. Skipping Bot reply.", conversationId);
-                return;
-            }
-
-            // Route to Penny Bot
-            if (connection.getBotId() == null || connection.getBotId().trim().isEmpty()) {
-                log.warn("⚠️ Connection has no botId. Skipping bot processing.");
-                return;
-            }
-
-            UUID botId = UUID.fromString(connection.getBotId());
-            String botReply = pennyBotManager.processMessage(botId, messageText, connection.getOwnerId(), false);
-
-            if (botReply != null && !botReply.trim().isEmpty()) {
-                log.info("✅ [Penny] Bot handled message. Sending response...");
-
-                // Save Bot Message to DB
-                try {
-                    messageService.saveMessage(
-                            conversation.getId(),
-                            "bot",
-                            botReply,
-                            FacebookMessageType.TEXT.name(),
-                            null
-                    );
-                } catch (Exception e) {
-                    log.error("❌ Failed to save bot message to DB: {}", e.getMessage());
-                }
-
-                // Save Bot Message to Redis and Push via WebSocket
-                try {
-                    TakeoverMessage botMessage = new TakeoverMessage(
-                            "bot_" + System.currentTimeMillis() + "_" + (int) (Math.random() * 10000),
-                            String.valueOf(conversation.getId()),
-                            "bot",
-                            botReply,
-                            System.currentTimeMillis()
-                    );
-                    takeoverService.saveMessage(botMessage);
-                    takeoverService.sendToConversation(botMessage);
-                } catch (Exception e) {
-                    log.error("❌ WebSocket push error for bot reply: {}", e.getMessage());
-                }
-
-                // Send message back to Facebook User
-                facebookMessengerService.sendMessageToUser(connection.getPageId(), senderId, botReply, connection.getPageAccessToken());
-                log.info("📤 Response sent to Facebook user: {}", botReply);
-            }
-        } catch (Exception e) {
-            log.error("❌ Penny processing error: {}", e.getMessage(), e);
-        }
+        });
     }
 
     private FacebookMessageType classifyMessage(WebhookRequest.Messaging messaging) {
@@ -425,16 +440,5 @@ public class FacebookEventConsumer {
         else if (messaging.getDelivery() != null) return FacebookMessageType.DELIVERY;
 
         return FacebookMessageType.UNKNOWN;
-    }
-
-    private void cleanupOldMessageIds() {
-        long currentTime = System.currentTimeMillis();
-        if (currentTime - lastCleanupTime > CLEANUP_INTERVAL_MS) {
-            if (processedMessageIds.size() > 10000) {
-                processedMessageIds.clear();
-                log.info("🧹 Cleared processed message IDs cache.");
-            }
-            lastCleanupTime = currentTime;
-        }
     }
 }

@@ -226,11 +226,14 @@ export const tenantApi = {
     
     return result;
   },
+  async getPendingRequests() {
+    return axios.get('/pending-tenants');
+  },
   async getMyJoinRequests() {
-    return axios.get('/tenants/members/join-requests');
+    return axios.get('/pending-tenants');
   },
   async cancelJoinRequest(requestId) {
-    return axios.delete(`/tenants/members/join-requests/${requestId}`);
+    return axios.delete(`/users/join-requests/${requestId}`);
   },
   async getMyInvitations() {
     return axios.get('/tenants/members/my-invitations');

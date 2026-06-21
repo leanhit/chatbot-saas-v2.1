@@ -25,8 +25,10 @@ const EXCLUDED_PATHS = [
     '/tenants/search',
     '/tenants/my-list',
     '/tenants/members/pending-tenants', // User's own pending requests
+    '/pending-tenants', // User's own pending requests (new endpoint)
     '/tenants/members/my-invitations', // User's own invitations
     '/tenants/members/join-requests', // Join requests - user doesn't have active tenant yet
+    '/users/join-requests', // Cancel join requests
     '/images', // Image API không cần tenant ID
     '/api/customers/statuses' // Only statuses endpoint doesn't need tenant context
 ];

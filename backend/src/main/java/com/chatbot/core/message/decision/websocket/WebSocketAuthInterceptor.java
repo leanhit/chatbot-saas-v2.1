@@ -61,10 +61,10 @@ public class WebSocketAuthInterceptor implements HandshakeInterceptor {
                                 log.warn("❌ [WebSocket Handshake] Tenant not found for key: {}", tenantKey);
                                 return false;
                             }
+                        } else {
+                            log.warn("❌ [WebSocket Handshake] Missing tenantKey for user {}", email);
+                            return false;
                         }
-                        
-                        log.info("✅ [WebSocket Handshake] Authenticated user {} (No tenant specified)", email);
-                        return true;
                     }
                 }
             } catch (Exception e) {

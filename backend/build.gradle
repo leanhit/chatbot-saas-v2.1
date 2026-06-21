@@ -133,6 +133,11 @@ dependencies {
     // Flyway (for database migrations)
     // -------------------------------
     implementation 'org.flywaydb:flyway-core:9.22.3'
+
+    // -------------------------------
+    // Caffeine Cache (for in-memory caching with TTL)
+    // -------------------------------
+    implementation 'com.github.ben-manes.caffeine:caffeine:3.1.8'
 }
 
 tasks.named('test') {
