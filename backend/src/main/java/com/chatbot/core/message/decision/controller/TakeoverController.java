@@ -7,7 +7,6 @@ import com.chatbot.core.message.store.service.MessageService;
 import com.chatbot.core.message.store.service.ConversationService;
 import com.chatbot.core.message.store.model.Conversation;
 import com.chatbot.core.message.store.repository.ConversationRepository;
-import com.chatbot.core.message.router.service.AgentMessageService;
 import com.chatbot.core.tenant.infra.TenantContext;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
@@ -33,7 +32,6 @@ public class TakeoverController {
     private final TakeoverWebSocketHandler websocketHandler;
     private final ObjectMapper objectMapper;
     private final MessageService messageService;
-    private final AgentMessageService agentMessageService;
     private final ConversationService conversationService;
     private final ConversationRepository conversationRepo;
 

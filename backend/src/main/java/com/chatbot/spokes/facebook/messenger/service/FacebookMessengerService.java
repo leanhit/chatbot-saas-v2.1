@@ -32,7 +32,7 @@ public class FacebookMessengerService {
      * Send text message to Facebook user
      */
     public void sendTextMessage(String pageAccessToken, String recipientId, String text) {
-        String url = graphApiUrl + "/v18.0/me/messages?access_token=" + pageAccessToken;
+        String url = graphApiUrl + "/v18.0/me/messages";
         
         Map<String, Object> payload = Map.of(
             "messaging_type", "RESPONSE",
@@ -43,6 +43,7 @@ public class FacebookMessengerService {
         try {
             webClient.post()
                     .uri(url)
+                    .header("Authorization", "Bearer " + pageAccessToken)
                     .contentType(MediaType.APPLICATION_JSON)
                     .bodyValue(payload)
                     .retrieve()
@@ -53,6 +54,7 @@ public class FacebookMessengerService {
 
         } catch (Exception e) {
             log.error("❌ Lỗi gửi text message: {}", e.getMessage(), e);
+            throw new RuntimeException("Failed to send text message", e);
         }
     }
 
@@ -60,7 +62,7 @@ public class FacebookMessengerService {
      * Send image message to Facebook user with unified error handling
      */
     public void sendImageToUser(String pageAccessToken, String recipientId, String imageUrl) {
-        String url = graphApiUrl + "/v18.0/me/messages?access_token=" + pageAccessToken;
+        String url = graphApiUrl + "/v18.0/me/messages";
 
         Map<String, Object> payload = Map.of(
                 "messaging_type", "RESPONSE",
@@ -79,6 +81,7 @@ public class FacebookMessengerService {
         try {
             webClient.post()
                     .uri(url)
+                    .header("Authorization", "Bearer " + pageAccessToken)
                     .contentType(MediaType.APPLICATION_JSON)
                     .bodyValue(payload)
                     .retrieve()
@@ -89,31 +92,17 @@ public class FacebookMessengerService {
 
         } catch (Exception e) {
             log.error("❌ Lỗi gửi image message: {}", e.getMessage(), e);
+            throw new RuntimeException("Failed to send image message", e);
         }
     }
 
     /**
      * Send message to Facebook user (exact traloitudongV2 logic)
      */
-    public void sendMessageToUser(String pageId, String recipientId, String messageText, String sender) {
+    public void sendMessageToUser(String pageId, String recipientId, String messageText, String pageAccessToken) {
         log.info("📤 Sending message to Facebook user {} from page {}: {}", recipientId, pageId, messageText);
         
-        // Find connection by pageId (traloitudongV2 logic)
-        Optional<FacebookConnection> connectionOpt = connectionRepository.findByPageIdAndIsActiveTrue(pageId);
-        
-        if (connectionOpt.isEmpty()) {
-            log.error("❌ Không tìm thấy FacebookConnection pageId={}", pageId);
-            return;
-        }
-        
-        FacebookConnection connection = connectionOpt.get();
-        if (!connection.isEnabled()) {
-            log.warn("⚠️ FacebookConnection bị disable. pageId={}", pageId);
-            return;
-        }
-        
-        String accessToken = connection.getPageAccessToken();
-        String url = "https://graph.facebook.com/v18.0/me/messages?access_token=" + accessToken;
+        String url = graphApiUrl + "/v18.0/me/messages";
         
         Map<String, Object> payload = Map.of(
             "recipient", Map.of("id", recipientId),
@@ -125,6 +114,7 @@ public class FacebookMessengerService {
             try {
                 webClient.post()
                     .uri(url)
+                    .header("Authorization", "Bearer " + pageAccessToken)
                     .contentType(MediaType.APPLICATION_JSON)
                     .bodyValue(payload)
                     .retrieve()
@@ -138,6 +128,12 @@ public class FacebookMessengerService {
                 log.error("❌ Attempt {} failed to send message: {}", attempt, e.getMessage());
                 if (attempt == 3) {
                     log.error("❌ All attempts failed. Could not send message to Facebook user {}", recipientId);
+                    throw new RuntimeException("Failed to send message after 3 attempts", e);
+                }
+                try {
+                    Thread.sleep(attempt * 1000L); // Exponential backoff
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
                 }
             }
         }

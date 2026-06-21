@@ -515,17 +515,7 @@ public class TenantService {
     // =========================================================================
 
     private void createEmptyAddressForTenant(Long tenantId) {
-        com.chatbot.shared.address.dto.AddressRequestDTO emptyAddress =
-                new com.chatbot.shared.address.dto.AddressRequestDTO();
-        emptyAddress.setOwnerType(OwnerType.TENANT);
-        emptyAddress.setOwnerId(tenantId);
-        emptyAddress.setStreet("");
-        emptyAddress.setHouseNumber("");
-        emptyAddress.setWard("");
-        emptyAddress.setDistrict("");
-        emptyAddress.setProvince("");
-        emptyAddress.setCountry("Vietnam");
-        addressService.createAddress(tenantId, emptyAddress);
+        addressService.getOrCreateSingleAddress(tenantId, OwnerType.TENANT, tenantId);
         log.info("[TenantService] Created empty address for tenant: {}", tenantId);
     }
 

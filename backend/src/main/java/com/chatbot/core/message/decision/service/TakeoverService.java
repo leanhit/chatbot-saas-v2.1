@@ -4,12 +4,17 @@ import com.chatbot.core.message.decision.model.TakeoverMessage;
 // !!! Cần Import WebSocket Handler !!!
 import com.chatbot.core.message.decision.websocket.TakeoverWebSocketHandler; 
 import com.chatbot.core.message.store.service.MessageService;
-import com.chatbot.core.message.router.service.AgentMessageService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.ListOperations;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import com.chatbot.core.message.store.repository.ConversationRepository;
+import com.chatbot.core.message.store.model.Conversation;
+import com.chatbot.spokes.facebook.connection.model.FacebookConnection;
+import com.chatbot.spokes.facebook.connection.repository.FacebookConnectionRepository;
+import com.chatbot.spokes.facebook.messenger.service.FacebookMessengerService;
+import java.util.UUID;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -27,7 +32,9 @@ public class TakeoverService {
     // 1. INJECT WEBSOCKET HANDLER
     private final TakeoverWebSocketHandler websocketHandler;
     private final MessageService messageService;
-    private final AgentMessageService agentMessageService; 
+    private final FacebookMessengerService facebookMessengerService;
+    private final ConversationRepository conversationRepository;
+    private final FacebookConnectionRepository connectionRepository;
 
     private final long MESSAGE_TTL_HOURS = 24;
     private final long MAX_MESSAGE_COUNT = 100; // Giới hạn 100 tin nhắn lịch sử
@@ -61,6 +68,30 @@ public class TakeoverService {
             log.error("❌ Lỗi khi lưu Message vào Redis/gửi WebSocket: " + e.getMessage());
             e.printStackTrace();
         }
+    }
+
+    private void sendAgentTextMessage(Long conversationDbId, String content, Integer agentId) {
+        Conversation conversation = conversationRepository.findById(conversationDbId)
+                .orElseThrow(() -> new RuntimeException("Conversation not found for ID: " + conversationDbId));
+
+        UUID connectionId = conversation.getConnectionId();
+        FacebookConnection connection = connectionRepository.findById(connectionId)
+                .orElseThrow(() -> new RuntimeException("Connection not found for ID: " + connectionId));
+
+        String pageId = connection.getPageId();
+        String recipientId = conversation.getExternalUserId();
+        String pageAccessToken = connection.getPageAccessToken();
+
+        log.info("🤖 [AgentMsg] Bắt đầu gửi tin nhắn Agent ra Facebook. Page ID: {}", pageId);
+        
+        try {
+            facebookMessengerService.sendMessageToUser(pageId, recipientId, content, pageAccessToken);
+            log.info("📤 [AgentMsg] Agent message sent to Facebook user: {}", content);
+        } catch (Exception e) {
+            log.error("❌ [AgentMsg] Error sending agent message to Facebook: {}", e.getMessage());
+        }
+
+        log.info("✅ [AgentMsg] Hoàn tất luồng gửi tin nhắn Agent.");
     }
 
     /**
@@ -102,7 +133,7 @@ public class TakeoverService {
 
             // 3. Gửi tin nhắn đến Facebook user
             try {
-                agentMessageService.sendAgentTextMessage(
+                this.sendAgentTextMessage(
                     conversationIdLong, 
                     message.getContent(), 
                     null // agentId đang là null, có thể cần lấy từ context sau này

@@ -64,7 +64,8 @@ public class FacebookEventConsumer {
                                  MessageService messageService,
                                  TakeoverService takeoverService,
                                  CustomerDataService customerDataService,
-                                 RedisTemplate<String, String> redisTemplate) {
+                                 RedisTemplate<String, String> redisTemplate,
+                                 ObjectMapper objectMapper) {
         this.connectionRepository = connectionRepository;
         this.pennyBotManager = pennyBotManager;
         this.facebookMessengerService = facebookMessengerService;
@@ -73,7 +74,7 @@ public class FacebookEventConsumer {
         this.takeoverService = takeoverService;
         this.customerDataService = customerDataService;
         this.redisTemplate = redisTemplate;
-        this.objectMapper = new ObjectMapper();
+        this.objectMapper = objectMapper;
     }
 
     private boolean tryDedup(String mid) {
@@ -85,6 +86,17 @@ public class FacebookEventConsumer {
         } catch (Exception e) {
             log.error("❌ Failed to check deduplication in Redis: {}, falling back to Caffeine cache", e.getMessage());
             return dedupCache.getIfPresent(mid) == null && dedupCache.asMap().putIfAbsent(mid, true) == null;
+        }
+    }
+
+    private void removeDedup(String mid) {
+        if (mid == null) return;
+        try {
+            String key = "facebook:dedup:mid:" + mid;
+            redisTemplate.delete(key);
+            dedupCache.invalidate(mid);
+        } catch (Exception e) {
+            log.error("❌ Failed to remove deduplication key: {}", e.getMessage());
         }
     }
 
@@ -153,6 +165,15 @@ public class FacebookEventConsumer {
             }
         } catch (Exception e) {
             log.error("❌ [Kafka Consumer] Processing exception: {}", e.getMessage(), e);
+            
+            // Remove dedup key to allow retry for this message
+            if (event.getMessaging() != null) {
+                String mid = null;
+                if (event.getMessaging().getMessage() != null) mid = event.getMessaging().getMessage().getMid();
+                else if (event.getMessaging().getReaction() != null) mid = event.getMessaging().getReaction().getMid();
+                if (mid != null) removeDedup(mid);
+            }
+            
             throw new RuntimeException("Error processing Kafka event", e);
         } finally {
             // Guarantee TenantContext clean-up to prevent context leaking
@@ -330,15 +351,8 @@ public class FacebookEventConsumer {
     private void routeToPennyBot(FacebookConnection connection, String senderId, String messageText, String messageType, Conversation conversation, Message userMessage) {
         log.info("🤖 [Penny] Starting message processing...");
 
-        // Capture current tenant context for the async thread
-        Long currentTenantId = TenantContext.getTenantId();
-
-        CompletableFuture.runAsync(() -> {
-            try {
-                // Restore tenant context in the new thread
-                TenantContext.setTenantId(currentTenantId);
-
-                // Save to Redis for Takeover history using real DB message ID
+        try {
+            // Save to Redis for Takeover history using real DB message ID
                 String messageId = (userMessage != null) ? String.valueOf(userMessage.getId()) : "user_" + System.currentTimeMillis() + "_" + (int) (Math.random() * 10000);
                 TakeoverMessage takeoverMessage = new TakeoverMessage(
                         messageId,
@@ -410,13 +424,10 @@ public class FacebookEventConsumer {
                     facebookMessengerService.sendMessageToUser(connection.getPageId(), senderId, botReply, connection.getPageAccessToken());
                     log.info("📤 Response sent to Facebook user: {}", botReply);
                 }
-            } catch (Exception e) {
-                log.error("❌ Penny processing error: {}", e.getMessage(), e);
-            } finally {
-                // Ensure context is cleared when thread completes to prevent leaks
-                TenantContext.clear();
-            }
-        });
+        } catch (Exception e) {
+            log.error("❌ Penny processing error: {}", e.getMessage(), e);
+            throw new RuntimeException("Penny processing failed", e);
+        }
     }
 
     private FacebookMessageType classifyMessage(WebhookRequest.Messaging messaging) {
