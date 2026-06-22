@@ -4,7 +4,7 @@ import router from '@/router';
 import { ACTIVE_TENANT_ID } from '@/utils/constant'
 
 const instance = axios.create({
-    baseURL: process.env.VITE_API_URL,
+    baseURL: process.env.VUE_APP_API_URL,
     headers: {
         Accept: 'application/json',
         'Content-Type': 'application/json',

@@ -200,11 +200,11 @@ export const tenantApi = {
   async getMyMember(tenantKey) {
     return axios.get(`/tenants/key/${tenantKey}/members/me`);
   },
-  async updateMemberRole(tenantKey, memberId, role) {
-    return axios.put(`/tenants/key/${tenantKey}/members/${memberId}/role`, { role });
+  async updateMemberRole(tenantKey, userId, role) {
+    return axios.put(`/tenants/key/${tenantKey}/members/${userId}/role`, { role });
   },
-  async removeMember(tenantKey, memberId) {
-    return axios.delete(`/tenants/key/${tenantKey}/members/${memberId}`);
+  async removeMember(tenantKey, userId) {
+    return axios.delete(`/tenants/key/${tenantKey}/members/${userId}`);
   },
   async inviteMember(tenantKey, inviteData) {
     return axios.post(`/tenants/key/${tenantKey}/invitations`, inviteData);
@@ -245,7 +245,7 @@ export const tenantApi = {
     return axios.post(`/tenants/members/invitations/${invitationId}/reject`);
   },
   async leaveTenant(tenantKey) {
-    return axios.post(`/tenants/key/${tenantKey}/leave`);
+    return axios.delete(`/tenants/key/${tenantKey}/members/me`);
   },
   /**
    * Phê duyệt hoặc Từ chối yêu cầu

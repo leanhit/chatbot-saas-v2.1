@@ -51,7 +51,10 @@
       "enter": "Vào không gian",
       "suspend": "Tạm dừng",
       "activate": "Kích hoạt",
-      "join": "Tham gia"
+      "join": "Tham gia",
+      "leaveTenant": "Rời khỏi",
+      "confirmLeave": "Bạn có chắc chắn muốn rời khỏi \"{name}\"? Bạn sẽ mất quyền truy cập vào không gian làm việc này.",
+      "leaveSuccess": "Đã rời khỏi không gian làm việc thành công"
     },
     "errors": {
       "failedJoinRequest": "Không thể gửi yêu cầu tham gia. Vui lòng thử lại."
@@ -1131,6 +1134,7 @@
     "tenant": "Không gian làm việc",
     "overview": "Tổng quan",
     "member": "Thành viên",
+    "switchTenant": "Chuyển không gian",
     "pennyBots": "Penny Bots",
     "bots": "Bot",
     "connections": "Kết nối",

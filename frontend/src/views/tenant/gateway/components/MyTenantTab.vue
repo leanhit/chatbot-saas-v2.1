@@ -84,20 +84,29 @@
           </div>
           <div class="card-footer">
             <div class="action-buttons">
-              <button
-                v-if="tenant.status === TenantStatus.ACTIVE"
-                @click="suspendTenant(tenant.tenantKey)"
-                class="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 text-sm font-medium"
-              >
-                {{ $t('tenant.gateway.suspend') }}
-              </button>
-              <button
-                v-else
-                @click="activateTenant(tenant.tenantKey)"
-                class="text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300 text-sm font-medium"
-              >
-                {{ $t('tenant.gateway.activate') }}
-              </button>
+              <div class="flex items-center gap-2">
+                <button
+                  v-if="tenant.status === TenantStatus.ACTIVE && tenant.role === 'OWNER'"
+                  @click="suspendTenant(tenant.tenantKey)"
+                  class="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 text-sm font-medium"
+                >
+                  {{ $t('tenant.gateway.suspend') }}
+                </button>
+                <button
+                  v-else-if="tenant.status !== TenantStatus.ACTIVE && tenant.role === 'OWNER'"
+                  @click="activateTenant(tenant.tenantKey)"
+                  class="text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300 text-sm font-medium"
+                >
+                  {{ $t('tenant.gateway.activate') }}
+                </button>
+                <button
+                  v-if="tenant.role !== 'OWNER'"
+                  @click="handleLeaveTenant(tenant)"
+                  class="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 text-sm font-medium"
+                >
+                  {{ $t('gateway.actions.leaveTenant') }}
+                </button>
+              </div>
               <button
                 @click="enterWorkspace(tenant)"
                 :disabled="tenant.status !== TenantStatus.ACTIVE"
@@ -152,12 +161,25 @@ export default {
       await tenantStore.activateTenant(tenantKey)
       await tenantStore.fetchUserTenants()
     }
+    const handleLeaveTenant = async (tenant) => {
+      if (!confirm(t('gateway.actions.confirmLeave', { name: tenant.name }))) {
+        return
+      }
+      try {
+        await tenantStore.leaveTenant(tenant.tenantKey)
+        alert(t('gateway.actions.leaveSuccess'))
+      } catch (error) {
+        const errorMessage = error.response?.data?.message || error.message || 'Failed to leave tenant'
+        alert(errorMessage)
+      }
+    }
     return {
       tenantList,
       loading,
       enterWorkspace,
       suspendTenant,
       activateTenant,
+      handleLeaveTenant,
       secureImageUrl,
       formatDateTime,
       TenantStatus

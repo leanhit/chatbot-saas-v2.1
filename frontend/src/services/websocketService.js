@@ -17,7 +17,7 @@ class WebSocketService {
     this.notificationStore = useNotificationStore()
 
     // WebSocket URL - adjust based on your backend configuration
-    const wsUrl = `${process.env.VITE_WS_URL || 'ws://localhost:8080'}/ws/notifications?token=${token}`
+    const wsUrl = `${process.env.VUE_APP_WS_URL || 'ws://localhost:8080'}/ws/notifications?token=${token}`
     
     try {
       this.socket = new WebSocket(wsUrl)

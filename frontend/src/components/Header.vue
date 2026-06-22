@@ -219,15 +219,6 @@
                     <Icon icon="mdi:help-circle" class="mr-3 h-4 w-4" />
                     {{ $t('header.help') }}
                   </router-link>
-                  
-                  <a
-                    href="#"
-                    @click.prevent="handleTenantGateway"
-                    class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
-                  >
-                    <Icon icon="mdi:office-building" class="mr-3 h-4 w-4" />
-                    {{ $t('header.tenantGateway') }}
-                  </a>
                 </div>
                 
                 <div class="border-t border-gray-200 dark:border-gray-700 py-2">
@@ -365,7 +356,7 @@
             return `${securedUrl}?t=${this.avatarTimestamp}`;
           }
           // If avatar is a file ID, use public backend content endpoint with cache busting
-          const apiUrl = process.env.VITE_API_URL || 'http://localhost:8080/api';
+          const apiUrl = process.env.VUE_APP_API_URL || 'http://localhost:8080/api';
           const baseUrl = apiUrl.endsWith('/') ? apiUrl.slice(0, -1) : apiUrl;
           return `${baseUrl}/images/public/${avatar}/content?t=${this.avatarTimestamp}`;
         }
@@ -414,14 +405,6 @@
       // handle logout
       handleLogout() {
         this.authStore.logout();
-        this.menu = false;
-      },
-      // handle tenant gateway click
-      handleTenantGateway() {
-        // Navigate to tenant gateway
-        this.$router.push('/tenant-gateway').then(() => {
-        }).catch(error => {
-        });
         this.menu = false;
       },
       // Enhanced avatar error handling

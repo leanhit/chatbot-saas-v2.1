@@ -87,11 +87,19 @@
           <Icon icon="mdi:account-group" class="h-5 w-5" />
         </button>
         <button
-          @click="$emit('settings')"
-          class="p-2 text-gray-400 hover:text-gray-600 transition-colors"
-          :title="$t('tenant.settings.title')"
+          @click="switchTenant"
+          class="p-2 text-gray-400 hover:text-blue-500 transition-colors"
+          :title="$t('sidebar.switchTenant')"
         >
-          <Icon icon="mdi:cog" class="h-5 w-5" />
+          <Icon icon="mdi:swap-horizontal" class="h-5 w-5" />
+        </button>
+        <button
+          v-if="!canEdit"
+          @click="handleLeaveTenant"
+          class="p-2 text-gray-400 hover:text-red-600 transition-colors"
+          :title="$t('gateway.actions.leaveTenant')"
+        >
+          <Icon icon="mdi:exit-run" class="h-5 w-5" />
         </button>
       </div>
     </div>
@@ -105,6 +113,8 @@ import { secureImageUrl } from '@/utils/imageUtils'
 import { formatDate } from '@/utils/dateUtils'
 import { getCurrentInstance } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useRouter } from 'vue-router'
+import { useGatewayTenantStore } from '@/stores/tenant/gateway/myTenantStore'
 
 export default {
   name: 'AvatarCard',
@@ -121,9 +131,11 @@ export default {
       default: false
     }
   },
-  emits: ['manage-members', 'settings', 'update-logo'],
+  emits: ['manage-members', 'update-logo'],
   setup(props) {
     const { t } = useI18n()
+    const router = useRouter()
+    const tenantStore = useGatewayTenantStore()
     const logoError = ref(false)
     const logoTimestamp = ref(Date.now())
     
@@ -210,6 +222,11 @@ export default {
       logoTimestamp.value = Date.now()
     }
     
+    // Navigate to tenant gateway (switch workspace)
+    const switchTenant = () => {
+      router.push('/tenant-gateway')
+    }
+    
     // Copy tenant key to clipboard
     const copyTenantKey = () => {
       const tenantKey = props.tenant?.tenantKey
@@ -218,6 +235,24 @@ export default {
         // Show success message
         const toast = getCurrentInstance()?.appContext.config.globalProperties.$toast
         toast?.success('Tenant Key đã được sao chép')
+      }
+    }
+    
+    // Handle leave tenant
+    const handleLeaveTenant = async () => {
+      const tenantKey = props.tenant?.tenantKey
+      const tenantName = props.tenant?.name || ''
+      if (!tenantKey) return
+      if (!confirm(t('gateway.actions.confirmLeave', { name: tenantName }))) {
+        return
+      }
+      try {
+        await tenantStore.leaveTenant(tenantKey)
+        alert(t('gateway.actions.leaveSuccess'))
+        router.push('/tenant-gateway')
+      } catch (error) {
+        const errorMessage = error.response?.data?.message || error.message || 'Failed to leave tenant'
+        alert(errorMessage)
       }
     }
     
@@ -231,7 +266,9 @@ export default {
       handleLogoError,
       handleLogoLoad,
       refreshLogo,
-      copyTenantKey
+      copyTenantKey,
+      switchTenant,
+      handleLeaveTenant
     }
   }
 }

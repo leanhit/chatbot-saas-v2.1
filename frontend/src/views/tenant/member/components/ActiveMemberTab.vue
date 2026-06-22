@@ -241,7 +241,7 @@ export default {
         }
 
         // Call API to update member role
-        await tenantApi.updateMemberRole(tenantKey, member.id, newRole)
+        await tenantApi.updateMemberRole(tenantKey, member.userId, newRole)
         
         // Update local member data
         member.role = newRole
@@ -265,7 +265,7 @@ export default {
         }
 
         // Call API to remove member
-        await tenantApi.removeMember(tenantKey, member.id)
+        await tenantApi.removeMember(tenantKey, member.userId)
         
         // Remove from local list
         members.value = members.value.filter(m => m.id !== member.id)

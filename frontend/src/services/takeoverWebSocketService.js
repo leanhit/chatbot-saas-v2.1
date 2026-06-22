@@ -48,7 +48,7 @@ class TakeoverWebSocketService {
 
     try {
       // VITE_WS_URL should already include the full WebSocket endpoint
-      const wsUrl = process.env.VITE_WS_URL || 'ws://localhost:8080/ws/takeover'
+      const wsUrl = process.env.VUE_APP_WS_URL || 'ws://localhost:8080/ws/takeover'
       
       // Validate and clean URL
       if (!wsUrl || typeof wsUrl !== 'string') {

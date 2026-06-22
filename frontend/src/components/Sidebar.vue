@@ -82,6 +82,13 @@
                 >
                   {{ $t('sidebar.member') }}
                 </router-link>
+                <router-link
+                  to="/tenant-gateway"
+                  @click.stop
+                  class="w-full text-left block rounded-md p-3 hover:bg-gray-200 dark:hover:bg-gray-700"
+                >
+                  {{ $t('sidebar.switchTenant') }}
+                </router-link>
                 <!-- Temporarily hidden
                 <router-link
                   to="/tenant/settings"

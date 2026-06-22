@@ -133,6 +133,14 @@ export const useGatewayTenantStore = defineStore('gateway-tenant', () => {
     await tenantApi.activateTenant(tenantKey);
     await fetchUserTenants();
   };
+  const leaveTenant = async (tenantKey) => {
+    await tenantApi.leaveTenant(tenantKey)
+    // If leaving the currently active tenant, clear it
+    if (currentTenant.value?.tenantKey === tenantKey) {
+      clearTenant()
+    }
+    await fetchUserTenants()
+  }
   return {
     // state
     userTenants,
@@ -146,6 +154,7 @@ export const useGatewayTenantStore = defineStore('gateway-tenant', () => {
     switchTenant,
     clearTenant,
     suspendTenant,
-    activateTenant
+    activateTenant,
+    leaveTenant
   }
 })

@@ -51,7 +51,10 @@
       "enter": "Enter Workspace",
       "suspend": "Suspend",
       "activate": "Activate",
-      "join": "Join"
+      "join": "Join",
+      "leaveTenant": "Leave",
+      "confirmLeave": "Are you sure you want to leave \"{name}\"? You will lose access to this workspace.",
+      "leaveSuccess": "Successfully left the workspace"
     },
     "errors": {
       "failedJoinRequest": "Failed to send join request. Please try again."
@@ -1131,6 +1134,7 @@
     "tenant": "Tenant",
     "overview": "Overview",
     "member": "Member",
+    "switchTenant": "Switch Workspace",
     "pennyBots": "Penny Bots",
     "bots": "Bots",
     "connections": "Connections",

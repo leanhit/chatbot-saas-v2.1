@@ -319,7 +319,7 @@ export default {
         }
 
         // Call API with typed parameters
-        await tenantApi.updateMemberRole(tenantKey, member.id, newRole as TenantRole)
+        await tenantApi.updateMemberRole(tenantKey, member.userId, newRole as TenantRole)
         
         // Update local member data
         member.role = newRole as TenantRole
@@ -347,7 +347,7 @@ export default {
         }
 
         // Call API
-        await tenantApi.removeMember(tenantKey, member.id)
+        await tenantApi.removeMember(tenantKey, member.userId)
         
         // Update local state
         const index = members.value.findIndex(m => m.id === member.id)

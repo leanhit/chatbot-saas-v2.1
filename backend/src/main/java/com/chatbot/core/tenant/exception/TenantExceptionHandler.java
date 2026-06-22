@@ -1,6 +1,7 @@
 package com.chatbot.core.tenant.exception;
 
 import com.chatbot.core.tenant.exception.TenantException;
+import com.chatbot.shared.exceptions.ResourceNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -63,6 +64,19 @@ public class TenantExceptionHandler {
     public ResponseEntity<Map<String, Object>> handleTenantProfile(
             TenantProfileException ex, WebRequest request) {
         return createErrorResponse(ex, HttpStatus.INTERNAL_SERVER_ERROR, request);
+    }
+
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity<Map<String, Object>> handleResourceNotFoundException(
+            ResourceNotFoundException ex, WebRequest request) {
+        Map<String, Object> response = new HashMap<>();
+        response.put("timestamp", LocalDateTime.now());
+        response.put("status", HttpStatus.NOT_FOUND.value());
+        response.put("error", "Not Found");
+        response.put("message", ex.getMessage());
+        response.put("path", request.getDescription(false).replace("uri=", ""));
+        
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
     }
 
     @ExceptionHandler(ResponseStatusException.class)
