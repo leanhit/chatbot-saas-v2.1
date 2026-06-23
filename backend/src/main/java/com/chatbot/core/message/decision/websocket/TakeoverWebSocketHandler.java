@@ -12,8 +12,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
-import org.springframework.data.redis.core.ListOperations;
-import org.springframework.data.redis.core.StringRedisTemplate;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
@@ -25,7 +23,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 
@@ -37,12 +34,15 @@ public class TakeoverWebSocketHandler extends TextWebSocketHandler {
     private final ObjectMapper objectMapper;
     private final ConversationRepository conversationRepository;
     private final FacebookConnectionRepository facebookConnectionRepository;
-    private final StringRedisTemplate redisTemplate;
 
     // Session tracking with metadata like traloitudongV2
     private final ConcurrentMap<String, Set<WebSocketSession>> conversationSessions = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, String> sessionToConversationMap = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, LocalDateTime> sessionLastActivity = new ConcurrentHashMap<>();
+    
+    // Tenant-wide session tracking for broadcasting takeover events
+    private final ConcurrentMap<Long, Set<WebSocketSession>> tenantSessions = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, Long> sessionToTenantMap = new ConcurrentHashMap<>();
     
     // Connection health monitoring with configuration
     private final ScheduledExecutorService heartbeatExecutor = new ScheduledThreadPoolExecutor(1);
@@ -164,7 +164,16 @@ public class TakeoverWebSocketHandler extends TextWebSocketHandler {
     public void afterConnectionEstablished(WebSocketSession session) {
         // Initialize session tracking
         sessionLastActivity.put(session.getId(), LocalDateTime.now());
-        log.info("🔗 WebSocket: New connection established - Session: {}", session.getId());
+        
+        // Track tenant session for broadcast
+        Long tenantId = (Long) session.getAttributes().get("tenantId");
+        if (tenantId != null) {
+            tenantSessions.computeIfAbsent(tenantId, k -> ConcurrentHashMap.newKeySet()).add(session);
+            sessionToTenantMap.put(session.getId(), tenantId);
+            log.info("🔗 WebSocket: New connection established - Session: {}, Tenant: {}", session.getId(), tenantId);
+        } else {
+            log.warn("⚠️ WebSocket: Connection established without tenantId - Session: {}", session.getId());
+        }
     }
 
     @Override
@@ -186,7 +195,19 @@ public class TakeoverWebSocketHandler extends TextWebSocketHandler {
                 session.getId(), conversationId, status);
         }
         
-        // 4. Clean up activity tracking
+        // 4. Clean up tenant session tracking
+        Long tenantId = sessionToTenantMap.remove(session.getId());
+        if (tenantId != null) {
+            Set<WebSocketSession> tenantSessionSet = tenantSessions.get(tenantId);
+            if (tenantSessionSet != null) {
+                tenantSessionSet.remove(session);
+                if (tenantSessionSet.isEmpty()) {
+                    tenantSessions.remove(tenantId);
+                }
+            }
+        }
+        
+        // 5. Clean up activity tracking
         sessionLastActivity.remove(session.getId());
     }
 
@@ -299,6 +320,41 @@ public class TakeoverWebSocketHandler extends TextWebSocketHandler {
     }
 
     /**
+     * Broadcast message to all sessions in a tenant
+     * @param tenantId Tenant ID
+     * @param message JSON message to broadcast
+     */
+    public void broadcastToTenant(Long tenantId, String message) {
+        Set<WebSocketSession> sessions = tenantSessions.get(tenantId);
+        if (sessions == null || sessions.isEmpty()) {
+            log.debug("⚠️ WebSocket: No sessions for tenant {}", tenantId);
+            return;
+        }
+
+        try {
+            TextMessage textMessage = new TextMessage(message);
+            // Snapshot the set to avoid ConcurrentModificationException if a session
+            // disconnects while we are iterating (race condition fix)
+            Set<WebSocketSession> snapshot = new java.util.HashSet<>(sessions);
+            int sent = 0;
+            for (WebSocketSession session : snapshot) {
+                if (session.isOpen()) {
+                    try {
+                        session.sendMessage(textMessage);
+                        sent++;
+                    } catch (Exception ex) {
+                        log.warn("⚠️ WebSocket: Failed to send to session {} in tenant {}: {}",
+                            session.getId(), tenantId, ex.getMessage());
+                    }
+                }
+            }
+            log.info("📡 WebSocket: Broadcasted message to {}/{} sessions in tenant {}", sent, snapshot.size(), tenantId);
+        } catch (Exception e) {
+            log.error("❌ WebSocket: Failed to broadcast to tenant {}: {}", tenantId, e.getMessage());
+        }
+    }
+
+    /**
      * Gửi tin nhắn đến tất cả các Agent đang xem cuộc hội thoại cụ thể này.
      * Đây là hàm sẽ được gọi từ các service khác (như FacebookMessengerService, FacebookWebhookService).
      */
@@ -306,18 +362,8 @@ public class TakeoverWebSocketHandler extends TextWebSocketHandler {
         Set<WebSocketSession> sessions = conversationSessions.get(conversationId);
         if (sessions == null || sessions.isEmpty()) {
             log.info("⚠️ WebSocket: Không có Agent nào đang xem Conversation " + conversationId);
-            
-            // Still save to Redis for history when no agents are watching
-            try {
-                String json = objectMapper.writeValueAsString(message);
-                ListOperations<String, String> ops = redisTemplate.opsForList();
-                ops.rightPush("takeover:" + conversationId, json);
-                ops.trim("takeover:" + conversationId, -100, -1); // Keep last 100 messages
-                redisTemplate.expire("takeover:" + conversationId, 24, TimeUnit.HOURS);
-                log.info("💾 Saved message to Redis for history (no active agents). Conversation: " + conversationId);
-            } catch (Exception e) {
-                log.error("❌ Failed to save message to Redis: {}", e.getMessage());
-            }
+            // NOTE: Messages are saved centrally in TakeoverService.saveMessage()
+            // No need to save here to avoid duplicates
             return;
         }
 
@@ -340,19 +386,30 @@ public class TakeoverWebSocketHandler extends TextWebSocketHandler {
             log.info("🔍 [DEBUG] Sending WebSocket message - ID: {}, Sender: {}, Content: {}, Sessions: {}", 
                 message.getId(), message.getSender(), message.getContent(), sessions.size());
             
-            for (WebSocketSession session : sessions) {
+            // Snapshot the set to avoid ConcurrentModificationException if a session
+            // disconnects while we are iterating (race condition fix)
+            Set<WebSocketSession> snapshot = new java.util.HashSet<>(sessions);
+            int sent = 0;
+            for (WebSocketSession session : snapshot) {
                 if (session.isOpen()) {
-                    session.sendMessage(textMessage);
-                    log.debug("🔍 [DEBUG] Sent to session: {}", session.getId());
+                    try {
+                        session.sendMessage(textMessage);
+                        sent++;
+                        log.debug("🔍 [DEBUG] Sent to session: {}", session.getId());
+                    } catch (Exception ex) {
+                        log.warn("⚠️ WebSocket: Failed to send to session {} for conversation {}: {}",
+                            session.getId(), conversationId, ex.getMessage());
+                    }
                 }
             }
-            log.info("✉️ WebSocket: Đã gửi tin nhắn đến " + sessions.size() + " Agent xem Conversation " + conversationId);
+            log.info("✉️ WebSocket: Đã gửi tin nhắn đến {}/{} Agent xem Conversation {}", sent, snapshot.size(), conversationId);
             
             // NOTE: Messages are now saved centrally in TakeoverService
             // WebSocket handler only broadcasts messages, no longer saves to database
             // This prevents duplicate saves since TakeoverService already handles persistence
 
         } catch (Exception e) {
+            log.error("❌ WebSocket: Error sending message to conversation {}: {}", conversationId, e.getMessage());
             e.printStackTrace();
         }
     }

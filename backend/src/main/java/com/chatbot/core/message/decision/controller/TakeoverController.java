@@ -8,6 +8,7 @@ import com.chatbot.core.message.store.service.ConversationService;
 import com.chatbot.core.message.store.model.Conversation;
 import com.chatbot.core.message.store.repository.ConversationRepository;
 import com.chatbot.core.tenant.infra.TenantContext;
+import com.chatbot.shared.exceptions.ResourceNotFoundException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,6 +27,7 @@ import java.util.stream.Collectors;
 @RequestMapping("/api/takeover")
 @RequiredArgsConstructor
 @Slf4j
+@PreAuthorize("isAuthenticated()")
 public class TakeoverController {
 
     private final TakeoverService takeoverService;
@@ -34,6 +36,7 @@ public class TakeoverController {
     private final MessageService messageService;
     private final ConversationService conversationService;
     private final ConversationRepository conversationRepo;
+    private final com.chatbot.core.tenant.service.TenantPermissionValidator permissionValidator;
 
     // UI gửi tin nhắn → centralized xử lý qua TakeoverService
     @PostMapping("/send")
@@ -44,6 +47,45 @@ public class TakeoverController {
             log.debug("Conversation ID: {}", message.getConversationId());
             log.debug("Content: {}", message.getContent());
             log.debug("Sender: {}", message.getSender());
+            
+            String conversationIdStr = message.getConversationId();
+            Long conversationIdLong = Long.parseLong(conversationIdStr);
+            
+            // Reply Lock Check: Kiểm tra xem conversation có đang được agent khác phụ trách không
+            Conversation conversation = conversationRepo.findById(conversationIdLong)
+                .orElseThrow(() -> new ResourceNotFoundException("Conversation not found"));
+            
+            Long currentUserId = permissionValidator.getCurrentUser().getId();
+            String currentUserEmail = permissionValidator.getCurrentUserEmail();
+            
+            // Check if user has active membership of the conversation's tenant
+            if (!permissionValidator.isActiveMember(conversation.getTenantId(), currentUserEmail)) {
+                log.warn("🚫 [Tenant Lock] Agent {} attempted to send message to conversation {} in tenant {} but is not a member", 
+                    currentUserEmail, conversationIdLong, conversation.getTenantId());
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("error", "Bạn không thuộc Tenant của cuộc hội thoại này."));
+            }
+            
+            if (conversation.getAgentAssignedId() != null && 
+                !conversation.getAgentAssignedId().equals(currentUserId)) {
+                // Conversation đã được gán cho agent khác
+                // Kiểm tra xem user hiện tại có phải Owner/Admin không (quyền tối cao)
+                boolean isManager = permissionValidator.isAdminOrOwner(conversation.getTenantId(), currentUserEmail);
+                
+                if (!isManager) {
+                    log.warn("🚫 [Reply Lock] Agent {} (ID: {}) attempted to send message to conversation {} assigned to agent {}", 
+                        currentUserEmail, currentUserId, conversationIdLong, conversation.getAgentAssignedId());
+                    return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(Map.of(
+                            "error", "Cuộc hội thoại này đã được phân công cho Agent khác.",
+                            "assignedAgentId", conversation.getAgentAssignedId()
+                        ));
+                }
+                
+                // Owner/Admin được phép gửi tin nhắn ghi đè, nhưng log cảnh báo
+                log.info("⚠️ [Reply Lock Override] Manager {} sending message to conversation {} assigned to agent {}", 
+                    currentUserEmail, conversationIdLong, conversation.getAgentAssignedId());
+            }
             
             // Check for duplicate message (idempotency)
             if (message.getId() != null && messageService.messageExists(message.getId())) {
@@ -58,13 +100,11 @@ public class TakeoverController {
             }
             message.setTimestamp(System.currentTimeMillis());
             message.setSender("agent"); // Ensure sender is set to agent
-            
-            String conversationIdStr = message.getConversationId();
-            Long conversationIdLong = Long.parseLong(conversationIdStr);
  
             log.debug("Calling TakeoverService...");
             // 1. Centralized: Lưu vào DB + Gửi đến Facebook + Push WebSocket thông qua TakeoverService
-            takeoverService.saveAndSendAgentMessage(message, conversationIdLong);
+            // Truyền currentUserId để audit log biết agent nào gửi tin nhắn
+            takeoverService.saveAndSendAgentMessage(message, conversationIdLong, currentUserId);
             
             log.info("✅ [Takeover] Agent message processed centrally. ID: {}, Conversation: {}", 
                 message.getId(), conversationIdLong);
@@ -80,6 +120,17 @@ public class TakeoverController {
     // Lấy lịch sử tin nhắn
     @GetMapping("/history/{conversationId}")
     public List<TakeoverMessage> getHistory(@PathVariable String conversationId) {
+        Long conversationIdLong = Long.parseLong(conversationId);
+        Conversation conversation = conversationRepo.findById(conversationIdLong)
+            .orElseThrow(() -> new ResourceNotFoundException("Conversation not found"));
+            
+        String currentUserEmail = permissionValidator.getCurrentUserEmail();
+        if (!permissionValidator.isActiveMember(conversation.getTenantId(), currentUserEmail)) {
+            log.warn("🚫 [Tenant Lock] User {} attempted to access history for conversation {} in tenant {} but is not a member", 
+                currentUserEmail, conversationIdLong, conversation.getTenantId());
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Bạn không thuộc Tenant của cuộc hội thoại này");
+        }
+        
         return takeoverService.getMessages(conversationId)
                 .stream()
                 .map(json -> {
@@ -95,19 +146,105 @@ public class TakeoverController {
     }
 
     // --------------------------------------------------------------------------
+    // ENDPOINT MỚI: ASSIGN AGENT TO CONVERSATION
+    // --------------------------------------------------------------------------
+    @PostMapping("/{conversationId}/assign")
+    public ResponseEntity<?> assignConversation(
+            @PathVariable Long conversationId,
+            @RequestBody Map<String, Long> requestBody) {
+        try {
+            Long agentId = requestBody.get("agentId");
+            String currentUserEmail = permissionValidator.getCurrentUserEmail();
+            
+            Conversation conversation = conversationRepo.findById(conversationId)
+                .orElseThrow(() -> new ResourceNotFoundException("Conversation not found"));
+            
+            // Check if user has active membership of the conversation's tenant
+            if (!permissionValidator.isActiveMember(conversation.getTenantId(), currentUserEmail)) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, 
+                    "Bạn không thuộc Tenant của cuộc hội thoại này");
+            }
+            
+            // Check if user is trying to assign someone else
+            if (agentId != null && !agentId.equals(permissionValidator.getCurrentUser().getId())) {
+                // Only Owner/Admin can assign others
+                if (!permissionValidator.isAdminOrOwner(conversation.getTenantId(), currentUserEmail)) {
+                    throw new ResponseStatusException(HttpStatus.FORBIDDEN, 
+                        "Bạn không có quyền phân công conversation cho người khác");
+                }
+            }
+            
+            // Update conversation assignment
+            if (agentId == null) {
+                // Release assignment
+                if (conversation.getAgentAssignedId() != null && !conversation.getAgentAssignedId().equals(permissionValidator.getCurrentUser().getId())) {
+                    if (!permissionValidator.isAdminOrOwner(conversation.getTenantId(), currentUserEmail)) {
+                        throw new ResponseStatusException(HttpStatus.FORBIDDEN, 
+                            "Bạn không có quyền giải phóng conversation của người khác");
+                    }
+                }
+                conversation.setAgentAssignedId(null);
+                conversation.setIsTakenOverByAgent(false);
+                conversation.setStatus("open");
+                log.info("🔓 Conversation {} released by {}", conversationId, currentUserEmail);
+            } else {
+                // Assign to agent
+                conversation.setAgentAssignedId(agentId);
+                conversation.setIsTakenOverByAgent(true);
+                conversation.setStatus("active_agent");
+                log.info("🔒 Conversation {} assigned to agent {} by {}", conversationId, agentId, currentUserEmail);
+            }
+            
+            conversationRepo.save(conversation);
+            
+            // Broadcast via WebSocket
+            TakeoverMessage notification = new TakeoverMessage(
+                "system_" + System.currentTimeMillis() + "_" + (int)(Math.random() * 10000),
+                String.valueOf(conversationId),
+                "system",
+                agentId == null ? "Conversation đã được giải phóng" : "Conversation đã được phân công",
+                System.currentTimeMillis()
+            );
+            websocketHandler.sendToConversation(String.valueOf(conversationId), notification);
+            
+            return ResponseEntity.ok().body(Map.of(
+                "message", agentId == null ? "Conversation released successfully" : "Conversation assigned successfully",
+                "conversationId", conversationId,
+                "agentAssignedId", agentId != null ? agentId : "",
+                "isTakenOver", agentId != null
+            ));
+        } catch (ResponseStatusException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("❌ Cannot assign conversation: {}", e.getMessage());
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot assign conversation", e);
+        }
+    }
+
+    // --------------------------------------------------------------------------
     // ENDPOINT MỚI: TAKEOVER CONVERSATION
     // --------------------------------------------------------------------------
     @PostMapping("/take/{conversationId}")
     public ResponseEntity<?> takeOverConversation(@PathVariable Long conversationId) {
         try {
-            // 1. Use updateTakenOverStatus method which exists and works
-            // We need to get the conversation first to get the ownerId for permission check
+            // Get conversation for permission check
             Conversation conversation = conversationRepo.findById(conversationId)
-                .orElseThrow(() -> new RuntimeException("Conversation not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Conversation not found"));
             
-            conversationService.updateTakenOverStatus(conversationId, true, conversation.getOwnerId());
+            // Get current user ID
+            Long currentUserId = permissionValidator.getCurrentUser().getId();
+            String currentUserEmail = permissionValidator.getCurrentUserEmail();
             
-            // 2. Gửi thông báo qua WebSocket về tất cả sessions
+            // Check if user has active membership of the conversation's tenant
+            if (!permissionValidator.isActiveMember(conversation.getTenantId(), currentUserEmail)) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, 
+                    "Bạn không thuộc Tenant của cuộc hội thoại này");
+            }
+            
+            // Use takeoverConversation method which properly sets agentAssignedId
+            conversationService.takeoverConversation(conversationId, currentUserId);
+            
+            // 2. Gửi thông báo qua WebSocket về tất cả sessions trong conversation
             TakeoverMessage takeoverNotification = new TakeoverMessage(
                 "system_" + System.currentTimeMillis() + "_" + (int)(Math.random() * 10000),
                 String.valueOf(conversationId),
@@ -116,6 +253,23 @@ public class TakeoverController {
                 System.currentTimeMillis()
             );
             websocketHandler.sendToConversation(String.valueOf(conversationId), takeoverNotification);
+            
+            // 3. Broadcast takeover event tenant-wide để agents khác thấy realtime update
+            try {
+                Map<String, Object> takeoverEvent = Map.of(
+                    "type", "TAKEOVER_EVENT",
+                    "data", Map.of(
+                        "conversationId", conversationId,
+                        "action", "taken_over",
+                        "timestamp", System.currentTimeMillis()
+                    )
+                );
+                String takeoverEventJson = objectMapper.writeValueAsString(takeoverEvent);
+                websocketHandler.broadcastToTenant(conversation.getTenantId(), takeoverEventJson);
+                log.info("📡 Broadcasted takeover event to tenant {}", conversation.getTenantId());
+            } catch (Exception e) {
+                log.error("❌ Failed to broadcast takeover event: {}", e.getMessage());
+            }
             
             log.info("🔒 Conversation {} taken over successfully", conversationId);
             return ResponseEntity.ok().body(Map.of(
@@ -138,12 +292,30 @@ public class TakeoverController {
         try {
             // 1. Get conversation to check ownership
             Conversation conversation = conversationRepo.findById(conversationId)
-                .orElseThrow(() -> new RuntimeException("Conversation not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Conversation not found"));
             
-            // 2. Use updateTakenOverStatus method to release
-            conversationService.updateTakenOverStatus(conversationId, false, conversation.getOwnerId());
+            String currentUserEmail = permissionValidator.getCurrentUserEmail();
             
-            // 3. G thông báo qua WebSocket
+            // Check if user has active membership of the conversation's tenant
+            if (!permissionValidator.isActiveMember(conversation.getTenantId(), currentUserEmail)) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, 
+                    "Bạn không thuộc Tenant của cuộc hội thoại này");
+            }
+            
+            // Check if user has permission to release (must be assigned agent or Admin/Owner)
+            if (conversation.getAgentAssignedId() != null && !conversation.getAgentAssignedId().equals(permissionValidator.getCurrentUser().getId())) {
+                if (!permissionValidator.isAdminOrOwner(conversation.getTenantId(), currentUserEmail)) {
+                    throw new ResponseStatusException(HttpStatus.FORBIDDEN, 
+                        "Bạn không có quyền giải phóng conversation của người khác");
+                }
+            }
+            
+            // 2. Dùng releaseConversation() — gán agentAssignedId = null, status = "open"
+            // Không dùng updateTakenOverStatus() vì nó kiểm tra ownerId của FacebookConnection,
+            // không phải agent đang thực hiện release — sẽ gây lỗi 403 cho agent thông thường.
+            conversationService.releaseConversation(conversationId);
+            
+            // 3. Gửi thông báo qua WebSocket đến conversation
             TakeoverMessage releaseNotification = new TakeoverMessage(
                 "system_" + System.currentTimeMillis() + "_" + (int)(Math.random() * 10000),
                 String.valueOf(conversationId),
@@ -152,6 +324,23 @@ public class TakeoverController {
                 System.currentTimeMillis()
             );
             websocketHandler.sendToConversation(String.valueOf(conversationId), releaseNotification);
+            
+            // 4. Broadcast release event tenant-wide để agents khác thấy realtime update
+            try {
+                Map<String, Object> releaseEvent = Map.of(
+                    "type", "TAKEOVER_EVENT",
+                    "data", Map.of(
+                        "conversationId", conversationId,
+                        "action", "released",
+                        "timestamp", System.currentTimeMillis()
+                    )
+                );
+                String releaseEventJson = objectMapper.writeValueAsString(releaseEvent);
+                websocketHandler.broadcastToTenant(conversation.getTenantId(), releaseEventJson);
+                log.info("📡 Broadcasted release event to tenant {}", conversation.getTenantId());
+            } catch (Exception e) {
+                log.error("❌ Failed to broadcast release event: {}", e.getMessage());
+            }
             
             log.info("Conversation {} released successfully", conversationId);
             return ResponseEntity.ok().body(Map.of(
@@ -172,14 +361,21 @@ public class TakeoverController {
     @GetMapping("/status/{conversationId}")
     public ResponseEntity<?> getTakeoverStatus(@PathVariable Long conversationId) {
         try {
-            return conversationRepo.findById(conversationId)
-                .map(c -> ResponseEntity.ok().body((Object) Map.of(
-                    "conversationId", conversationId,
-                    "isTakenOver", c.getIsTakenOverByAgent() != null && c.getIsTakenOverByAgent(),
-                    "agentId", c.getAgentAssignedId() != null ? c.getAgentAssignedId().toString() : "",
-                    "status", c.getStatus() != null ? c.getStatus() : "open"
-                )))
+            Conversation c = conversationRepo.findById(conversationId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Conversation not found"));
+                
+            String currentUserEmail = permissionValidator.getCurrentUserEmail();
+            if (!permissionValidator.isActiveMember(c.getTenantId(), currentUserEmail)) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, 
+                    "Bạn không thuộc Tenant của cuộc hội thoại này");
+            }
+            
+            return ResponseEntity.ok().body((Object) Map.of(
+                "conversationId", conversationId,
+                "isTakenOver", c.getIsTakenOverByAgent() != null && c.getIsTakenOverByAgent(),
+                "agentId", c.getAgentAssignedId() != null ? c.getAgentAssignedId().toString() : "",
+                "status", c.getStatus() != null ? c.getStatus() : "open"
+            ));
         } catch (ResponseStatusException e) {
             throw e;
         } catch (Exception e) {

@@ -1,7 +1,7 @@
 package com.chatbot.core.message.decision.service;
 
 import com.chatbot.core.message.decision.model.TakeoverMessage;
-// !!! Cần Import WebSocket Handler !!!
+// !!! Cần Import WebSocket Handler !!!\
 import com.chatbot.core.message.decision.websocket.TakeoverWebSocketHandler; 
 import com.chatbot.core.message.store.service.MessageService;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -70,7 +70,13 @@ public class TakeoverService {
         }
     }
 
-    private void sendAgentTextMessage(Long conversationDbId, String content, Integer agentId) {
+    /**
+     * Gửi tin nhắn agent ra Facebook.
+     * @param conversationDbId ID conversation trong DB
+     * @param content Nội dung tin nhắn
+     * @param agentId ID của agent gửi (dùng cho audit log)
+     */
+    private void sendAgentTextMessage(Long conversationDbId, String content, Long agentId) {
         Conversation conversation = conversationRepository.findById(conversationDbId)
                 .orElseThrow(() -> new RuntimeException("Conversation not found for ID: " + conversationDbId));
 
@@ -82,16 +88,16 @@ public class TakeoverService {
         String recipientId = conversation.getExternalUserId();
         String pageAccessToken = connection.getPageAccessToken();
 
-        log.info("🤖 [AgentMsg] Bắt đầu gửi tin nhắn Agent ra Facebook. Page ID: {}", pageId);
+        log.info("🤖 [AgentMsg] Bắt đầu gửi tin nhắn Agent ra Facebook. Page ID: {}, AgentId: {}", pageId, agentId);
         
         try {
             facebookMessengerService.sendMessageToUser(pageId, recipientId, content, pageAccessToken);
-            log.info("📤 [AgentMsg] Agent message sent to Facebook user: {}", content);
+            log.info("📤 [AgentMsg] Agent (ID: {}) sent message to Facebook user: {}", agentId, content);
         } catch (Exception e) {
             log.error("❌ [AgentMsg] Error sending agent message to Facebook: {}", e.getMessage());
         }
 
-        log.info("✅ [AgentMsg] Hoàn tất luồng gửi tin nhắn Agent.");
+        log.info("✅ [AgentMsg] Hoàn tất luồng gửi tin nhắn Agent (ID: {}).", agentId);
     }
 
     /**
@@ -100,18 +106,22 @@ public class TakeoverService {
      * 2. Save to Redis (for takeover history)
      * 3. Send to Facebook (via AgentMessageService)
      * 4. Send WebSocket (real-time UI updates)
+     *
+     * @param message         The message to process
+     * @param conversationIdLong The conversation ID (Long)
+     * @param agentId         ID of the agent sending the message (for audit logging)
      */
-    public void saveAndSendAgentMessage(TakeoverMessage message, Long conversationIdLong) {
+    public void saveAndSendAgentMessage(TakeoverMessage message, Long conversationIdLong, Long agentId) {
         try {
             String conversationIdStr = message.getConversationId();
             
-            // 1. L message t agent vào database (l u dài)
+            // 1. Lưu message từ agent vào database (lưu dài hạn)
             try {
                 log.debug("=== SAVING AGENT MESSAGE TO DATABASE ===");
                 log.debug("Message ID: {}", message.getId());
                 log.debug("Conversation ID: {}", conversationIdLong);
                 log.debug("Content: {}", message.getContent());
-                log.debug("External Message ID: {}", message.getId());
+                log.debug("AgentId: {}", agentId);
                 
                 messageService.saveMessage(
                     conversationIdLong, 
@@ -122,7 +132,7 @@ public class TakeoverService {
                 );
                 
                 log.debug("=== Agent message saved to DB ===");
-                log.info(" [Takeover] Saved agent message to DB. Conversation ID: {}", conversationIdLong);
+                log.info("✅ [Takeover] Saved agent message to DB. Conversation ID: {}, AgentId: {}", conversationIdLong, agentId);
             } catch (Exception e) {
                 log.error("❌ [Takeover] Error saving agent message to DB: {}", e.getMessage(), e);
             }
@@ -133,11 +143,7 @@ public class TakeoverService {
 
             // 3. Gửi tin nhắn đến Facebook user
             try {
-                this.sendAgentTextMessage(
-                    conversationIdLong, 
-                    message.getContent(), 
-                    null // agentId đang là null, có thể cần lấy từ context sau này
-                );
+                this.sendAgentTextMessage(conversationIdLong, message.getContent(), agentId);
                 log.info("📤 [Takeover] Agent message sent to Facebook. Conversation ID: {}", conversationIdLong);
             } catch (Exception e) {
                 log.error("❌ [Takeover] Error sending agent message to Facebook: {}", e.getMessage(), e);

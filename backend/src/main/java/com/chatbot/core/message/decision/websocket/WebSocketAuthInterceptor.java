@@ -49,13 +49,16 @@ public class WebSocketAuthInterceptor implements HandshakeInterceptor {
                     CustomUserDetails userDetails = (CustomUserDetails) authService.loadUserByUsername(email);
                     if (jwtService.validateToken(token, userDetails)) {
                         attributes.put("email", email);
+                        attributes.put("userId", userDetails.getUser().getId());
+                        attributes.put("fullName", userDetails.getUser().getProfile() != null ? 
+                            userDetails.getUser().getProfile().getFullName() : email);
                         
                         if (tenantKey != null && !tenantKey.trim().isEmpty()) {
                             Long tenantId = tenantService.getTenantIdByKey(tenantKey);
                             if (tenantId != null) {
                                 attributes.put("tenantId", tenantId);
-                                log.info("✅ [WebSocket Handshake] Authenticated user {} for tenant {} (ID: {})", 
-                                        email, tenantKey, tenantId);
+                                log.info("✅ [WebSocket Handshake] Authenticated user {} (ID: {}) for tenant {} (ID: {})", 
+                                        email, userDetails.getUser().getId(), tenantKey, tenantId);
                                 return true;
                             } else {
                                 log.warn("❌ [WebSocket Handshake] Tenant not found for key: {}", tenantKey);

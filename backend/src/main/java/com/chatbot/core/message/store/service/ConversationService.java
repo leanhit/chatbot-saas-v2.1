@@ -262,11 +262,11 @@ public class ConversationService {
      * Cập nhật trạng thái isTakenOverByAgent của một conversation
      */
     @Transactional
-    public Conversation updateTakenOverStatus(Long conversationId, Boolean isTakenOverByAgent, String ownerId) {
+    public Conversation updateTakenOverStatus(Long conversationId, Boolean isTakenOverByAgent, Long agentAssignedId, String ownerId) {
 
     log.info(
-        "Request to update takeover status. ConversationId={}, isTakenOver={}, CallerOwnerId={}",
-        conversationId, isTakenOverByAgent, ownerId
+        "Request to update takeover status. ConversationId={}, isTakenOver={}, agentAssignedId={}, CallerOwnerId={}",
+        conversationId, isTakenOverByAgent, agentAssignedId, ownerId
     );
 
     return conversationRepo.findById(conversationId)
@@ -303,7 +303,8 @@ public class ConversationService {
             if (isTakenOverByAgent) {
                 // Agent takeover → bot stop
                 conversation.setStatus("active_agent");  // Giữ đồng bộ với hàm takeoverConversation()
-                log.debug("Conversation {} takeover → status=active_agent", conversationId);
+                conversation.setAgentAssignedId(agentAssignedId);
+                log.debug("Conversation {} takeover → status=active_agent, agentAssignedId={}", conversationId, agentAssignedId);
             } else {
                 // Release → trả lại bot
                 conversation.setStatus("open");

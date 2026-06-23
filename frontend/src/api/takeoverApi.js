@@ -70,11 +70,11 @@ export const appApi = {
         return axios.get('/takeover/active');
     },
     // -------------------------
-    // 8. Delete Conversation
-    // ENDPOINT: DELETE /api/conversations/{conversationId}
+    // 8. Assign Agent to Conversation
+    // ENDPOINT: POST /api/takeover/{conversationId}/assign
     // -------------------------
-    deleteConversation(conversationId) {
-        return axios.delete(`/conversations/${conversationId}`);
+    assignConversation(conversationId, agentId) {
+        return axios.post(`/takeover/${conversationId}/assign`, { agentId });
     },
     // -------------------------
     // 9. Get Conversation Statistics

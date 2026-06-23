@@ -272,6 +272,16 @@
           
           <!-- Message Input -->
           <div v-if="selectedConversation.isTakenOver" class="p-4 border-t dark:border-gray-700">
+            <!-- WebSocket Connection Warning -->
+            <div v-if="connectionStatus !== 'connected'" class="mb-3 p-2 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+              <p class="text-sm text-yellow-800 dark:text-yellow-200 flex items-center gap-2">
+                <Icon icon="mdi:wifi-off" class="text-yellow-600 dark:text-yellow-400" />
+                <span>
+                  {{ connectionStatus === 'connecting' ? 'Connecting to real-time service...' : 'Real-time connection lost. Messages may not be delivered.' }}
+                </span>
+              </p>
+            </div>
+            
             <div class="flex items-center gap-2">
               <input
                 v-model="newMessage"
@@ -279,7 +289,7 @@
                 @keydown.enter.prevent="sendMessage"
                 @blur="stopTyping"
                 type="text"
-                placeholder="Type your message..."
+                :placeholder="connectionStatus !== 'connected' ? 'Connection lost - waiting for reconnection...' : 'Type your message...'"
                 :disabled="sendingMessage || connectionStatus !== 'connected'"
                 class="flex-1 px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white disabled:opacity-50"
               />

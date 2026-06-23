@@ -29,6 +29,7 @@ public class TakeoverCleanupService {
     private final ConversationService conversationService;
     private final MessageService messageService;
     private final org.springframework.data.redis.core.RedisTemplate<String, String> redisTemplate;
+    private final com.chatbot.core.message.decision.websocket.TakeoverWebSocketHandler websocketHandler;
     
     private final ExecutorService cleanupExecutor = Executors.newFixedThreadPool(5);
 
@@ -246,6 +247,43 @@ public class TakeoverCleanupService {
             
             // Send system notification
             sendCleanupNotification(conversation, idleDuration);
+            
+            // Send WebSocket notification to agents viewing this conversation
+            try {
+                com.chatbot.core.message.decision.model.TakeoverMessage autoReleaseNotification = 
+                    new com.chatbot.core.message.decision.model.TakeoverMessage(
+                        "system_auto_release_" + System.currentTimeMillis() + "_" + (int)(Math.random() * 10000),
+                        String.valueOf(conversation.getId()),
+                        "system",
+                        "🔄 Conversation auto-released due to inactivity (idle for " + (idleDuration / 60000) + " minutes)",
+                        System.currentTimeMillis()
+                    );
+                websocketHandler.sendToConversation(String.valueOf(conversation.getId()), autoReleaseNotification);
+                
+                // Also broadcast tenant-wide so all agents see the auto-release
+                try {
+                    com.fasterxml.jackson.databind.ObjectMapper objectMapper = new com.fasterxml.jackson.databind.ObjectMapper();
+                    java.util.Map<String, Object> autoReleaseEvent = java.util.Map.of(
+                        "type", "TAKEOVER_EVENT",
+                        "data", java.util.Map.of(
+                            "conversationId", conversation.getId(),
+                            "action", "auto_released",
+                            "reason", "idle_timeout",
+                            "idleDuration", idleDuration,
+                            "timestamp", System.currentTimeMillis()
+                        )
+                    );
+                    String autoReleaseEventJson = objectMapper.writeValueAsString(autoReleaseEvent);
+                    websocketHandler.broadcastToTenant(conversation.getTenantId(), autoReleaseEventJson);
+                    log.info("📡 [TakeoverCleanup] Broadcasted auto-release event to tenant {}", conversation.getTenantId());
+                } catch (Exception e) {
+                    log.error("❌ [TakeoverCleanup] Failed to broadcast auto-release event: {}", e.getMessage());
+                }
+                
+                log.info("📡 [TakeoverCleanup] Sent WebSocket notification for auto-release of conversation {}", conversation.getId());
+            } catch (Exception e) {
+                log.error("❌ [TakeoverCleanup] Failed to send WebSocket notification: {}", e.getMessage());
+            }
             
             return true;
             

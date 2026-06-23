@@ -163,55 +163,61 @@
         </div>
       </div>
 
-      <!-- Quick Actions -->
-      <div class="bg-white dark:bg-gray-800 p-6 lg:w-1/3 w-full rounded-md border dark:border-gray-700 mt-6 lg:mt-0">
-        <h2 class="font-medium text-sm text-gray-800 dark:text-gray-200">{{ $t('dashboard.quickActions') }}</h2>
-        
-        <div class="space-y-3">
-          <router-link
-            to="/messages"
-            class="flex items-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors"
-          >
-            <Icon icon="mdi:message-text" class="text-blue-600 text-xl mr-3" />
-            <div>
-              <p class="font-medium text-gray-900 dark:text-gray-200">{{ $t('dashboard.viewMessages') }}</p>
-              <p class="text-sm text-gray-500">{{ $t('dashboard.manageConversations') }}</p>
-            </div>
-          </router-link>
+      <!-- Quick Actions & Online Members -->
+      <div class="lg:w-1/3 w-full mt-6 lg:mt-0 space-y-6">
+        <!-- Quick Actions -->
+        <div class="bg-white dark:bg-gray-800 p-6 rounded-md border dark:border-gray-700">
+          <h2 class="font-medium text-sm text-gray-800 dark:text-gray-200">{{ $t('dashboard.quickActions') }}</h2>
+          
+          <div class="space-y-3 mt-4">
+            <router-link
+              to="/messages"
+              class="flex items-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors"
+            >
+              <Icon icon="mdi:message-text" class="text-blue-600 text-xl mr-3" />
+              <div>
+                <p class="font-medium text-gray-900 dark:text-gray-200">{{ $t('dashboard.viewMessages') }}</p>
+                <p class="text-sm text-gray-500">{{ $t('dashboard.manageConversations') }}</p>
+              </div>
+            </router-link>
 
-          <router-link
-            to="/penny-rules"
-            class="flex items-center p-3 bg-green-50 dark:bg-green-900/20 rounded-lg hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors"
-          >
-            <Icon icon="mdi:robot" class="text-green-600 text-xl mr-3" />
-            <div>
-              <p class="font-medium text-gray-900 dark:text-gray-200">{{ $t('dashboard.botRules') }}</p>
-              <p class="text-sm text-gray-500">{{ $t('dashboard.configureResponses') }}</p>
-            </div>
-          </router-link>
+            <router-link
+              to="/penny-rules"
+              class="flex items-center p-3 bg-green-50 dark:bg-green-900/20 rounded-lg hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors"
+            >
+              <Icon icon="mdi:robot" class="text-green-600 text-xl mr-3" />
+              <div>
+                <p class="font-medium text-gray-900 dark:text-gray-200">{{ $t('dashboard.botRules') }}</p>
+                <p class="text-sm text-gray-500">{{ $t('dashboard.configureResponses') }}</p>
+              </div>
+            </router-link>
 
-          <router-link
-            to="/penny-connections"
-            class="flex items-center p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg hover:bg-purple-100 dark:hover:bg-purple-900/30 transition-colors"
-          >
-            <Icon icon="mdi:facebook" class="text-purple-600 text-xl mr-3" />
-            <div>
-              <p class="font-medium text-gray-900 dark:text-gray-200">{{ $t('dashboard.connections') }}</p>
-              <p class="text-sm text-gray-500">{{ $t('dashboard.managePlatforms') }}</p>
-            </div>
-          </router-link>
+            <router-link
+              to="/penny-connections"
+              class="flex items-center p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg hover:bg-purple-100 dark:hover:bg-purple-900/30 transition-colors"
+            >
+              <Icon icon="mdi:facebook" class="text-purple-600 text-xl mr-3" />
+              <div>
+                <p class="font-medium text-gray-900 dark:text-gray-200">{{ $t('dashboard.connections') }}</p>
+                <p class="text-sm text-gray-500">{{ $t('dashboard.managePlatforms') }}</p>
+              </div>
+            </router-link>
 
-          <button
-            @click="testBot"
-            class="w-full flex items-center p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg hover:bg-orange-100 dark:hover:bg-orange-900/30 transition-colors"
-          >
-            <Icon icon="mdi:play-circle" class="text-orange-600 text-xl mr-3" />
-            <div class="text-left">
-              <p class="font-medium text-gray-900 dark:text-gray-200">{{ $t('dashboard.testBot') }}</p>
-              <p class="text-sm text-gray-500">{{ $t('dashboard.runTestConversation') }}</p>
-            </div>
-          </button>
+            <button
+              @click="testBot"
+              class="w-full flex items-center p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg hover:bg-orange-100 dark:hover:bg-orange-900/30 transition-colors"
+            >
+              <Icon icon="mdi:play-circle" class="text-orange-600 text-xl mr-3" />
+              <div class="text-left">
+                <p class="font-medium text-gray-900 dark:text-gray-200">{{ $t('dashboard.testBot') }}</p>
+                <p class="text-sm text-gray-500">{{ $t('dashboard.runTestConversation') }}</p>
+              </div>
+            </button>
+          </div>
         </div>
+
+        <!-- Online Members -->
+        <OnlineMembers v-if="tenantKey" :tenant-key="tenantKey" />
       </div>
     </div>
 
@@ -245,13 +251,17 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch, nextTick } from 'vue'
+import { ref, onMounted, watch, nextTick, computed } from 'vue'
 import { Icon } from '@iconify/vue'
 import { useRouter } from 'vue-router'
 import { getRelativeTime } from '@/utils/dateUtils'
 import axios from '@/plugins/axios'
+import OnlineMembers from '@/components/OnlineMembers.vue'
 
 const router = useRouter()
+
+// Get tenant key from localStorage
+const tenantKey = computed(() => localStorage.getItem('active_tenant_id'))
 
 // State
 const selectedPeriod = ref('7d')

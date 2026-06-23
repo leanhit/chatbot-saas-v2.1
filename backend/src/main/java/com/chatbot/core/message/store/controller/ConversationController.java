@@ -27,6 +27,9 @@ import java.util.UUID;
 import java.security.Principal;
 import java.util.List;
 
+import com.chatbot.core.user.repository.AuthRepository;
+import com.chatbot.core.user.model.User;
+
 @RestController
 @RequestMapping("/api/conversations")
 @RequiredArgsConstructor
@@ -36,6 +39,7 @@ public class ConversationController {
 
     private final ConversationService conversationService;
     private final ConversationMapper conversationMapper; // Giả định đã có
+    private final AuthRepository authRepository;
 
     // --------------------------------------------------------------------------
     // 1. LẤY TẤT CẢ CONVERSATIONS (Default)
@@ -242,7 +246,13 @@ public class ConversationController {
             Principal principal) {
         try {
             String ownerId = principal.getName();
-            Conversation updatedConversation = conversationService.updateTakenOverStatus(conversationId, isTakenOver, ownerId);
+            Long agentId = null;
+            if (isTakenOver) {
+                agentId = authRepository.findByEmail(ownerId)
+                    .map(User::getId)
+                    .orElse(null);
+            }
+            Conversation updatedConversation = conversationService.updateTakenOverStatus(conversationId, isTakenOver, agentId, ownerId);
             return ResponseEntity.ok(conversationMapper.toDTO(updatedConversation));
         } catch (RuntimeException e) {
             if (e.getMessage().contains("permission")) {
