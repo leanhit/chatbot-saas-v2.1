@@ -72,18 +72,18 @@ public class TenantMemberService {
 
         // Kiểm tra quyền của ACTOR, không phải của target
         if (!canManageMembers(tenantId, actorEmail)) {
-            throw new InsufficientPermissionException("Không đủ quyền để quản lý thành viên");
+            throw new InsufficientPermissionException(com.chatbot.shared.exceptions.ErrorCode.CANNOT_MANAGE_MEMBERS, "Insufficient permission to manage members");
         }
 
         // Kiểm tra actor có thể gán role này không (Dùng Validator chung)
         if (!permissionValidator.canAssignRole(tenantId, actorEmail, newRole)) {
-            throw new InsufficientPermissionException("Không thể gán role cao hơn quyền hiện tại của bạn");
+            throw new InsufficientPermissionException(com.chatbot.shared.exceptions.ErrorCode.CANNOT_ASSIGN_ROLE, "Cannot assign role higher than your current permissions");
         }
 
         TenantMember targetMember = getMemberEntityRequired(tenantId, targetUserId);
 
         if (targetMember.getRole() == TenantRole.OWNER) {
-            throw new BusinessLogicException("Không thể thay đổi role của OWNER");
+            throw new BusinessLogicException(com.chatbot.shared.exceptions.ErrorCode.CANNOT_CHANGE_OWNER_ROLE, "Cannot change OWNER role");
         }
 
         targetMember.setRole(newRole);
@@ -99,13 +99,13 @@ public class TenantMemberService {
         String actorEmail = getCurrentUserEmail();
 
         if (!canManageMembers(tenantId, actorEmail)) {
-            throw new InsufficientPermissionException("Không đủ quyền để xóa thành viên");
+            throw new InsufficientPermissionException(com.chatbot.shared.exceptions.ErrorCode.CANNOT_MANAGE_MEMBERS, "Insufficient permission to remove members");
         }
 
         TenantMember targetMember = getMemberEntityRequired(tenantId, targetUserId);
 
         if (targetMember.getRole() == TenantRole.OWNER) {
-            throw new BusinessLogicException("Không thể xóa OWNER khỏi tenant");
+            throw new BusinessLogicException(com.chatbot.shared.exceptions.ErrorCode.CANNOT_REMOVE_OWNER, "Cannot remove OWNER from tenant");
         }
 
         memberRepo.delete(targetMember);
@@ -163,7 +163,7 @@ public class TenantMemberService {
     private String getCurrentUserEmail() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth == null || !auth.isAuthenticated()) {
-            throw new InsufficientPermissionException("User chưa được xác thực");
+            throw new InsufficientPermissionException(com.chatbot.shared.exceptions.ErrorCode.USER_NOT_AUTHENTICATED, "User not authenticated");
         }
         return auth.getName();
     }

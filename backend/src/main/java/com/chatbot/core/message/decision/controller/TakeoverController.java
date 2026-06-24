@@ -128,7 +128,7 @@ public class TakeoverController {
         if (!permissionValidator.isActiveMember(conversation.getTenantId(), currentUserEmail)) {
             log.warn("🚫 [Tenant Lock] User {} attempted to access history for conversation {} in tenant {} but is not a member", 
                 currentUserEmail, conversationIdLong, conversation.getTenantId());
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Bạn không thuộc Tenant của cuộc hội thoại này");
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You are not a member of this conversation's tenant");
         }
         
         return takeoverService.getMessages(conversationId)

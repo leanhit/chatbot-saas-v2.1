@@ -1,20 +1,19 @@
 package com.chatbot.core.identity.exception;
 
-public class IdentityException extends RuntimeException {
+import com.chatbot.shared.exceptions.BaseException;
+import com.chatbot.shared.exceptions.ErrorCode;
+
+/**
+ * Base exception for identity-related errors.
+ * All identity exceptions should extend this class.
+ */
+public class IdentityException extends BaseException {
     
-    private final String errorCode;
-    
-    public IdentityException(String errorCode, String message) {
-        super(message);
-        this.errorCode = errorCode;
+    public IdentityException(ErrorCode errorCode, String message) {
+        super(errorCode, message);
     }
     
-    public IdentityException(String errorCode, String message, Throwable cause) {
-        super(message, cause);
-        this.errorCode = errorCode;
-    }
-    
-    public String getErrorCode() {
-        return errorCode;
+    public IdentityException(ErrorCode errorCode, String message, Throwable cause) {
+        super(errorCode, message, cause);
     }
 }

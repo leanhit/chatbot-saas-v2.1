@@ -168,7 +168,7 @@ public class TenantPackageService {
             }
         }
 
-        throw new TenantNotFoundException("Tenant ID không tìm thấy qua header hay user context");
+        throw new TenantNotFoundException(com.chatbot.shared.exceptions.ErrorCode.TENANT_ID_NOT_FOUND, "Tenant ID not found in header or user context");
     }
 
     /**

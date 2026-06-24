@@ -467,7 +467,7 @@ public class ConversationController {
             Principal principal) {
         
         if (conversationIds == null || conversationIds.isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Danh sách ID không được để trống.");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Conversation IDs list cannot be empty");
         }
         
         try {
@@ -476,9 +476,9 @@ public class ConversationController {
             conversationService.deleteConversations(conversationIds, ownerId);
             return ResponseEntity.noContent().build();
         } catch (SecurityException e) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Không được phép xóa một số hội thoại.", e);
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Not allowed to delete some conversations", e);
         } catch (RuntimeException e) {
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Lỗi khi xóa hàng loạt hội thoại.", e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error bulk deleting conversations", e);
         }
     }
 }

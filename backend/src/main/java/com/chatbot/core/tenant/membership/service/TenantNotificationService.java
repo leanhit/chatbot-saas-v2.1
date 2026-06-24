@@ -42,7 +42,7 @@ public class TenantNotificationService {
             log.info("Invitation notification sent for tenant {} to {}", tenantName, recipientEmail);
         } catch (Exception e) {
             log.error("Failed to send invitation notification", e);
-            throw new RuntimeException("Hệ thống gửi thông báo đang gặp sự cố, vui lòng thử lại sau.", e);
+            throw new com.chatbot.shared.exceptions.BaseException(com.chatbot.shared.exceptions.ErrorCode.NOTIFICATION_ERROR, "Notification system is experiencing issues, please try again later", e);
         }
     }
 

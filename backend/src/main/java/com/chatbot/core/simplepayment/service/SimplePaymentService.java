@@ -248,7 +248,7 @@ public class SimplePaymentService {
                 log.debug("📝 [DEBUG] Package upgrade result for payment {}: {}", referenceCode, upgradeSuccess);
                 
                 if (!upgradeSuccess) {
-                    throw new PaymentException("Package upgrade failed for payment: " + referenceCode);
+                    throw new PaymentException(com.chatbot.shared.exceptions.ErrorCode.PAYMENT_ERROR, "Package upgrade failed for payment: " + referenceCode);
                 }
                 
                 log.info(" [SimplePaymentService] Package upgrade completed successfully for payment: {}", 

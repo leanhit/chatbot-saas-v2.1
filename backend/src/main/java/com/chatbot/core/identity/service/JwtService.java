@@ -235,7 +235,7 @@ public class JwtService {
             throw new InvalidTokenException("JWT claims string is empty", e);
         } catch (Exception e) {
             log.error("Token parsing failed: {}", e.getMessage());
-            throw new InvalidTokenException("Token không hợp lệ hoặc đã hết hạn", e);
+            throw new InvalidTokenException(com.chatbot.shared.exceptions.ErrorCode.TOKEN_INVALID_OR_EXPIRED, "Token is invalid or has expired", e);
         }
     }
 

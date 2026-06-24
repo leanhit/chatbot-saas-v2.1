@@ -1,7 +1,8 @@
 import axios from 'axios';
 import { useAuthStore } from '@/stores/authStore';
 import router from '@/router';
-import { ACTIVE_TENANT_ID } from '@/utils/constant'
+import { ACTIVE_TENANT_ID } from '@/utils/constant';
+import { extractErrorCode, getErrorFromResponse, isAuthError } from '@/utils/errorHandler';
 
 const instance = axios.create({
     baseURL: process.env.VUE_APP_API_URL,
@@ -132,6 +133,20 @@ instance.interceptors.response.use(
                 // If it's an auth request, logout
                 authStore.logout();
                 router.push({ name: 'login' });
+            }
+        }
+        
+        // Attach localized error message to error object for components to use
+        if (error.response) {
+            const errorCode = extractErrorCode(error);
+            const localizedMessage = getErrorFromResponse(error);
+            error.localizedMessage = localizedMessage;
+            error.errorCode = errorCode;
+            
+            // Overwrite message properties to ensure components display the localized translation
+            error.message = localizedMessage;
+            if (error.response.data && typeof error.response.data === 'object') {
+                error.response.data.message = localizedMessage;
             }
         }
         

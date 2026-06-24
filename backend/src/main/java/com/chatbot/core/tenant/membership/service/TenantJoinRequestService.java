@@ -41,12 +41,12 @@ public class TenantJoinRequestService {
     public void requestToJoin(Long tenantId, User user) {
         if (memberRepo.existsByTenant_IdAndUserIdAndStatus(
                 tenantId, user.getId(), MembershipStatus.ACTIVE)) {
-            throw new BusinessLogicException("Bạn đã là thành viên của tenant này");
+            throw new BusinessLogicException(com.chatbot.shared.exceptions.ErrorCode.ALREADY_MEMBER, "You are already a member of this tenant");
         }
 
         if (joinRequestRepo.existsByTenant_IdAndUserIdAndStatus(
                 tenantId, user.getId(), MembershipStatus.PENDING)) {
-            throw new BusinessLogicException("Bạn đã gửi yêu cầu tham gia tenant này rồi");
+            throw new BusinessLogicException(com.chatbot.shared.exceptions.ErrorCode.JOIN_REQUEST_ALREADY_SENT, "You have already sent a join request for this tenant");
         }
 
         Tenant tenant = tenantRepo.findById(tenantId)
@@ -75,7 +75,7 @@ public class TenantJoinRequestService {
     public List<MemberResponse> getPendingRequests(Long tenantId) {
         String currentUserEmail = permissionValidator.getCurrentUserEmail();
         if (!permissionValidator.isAdmin(currentUserEmail) && !permissionValidator.isTenantAdmin(tenantId, currentUserEmail)) {
-            throw new InsufficientPermissionException("Chỉ Admin hoặc Chủ sở hữu của tổ chức mới có quyền xem danh sách yêu cầu tham gia.");
+            throw new InsufficientPermissionException(com.chatbot.shared.exceptions.ErrorCode.CANNOT_VIEW_JOIN_REQUESTS, "Only Admin or Tenant Owner can view join request list");
         }
 
         return joinRequestRepo.findByTenant_IdAndStatus(tenantId, MembershipStatus.PENDING)
@@ -90,7 +90,7 @@ public class TenantJoinRequestService {
     public void updateStatus(Long tenantId, Long requestId, MembershipStatus status) {
         String actorEmail = permissionValidator.getCurrentUserEmail();
         if (!permissionValidator.isAdmin(actorEmail) && !permissionValidator.isTenantAdmin(tenantId, actorEmail)) {
-            throw new InsufficientPermissionException("Chỉ Admin hoặc Chủ sở hữu của tổ chức mới có quyền duyệt yêu cầu tham gia.");
+            throw new InsufficientPermissionException(com.chatbot.shared.exceptions.ErrorCode.CANNOT_APPROVE_JOIN_REQUESTS, "Only Admin or Tenant Owner can approve join requests");
         }
 
         TenantJoinRequest request = getPendingRequest(tenantId, requestId);
@@ -129,7 +129,7 @@ public class TenantJoinRequestService {
             auditLogService.logAction(tenantId, actorEmail, "REJECT_JOIN_REQUEST",
                 "Rejected join request from " + userEmail);
         } else {
-            throw new BusinessLogicException("Trạng thái không hợp lệ: " + status);
+            throw new BusinessLogicException(com.chatbot.shared.exceptions.ErrorCode.INVALID_STATUS_TRANSITION, "Invalid status: " + status);
         }
     }
 
@@ -139,14 +139,14 @@ public class TenantJoinRequestService {
     @Transactional(transactionManager = "tenantTransactionManager")
     public void cancelUserRequest(Long requestId, User user) {
         TenantJoinRequest request = joinRequestRepo.findById(requestId)
-                .orElseThrow(() -> new BusinessLogicException("Không tìm thấy yêu cầu"));
+                .orElseThrow(() -> new BusinessLogicException(com.chatbot.shared.exceptions.ErrorCode.JOIN_REQUEST_NOT_FOUND, "Join request not found"));
 
         if (!request.getUserId().equals(user.getId())) {
-            throw new InsufficientPermissionException("Bạn không thể hủy yêu cầu của người khác");
+            throw new InsufficientPermissionException(com.chatbot.shared.exceptions.ErrorCode.CANNOT_CANCEL_OTHERS_REQUEST, "You cannot cancel other people's requests");
         }
 
         if (request.getStatus() != MembershipStatus.PENDING) {
-            throw new BusinessLogicException("Chỉ có thể hủy yêu cầu đang chờ xử lý");
+            throw new BusinessLogicException(com.chatbot.shared.exceptions.ErrorCode.CANNOT_CANCEL_NON_PENDING, "Can only cancel pending requests");
         }
 
         Long tenantId = request.getTenant().getId();
@@ -160,11 +160,11 @@ public class TenantJoinRequestService {
 
     private TenantJoinRequest getPendingRequest(Long tenantId, Long requestId) {
         TenantJoinRequest request = joinRequestRepo.findById(requestId)
-                .orElseThrow(() -> new BusinessLogicException("Không tìm thấy yêu cầu"));
+                .orElseThrow(() -> new BusinessLogicException(com.chatbot.shared.exceptions.ErrorCode.JOIN_REQUEST_NOT_FOUND, "Join request not found"));
 
         if (!request.getTenant().getId().equals(tenantId)
                 || request.getStatus() != MembershipStatus.PENDING) {
-            throw new BusinessLogicException("Yêu cầu tham gia không hợp lệ");
+            throw new BusinessLogicException(com.chatbot.shared.exceptions.ErrorCode.INVALID_JOIN_REQUEST, "Invalid join request");
         }
         return request;
     }

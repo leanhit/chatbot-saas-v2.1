@@ -257,36 +257,36 @@ public class TenantController {
         try {
             // Validate tenantKey format
             if (tenantKey == null || tenantKey.trim().isEmpty()) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Tenant key không được để trống");
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Tenant key cannot be empty");
             }
             
             // Check if tenantKey looks like [object File] or other invalid patterns
             if (tenantKey.contains("[object") || tenantKey.contains("undefined") || tenantKey.length() < 10) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, 
-                    "Tenant key không hợp lệ. Expected UUID format, received: " + tenantKey);
+                    "Invalid tenant key. Expected UUID format, received: " + tenantKey);
             }
             
             // Validate file
             if (file == null || file.isEmpty()) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "File không được để trống");
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "File cannot be empty");
             }
             
             // Validate file content (check if it's actual image data, not "undefined")
             if (file.getSize() == 0) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "File không có nội dung");
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "File has no content");
             }
             
             // Validate file type (only allow images)
             String contentType = file.getContentType();
             if (contentType == null || !contentType.startsWith("image/")) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, 
-                    "Chỉ chấp nhận file ảnh. Received: " + contentType);
+                    "Only image files are accepted. Received: " + contentType);
             }
             
             // Validate file size (max 10MB)
             if (file.getSize() > 10 * 1024 * 1024) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, 
-                    "File quá lớn. Kích thước tối đa: 10MB");
+                    "File too large. Maximum size: 10MB");
             }
             
             log.info("📤 [TenantController] Updating logo for tenantKey: {}, fileName: {}, fileSize: {}", 
@@ -295,13 +295,13 @@ public class TenantController {
             // Convert tenantKey to tenantId
             Tenant tenant = tenantRepository.findByTenantKey(tenantKey)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, 
-                    "Tenant không tồn tại với key: " + tenantKey));
+                    "Tenant not found with key: " + tenantKey));
             
             // Check authorization using centralized validator
             String currentUserEmail = SecurityContextHolder.getContext().getAuthentication().getName();
             if (!permissionValidator.isAdminOrOwner(tenant.getId(), currentUserEmail)) {
                 throw new ResponseStatusException(HttpStatus.FORBIDDEN, 
-                    "Bạn không có quyền cập nhật logo tenant này");
+                    "You do not have permission to update this tenant logo");
             }
             
             // Update logo using TenantProfileService

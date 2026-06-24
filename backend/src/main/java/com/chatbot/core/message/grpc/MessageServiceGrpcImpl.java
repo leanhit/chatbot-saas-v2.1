@@ -366,7 +366,7 @@ public class MessageServiceGrpcImpl extends MessageServiceGrpc.MessageServiceImp
     }
     private void validateTenant(String tenantId) {
         if (tenantId == null || tenantId.trim().isEmpty()) {
-            throw new IllegalArgumentException("Tenant ID là bắt buộc");
+            throw new IllegalArgumentException("Tenant ID is required");
         }
         // TODO: Validate tenant exists and is active
     }

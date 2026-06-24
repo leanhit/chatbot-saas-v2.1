@@ -70,7 +70,7 @@ public class RefreshTokenService {
     public RefreshToken verifyExpiration(RefreshToken token) {
         if (token.isExpired()) {
             refreshTokenRepository.delete(token);
-            throw new InvalidTokenException("Refresh token đã hết hạn. Vui lòng đăng nhập lại.");
+            throw new InvalidTokenException(com.chatbot.shared.exceptions.ErrorCode.REFRESH_TOKEN_EXPIRED, "Refresh token has expired. Please login again.");
         }
         return token;
     }

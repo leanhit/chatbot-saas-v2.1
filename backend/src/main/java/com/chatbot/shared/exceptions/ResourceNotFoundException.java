@@ -1,12 +1,15 @@
 package com.chatbot.shared.exceptions;
 
-public class ResourceNotFoundException extends RuntimeException {
+/**
+ * Exception thrown when a requested resource is not found.
+ */
+public class ResourceNotFoundException extends BaseException {
     
     public ResourceNotFoundException(String message) {
-        super(message);
+        super(ErrorCode.RESOURCE_NOT_FOUND, message);
     }
     
     public ResourceNotFoundException(String message, Throwable cause) {
-        super(message, cause);
+        super(ErrorCode.RESOURCE_NOT_FOUND, message, cause);
     }
 }

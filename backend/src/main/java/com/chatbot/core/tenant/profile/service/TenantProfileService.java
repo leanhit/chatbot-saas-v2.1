@@ -174,7 +174,7 @@ public class TenantProfileService {
 
             if (logoCategory == null) {
                 log.error("❌ [CATEGORY] Failed to create or find tenant-logo category");
-                throw new RuntimeException("Không thể tạo hoặc tìm category cho tenant logo");
+                throw new com.chatbot.shared.exceptions.BaseException(com.chatbot.shared.exceptions.ErrorCode.CANNOT_UPLOAD_LOGO, "Cannot create or find category for tenant logo");
             }
 
             // 3. Set tenant context for file upload
@@ -197,7 +197,7 @@ public class TenantProfileService {
 
             if (uploadedFiles.isEmpty()) {
                 log.error("❌ [UPLOAD] No files returned from upload service");
-                throw new RuntimeException("Không thể upload tenant logo");
+                throw new com.chatbot.shared.exceptions.BaseException(com.chatbot.shared.exceptions.ErrorCode.CANNOT_UPLOAD_LOGO, "Cannot upload tenant logo");
             }
 
             String logoUrl = uploadedFiles.get(0).getFileUrl(); // Use direct MinIO URL like user avatar
@@ -215,7 +215,7 @@ public class TenantProfileService {
 
         } catch (Exception e) {
             log.error("❌ [LOGO ERROR] Failed to update tenant logo for tenantId {}: {}", tenantId, e.getMessage(), e);
-            throw new RuntimeException("Không thể cập nhật tenant logo: " + e.getMessage(), e);
+            throw new com.chatbot.shared.exceptions.BaseException(com.chatbot.shared.exceptions.ErrorCode.CANNOT_UPDATE_LOGO, "Cannot update tenant logo: " + e.getMessage(), e);
         }
     }
 

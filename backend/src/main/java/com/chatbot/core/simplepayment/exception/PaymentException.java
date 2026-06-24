@@ -1,30 +1,19 @@
 package com.chatbot.core.simplepayment.exception;
 
-public class PaymentException extends RuntimeException {
+import com.chatbot.shared.exceptions.BaseException;
+import com.chatbot.shared.exceptions.ErrorCode;
+
+/**
+ * Base exception for payment-related errors.
+ * All payment exceptions should extend this class.
+ */
+public class PaymentException extends BaseException {
     
-    private final String errorCode;
-    
-    public PaymentException(String message) {
-        super(message);
-        this.errorCode = "PAYMENT_ERROR";
+    public PaymentException(ErrorCode errorCode, String message) {
+        super(errorCode, message);
     }
     
-    public PaymentException(String errorCode, String message) {
-        super(message);
-        this.errorCode = errorCode;
-    }
-    
-    public PaymentException(String message, Throwable cause) {
-        super(message, cause);
-        this.errorCode = "PAYMENT_ERROR";
-    }
-    
-    public PaymentException(String errorCode, String message, Throwable cause) {
-        super(message, cause);
-        this.errorCode = errorCode;
-    }
-    
-    public String getErrorCode() {
-        return errorCode;
+    public PaymentException(ErrorCode errorCode, String message, Throwable cause) {
+        super(errorCode, message, cause);
     }
 }

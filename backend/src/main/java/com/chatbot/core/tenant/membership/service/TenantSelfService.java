@@ -47,10 +47,10 @@ public class TenantSelfService {
     @Transactional(transactionManager = "tenantTransactionManager")
     public void leaveTenant(Long tenantId, User user) {
         TenantMember member = memberRepo.findByTenant_IdAndUserId(tenantId, user.getId())
-                .orElseThrow(() -> new ResourceNotFoundException("Bạn không phải thành viên của tenant này"));
+                .orElseThrow(() -> new ResourceNotFoundException("You are not a member of this tenant"));
 
         if (member.getRole() == TenantRole.OWNER) {
-            throw new BusinessLogicException("OWNER phải chuyển quyền sở hữu trước khi rời tổ chức");
+            throw new BusinessLogicException(com.chatbot.shared.exceptions.ErrorCode.OWNER_MUST_TRANSFER, "OWNER must transfer ownership before leaving the organization");
         }
 
         memberRepo.delete(member);

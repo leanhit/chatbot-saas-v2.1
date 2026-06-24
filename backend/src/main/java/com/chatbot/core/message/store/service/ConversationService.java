@@ -44,7 +44,7 @@ public class ConversationService {
     public Conversation findOrCreate(UUID connectionId, String externalUserId, Channel channel) {
         Long tenantId = TenantContext.getTenantId();
         if (tenantId == null) {
-            throw new RuntimeException("Không tìm thấy tenant ID trong context");
+            throw new com.chatbot.shared.exceptions.BaseException(com.chatbot.shared.exceptions.ErrorCode.TENANT_CONTEXT_MISSING, "Tenant ID not found in context");
         }
         
         return conversationRepo
@@ -71,7 +71,7 @@ public class ConversationService {
                         try {
                             // Lấy thông tin kết nối để lấy pageId thực tế
                             FacebookConnection fbConnection = facebookConnectionRepo.findById(connectionId)
-                                .orElseThrow(() -> new RuntimeException("Không tìm thấy kết nối với ID: " + connectionId));
+                                .orElseThrow(() -> new com.chatbot.shared.exceptions.BaseException(com.chatbot.shared.exceptions.ErrorCode.CONNECTION_NOT_FOUND, "Connection not found with ID: " + connectionId));
                             
                             String pageId = fbConnection.getPageId();
                             log.info("🔄 Đang lấy thông tin người dùng Facebook - PSID: {}, Page ID: {}", 
@@ -107,7 +107,7 @@ public class ConversationService {
         Pageable pageable = PageRequest.of(page, size, Sort.by("updatedAt").descending());
         Long tenantId = TenantContext.getTenantId();
         if (tenantId == null) {
-            throw new RuntimeException("Không tìm thấy tenant ID trong context");
+            throw new com.chatbot.shared.exceptions.BaseException(com.chatbot.shared.exceptions.ErrorCode.TENANT_CONTEXT_MISSING, "Tenant ID not found in context");
         }
         return conversationRepo.findAllByTenantIdOrderByUpdatedAtDesc(tenantId, pageable);
     }
@@ -121,7 +121,7 @@ public class ConversationService {
         Pageable pageable = PageRequest.of(page, size, Sort.by("updatedAt").descending());
         Long tenantId = TenantContext.getTenantId();
         if (tenantId == null) {
-            throw new RuntimeException("Không tìm thấy tenant ID trong context");
+            throw new com.chatbot.shared.exceptions.BaseException(com.chatbot.shared.exceptions.ErrorCode.TENANT_CONTEXT_MISSING, "Tenant ID not found in context");
         }
         return conversationRepo.findByOwnerIdAndTenantIdOrderByUpdatedAtDesc(ownerId, tenantId, pageable);
     }
@@ -211,7 +211,7 @@ public class ConversationService {
         // Xóa tất cả tin nhắn liên quan
         Long tenantId = TenantContext.getTenantId();
         if (tenantId == null) {
-            throw new RuntimeException("Không tìm thấy tenant ID trong context");
+            throw new com.chatbot.shared.exceptions.BaseException(com.chatbot.shared.exceptions.ErrorCode.TENANT_CONTEXT_MISSING, "Tenant ID not found in context");
         }
         messageRepo.deleteByConversationIdAndTenantId(conversationId, tenantId);
         
@@ -351,7 +351,7 @@ public class ConversationService {
     public Optional<Conversation> findByConnectionIdAndExternalUserId(UUID connectionId, String externalUserId) {
         Long tenantId = TenantContext.getTenantId();
         if (tenantId == null) {
-            throw new RuntimeException("Không tìm thấy tenant ID trong context");
+            throw new com.chatbot.shared.exceptions.BaseException(com.chatbot.shared.exceptions.ErrorCode.TENANT_CONTEXT_MISSING, "Tenant ID not found in context");
         }
         return conversationRepo.findByConnectionIdAndExternalUserIdAndTenantId(connectionId, externalUserId, tenantId);
     }
@@ -373,7 +373,7 @@ public class ConversationService {
         Pageable pageable = PageRequest.of(page, size, Sort.by("updatedAt").descending());
         Long tenantId = TenantContext.getTenantId();
         if (tenantId == null) {
-            throw new RuntimeException("Không tìm thấy tenant ID trong context");
+            throw new com.chatbot.shared.exceptions.BaseException(com.chatbot.shared.exceptions.ErrorCode.TENANT_CONTEXT_MISSING, "Tenant ID not found in context");
         }
         
         return conversationRepo.findByOwnerIdAndConnectionIdAndTenantIdOrderByUpdatedAtDesc(
@@ -403,7 +403,7 @@ public class ConversationService {
     public Optional<Conversation> findConversationById(Long conversationId) {
         Long tenantId = TenantContext.getTenantId();
         if (tenantId == null) {
-            throw new RuntimeException("Không tìm thấy tenant ID trong context");
+            throw new com.chatbot.shared.exceptions.BaseException(com.chatbot.shared.exceptions.ErrorCode.TENANT_CONTEXT_MISSING, "Tenant ID not found in context");
         }
         return conversationRepo.findByIdAndTenantId(conversationId, tenantId);
     }
@@ -415,7 +415,7 @@ public class ConversationService {
     public Conversation createConversation(Conversation conversation) {
         Long tenantId = TenantContext.getTenantId();
         if (tenantId == null) {
-            throw new RuntimeException("Không tìm thấy tenant ID trong context");
+            throw new com.chatbot.shared.exceptions.BaseException(com.chatbot.shared.exceptions.ErrorCode.TENANT_CONTEXT_MISSING, "Tenant ID not found in context");
         }
         
         // Set tenant ID

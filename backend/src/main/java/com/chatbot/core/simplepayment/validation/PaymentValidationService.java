@@ -26,7 +26,7 @@ public class PaymentValidationService {
         
         // Validate description length
         if (request.getDescription() != null && request.getDescription().length() > 500) {
-            throw new PaymentException("VALIDATION_ERROR", "Description must not exceed 500 characters");
+            throw new PaymentException(com.chatbot.shared.exceptions.ErrorCode.VALIDATION_ERROR, "Description must not exceed 500 characters");
         }
         
         // Validate discount code format if provided
@@ -61,7 +61,7 @@ public class PaymentValidationService {
 
     public void validateCurrency(String currency) {
         if (currency == null || currency.trim().isEmpty()) {
-            throw new PaymentException("VALIDATION_ERROR", "Currency is required");
+            throw new PaymentException(com.chatbot.shared.exceptions.ErrorCode.VALIDATION_ERROR, "Currency is required");
         }
 
         String normalizedCurrency = currency.toUpperCase().trim();
@@ -69,7 +69,7 @@ public class PaymentValidationService {
         if (!normalizedCurrency.equals("VND") && 
             !normalizedCurrency.equals("USD") && 
             !normalizedCurrency.equals("EUR")) {
-            throw new PaymentException("VALIDATION_ERROR", 
+            throw new PaymentException(com.chatbot.shared.exceptions.ErrorCode.VALIDATION_ERROR, 
                 "Currency must be one of: VND, USD, EUR");
         }
     }
@@ -83,27 +83,27 @@ public class PaymentValidationService {
         
         // Discount code should be alphanumeric, 6-20 characters
         if (!normalizedCode.matches("^[A-Z0-9]{6,20}$")) {
-            throw new PaymentException("VALIDATION_ERROR", 
+            throw new PaymentException(com.chatbot.shared.exceptions.ErrorCode.VALIDATION_ERROR, 
                 "Discount code must be 6-20 alphanumeric characters");
         }
     }
 
     public void validateReferenceCode(String referenceCode) {
         if (referenceCode == null || referenceCode.trim().isEmpty()) {
-            throw new PaymentException("VALIDATION_ERROR", "Reference code is required");
+            throw new PaymentException(com.chatbot.shared.exceptions.ErrorCode.VALIDATION_ERROR, "Reference code is required");
         }
 
         String normalizedCode = referenceCode.trim().toUpperCase();
         
         if (!normalizedCode.matches("^PAY[A-Z0-9]{12}$")) {
-            throw new PaymentException("VALIDATION_ERROR", 
+            throw new PaymentException(com.chatbot.shared.exceptions.ErrorCode.VALIDATION_ERROR, 
                 "Invalid reference code format");
         }
     }
 
     public void validatePaymentExists(String referenceCode) {
         if (!paymentRepository.existsByReferenceCode(referenceCode)) {
-            throw new PaymentException("PAYMENT_NOT_FOUND", 
+            throw new PaymentException(com.chatbot.shared.exceptions.ErrorCode.PAYMENT_NOT_FOUND, 
                 "Payment not found: " + referenceCode);
         }
     }

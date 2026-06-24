@@ -113,8 +113,8 @@ public class AuthService implements UserDetailsService {
         // Check rate limiting
         if (!rateLimitService.isLoginAllowed(request.getEmail())) {
             auditService.logLoginFailure(request.getEmail(), "Rate limit exceeded");
-            throw new AuthenticationException("Quá số lần đăng nhập cho phép. Vui lòng thử lại sau " + 
-                rateLimitService.getTimeUntilReset(request.getEmail()) + " phút");
+            throw new AuthenticationException("Too many login attempts. Please try again after " + 
+                rateLimitService.getTimeUntilReset(request.getEmail()) + " minutes");
         }
 
         User user = authRepository.findByEmail(request.getEmail())

@@ -186,7 +186,7 @@ public class TenantService {
                     .findByTenantIdAndUserIdAndStatus(tenant.getId(), userId, MembershipStatus.ACTIVE)
                     .isPresent();
             if (!isMember) {
-                throw new InsufficientPermissionException("Bạn không có quyền truy cập tenant này");
+                throw new InsufficientPermissionException(com.chatbot.shared.exceptions.ErrorCode.CANNOT_ACCESS_TENANT, "You do not have permission to access this tenant");
             }
         }
 
@@ -312,7 +312,7 @@ public class TenantService {
         String currentUserEmail = permissionValidator.getCurrentUserEmail();
 
         if (!permissionValidator.isAdmin(currentUserEmail)) {
-            throw new InsufficientPermissionException("Chỉ admin mới có quyền tạm dừng tenant");
+            throw new InsufficientPermissionException(com.chatbot.shared.exceptions.ErrorCode.CANNOT_SUSPEND_TENANT, "Only admin can suspend tenant");
         }
 
         validateStatusTransition(tenant.getStatus(), TenantStatus.SUSPENDED);
@@ -330,7 +330,7 @@ public class TenantService {
         String currentUserEmail = permissionValidator.getCurrentUserEmail();
 
         if (!permissionValidator.isAdmin(currentUserEmail)) {
-            throw new InsufficientPermissionException("Chỉ admin mới có quyền kích hoạt tenant");
+            throw new InsufficientPermissionException(com.chatbot.shared.exceptions.ErrorCode.CANNOT_RESUME_TENANT, "Only admin can activate tenant");
         }
 
         validateStatusTransition(tenant.getStatus(), TenantStatus.ACTIVE);
@@ -348,7 +348,7 @@ public class TenantService {
         String currentUserEmail = permissionValidator.getCurrentUserEmail();
 
         if (!permissionValidator.isOwner(tenantId, currentUserEmail)) {
-            throw new InsufficientPermissionException("Chỉ chủ sở hữu mới có quyền vô hiệu hóa tenant");
+            throw new InsufficientPermissionException(com.chatbot.shared.exceptions.ErrorCode.CANNOT_DELETE_TENANT, "Only owner can deactivate tenant");
         }
 
         validateStatusTransition(tenant.getStatus(), TenantStatus.INACTIVE);
@@ -372,7 +372,7 @@ public class TenantService {
 
         // Defense-in-depth: kiểm tra quyền ngay tại tầng service
         if (!permissionValidator.isAdminOrOwner(tenantId, currentUserEmail)) {
-            throw new InsufficientPermissionException("Chỉ ADMIN hoặc OWNER mới có quyền xóa tenant");
+            throw new InsufficientPermissionException(com.chatbot.shared.exceptions.ErrorCode.CANNOT_DELETE_TENANT, "Only ADMIN or OWNER can delete tenant");
         }
 
         tenant.setStatus(TenantStatus.DELETED);
@@ -406,15 +406,15 @@ public class TenantService {
     @Transactional(rollbackFor = Exception.class, transactionManager = "tenantTransactionManager")
     public TenantResponse updateBasicInfo(String tenantKey, TenantBasicInfoRequest req) {
         if (tenantKey == null || tenantKey.trim().isEmpty()) {
-            throw new InvalidTenantKeyException("Tenant key không được để trống");
+            throw new InvalidTenantKeyException("Tenant key cannot be empty");
         }
 
         Tenant tenant = tenantRepository.findByTenantKey(tenantKey)
-                .orElseThrow(() -> new TenantNotFoundException("Tenant không tồn tại với key: " + tenantKey));
+                .orElseThrow(() -> new TenantNotFoundException("Tenant not found with key: " + tenantKey));
 
         String currentUserEmail = permissionValidator.getCurrentUserEmail();
         if (!permissionValidator.isAdminOrOwner(tenant.getId(), currentUserEmail)) {
-            throw new InsufficientPermissionException("Bạn không có quyền cập nhật thông tin tenant này");
+            throw new InsufficientPermissionException(com.chatbot.shared.exceptions.ErrorCode.CANNOT_MANAGE_MEMBERS, "You do not have permission to update tenant information");
         }
 
         if (req.getName() != null && !req.getName().trim().isEmpty()) {
@@ -443,15 +443,15 @@ public class TenantService {
     @Transactional(rollbackFor = Exception.class, transactionManager = "tenantTransactionManager")
     public TenantResponse updateContactInfo(String tenantKey, TenantContactInfoRequest req) {
         if (tenantKey == null || tenantKey.trim().isEmpty()) {
-            throw new InvalidTenantKeyException("Tenant key không được để trống");
+            throw new InvalidTenantKeyException("Tenant key cannot be empty");
         }
 
         Tenant tenant = tenantRepository.findByTenantKey(tenantKey)
-                .orElseThrow(() -> new TenantNotFoundException("Tenant không tồn tại với key: " + tenantKey));
+                .orElseThrow(() -> new TenantNotFoundException("Tenant not found with key: " + tenantKey));
 
         String currentUserEmail = permissionValidator.getCurrentUserEmail();
         if (!permissionValidator.isAdminOrOwner(tenant.getId(), currentUserEmail)) {
-            throw new InsufficientPermissionException("Bạn không có quyền cập nhật thông tin liên hệ tenant này");
+            throw new InsufficientPermissionException(com.chatbot.shared.exceptions.ErrorCode.CANNOT_MANAGE_MEMBERS, "You do not have permission to update tenant contact information");
         }
 
         TenantProfile profile = tenantProfileRepository.findByTenant_Id(tenant.getId())

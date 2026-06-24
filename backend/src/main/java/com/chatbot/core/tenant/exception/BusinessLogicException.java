@@ -1,7 +1,18 @@
 package com.chatbot.core.tenant.exception;
 
-public class BusinessLogicException extends RuntimeException {
+import com.chatbot.shared.exceptions.BaseException;
+import com.chatbot.shared.exceptions.ErrorCode;
+
+public class BusinessLogicException extends BaseException {
     public BusinessLogicException(String message) {
-        super(message);
+        super(ErrorCode.CONFLICT, message);
+    }
+    
+    public BusinessLogicException(ErrorCode errorCode, String message) {
+        super(errorCode, message);
+    }
+    
+    public BusinessLogicException(ErrorCode errorCode, String message, Throwable cause) {
+        super(errorCode, message, cause);
     }
 }

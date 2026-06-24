@@ -18,59 +18,111 @@ import java.util.stream.Collectors;
 
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
+import lombok.extern.slf4j.Slf4j;
 
+/**
+ * Global exception handler that handles all exceptions in the application.
+ * This is the single source of truth for error response formatting.
+ * All custom exceptions should extend BaseException and use ErrorCode enum.
+ */
 @RestControllerAdvice
 @Order(Ordered.LOWEST_PRECEDENCE)
+@Slf4j
 public class GlobalExceptionHandler {
 
+    private String getCleanPath(WebRequest request) {
+        if (request == null) {
+            return "";
+        }
+        return request.getDescription(false).replace("uri=", "");
+    }
+
+    // Handle all BaseException subclasses (custom exceptions)
+    @ExceptionHandler(BaseException.class)
+    public ResponseEntity<ErrorResponse> handleBaseException(
+            BaseException ex, WebRequest request) {
+        
+        String path = getCleanPath(request);
+        ErrorCode errorCode = ex.getErrorCode();
+        String code = errorCode != null ? errorCode.getCode() : "INTERNAL_ERROR";
+        
+        ErrorResponse errorResponse = new ErrorResponse(code, ex.getMessage())
+                .withPath(path)
+                .withTimestamp(java.time.LocalDateTime.now());
+        
+        addContextToErrorResponse(errorResponse, request);
+        log.warn("BaseException [{}]: {} at path: {}", code, ex.getMessage(), path);
+        
+        HttpStatus status = mapErrorCodeToHttpStatus(errorCode);
+        return new ResponseEntity<>(errorResponse, status);
+    }
+
+    // Handle legacy ResourceNotFoundException
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleResourceNotFoundException(
             ResourceNotFoundException ex, WebRequest request) {
         
-        ErrorResponse errorResponse = ErrorResponse.fromNotFound(ex.getMessage())
-                .withCode("NOT_FOUND")
-                .withPath(request.getDescription(false))
+        String path = getCleanPath(request);
+        ErrorResponse errorResponse = new ErrorResponse(ErrorCode.RESOURCE_NOT_FOUND.getCode(), ex.getMessage())
+                .withPath(path)
                 .withTimestamp(java.time.LocalDateTime.now());
+        
+        addContextToErrorResponse(errorResponse, request);
+        log.warn("ResourceNotFoundException: {} at path: {}", ex.getMessage(), path);
         
         return new ResponseEntity<>(errorResponse, HttpStatus.NOT_FOUND);
     }
 
+    // Handle legacy ValidationException
     @ExceptionHandler(ValidationException.class)
     public ResponseEntity<ErrorResponse> handleValidationException(
             ValidationException ex, WebRequest request) {
         
+        String path = getCleanPath(request);
         ErrorResponse errorResponse = ErrorResponse.fromValidation(ex.getErrors())
-                .withCode("VALIDATION_ERROR")
-                .withPath(request.getDescription(false))
+                .withCode(ErrorCode.VALIDATION_ERROR.getCode())
+                .withPath(path)
                 .withTimestamp(java.time.LocalDateTime.now());
+        
+        addContextToErrorResponse(errorResponse, request);
+        log.warn("ValidationException at path: {}. Errors: {}", path, ex.getErrors());
         
         return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
     }
 
+    // Handle legacy UnauthorizedException
     @ExceptionHandler(UnauthorizedException.class)
     public ResponseEntity<ErrorResponse> handleUnauthorizedException(
             UnauthorizedException ex, WebRequest request) {
         
-        ErrorResponse errorResponse = ErrorResponse.fromUnauthorized(ex.getMessage())
-                .withCode("UNAUTHORIZED")
-                .withPath(request.getDescription(false))
+        String path = getCleanPath(request);
+        ErrorResponse errorResponse = new ErrorResponse(ErrorCode.UNAUTHORIZED.getCode(), ex.getMessage())
+                .withPath(path)
                 .withTimestamp(java.time.LocalDateTime.now());
+        
+        addContextToErrorResponse(errorResponse, request);
+        log.warn("UnauthorizedException: {} at path: {}", ex.getMessage(), path);
         
         return new ResponseEntity<>(errorResponse, HttpStatus.UNAUTHORIZED);
     }
 
+    // Handle validation errors from @Valid annotation
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> handleMethodArgumentNotValidException(
             MethodArgumentNotValidException ex, WebRequest request) {
         
+        String path = getCleanPath(request);
         List<String> errors = ex.getBindingResult().getFieldErrors().stream()
                 .map(FieldError::getDefaultMessage)
                 .collect(Collectors.toList());
         
         ErrorResponse errorResponse = ErrorResponse.fromValidation(errors)
-                .withCode("VALIDATION_ERROR")
-                .withPath(request.getDescription(false))
+                .withCode(ErrorCode.VALIDATION_ERROR.getCode())
+                .withPath(path)
                 .withTimestamp(java.time.LocalDateTime.now());
+        
+        addContextToErrorResponse(errorResponse, request);
+        log.warn("MethodArgumentNotValidException at path: {}. Errors: {}", path, errors);
         
         return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
     }
@@ -79,14 +131,18 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleBindException(
             BindException ex, WebRequest request) {
         
+        String path = getCleanPath(request);
         List<String> errors = ex.getFieldErrors().stream()
                 .map(FieldError::getDefaultMessage)
                 .collect(Collectors.toList());
         
         ErrorResponse errorResponse = ErrorResponse.fromValidation(errors)
-                .withCode("VALIDATION_ERROR")
-                .withPath(request.getDescription(false))
+                .withCode(ErrorCode.VALIDATION_ERROR.getCode())
+                .withPath(path)
                 .withTimestamp(java.time.LocalDateTime.now());
+        
+        addContextToErrorResponse(errorResponse, request);
+        log.warn("BindException at path: {}. Errors: {}", path, errors);
         
         return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
     }
@@ -95,14 +151,18 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleConstraintViolationException(
             ConstraintViolationException ex, WebRequest request) {
         
+        String path = getCleanPath(request);
         List<String> errors = ex.getConstraintViolations().stream()
                 .map(ConstraintViolation::getMessage)
                 .collect(Collectors.toList());
         
         ErrorResponse errorResponse = ErrorResponse.fromValidation(errors)
-                .withCode("VALIDATION_ERROR")
-                .withPath(request.getDescription(false))
+                .withCode(ErrorCode.VALIDATION_ERROR.getCode())
+                .withPath(path)
                 .withTimestamp(java.time.LocalDateTime.now());
+        
+        addContextToErrorResponse(errorResponse, request);
+        log.warn("ConstraintViolationException at path: {}. Violations: {}", path, errors);
         
         return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
     }
@@ -111,9 +171,13 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleIllegalArgumentException(
             IllegalArgumentException ex, WebRequest request) {
         
-        ErrorResponse errorResponse = ErrorResponse.fromCode("BAD_REQUEST", ex.getMessage())
-                .withPath(request.getDescription(false))
+        String path = getCleanPath(request);
+        ErrorResponse errorResponse = new ErrorResponse(ErrorCode.BAD_REQUEST.getCode(), ex.getMessage())
+                .withPath(path)
                 .withTimestamp(java.time.LocalDateTime.now());
+        
+        addContextToErrorResponse(errorResponse, request);
+        log.warn("IllegalArgumentException: {} at path: {}", ex.getMessage(), path);
         
         return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
     }
@@ -122,9 +186,13 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleIllegalStateException(
             IllegalStateException ex, WebRequest request) {
         
-        ErrorResponse errorResponse = ErrorResponse.fromCode("CONFLICT", ex.getMessage())
-                .withPath(request.getDescription(false))
+        String path = getCleanPath(request);
+        ErrorResponse errorResponse = new ErrorResponse(ErrorCode.CONFLICT.getCode(), ex.getMessage())
+                .withPath(path)
                 .withTimestamp(java.time.LocalDateTime.now());
+        
+        addContextToErrorResponse(errorResponse, request);
+        log.warn("IllegalStateException: {} at path: {}", ex.getMessage(), path);
         
         return new ResponseEntity<>(errorResponse, HttpStatus.CONFLICT);
     }
@@ -133,9 +201,13 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleResponseStatusException(
             org.springframework.web.server.ResponseStatusException ex, WebRequest request) {
         
-        ErrorResponse errorResponse = ErrorResponse.fromCode("BAD_REQUEST", ex.getReason())
-                .withPath(request.getDescription(false))
+        String path = getCleanPath(request);
+        ErrorResponse errorResponse = new ErrorResponse(ErrorCode.BAD_REQUEST.getCode(), ex.getReason())
+                .withPath(path)
                 .withTimestamp(java.time.LocalDateTime.now());
+        
+        addContextToErrorResponse(errorResponse, request);
+        log.warn("ResponseStatusException: status={}, reason={} at path: {}", ex.getStatusCode(), ex.getReason(), path);
         
         return new ResponseEntity<>(errorResponse, ex.getStatusCode());
     }
@@ -144,10 +216,14 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleRuntimeException(
             RuntimeException ex, WebRequest request) {
         
-        ErrorResponse errorResponse = ErrorResponse.fromInternalError(ex.getMessage())
-                .withCode("RUNTIME_ERROR")
-                .withPath(request.getDescription(false))
+        String path = getCleanPath(request);
+        // Do not expose raw internal exception message to the client (Security constraint)
+        ErrorResponse errorResponse = new ErrorResponse(ErrorCode.RUNTIME_ERROR.getCode(), "An internal server error occurred")
+                .withPath(path)
                 .withTimestamp(java.time.LocalDateTime.now());
+        
+        addContextToErrorResponse(errorResponse, request);
+        log.error("Unhandled RuntimeException at path: {}", path, ex);
         
         return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
     }
@@ -156,11 +232,15 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleGenericException(
             Exception ex, WebRequest request) {
         
-        ErrorResponse errorResponse = ErrorResponse.fromInternalError("An unexpected error occurred")
-                .withCode("INTERNAL_ERROR")
-                .withDescription(ex.getMessage())
-                .withPath(request.getDescription(false))
+        String path = getCleanPath(request);
+        // Do not expose internal technical details in client response (Information Disclosure prevention)
+        ErrorResponse errorResponse = new ErrorResponse(ErrorCode.INTERNAL_ERROR.getCode(), "An unexpected error occurred")
+                .withDescription("An unexpected error occurred on the server.")
+                .withPath(path)
                 .withTimestamp(java.time.LocalDateTime.now());
+        
+        addContextToErrorResponse(errorResponse, request);
+        log.error("Unhandled Exception at path: {}", path, ex);
         
         return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
     }
@@ -169,10 +249,13 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleAccessDeniedException(
             org.springframework.security.access.AccessDeniedException ex, WebRequest request) {
         
-        ErrorResponse errorResponse = ErrorResponse.fromForbidden("Access denied")
-                .withCode("FORBIDDEN")
-                .withPath(request.getDescription(false))
+        String path = getCleanPath(request);
+        ErrorResponse errorResponse = new ErrorResponse(ErrorCode.FORBIDDEN.getCode(), "Access denied")
+                .withPath(path)
                 .withTimestamp(java.time.LocalDateTime.now());
+        
+        addContextToErrorResponse(errorResponse, request);
+        log.warn("AccessDeniedException: Access denied at path: {}", path);
         
         return new ResponseEntity<>(errorResponse, HttpStatus.FORBIDDEN);
     }
@@ -181,10 +264,13 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleBadCredentialsException(
             org.springframework.security.authentication.BadCredentialsException ex, WebRequest request) {
         
-        ErrorResponse errorResponse = ErrorResponse.fromUnauthorized("Invalid credentials")
-                .withCode("BAD_CREDENTIALS")
-                .withPath(request.getDescription(false))
+        String path = getCleanPath(request);
+        ErrorResponse errorResponse = new ErrorResponse(ErrorCode.BAD_CREDENTIALS.getCode(), "Invalid credentials")
+                .withPath(path)
                 .withTimestamp(java.time.LocalDateTime.now());
+        
+        addContextToErrorResponse(errorResponse, request);
+        log.warn("BadCredentialsException: Invalid credentials at path: {}", path);
         
         return new ResponseEntity<>(errorResponse, HttpStatus.UNAUTHORIZED);
     }
@@ -193,11 +279,14 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleAuthenticationException(
             org.springframework.security.core.AuthenticationException ex, WebRequest request) {
         
-        ErrorResponse errorResponse = ErrorResponse.fromUnauthorized("Authentication failed")
-                .withCode("AUTHENTICATION_FAILED")
+        String path = getCleanPath(request);
+        ErrorResponse errorResponse = new ErrorResponse(ErrorCode.AUTHENTICATION_FAILED.getCode(), "Authentication failed")
                 .withDescription(ex.getMessage())
-                .withPath(request.getDescription(false))
+                .withPath(path)
                 .withTimestamp(java.time.LocalDateTime.now());
+        
+        addContextToErrorResponse(errorResponse, request);
+        log.warn("AuthenticationException: {} at path: {}", ex.getMessage(), path);
         
         return new ResponseEntity<>(errorResponse, HttpStatus.UNAUTHORIZED);
     }
@@ -206,10 +295,13 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleNoHandlerFoundException(
             org.springframework.web.servlet.NoHandlerFoundException ex, WebRequest request) {
         
-        ErrorResponse errorResponse = ErrorResponse.fromNotFound("Endpoint not found")
-                .withCode("ENDPOINT_NOT_FOUND")
-                .withPath(request.getDescription(false))
+        String path = getCleanPath(request);
+        ErrorResponse errorResponse = new ErrorResponse(ErrorCode.ENDPOINT_NOT_FOUND.getCode(), "Endpoint not found")
+                .withPath(path)
                 .withTimestamp(java.time.LocalDateTime.now());
+        
+        addContextToErrorResponse(errorResponse, request);
+        log.warn("NoHandlerFoundException: Endpoint not found at path: {}", path);
         
         return new ResponseEntity<>(errorResponse, HttpStatus.NOT_FOUND);
     }
@@ -218,10 +310,14 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleHttpMessageNotReadableException(
             org.springframework.http.converter.HttpMessageNotReadableException ex, WebRequest request) {
         
-        ErrorResponse errorResponse = ErrorResponse.fromCode("INVALID_REQUEST_BODY", "Invalid request body")
-                .withDescription(ex.getMessage())
-                .withPath(request.getDescription(false))
+        String path = getCleanPath(request);
+        ErrorResponse errorResponse = new ErrorResponse(ErrorCode.INVALID_REQUEST_BODY.getCode(), "Invalid request body")
+                .withDescription("The HTTP request body is invalid or not readable.")
+                .withPath(path)
                 .withTimestamp(java.time.LocalDateTime.now());
+        
+        addContextToErrorResponse(errorResponse, request);
+        log.warn("HttpMessageNotReadableException at path: {}: {}", path, ex.getMessage());
         
         return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
     }
@@ -230,10 +326,14 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleHttpMediaTypeNotSupportedException(
             org.springframework.web.HttpMediaTypeNotSupportedException ex, WebRequest request) {
         
-        ErrorResponse errorResponse = ErrorResponse.fromCode("UNSUPPORTED_MEDIA_TYPE", "Unsupported media type")
+        String path = getCleanPath(request);
+        ErrorResponse errorResponse = new ErrorResponse(ErrorCode.UNSUPPORTED_MEDIA_TYPE.getCode(), "Unsupported media type")
                 .withDescription("Supported media types: " + ex.getSupportedMediaTypes())
-                .withPath(request.getDescription(false))
+                .withPath(path)
                 .withTimestamp(java.time.LocalDateTime.now());
+        
+        addContextToErrorResponse(errorResponse, request);
+        log.warn("HttpMediaTypeNotSupportedException at path: {}: {}", path, ex.getMessage());
         
         return new ResponseEntity<>(errorResponse, HttpStatus.UNSUPPORTED_MEDIA_TYPE);
     }
@@ -242,10 +342,14 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleHttpRequestMethodNotSupportedException(
             org.springframework.web.HttpRequestMethodNotSupportedException ex, WebRequest request) {
         
-        ErrorResponse errorResponse = ErrorResponse.fromCode("METHOD_NOT_ALLOWED", "Method not allowed")
+        String path = getCleanPath(request);
+        ErrorResponse errorResponse = new ErrorResponse(ErrorCode.METHOD_NOT_ALLOWED.getCode(), "Method not allowed")
                 .withDescription("Supported methods: " + ex.getSupportedHttpMethods())
-                .withPath(request.getDescription(false))
+                .withPath(path)
                 .withTimestamp(java.time.LocalDateTime.now());
+        
+        addContextToErrorResponse(errorResponse, request);
+        log.warn("HttpRequestMethodNotSupportedException at path: {}: {}", path, ex.getMessage());
         
         return new ResponseEntity<>(errorResponse, HttpStatus.METHOD_NOT_ALLOWED);
     }
@@ -254,10 +358,13 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleTimeoutException(
             java.util.concurrent.TimeoutException ex, WebRequest request) {
         
-        ErrorResponse errorResponse = ErrorResponse.fromTimeout("Request timed out")
-                .withDescription(ex.getMessage())
-                .withPath(request.getDescription(false))
+        String path = getCleanPath(request);
+        ErrorResponse errorResponse = new ErrorResponse(ErrorCode.TIMEOUT.getCode(), "Request timed out")
+                .withPath(path)
                 .withTimestamp(java.time.LocalDateTime.now());
+        
+        addContextToErrorResponse(errorResponse, request);
+        log.warn("TimeoutException at path: {}: {}", path, ex.getMessage());
         
         return new ResponseEntity<>(errorResponse, HttpStatus.REQUEST_TIMEOUT);
     }
@@ -266,10 +373,15 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleDataIntegrityViolationException(
             org.springframework.dao.DataIntegrityViolationException ex, WebRequest request) {
         
-        ErrorResponse errorResponse = ErrorResponse.fromCode("DATA_INTEGRITY_VIOLATION", "Data integrity violation")
-                .withDescription(ex.getMessage())
-                .withPath(request.getDescription(false))
+        String path = getCleanPath(request);
+        // Do not expose database integrity violation details to client
+        ErrorResponse errorResponse = new ErrorResponse(ErrorCode.DATA_INTEGRITY_VIOLATION.getCode(), "Data integrity violation")
+                .withDescription("Database integrity constraint violation occurred.")
+                .withPath(path)
                 .withTimestamp(java.time.LocalDateTime.now());
+        
+        addContextToErrorResponse(errorResponse, request);
+        log.error("DataIntegrityViolationException at path: {}", path, ex);
         
         return new ResponseEntity<>(errorResponse, HttpStatus.CONFLICT);
     }
@@ -278,10 +390,14 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleOptimisticLockingFailureException(
             org.springframework.orm.ObjectOptimisticLockingFailureException ex, WebRequest request) {
         
-        ErrorResponse errorResponse = ErrorResponse.fromCode("OPTIMISTIC_LOCK", "Optimistic lock failure")
+        String path = getCleanPath(request);
+        ErrorResponse errorResponse = new ErrorResponse(ErrorCode.OPTIMISTIC_LOCK.getCode(), "Optimistic lock failure")
                 .withDescription("The record was modified by another transaction")
-                .withPath(request.getDescription(false))
+                .withPath(path)
                 .withTimestamp(java.time.LocalDateTime.now());
+        
+        addContextToErrorResponse(errorResponse, request);
+        log.warn("ObjectOptimisticLockingFailureException at path: {}: {}", path, ex.getMessage());
         
         return new ResponseEntity<>(errorResponse, HttpStatus.CONFLICT);
     }
@@ -290,15 +406,90 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleMaxUploadSizeExceededException(
             MaxUploadSizeExceededException ex, WebRequest request) {
         
-        System.err.println("413 ERROR - File size too large: " + ex.getMessage());
-        ex.printStackTrace();
-        
-        ErrorResponse errorResponse = ErrorResponse.fromCode("PAYLOAD_TOO_LARGE", "File size too large")
+        String path = getCleanPath(request);
+        ErrorResponse errorResponse = new ErrorResponse(ErrorCode.PAYLOAD_TOO_LARGE.getCode(), "File size too large")
                 .withDescription("The uploaded file exceeds the maximum allowed size. Please choose a smaller file.")
-                .withPath(request.getDescription(false))
+                .withPath(path)
                 .withTimestamp(java.time.LocalDateTime.now());
         
+        addContextToErrorResponse(errorResponse, request);
+        log.warn("MaxUploadSizeExceededException at path: {}: {}", path, ex.getMessage());
+        
         return new ResponseEntity<>(errorResponse, HttpStatus.PAYLOAD_TOO_LARGE);
+    }
+
+    /**
+     * Map ErrorCode to appropriate HTTP status
+     */
+    private HttpStatus mapErrorCodeToHttpStatus(ErrorCode errorCode) {
+        if (errorCode == null) {
+            return HttpStatus.INTERNAL_SERVER_ERROR;
+        }
+        
+        switch (errorCode) {
+            case NOT_FOUND:
+            case RESOURCE_NOT_FOUND:
+            case USER_NOT_FOUND:
+            case TENANT_NOT_FOUND:
+            case LICENSE_NOT_FOUND:
+            case PAYMENT_NOT_FOUND:
+                return HttpStatus.NOT_FOUND;
+                
+            case VALIDATION_ERROR:
+            case BAD_REQUEST:
+            case INVALID_REQUEST_BODY:
+            case INVALID_TENANT_KEY:
+            case INVALID_PAYMENT_AMOUNT:
+            case EMAIL_ALREADY_EXISTS:
+                return HttpStatus.BAD_REQUEST;
+                
+            case UNAUTHORIZED:
+            case BAD_CREDENTIALS:
+            case AUTHENTICATION_FAILED:
+            case INVALID_TOKEN:
+            case LICENSE_EXPIRED:
+            case LICENSE_INACTIVE:
+                return HttpStatus.UNAUTHORIZED;
+                
+            case FORBIDDEN:
+            case INSUFFICIENT_PERMISSION:
+                return HttpStatus.FORBIDDEN;
+                
+            case CONFLICT:
+            case DATA_INTEGRITY_VIOLATION:
+            case OPTIMISTIC_LOCK:
+                return HttpStatus.CONFLICT;
+                
+            case PAYLOAD_TOO_LARGE:
+                return HttpStatus.PAYLOAD_TOO_LARGE;
+                
+            case UNSUPPORTED_MEDIA_TYPE:
+                return HttpStatus.UNSUPPORTED_MEDIA_TYPE;
+                
+            case METHOD_NOT_ALLOWED:
+                return HttpStatus.METHOD_NOT_ALLOWED;
+                
+            case TIMEOUT:
+                return HttpStatus.REQUEST_TIMEOUT;
+                
+            case SERVICE_UNAVAILABLE:
+            case BANK_API_ERROR:
+                return HttpStatus.SERVICE_UNAVAILABLE;
+                
+            case RATE_LIMIT_EXCEEDED:
+                return HttpStatus.TOO_MANY_REQUESTS;
+                
+            case ENDPOINT_NOT_FOUND:
+                return HttpStatus.NOT_FOUND;
+                
+            case INTEGRATION_ERROR:
+            case INTERNAL_ERROR:
+            case RUNTIME_ERROR:
+            case TENANT_STATUS_TRANSITION:
+            case TENANT_PROFILE_ERROR:
+            default:
+                return HttpStatus.INTERNAL_SERVER_ERROR;
+        }
     }
 
     protected ErrorResponse createErrorResponse(String code, String message, String path) {
@@ -320,6 +511,9 @@ public class GlobalExceptionHandler {
     }
 
     protected void addContextToErrorResponse(ErrorResponse errorResponse, WebRequest request) {
+        if (errorResponse == null || request == null) {
+            return;
+        }
         String correlationId = request.getHeader("X-Correlation-ID");
         String requestId = request.getHeader("X-Request-ID");
         String userId = request.getHeader("X-User-ID");

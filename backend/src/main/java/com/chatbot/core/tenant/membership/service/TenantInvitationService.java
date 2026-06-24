@@ -49,23 +49,23 @@ public class TenantInvitationService {
     @Transactional(transactionManager = "tenantTransactionManager")
     public void inviteMember(Long tenantId, InviteMemberRequest request, User admin) {
         if (!permissionValidator.isAdmin(admin.getEmail()) && !permissionValidator.isTenantAdmin(tenantId, admin.getEmail())) {
-            throw new InsufficientPermissionException("Chỉ Admin hoặc Chủ sở hữu của tổ chức mới có quyền mời thành viên.");
+            throw new InsufficientPermissionException(com.chatbot.shared.exceptions.ErrorCode.INVITATION_PERMISSION_DENIED, "Only Admin or Tenant Owner can invite members");
         }
 
         if (!permissionValidator.canAssignRole(tenantId, admin.getEmail(), request.getRole())) {
-            throw new InsufficientPermissionException("Bạn không có quyền mời người khác với vai trò " + request.getRole());
+            throw new InsufficientPermissionException(com.chatbot.shared.exceptions.ErrorCode.CANNOT_ASSIGN_ROLE, "You do not have permission to invite others with role " + request.getRole());
         }
 
         Tenant tenant = tenantRepo.findById(tenantId)
-            .orElseThrow(() -> new TenantNotFoundException("Tenant không tồn tại"));
+            .orElseThrow(() -> new TenantNotFoundException("Tenant not found"));
 
-        // Dùng message chung để tránh user enumeration vulnerability
+        // Use generic message to avoid user enumeration vulnerability
         User userToBeInvited = userRepo.findByEmail(request.getEmail().toLowerCase())
             .orElseThrow(() -> new BusinessLogicException(
-                "Không tìm thấy tài khoản với email này. Người dùng cần tự đăng ký trước khi được mời."));
+                com.chatbot.shared.exceptions.ErrorCode.USER_NOT_FOUND_FOR_INVITATION, "User not found. Please register before being invited."));
 
         if (memberRepo.existsByTenantIdAndUserId(tenantId, userToBeInvited.getId())) {
-            throw new BusinessLogicException("Người dùng đã là thành viên của tổ chức này.");
+            throw new BusinessLogicException(com.chatbot.shared.exceptions.ErrorCode.ALREADY_MEMBER, "User is already a member of this organization");
         }
 
         // Check for pending invitations that are not expired
@@ -75,7 +75,7 @@ public class TenantInvitationService {
             .anyMatch(inv -> inv.getExpiresAt() == null || inv.getExpiresAt().isAfter(LocalDateTime.now()));
         
         if (hasValidPendingInvitation) {
-            throw new BusinessLogicException("Đã có lời mời đang chờ xác nhận cho email này.");
+            throw new BusinessLogicException(com.chatbot.shared.exceptions.ErrorCode.INVITATION_ALREADY_PENDING, "There is already a pending invitation for this email");
         }
 
         TenantInvitation invitation = TenantInvitation.builder()
@@ -111,7 +111,7 @@ public class TenantInvitationService {
     public List<InvitationResponse> listInvitations(Long tenantId) {
         String currentUserEmail = permissionValidator.getCurrentUserEmail();
         if (!permissionValidator.isAdmin(currentUserEmail) && !permissionValidator.isTenantAdmin(tenantId, currentUserEmail)) {
-            throw new InsufficientPermissionException("Chỉ Admin hoặc Chủ sở hữu của tổ chức mới có quyền xem danh sách lời mời.");
+            throw new InsufficientPermissionException(com.chatbot.shared.exceptions.ErrorCode.INVITATION_PERMISSION_DENIED, "Only Admin or Tenant Owner can view invitation list");
         }
 
         return invitationRepo.findByTenantId(tenantId).stream()
@@ -137,18 +137,18 @@ public class TenantInvitationService {
     @Transactional(transactionManager = "tenantTransactionManager")
     public void acceptInvitation(String token, User user) {
         TenantInvitation invitation = invitationRepo.findByToken(token)
-            .orElseThrow(() -> new BusinessLogicException("Lời mời không hợp lệ hoặc đã bị thu hồi."));
+            .orElseThrow(() -> new BusinessLogicException(com.chatbot.shared.exceptions.ErrorCode.INVITATION_INVALID, "Invitation is invalid or has been revoked"));
 
         if (invitation.getStatus() != InvitationStatus.PENDING) {
-            throw new BusinessLogicException("Lời mời này không còn ở trạng thái chờ.");
+            throw new BusinessLogicException(com.chatbot.shared.exceptions.ErrorCode.INVITATION_NOT_PENDING, "This invitation is no longer pending");
         }
 
         if (invitation.getExpiresAt() != null && invitation.getExpiresAt().isBefore(LocalDateTime.now())) {
-            throw new BusinessLogicException("Lời mời này đã hết hạn.");
+            throw new BusinessLogicException(com.chatbot.shared.exceptions.ErrorCode.INVITATION_EXPIRED, "This invitation has expired");
         }
 
         if (!invitation.getEmail().equalsIgnoreCase(user.getEmail())) {
-            throw new InsufficientPermissionException("Bạn không có quyền chấp nhận lời mời này.");
+            throw new InsufficientPermissionException(com.chatbot.shared.exceptions.ErrorCode.CANNOT_ACCEPT_INVITATION, "You do not have permission to accept this invitation");
         }
 
         memberRepo.save(TenantMember.builder()
@@ -181,10 +181,10 @@ public class TenantInvitationService {
     @Transactional(transactionManager = "tenantTransactionManager")
     public void rejectInvitation(String token, User user) {
         TenantInvitation invitation = invitationRepo.findByToken(token)
-            .orElseThrow(() -> new BusinessLogicException("Lời mời không tồn tại."));
+            .orElseThrow(() -> new BusinessLogicException(com.chatbot.shared.exceptions.ErrorCode.INVITATION_NOT_FOUND, "Invitation not found"));
 
         if (!invitation.getEmail().equalsIgnoreCase(user.getEmail())) {
-            throw new InsufficientPermissionException("Bạn không có quyền từ chối lời mời này.");
+            throw new InsufficientPermissionException(com.chatbot.shared.exceptions.ErrorCode.CANNOT_REJECT_INVITATION, "You do not have permission to reject this invitation");
         }
 
         invitation.setStatus(InvitationStatus.REJECTED);
@@ -201,11 +201,11 @@ public class TenantInvitationService {
     public void revokeInvitation(Long tenantId, Long invitationId) {
         String currentUserEmail = permissionValidator.getCurrentUserEmail();
         if (!permissionValidator.isAdmin(currentUserEmail) && !permissionValidator.isTenantAdmin(tenantId, currentUserEmail)) {
-            throw new InsufficientPermissionException("Chỉ Admin hoặc Chủ sở hữu của tổ chức mới có quyền thu hồi lời mời.");
+            throw new InsufficientPermissionException(com.chatbot.shared.exceptions.ErrorCode.CANNOT_REVOKE_INVITATION, "Only Admin or Tenant Owner can revoke invitations");
         }
 
         TenantInvitation invitation = invitationRepo.findByIdAndTenantId(invitationId, tenantId)
-                .orElseThrow(() -> new BusinessLogicException("Không tìm thấy lời mời trong tổ chức này."));
+                .orElseThrow(() -> new BusinessLogicException(com.chatbot.shared.exceptions.ErrorCode.INVITATION_NOT_FOUND_IN_TENANT, "Invitation not found in this organization"));
 
         invitation.setStatus(InvitationStatus.REVOKED);
         invitationRepo.save(invitation);

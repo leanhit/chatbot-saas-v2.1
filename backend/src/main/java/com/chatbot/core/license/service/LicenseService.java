@@ -43,9 +43,9 @@ public class LicenseService {
         // Check if license is still valid
         if (!license.isValid()) {
             if (license.isExpired()) {
-                throw new LicenseException("License has expired");
+                throw new LicenseException(com.chatbot.shared.exceptions.ErrorCode.LICENSE_EXPIRED, "License has expired");
             } else {
-                throw new LicenseException("License is inactive");
+                throw new LicenseException(com.chatbot.shared.exceptions.ErrorCode.LICENSE_INACTIVE, "License is inactive");
             }
         }
         
@@ -59,7 +59,7 @@ public class LicenseService {
         
         // Check if user already has an active license
         if (licenseRepository.hasActiveLicense(request.getUserId())) {
-            throw new LicenseException("User already has an active license");
+            throw new LicenseException(com.chatbot.shared.exceptions.ErrorCode.CONFLICT, "User already has an active license");
         }
         
         License license = License.builder()

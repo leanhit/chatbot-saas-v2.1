@@ -1,29 +1,19 @@
 package com.chatbot.core.license.exception;
 
-public class LicenseException extends RuntimeException {
-    private final String errorCode;
+import com.chatbot.shared.exceptions.BaseException;
+import com.chatbot.shared.exceptions.ErrorCode;
 
-    public LicenseException(String message) {
-        super(message);
-        this.errorCode = "LICENSE_ERROR";
+/**
+ * Base exception for license-related errors.
+ * All license exceptions should extend this class.
+ */
+public class LicenseException extends BaseException {
+    
+    public LicenseException(ErrorCode errorCode, String message) {
+        super(errorCode, message);
     }
-
-    public LicenseException(String message, Throwable cause) {
-        super(message, cause);
-        this.errorCode = "LICENSE_ERROR";
-    }
-
-    public LicenseException(String message, String errorCode) {
-        super(message);
-        this.errorCode = errorCode;
-    }
-
-    public LicenseException(String message, String errorCode, Throwable cause) {
-        super(message, cause);
-        this.errorCode = errorCode;
-    }
-
-    public String getErrorCode() {
-        return errorCode;
+    
+    public LicenseException(ErrorCode errorCode, String message, Throwable cause) {
+        super(errorCode, message, cause);
     }
 }

@@ -249,7 +249,7 @@ public class UserService {
 
                 if (avatarCategory == null) {
                     log.error("❌ [AVATAR UPDATE] Failed to create or find avatar category for userId: {}", userId);
-                    throw new RuntimeException("Không thể tạo hoặc tìm category cho avatar");
+                    throw new com.chatbot.shared.exceptions.BaseException(com.chatbot.shared.exceptions.ErrorCode.CANNOT_CREATE_AVATAR_CATEGORY, "Cannot create or find category for avatar");
                 }
 
                 log.info("✅ [AVATAR UPDATE] Category ready: {} (ID: {})", avatarCategory.getName(), avatarCategory.getId());
@@ -269,7 +269,7 @@ public class UserService {
 
                 if (uploadedFiles.isEmpty()) {
                     log.error("❌ [AVATAR UPDATE] No files returned from upload service for userId: {}", userId);
-                    throw new RuntimeException("Không thể upload avatar");
+                    throw new com.chatbot.shared.exceptions.BaseException(com.chatbot.shared.exceptions.ErrorCode.CANNOT_UPLOAD_AVATAR, "Cannot upload avatar");
                 }
 
                 // 3. Get public URL from FileResponse (not manual construct)

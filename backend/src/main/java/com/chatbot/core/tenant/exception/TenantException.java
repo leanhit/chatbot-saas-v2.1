@@ -1,20 +1,19 @@
 package com.chatbot.core.tenant.exception;
 
-public class TenantException extends RuntimeException {
+import com.chatbot.shared.exceptions.BaseException;
+import com.chatbot.shared.exceptions.ErrorCode;
+
+/**
+ * Base exception for tenant-related errors.
+ * All tenant exceptions should extend this class.
+ */
+public class TenantException extends BaseException {
     
-    private final String errorCode;
-    
-    public TenantException(String errorCode, String message) {
-        super(message);
-        this.errorCode = errorCode;
+    public TenantException(ErrorCode errorCode, String message) {
+        super(errorCode, message);
     }
     
-    public TenantException(String errorCode, String message, Throwable cause) {
-        super(message, cause);
-        this.errorCode = errorCode;
-    }
-    
-    public String getErrorCode() {
-        return errorCode;
+    public TenantException(ErrorCode errorCode, String message, Throwable cause) {
+        super(errorCode, message, cause);
     }
 }

@@ -133,7 +133,7 @@ public class MessageService {
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
         Long tenantId = TenantContext.getTenantId();
         if (tenantId == null) {
-            throw new RuntimeException("Không tìm thấy tenant ID trong context");
+            throw new com.chatbot.shared.exceptions.BaseException(com.chatbot.shared.exceptions.ErrorCode.TENANT_CONTEXT_MISSING, "Tenant ID not found in context");
         }
         Page<Message> messages = messageRepo.findByConversationIdAndTenantIdOrderByCreatedAtDesc(conversationId, tenantId, pageable);
 
@@ -197,7 +197,7 @@ public class MessageService {
     public int deleteAllMessagesInConversation(Long conversationId) {
         Long tenantId = TenantContext.getTenantId();
         if (tenantId == null) {
-            throw new RuntimeException("Không tìm thấy tenant ID trong context");
+            throw new com.chatbot.shared.exceptions.BaseException(com.chatbot.shared.exceptions.ErrorCode.TENANT_CONTEXT_MISSING, "Tenant ID not found in context");
         }
         List<Message> messages = messageRepo.findByConversationIdAndTenantId(conversationId, tenantId);
         int count = messages.size();
@@ -217,7 +217,7 @@ public class MessageService {
     public Optional<Message> getMessageById(Long messageId) {
         Long tenantId = TenantContext.getTenantId();
         if (tenantId == null) {
-            throw new RuntimeException("Không tìm thấy tenant ID trong context");
+            throw new com.chatbot.shared.exceptions.BaseException(com.chatbot.shared.exceptions.ErrorCode.TENANT_CONTEXT_MISSING, "Tenant ID not found in context");
         }
         return messageRepo.findByIdAndTenantId(messageId, tenantId);
     }
@@ -231,7 +231,7 @@ public class MessageService {
     public Message updateMessage(Message message) {
         Long tenantId = TenantContext.getTenantId();
         if (tenantId == null) {
-            throw new RuntimeException("Không tìm thấy tenant ID trong context");
+            throw new com.chatbot.shared.exceptions.BaseException(com.chatbot.shared.exceptions.ErrorCode.TENANT_CONTEXT_MISSING, "Tenant ID not found in context");
         }
         
         // Validate message exists và thuộc tenant
