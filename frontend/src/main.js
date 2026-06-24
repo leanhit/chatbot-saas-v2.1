@@ -30,6 +30,7 @@ const authStore = useAuthStore()
 const tenantStore = useGatewayTenantStore()
 const paymentStore = usePaymentStore()
 authStore.initialize()
+tenantStore.initialize()
 
 // Initialize WebSocket when user is authenticated
 authStore.$subscribe(async (state, prevState) => {

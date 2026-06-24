@@ -141,6 +141,37 @@ export const useGatewayTenantStore = defineStore('gateway-tenant', () => {
     }
     await fetchUserTenants()
   }
+  const initialize = () => {
+    // Check if we should hydrate from localStorage (not after logout)
+    let shouldHydrate = true
+    try {
+      if (typeof localStorage !== 'undefined') {
+        shouldHydrate = localStorage.getItem('should_hydrate_tenant') !== 'false'
+      }
+    } catch (error) {
+      console.error('Error checking hydrate flag:', error);
+    }
+    
+    // hydrate from localStorage with defensive check
+    let storedTenant = null
+    try {
+      if (typeof localStorage !== 'undefined' && shouldHydrate) {
+        storedTenant = localStorage.getItem(TENANT_DATA)
+      }
+    } catch (error) {
+      console.error('Error reading from localStorage:', error);
+    }
+    
+    if (shouldHydrate && storedTenant) {
+      try {
+        currentTenant.value = JSON.parse(storedTenant)
+        console.log('✅ Tenant data hydrated from localStorage:', currentTenant.value?.tenantKey)
+      } catch (e) {
+        console.error('Error parsing stored tenant data:', e)
+        localStorage.removeItem(TENANT_DATA)
+      }
+    }
+  }
   return {
     // state
     userTenants,
@@ -155,6 +186,7 @@ export const useGatewayTenantStore = defineStore('gateway-tenant', () => {
     clearTenant,
     suspendTenant,
     activateTenant,
-    leaveTenant
+    leaveTenant,
+    initialize
   }
 })

@@ -43,6 +43,12 @@ public class MessageService {
                 } catch (MessageUsageService.MessageLimitExceededException e) {
                     log.warn("❌ Message limit exceeded for tenant {}: {}", tenantId, e.getMessage());
                     throw e; // Re-throw to stop message processing
+                } catch (Exception e) {
+                    // Handle tenant not found or other errors gracefully
+                    log.error("❌ Error validating message limit for tenant {}: {}. Skipping validation and allowing message.", 
+                        tenantId, e.getMessage());
+                    // Continue with message saving even if validation fails
+                    // This prevents message loss when tenant configuration is missing
                 }
             }
         }

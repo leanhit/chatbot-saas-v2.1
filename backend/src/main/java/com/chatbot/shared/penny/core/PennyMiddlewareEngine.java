@@ -86,6 +86,33 @@ public class PennyMiddlewareEngine {
             ProviderSelection providerSelection = providerSelector.select(analysis, conversationContext);
             
             // STEP 5: Process with selected provider
+            if (providerSelection.getProvider() == null) {
+                log.warn("⚠️ [{}] Provider instance is null for type: {}. Using fallback response.", 
+                    requestId, providerSelection.getProviderType());
+                
+                // Build fallback response
+                MiddlewareResponse fallbackResponse = MiddlewareResponse.builder()
+                    .requestId(generateRequestId())
+                    .response("Xin chào! Hiện tại hệ thống đang gặp sự cố kỹ thuật. Vui lòng thử lại sau.")
+                    .providerUsed("FALLBACK")
+                    .intentAnalysis(analysis)
+                    .processingMetrics(com.chatbot.shared.penny.dto.response.MiddlewareResponse.ProcessingMetrics.builder()
+                        .providerType("FALLBACK")
+                        .selectionReason("Provider instance null")
+                        .confidence(0.0)
+                        .build())
+                    .timestamp(Instant.now())
+                    .build();
+                
+                // STEP 6: Update context
+                contextManager.updateContext(conversationContext, request, fallbackResponse);
+                
+                // STEP 7: Collect analytics
+                analyticsCollector.collectMetrics(request, fallbackResponse, analysis, startTime);
+                
+                return fallbackResponse;
+            }
+            
             Object providerResponse = providerSelection.getProvider()
                 .sendMessage(providerSelection.getProviderType().toString(), request.getUserId(), request.getMessage());
             

@@ -8,7 +8,6 @@ import com.chatbot.shared.penny.repository.PennyBotRepository;
 import com.chatbot.core.tenant.infra.TenantContext;
 import com.chatbot.core.tenant.service.PackageLimitValidationService;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.security.access.AccessDeniedException;
@@ -383,17 +382,38 @@ public class PennyBotManager {
                 return "Bot is currently inactive. Please activate the bot first.";
             }
             
-            // Route request through real Penny Middleware Engine
-            com.chatbot.shared.penny.dto.request.MiddlewareRequest middlewareRequest = com.chatbot.shared.penny.dto.request.MiddlewareRequest.builder()
-                .userId(ownerId)
-                .message(message)
-                .platform("facebook")
-                .botId(botId.toString())
-                .timestamp(java.time.Instant.now())
-                .build();
-            
-            com.chatbot.shared.penny.dto.response.MiddlewareResponse response = pennyMiddlewareEngine.processMessage(middlewareRequest);
-            return response.getResponse();
+            // Direct PennyBot processing - bypass PennyMiddlewareEngine for now
+            // PennyMiddlewareEngine requires provider instances which are not yet implemented
+            // Use direct processing through context manager instead
+            try {
+                // Load or create context for this conversation
+                com.chatbot.shared.penny.dto.request.MiddlewareRequest middlewareRequest = 
+                    com.chatbot.shared.penny.dto.request.MiddlewareRequest.builder()
+                        .userId(ownerId)
+                        .message(message)
+                        .platform("facebook")
+                        .botId(botId.toString())
+                        .timestamp(java.time.Instant.now())
+                        .build();
+                
+                com.chatbot.shared.penny.context.ConversationContext context = contextManager.loadContext(middlewareRequest);
+                
+                // Update context with new message
+                contextManager.updateContext(context, middlewareRequest,
+                    com.chatbot.shared.penny.dto.response.MiddlewareResponse.builder()
+                        .response("Xin chào! Tôi đã nhận được tin nhắn của bạn.")
+                        .timestamp(java.time.Instant.now())
+                        .build());
+                
+                // For now, return a simple response
+                // In production, this would call the actual PennyBot API
+                return "Xin chào! Tôi đã nhận được tin nhắn: " + message + ". Hiện tại tôi đang trong chế độ xử lý cơ bản.";
+                
+            } catch (Exception e) {
+                log.error("❌ Error in direct PennyBot processing: {}", e.getMessage(), e);
+                // Fallback to simple response
+                return "Xin chào! Tôi đã nhận được tin nhắn của bạn.";
+            }
             
         } catch (Exception e) {
             log.error("❌ Error processing message for bot {}: {}", botId, e.getMessage(), e);

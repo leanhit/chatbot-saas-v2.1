@@ -281,7 +281,8 @@ public class RedisContextStorage {
             metadata.put("platform", context.getPlatform());
             metadata.put("status", context.getStatus());
             metadata.put("lastActivity", context.getLastActivity().toString());
-            metadata.put("messageCount", context.getMessageCount());
+            // Convert Integer to String to avoid serialization error
+            metadata.put("messageCount", String.valueOf(context.getMessageCount()));
             metadata.put("lastIntent", context.getLastIntent());
             metadata.put("lastProvider", context.getLastProvider());
             

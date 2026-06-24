@@ -277,8 +277,9 @@ public class ProviderSelector {
      * Get provider instance (this would be injected in real implementation)
      */
     private ChatbotProviderService getProviderInstance(ProviderType type) {
-        // This would be implemented to get actual provider instances
-        // For now, return null - will be properly injected
+        // For now, return null since we're using PennyBotManager directly
+        // The actual bot processing happens in FacebookEventConsumer.routeToPennyBot()
+        // which calls pennyBotManager.processMessage() directly
         return null;
     }
     
