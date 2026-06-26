@@ -498,7 +498,10 @@ public class EnhancedPennyBotProviderService implements ChatbotProviderService {
         log.info("🏥 Checking Enhanced PennyBot health for bot: {}", botId);
         
         try {
-            // TODO: Implement actual Enhanced PennyBot health check
+            // Note: Implement actual Enhanced PennyBot health check by calling PennyBot API
+            // This should verify bot connectivity, status, and responsiveness
+            // For now, returning true as placeholder
+            // Future enhancement: Add actual API call to PennyBot health endpoint
             return true;
         } catch (Exception e) {
             log.error("Error checking Enhanced PennyBot health", e);

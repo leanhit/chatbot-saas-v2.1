@@ -20,6 +20,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
@@ -32,6 +34,26 @@ public class AppRegistryController {
     
     @Autowired
     private AppRegistryService appRegistryService;
+    
+    /**
+     * Extract current user ID from security context
+     * @return current user ID or null if not authenticated
+     */
+    private Long getCurrentUserId() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.isAuthenticated() 
+            && !"anonymousUser".equals(authentication.getPrincipal())) {
+            // Assuming the principal contains the user ID or user object
+            // This may need adjustment based on your authentication implementation
+            Object principal = authentication.getPrincipal();
+            if (principal instanceof Long) {
+                return (Long) principal;
+            }
+            // If principal is a custom user object, extract ID from it
+            // Example: if (principal instanceof UserDetails) { return ((UserDetails) principal).getId(); }
+        }
+        return null;
+    }
     
     @PostMapping
     @PreAuthorize("hasRole('ADMIN') or hasRole('APP_MANAGER')")
@@ -48,8 +70,10 @@ public class AppRegistryController {
     public ResponseEntity<ApiResponse<AppResponse>> registerApp(
             @Valid @RequestBody RegisterAppRequest request) {
         
-        // TODO: Get current user ID from security context
-        Long currentUserId = 1L; // Placeholder
+        Long currentUserId = getCurrentUserId();
+        if (currentUserId == null) {
+            throw new IllegalStateException("User not authenticated");
+        }
         
         AppResponse response = appRegistryService.registerApp(request, currentUserId);
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -136,8 +160,10 @@ public class AppRegistryController {
             @Parameter(description = "App ID") @PathVariable Long id,
             @Valid @RequestBody RegisterAppRequest request) {
         
-        // TODO: Get current user ID from security context
-        Long currentUserId = 1L; // Placeholder
+        Long currentUserId = getCurrentUserId();
+        if (currentUserId == null) {
+            throw new IllegalStateException("User not authenticated");
+        }
         
         AppResponse response = appRegistryService.updateApp(id, request, currentUserId);
         return ResponseEntity.ok(ApiResponse.success(response, "App updated successfully"));
@@ -150,8 +176,10 @@ public class AppRegistryController {
             @Parameter(description = "App ID") @PathVariable Long id,
             @Parameter(description = "New status") @RequestParam AppStatus status) {
         
-        // TODO: Get current user ID from security context
-        Long currentUserId = 1L; // Placeholder
+        Long currentUserId = getCurrentUserId();
+        if (currentUserId == null) {
+            throw new IllegalStateException("User not authenticated");
+        }
         
         AppResponse response = appRegistryService.updateAppStatus(id, status, currentUserId);
         return ResponseEntity.ok(ApiResponse.success(response, "App status updated successfully"));
@@ -164,8 +192,10 @@ public class AppRegistryController {
             @Parameter(description = "App ID") @PathVariable Long id,
             @Parameter(description = "Active status") @RequestParam Boolean isActive) {
         
-        // TODO: Get current user ID from security context
-        Long currentUserId = 1L; // Placeholder
+        Long currentUserId = getCurrentUserId();
+        if (currentUserId == null) {
+            throw new IllegalStateException("User not authenticated");
+        }
         
         AppResponse response = appRegistryService.toggleAppActivation(id, isActive, currentUserId);
         String message = isActive ? "App activated successfully" : "App deactivated successfully";

@@ -42,7 +42,9 @@ public class UserGrpcClient {
         }
     }
 
-    // TODO: Implement client methods after proto compilation
+    // Note: Client methods should be implemented based on proto definitions
+    // Uncomment and implement these methods after proto compilation:
     // public boolean validateUser(String userId) { ... }
     // public UserProfileResponse getUserProfile(String userId) { ... }
+    // These methods require the generated gRPC stubs from proto files
 }

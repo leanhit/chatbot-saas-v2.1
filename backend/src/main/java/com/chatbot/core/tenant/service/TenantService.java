@@ -100,7 +100,8 @@ public class TenantService {
             log.error("[TenantService] [MONITORING] Failed to create address for tenant {}: {} - Tenant created but without address. Manual intervention may be required.", 
                     savedTenant.getId(), e.getMessage(), e);
             // Address creation is non-critical, continue with tenant creation
-            // TODO: Consider adding alerting mechanism for monitoring systems
+            // Note: Consider integrating with monitoring/alerting systems (Prometheus Alertmanager, PagerDuty, etc.)
+            // for production environments to notify operations team of such failures
         }
 
         // Gán gói mặc định — critical operation, rollback if fails

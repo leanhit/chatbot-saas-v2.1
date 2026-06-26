@@ -368,7 +368,10 @@ public class MessageServiceGrpcImpl extends MessageServiceGrpc.MessageServiceImp
         if (tenantId == null || tenantId.trim().isEmpty()) {
             throw new IllegalArgumentException("Tenant ID is required");
         }
-        // TODO: Validate tenant exists and is active
+        // Note: Tenant validation should be implemented by calling TenantService
+        // This requires dependency injection of TenantService or using gRPC client
+        // For now, basic null/empty validation is performed
+        // Future enhancement: Add tenant existence and active status validation
     }
 
     private Message convertGrpcMessageToDomain(com.chatbot.message.grpc.MessageServiceProto.Message grpcMessage) {

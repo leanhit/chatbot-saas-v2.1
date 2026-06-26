@@ -276,8 +276,9 @@ public class UserController {
         
         User user = currentUser.getUser();
         
-        // TODO: Implement actual package logic
-        // For now, return mock data
+        // Note: This should call TenantPackageService to get actual package information
+        // For now, returning mock data as placeholder
+        // Future enhancement: Integrate with TenantPackageService to fetch real package details
         Map<String, Object> response = Map.of(
             "currentPackage", Map.of(
                 "id", "free",

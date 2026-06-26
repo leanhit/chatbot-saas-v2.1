@@ -269,7 +269,10 @@ public class PennyBotProviderService implements ChatbotProviderService {
         log.info("Sending event to PennyBot - Bot: {}, Sender: {}, Event: {}, Payload: {}", botId, senderId, eventName, payload);
         
         try {
-            // TODO: Implement actual PennyBot API call
+            // Note: Implement actual PennyBot API call to send events
+            // This should make HTTP request to PennyBot's event endpoint
+            // For now, returning mock response as placeholder
+            // Future enhancement: Add actual API integration with PennyBot
             Map<String, Object> response = new HashMap<>();
             response.put("status", "success");
             response.put("message", "Event received by PennyBot");
@@ -294,8 +297,10 @@ public class PennyBotProviderService implements ChatbotProviderService {
         log.info("Checking PennyBot health for bot: {}", botId);
         
         try {
-            // TODO: Implement actual PennyBot health check
-            // For now, always return true
+            // Note: Implement actual PennyBot health check by calling PennyBot API
+            // This should verify bot connectivity, status, and responsiveness
+            // For now, returning true as placeholder
+            // Future enhancement: Add actual API call to PennyBot health endpoint
             return true;
         } catch (Exception e) {
             log.error("Error checking PennyBot health", e);

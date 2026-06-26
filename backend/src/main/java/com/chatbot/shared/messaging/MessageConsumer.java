@@ -1,6 +1,8 @@
 package com.chatbot.shared.messaging;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.handler.annotation.Headers;
@@ -12,6 +14,8 @@ import java.util.concurrent.CompletableFuture;
 
 @Component
 public class MessageConsumer {
+
+    private static final Logger log = LoggerFactory.getLogger(MessageConsumer.class);
 
     @Autowired
     private ObjectMapper objectMapper;
@@ -105,11 +109,9 @@ public class MessageConsumer {
         String tenantId = (String) headers.get("tenantId");
         String messageId = (String) headers.get("messageId");
         
-        System.out.println("Processing message from " + queueType + " queue");
-        System.out.println("Message ID: " + messageId);
-        System.out.println("Correlation ID: " + correlationId);
-        System.out.println("User ID: " + userId);
-        System.out.println("Tenant ID: " + tenantId);
+        log.info("Processing message from {} queue", queueType);
+        log.debug("Message ID: {}, Correlation ID: {}, User ID: {}, Tenant ID: {}", 
+                  messageId, correlationId, userId, tenantId);
         
         // Process the message based on its type
         if (message instanceof Event) {
@@ -168,7 +170,7 @@ public class MessageConsumer {
         Object stepData = message.get("stepData");
         
         // Handle saga step completion
-        System.out.println("Handling saga step: " + stepName + " for saga: " + sagaId);
+        log.info("Handling saga step: {} for saga: {}", stepName, sagaId);
     }
 
     private void handleSagaCompletionMessage(Map<String, Object> message, Map<String, Object> headers) {
@@ -177,7 +179,7 @@ public class MessageConsumer {
         Object result = message.get("result");
         
         // Handle saga completion
-        System.out.println("Saga " + sagaId + " completed with success: " + success);
+        log.info("Saga {} completed with success: {}", sagaId, success);
     }
 
     private void handleUserActivityMessage(Map<String, Object> message, Map<String, Object> headers) {
@@ -186,7 +188,7 @@ public class MessageConsumer {
         Object data = message.get("data");
         
         // Handle user activity
-        System.out.println("User activity: " + activity + " for user: " + userId);
+        log.debug("User activity: {} for user: {}", activity, userId);
     }
 
     private void handleTenantActivityMessage(Map<String, Object> message, Map<String, Object> headers) {
@@ -195,7 +197,7 @@ public class MessageConsumer {
         Object data = message.get("data");
         
         // Handle tenant activity
-        System.out.println("Tenant activity: " + activity + " for tenant: " + tenantId);
+        log.debug("Tenant activity: {} for tenant: {}", activity, tenantId);
     }
 
     private void handleAppActivityMessage(Map<String, Object> message, Map<String, Object> headers) {
@@ -204,17 +206,17 @@ public class MessageConsumer {
         Object data = message.get("data");
         
         // Handle app activity
-        System.out.println("App activity: " + activity + " for app: " + appId);
+        log.debug("App activity: {} for app: {}", activity, appId);
     }
 
     private void handleMetricsMessage(Map<String, Object> message, Map<String, Object> headers) {
         // Handle metrics collection
-        System.out.println("Processing metrics message");
+        log.debug("Processing metrics message");
     }
 
     private void handleAlertMessage(Map<String, Object> message, Map<String, Object> headers) {
         // Handle alert notification
-        System.out.println("Processing alert message");
+        log.warn("Processing alert message");
     }
 
     private void handleHealthCheckMessage(Map<String, Object> message, Map<String, Object> headers) {
@@ -222,47 +224,45 @@ public class MessageConsumer {
         Object healthData = message.get("healthData");
         
         // Handle health check
-        System.out.println("Health check for service: " + serviceName);
+        log.debug("Health check for service: {}", serviceName);
     }
 
     private void processEmailMessage(Object emailMessage, Map<String, Object> headers) {
         // Process email message
-        System.out.println("Processing email message");
+        log.info("Processing email message");
     }
 
     private void processSmsMessage(Object smsMessage, Map<String, Object> headers) {
         // Process SMS message
-        System.out.println("Processing SMS message");
+        log.info("Processing SMS message");
     }
 
     private void processNotificationMessage(Object notificationMessage, Map<String, Object> headers) {
         // Process notification message
-        System.out.println("Processing notification message");
+        log.info("Processing notification message");
     }
 
     private void processReportMessage(Object reportMessage, Map<String, Object> headers) {
         // Process report generation
-        System.out.println("Processing report message");
+        log.info("Processing report message");
     }
 
     private void processCleanupMessage(Object cleanupMessage, Map<String, Object> headers) {
         // Process cleanup task
-        System.out.println("Processing cleanup message");
+        log.info("Processing cleanup message");
     }
 
     private void handleGenericMessage(Object message, Map<String, Object> headers) {
         // Handle generic message
-        System.out.println("Processing generic message: " + message.getClass().getSimpleName());
+        log.debug("Processing generic message: {}", message.getClass().getSimpleName());
     }
 
     private void handleMessageProcessingError(Object message, Map<String, Object> headers, Exception e, String queueType) {
         String messageId = (String) headers.get("messageId");
         String correlationId = (String) headers.get("correlationId");
         
-        System.err.println("Error processing message from " + queueType + " queue");
-        System.err.println("Message ID: " + messageId);
-        System.err.println("Correlation ID: " + correlationId);
-        System.err.println("Error: " + e.getMessage());
+        log.error("Error processing message from {} queue. Message ID: {}, Correlation ID: {}, Error: {}", 
+                  queueType, messageId, correlationId, e.getMessage(), e);
         
         // Log the error and potentially send to dead letter queue
         // This is where you would implement your error handling strategy
