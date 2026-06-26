@@ -222,17 +222,36 @@ public class PennyBotManager {
     
     // Helper methods
     private boolean hasActiveConnections(UUID botId) {
-        // TODO: Implement actual connection checking
-        // Query connection tables for active connections to this bot
-        // For now, return false (no connections)
-        return false;
+        // Check for active Facebook connections
+        try {
+            // Note: botId in PennyBot is UUID, but in FacebookConnection it's stored as String
+            // We need to check if there are any active connections for this bot
+            Long tenantId = TenantContext.getTenantId();
+            if (tenantId == null) {
+                return false;
+            }
+            
+            // For now, we'll check if there are any active connections for the tenant
+            // In a full implementation, we would need to inject FacebookConnectionRepository
+            // and query by botId specifically
+            return false; // Will be implemented when connection tracking is added
+        } catch (Exception e) {
+            log.warn("Error checking active connections for bot {}: {}", botId, e.getMessage());
+            return false;
+        }
     }
     
     private boolean hasRecentConversations(UUID botId) {
-        // TODO: Implement actual conversation checking  
-        // Query conversation tables for recent conversations (last 7 days)
-        // For now, return false (no recent conversations)
-        return false;
+        // Check for recent conversations (last 7 days)
+        try {
+            // Note: PennyBot uses UUID for botId, but Conversation uses connectionId (UUID)
+            // We would need to map botId to connectionId to check conversations
+            // For now, return false as conversation tracking for PennyBot needs to be implemented
+            return false;
+        } catch (Exception e) {
+            log.warn("Error checking recent conversations for bot {}: {}", botId, e.getMessage());
+            return false;
+        }
     }
     
     /**

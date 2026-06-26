@@ -6,7 +6,6 @@ package com.chatbot.spokes.facebook.connection.model;
 public enum ChatbotProvider {
     BOTPRESS("Botpress"),
     PENNYBOT("PennyBot"),
-    RASA("Rasa"),
     DIALOGFLOW("Dialogflow"),
     CUSTOM("Custom");
 

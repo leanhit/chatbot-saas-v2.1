@@ -20,9 +20,6 @@ public interface CategoryRepository extends JpaRepository<Category, UUID> {
     @Query("SELECT c FROM Category c WHERE c.name = :name AND c.tenantId IS NULL")
     Optional<Category> findByNameAndTenantIdIsNull(@Param("name") String name);
     
-    @Deprecated
-    Optional<Category> findByName(String name);
-    
     // Lấy tất cả theo tenantId
     @Query("SELECT c FROM Category c WHERE c.tenantId = :tenantId")
     List<Category> findAllByTenantId(@Param("tenantId") Long tenantId);

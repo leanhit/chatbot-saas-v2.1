@@ -18,21 +18,9 @@ public interface FileMetadataRepository extends JpaRepository<FileMetadata, UUID
     @EntityGraph(attributePaths = {"category", "tags"})
     @Query("SELECT fm FROM FileMetadata fm WHERE fm.id = :id AND fm.tenantId = :tenantId")
     Optional<FileMetadata> findByIdAndTenantId(@Param("id") UUID id, @Param("tenantId") Long tenantId);
-    
-    // Deprecated method without tenantId
-    @Deprecated
-    @Override
-    @EntityGraph(attributePaths = {"category", "tags"})
-    Optional<FileMetadata> findById(UUID id);
 
     // Lấy tất cả file kèm category + tags theo tenantId
     @EntityGraph(attributePaths = {"category", "tags"})
     @Query("SELECT fm FROM FileMetadata fm WHERE fm.tenantId = :tenantId")
     List<FileMetadata> findAllByTenantId(@Param("tenantId") Long tenantId);
-    
-    // Deprecated method without tenantId
-    @Deprecated
-    @Override
-    @EntityGraph(attributePaths = {"category", "tags"})
-    List<FileMetadata> findAll();
 }

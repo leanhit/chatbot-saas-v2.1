@@ -26,9 +26,6 @@ public interface FacebookConnectionRepository extends JpaRepository<FacebookConn
     @Query("SELECT fc FROM FacebookConnection fc WHERE fc.pageId = :pageId")
     List<FacebookConnection> findAllByPageId(@Param("pageId") String pageId);
     
-    @Deprecated
-    Optional<FacebookConnection> findByPageId(String pageId);
-    
     @Query("SELECT fc FROM FacebookConnection fc WHERE fc.tenantId = :tenantId AND fc.pageId = :pageId")
     Optional<FacebookConnection> findByTenantIdAndPageId(@Param("tenantId") Long tenantId, @Param("pageId") String pageId);
     
@@ -38,11 +35,6 @@ public interface FacebookConnectionRepository extends JpaRepository<FacebookConn
     
     @Query("SELECT fc FROM FacebookConnection fc WHERE fc.ownerId = :ownerId AND fc.tenantId = :tenantId")
     Page<FacebookConnection> findByOwnerIdAndTenantId(@Param("ownerId") String ownerId, @Param("tenantId") Long tenantId, Pageable pageable);
-    
-    @Deprecated
-    List<FacebookConnection> findByOwnerId(String ownerId);
-    @Deprecated
-    Page<FacebookConnection> findByOwnerId(String ownerId, Pageable pageable);
 
     // Tìm theo ownerId, isActive và tenantId
     @Query("SELECT fc FROM FacebookConnection fc WHERE fc.ownerId = :ownerId AND fc.isActive = true AND fc.tenantId = :tenantId")
@@ -50,11 +42,6 @@ public interface FacebookConnectionRepository extends JpaRepository<FacebookConn
     
     @Query("SELECT fc FROM FacebookConnection fc WHERE fc.ownerId = :ownerId AND fc.isActive = true AND fc.tenantId = :tenantId")
     Page<FacebookConnection> findByOwnerIdAndIsActiveTrueAndTenantId(@Param("ownerId") String ownerId, @Param("tenantId") Long tenantId, Pageable pageable);
-    
-    @Deprecated
-    List<FacebookConnection> findByOwnerIdAndIsActiveTrue(@Param("ownerId") String ownerId);
-    @Deprecated
-    Page<FacebookConnection> findByOwnerIdAndIsActiveTrue(@Param("ownerId") String ownerId, Pageable pageable);
 
     @Query("SELECT fc FROM FacebookConnection fc WHERE fc.tenantId = :tenantId AND fc.pageId = :pageId AND fc.isActive = true")
     Optional<FacebookConnection> findByTenantIdAndPageIdAndIsActiveTrue(@Param("tenantId") Long tenantId, @Param("pageId") String pageId);

@@ -38,7 +38,7 @@ public interface MiddlewareProvider {
     // Inner classes
     
     enum ProviderType {
-        BOTPRESS, PENNYBOT, RASA, GPT, WRAPPED
+        BOTPRESS, PENNYBOT, GPT, WRAPPED
     }
     
     enum Feature {

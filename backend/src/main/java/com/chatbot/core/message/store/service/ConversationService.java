@@ -331,14 +331,6 @@ public class ConversationService {
         });
 }
 
-        
-    /**
-     * @deprecated Sử dụng phiên bản mới có kiểm tra ownerId
-     */
-    @Deprecated
-    public void deleteConversation(Long conversationId) {
-        deleteConversation(conversationId, ""); // Gọi phương thức mới với ownerId rỗng
-    }
     
     // =========================================================================
     // END PHƯƠNG THỨC HANDOVER

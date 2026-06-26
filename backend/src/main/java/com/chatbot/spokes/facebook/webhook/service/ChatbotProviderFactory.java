@@ -32,7 +32,7 @@ public class ChatbotProviderFactory {
 
     /**
      * Lấy provider dựa trên loại
-     * @param providerType loại provider (BOTPRESS, RASA)
+     * @param providerType loại provider (BOTPRESS, PENNYBOT)
      * @return ChatbotProviderService
      * @throws IllegalArgumentException nếu không tìm thấy provider
      */

@@ -34,7 +34,7 @@ public interface ChatbotProviderService {
     boolean healthCheck(String botId);
     
     /**
-     * Lấy loại nhà cung cấp (BOTPRESS, RASA, v.v.)
+     * Lấy loại nhà cung cấp (BOTPRESS, PENNYBOT, v.v.)
      * @return tên nhà cung cấp
      */
     String getProviderType();

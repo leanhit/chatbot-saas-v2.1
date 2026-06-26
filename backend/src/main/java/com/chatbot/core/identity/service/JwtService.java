@@ -146,22 +146,6 @@ public class JwtService {
         return getClaim(token, Claims::getSubject);
     }
 
-    /**
-     * @deprecated Use extractEmail instead
-     */
-    @Deprecated
-    public String getEmailFromToken(String token) {
-        return extractEmail(token);
-    }
-
-    /**
-     * @deprecated Use extractEmail instead
-     */
-    @Deprecated
-    public String extractUsername(String token) {
-        return extractEmail(token);
-    }
-
     public boolean isTokenValid(String token, User user) {
         try {
             if (tokenBlacklistService != null && tokenBlacklistService.isTokenBlacklisted(token)) {

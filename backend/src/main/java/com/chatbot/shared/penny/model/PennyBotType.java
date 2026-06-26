@@ -29,12 +29,6 @@ public enum PennyBotType {
         return pennyBotId;
     }
 
-    // Keep for backward compatibility
-    @Deprecated
-    public String getBotpressBotId() {
-        return pennyBotId;
-    }
-
     public static PennyBotType fromString(String type) {
         try {
             return PennyBotType.valueOf(type.toUpperCase());

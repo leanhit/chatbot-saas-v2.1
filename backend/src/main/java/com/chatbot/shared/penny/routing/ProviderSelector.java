@@ -88,9 +88,9 @@ public class ProviderSelector {
             return ProviderType.PENNYBOT;
         }
         
-        // Support intents -> Rasa (better for structured responses)
+        // Support intents -> PennyBot
         if (isSupportIntent(intent)) {
-            return ProviderType.RASA;
+            return ProviderType.PENNYBOT;
         }
         
         // General chat -> PennyBot (default)
@@ -108,9 +108,9 @@ public class ProviderSelector {
             return ProviderType.PENNYBOT;
         }
         
-        // Medium complexity -> Rasa (faster for moderate complexity)
+        // Medium complexity -> PennyBot
         if ("medium".equals(complexity)) {
-            return ProviderType.RASA;
+            return ProviderType.PENNYBOT;
         }
         
         // Low complexity -> PennyBot (default)
@@ -173,10 +173,10 @@ public class ProviderSelector {
             return ProviderType.PENNYBOT;
         }
         
-        // Rule 3: Support intents -> Rasa (better for structured support)
+        // Rule 3: Support intents -> PennyBot
         if (isSupportIntent(intent)) {
-            log.debug("🎯 Support intent detected, selecting Rasa");
-            return ProviderType.RASA;
+            log.debug("🎯 Support intent detected, selecting PennyBot");
+            return ProviderType.PENNYBOT;
         }
         
         // Rule 4: Context continuity for ongoing conversations
@@ -190,13 +190,10 @@ public class ProviderSelector {
         // Rule 5: Health-based fallback
         List<ProviderType> healthyProviders = getHealthyProviders();
         if (!healthyProviders.isEmpty()) {
-            // Prefer PennyBot if healthy, otherwise use Rasa
+            // Prefer PennyBot if healthy
             if (healthyProviders.contains(ProviderType.PENNYBOT)) {
                 log.debug("🎯 PennyBot is healthy, selecting PennyBot");
                 return ProviderType.PENNYBOT;
-            } else if (healthyProviders.contains(ProviderType.RASA)) {
-                log.debug("🎯 PennyBot not healthy, selecting Rasa");
-                return ProviderType.RASA;
             }
         }
         
@@ -342,7 +339,6 @@ public class ProviderSelector {
     public enum ProviderType {
         BOTPRESS("Botpress"),
         PENNYBOT("PennyBot"),
-        RASA("Rasa"),
         GPT("GPT");
         
         private final String displayName;

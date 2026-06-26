@@ -85,7 +85,7 @@ public class ChatbotProviderWrapper implements MiddlewareProvider {
             Map<String, Boolean> providerHealth = new HashMap<>();
             
             // Try to get health status for each provider type
-            String[] providerTypes = {"PENNYBOT", "RASA"};
+            String[] providerTypes = {"PENNYBOT"};
             
             for (String providerType : providerTypes) {
                 try {

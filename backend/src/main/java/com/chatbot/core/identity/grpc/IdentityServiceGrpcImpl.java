@@ -28,7 +28,7 @@ public class IdentityServiceGrpcImpl extends IdentityServiceGrpc.IdentityService
             log.info("gRPC: Validating token cho user");
             
             String token = request.getToken();
-            String email = jwtService.extractUsername(token);
+            String email = jwtService.extractEmail(token);
             Optional<User> userOpt = authRepository.findByEmail(email);
             
             boolean valid = userOpt.isPresent() && jwtService.isTokenValid(token, userOpt.get());

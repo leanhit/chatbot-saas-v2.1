@@ -450,15 +450,6 @@ public class SimplePaymentService {
         userBalanceService.updateUserBalanceInSeparateTransaction(userId, amount);
     }
 
-    /**
-     * @deprecated Use updateUserBalanceInSeparateTransaction for proper transaction isolation.
-     * This non-transactional version is kept only for compatibility; prefer the annotated variant.
-     */
-    @Deprecated
-    public void updateUserBalance(Long userId, BigDecimal amount) {
-        userBalanceService.updateUserBalanceInSeparateTransaction(userId, amount);
-    }
-
     public void deductUserBalance(Long userId, BigDecimal amount) {
         userBalanceService.deductUserBalance(userId, amount);
     }

@@ -97,14 +97,6 @@ public class PennyBot {
     }
 
     /**
-     * Get the target bot ID (for compatibility)
-     */
-    @Deprecated
-    public String getTargetBotpressBotId() {
-        return pennyBotId;
-    }
-
-    /**
      * Check if this bot can handle the given message type
      */
     public boolean canHandle(String messageType) {

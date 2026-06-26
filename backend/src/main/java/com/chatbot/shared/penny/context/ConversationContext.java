@@ -569,6 +569,6 @@ public class ConversationContext {
     
     // Provider type enum
     public enum ProviderType {
-        BOTPRESS, RASA, GPT
+        BOTPRESS, GPT
     }
 }

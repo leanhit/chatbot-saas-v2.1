@@ -22,9 +22,6 @@ public interface FbCustomerStagingRepository extends JpaRepository<FbCustomerSta
     // Lấy theo ownerId và tenantId
     @Query("SELECT fcs FROM FbCustomerStaging fcs WHERE fcs.ownerId = :ownerId AND fcs.tenantId = :tenantId")
     List<FbCustomerStaging> findByOwnerIdAndTenantId(@Param("ownerId") String ownerId, @Param("tenantId") Long tenantId);
-    
-    @Deprecated
-    List<FbCustomerStaging> findByOwnerId(String ownerId);
 
     // Lấy theo ownerId, status và tenantId
     @Query("SELECT fcs FROM FbCustomerStaging fcs WHERE fcs.ownerId = :ownerId AND fcs.status = :status AND fcs.tenantId = :tenantId")
@@ -33,9 +30,6 @@ public interface FbCustomerStagingRepository extends JpaRepository<FbCustomerSta
         @Param("status") CustomerStatus status, 
         @Param("tenantId") Long tenantId
     );
-    
-    @Deprecated
-    List<FbCustomerStaging> findByOwnerIdAndStatus(String ownerId, CustomerStatus status);
 
     // Tìm theo psid, ownerId và tenantId
     @Query("SELECT fcs FROM FbCustomerStaging fcs WHERE fcs.psid = :psid AND fcs.ownerId = :ownerId AND fcs.tenantId = :tenantId")
@@ -44,9 +38,6 @@ public interface FbCustomerStagingRepository extends JpaRepository<FbCustomerSta
         @Param("ownerId") String ownerId, 
         @Param("tenantId") Long tenantId
     );
-    
-    @Deprecated
-    Optional<FbCustomerStaging> findByPsidAndOwnerId(String psid, String ownerId);
 
     // Xóa theo psid, ownerId và tenantId
     @Modifying
@@ -57,11 +48,7 @@ public interface FbCustomerStagingRepository extends JpaRepository<FbCustomerSta
         @Param("ownerId") String ownerId, 
         @Param("tenantId") Long tenantId
     );
-    
-    @Deprecated
-    @Transactional
-    void deleteByPsidAndOwnerId(String psid, String ownerId);
-    
+
     // ===== NEW METHODS FOR CUSTOMER DATA QUERY =====
     
     // Lấy theo tenantId với pagination
