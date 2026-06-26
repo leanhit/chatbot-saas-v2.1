@@ -47,7 +47,7 @@ public class LicenseController {
         }
     )
     public ResponseEntity<LicenseResponse> getMyLicense(
-            @Parameter(hidden = true) @AuthenticationPrincipal(expression = "user") CustomUserDetails currentUser,
+            @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails currentUser,
             @RequestHeader(value = "X-License-Token", required = false) String licenseToken) {
         
         Long userId = currentUser.getUser().getId();
@@ -86,7 +86,7 @@ public class LicenseController {
     public ResponseEntity<LicenseResponse> createLicense(
             @Parameter(description = "License creation details", required = true)
             @Valid @RequestBody CreateLicenseRequest request,
-            @Parameter(hidden = true) @AuthenticationPrincipal(expression = "user") CustomUserDetails currentUser) {
+            @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails currentUser) {
         
         // Additional validation: Only cloud service can create licenses with specific features
         if (request.getFeatures() != null && !request.getFeatures().isEmpty()) {
@@ -202,7 +202,7 @@ public class LicenseController {
     public ResponseEntity<ApiResponse<Boolean>> checkFeatureAccess(
             @Parameter(description = "Feature name to check", required = true)
             @PathVariable String feature,
-            @Parameter(hidden = true) @AuthenticationPrincipal(expression = "user") CustomUserDetails currentUser) {
+            @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails currentUser) {
         
         Long userId = currentUser.getUser().getId();
         boolean hasFeature = licenseService.hasFeature(userId, feature);
@@ -224,7 +224,7 @@ public class LicenseController {
     public ResponseEntity<ApiResponse<Boolean>> checkModuleAccess(
             @Parameter(description = "Module name to check", required = true)
             @PathVariable String module,
-            @Parameter(hidden = true) @AuthenticationPrincipal(expression = "user") CustomUserDetails currentUser) {
+            @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails currentUser) {
         
         Long userId = currentUser.getUser().getId();
         boolean hasModule = licenseService.hasModule(userId, module);
@@ -246,7 +246,7 @@ public class LicenseController {
     public ResponseEntity<ApiResponse<Integer>> getLimit(
             @Parameter(description = "Limit key (e.g., 'bots', 'storage')", required = true)
             @PathVariable String limitKey,
-            @Parameter(hidden = true) @AuthenticationPrincipal(expression = "user") CustomUserDetails currentUser) {
+            @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails currentUser) {
         
         Long userId = currentUser.getUser().getId();
         Integer limit = licenseService.getLimit(userId, limitKey);
@@ -343,7 +343,7 @@ public class LicenseController {
         }
     )
     public ResponseEntity<ApiResponse<Map<String, Object>>> generateActivationToken(
-            @Parameter(hidden = true) @AuthenticationPrincipal(expression = "user") CustomUserDetails currentUser,
+            @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails currentUser,
             @Parameter(description = "License configuration", required = false)
             @RequestBody(required = false) Map<String, Object> licenseConfig) {
         

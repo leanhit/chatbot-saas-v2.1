@@ -6,6 +6,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -30,20 +32,26 @@ public class LicenseResponse {
     private String sub; // User ID as string
     private String email; // User email
     
+    // Metadata fields
+    private Integer schemaVersion;
+    private String licenseId;
+    
     public static LicenseResponse from(com.chatbot.core.license.model.License license, String userEmail) {
         return LicenseResponse.builder()
                 .id(license.getId())
                 .planName(license.getPlanName())
                 .isActive(license.getIsActive())
                 .expiresAt(license.getExpiresAt())
-                .features(license.getFeatures())
-                .modules(license.getModules())
-                .limits(license.getLimits())
+                .features(license.getFeatures() != null ? new ArrayList<>(license.getFeatures()) : null)
+                .modules(license.getModules() != null ? new ArrayList<>(license.getModules()) : null)
+                .limits(license.getLimits() != null ? new HashMap<>(license.getLimits()) : null)
                 .createdAt(license.getCreatedAt())
                 .updatedAt(license.getUpdatedAt())
                 .exp(license.getExpiresAt() != null ? license.getExpiresAt().getEpochSecond() : null)
                 .sub(license.getUserId().toString()) // Application-level join: use userId instead of User object
                 .email(userEmail)
+                .schemaVersion(1)
+                .licenseId(null) // Not available in the current database schema
                 .build();
     }
 }
