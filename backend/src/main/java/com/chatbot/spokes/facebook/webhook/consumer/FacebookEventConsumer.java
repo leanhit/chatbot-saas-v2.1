@@ -370,7 +370,16 @@ public class FacebookEventConsumer {
                 }
 
                 UUID botId = UUID.fromString(connection.getBotId());
-                String botReply = pennyBotManager.processMessage(botId, messageText, connection.getOwnerId(), false);
+                String botReply = null;
+                try {
+                    botReply = pennyBotManager.processMessage(botId, messageText, connection.getOwnerId(), false);
+                } catch (IllegalArgumentException e) {
+                    log.error("❌ Bot not found for connection {}: {}. Sending fallback response.", connection.getId(), e.getMessage());
+                    botReply = "Sorry, the bot configuration is missing. Please contact the administrator.";
+                } catch (Exception e) {
+                    log.error("❌ Error processing message with bot {}: {}", botId, e.getMessage(), e);
+                    botReply = "Sorry, I encountered an error while processing your message. Please try again.";
+                }
 
                 if (botReply != null && !botReply.trim().isEmpty()) {
                     log.info("✅ [Penny] Bot handled message. Sending response...");

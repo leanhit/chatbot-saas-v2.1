@@ -74,4 +74,9 @@ public interface PennyBotRepository extends JpaRepository<PennyBot, UUID> {
     @Transactional
     @Query("DELETE FROM PennyBot b WHERE b.id = :botId")
     void hardDeleteBot(@Param("botId") UUID botId);
+
+    /**
+     * Find bot by ID and tenant ID (for multi-tenant safety)
+     */
+    Optional<PennyBot> findByIdAndTenantId(UUID id, Long tenantId);
 }

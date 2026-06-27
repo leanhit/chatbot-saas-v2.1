@@ -255,9 +255,15 @@ public class PennyBotManager {
     }
     
     /**
-     * Get bot by ID
+     * Get bot by ID with tenant context
      */
     public PennyBot getBot(UUID botId) {
+        Long tenantId = TenantContext.getTenantId();
+        if (tenantId != null) {
+            return pennyBotRepository.findByIdAndTenantId(botId, tenantId)
+                .orElseThrow(() -> new IllegalArgumentException("Bot not found for tenant " + tenantId + ": " + botId));
+        }
+        // Fallback to non-tenant lookup if no tenant context
         return pennyBotRepository.findById(botId)
             .orElseThrow(() -> new IllegalArgumentException("Bot not found: " + botId));
     }

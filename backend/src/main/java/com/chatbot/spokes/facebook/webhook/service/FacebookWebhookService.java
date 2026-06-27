@@ -10,7 +10,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Optional;
 
 /**
  * Webhook service that receives incoming Facebook webhook payloads,
@@ -114,15 +113,20 @@ public class FacebookWebhookService {
      * Find tenantId by querying FacebookConnection
      */
     private Long findTenantIdByPageId(String pageId) {
-        // 1. Try to find active and enabled connection
-        Optional<FacebookConnection> activeConnectionOpt = connectionRepository.findByPageIdForWebhook(pageId);
-        if (activeConnectionOpt.isPresent()) {
-            return activeConnectionOpt.get().getTenantId();
+        // 1. Try to find active and enabled connection(s)
+        List<FacebookConnection> activeConnections = connectionRepository.findByPageIdForWebhook(pageId);
+        if (!activeConnections.isEmpty()) {
+            if (activeConnections.size() > 1) {
+                log.warn("⚠️ Multiple active connections found for pageId: {} ({} connections). Using first one.", 
+                    pageId, activeConnections.size());
+            }
+            return activeConnections.get(0).getTenantId();
         }
 
         // 2. Fallback to any connection
         List<FacebookConnection> allConnections = connectionRepository.findAllByPageId(pageId);
         if (!allConnections.isEmpty()) {
+            log.warn("⚠️ No active connections found for pageId: {}. Using inactive connection as fallback.", pageId);
             return allConnections.get(0).getTenantId();
         }
 

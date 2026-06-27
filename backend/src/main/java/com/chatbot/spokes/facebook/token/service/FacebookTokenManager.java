@@ -8,7 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.Optional;
+import java.util.List;
 
 @Service
 @Slf4j
@@ -32,8 +32,14 @@ public class FacebookTokenManager {
     public String getValidToken(String pageId) {
         log.debug("🔍 Getting valid token for page: {}", pageId);
         
-        FacebookConnection connection = connectionRepository.findByPageIdForWebhook(pageId)
-            .orElseThrow(() -> new RuntimeException("❌ No active connection found for page: " + pageId));
+        List<FacebookConnection> connections = connectionRepository.findByPageIdForWebhook(pageId);
+        if (connections.isEmpty()) {
+            throw new RuntimeException("❌ No active connection found for page: " + pageId);
+        }
+        if (connections.size() > 1) {
+            log.warn("⚠️ Multiple active connections found for page: {} ({} connections). Using first one.", pageId, connections.size());
+        }
+        FacebookConnection connection = connections.get(0);
         
         // Check if token is expired or expiring soon (within 1 hour)
         if (isTokenExpiringSoon(connection)) {
@@ -140,8 +146,14 @@ public class FacebookTokenManager {
     @Transactional
     public boolean forceRefreshToken(String pageId) {
         try {
-            FacebookConnection connection = connectionRepository.findByPageIdForWebhook(pageId)
-                .orElseThrow(() -> new RuntimeException("No active connection found for page: " + pageId));
+            List<FacebookConnection> connections = connectionRepository.findByPageIdForWebhook(pageId);
+            if (connections.isEmpty()) {
+                throw new RuntimeException("No active connection found for page: " + pageId);
+            }
+            if (connections.size() > 1) {
+                log.warn("⚠️ Multiple active connections found for page: {} ({} connections). Using first one.", pageId, connections.size());
+            }
+            FacebookConnection connection = connections.get(0);
             
             String newToken = refreshToken(connection);
             
@@ -159,13 +171,17 @@ public class FacebookTokenManager {
      */
     @Transactional(readOnly = true)
     public TokenStatus getTokenStatus(String pageId) {
-        Optional<FacebookConnection> connectionOpt = connectionRepository.findByPageIdForWebhook(pageId);
+        List<FacebookConnection> connections = connectionRepository.findByPageIdForWebhook(pageId);
         
-        if (connectionOpt.isEmpty()) {
+        if (connections.isEmpty()) {
             return TokenStatus.NOT_FOUND;
         }
         
-        FacebookConnection connection = connectionOpt.get();
+        if (connections.size() > 1) {
+            log.warn("⚠️ Multiple active connections found for page: {} ({} connections). Using first one.", pageId, connections.size());
+        }
+        
+        FacebookConnection connection = connections.get(0);
         
         if (connection.getTokenExpiresAt() == null) {
             return TokenStatus.UNKNOWN;

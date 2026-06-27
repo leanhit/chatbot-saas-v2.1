@@ -18,9 +18,9 @@ public interface FacebookConnectionRepository extends JpaRepository<FacebookConn
     @Query("SELECT fc FROM FacebookConnection fc WHERE fc.botId = :botId AND fc.tenantId = :tenantId")
     Optional<FacebookConnection> findByBotIdAndTenantId(@Param("botId") String botId, @Param("tenantId") Long tenantId);
     
-    // 4. Tìm theo pageId (cho webhook lookup - không cần tenantId)
+    // 4. Tìm theo pageId (cho webhook lookup - không cần tenantId) - trả về List vì có thể nhiều connections
     @Query("SELECT fc FROM FacebookConnection fc WHERE fc.pageId = :pageId AND fc.isEnabled = true AND fc.isActive = true")
-    Optional<FacebookConnection> findByPageIdForWebhook(@Param("pageId") String pageId);
+    List<FacebookConnection> findByPageIdForWebhook(@Param("pageId") String pageId);
     
     // 4b. Tìm tất cả theo pageId (để debug)
     @Query("SELECT fc FROM FacebookConnection fc WHERE fc.pageId = :pageId")
