@@ -50,60 +50,24 @@ public class GlobalExceptionHandler {
                 .withPath(path)
                 .withTimestamp(java.time.LocalDateTime.now());
         
+        // Handle ValidationException with errors list
+        if (ex instanceof ValidationException) {
+            ValidationException validationEx = (ValidationException) ex;
+            errorResponse = ErrorResponse.fromValidation(validationEx.getErrors())
+                    .withCode(code)
+                    .withPath(path)
+                    .withTimestamp(java.time.LocalDateTime.now());
+        }
+        
+        if (ex.getDetails() != null) {
+            ex.getDetails().forEach(errorResponse::withDetail);
+        }
+        
         addContextToErrorResponse(errorResponse, request);
         log.warn("BaseException [{}]: {} at path: {}", code, ex.getMessage(), path);
         
         HttpStatus status = mapErrorCodeToHttpStatus(errorCode);
         return new ResponseEntity<>(errorResponse, status);
-    }
-
-    // Handle legacy ResourceNotFoundException
-    @ExceptionHandler(ResourceNotFoundException.class)
-    public ResponseEntity<ErrorResponse> handleResourceNotFoundException(
-            ResourceNotFoundException ex, WebRequest request) {
-        
-        String path = getCleanPath(request);
-        ErrorResponse errorResponse = new ErrorResponse(ErrorCode.RESOURCE_NOT_FOUND.getCode(), ex.getMessage())
-                .withPath(path)
-                .withTimestamp(java.time.LocalDateTime.now());
-        
-        addContextToErrorResponse(errorResponse, request);
-        log.warn("ResourceNotFoundException: {} at path: {}", ex.getMessage(), path);
-        
-        return new ResponseEntity<>(errorResponse, HttpStatus.NOT_FOUND);
-    }
-
-    // Handle legacy ValidationException
-    @ExceptionHandler(ValidationException.class)
-    public ResponseEntity<ErrorResponse> handleValidationException(
-            ValidationException ex, WebRequest request) {
-        
-        String path = getCleanPath(request);
-        ErrorResponse errorResponse = ErrorResponse.fromValidation(ex.getErrors())
-                .withCode(ErrorCode.VALIDATION_ERROR.getCode())
-                .withPath(path)
-                .withTimestamp(java.time.LocalDateTime.now());
-        
-        addContextToErrorResponse(errorResponse, request);
-        log.warn("ValidationException at path: {}. Errors: {}", path, ex.getErrors());
-        
-        return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
-    }
-
-    // Handle legacy UnauthorizedException
-    @ExceptionHandler(UnauthorizedException.class)
-    public ResponseEntity<ErrorResponse> handleUnauthorizedException(
-            UnauthorizedException ex, WebRequest request) {
-        
-        String path = getCleanPath(request);
-        ErrorResponse errorResponse = new ErrorResponse(ErrorCode.UNAUTHORIZED.getCode(), ex.getMessage())
-                .withPath(path)
-                .withTimestamp(java.time.LocalDateTime.now());
-        
-        addContextToErrorResponse(errorResponse, request);
-        log.warn("UnauthorizedException: {} at path: {}", ex.getMessage(), path);
-        
-        return new ResponseEntity<>(errorResponse, HttpStatus.UNAUTHORIZED);
     }
 
     // Handle validation errors from @Valid annotation
@@ -197,19 +161,43 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(errorResponse, HttpStatus.CONFLICT);
     }
 
+    private ErrorCode mapHttpStatusToErrorCode(org.springframework.http.HttpStatusCode status) {
+        if (status == null) {
+            return ErrorCode.INTERNAL_ERROR;
+        }
+        int value = status.value();
+        switch (value) {
+            case 404:
+                return ErrorCode.NOT_FOUND;
+            case 401:
+                return ErrorCode.UNAUTHORIZED;
+            case 403:
+                return ErrorCode.FORBIDDEN;
+            case 409:
+                return ErrorCode.CONFLICT;
+            case 429:
+                return ErrorCode.RATE_LIMIT_EXCEEDED;
+            default:
+                return ErrorCode.BAD_REQUEST;
+        }
+    }
+
     @ExceptionHandler(org.springframework.web.server.ResponseStatusException.class)
     public ResponseEntity<ErrorResponse> handleResponseStatusException(
             org.springframework.web.server.ResponseStatusException ex, WebRequest request) {
         
         String path = getCleanPath(request);
-        ErrorResponse errorResponse = new ErrorResponse(ErrorCode.BAD_REQUEST.getCode(), ex.getReason())
+        org.springframework.http.HttpStatusCode statusCode = ex.getStatusCode();
+        ErrorCode errorCode = mapHttpStatusToErrorCode(statusCode);
+        
+        ErrorResponse errorResponse = new ErrorResponse(errorCode.getCode(), ex.getReason())
                 .withPath(path)
                 .withTimestamp(java.time.LocalDateTime.now());
         
         addContextToErrorResponse(errorResponse, request);
-        log.warn("ResponseStatusException: status={}, reason={} at path: {}", ex.getStatusCode(), ex.getReason(), path);
+        log.warn("ResponseStatusException: status={}, reason={} at path: {}", statusCode, ex.getReason(), path);
         
-        return new ResponseEntity<>(errorResponse, ex.getStatusCode());
+        return new ResponseEntity<>(errorResponse, statusCode);
     }
 
     @ExceptionHandler(RuntimeException.class)
@@ -433,6 +421,11 @@ public class GlobalExceptionHandler {
             case TENANT_NOT_FOUND:
             case LICENSE_NOT_FOUND:
             case PAYMENT_NOT_FOUND:
+            case CONVERSATION_NOT_FOUND:
+            case CONFIG_NOT_FOUND:
+            case INVITATION_NOT_FOUND:
+            case JOIN_REQUEST_NOT_FOUND:
+            case CONNECTION_NOT_FOUND:
                 return HttpStatus.NOT_FOUND;
                 
             case VALIDATION_ERROR:
@@ -440,7 +433,11 @@ public class GlobalExceptionHandler {
             case INVALID_REQUEST_BODY:
             case INVALID_TENANT_KEY:
             case INVALID_PAYMENT_AMOUNT:
-            case EMAIL_ALREADY_EXISTS:
+            case INVALID_STATUS_TRANSITION:
+            case INVALID_JOIN_REQUEST:
+            case INVITATION_INVALID:
+            case CONVERSATION_IDS_REQUIRED:
+            case TENANT_ID_REQUIRED:
                 return HttpStatus.BAD_REQUEST;
                 
             case UNAUTHORIZED:
@@ -449,15 +446,47 @@ public class GlobalExceptionHandler {
             case INVALID_TOKEN:
             case LICENSE_EXPIRED:
             case LICENSE_INACTIVE:
+            case TOKEN_INVALID_OR_EXPIRED:
+            case REFRESH_TOKEN_EXPIRED:
+            case USER_NOT_AUTHENTICATED:
                 return HttpStatus.UNAUTHORIZED;
                 
             case FORBIDDEN:
             case INSUFFICIENT_PERMISSION:
+            case TENANT_INACTIVE:
+            case NOT_TENANT_MEMBER:
+            case NOT_TENANT_MEMBER_SELF:
+            case NOT_CONVERSATION_MEMBER:
+            case CANNOT_ACCESS_TENANT:
+            case CANNOT_MANAGE_MEMBERS:
+            case CANNOT_VIEW_JOIN_REQUESTS:
+            case CANNOT_APPROVE_JOIN_REQUESTS:
+            case CANNOT_ASSIGN_CONVERSATION:
+            case CANNOT_RELEASE_CONVERSATION:
+            case CANNOT_TAKEOVER_CONVERSATION:
+            case INVITATION_PERMISSION_DENIED:
+            case CANNOT_ACCEPT_INVITATION:
+            case CANNOT_REJECT_INVITATION:
+            case CANNOT_REVOKE_INVITATION:
+            case CANNOT_SUSPEND_TENANT:
+            case CANNOT_RESUME_TENANT:
+            case CANNOT_DELETE_TENANT:
+            case CANNOT_UPLOAD_LOGO:
+            case CANNOT_UPDATE_LOGO:
+            case CANNOT_UPLOAD_AVATAR:
+            case CANNOT_CREATE_AVATAR_CATEGORY:
+            case CANNOT_DELETE_CONVERSATIONS:
                 return HttpStatus.FORBIDDEN;
                 
             case CONFLICT:
             case DATA_INTEGRITY_VIOLATION:
             case OPTIMISTIC_LOCK:
+            case EMAIL_ALREADY_EXISTS:
+            case ALREADY_MEMBER:
+            case JOIN_REQUEST_ALREADY_SENT:
+            case INVITATION_ALREADY_PENDING:
+            case TENANT_STATUS_TRANSITION:
+            case TENANT_PROFILE_ERROR:
                 return HttpStatus.CONFLICT;
                 
             case PAYLOAD_TOO_LARGE:
@@ -485,8 +514,9 @@ public class GlobalExceptionHandler {
             case INTEGRATION_ERROR:
             case INTERNAL_ERROR:
             case RUNTIME_ERROR:
-            case TENANT_STATUS_TRANSITION:
-            case TENANT_PROFILE_ERROR:
+            case PAYMENT_ERROR:
+            case NOTIFICATION_ERROR:
+            case BULK_DELETE_ERROR:
             default:
                 return HttpStatus.INTERNAL_SERVER_ERROR;
         }

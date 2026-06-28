@@ -1,5 +1,6 @@
 package com.chatbot.core.tenant.guard;
 
+import com.chatbot.core.tenant.exception.TenantInactiveException;
 import com.chatbot.core.tenant.infra.TenantContext;
 import com.chatbot.core.tenant.model.Tenant;
 import com.chatbot.core.tenant.model.TenantStatus;
@@ -43,7 +44,7 @@ public class TenantContextInterceptor implements HandlerInterceptor {
                 if (tenant != null) {
                     // Check tenant status (merged from TenantStatusInterceptor)
                     if (tenant.getStatus() != TenantStatus.ACTIVE) {
-                        throw new IllegalStateException("Tenant is not active: " + tenant.getStatus());
+                        throw new TenantInactiveException("Tenant is not active: " + tenant.getStatus());
                     }
                     
                     // Set both tenant key and tenant ID in context
@@ -53,7 +54,7 @@ public class TenantContextInterceptor implements HandlerInterceptor {
                 } else {
                     log.warn("⚠️ Tenant not found for key: {}", tenantKey);
                 }
-            } catch (IllegalStateException e) {
+            } catch (TenantInactiveException e) {
                 // Re-throw status check exceptions
                 throw e;
             } catch (Exception e) {

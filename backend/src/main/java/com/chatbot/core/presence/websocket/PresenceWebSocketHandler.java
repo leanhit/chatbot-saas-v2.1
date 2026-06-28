@@ -47,10 +47,10 @@ public class PresenceWebSocketHandler extends TextWebSocketHandler {
         // Add user to online list in Redis
         presenceService.addOnlineMember(tenantId, userId, email, fullName != null ? fullName : email);
 
-        // Broadcast MEMBER_ONLINE to all other sessions in the same tenant
+        // Broadcast MEMBER_ONLINE to all sessions in the same tenant
         String onlineMessage = presenceService.createMemberOnlineMessage(tenantId, userId, email, fullName != null ? fullName : email);
         if (onlineMessage != null) {
-            broadcastToTenant(tenantId, onlineMessage, session); // Exclude current session
+            broadcastToTenant(tenantId, onlineMessage, null); // Broadcast to all sessions
         }
 
         log.info("✅ [Presence] User {} (ID: {}) connected for tenant {}. Total sessions: {}", 

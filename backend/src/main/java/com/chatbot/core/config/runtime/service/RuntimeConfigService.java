@@ -5,6 +5,8 @@ import com.chatbot.core.config.runtime.dto.ConfigResponse;
 import com.chatbot.core.config.runtime.model.RuntimeConfig;
 import com.chatbot.core.config.runtime.model.ConfigScope;
 import com.chatbot.core.config.runtime.repository.RuntimeConfigRepository;
+import com.chatbot.core.config.runtime.exception.ConfigException;
+import com.chatbot.shared.exceptions.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -29,19 +31,19 @@ public class RuntimeConfigService {
         if (request.getTenantId() != null) {
             runtimeConfigRepository.findByConfigKeyAndTenantId(request.getConfigKey(), request.getTenantId())
                     .ifPresent(config -> {
-                        throw new IllegalStateException("Config already exists for this tenant");
+                        throw new ConfigException(ErrorCode.CONFIG_ALREADY_EXISTS, "Config already exists for this tenant");
                     });
         } else if (request.getUserId() != null) {
             runtimeConfigRepository.findByConfigKeyAndTenantIdAndUserId(
                     request.getConfigKey(), request.getTenantId(), request.getUserId())
                     .ifPresent(config -> {
-                        throw new IllegalStateException("Config already exists for this user");
+                        throw new ConfigException(ErrorCode.CONFIG_ALREADY_EXISTS, "Config already exists for this user");
                     });
         } else {
             runtimeConfigRepository.findByConfigKeyAndConfigScope(
                     request.getConfigKey(), request.getConfigScope())
                     .ifPresent(config -> {
-                        throw new IllegalStateException("Config already exists for this scope");
+                        throw new ConfigException(ErrorCode.CONFIG_ALREADY_EXISTS, "Config already exists for this scope");
                     });
         }
 
@@ -69,7 +71,7 @@ public class RuntimeConfigService {
         List<RuntimeConfig> configs = runtimeConfigRepository.findEffectiveConfigByKey(configKey, tenantId, userId);
         
         if (configs.isEmpty()) {
-            throw new RuntimeException("Config not found: " + configKey);
+            throw new ConfigException(ErrorCode.CONFIG_NOT_FOUND, "Config not found: " + configKey);
         }
 
         // Return the most specific config (USER > TENANT > GLOBAL)
@@ -87,10 +89,10 @@ public class RuntimeConfigService {
 
     public ConfigResponse updateConfig(Long configId, ConfigRequest request) {
         RuntimeConfig config = runtimeConfigRepository.findById(configId)
-                .orElseThrow(() -> new RuntimeException("Config not found"));
+                .orElseThrow(() -> new ConfigException(ErrorCode.CONFIG_NOT_FOUND, "Config not found"));
 
         if (config.getIsReadonly()) {
-            throw new IllegalStateException("Cannot update readonly config");
+            throw new ConfigException(ErrorCode.CONFIG_READONLY, "Cannot update readonly config");
         }
 
         config.setConfigValue(request.getConfigValue());
@@ -105,10 +107,10 @@ public class RuntimeConfigService {
 
     public void deleteConfig(Long configId) {
         RuntimeConfig config = runtimeConfigRepository.findById(configId)
-                .orElseThrow(() -> new RuntimeException("Config not found"));
+                .orElseThrow(() -> new ConfigException(ErrorCode.CONFIG_NOT_FOUND, "Config not found"));
 
         if (config.getIsReadonly()) {
-            throw new IllegalStateException("Cannot delete readonly config");
+            throw new ConfigException(ErrorCode.CONFIG_READONLY, "Cannot delete readonly config");
         }
 
         runtimeConfigRepository.delete(config);

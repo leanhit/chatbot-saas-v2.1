@@ -1,36 +1,36 @@
 package com.chatbot.shared.exceptions;
 
-public class UnauthorizedException extends RuntimeException {
+/**
+ * Exception thrown when access is unauthorized.
+ * Extends BaseException to use unified error handling.
+ */
+public class UnauthorizedException extends BaseException {
 
     private String reason;
     private String resource;
     private String action;
 
-    public UnauthorizedException() {
-        super();
-    }
-
     public UnauthorizedException(String message) {
-        super(message);
+        super(ErrorCode.UNAUTHORIZED, message);
     }
 
     public UnauthorizedException(String message, Throwable cause) {
-        super(message, cause);
+        super(ErrorCode.UNAUTHORIZED, message, cause);
     }
 
     public UnauthorizedException(String message, String reason) {
-        super(message);
+        super(ErrorCode.UNAUTHORIZED, message);
         this.reason = reason;
     }
 
     public UnauthorizedException(String message, String reason, String resource) {
-        super(message);
+        super(ErrorCode.UNAUTHORIZED, message);
         this.reason = reason;
         this.resource = resource;
     }
 
     public UnauthorizedException(String message, String reason, String resource, String action) {
-        super(message);
+        super(ErrorCode.UNAUTHORIZED, message);
         this.reason = reason;
         this.resource = resource;
         this.action = action;
