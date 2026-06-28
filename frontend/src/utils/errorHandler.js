@@ -31,6 +31,10 @@ export function getErrorMessage(errorCode, fallbackMessage = null) {
  * @returns {string|null} Error code or null
  */
 export function extractErrorCode(error) {
+  if (!error || !error.response) {
+    return 'NETWORK_ERROR';
+  }
+
   if (error?.response?.data?.code) {
     return error.response.data.code
   }

@@ -1407,6 +1407,8 @@
     "CANNOT_DELETE_CONVERSATIONS": "Not allowed to delete some conversations",
     "BULK_DELETE_ERROR": "Error bulk deleting conversations",
     "CANNOT_UPLOAD_AVATAR": "Cannot upload avatar",
-    "CANNOT_CREATE_AVATAR_CATEGORY": "Cannot create or find category for avatar"
+    "CANNOT_CREATE_AVATAR_CATEGORY": "Cannot create or find category for avatar",
+    "CONVERSATION_ASSIGNED_TO_OTHER": "This conversation is already assigned to another agent.",
+    "NETWORK_ERROR": "Unable to connect to the server. Please check your internet connection."
   }
 }

@@ -36,7 +36,18 @@ class PresenceWebSocketService {
     this.connectionStatus.value = 'connecting'
 
     try {
-      const wsUrl = process.env.VUE_APP_PRESENCE_WS_URL || process.env.VUE_APP_WS_URL || 'ws://localhost:8080/ws/presence'
+      let wsUrl = process.env.VUE_APP_PRESENCE_WS_URL
+      if (!wsUrl) {
+        const baseWsUrl = process.env.VUE_APP_WS_URL || 'ws://localhost:8080/ws/presence'
+        if (baseWsUrl.includes('/ws/takeover')) {
+          wsUrl = baseWsUrl.replace('/ws/takeover', '/ws/presence')
+        } else if (baseWsUrl.includes('/ws/')) {
+          const index = baseWsUrl.lastIndexOf('/ws/')
+          wsUrl = baseWsUrl.substring(0, index) + '/ws/presence'
+        } else {
+          wsUrl = 'ws://localhost:8080/ws/presence'
+        }
+      }
       
       if (!wsUrl || typeof wsUrl !== 'string') {
         throw new Error('Invalid WebSocket URL')

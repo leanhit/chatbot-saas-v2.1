@@ -137,17 +137,14 @@ instance.interceptors.response.use(
         }
         
         // Attach localized error message to error object for components to use
-        if (error.response) {
-            const errorCode = extractErrorCode(error);
-            const localizedMessage = getErrorFromResponse(error);
-            error.localizedMessage = localizedMessage;
-            error.errorCode = errorCode;
-            
-            // Overwrite message properties to ensure components display the localized translation
-            error.message = localizedMessage;
-            if (error.response.data && typeof error.response.data === 'object') {
-                error.response.data.message = localizedMessage;
-            }
+        const errorCode = extractErrorCode(error);
+        const localizedMessage = getErrorFromResponse(error);
+        error.localizedMessage = localizedMessage;
+        error.errorCode = errorCode;
+        error.message = localizedMessage;
+        
+        if (error.response && error.response.data && typeof error.response.data === 'object') {
+            error.response.data.message = localizedMessage;
         }
         
         return Promise.reject(error);
