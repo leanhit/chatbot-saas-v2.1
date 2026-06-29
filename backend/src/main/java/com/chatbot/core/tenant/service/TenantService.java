@@ -31,6 +31,9 @@ import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
@@ -124,12 +127,14 @@ public class TenantService {
     // READ
     // =========================================================================
 
+    @Cacheable(value = "tenants", key = "#tenantId", unless = "#result == null")
     @Transactional(readOnly = true, transactionManager = "tenantTransactionManager")
     public Tenant getTenant(Long tenantId) {
         return tenantRepository.findById(tenantId)
                 .orElseThrow(() -> new TenantNotFoundException("Tenant not found with ID: " + tenantId));
     }
 
+    @Cacheable(value = "tenant-key-to-id", key = "#tenantKey", unless = "#result == null")
     @Transactional(readOnly = true, transactionManager = "tenantTransactionManager")
     public Long getTenantIdByKey(String tenantKey) {
         return tenantRepository.findByTenantKey(tenantKey)
@@ -307,6 +312,7 @@ public class TenantService {
     // STATUS TRANSITIONS
     // =========================================================================
 
+    @CacheEvict(value = "tenants", key = "#tenantId")
     @Transactional(transactionManager = "tenantTransactionManager")
     public void suspendTenant(Long tenantId) {
         Tenant tenant = getTenant(tenantId);
@@ -325,6 +331,7 @@ public class TenantService {
         log.info("[TenantService] Tenant {} suspended by {}", tenantId, currentUserEmail);
     }
 
+    @CacheEvict(value = "tenants", key = "#tenantId")
     @Transactional(transactionManager = "tenantTransactionManager")
     public void activateTenant(Long tenantId) {
         Tenant tenant = getTenant(tenantId);
@@ -343,6 +350,7 @@ public class TenantService {
         log.info("[TenantService] Tenant {} activated by {}", tenantId, currentUserEmail);
     }
 
+    @CacheEvict(value = "tenants", key = "#tenantId")
     @Transactional(transactionManager = "tenantTransactionManager")
     public void deactivateTenant(Long tenantId) {
         Tenant tenant = getTenant(tenantId);
@@ -364,6 +372,7 @@ public class TenantService {
     /**
      * Soft-delete tenant — chỉ ADMIN hoặc OWNER.
      */
+    @CacheEvict(value = "tenants", key = "#tenantId")
     @Transactional(transactionManager = "tenantTransactionManager")
     public void deleteTenant(Long tenantId) {
         Tenant tenant = tenantRepository.findById(tenantId)
@@ -404,6 +413,10 @@ public class TenantService {
     // UPDATE
     // =========================================================================
 
+    @Caching(evict = {
+        @CacheEvict(value = "tenants", key = "#result.id", condition = "#result != null"),
+        @CacheEvict(value = "tenant-key-to-id", key = "#tenantKey")
+    })
     @Transactional(rollbackFor = Exception.class, transactionManager = "tenantTransactionManager")
     public TenantResponse updateBasicInfo(String tenantKey, TenantBasicInfoRequest req) {
         if (tenantKey == null || tenantKey.trim().isEmpty()) {
@@ -441,6 +454,10 @@ public class TenantService {
     /**
      * Cập nhật thông tin liên hệ. Dùng typed DTO thay vì Map<String,Object>.
      */
+    @Caching(evict = {
+        @CacheEvict(value = "tenants", key = "#result.id", condition = "#result != null"),
+        @CacheEvict(value = "tenant-key-to-id", key = "#tenantKey")
+    })
     @Transactional(rollbackFor = Exception.class, transactionManager = "tenantTransactionManager")
     public TenantResponse updateContactInfo(String tenantKey, TenantContactInfoRequest req) {
         if (tenantKey == null || tenantKey.trim().isEmpty()) {

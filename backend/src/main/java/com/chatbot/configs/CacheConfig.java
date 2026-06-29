@@ -81,7 +81,11 @@ public class CacheConfig {
         cacheConfigurations.put("provinces",           defaultConfig.entryTtl(Duration.ofDays(1)));
         cacheConfigurations.put("districts",           defaultConfig.entryTtl(Duration.ofDays(1)));
         cacheConfigurations.put("wards",               defaultConfig.entryTtl(Duration.ofDays(1)));
-        cacheConfigurations.put("tenant-key-to-id",    defaultConfig.entryTtl(Duration.ofMinutes(15)));
+        cacheConfigurations.put("tenant-key-to-id",    RedisCacheConfiguration.defaultCacheConfig()
+                .entryTtl(Duration.ofMinutes(15))
+                .disableCachingNullValues()
+                .serializeKeysWith(RedisSerializationContext.SerializationPair.fromSerializer(new StringRedisSerializer()))
+                .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(new org.springframework.data.redis.serializer.GenericToStringSerializer<>(Long.class))));
 
         return RedisCacheManager.builder(connectionFactory)
                 .cacheDefaults(defaultConfig)

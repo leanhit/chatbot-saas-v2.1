@@ -20,6 +20,7 @@ import com.chatbot.core.tenant.service.PackageLimitValidationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -159,6 +160,7 @@ public class PennyBotService {
     /**
      * Get Penny Bot by ID
      */
+    @Cacheable(value = "chatbots", key = "#id", unless = "#result == null")
     public PennyBotResponse getBotById(UUID id) {
         PennyBot bot = pennyBotRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Penny bot not found: " + id));
@@ -228,6 +230,7 @@ public class PennyBotService {
     /**
      * Update Penny Bot
      */
+    @CacheEvict(value = "chatbots", key = "#id")
     @Transactional
     public PennyBotResponse updateBot(UUID id, PennyBotRequest request) {
         log.info("Updating Penny bot: {}", id);
@@ -262,6 +265,7 @@ public class PennyBotService {
     /**
      * Enable Penny Bot
      */
+    @CacheEvict(value = "chatbots", key = "#id")
     @Transactional
     public void enableBot(UUID id) {
         log.info("Enabling Penny bot: {}", id);
@@ -278,6 +282,7 @@ public class PennyBotService {
     /**
      * Disable Penny Bot
      */
+    @CacheEvict(value = "chatbots", key = "#id")
     @Transactional
     public void disableBot(UUID id) {
         log.info("Disabling Penny bot: {}", id);
@@ -294,6 +299,7 @@ public class PennyBotService {
     /**
      * Delete Penny Bot
      */
+    @CacheEvict(value = "chatbots", key = "#id")
     @Transactional
     public void deleteBot(UUID id) {
         log.info("Deleting Penny bot: {}", id);

@@ -243,7 +243,12 @@
           </div>
           
           <!-- Messages Area -->
-          <div ref="messagesContainer" class="messages-area flex-1 overflow-y-auto p-4 bg-white dark:bg-gray-800 flex flex-col">
+          <div ref="messagesContainer" @scroll="handleScroll" class="messages-area flex-1 overflow-y-auto p-4 bg-white dark:bg-gray-800 flex flex-col">
+            <!-- Loading Older Messages Indicator -->
+            <div v-if="loadingOlderMessages" class="text-center py-2 flex-shrink-0">
+              <Icon icon="mdi:loading" class="animate-spin text-lg text-gray-400" />
+            </div>
+            
             <!-- Real-time Message Indicator -->
             <RealTimeMessageIndicator
               v-if="selectedConversation"
@@ -454,6 +459,12 @@ const sendingMessage = ref(false)
 const filterBot = ref('all')
 const filterConnection = ref('all')
 
+// Message pagination state
+const currentMessagePage = ref(0)
+const hasMoreMessages = ref(true)
+const loadingOlderMessages = ref(false)
+const pageSizeMessage = ref(30)
+
 // Pagination
 const currentPage = ref(0)
 const totalPages = ref(0)
@@ -636,11 +647,20 @@ const loadConversations = async () => {
 const loadMessages = async (conversationId) => {
   try {
     loadingMessages.value = true
+    currentMessagePage.value = 0
+    hasMoreMessages.value = true
+    
     const response = await takeoverApi.getMessagesByConversationId(conversationId, {
       page: 0,
-      limit: 100
+      size: pageSizeMessage.value
     })
     const newMessages = response.data.content || response.data || []
+    
+    if (response.data && response.data.last !== undefined) {
+      hasMoreMessages.value = !response.data.last
+    } else {
+      hasMoreMessages.value = newMessages.length === pageSizeMessage.value
+    }
     
     // Clear and reload messages for fresh conversation
     messages.value = newMessages
@@ -653,6 +673,70 @@ const loadMessages = async (conversationId) => {
     messages.value = []
   } finally {
     loadingMessages.value = false
+  }
+}
+
+const loadOlderMessages = async () => {
+  if (loadingOlderMessages.value || !hasMoreMessages.value || loadingMessages.value || !selectedConversation.value) return
+  
+  try {
+    loadingOlderMessages.value = true
+    
+    // Save current scroll height to preserve scroll position after load
+    const previousScrollHeight = messagesContainer.value ? messagesContainer.value.scrollHeight : 0
+    
+    const conversationId = selectedConversation.value.id
+    const nextPage = currentMessagePage.value + 1
+    
+    const response = await takeoverApi.getMessagesByConversationId(conversationId, {
+      page: nextPage,
+      size: pageSizeMessage.value
+    })
+    
+    const olderMessages = response.data.content || response.data || []
+    
+    if (olderMessages.length > 0) {
+      currentMessagePage.value = nextPage
+      
+      // Filter out duplicate messages and add to the list
+      olderMessages.forEach(msg => {
+        const isDuplicate = messages.value.some(existing => 
+          existing.id === msg.id || 
+          (existing.content === msg.content && 
+           existing.sender === msg.sender && 
+           Math.abs(new Date(existing.timestamp || existing.createdAt) - new Date(msg.timestamp || msg.createdAt)) < 2000)
+        )
+        if (!isDuplicate) {
+          messages.value.push(msg)
+        }
+      })
+      
+      if (response.data && response.data.last !== undefined) {
+        hasMoreMessages.value = !response.data.last
+      } else {
+        hasMoreMessages.value = olderMessages.length === pageSizeMessage.value
+      }
+      
+      // Keep scroll position relative to previous top message
+      await nextTick()
+      if (messagesContainer.value) {
+        messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight - previousScrollHeight
+      }
+    } else {
+      hasMoreMessages.value = false
+    }
+  } catch (error) {
+    console.error('Error loading older messages:', error)
+  } finally {
+    loadingOlderMessages.value = false
+  }
+}
+
+const handleScroll = () => {
+  if (!messagesContainer.value) return
+  // If the user scrolls to/near the top (scrollTop <= 5)
+  if (messagesContainer.value.scrollTop <= 5) {
+    loadOlderMessages()
   }
 }
 

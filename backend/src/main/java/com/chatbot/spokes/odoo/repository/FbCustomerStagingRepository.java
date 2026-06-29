@@ -70,6 +70,16 @@ public interface FbCustomerStagingRepository extends JpaRepository<FbCustomerSta
     @Query("SELECT fcs FROM FbCustomerStaging fcs WHERE fcs.phones LIKE %:keyword% AND fcs.tenantId = :tenantId")
     List<FbCustomerStaging> findByPhonesContainingAndTenantId(@Param("keyword") String keyword, @Param("tenantId") Long tenantId);
     
+    // Tìm kiếm khách hàng phân trang trực tiếp ở database theo phone hoặc tên FacebookUser
+    @Query("SELECT fcs FROM FbCustomerStaging fcs WHERE fcs.tenantId = :tenantId AND (" +
+           "fcs.phones LIKE %:keyword% OR " +
+           "EXISTS (SELECT fu FROM FacebookUser fu WHERE fu.psid = fcs.psid AND fu.tenantId = :tenantId AND LOWER(fu.name) LIKE LOWER(CONCAT('%', :keyword, '%')))" +
+           ")")
+    Page<FbCustomerStaging> searchCustomersWithDatabasePagination(
+            @Param("keyword") String keyword, 
+            @Param("tenantId") Long tenantId, 
+            Pageable pageable);
+
     // Đếm theo tenantId
     long countByTenantId(Long tenantId);
     

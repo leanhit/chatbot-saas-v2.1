@@ -122,32 +122,10 @@ public class CustomerDataQueryService {
             return getAllCustomers(pageable);
         }
 
-        // 1. Tìm trong Facebook users theo tên
-        List<FacebookUser> facebookUsers = facebookUserRepository
-                .findByNameContainingIgnoreCaseAndTenantId(keyword, tenantId);
-        Set<String> psidsFromName = facebookUsers.stream()
-                .map(FacebookUser::getPsid)
-                .collect(Collectors.toSet());
+        // 1. Phân trang trực tiếp từ database bằng câu query tối ưu
+        Page<FbCustomerStaging> stagingPage = stagingRepository.searchCustomersWithDatabasePagination(keyword, tenantId, pageable);
 
-        // 2. Tìm trong staging data theo phone
-        List<FbCustomerStaging> stagingByPhone = stagingRepository
-                .findByPhonesContainingAndTenantId(keyword, tenantId);
-        Set<String> psidsFromPhone = stagingByPhone.stream()
-                .map(FbCustomerStaging::getPsid)
-                .collect(Collectors.toSet());
-
-        // 3. Gộp tất cả PSID
-        Set<String> allPsids = new HashSet<>(psidsFromName);
-        allPsids.addAll(psidsFromPhone);
-
-        if (allPsids.isEmpty()) {
-            return Page.empty(pageable);
-        }
-
-        // 4. Lấy staging data cho các PSID tìm được có PHÂN TRANG CẤP DB để tránh OOM
-        Page<FbCustomerStaging> stagingPage = stagingRepository.findByPsidInAndTenantId(allPsids, tenantId, pageable);
-
-        // 5. Lấy Facebook users của toàn bộ PSID tìm được (SỬA LỖI Unknown User)
+        // 2. Lấy Facebook users của toàn bộ PSID trong trang hiện tại để tránh OOM và N+1 query
         Set<String> pagePsids = stagingPage.getContent().stream()
                 .map(FbCustomerStaging::getPsid)
                 .collect(Collectors.toSet());

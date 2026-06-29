@@ -27,14 +27,32 @@ public class CacheStatisticsMonitor {
      */
     public CacheStatistics getStatistics() {
         try {
-            // Get Redis info
-            Properties info = connectionFactory
+            // Get Redis info for memory
+            Properties memoryInfo = connectionFactory
                     .getConnection()
                     .info("memory");
             
-            // Parse memory info (simplified)
             long usedMemory = 0;
             long maxMemory = 0;
+            
+            if (memoryInfo != null) {
+                String usedStr = memoryInfo.getProperty("used_memory");
+                if (usedStr != null) {
+                    try {
+                        usedMemory = Long.parseLong(usedStr);
+                    } catch (NumberFormatException e) {
+                        log.debug("Failed to parse used_memory: {}", usedStr);
+                    }
+                }
+                String maxStr = memoryInfo.getProperty("maxmemory");
+                if (maxStr != null) {
+                    try {
+                        maxMemory = Long.parseLong(maxStr);
+                    } catch (NumberFormatException e) {
+                        log.debug("Failed to parse maxmemory: {}", maxStr);
+                    }
+                }
+            }
             
             // Get key count
             Set<String> allKeys = redisTemplate.keys("*");
@@ -53,8 +71,27 @@ public class CacheStatisticsMonitor {
     }
 
     private double calculateHitRate() {
-        // Implementation would calculate actual hit rate
-        return 0.85; // Placeholder
+        try {
+            Properties statsInfo = connectionFactory
+                    .getConnection()
+                    .info("stats");
+            
+            if (statsInfo != null) {
+                String hitsStr = statsInfo.getProperty("keyspace_hits");
+                String missesStr = statsInfo.getProperty("keyspace_misses");
+                if (hitsStr != null && missesStr != null) {
+                    long hits = Long.parseLong(hitsStr);
+                    long misses = Long.parseLong(missesStr);
+                    long total = hits + misses;
+                    if (total > 0) {
+                        return (double) hits / total;
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log.warn("Error calculating cache hit rate from Redis stats", e);
+        }
+        return 0.85; // Fallback default
     }
 
     @Data
