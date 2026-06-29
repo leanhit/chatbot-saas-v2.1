@@ -477,8 +477,7 @@ export default {
     const paymentStore = usePaymentStore()
     const { t, locale } = useI18n()
 
-    // Temporarily disabled automatic payment detection via SSE
-    /*
+    // SSE connection for automatic payment detection
     let eventSource = null
 
     const stopSseConnection = () => {
@@ -493,7 +492,8 @@ export default {
       stopSseConnection()
       
       console.log('📶 SSE: Connecting for reference', referenceCode)
-      eventSource = new EventSource(`/api/public/simple-payment/events/${referenceCode}`)
+      const apiBaseUrl = process.env.VUE_APP_API_URL || 'http://localhost:8080'
+      eventSource = new EventSource(`${apiBaseUrl}/api/public/simple-payment/events/${referenceCode}`)
       
       eventSource.addEventListener('payment_completed', (event) => {
         try {
@@ -519,10 +519,6 @@ export default {
         stopSseConnection()
       }
     })
-    */
-
-    // Dummy helper functions to prevent runtime errors if referenced elsewhere
-    const stopSseConnection = () => {}
 
     // Watch for language changes and reload packages
     watch(locale, async (newLocale) => {

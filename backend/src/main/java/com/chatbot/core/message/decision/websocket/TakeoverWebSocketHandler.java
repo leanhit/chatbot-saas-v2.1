@@ -3,6 +3,7 @@ package com.chatbot.core.message.decision.websocket;
 import com.chatbot.core.message.decision.model.TakeoverMessage;
 import com.chatbot.core.message.store.repository.ConversationRepository;
 import com.chatbot.spokes.facebook.connection.repository.FacebookConnectionRepository;
+import com.chatbot.core.notification.websocket.NotificationWebSocketHandler;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -34,6 +35,7 @@ public class TakeoverWebSocketHandler extends TextWebSocketHandler {
     private final ObjectMapper objectMapper;
     private final ConversationRepository conversationRepository;
     private final FacebookConnectionRepository facebookConnectionRepository;
+    private final NotificationWebSocketHandler notificationWebSocketHandler;
 
     // Session tracking with metadata like traloitudongV2
     private final ConcurrentMap<String, Set<WebSocketSession>> conversationSessions = new ConcurrentHashMap<>();
@@ -359,6 +361,30 @@ public class TakeoverWebSocketHandler extends TextWebSocketHandler {
      * Đây là hàm sẽ được gọi từ các service khác (như FacebookMessengerService, FacebookWebhookService).
      */
     public void sendToConversation(String conversationId, TakeoverMessage message) {
+        // Broadcast new message notification to the entire tenant via Notification WebSocket
+        try {
+            Long conversationIdLong = Long.parseLong(conversationId);
+            conversationRepository.findById(conversationIdLong).ifPresent(conversation -> {
+                Long tenantId = conversation.getTenantId();
+                if (tenantId != null && notificationWebSocketHandler != null) {
+                    Map<String, Object> wsNotification = Map.of(
+                        "type", "CONVERSATION_MESSAGE",
+                        "data", Map.of(
+                            "id", message.getId(),
+                            "conversationId", conversationId,
+                            "sender", message.getSender(),
+                            "message", message.getContent(),
+                            "timestamp", message.getTimestamp()
+                        )
+                    );
+                    notificationWebSocketHandler.broadcastToTenant(tenantId, wsNotification);
+                    log.info("📢 Broadcasted CONVERSATION_MESSAGE to notification WS for tenant: {}", tenantId);
+                }
+            });
+        } catch (Exception e) {
+            log.error("Failed to broadcast conversation message notification to tenant", e);
+        }
+
         Set<WebSocketSession> sessions = conversationSessions.get(conversationId);
         if (sessions == null || sessions.isEmpty()) {
             log.info("⚠️ WebSocket: Không có Agent nào đang xem Conversation " + conversationId);

@@ -59,15 +59,14 @@ public class WebSocketAuthInterceptor implements HandshakeInterceptor {
                                 attributes.put("tenantId", tenantId);
                                 log.info("✅ [WebSocket Handshake] Authenticated user {} (ID: {}) for tenant {} (ID: {})", 
                                         email, userDetails.getUser().getId(), tenantKey, tenantId);
-                                return true;
                             } else {
                                 log.warn("❌ [WebSocket Handshake] Tenant not found for key: {}", tenantKey);
-                                return false;
                             }
                         } else {
-                            log.warn("❌ [WebSocket Handshake] Missing tenantKey for user {}", email);
-                            return false;
+                            log.info("✅ [WebSocket Handshake] Authenticated user {} (ID: {}) without tenant context", 
+                                    email, userDetails.getUser().getId());
                         }
+                        return true;
                     }
                 }
             } catch (Exception e) {

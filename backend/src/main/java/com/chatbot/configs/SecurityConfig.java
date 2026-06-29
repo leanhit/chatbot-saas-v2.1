@@ -116,7 +116,7 @@ public class SecurityConfig {
                 .requestMatchers("/webhooks/facebook/pennybot/**").permitAll()
                 .requestMatchers("/api/v1/facebook/webhook/**").permitAll()
                 .requestMatchers("/images/public/**", "/api/images/public/**").permitAll()
-                .requestMatchers("/ws/takeover/**", "/ws/presence/**").permitAll()
+                .requestMatchers("/ws/takeover/**", "/ws/presence/**", "/ws/notifications/**").permitAll()
                 .requestMatchers("/api/takeover/**").authenticated()
                 
                 // ================= LOCATION APIs (PUBLIC) =================

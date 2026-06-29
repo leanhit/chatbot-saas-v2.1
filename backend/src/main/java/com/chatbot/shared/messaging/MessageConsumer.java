@@ -9,6 +9,8 @@ import org.springframework.messaging.handler.annotation.Headers;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.stereotype.Component;
 
+import com.chatbot.core.notification.websocket.NotificationWebSocketHandler;
+
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
@@ -22,6 +24,9 @@ public class MessageConsumer {
 
     @Autowired
     private EventHandler eventHandler;
+
+    @Autowired
+    private NotificationWebSocketHandler notificationWebSocketHandler;
 
     @RabbitListener(queues = "${rabbitmq.queue.default:chatbot.queue.default}")
     public void handleDefaultMessage(@Payload Object message, 
@@ -238,8 +243,70 @@ public class MessageConsumer {
     }
 
     private void processNotificationMessage(Object notificationMessage, Map<String, Object> headers) {
-        // Process notification message
-        log.info("Processing notification message");
+        log.info("📢 Processing notification message from queue: {}", notificationMessage);
+        
+        if (notificationMessage instanceof Map) {
+            Map<String, Object> notificationMap = (Map<String, Object>) notificationMessage;
+            String type = (String) notificationMap.get("type");
+            
+            if (type != null) {
+                // Wrap to match client payload structure: { type: "TYPE", data: { ... } }
+                Map<String, Object> wsPayload = Map.of(
+                    "type", type,
+                    "data", notificationMap
+                );
+                
+                // Get tenantId if available
+                Long tenantId = null;
+                Object tenantIdObj = notificationMap.get("tenantId");
+                if (tenantIdObj instanceof Number) {
+                    tenantId = ((Number) tenantIdObj).longValue();
+                } else if (tenantIdObj instanceof String) {
+                    try {
+                        tenantId = Long.parseLong((String) tenantIdObj);
+                    } catch (NumberFormatException e) {
+                        log.warn("Invalid tenantId format: {}", tenantIdObj);
+                    }
+                }
+                
+                switch (type) {
+                    case "TENANT_INVITATION":
+                        String recipientEmail = (String) notificationMap.get("recipientEmail");
+                        if (recipientEmail != null) {
+                            notificationWebSocketHandler.sendToUser(recipientEmail, wsPayload);
+                            log.info("📧 Sent TENANT_INVITATION to user email: {}", recipientEmail);
+                        }
+                        break;
+                        
+                    case "TENANT_JOIN_REQUEST":
+                    case "TENANT_INVITATION_ACCEPTED":
+                        if (tenantId != null) {
+                            notificationWebSocketHandler.broadcastToTenant(tenantId, wsPayload);
+                            log.info("🏢 Broadcasted {} to tenant ID: {}", type, tenantId);
+                        }
+                        break;
+                        
+                    case "TENANT_JOIN_REQUEST_APPROVED":
+                        String memberEmail = (String) notificationMap.get("memberEmail");
+                        if (memberEmail != null) {
+                            notificationWebSocketHandler.sendToUser(memberEmail, wsPayload);
+                            log.info("📧 Sent TENANT_JOIN_REQUEST_APPROVED to user email: {}", memberEmail);
+                        }
+                        break;
+                        
+                    default:
+                        // For other notification types, if a tenant ID is present, broadcast to tenant
+                        if (tenantId != null) {
+                            notificationWebSocketHandler.broadcastToTenant(tenantId, wsPayload);
+                        } else {
+                            log.warn("Unknown notification type and no tenantId available for: {}", type);
+                        }
+                        break;
+                }
+            }
+        } else {
+            log.warn("Notification message is not an instance of Map: {}", notificationMessage != null ? notificationMessage.getClass().getName() : "null");
+        }
     }
 
     private void processReportMessage(Object reportMessage, Map<String, Object> headers) {

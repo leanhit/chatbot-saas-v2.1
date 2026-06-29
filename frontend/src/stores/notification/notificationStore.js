@@ -1,10 +1,63 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 
+const NOTIFICATION_STORAGE_KEY = 'notification_history'
+const MAX_STORED_NOTIFICATIONS = 50
+
+// Sound notification
+let audioContext = null
+const playNotificationSound = () => {
+  try {
+    if (!audioContext) {
+      audioContext = new (window.AudioContext || window.webkitAudioContext)()
+    }
+    
+    // Try to play notification sound from public folder
+    const audio = new Audio('/sounds/notification.mp3')
+    audio.volume = 0.5
+    audio.play().catch(err => {
+      console.log('Could not play notification sound:', err)
+    })
+  } catch (error) {
+    console.log('Audio not supported:', error)
+  }
+}
+
 export const useNotificationStore = defineStore('notification', () => {
   const notifications = ref([])
   const unreadCount = ref(0)
   const isConnected = ref(false)
+  const soundEnabled = ref(true)
+
+  // Load notifications from localStorage on initialization
+  const loadFromStorage = () => {
+    try {
+      const stored = localStorage.getItem(NOTIFICATION_STORAGE_KEY)
+      if (stored) {
+        const parsed = JSON.parse(stored)
+        notifications.value = parsed.map(n => ({
+          ...n,
+          timestamp: new Date(n.timestamp)
+        }))
+        unreadCount.value = notifications.value.filter(n => !n.read).length
+      }
+    } catch (error) {
+      console.error('Failed to load notifications from storage:', error)
+    }
+  }
+
+  // Save notifications to localStorage
+  const saveToStorage = () => {
+    try {
+      const toStore = notifications.value.slice(0, MAX_STORED_NOTIFICATIONS)
+      localStorage.setItem(NOTIFICATION_STORAGE_KEY, JSON.stringify(toStore))
+    } catch (error) {
+      console.error('Failed to save notifications to storage:', error)
+    }
+  }
+
+  // Initialize from storage
+  loadFromStorage()
 
   // Add a new notification
   const addNotification = (notification) => {
@@ -17,6 +70,14 @@ export const useNotificationStore = defineStore('notification', () => {
     
     notifications.value.unshift(newNotification)
     unreadCount.value++
+    
+    // Save to storage
+    saveToStorage()
+    
+    // Play sound if enabled and not a toast notification
+    if (soundEnabled.value && notification.type !== 'toast') {
+      playNotificationSound()
+    }
     
     // Auto-remove after 10 seconds for toast notifications
     if (notification.type === 'toast') {
@@ -35,6 +96,7 @@ export const useNotificationStore = defineStore('notification', () => {
         unreadCount.value--
       }
       notifications.value.splice(index, 1)
+      saveToStorage()
     }
   }
 
@@ -44,6 +106,7 @@ export const useNotificationStore = defineStore('notification', () => {
     if (notification && !notification.read) {
       notification.read = true
       unreadCount.value--
+      saveToStorage()
     }
   }
 
@@ -53,6 +116,14 @@ export const useNotificationStore = defineStore('notification', () => {
       notification.read = true
     })
     unreadCount.value = 0
+    saveToStorage()
+  }
+
+  // Clear all notifications
+  const clearAll = () => {
+    notifications.value = []
+    unreadCount.value = 0
+    saveToStorage()
   }
 
   // Handle tenant invitation notification
@@ -124,10 +195,12 @@ export const useNotificationStore = defineStore('notification', () => {
     notifications,
     unreadCount,
     isConnected,
+    soundEnabled,
     addNotification,
     removeNotification,
     markAsRead,
     markAllAsRead,
+    clearAll,
     handleTenantInvitation,
     handleJoinRequest,
     handleInvitationAccepted,
