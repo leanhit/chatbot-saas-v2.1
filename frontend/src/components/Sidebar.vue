@@ -239,6 +239,43 @@
                 >
                   {{ $t('sidebar.userManagement') }}
                 </router-link>
+                <!-- Conversation Routing & Agent Management -->
+                <hr class="my-1 border-gray-200 dark:border-gray-700" />
+                <router-link
+                  to="/admin/agents"
+                  @click.stop
+                  class="w-full text-left block rounded-md p-3 hover:bg-gray-200 dark:hover:bg-gray-700"
+                >
+                  {{ $t('sidebar.agentManagement') }}
+                </router-link>
+                <router-link
+                  to="/admin/skills"
+                  @click.stop
+                  class="w-full text-left block rounded-md p-3 hover:bg-gray-200 dark:hover:bg-gray-700"
+                >
+                  {{ $t('sidebar.skillsManagement') }}
+                </router-link>
+                <router-link
+                  to="/admin/routing-rules"
+                  @click.stop
+                  class="w-full text-left block rounded-md p-3 hover:bg-gray-200 dark:hover:bg-gray-700"
+                >
+                  {{ $t('sidebar.routingRules') }}
+                </router-link>
+                <router-link
+                  to="/admin/sla-monitoring"
+                  @click.stop
+                  class="w-full text-left block rounded-md p-3 hover:bg-gray-200 dark:hover:bg-gray-700"
+                >
+                  {{ $t('sidebar.slaMonitoring') }}
+                </router-link>
+                <router-link
+                  to="/admin/escalation-tiers"
+                  @click.stop
+                  class="w-full text-left block rounded-md p-3 hover:bg-gray-200 dark:hover:bg-gray-700"
+                >
+                  {{ $t('sidebar.escalationTiers') }}
+                </router-link>
               </template>
             </menu-accordion>
           </div>

@@ -71,6 +71,38 @@ public class Conversation extends BaseTenantEntity {
     @JdbcTypeCode(SqlTypes.JSON)
     private String tags; // Có thể null
 
+    // Attribute-based routing fields
+    private String customerTier; // VIP, Enterprise, Standard
+    private String language; // en, vi, etc.
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    private String customAttributes; // JSON string for custom attributes
+
+    // SLA Monitoring fields
+    @JsonFormat(pattern = DateUtils.STANDARD_JSON_FORMAT, timezone = DateUtils.STANDARD_TIMEZONE)
+    private LocalDateTime firstAgentResponseTime;
+
+    @JsonFormat(pattern = DateUtils.STANDARD_JSON_FORMAT, timezone = DateUtils.STANDARD_TIMEZONE)
+    private LocalDateTime firstBotResponseTime;
+
+    @Builder.Default
+    private Integer slaBreachCount = 0;
+
+    private Long expectedResponseTime; // in seconds
+
+    // Skills-based routing fields (Phase 3.2)
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "required_skills")
+    private String requiredSkills; // JSON array of required skill strings, e.g. ["billing","technical"]
+
+    // Multi-tier Escalation tracking fields (Phase 2.2)
+    @Column(name = "current_escalation_tier")
+    private Integer currentEscalationTier; // null = not escalated, 1/2/3 = current tier level
+
+    @JsonFormat(pattern = DateUtils.STANDARD_JSON_FORMAT, timezone = DateUtils.STANDARD_TIMEZONE)
+    @Column(name = "last_escalated_at")
+    private LocalDateTime lastEscalatedAt; // timestamp of last escalation
+
     // Timestamp
     @CreationTimestamp
     @JsonFormat(pattern = DateUtils.STANDARD_JSON_FORMAT, timezone = DateUtils.STANDARD_TIMEZONE)

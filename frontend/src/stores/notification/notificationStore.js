@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
+import axios from '@/plugins/axios'
 
 const NOTIFICATION_STORAGE_KEY = 'notification_history'
 const MAX_STORED_NOTIFICATIONS = 50
@@ -65,25 +66,49 @@ export const useNotificationStore = defineStore('notification', () => {
       id: Date.now() + Math.random(),
       ...notification,
       timestamp: new Date(),
-      read: false
+      read: false,
+      priority: notification.priority || 'medium' // Default priority: medium
     }
-    
+
     notifications.value.unshift(newNotification)
     unreadCount.value++
-    
+
     // Save to storage
     saveToStorage()
-    
+
     // Play sound if enabled and not a toast notification
+    // Play different sound/volume based on priority
     if (soundEnabled.value && notification.type !== 'toast') {
-      playNotificationSound()
+      if (newNotification.priority === 'urgent' || newNotification.priority === 'high') {
+        // Play sound at higher volume for urgent/high priority
+        playNotificationSoundWithVolume(0.8)
+      } else {
+        playNotificationSound()
+      }
     }
-    
+
     // Auto-remove after 10 seconds for toast notifications
     if (notification.type === 'toast') {
       setTimeout(() => {
         removeNotification(newNotification.id)
       }, 10000)
+    }
+  }
+
+  // Play notification sound with custom volume
+  const playNotificationSoundWithVolume = (volume = 0.5) => {
+    try {
+      if (!audioContext) {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)()
+      }
+
+      const audio = new Audio('/sounds/notification.mp3')
+      audio.volume = volume
+      audio.play().catch(err => {
+        console.log('Could not play notification sound:', err)
+      })
+    } catch (error) {
+      console.log('Audio not supported:', error)
     }
   }
 
@@ -117,6 +142,35 @@ export const useNotificationStore = defineStore('notification', () => {
     })
     unreadCount.value = 0
     saveToStorage()
+  }
+
+  // Acknowledge a notification on the backend (Redis-backed, 24h TTL)
+  const acknowledgeNotification = async (notificationId) => {
+    try {
+      await axios.post(`/api/notifications/${notificationId}/ack`)
+      markAsRead(notificationId)
+    } catch (error) {
+      console.error('Failed to acknowledge notification:', error)
+      // Still mark as read locally even if backend fails
+      markAsRead(notificationId)
+    }
+  }
+
+  // Acknowledge all notifications on the backend
+  const acknowledgeAll = async () => {
+    try {
+      const ids = notifications.value
+        .filter(n => !n.read)
+        .map(n => String(n.id))
+      if (ids.length > 0) {
+        await axios.post('/api/notifications/ack-all', { notificationIds: ids })
+      }
+      markAllAsRead()
+    } catch (error) {
+      console.error('Failed to acknowledge all notifications:', error)
+      // Still mark all as read locally
+      markAllAsRead()
+    }
   }
 
   // Clear all notifications
@@ -200,6 +254,8 @@ export const useNotificationStore = defineStore('notification', () => {
     removeNotification,
     markAsRead,
     markAllAsRead,
+    acknowledgeNotification,
+    acknowledgeAll,
     clearAll,
     handleTenantInvitation,
     handleJoinRequest,

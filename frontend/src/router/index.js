@@ -31,6 +31,12 @@ const DiscountManagement = () => import("../views/admin/DiscountManagement.vue")
 const PaymentAnalytics = () => import("../views/admin/PaymentAnalytics.vue");
 const WebhookManagement = () => import("../views/admin/WebhookManagement.vue");
 const UserManagement = () => import("../views/admin/UserManagement.vue");
+// Conversation Routing & Agent Management Pages
+const AgentManagement = () => import("../views/admin/AgentManagement.vue");
+const SkillsManagement = () => import("../views/admin/SkillsManagement.vue");
+const RoutingRules = () => import("../views/admin/RoutingRules.vue");
+const SLAMonitoring = () => import("../views/admin/SLAMonitoring.vue");
+const EscalationTiers = () => import("../views/admin/EscalationTiers.vue");
 var appname = " - Windzo Dashboard Admin Template";
 const routes = [
   // Root route - redirect to login
@@ -181,6 +187,37 @@ const routes = [
     name: "admin-users",
     component: UserManagement,
     meta: { requiresAuth: true, title: "User Management" + appname },
+  },
+  // Conversation Routing & Agent Management Routes
+  {
+    path: "/admin/agents",
+    name: "admin-agents",
+    component: AgentManagement,
+    meta: { requiresAuth: true, title: "Agent Management" + appname },
+  },
+  {
+    path: "/admin/skills",
+    name: "admin-skills",
+    component: SkillsManagement,
+    meta: { requiresAuth: true, title: "Skills Management" + appname },
+  },
+  {
+    path: "/admin/routing-rules",
+    name: "admin-routing-rules",
+    component: RoutingRules,
+    meta: { requiresAuth: true, title: "Routing Rules" + appname },
+  },
+  {
+    path: "/admin/sla-monitoring",
+    name: "admin-sla-monitoring",
+    component: SLAMonitoring,
+    meta: { requiresAuth: true, title: "SLA Monitoring" + appname },
+  },
+  {
+    path: "/admin/escalation-tiers",
+    name: "admin-escalation-tiers",
+    component: EscalationTiers,
+    meta: { requiresAuth: true, title: "Escalation Tiers" + appname },
   },
 ];
 const router = createRouter({

@@ -10,6 +10,20 @@ export const appApi = {
         return axios.get('/conversations', { params });
     },
     // -------------------------
+    // 1a. Bot Inbox: Conversations đang được bot xử lý
+    // ENDPOINT: GET /api/conversations/bot-inbox
+    // -------------------------
+    getBotInboxConversations(params) {
+        return axios.get('/conversations/bot-inbox', { params });
+    },
+    // -------------------------
+    // 1b. Agent Inbox: Conversations đang được agent xử lý
+    // ENDPOINT: GET /api/conversations/agent-inbox
+    // -------------------------
+    getAgentInboxConversations(params) {
+        return axios.get('/conversations/agent-inbox', { params });
+    },
+    // -------------------------
     // 1.1. LỌC THEO CONNECTION ID
     // ENDPOINT: GET /api/conversations/by-owner-connection?ownerId={id}&connectionId={id}
     // -------------------------
@@ -110,5 +124,12 @@ export const appApi = {
     // -------------------------
     deleteConversation(conversationId) {
         return axios.delete(`/conversations/${conversationId}`);
+    },
+    // -------------------------
+    // 13. Get SLA Metrics
+    // ENDPOINT: GET /api/conversations/sla-metrics
+    // -------------------------
+    getSLAMetrics() {
+        return axios.get('/conversations/sla-metrics');
     }
 };

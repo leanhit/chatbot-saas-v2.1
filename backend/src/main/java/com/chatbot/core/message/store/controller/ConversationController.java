@@ -1,16 +1,16 @@
 package com.chatbot.core.message.store.controller;
 
 import com.chatbot.core.message.store.dto.ConversationDTO;
-import com.chatbot.core.message.store.dto.ConversationStatisticsDTO;
 import com.chatbot.core.message.store.dto.ChartDataPointDTO;
 import com.chatbot.core.message.store.dto.ActivityDTO;
 import com.chatbot.core.message.store.model.Conversation;
 import com.chatbot.core.message.store.model.Channel;
 import com.chatbot.core.message.store.mapper.ConversationMapper;
 import com.chatbot.core.message.store.service.ConversationService;
+import com.chatbot.core.message.store.service.SLAMonitorService;
+import com.chatbot.core.tenant.infra.TenantContext;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 // import io.swagger.v3.oas.annotations.responses.ApiResponse; // Use fully qualified name to avoid conflict
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -26,6 +26,7 @@ import org.springframework.web.server.ResponseStatusException;
 import java.util.UUID;
 import java.security.Principal;
 import java.util.List;
+import java.util.Map;
 
 import com.chatbot.core.user.repository.AuthRepository;
 import com.chatbot.core.user.model.User;
@@ -40,6 +41,7 @@ public class ConversationController {
     private final ConversationService conversationService;
     private final ConversationMapper conversationMapper; // Giả định đã có
     private final AuthRepository authRepository;
+    private final SLAMonitorService slaMonitorService;
 
     // --------------------------------------------------------------------------
     // 1. LẤY TẤT CẢ CONVERSATIONS (Default)
@@ -52,6 +54,64 @@ public class ConversationController {
         return conversationService
                 .getConversations(page, size)
                 .map(conversationMapper::toDTO);
+    }
+
+    // --------------------------------------------------------------------------
+    // 1a. Bot Inbox: Conversations đang được bot xử lý
+    // --------------------------------------------------------------------------
+    @GetMapping("/bot-inbox")
+    @Operation(
+        summary = "Get bot inbox conversations",
+        description = "Retrieve conversations currently being handled by bot (isTakenOverByAgent = false)",
+        responses = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Bot inbox conversations retrieved successfully",
+                content = @Content(schema = @Schema(implementation = Page.class)))
+        }
+    )
+    public Page<ConversationDTO> getBotInbox(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        log.info("Fetching bot inbox conversations, page: " + page + ", size: " + size);
+        return conversationService
+                .getBotInboxConversations(page, size)
+                .map(conversationMapper::toDTO);
+    }
+
+    // --------------------------------------------------------------------------
+    // 1b. Agent Inbox: Conversations đang được agent xử lý
+    // --------------------------------------------------------------------------
+    @GetMapping("/agent-inbox")
+    @Operation(
+        summary = "Get agent inbox conversations",
+        description = "Retrieve conversations currently being handled by agents (isTakenOverByAgent = true)",
+        responses = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Agent inbox conversations retrieved successfully",
+                content = @Content(schema = @Schema(implementation = Page.class)))
+        }
+    )
+    public Page<ConversationDTO> getAgentInbox(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        log.info("Fetching agent inbox conversations, page: " + page + ", size: " + size);
+        return conversationService
+                .getAgentInboxConversations(page, size)
+                .map(conversationMapper::toDTO);
+    }
+
+    // --------------------------------------------------------------------------
+    // SLA Monitoring: Get SLA metrics for tenant
+    // --------------------------------------------------------------------------
+    @GetMapping("/sla-metrics")
+    @Operation(
+        summary = "Get SLA metrics",
+        description = "Retrieve SLA compliance metrics for the current tenant",
+        responses = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "SLA metrics retrieved successfully")
+        }
+    )
+    public Map<String, Object> getSLAMetrics() {
+        log.info("Fetching SLA metrics");
+        return slaMonitorService.getSLAMetrics(TenantContext.getTenantId());
     }
 
     // --------------------------------------------------------------------------

@@ -38,15 +38,30 @@
           <div class="flex items-center justify-between mb-4">
             <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-200">{{ $t('messages.conversations') }}</h2>
             <div class="flex items-center gap-2">
+              <!-- SLA Metrics Button -->
+              <button
+                @click="showSLAMetrics = true"
+                class="text-sm border rounded px-2 py-1 dark:bg-gray-700 dark:border-gray-600 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-600 flex items-center gap-1"
+              >
+                <Icon icon="mdi:chart-line" />
+                SLA Metrics
+              </button>
+              <!-- Inbox Type Filter -->
+              <select v-model="inboxType" @change="loadConversations"
+                class="text-sm border rounded px-2 py-1 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                <option value="all">All Conversations</option>
+                <option value="bot">Bot Inbox</option>
+                <option value="agent">Agent Inbox</option>
+              </select>
               <!-- Filter Controls -->
-              <select v-model="filterBot" @change="loadConversations" 
+              <select v-model="filterBot" @change="loadConversations"
                 class="text-sm border rounded px-2 py-1 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
                 <option value="all">{{ $t('messages.allBots') }}</option>
                 <option v-for="bot in pennyBotStore.activeBots" :key="bot.id" :value="bot.id">
                   {{ bot.name || bot.botName || `Bot ${bot.id}` }}
                 </option>
               </select>
-              <select v-model="filterConnection" @change="loadConversations" 
+              <select v-model="filterConnection" @change="loadConversations"
                 class="text-sm border rounded px-2 py-1 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
                 <option value="all">{{ $t('messages.allConnections') }}</option>
                 <option v-for="connection in pennyConnectionStore.activeConnections" :key="connection.id" :value="connection.id">
@@ -369,6 +384,63 @@
         </div>
       </div>
     </div>
+
+    <!-- SLA Metrics Modal -->
+    <div v-if="showSLAMetrics" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div class="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-2xl">
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="text-lg font-semibold">SLA Metrics</h3>
+          <button @click="showSLAMetrics = false" class="text-gray-500 hover:text-gray-700">
+            <Icon icon="mdi:close" class="text-xl" />
+          </button>
+        </div>
+        <div v-if="loadingSLAMetrics" class="text-center py-8">
+          <Icon icon="mdi:loading" class="animate-spin text-2xl text-gray-400" />
+          <p class="mt-2 text-gray-500">Loading SLA metrics...</p>
+        </div>
+        <div v-else class="grid grid-cols-2 gap-4">
+          <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+            <p class="text-sm text-gray-600 dark:text-gray-400">Total Conversations</p>
+            <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ slaMetrics.totalConversations }}</p>
+          </div>
+          <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+            <p class="text-sm text-gray-600 dark:text-gray-400">Open Conversations</p>
+            <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ slaMetrics.openConversations }}</p>
+          </div>
+          <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+            <p class="text-sm text-gray-600 dark:text-gray-400">SLA Breaches</p>
+            <p class="text-2xl font-bold text-red-600">{{ slaMetrics.slaBreachCount }}</p>
+          </div>
+          <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+            <p class="text-sm text-gray-600 dark:text-gray-400">Avg Response Time</p>
+            <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ Math.round(slaMetrics.averageResponseTime) }}s</p>
+          </div>
+          <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg col-span-2">
+            <p class="text-sm text-gray-600 dark:text-gray-400">SLA Compliance Rate</p>
+            <div class="flex items-center gap-2">
+              <p class="text-3xl font-bold" :class="slaMetrics.slaComplianceRate >= 80 ? 'text-green-600' : 'text-yellow-600'">
+                {{ slaMetrics.slaComplianceRate.toFixed(1) }}%
+              </p>
+              <div class="flex-1 bg-gray-200 dark:bg-gray-600 rounded-full h-2">
+                <div
+                  class="h-2 rounded-full"
+                  :class="slaMetrics.slaComplianceRate >= 80 ? 'bg-green-600' : 'bg-yellow-600'"
+                  :style="{ width: slaMetrics.slaComplianceRate + '%' }"
+                ></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="flex justify-end mt-6">
+          <button
+            @click="showSLAMetrics = false"
+            class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -456,6 +528,7 @@ const loadingMessages = ref(false)
 const takingOver = ref(false)
 const releasing = ref(false)
 const sendingMessage = ref(false)
+const inboxType = ref('all')
 const filterBot = ref('all')
 const filterConnection = ref('all')
 
@@ -552,6 +625,18 @@ const searchModal = ref({
   dateRange: ''
 })
 
+// SLA Metrics state
+const showSLAMetrics = ref(false)
+const slaMetrics = ref({
+  totalConversations: 0,
+  openConversations: 0,
+  slaBreachCount: 0,
+  averageResponseTime: 0,
+  slaComplianceRate: 0,
+  respondedConversations: 0
+})
+const loadingSLAMetrics = ref(false)
+
 // Statistics
 const stats = ref({
   totalConversations: 0,
@@ -594,33 +679,34 @@ const sortedMessages = computed(() => {
 const loadConversations = async () => {
   try {
     loadingConversations.value = true
-    
+
     let response
-    
-    // Use different endpoints based on filters
-    if (filterConnection.value !== 'all') {
-      const params = {
-        page: currentPage.value,
-        limit: pageSize.value
-      }
+
+    const params = {
+      page: currentPage.value,
+      size: pageSize.value
+    }
+
+    // Use different endpoints based on inbox type filter
+    if (inboxType.value === 'bot') {
+      response = await takeoverApi.getBotInboxConversations(params)
+    } else if (inboxType.value === 'agent') {
+      response = await takeoverApi.getAgentInboxConversations(params)
+    } else if (filterConnection.value !== 'all') {
       response = await takeoverApi.getConversationsByConnectionId(filterConnection.value, params)
     } else if (filterBot.value !== 'all') {
-      const params = {
+      const ownerParams = {
         ownerId: filterBot.value,
         page: currentPage.value,
-        limit: pageSize.value
+        size: pageSize.value
       }
-      response = await takeoverApi.getConversationsByOwnerId(params)
+      response = await takeoverApi.getConversationsByOwnerId(ownerParams)
     } else {
-      const params = {
-        page: currentPage.value,
-        limit: pageSize.value
-      }
       response = await takeoverApi.getConversations(params)
     }
-    
+
     conversations.value = response.data.content || response.data || []
-    
+
     // Update pagination info
     if (response.data.totalElements !== undefined) {
       totalElements.value = response.data.totalElements
@@ -630,12 +716,12 @@ const loadConversations = async () => {
       totalElements.value = conversations.value.length
       totalPages.value = 1
     }
-    
+
     // Auto-select first conversation if none selected and conversations exist
     if (!selectedConversation.value && conversations.value.length > 0) {
       await selectConversation(conversations.value[0])
-      }
-    
+    }
+
   } catch (error) {
     console.error('Error loading conversations:', error)
     conversations.value = []
@@ -895,6 +981,25 @@ const refreshConversations = async () => {
   ])
   loading.value = false
 }
+
+const loadSLAMetrics = async () => {
+  try {
+    loadingSLAMetrics.value = true
+    const response = await takeoverApi.getSLAMetrics()
+    slaMetrics.value = response.data
+  } catch (error) {
+    console.error('Error loading SLA metrics:', error)
+  } finally {
+    loadingSLAMetrics.value = false
+  }
+}
+
+// Watch for SLA metrics modal open
+watch(showSLAMetrics, (newVal) => {
+  if (newVal) {
+    loadSLAMetrics()
+  }
+})
 
 const performSearch = async () => {
   try {

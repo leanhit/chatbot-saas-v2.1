@@ -1150,7 +1150,12 @@
     "discounts": "Discount Management",
     "analytics": "Payment Analytics",
     "webhooks": "Webhook Management",
-    "userManagement": "User Management"
+    "userManagement": "User Management",
+    "agentManagement": "Agent Management",
+    "skillsManagement": "Skills Management",
+    "routingRules": "Routing Rules",
+    "slaMonitoring": "SLA Monitoring",
+    "escalationTiers": "Escalation Tiers"
   },
   "admin": {
     "user": {

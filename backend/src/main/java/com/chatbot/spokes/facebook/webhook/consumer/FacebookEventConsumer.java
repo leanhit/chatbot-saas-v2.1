@@ -13,6 +13,9 @@ import com.chatbot.spokes.facebook.webhook.model.FacebookMessageType;
 import com.chatbot.shared.penny.service.PennyBotManager;
 import com.chatbot.core.message.store.service.ConversationService;
 import com.chatbot.core.message.store.service.MessageService;
+import com.chatbot.core.message.store.service.AIEscalationService;
+import com.chatbot.core.message.store.service.ErrorWorkflow;
+import com.chatbot.core.message.store.service.ConversationEndWorkflow;
 import com.chatbot.core.message.decision.service.TakeoverService;
 import com.chatbot.core.message.decision.model.TakeoverMessage;
 import com.chatbot.spokes.odoo.service.CustomerDataService;
@@ -47,6 +50,9 @@ public class FacebookEventConsumer {
     private final MessageService messageService;
     private final TakeoverService takeoverService;
     private final CustomerDataService customerDataService;
+    private final AIEscalationService aiEscalationService;
+    private final ErrorWorkflow errorWorkflow;
+    private final ConversationEndWorkflow conversationEndWorkflow;
     private final ObjectMapper objectMapper;
     private final RedisTemplate<String, String> redisTemplate;
 
@@ -64,6 +70,9 @@ public class FacebookEventConsumer {
                                  MessageService messageService,
                                  TakeoverService takeoverService,
                                  CustomerDataService customerDataService,
+                                 AIEscalationService aiEscalationService,
+                                 ErrorWorkflow errorWorkflow,
+                                 ConversationEndWorkflow conversationEndWorkflow,
                                  RedisTemplate<String, String> redisTemplate,
                                  ObjectMapper objectMapper) {
         this.connectionRepository = connectionRepository;
@@ -73,6 +82,9 @@ public class FacebookEventConsumer {
         this.messageService = messageService;
         this.takeoverService = takeoverService;
         this.customerDataService = customerDataService;
+        this.aiEscalationService = aiEscalationService;
+        this.errorWorkflow = errorWorkflow;
+        this.conversationEndWorkflow = conversationEndWorkflow;
         this.redisTemplate = redisTemplate;
         this.objectMapper = objectMapper;
     }
@@ -198,6 +210,9 @@ public class FacebookEventConsumer {
             log.info("✅ Saved user text message to DB. Conversation ID: " + conversation.getId() + ", Message ID: " + savedMessage.getId());
         } catch (Exception e) {
             log.error("❌ Failed to save user text message to DB: " + e.getMessage());
+            // Trigger error workflow for message save failure
+            errorWorkflow.handleError(conversation.getId(), "MESSAGE_SAVE_FAILED",
+                    "Failed to save user message: " + e.getMessage(), "medium");
         }
 
         try {
@@ -376,9 +391,15 @@ public class FacebookEventConsumer {
                 } catch (IllegalArgumentException e) {
                     log.error("❌ Bot not found for connection {}: {}. Sending fallback response.", connection.getId(), e.getMessage());
                     botReply = "Sorry, the bot configuration is missing. Please contact the administrator.";
+                    // Trigger error workflow - bot configuration missing
+                    errorWorkflow.handleError(conversation.getId(), "BOT_NOT_CONFIGURED",
+                            "Bot not found for connection " + connection.getId() + ": " + e.getMessage(), "medium");
                 } catch (Exception e) {
                     log.error("❌ Error processing message with bot {}: {}", botId, e.getMessage(), e);
                     botReply = "Sorry, I encountered an error while processing your message. Please try again.";
+                    // Trigger error workflow - bot processing failed
+                    errorWorkflow.handleError(conversation.getId(), "BOT_PROCESSING_FAILED",
+                            "Bot processing error: " + e.getMessage(), "high");
                 }
 
                 if (botReply != null && !botReply.trim().isEmpty()) {
@@ -394,29 +415,45 @@ public class FacebookEventConsumer {
                                 FacebookMessageType.TEXT.name(),
                                 null
                         );
+                        log.info("✅ Saved bot message to DB. Message ID: " + botMessageSaved.getId());
                     } catch (Exception e) {
-                        log.error("❌ Failed to save bot message to DB: {}", e.getMessage());
+                        log.error("❌ Failed to save bot message to DB: " + e.getMessage());
                     }
 
-                    // Save Bot Message to Redis and Push via WebSocket using real DB message ID
+                    // Send to Facebook
                     try {
-                        String botMessageId = (botMessageSaved != null) ? String.valueOf(botMessageSaved.getId()) : "bot_" + System.currentTimeMillis() + "_" + (int) (Math.random() * 10000);
-                        TakeoverMessage botMessage = new TakeoverMessage(
-                                botMessageId,
+                        facebookMessengerService.sendTextMessage(connection.getPageAccessToken(), senderId, botReply);
+                        log.info("✅ Sent bot reply to Facebook. Conversation ID: " + conversation.getId());
+                    } catch (Exception e) {
+                        log.error("❌ Failed to send bot reply to Facebook: " + e.getMessage());
+                    }
+
+                    // Save bot message to Redis for Takeover history
+                    if (botMessageSaved != null) {
+                        TakeoverMessage botTakeoverMessage = new TakeoverMessage(
+                                String.valueOf(botMessageSaved.getId()),
                                 String.valueOf(conversation.getId()),
                                 "bot",
                                 botReply,
                                 System.currentTimeMillis()
                         );
-                        takeoverService.saveMessage(botMessage);
-                        takeoverService.sendToConversation(botMessage);
-                    } catch (Exception e) {
-                        log.error("❌ WebSocket push error for bot reply: {}", e.getMessage());
-                    }
+                        takeoverService.saveMessage(botTakeoverMessage);
 
-                    // Send message back to Facebook User
-                    facebookMessengerService.sendMessageToUser(connection.getPageId(), senderId, botReply, connection.getPageAccessToken());
-                    log.info("📤 Response sent to Facebook user: {}", botReply);
+                        // Publish bot message via WebSocket
+                        try {
+                            takeoverService.sendToConversation(botTakeoverMessage);
+                        } catch (Exception e) {
+                            log.error("❌ WebSocket push error for bot message: {}", e.getMessage());
+                        }
+                    }
+                }
+
+                // AI-based Escalation Analysis
+                // Trigger AI analysis after bot reply to determine if escalation is needed
+                try {
+                    aiEscalationService.analyzeAndEscalateIfNeeded(conversation.getId());
+                } catch (Exception e) {
+                    log.error("❌ AI escalation analysis failed: {}", e.getMessage());
                 }
         } catch (Exception e) {
             log.error("❌ Penny processing error: {}", e.getMessage(), e);

@@ -35,6 +35,8 @@ public class ConversationService {
     private final FacebookConnectionRepository facebookConnectionRepo;
     private final MessageRepository messageRepo;
     private final FacebookUserService facebookUserService;
+    private final RoutingRuleService routingRuleService;
+    private final ConversationEndWorkflow conversationEndWorkflow;
 
     /**
      * Tìm kiếm Conversation hiện có hoặc tạo mới nếu chưa tồn tại.
@@ -60,10 +62,12 @@ public class ConversationService {
                             .connectionId(connectionId)
                             .externalUserId(externalUserId)
                             .status("open")
-                            .channel(channel) 
+                            .channel(channel)
                             .isClosedByAgent(false)
                             .isTakenOverByAgent(false)
                             .ownerId(ownerId)
+                            .customerTier("Standard") // Default tier
+                            .language("en") // Default language
                             .build();
                     
                     // Nếu là kênh Facebook, lấy thông tin người dùng
@@ -86,6 +90,9 @@ public class ConversationService {
                                     
                                 c.setUserName(userInfo.getName());
                                 c.setUserAvatar(userInfo.getProfilePic());
+                                
+                                // Extract additional attributes for attribute-based routing
+                                extractAndStoreUserAttributes(c, userInfo);
                             } else {
                                 log.warn("⚠️ Không lấy được thông tin người dùng từ Facebook cho PSID: {}", externalUserId);
                             }
@@ -95,8 +102,77 @@ public class ConversationService {
                         }
                     }
                     
-                    return conversationRepo.save(c);
+                    Conversation savedConversation = conversationRepo.save(c);
+                    
+                    // Apply routing rules to the new conversation
+                    try {
+                        routingRuleService.applyRoutingRules(savedConversation);
+                    } catch (Exception e) {
+                        log.error("Error applying routing rules to conversation {}", savedConversation.getId(), e);
+                    }
+                    
+                    return savedConversation;
                 });
+    }
+
+    /**
+     * Extract and store user attributes from Facebook user info for attribute-based routing
+     * Implements Phase 1.3: Attribute-based Routing
+     */
+    @SuppressWarnings("unchecked")
+    private void extractAndStoreUserAttributes(Conversation conversation, com.chatbot.spokes.facebook.user.dto.FacebookUserInfo userInfo) {
+        try {
+            java.util.Map<String, Object> attributes = new java.util.HashMap<>();
+            
+            // Extract available attributes from FacebookUserInfo
+            if (userInfo.getName() != null) {
+                attributes.put("name", userInfo.getName());
+                // Try to extract first name from full name
+                String[] nameParts = userInfo.getName().split(" ", 2);
+                if (nameParts.length > 0) {
+                    attributes.put("firstName", nameParts[0]);
+                }
+                if (nameParts.length > 1) {
+                    attributes.put("lastName", nameParts[1]);
+                }
+            }
+            if (userInfo.getPsid() != null) {
+                attributes.put("psid", userInfo.getPsid());
+            }
+            if (userInfo.getProfilePic() != null) {
+                attributes.put("hasProfilePic", true);
+            }
+            if (userInfo.getOdooPartnerId() != null) {
+                attributes.put("odooPartnerId", userInfo.getOdooPartnerId());
+                attributes.put("isOdooCustomer", true);
+            }
+            if (userInfo.getLastInteraction() != null) {
+                attributes.put("lastInteraction", userInfo.getLastInteraction().toString());
+            }
+            
+            // Store in custom attributes as JSON
+            if (!attributes.isEmpty()) {
+                String existingAttributes = conversation.getCustomAttributes();
+                java.util.Map<String, Object> allAttributes;
+                
+                if (existingAttributes != null && !existingAttributes.isEmpty()) {
+                    allAttributes = new com.fasterxml.jackson.databind.ObjectMapper().readValue(
+                        existingAttributes,
+                        java.util.Map.class
+                    );
+                } else {
+                    allAttributes = new java.util.HashMap<>();
+                }
+                
+                allAttributes.put("facebookUserAttributes", attributes);
+                conversation.setCustomAttributes(new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(allAttributes));
+                
+                log.info("Extracted and stored {} attributes from Facebook user info for conversation {}", 
+                    attributes.size(), conversation.getId());
+            }
+        } catch (Exception e) {
+            log.error("Error extracting user attributes from Facebook user info", e);
+        }
     }
 
     /**
@@ -110,6 +186,32 @@ public class ConversationService {
             throw new com.chatbot.shared.exceptions.BaseException(com.chatbot.shared.exceptions.ErrorCode.TENANT_CONTEXT_MISSING, "Tenant ID not found in context");
         }
         return conversationRepo.findAllByTenantIdOrderByUpdatedAtDesc(tenantId, pageable);
+    }
+
+    /**
+     * Bot Inbox: Lấy danh sách conversations đang được bot xử lý (isTakenOverByAgent = false)
+     * Sắp xếp theo updatedAt để Conversation có tin nhắn mới nhất lên đầu.
+     */
+    public Page<Conversation> getBotInboxConversations(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("updatedAt").descending());
+        Long tenantId = TenantContext.getTenantId();
+        if (tenantId == null) {
+            throw new com.chatbot.shared.exceptions.BaseException(com.chatbot.shared.exceptions.ErrorCode.TENANT_CONTEXT_MISSING, "Tenant ID not found in context");
+        }
+        return conversationRepo.findBotInboxConversationsByTenantId(tenantId, pageable);
+    }
+
+    /**
+     * Agent Inbox: Lấy danh sách conversations đang được agent xử lý (isTakenOverByAgent = true)
+     * Sắp xếp theo updatedAt để Conversation có tin nhắn mới nhất lên đầu.
+     */
+    public Page<Conversation> getAgentInboxConversations(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("updatedAt").descending());
+        Long tenantId = TenantContext.getTenantId();
+        if (tenantId == null) {
+            throw new com.chatbot.shared.exceptions.BaseException(com.chatbot.shared.exceptions.ErrorCode.TENANT_CONTEXT_MISSING, "Tenant ID not found in context");
+        }
+        return conversationRepo.findAgentInboxConversationsByTenantId(tenantId, pageable);
     }
     
     /**
@@ -129,16 +231,14 @@ public class ConversationService {
     /**
      * Thêm phương thức để đóng Conversation
      */
+    @Transactional
     public Conversation closeConversation(Long conversationId) {
-        return conversationRepo.findById(conversationId)
-            .map(c -> {
-                c.setIsClosedByAgent(true);
-                c.setStatus("closed");
-                // Khi đóng, luôn trả quyền điều khiển về Botpress (mặc dù cuộc hội thoại đã đóng)
-                c.setIsTakenOverByAgent(false); 
-                return conversationRepo.save(c);
-            })
+        Conversation conversation = conversationRepo.findById(conversationId)
             .orElseThrow(() -> new RuntimeException("Conversation not found"));
+        
+        conversationEndWorkflow.handleConversationEnd(conversationId, "agent_closed");
+        
+        return conversationRepo.findById(conversationId).orElse(conversation);
     }
 
     // =========================================================================
@@ -152,6 +252,7 @@ public class ConversationService {
      * @param agentAssignedId ID của Agent tiếp quản
      * @return Conversation đã được cập nhật
      */
+    @Transactional
     public Conversation takeoverConversation(Long conversationId, Long agentAssignedId) {
         return conversationRepo.findById(conversationId)
             .map(c -> {
@@ -173,6 +274,7 @@ public class ConversationService {
      * @param conversationId ID của Conversation
      * @return Conversation đã được cập nhật
      */
+    @Transactional
     public Conversation releaseConversation(Long conversationId) {
         return conversationRepo.findById(conversationId)
             .map(c -> {
@@ -261,7 +363,6 @@ public class ConversationService {
     /**
      * Cập nhật trạng thái isTakenOverByAgent của một conversation
      */
-    @Transactional
     public Conversation updateTakenOverStatus(Long conversationId, Boolean isTakenOverByAgent, Long agentAssignedId, String ownerId) {
 
     log.info(

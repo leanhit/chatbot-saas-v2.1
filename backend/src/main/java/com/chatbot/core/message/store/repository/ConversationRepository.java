@@ -75,6 +75,20 @@ public interface ConversationRepository extends JpaRepository<Conversation, Long
         @Param("isTakenOverByAgent") Boolean isTakenOverByAgent,
         @Param("tenantId") Long tenantId
     );
+
+    // 6a. Bot Inbox: Conversations đang được bot xử lý (isTakenOverByAgent = false) - Phân trang
+    @Query("SELECT c FROM Conversation c WHERE c.isTakenOverByAgent = false AND c.tenantId = :tenantId ORDER BY c.updatedAt DESC")
+    Page<Conversation> findBotInboxConversationsByTenantId(
+        @Param("tenantId") Long tenantId,
+        Pageable pageable
+    );
+
+    // 6b. Agent Inbox: Conversations đang được agent xử lý (isTakenOverByAgent = true) - Phân trang
+    @Query("SELECT c FROM Conversation c WHERE c.isTakenOverByAgent = true AND c.tenantId = :tenantId ORDER BY c.updatedAt DESC")
+    Page<Conversation> findAgentInboxConversationsByTenantId(
+        @Param("tenantId") Long tenantId,
+        Pageable pageable
+    );
     
     // 6b. Tìm tất cả Conversation đang được Agent tiếp quản từ TẤT CẢ các tenant (cho Scheduler)
     @Query("SELECT c FROM Conversation c WHERE c.isTakenOverByAgent = :isTakenOverByAgent")
@@ -159,4 +173,16 @@ public interface ConversationRepository extends JpaRepository<Conversation, Long
         @Param("query") String query,
         Pageable pageable
     );
+
+    // SLA Monitoring: Find all conversations by tenant
+    List<Conversation> findByTenantId(@Param("tenantId") Long tenantId);
+
+    // SLA Monitoring: Find conversations by tenant and status
+    List<Conversation> findByTenantIdAndStatus(
+        @Param("tenantId") Long tenantId,
+        @Param("status") String status
+    );
+
+    // Timeout Workflow: Find conversations by status (tenant-independent for scheduled jobs)
+    List<Conversation> findByStatus(@Param("status") String status);
 }

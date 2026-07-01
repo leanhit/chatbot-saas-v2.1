@@ -1150,7 +1150,12 @@
     "discounts": "Quản lý giảm giá",
     "analytics": "Phân tích thanh toán",
     "webhooks": "Quản lý Webhook",
-    "userManagement": "Quản lý người dùng"
+    "userManagement": "Quản lý người dùng",
+    "agentManagement": "Quản lý Agent",
+    "skillsManagement": "Quản lý Kỹ năng",
+    "routingRules": "Quy tắc Định tuyến",
+    "slaMonitoring": "Giám sát SLA",
+    "escalationTiers": "Cấp độ Leo thang"
   },
   "admin": {
     "user": {

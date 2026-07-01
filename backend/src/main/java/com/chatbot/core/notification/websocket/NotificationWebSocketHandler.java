@@ -163,6 +163,27 @@ public class NotificationWebSocketHandler extends TextWebSocketHandler {
     }
 
     /**
+     * Send notification to a specific user ID with priority
+     * Priority levels: urgent, high, medium, low
+     */
+    @SuppressWarnings("unchecked")
+    public void sendToUserWithPriority(Long userId, Object notification, String priority) {
+        if (userId == null) return;
+        Set<WebSocketSession> sessions = userSessions.get(userId);
+        if (sessions == null || sessions.isEmpty()) {
+            log.debug("⚠️ [Notification WS] No active WebSocket session for user ID {}", userId);
+            return;
+        }
+
+        // Add priority to notification if it's a Map
+        if (notification instanceof Map) {
+            ((Map<String, Object>) notification).put("priority", priority);
+        }
+
+        sendToSessions(sessions, notification);
+    }
+
+    /**
      * Send notification to all active sessions in a tenant
      */
     public void broadcastToTenant(Long tenantId, Object notification) {
