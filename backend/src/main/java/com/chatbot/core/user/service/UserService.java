@@ -22,6 +22,9 @@ import io.minio.PutObjectArgs;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.annotation.Propagation;
@@ -62,7 +65,8 @@ public class UserService {
     /**
      * Get user by ID
      */
-    @Transactional(readOnly = true)
+    @Cacheable(value = "users", key = "#userId", unless = "#result == null")
+    @Transactional(value = "userTransactionManager", readOnly = true, rollbackFor = Exception.class)
     public User getUser(Long userId) {
         return userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found with ID: " + userId));
@@ -71,7 +75,8 @@ public class UserService {
     /**
      * Get all users
      */
-    @Transactional(readOnly = true)
+    @Cacheable(value = "apiResponses", key = "'allUsers'", unless = "#result == null || #result.isEmpty()")
+    @Transactional(value = "userTransactionManager", readOnly = true, rollbackFor = Exception.class)
     public List<UserDto> getAllUsers() {
         return userRepository.findAll().stream()
                 .map(user -> UserDto.builder()
@@ -87,7 +92,7 @@ public class UserService {
     /**
      * Search users with pagination
      */
-    @Transactional(readOnly = true)
+    @Transactional(value = "userTransactionManager", readOnly = true, rollbackFor = Exception.class)
     public org.springframework.data.domain.Page<UserDto> searchUsers(String keyword, com.chatbot.core.identity.model.SystemRole role, org.springframework.data.domain.Pageable pageable) {
         return userRepository.searchUsers(keyword, role, pageable)
                 .map(user -> UserDto.builder()
@@ -102,7 +107,7 @@ public class UserService {
     /**
      * Update user active status
      */
-    @Transactional
+    @Transactional(value = "userTransactionManager", rollbackFor = Exception.class)
     public void updateUserStatus(Long userId, boolean isActive) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found with ID: " + userId));

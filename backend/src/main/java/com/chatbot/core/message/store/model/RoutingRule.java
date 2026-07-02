@@ -3,6 +3,9 @@ package com.chatbot.core.message.store.model;
 import com.chatbot.core.tenant.infra.BaseTenantEntity;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
@@ -40,6 +43,7 @@ public class RoutingRule extends BaseTenantEntity {
      * Rule name
      */
     @Column(nullable = false)
+    @NotBlank(message = "Rule name is required")
     private String name;
 
     /**
@@ -53,6 +57,7 @@ public class RoutingRule extends BaseTenantEntity {
      */
     @Column(nullable = false)
     @Builder.Default
+    @Min(value = 0, message = "Priority must be non-negative")
     private Integer priority = 0;
 
     /**
@@ -81,6 +86,7 @@ public class RoutingRule extends BaseTenantEntity {
      */
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
+    @NotNull(message = "Rule type is required")
     private RoutingRuleType ruleType;
 
     // Timestamp

@@ -76,8 +76,13 @@
       "total": "Tổng khách hàng",
       "pending": "Đang chờ",
       "completed": "Hoàn thành",
-      "synced": "Đã đồng bộ"
+      "synced": "Đã đồng bộ",
+      "capturedPhones": "Số điện thoại đã thu thập"
     },
+    "statusInfo": "Thông tin trạng thái",
+    "currentStatus": "Trạng thái hiện tại",
+    "timestamps": "Dấu thời gian",
+    "lastUpdated": "Cập nhật lần cuối",
     "status": {
       "PENDING": "Chờ xử lý",
       "COMPLETED": "Hoàn thành",

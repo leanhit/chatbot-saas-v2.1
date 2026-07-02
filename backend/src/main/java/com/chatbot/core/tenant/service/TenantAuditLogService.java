@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 
@@ -24,6 +25,7 @@ public class TenantAuditLogService {
      * @param action    tên hành động ngắn gọn (e.g. CREATE_TENANT, UPDATE_ROLE)
      * @param details   mô tả chi tiết tùy chọn
      */
+    @Transactional(transactionManager = "tenantTransactionManager", rollbackFor = Exception.class)
     public void logAction(Long tenantId, String userEmail, String action, String details) {
         try {
             TenantAuditLog entry = TenantAuditLog.builder()

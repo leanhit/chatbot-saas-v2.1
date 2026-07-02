@@ -217,133 +217,143 @@ public class SimplePaymentService {
     public void completePayment(String referenceCode, String bankTransactionId) {
         log.info("✅ Completing payment: {}", referenceCode);
 
-        SimplePayment payment = paymentRepository.findByReferenceCode(referenceCode)
-                .orElseThrow(() -> new PaymentNotFoundException("Payment not found: " + referenceCode));
-
+        SimplePayment payment = validateAndLoadPayment(referenceCode);
+        
         if (payment.getStatus() != PaymentStatus.PENDING) {
             log.warn("Payment {} is not pending: {}", referenceCode, payment.getStatus());
             return;
         }
 
-        try {
-            // Update payment status
-            payment.setStatus(PaymentStatus.COMPLETED);
-            payment.setBankTransactionId(bankTransactionId);
-            payment.setCompletedAt(LocalDateTime.now());
-            paymentRepository.save(payment);
+        updatePaymentStatus(payment, bankTransactionId);
+        processPackageUpgradeOrCreditBalance(payment);
+        publishPaymentEvent(payment, bankTransactionId);
+        markTransactionAsProcessed(referenceCode);
+        sendNotifications(payment);
+        generateInvoiceSafe(payment);
+        logPaymentCompletionAudit(payment);
+        log.info("✅ Payment completed successfully: {}", referenceCode);
+    }
 
-            log.debug("📝 [DEBUG] Payment status updated to COMPLETED for: {}, targetPackage: {}",
-                    referenceCode, payment.getTargetPackageId());
+    private SimplePayment validateAndLoadPayment(String referenceCode) {
+        return paymentRepository.findByReferenceCode(referenceCode)
+                .orElseThrow(() -> new PaymentNotFoundException("Payment not found: " + referenceCode));
+    }
 
-            // 1. Process package upgrade if a target package is requested (it handles balance crediting internally)
-            if (payment.getTargetPackageId() != null && !payment.getTargetPackageId().trim().isEmpty()) {
-                log.info(" [SimplePaymentService] Processing package upgrade for payment: {}, targetPackage: {}", 
-                        referenceCode, payment.getTargetPackageId());
-                
-                boolean upgradeSuccess = TenantContext.executeWithTenantId(
-                    payment.getTenantId(), 
-                    () -> packageUpgradeService.processPackageUpgrade(payment)
-                );
-                
-                log.debug("📝 [DEBUG] Package upgrade result for payment {}: {}", referenceCode, upgradeSuccess);
-                
-                if (!upgradeSuccess) {
-                    throw new PaymentException(com.chatbot.shared.exceptions.ErrorCode.PAYMENT_ERROR, "Package upgrade failed for payment: " + referenceCode);
-                }
-                
-                log.info(" [SimplePaymentService] Package upgrade completed successfully for payment: {}", 
-                        referenceCode);
-            } else {
-                // 2. Otherwise, this is a standard deposit, credit the user balance directly
-                log.info(" [SimplePaymentService] Standard deposit. Crediting user balance for payment: {}", referenceCode);
-                userBalanceService.updateUserBalanceInSeparateTransaction(payment.getUserId(), payment.getAmount());
-            }
+    private void updatePaymentStatus(SimplePayment payment, String bankTransactionId) {
+        payment.setStatus(PaymentStatus.COMPLETED);
+        payment.setBankTransactionId(bankTransactionId);
+        payment.setCompletedAt(LocalDateTime.now());
+        paymentRepository.save(payment);
 
-            // Publish Redis event for real-time notification
-            PaymentEvent event = redisPaymentService.createStatusUpdateEvent(
-                    referenceCode, PaymentStatus.COMPLETED, bankTransactionId
-            );
-            redisPaymentService.publishPaymentEvent(event);
+        log.debug("📝 [DEBUG] Payment status updated to COMPLETED for: {}, targetPackage: {}",
+                payment.getReferenceCode(), payment.getTargetPackageId());
+    }
 
-            // Mark transaction as processed in mock bank api to avoid checking it again
-            bankApiService.markTransactionAsProcessed(referenceCode);
-
-            // Trigger email notification
-            emailNotificationService.sendPaymentSuccessEmail(referenceCode);
-
-            // Trigger webhook notification
-            webhookService.triggerWebhook(com.chatbot.core.simplepayment.model.Webhook.WebhookEventType.PAYMENT_COMPLETED, payment);
-
-            // Generate invoice
-            try {
-                invoiceService.generateInvoice(referenceCode);
-            } catch (Exception e) {
-                log.warn("⚠️ Failed to generate invoice for payment {}: {}", referenceCode, e.getMessage());
-            }
-
-            // Send package upgrade email if applicable
-            if (payment.getTargetPackageId() != null && !payment.getTargetPackageId().trim().isEmpty()) {
-                emailNotificationService.sendPackageUpgradeEmail(referenceCode, payment.getTargetPackageId());
-                webhookService.triggerWebhook(com.chatbot.core.simplepayment.model.Webhook.WebhookEventType.PACKAGE_UPGRADED, payment);
-                
-                // Log audit for package upgrade
-                paymentAuditService.logPaymentAction(
-                    referenceCode,
-                    payment.getUserId(),
-                    payment.getTenantId(),
-                    com.chatbot.core.simplepayment.model.PaymentAuditLog.AuditAction.PACKAGE_UPGRADED,
-                    "COMPLETED",
-                    "COMPLETED",
-                    payment.getAmount(),
-                    "Package upgraded: " + payment.getTargetPackageId(),
-                    null
-                );
-            }
-
-            // Log audit for payment completion
-            paymentAuditService.logPaymentAction(
-                referenceCode,
-                payment.getUserId(),
-                payment.getTenantId(),
-                com.chatbot.core.simplepayment.model.PaymentAuditLog.AuditAction.PAYMENT_COMPLETED,
-                "PENDING",
-                "COMPLETED",
-                payment.getAmount(),
-                "Payment completed successfully",
-                null
-            );
-
-            // Track metrics
-            paymentMetricsService.incrementPaymentCompleted();
-            paymentMetricsService.recordPaymentAmount(payment.getAmount());
-
-            log.info("✅ Payment completed successfully: {}", referenceCode);
-            
-            // Trigger SSE live update if connection is active
-            try {
-                PaymentStatusResponse sseResponse = new PaymentStatusResponse();
-                sseResponse.setReferenceCode(payment.getReferenceCode());
-                sseResponse.setStatus(payment.getStatus().name());
-                sseResponse.setAmount(payment.getAmount());
-                sseResponse.setCurrency(payment.getCurrency());
-                sseResponse.setDescription(payment.getDescription());
-                sseResponse.setBankTransactionId(payment.getBankTransactionId());
-                sseResponse.setTargetPackageId(payment.getTargetPackageId());
-                sseResponse.setCreatedAt(payment.getCreatedAt());
-                sseResponse.setCompletedAt(payment.getCompletedAt());
-                sseResponse.setExpiresAt(payment.getExpiresAt());
-                sseResponse.setUpdatedAt(payment.getUpdatedAt());
-                sseResponse.withFormattedDates();
-                
-                paymentNotificationService.notifyPaymentSuccess(payment.getReferenceCode(), sseResponse);
-            } catch (Exception e) {
-                log.error("⚠️ Failed to send SSE notification: {}", e.getMessage());
-            }
-            
-        } catch (Exception e) {
-            log.error("❌ Payment completion failed for {}: {}", referenceCode, e.getMessage(), e);
-            throw e;
+    private void processPackageUpgradeOrCreditBalance(SimplePayment payment) {
+        String referenceCode = payment.getReferenceCode();
+        
+        if (payment.getTargetPackageId() != null && !payment.getTargetPackageId().trim().isEmpty()) {
+            processPackageUpgrade(payment);
+        } else {
+            creditUserBalance(payment);
         }
+    }
+
+    private void processPackageUpgrade(SimplePayment payment) {
+        String referenceCode = payment.getReferenceCode();
+        log.info(" [SimplePaymentService] Processing package upgrade for payment: {}, targetPackage: {}", 
+                referenceCode, payment.getTargetPackageId());
+        
+        boolean upgradeSuccess = TenantContext.executeWithTenantId(
+            payment.getTenantId(), 
+            () -> packageUpgradeService.processPackageUpgrade(payment)
+        );
+        
+        log.debug("📝 [DEBUG] Package upgrade result for payment {}: {}", referenceCode, upgradeSuccess);
+        
+        if (!upgradeSuccess) {
+            throw new PaymentException(com.chatbot.shared.exceptions.ErrorCode.PAYMENT_ERROR, 
+                "Package upgrade failed for payment: " + referenceCode);
+        }
+        
+        log.info(" [SimplePaymentService] Package upgrade completed successfully for payment: {}", referenceCode);
+    }
+
+    private void creditUserBalance(SimplePayment payment) {
+        log.info(" [SimplePaymentService] Standard deposit. Crediting user balance for payment: {}", 
+                payment.getReferenceCode());
+        userBalanceService.updateUserBalanceInSeparateTransaction(payment.getUserId(), payment.getAmount());
+    }
+
+    private void publishPaymentEvent(SimplePayment payment, String bankTransactionId) {
+        PaymentEvent event = redisPaymentService.createStatusUpdateEvent(
+                payment.getReferenceCode(), PaymentStatus.COMPLETED, bankTransactionId
+        );
+        redisPaymentService.publishPaymentEvent(event);
+    }
+
+    private void markTransactionAsProcessed(String referenceCode) {
+        bankApiService.markTransactionAsProcessed(referenceCode);
+    }
+
+    private void sendNotifications(SimplePayment payment) {
+        String referenceCode = payment.getReferenceCode();
+        
+        emailNotificationService.sendPaymentSuccessEmail(referenceCode);
+        webhookService.triggerWebhook(
+            com.chatbot.core.simplepayment.model.Webhook.WebhookEventType.PAYMENT_COMPLETED, payment
+        );
+
+        if (payment.getTargetPackageId() != null && !payment.getTargetPackageId().trim().isEmpty()) {
+            sendPackageUpgradeNotifications(payment);
+        }
+    }
+
+    private void sendPackageUpgradeNotifications(SimplePayment payment) {
+        String referenceCode = payment.getReferenceCode();
+        emailNotificationService.sendPackageUpgradeEmail(referenceCode, payment.getTargetPackageId());
+        webhookService.triggerWebhook(
+            com.chatbot.core.simplepayment.model.Webhook.WebhookEventType.PACKAGE_UPGRADED, payment
+        );
+        
+        logPackageUpgradeAudit(payment);
+    }
+
+    private void generateInvoiceSafe(SimplePayment payment) {
+        try {
+            invoiceService.generateInvoice(payment.getReferenceCode());
+        } catch (Exception e) {
+            log.warn("⚠️ Failed to generate invoice for payment {}: {}", 
+                    payment.getReferenceCode(), e.getMessage());
+        }
+    }
+
+    private void logPackageUpgradeAudit(SimplePayment payment) {
+        paymentAuditService.logPaymentAction(
+            payment.getReferenceCode(),
+            payment.getUserId(),
+            payment.getTenantId(),
+            com.chatbot.core.simplepayment.model.PaymentAuditLog.AuditAction.PACKAGE_UPGRADED,
+            "COMPLETED",
+            "COMPLETED",
+            payment.getAmount(),
+            "Package upgraded: " + payment.getTargetPackageId(),
+            null
+        );
+    }
+
+    private void logPaymentCompletionAudit(SimplePayment payment) {
+        paymentAuditService.logPaymentAction(
+            payment.getReferenceCode(),
+            payment.getUserId(),
+            payment.getTenantId(),
+            com.chatbot.core.simplepayment.model.PaymentAuditLog.AuditAction.PAYMENT_COMPLETED,
+            "PENDING",
+            "COMPLETED",
+            payment.getAmount(),
+            "Payment completed successfully",
+            null
+        );
     }
 
     /**

@@ -20,7 +20,7 @@ public interface UserProfileRepository extends JpaRepository<UserProfile, Long> 
     Optional<UserProfile> findByUser(User user);
 
     @Modifying
-    @Transactional
+    @Transactional(value = "userTransactionManager", rollbackFor = Exception.class)
     @Query(value = "INSERT INTO user_profiles (user_id, created_at, updated_at) VALUES (:userId, NOW(), NOW())", nativeQuery = true)
     void insertProfile(Long userId);
 }

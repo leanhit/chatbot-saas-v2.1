@@ -50,7 +50,7 @@ public class CacheWarmer {
      */
     @EventListener(ApplicationReadyEvent.class)
     public void onApplicationReady() {
-        log.info("🚀 [CACHE WARMER] Application is ready. Triggering database cache warm-up...");
+        log.info("[CACHE WARMER] Application is ready. Triggering database cache warm-up...");
         warmUpCache();
     }
 

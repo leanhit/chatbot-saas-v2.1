@@ -1,5 +1,6 @@
 package com.chatbot.core.tenant.grpc;
 
+import com.chatbot.core.tenant.exception.TenantNotFoundException;
 import com.chatbot.core.tenant.model.Tenant;
 import com.chatbot.core.tenant.repository.TenantRepository;
 import com.chatbot.core.tenant.service.TenantService;
@@ -113,7 +114,7 @@ public class TenantServiceGrpcImpl extends TenantServiceGrpc.TenantServiceImplBa
     public void getTenantStatus(GetTenantStatusRequest request, StreamObserver<TenantStatusResponse> responseObserver) {
         try {
             Tenant tenant = tenantRepository.findByTenantKey(request.getTenantKey())
-                    .orElseThrow(() -> new RuntimeException("Không tìm thấy tenant: " + request.getTenantKey()));
+                    .orElseThrow(() -> new TenantNotFoundException("Không tìm thấy tenant: " + request.getTenantKey()));
             responseObserver.onNext(TenantStatusResponse.newBuilder()
                     .setTenantKey(request.getTenantKey())
                     .setStatus(tenant.getStatus().name())
@@ -130,7 +131,7 @@ public class TenantServiceGrpcImpl extends TenantServiceGrpc.TenantServiceImplBa
     public void getTenant(GetTenantRequest request, StreamObserver<TenantDetailResponse> responseObserver) {
         try {
             Tenant tenant = tenantRepository.findByTenantKey(request.getTenantKey())
-                    .orElseThrow(() -> new RuntimeException("Không tìm thấy tenant: " + request.getTenantKey()));
+                    .orElseThrow(() -> new TenantNotFoundException("Không tìm thấy tenant: " + request.getTenantKey()));
 
             String description = tenantProfileRepository.findById(tenant.getId())
                     .map(p -> p.getDescription() != null ? p.getDescription() : "")
@@ -249,7 +250,7 @@ public class TenantServiceGrpcImpl extends TenantServiceGrpc.TenantServiceImplBa
                              StreamObserver<TenantServiceProto.TenantResponse> responseObserver) {
         try {
             Tenant tenant = tenantRepository.findByTenantKey(request.getTenantKey())
-                    .orElseThrow(() -> new RuntimeException("Không tìm thấy tenant: " + request.getTenantKey()));
+                    .orElseThrow(() -> new TenantNotFoundException("Không tìm thấy tenant: " + request.getTenantKey()));
 
             if (request.getName() != null && !request.getName().isEmpty()) {
                 tenant.setName(request.getName());
@@ -277,7 +278,7 @@ public class TenantServiceGrpcImpl extends TenantServiceGrpc.TenantServiceImplBa
     public void deleteTenant(DeleteTenantRequest request, StreamObserver<DeleteTenantResponse> responseObserver) {
         try {
             Tenant tenant = tenantRepository.findByTenantKey(request.getTenantKey())
-                    .orElseThrow(() -> new RuntimeException("Không tìm thấy tenant: " + request.getTenantKey()));
+                    .orElseThrow(() -> new TenantNotFoundException("Không tìm thấy tenant: " + request.getTenantKey()));
 
             // Soft-delete: set DELETED thay vì INACTIVE
             tenant.setStatus(com.chatbot.core.tenant.model.TenantStatus.DELETED);
@@ -298,7 +299,7 @@ public class TenantServiceGrpcImpl extends TenantServiceGrpc.TenantServiceImplBa
                                StreamObserver<TenantServiceProto.TenantResponse> responseObserver) {
         try {
             Tenant tenant = tenantRepository.findByTenantKey(request.getTenantKey())
-                    .orElseThrow(() -> new RuntimeException("Không tìm thấy tenant: " + request.getTenantKey()));
+                    .orElseThrow(() -> new TenantNotFoundException("Không tìm thấy tenant: " + request.getTenantKey()));
             tenant.setStatus(com.chatbot.core.tenant.model.TenantStatus.ACTIVE);
             tenant.setUpdatedAt(LocalDateTime.now());
             responseObserver.onNext(toGrpcTenantResponse(tenantRepository.save(tenant)));
@@ -314,7 +315,7 @@ public class TenantServiceGrpcImpl extends TenantServiceGrpc.TenantServiceImplBa
                               StreamObserver<TenantServiceProto.TenantResponse> responseObserver) {
         try {
             Tenant tenant = tenantRepository.findByTenantKey(request.getTenantKey())
-                    .orElseThrow(() -> new RuntimeException("Không tìm thấy tenant: " + request.getTenantKey()));
+                    .orElseThrow(() -> new TenantNotFoundException("Không tìm thấy tenant: " + request.getTenantKey()));
             tenant.setStatus(com.chatbot.core.tenant.model.TenantStatus.SUSPENDED);
             tenant.setUpdatedAt(LocalDateTime.now());
             responseObserver.onNext(toGrpcTenantResponse(tenantRepository.save(tenant)));

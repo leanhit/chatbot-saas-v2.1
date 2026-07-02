@@ -3,6 +3,8 @@ package com.chatbot.core.message.store.service;
 import com.chatbot.core.message.store.model.Conversation;
 import com.chatbot.core.message.store.repository.ConversationRepository;
 import com.chatbot.core.notification.websocket.NotificationWebSocketHandler;
+import com.chatbot.spokes.facebook.connection.repository.FacebookConnectionRepository;
+import com.chatbot.spokes.facebook.messenger.service.FacebookMessengerService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -24,13 +26,15 @@ public class ConversationEndWorkflow {
 
     private final ConversationRepository conversationRepository;
     private final NotificationWebSocketHandler notificationWebSocketHandler;
+    private final FacebookConnectionRepository facebookConnectionRepository;
+    private final FacebookMessengerService facebookMessengerService;
 
     /**
      * Handle conversation end
      * @param conversationId The conversation ID
      * @param endReason Reason for conversation end (user_closed, agent_closed, auto_closed, timeout)
      */
-    @Transactional
+    @Transactional(transactionManager = "messageTransactionManager", rollbackFor = Exception.class)
     public void handleConversationEnd(Long conversationId, String endReason) {
         log.info("Handling conversation end for {} - Reason: {}", conversationId, endReason);
 
@@ -110,7 +114,26 @@ public class ConversationEndWorkflow {
         log.info("Sending follow-up message to user in conversation {}: {}",
             conversation.getId(), followUpMessage);
 
-        // TODO: Integrate with channel-specific message sending (Facebook, Zalo, etc.)
+        // Send message via Facebook if conversation has Facebook connection
+        try {
+            facebookConnectionRepository.findById(conversation.getConnectionId())
+                .ifPresent(connection -> {
+                    try {
+                        facebookMessengerService.sendMessageToUser(
+                            connection.getPageId(),
+                            conversation.getExternalUserId(),
+                            followUpMessage,
+                            connection.getPageAccessToken()
+                        );
+                        log.info("Follow-up message sent via Facebook for conversation {}", conversation.getId());
+                    } catch (Exception e) {
+                        log.error("Failed to send follow-up message via Facebook for conversation {}: {}", 
+                            conversation.getId(), e.getMessage());
+                    }
+                });
+        } catch (Exception e) {
+            log.error("Error in offerFollowUpActions for conversation {}: {}", conversation.getId(), e.getMessage());
+        }
     }
 
     /**
@@ -154,7 +177,7 @@ public class ConversationEndWorkflow {
     /**
      * Reopen a closed conversation
      */
-    @Transactional
+    @Transactional(transactionManager = "messageTransactionManager", rollbackFor = Exception.class)
     public void reopenConversation(Long conversationId) {
         Conversation conversation = conversationRepository.findById(conversationId).orElse(null);
         if (conversation == null) {

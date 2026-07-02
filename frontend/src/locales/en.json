@@ -76,8 +76,13 @@
       "total": "Total Customers",
       "pending": "Pending",
       "completed": "Completed",
-      "synced": "Synced"
+      "synced": "Synced",
+      "capturedPhones": "Captured Phones"
     },
+    "statusInfo": "Status Information",
+    "currentStatus": "Current Status",
+    "timestamps": "Timestamps",
+    "lastUpdated": "Last Updated",
     "status": {
       "PENDING": "Pending",
       "COMPLETED": "Completed",

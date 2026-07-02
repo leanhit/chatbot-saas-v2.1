@@ -1,6 +1,7 @@
 package com.chatbot.core.message.decision.service;
 import lombok.extern.slf4j.Slf4j;
 
+import com.chatbot.core.message.decision.exception.ConversationNotFoundException;
 import com.chatbot.core.message.store.model.Conversation;
 import com.chatbot.core.message.store.service.ConversationService;
 import com.chatbot.core.message.store.repository.ConversationRepository;
@@ -102,7 +103,7 @@ public class TakeoverCleanupService {
                 log.info("🔧 [TakeoverCleanup] Manual cleanup requested for conversation: {}", conversationId);
                 
                 Conversation conversation = conversationRepository.findById(conversationId)
-                    .orElseThrow(() -> new RuntimeException("Conversation not found: " + conversationId));
+                    .orElseThrow(() -> new ConversationNotFoundException(conversationId));
                 
                 if (!conversation.getIsTakenOverByAgent()) {
                     return CleanupResult.builder()

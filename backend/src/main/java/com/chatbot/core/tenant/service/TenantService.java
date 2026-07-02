@@ -59,6 +59,7 @@ public class TenantService {
     private final AddressService addressService;
     private final TenantAuditLogService auditLogService;
     private final TenantPermissionValidator permissionValidator;
+    private final TenantCleanupService tenantCleanupService;
 
     @Value("${tenant.trial.days:30}")
     private int trialDays;
@@ -76,51 +77,64 @@ public class TenantService {
         log.info("[TenantService] Starting tenant creation");
 
         String currentUserEmail = permissionValidator.getCurrentUserEmail();
-        User currentUser = userRepository.findByEmail(currentUserEmail)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + currentUserEmail));
+        User currentUser = getCurrentUser(currentUserEmail);
 
+        Tenant savedTenant = createAndSaveTenant(request);
+        createOwnerMembership(savedTenant, currentUser.getId());
+        handleAddressCreation(savedTenant.getId());
+        assignDefaultPackage(savedTenant);
+        logAuditAction(savedTenant.getId(), currentUserEmail, savedTenant.getTenantKey());
+
+        log.info("[TenantService] Tenant creation complete: key={}", savedTenant.getTenantKey());
+        return TenantMapper.toResponse(savedTenant);
+    }
+
+    private User getCurrentUser(String email) {
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + email));
+    }
+
+    private Tenant createAndSaveTenant(CreateTenantRequest request) {
         Tenant tenant = TenantMapper.toEntity(request, trialDays);
         Tenant savedTenant = tenantRepository.save(tenant);
         log.info("[TenantService] Tenant saved: id={}, key={}", savedTenant.getId(), savedTenant.getTenantKey());
+        return savedTenant;
+    }
 
-        // Tạo membership OWNER
+    private void createOwnerMembership(Tenant tenant, Long userId) {
         TenantMember owner = TenantMember.builder()
-                .tenant(savedTenant)
-                .userId(currentUser.getId()) // Application-level join: store userId instead of User object
+                .tenant(tenant)
+                .userId(userId)
                 .role(TenantRole.OWNER)
                 .status(MembershipStatus.ACTIVE)
                 .build();
         tenantMemberRepository.save(owner);
+        log.info("[TenantService] Skipping profile creation for tenant: {}", tenant.getId());
+    }
 
-        // Profile creation removed - will be created via separate API call to avoid transaction rollback issues
-        log.info("[TenantService] Skipping profile creation for tenant: {}", savedTenant.getId());
-
-        // Tạo địa chỉ rỗng - non-critical
+    private void handleAddressCreation(Long tenantId) {
         try {
-            createEmptyAddressForTenant(savedTenant.getId());
-            log.info("[TenantService] Created empty address for tenant: {}", savedTenant.getId());
+            createEmptyAddressForTenant(tenantId);
+            log.info("[TenantService] Created empty address for tenant: {}", tenantId);
         } catch (Exception e) {
             log.error("[TenantService] [MONITORING] Failed to create address for tenant {}: {} - Tenant created but without address. Manual intervention may be required.", 
-                    savedTenant.getId(), e.getMessage(), e);
-            // Address creation is non-critical, continue with tenant creation
-            // Note: Consider integrating with monitoring/alerting systems (Prometheus Alertmanager, PagerDuty, etc.)
-            // for production environments to notify operations team of such failures
+                    tenantId, e.getMessage(), e);
         }
+    }
 
-        // Gán gói mặc định — critical operation, rollback if fails
+    private void assignDefaultPackage(Tenant tenant) {
         try {
-            tenantPackageService.assignDefaultPackageToTenant(savedTenant);
+            tenantPackageService.assignDefaultPackageToTenant(tenant);
         } catch (Exception e) {
             log.error("[TenantService] Failed to assign default package to {}: {}", 
-                    savedTenant.getTenantKey(), e.getMessage(), e);
+                    tenant.getTenantKey(), e.getMessage(), e);
             throw new BusinessLogicException("Failed to assign default package. Tenant creation rolled back: " + e.getMessage());
         }
+    }
 
-        auditLogService.logAction(savedTenant.getId(), currentUserEmail, "CREATE_TENANT",
-                "Tenant created with key " + savedTenant.getTenantKey());
-
-        log.info("[TenantService] Tenant creation complete: key={}", savedTenant.getTenantKey());
-        return TenantMapper.toResponse(savedTenant);
+    private void logAuditAction(Long tenantId, String userEmail, String tenantKey) {
+        auditLogService.logAction(tenantId, userEmail, "CREATE_TENANT",
+                "Tenant created with key " + tenantKey);
     }
 
     // =========================================================================
@@ -247,7 +261,8 @@ public class TenantService {
 
     @Transactional(readOnly = true, transactionManager = "tenantTransactionManager")
     public Page<TenantSearchResponse> searchTenants(TenantSearchRequest request, String currentUserEmail) {
-        Page<Tenant> tenantsPage = tenantRepository.findByVisibilityAndStatusAndNameContainingIgnoreCase(
+        // Use optimized query with FETCH JOIN to avoid N+1 problem
+        Page<Tenant> tenantsPage = tenantRepository.findByVisibilityAndStatusAndNameContainingIgnoreCaseWithProfile(
                 TenantVisibility.PUBLIC,
                 TenantStatus.ACTIVE,
                 request.getKeyword() != null ? request.getKeyword() : "",
@@ -262,12 +277,32 @@ public class TenantService {
                 .map(Tenant::getId).collect(Collectors.toList());
         
         // Fix N+1 query: fetch only memberships for the tenants in the current page
-        List<TenantMember> userMemberships = tenantIds.isEmpty() 
-                ? Collections.emptyList() 
+        List<TenantMember> userMemberships = tenantIds.isEmpty()
+                ? Collections.emptyList()
                 : tenantMemberRepository.findByUserIdAndTenantIdIn(userId, tenantIds);
 
-        Map<Long, com.chatbot.core.tenant.profile.dto.TenantProfileResponse> profilesMap =
-                tenantProfileService.getProfilesByTenantIds(tenantIds);
+        // Profiles are already fetched via FETCH JOIN, no need for separate query
+        Map<Long, com.chatbot.core.tenant.profile.dto.TenantProfileResponse> profilesMap = new java.util.HashMap<>();
+        for (Tenant tenant : tenantsPage.getContent()) {
+            if (tenant.getProfile() != null) {
+                com.chatbot.core.tenant.profile.model.TenantProfile profile = tenant.getProfile();
+                profilesMap.put(tenant.getId(), com.chatbot.core.tenant.profile.dto.TenantProfileResponse.builder()
+                        .tenantId(profile.getId())
+                        .description(profile.getDescription())
+                        .industry(profile.getIndustry())
+                        .plan(profile.getPlan())
+                        .companySize(profile.getCompanySize())
+                        .legalName(profile.getLegalName())
+                        .taxCode(profile.getTaxCode())
+                        .contactEmail(profile.getContactEmail())
+                        .contactPhone(profile.getContactPhone())
+                        .website(profile.getWebsite())
+                        .logoUrl(profile.getLogoUrl())
+                        .faviconUrl(profile.getFaviconUrl())
+                        .primaryColor(profile.getPrimaryColor())
+                        .build());
+            }
+        }
 
         return tenantsPage.map(tenant -> {
             TenantMembershipStatus status = userMemberships.stream()
@@ -373,7 +408,7 @@ public class TenantService {
      * Soft-delete tenant — chỉ ADMIN hoặc OWNER.
      */
     @CacheEvict(value = "tenants", key = "#tenantId")
-    @Transactional(transactionManager = "tenantTransactionManager")
+    @Transactional(value = "tenantTransactionManager", rollbackFor = Exception.class)
     public void deleteTenant(Long tenantId) {
         Tenant tenant = tenantRepository.findById(tenantId)
                 .orElseThrow(() -> new TenantNotFoundException("Tenant not found with ID: " + tenantId));
@@ -391,6 +426,15 @@ public class TenantService {
 
         auditLogService.logAction(tenantId, currentUserEmail, "DELETE_TENANT", "Tenant soft-deleted");
         log.info("[TenantService] Tenant {} soft-deleted by {}", tenantId, currentUserEmail);
+
+        // Cleanup related data asynchronously
+        try {
+            tenantCleanupService.cleanupTenantData(tenantId);
+        } catch (Exception e) {
+            log.error("[TenantService] Error during tenant data cleanup for tenant: {}", tenantId, e);
+            // Don't fail the delete operation if cleanup fails
+            // The cleanup can be retried via scheduled job
+        }
     }
 
     // =========================================================================
@@ -402,7 +446,7 @@ public class TenantService {
         return getTenantForCurrentUser(tenantId);
     }
 
-    @Transactional(readOnly = true, transactionManager = "tenantTransactionManager")
+    @Transactional(value = "tenantTransactionManager", readOnly = true, rollbackFor = Exception.class)
     public TenantResponse switchTenantByKey(String tenantKey) {
         Tenant tenant = tenantRepository.findByTenantKey(tenantKey)
                 .orElseThrow(() -> new TenantNotFoundException("Tenant not found with key: " + tenantKey));

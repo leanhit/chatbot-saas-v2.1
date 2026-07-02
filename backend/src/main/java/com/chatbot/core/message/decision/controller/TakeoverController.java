@@ -13,6 +13,7 @@ import com.chatbot.shared.exceptions.ErrorCode;
 import com.chatbot.shared.exceptions.ResourceNotFoundException;
 import com.chatbot.shared.exceptions.BaseException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -41,7 +42,7 @@ public class TakeoverController {
 
     // UI gửi tin nhắn → centralized xử lý qua TakeoverService
     @PostMapping("/send")
-    public ResponseEntity<?> sendMessage(@RequestBody TakeoverMessage message) {
+    public ResponseEntity<?> sendMessage(@Valid @RequestBody TakeoverMessage message) {
         try {
             log.debug("=== RECEIVED AGENT MESSAGE FOR TAKEOVER ===");
             log.debug("Message ID: {}", message.getId());

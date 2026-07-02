@@ -70,6 +70,8 @@ public class CacheConfig {
         cacheConfigurations.put("payments",            defaultConfig.entryTtl(Duration.ofMinutes(2)));
         cacheConfigurations.put("subscriptions",       defaultConfig.entryTtl(Duration.ofHours(1)));
         cacheConfigurations.put("auditLogs",           defaultConfig.entryTtl(Duration.ofMinutes(30)));
+        cacheConfigurations.put("users",               defaultConfig.entryTtl(Duration.ofMinutes(30)));
+        cacheConfigurations.put("conversations",       defaultConfig.entryTtl(Duration.ofMinutes(10)));
 
         // --- Package caches (merged from PackageCacheConfig) ---
         cacheConfigurations.put("packages",            defaultConfig.entryTtl(Duration.ofMinutes(30)));

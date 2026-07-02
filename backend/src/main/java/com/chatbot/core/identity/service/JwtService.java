@@ -54,6 +54,9 @@ public class JwtService {
     @Autowired(required = false)
     private TokenBlacklistService tokenBlacklistService;
 
+    @Autowired(required = false)
+    private JwtKeyManagementService jwtKeyManagementService;
+
     @PostConstruct
     public void init() {
         try {
@@ -189,15 +192,17 @@ public class JwtService {
 
     private Claims getClaims(String token) {
         try {
+            Key validationKey = getValidationKey(token);
+            
             if ("RS256".equals(jwtAlgorithm)) {
                 return Jwts.parserBuilder()
-                        .setSigningKey(publicKey)
+                        .setSigningKey(validationKey)
                         .build()
                         .parseClaimsJws(token)
                         .getBody();
             } else {
                 return Jwts.parserBuilder()
-                        .setSigningKey(hmacKey)
+                        .setSigningKey(validationKey)
                         .build()
                         .parseClaimsJws(token)
                         .getBody();
@@ -220,6 +225,62 @@ public class JwtService {
         } catch (Exception e) {
             log.error("Token parsing failed: {}", e.getMessage());
             throw new InvalidTokenException(com.chatbot.shared.exceptions.ErrorCode.TOKEN_INVALID_OR_EXPIRED, "Token is invalid or has expired", e);
+        }
+    }
+
+    private Key getValidationKey(String token) {
+        // Try to get key from key management service if rotation is enabled
+        if (jwtKeyManagementService != null) {
+            try {
+                // Extract key ID from token header
+                String keyId = extractKeyIdFromToken(token);
+                if (keyId != null && jwtKeyManagementService.isValidKeyId(keyId)) {
+                    Key key = jwtKeyManagementService.getKeyById(keyId);
+                    if (key != null) {
+                        return key;
+                    }
+                }
+                
+                // If key ID not found or invalid, try current key
+                Key currentKey = jwtKeyManagementService.getCurrentSigningKey();
+                if (currentKey != null) {
+                    return currentKey;
+                }
+            } catch (Exception e) {
+                log.debug("Failed to get key from key management service: {}", e.getMessage());
+            }
+        }
+        
+        // Fall back to static key
+        return "RS256".equals(jwtAlgorithm) ? publicKey : hmacKey;
+    }
+
+    private String extractKeyIdFromToken(String token) {
+        try {
+            String[] parts = token.split("\\.");
+            if (parts.length < 1) {
+                return null;
+            }
+            
+            // Decode header
+            String header = new String(Base64.getDecoder().decode(parts[0]));
+            
+            // Extract kid from header (simple JSON parsing)
+            if (header.contains("\"kid\"")) {
+                int kidIndex = header.indexOf("\"kid\"");
+                int colonIndex = header.indexOf(":", kidIndex);
+                int startIndex = header.indexOf("\"", colonIndex) + 1;
+                int endIndex = header.indexOf("\"", startIndex);
+                
+                if (startIndex > 0 && endIndex > startIndex) {
+                    return header.substring(startIndex, endIndex);
+                }
+            }
+            
+            return null;
+        } catch (Exception e) {
+            log.debug("Failed to extract key ID from token: {}", e.getMessage());
+            return null;
         }
     }
 

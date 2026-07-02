@@ -42,7 +42,7 @@ public class TenantPackageService {
     /**
      * Gán gói mặc định (free) cho tenant mới.
      */
-    @Transactional("tenantTransactionManager")
+    @Transactional(value = "tenantTransactionManager", rollbackFor = Exception.class)
     public void assignDefaultPackageToTenant(Tenant tenant) {
         log.info("[TenantPackageService] Assigning default package '{}' to tenant: {}",
                 defaultPackageId, tenant.getTenantKey());
@@ -64,7 +64,7 @@ public class TenantPackageService {
     /**
      * Nâng cấp tenant lên gói cụ thể.
      */
-    @Transactional(transactionManager = "tenantTransactionManager")
+    @Transactional(value = "tenantTransactionManager", rollbackFor = Exception.class)
     public void upgradeTenantPackage(Long tenantId, String packageId) {
         log.info("[TenantPackageService] Upgrading tenant {} to package: {}", tenantId, packageId);
 

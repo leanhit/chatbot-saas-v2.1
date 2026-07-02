@@ -78,6 +78,14 @@ public class Conversation extends BaseTenantEntity {
     @JdbcTypeCode(SqlTypes.JSON)
     private String customAttributes; // JSON string for custom attributes
 
+    // Queue routing fields
+    private String queueName; // Name of the queue when conversation is routed to queue
+
+    // Custom action fields
+    private String customAction; // Custom action name from routing rules
+    @JdbcTypeCode(SqlTypes.JSON)
+    private String customActionData; // JSON data for custom action
+
     // SLA Monitoring fields
     @JsonFormat(pattern = DateUtils.STANDARD_JSON_FORMAT, timezone = DateUtils.STANDARD_TIMEZONE)
     private LocalDateTime firstAgentResponseTime;

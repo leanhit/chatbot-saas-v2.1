@@ -77,7 +77,7 @@ public class MessageUsageService {
         try {
             String key = getMessageCountKey(tenantId);
             redisTemplate.delete(key);
-            log.debug("🧹 [MessageUsageService] Evicted message count key: {}", key);
+            log.debug("[MessageUsageService] Evicted message count key: {}", key);
         } catch (Exception e) {
             log.error("Failed to evict message count in Redis: {}", e.getMessage());
         }
@@ -86,7 +86,7 @@ public class MessageUsageService {
     /**
      * Get current message usage for tenant in current billing period
      */
-    @Transactional(readOnly = true, transactionManager = "tenantTransactionManager")
+    @Transactional(value = "tenantTransactionManager", readOnly = true, rollbackFor = Exception.class)
     public MessageUsageInfo getCurrentUsage(Long tenantId) {
         Package currentPackage = tenantPackageService.getCurrentTenantPackage(tenantId);
         if (currentPackage == null) {
@@ -146,7 +146,7 @@ public class MessageUsageService {
     /**
      * Check if tenant can send more messages
      */
-    @Transactional(readOnly = true, transactionManager = "tenantTransactionManager")
+    @Transactional(value = "tenantTransactionManager", readOnly = true, rollbackFor = Exception.class)
     public boolean canSendMoreMessages(Long tenantId) {
         MessageUsageInfo usage = getCurrentUsage(tenantId);
         return usage.getCanSendMore();
@@ -155,7 +155,7 @@ public class MessageUsageService {
     /**
      * Validate message sending and increment atomically to prevent TOCTOU
      */
-    @Transactional(readOnly = true, transactionManager = "tenantTransactionManager")
+    @Transactional(value = "tenantTransactionManager", rollbackFor = Exception.class)
     public void validateAndIncrementMessageCount(Long tenantId) {
         MessageUsageInfo usage = getCurrentUsage(tenantId);
         
@@ -188,7 +188,7 @@ public class MessageUsageService {
     /**
      * Get message usage statistics for dashboard
      */
-    @Transactional(readOnly = true, transactionManager = "tenantTransactionManager")
+    @Transactional(value = "tenantTransactionManager", readOnly = true, rollbackFor = Exception.class)
     public MessageUsageStats getUsageStats(Long tenantId) {
         Package currentPackage = tenantPackageService.getCurrentTenantPackage(tenantId);
         if (currentPackage == null) {

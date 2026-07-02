@@ -41,6 +41,15 @@ public interface TenantRepository extends JpaRepository<Tenant, Long> {
             Pageable pageable
     );
 
+    // Optimized query with FETCH JOIN to avoid N+1 problem in searchTenants
+    @Query("SELECT t FROM Tenant t LEFT JOIN FETCH t.profile WHERE t.visibility = :visibility AND t.status = :status AND (:name IS NULL OR :name = '' OR LOWER(t.name) LIKE LOWER(CONCAT('%', :name, '%')))")
+    Page<Tenant> findByVisibilityAndStatusAndNameContainingIgnoreCaseWithProfile(
+            @Param("visibility") TenantVisibility visibility,
+            @Param("status") TenantStatus status,
+            @Param("name") String name,
+            Pageable pageable
+    );
+
     // Lấy thông tin Tenant kèm Profile bằng ID (Dùng Fetch Join để tối ưu)
     @Query("SELECT t FROM Tenant t LEFT JOIN FETCH t.profile WHERE t.id = :id")
     Optional<Tenant> findByIdWithProfile(@Param("id") Long id);

@@ -36,7 +36,7 @@ public class PresenceController {
             
             return ResponseEntity.ok(onlineMembers);
         } catch (Exception e) {
-            log.error("❌ [Presence] Error getting online members: {}", e.getMessage(), e);
+            log.error("[Presence] Error getting online members: {}", e.getMessage(), e);
             return ResponseEntity.internalServerError().body(Map.of(
                 "error", "Failed to get online members",
                 "message", e.getMessage()

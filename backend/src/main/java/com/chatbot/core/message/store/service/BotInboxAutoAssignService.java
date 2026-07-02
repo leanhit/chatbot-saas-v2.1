@@ -1,7 +1,9 @@
 package com.chatbot.core.message.store.service;
 
 import com.chatbot.core.message.store.model.Agent;
+import com.chatbot.core.message.store.model.AutoAssignConfig;
 import com.chatbot.core.message.store.model.Conversation;
+import com.chatbot.core.message.store.repository.AutoAssignConfigRepository;
 import com.chatbot.core.message.store.repository.ConversationRepository;
 import com.chatbot.core.tenant.model.Tenant;
 import com.chatbot.core.tenant.model.TenantStatus;
@@ -30,6 +32,7 @@ public class BotInboxAutoAssignService {
     private final AgentAssignmentService agentAssignmentService;
     private final RoutingRuleService routingRuleService;
     private final TenantRepository tenantRepository;
+    private final AutoAssignConfigRepository autoAssignConfigRepository;
 
     /**
      * Auto-assign bot inbox conversations to available agents
@@ -223,10 +226,35 @@ public class BotInboxAutoAssignService {
     /**
      * Configure auto-assignment settings for a tenant
      */
-    @Transactional
+    @Transactional(transactionManager = "messageTransactionManager", rollbackFor = Exception.class)
     public void configureAutoAssign(Long tenantId, boolean enabled, int intervalSeconds) {
-        // TODO: Store configuration in database
+        AutoAssignConfig config = autoAssignConfigRepository.findByTenantId(tenantId)
+            .orElse(AutoAssignConfig.builder()
+                .tenantId(tenantId)
+                .enabled(true)
+                .intervalSeconds(30)
+                .maxConcurrentPerAgent(5)
+                .build());
+        
+        config.setEnabled(enabled);
+        config.setIntervalSeconds(intervalSeconds);
+        
+        autoAssignConfigRepository.save(config);
+        
         log.info("Configured auto-assign for tenant {}: enabled={}, interval={}s", 
             tenantId, enabled, intervalSeconds);
+    }
+    
+    /**
+     * Get auto-assign configuration for a tenant
+     */
+    public AutoAssignConfig getAutoAssignConfig(Long tenantId) {
+        return autoAssignConfigRepository.findByTenantId(tenantId)
+            .orElse(AutoAssignConfig.builder()
+                .tenantId(tenantId)
+                .enabled(true)
+                .intervalSeconds(30)
+                .maxConcurrentPerAgent(5)
+                .build());
     }
 }

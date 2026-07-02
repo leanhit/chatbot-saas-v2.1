@@ -2,7 +2,8 @@ package com.chatbot.core.message.decision.service;
 
 import com.chatbot.core.message.decision.model.TakeoverMessage;
 // !!! Cần Import WebSocket Handler !!!\
-import com.chatbot.core.message.decision.websocket.TakeoverWebSocketHandler; 
+import com.chatbot.core.message.decision.websocket.TakeoverWebSocketHandler;
+import com.chatbot.core.message.decision.exception.ConversationNotFoundException;
 import com.chatbot.core.message.store.service.MessageService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
@@ -13,6 +14,7 @@ import com.chatbot.core.message.store.repository.ConversationRepository;
 import com.chatbot.core.message.store.model.Conversation;
 import com.chatbot.spokes.facebook.connection.model.FacebookConnection;
 import com.chatbot.spokes.facebook.connection.repository.FacebookConnectionRepository;
+import com.chatbot.spokes.facebook.connection.exception.ConnectionNotFoundException;
 import com.chatbot.spokes.facebook.messenger.service.FacebookMessengerService;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
@@ -78,11 +80,11 @@ public class TakeoverService {
      */
     private void sendAgentTextMessage(Long conversationDbId, String content, Long agentId) {
         Conversation conversation = conversationRepository.findById(conversationDbId)
-                .orElseThrow(() -> new RuntimeException("Conversation not found for ID: " + conversationDbId));
+                .orElseThrow(() -> new ConversationNotFoundException(conversationDbId));
 
         UUID connectionId = conversation.getConnectionId();
         FacebookConnection connection = connectionRepository.findById(connectionId)
-                .orElseThrow(() -> new RuntimeException("Connection not found for ID: " + connectionId));
+                .orElseThrow(() -> new ConnectionNotFoundException(connectionId));
 
         String pageId = connection.getPageId();
         String recipientId = conversation.getExternalUserId();

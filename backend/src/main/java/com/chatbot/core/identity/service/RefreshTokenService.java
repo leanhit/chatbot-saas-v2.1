@@ -27,7 +27,7 @@ public class RefreshTokenService {
     private final JwtService jwtService;
     private final UserRepository userRepository; // Added for application-level join
     
-    @Transactional("identityTransactionManager")
+    @Transactional(value = "identityTransactionManager", rollbackFor = Exception.class)
     public RefreshToken createRefreshToken(User user) {
         // Delete existing refresh tokens for this user
         refreshTokenRepository.deleteByUserId(user.getId());
@@ -44,7 +44,7 @@ public class RefreshTokenService {
         return refreshToken;
     }
     
-    @Transactional("identityTransactionManager")
+    @Transactional(value = "identityTransactionManager", rollbackFor = Exception.class)
     public RefreshToken createRefreshToken(Long userId) {
         // Delete existing refresh tokens for this user
         refreshTokenRepository.deleteByUserId(userId);
@@ -61,12 +61,12 @@ public class RefreshTokenService {
         return refreshToken;
     }
     
-    @Transactional("identityTransactionManager")
+    @Transactional(value = "identityTransactionManager", rollbackFor = Exception.class)
     public Optional<RefreshToken> findByToken(String token) {
         return refreshTokenRepository.findByToken(token);
     }
     
-    @Transactional("identityTransactionManager")
+    @Transactional(value = "identityTransactionManager", rollbackFor = Exception.class)
     public RefreshToken verifyExpiration(RefreshToken token) {
         if (token.isExpired()) {
             refreshTokenRepository.delete(token);
@@ -75,7 +75,7 @@ public class RefreshTokenService {
         return token;
     }
     
-    @Transactional("identityTransactionManager")
+    @Transactional(value = "identityTransactionManager", rollbackFor = Exception.class)
     public String refreshAccessToken(String refreshToken) {
         RefreshToken refresh = findByToken(refreshToken)
                 .orElseThrow(() -> new InvalidTokenException("Refresh token không hợp lệ"));
@@ -94,7 +94,7 @@ public class RefreshTokenService {
         return newAccessToken;
     }
     
-    @Transactional("identityTransactionManager")
+    @Transactional(value = "identityTransactionManager", rollbackFor = Exception.class)
     public void deleteByUserId(Long userId) {
         refreshTokenRepository.deleteByUserId(userId);
         log.info("Deleted refresh tokens for user ID: {}", userId);

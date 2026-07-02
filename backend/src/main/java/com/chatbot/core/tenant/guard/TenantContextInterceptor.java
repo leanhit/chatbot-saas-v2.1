@@ -50,19 +50,19 @@ public class TenantContextInterceptor implements HandlerInterceptor {
                     // Set both tenant key and tenant ID in context
                     TenantContext.setCurrentTenant(tenantKey);
                     TenantContext.setTenantId(tenant.getId());
-                    log.debug("🏢 Set tenant context: {} (ID: {}, Status: {})", tenantKey, tenant.getId(), tenant.getStatus());
+                    log.debug("[TenantContext] Set tenant context: {} (ID: {}, Status: {})", tenantKey, tenant.getId(), tenant.getStatus());
                 } else {
-                    log.warn("⚠️ Tenant not found for key: {}", tenantKey);
+                    log.warn("[TenantContext] Tenant not found for key: {}", tenantKey);
                 }
             } catch (TenantInactiveException e) {
                 // Re-throw status check exceptions
                 throw e;
             } catch (Exception e) {
-                log.error("❌ Error setting tenant context for key: {}", tenantKey, e);
+                log.error("[TenantContext] Error setting tenant context for key: {}", tenantKey, e);
                 // Don't block the request, just log the error
             }
         } else {
-            log.debug("🔍 No X-Tenant-Key header found for path: {}", path);
+            log.debug("[TenantContext] No X-Tenant-Key header found for path: {}", path);
         }
 
         return true;

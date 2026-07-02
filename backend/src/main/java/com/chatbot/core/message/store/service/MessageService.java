@@ -227,7 +227,7 @@ public class MessageService {
      * @param message Message cần cập nhật
      * @return Message đã được cập nhật
      */
-    @Transactional
+    @Transactional(transactionManager = "messageTransactionManager", rollbackFor = Exception.class)
     public Message updateMessage(Message message) {
         Long tenantId = TenantContext.getTenantId();
         if (tenantId == null) {

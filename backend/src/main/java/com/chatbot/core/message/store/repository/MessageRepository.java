@@ -36,7 +36,7 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
     
     // Phương thức xóa tin nhắn theo conversationId và tenantId
     @Modifying
-    @Transactional
+    @Transactional(value = "messageTransactionManager", rollbackFor = Exception.class)
     @Query("DELETE FROM Message m WHERE m.conversationId = :conversationId AND m.tenantId = :tenantId")
     int deleteByConversationIdAndTenantId(
         @Param("conversationId") Long conversationId, 

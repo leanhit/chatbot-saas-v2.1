@@ -230,7 +230,18 @@ public class RoutingRuleService {
     private boolean handleCustomAction(Conversation conversation, Map<String, Object> action) {
         String customAction = (String) action.get("customAction");
         log.info("Routing rule applied custom action {} to conversation {}", customAction, conversation.getId());
-        // TODO: Implement custom action logic
+        
+        // Store custom action metadata in conversation for later processing
+        conversation.setCustomAction(customAction);
+        // Convert Map to JSON string for storage
+        try {
+            com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+            conversation.setCustomActionData(mapper.writeValueAsString(action));
+        } catch (Exception e) {
+            log.error("Failed to convert custom action data to JSON: {}", e.getMessage());
+        }
+        conversationRepository.save(conversation);
+        
         return true;
     }
 
@@ -286,7 +297,7 @@ public class RoutingRuleService {
     /**
      * Create default routing rules for a tenant
      */
-    @Transactional
+    @Transactional(transactionManager = "messageTransactionManager", rollbackFor = Exception.class)
     public void createDefaultRoutingRules(Long tenantId) {
         if (routingRuleRepository.findByTenantId(tenantId).isEmpty()) {
             // Rule 1: VIP customers auto-assign to available agents

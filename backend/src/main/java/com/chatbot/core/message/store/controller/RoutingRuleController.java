@@ -3,6 +3,7 @@ package com.chatbot.core.message.store.controller;
 import com.chatbot.core.message.store.model.RoutingRule;
 import com.chatbot.core.message.store.service.RoutingRuleService;
 import com.chatbot.core.tenant.infra.TenantContext;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -71,7 +72,7 @@ public class RoutingRuleController {
     @PutMapping("/{id}")
     public ResponseEntity<RoutingRule> updateRoutingRule(
             @PathVariable Long id,
-            @RequestBody RoutingRule rule) {
+            @Valid @RequestBody RoutingRule rule) {
         Long tenantId = TenantContext.getTenantId();
         if (tenantId == null) {
             return ResponseEntity.badRequest().build();

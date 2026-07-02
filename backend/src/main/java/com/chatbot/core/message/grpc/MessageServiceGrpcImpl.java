@@ -6,7 +6,11 @@ import com.chatbot.core.message.store.service.MessageService;
 import com.chatbot.core.message.store.service.ConversationService;
 import com.chatbot.core.message.store.model.Message;
 import com.chatbot.core.message.store.model.Conversation;
+import com.chatbot.core.grpc.util.GrpcMapperUtil;
+import com.chatbot.core.tenant.exception.TenantNotFoundException;
+import com.chatbot.core.tenant.service.TenantService;
 import io.grpc.stub.StreamObserver;
+import io.grpc.Status;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -33,6 +37,9 @@ public class MessageServiceGrpcImpl extends MessageServiceGrpc.MessageServiceImp
     
     @Autowired
     private ConversationService conversationService;
+
+    @Autowired
+    private TenantService tenantService;
 
     @Override
     public void sendMessage(SendMessageRequest request, StreamObserver<SendMessageResponse> responseObserver) {
@@ -65,10 +72,10 @@ public class MessageServiceGrpcImpl extends MessageServiceGrpc.MessageServiceImp
             responseObserver.onNext(response);
             responseObserver.onCompleted();
             
-            log.info("✅ gRPC: Tin nhắn đã gửi thành công - MessageId: {}", savedMessage.getId());
+            log.info("[gRPC] Message sent successfully - MessageId: {}", savedMessage.getId());
             
         } catch (Exception e) {
-            log.error("❌ gRPC: Lỗi khi gửi tin nhắn", e);
+            log.error("[gRPC] Error sending message", e);
             responseObserver.onError(io.grpc.Status.INTERNAL
                 .withDescription("Lỗi khi gửi tin nhắn: " + e.getMessage())
                 .asRuntimeException());
@@ -78,11 +85,12 @@ public class MessageServiceGrpcImpl extends MessageServiceGrpc.MessageServiceImp
     @Override
     public void receiveMessage(ReceiveMessageRequest request, StreamObserver<ReceiveMessageResponse> responseObserver) {
         try {
-            log.info("📥 gRPC: Nhận tin nhắn - Conversation: {}, Limit: {}", 
+            log.info("[gRPC] Receive messages - Conversation: {}, Limit: {}", 
                 request.getConversationId(), request.getLimit());
             
-            // Validate tenant context
+            // Validate inputs
             validateTenant(request.getTenantId());
+            validateConversationId(request.getConversationId());
             
             // Get messages for conversation
             org.springframework.data.domain.Page<Message> messagePage = messageService.getMessages(
@@ -108,11 +116,11 @@ public class MessageServiceGrpcImpl extends MessageServiceGrpc.MessageServiceImp
             responseObserver.onNext(response);
             responseObserver.onCompleted();
             
-            log.info("✅ gRPC: Đã nhận {} tin nhắn cho conversation {}", 
+            log.info("[gRPC] Received {} messages for conversation {}", 
                 grpcMessages.size(), request.getConversationId());
             
         } catch (Exception e) {
-            log.error("❌ gRPC: Lỗi khi nhận tin nhắn", e);
+            log.error("[gRPC] Error receiving messages", e);
             responseObserver.onError(io.grpc.Status.INTERNAL
                 .withDescription("Lỗi khi nhận tin nhắn: " + e.getMessage())
                 .asRuntimeException());
@@ -122,7 +130,7 @@ public class MessageServiceGrpcImpl extends MessageServiceGrpc.MessageServiceImp
     @Override
     public void getMessage(GetMessageRequest request, StreamObserver<GetMessageResponse> responseObserver) {
         try {
-            log.info("🔍 gRPC: Lấy tin nhắn - MessageId: {}", request.getMessageId());
+            log.info("[gRPC] Get message - MessageId: {}", request.getMessageId());
             
             // Validate tenant context
             validateTenant(request.getTenantId());
@@ -149,7 +157,7 @@ public class MessageServiceGrpcImpl extends MessageServiceGrpc.MessageServiceImp
             responseObserver.onCompleted();
             
         } catch (Exception e) {
-            log.error("❌ gRPC: Lỗi khi lấy tin nhắn", e);
+            log.error("[gRPC] Error getting message", e);
             responseObserver.onError(io.grpc.Status.INTERNAL
                 .withDescription("Lỗi khi lấy tin nhắn: " + e.getMessage())
                 .asRuntimeException());
@@ -159,7 +167,7 @@ public class MessageServiceGrpcImpl extends MessageServiceGrpc.MessageServiceImp
     @Override
     public void createConversation(CreateConversationRequest request, StreamObserver<CreateConversationResponse> responseObserver) {
         try {
-            log.info("🆕 gRPC: Tạo cuộc trò chuyện - Tenant: {}, Participants: {}", 
+            log.info("[gRPC] Create conversation - Tenant: {}, Participants: {}", 
                 request.getTenantId(), request.getConversation().getParticipantsCount());
             
             // Validate tenant context
@@ -181,10 +189,10 @@ public class MessageServiceGrpcImpl extends MessageServiceGrpc.MessageServiceImp
             responseObserver.onNext(response);
             responseObserver.onCompleted();
             
-            log.info("✅ gRPC: Cuộc trò chuyện đã tạo thành công - ConversationId: {}", savedConversation.getId());
+            log.info("[gRPC] Conversation created successfully - ConversationId: {}", savedConversation.getId());
             
         } catch (Exception e) {
-            log.error("❌ gRPC: Lỗi khi tạo cuộc trò chuyện", e);
+            log.error("[gRPC] Error creating conversation", e);
             responseObserver.onError(io.grpc.Status.INTERNAL
                 .withDescription("Lỗi khi tạo cuộc trò chuyện: " + e.getMessage())
                 .asRuntimeException());
@@ -194,7 +202,7 @@ public class MessageServiceGrpcImpl extends MessageServiceGrpc.MessageServiceImp
     @Override
     public void updateMessage(UpdateMessageRequest request, StreamObserver<UpdateMessageResponse> responseObserver) {
         try {
-            log.info("📝 gRPC: Cập nhật tin nhắn - MessageId: {}", request.getMessageId());
+            log.info("[gRPC] Update message - MessageId: {}", request.getMessageId());
             
             validateTenant(request.getTenantId());
             
@@ -212,7 +220,7 @@ public class MessageServiceGrpcImpl extends MessageServiceGrpc.MessageServiceImp
             responseObserver.onCompleted();
             
         } catch (Exception e) {
-            log.error("❌ gRPC: Lỗi khi cập nhật tin nhắn", e);
+            log.error("[gRPC] Error updating message", e);
             responseObserver.onError(io.grpc.Status.INTERNAL
                 .withDescription("Lỗi khi cập nhật tin nhắn: " + e.getMessage())
                 .asRuntimeException());
@@ -222,7 +230,7 @@ public class MessageServiceGrpcImpl extends MessageServiceGrpc.MessageServiceImp
     @Override
     public void deleteMessage(DeleteMessageRequest request, StreamObserver<DeleteMessageResponse> responseObserver) {
         try {
-            log.info("🗑️ gRPC: Xóa tin nhắn - MessageId: {}, Permanent: {}", 
+            log.info("[gRPC] Delete message - MessageId: {}, Permanent: {}", 
                 request.getMessageId(), request.getPermanent());
             
             validateTenant(request.getTenantId());
@@ -336,7 +344,9 @@ public class MessageServiceGrpcImpl extends MessageServiceGrpc.MessageServiceImp
             log.info("📥 gRPC: Lấy tin nhắn theo cuộc trò chuyện - Conversation: {}, Limit: {}", 
                 request.getConversationId(), request.getLimit());
             
+            // Validate inputs
             validateTenant(request.getTenantId());
+            validateConversationId(request.getConversationId());
             
             // Get messages for conversation
             org.springframework.data.domain.Page<Message> messagePage = messageService.getMessages(
@@ -366,48 +376,93 @@ public class MessageServiceGrpcImpl extends MessageServiceGrpc.MessageServiceImp
     }
     private void validateTenant(String tenantId) {
         if (tenantId == null || tenantId.trim().isEmpty()) {
-            throw new IllegalArgumentException("Tenant ID is required");
+            throw Status.INVALID_ARGUMENT
+                .withDescription("Tenant ID is required")
+                .asRuntimeException();
         }
-        // Note: Tenant validation should be implemented by calling TenantService
-        // This requires dependency injection of TenantService or using gRPC client
-        // For now, basic null/empty validation is performed
-        // Future enhancement: Add tenant existence and active status validation
+
+        try {
+            Long tenantIdLong = Long.parseLong(tenantId);
+            // Validate tenant exists
+            tenantService.getTenant(tenantIdLong);
+        } catch (NumberFormatException e) {
+            throw Status.INVALID_ARGUMENT
+                .withDescription("Invalid Tenant ID format: " + tenantId)
+                .asRuntimeException();
+        } catch (TenantNotFoundException e) {
+            log.warn("Tenant not found: {}", tenantId);
+            throw Status.NOT_FOUND
+                .withDescription("Tenant not found: " + tenantId)
+                .asRuntimeException();
+        } catch (Exception e) {
+            log.error("Error validating tenant: {}", tenantId, e);
+            throw Status.INTERNAL
+                .withDescription("Error validating tenant: " + e.getMessage())
+                .asRuntimeException();
+        }
+    }
+
+    private void validateConversationId(String conversationId) {
+        if (conversationId == null || conversationId.trim().isEmpty()) {
+            throw Status.INVALID_ARGUMENT
+                .withDescription("Conversation ID is required")
+                .asRuntimeException();
+        }
+
+        try {
+            Long.parseLong(conversationId);
+        } catch (NumberFormatException e) {
+            throw Status.INVALID_ARGUMENT
+                .withDescription("Invalid Conversation ID format: " + conversationId)
+                .asRuntimeException();
+        }
+    }
+
+    private void validateMessageId(String messageId) {
+        if (messageId == null || messageId.trim().isEmpty()) {
+            throw Status.INVALID_ARGUMENT
+                .withDescription("Message ID is required")
+                .asRuntimeException();
+        }
+
+        try {
+            Long.parseLong(messageId);
+        } catch (NumberFormatException e) {
+            throw Status.INVALID_ARGUMENT
+                .withDescription("Invalid Message ID format: " + messageId)
+                .asRuntimeException();
+        }
     }
 
     private Message convertGrpcMessageToDomain(com.chatbot.message.grpc.MessageServiceProto.Message grpcMessage) {
         Message message = new Message();
-        // ID là Long, không cần set vì sẽ được auto-generated
-        message.setConversationId(Long.parseLong(grpcMessage.getConversationId()));
-        message.setSender(grpcMessage.getSenderId()); // Sử dụng field sender thay vì senderId
+        message.setConversationId(GrpcMapperUtil.stringToLong(grpcMessage.getConversationId()));
+        message.setSender(grpcMessage.getSenderId());
         message.setContent(grpcMessage.getContent());
-        message.setMessageType(grpcMessage.getType().name());
-        // Model hiện tại không có metadata field, bỏ qua
+        message.setMessageType(GrpcMapperUtil.enumToString(grpcMessage.getType()));
         message.setExternalMessageId(grpcMessage.getExternalId());
         return message;
     }
 
     private com.chatbot.message.grpc.MessageServiceProto.Message convertDomainMessageToGrpc(Message domainMessage) {
         return com.chatbot.message.grpc.MessageServiceProto.Message.newBuilder()
-            .setId(domainMessage.getId().toString())
-            .setConversationId(domainMessage.getConversationId().toString())
-            .setSenderId(domainMessage.getSender()) // Sử dụng field sender
+            .setId(GrpcMapperUtil.longToString(domainMessage.getId()))
+            .setConversationId(GrpcMapperUtil.longToString(domainMessage.getConversationId()))
+            .setSenderId(domainMessage.getSender())
             .setContent(domainMessage.getContent())
             .setType(MessageType.valueOf(domainMessage.getMessageType()))
-            .setExternalId(domainMessage.getExternalMessageId() != null ? domainMessage.getExternalMessageId() : "")
-            .setCreatedAt(domainMessage.getCreatedAt() != null ? 
-                domainMessage.getCreatedAt().atZone(ZoneId.systemDefault()).toInstant().toEpochMilli() : 0)
+            .setExternalId(GrpcMapperUtil.nullSafeString(domainMessage.getExternalMessageId()))
+            .setCreatedAt(GrpcMapperUtil.localDateTimeToTimestamp(domainMessage.getCreatedAt()))
             .build();
     }
 
     private Conversation convertGrpcConversationToDomain(com.chatbot.message.grpc.MessageServiceProto.Conversation grpcConversation) {
         Conversation conversation = new Conversation();
-        // ID là Long, không cần set vì sẽ được auto-generated
-        conversation.setTenantId(Long.parseLong(grpcConversation.getTenantId()));
-        conversation.setConnectionId(UUID.randomUUID()); // Tạo UUID mới
+        conversation.setTenantId(GrpcMapperUtil.stringToLong(grpcConversation.getTenantId()));
+        conversation.setConnectionId(UUID.randomUUID());
         conversation.setExternalUserId(grpcConversation.getParticipantsList().isEmpty() ? "" : grpcConversation.getParticipantsList().get(0));
         conversation.setUserName(grpcConversation.getTitle());
-        conversation.setStatus("open"); // Default status
-        // Model hiện tại không có Channel enum, bỏ qua
+        conversation.setStatus("open");
         conversation.setIsTakenOverByAgent(false);
         conversation.setIsClosedByAgent(false);
         return conversation;
@@ -415,8 +470,8 @@ public class MessageServiceGrpcImpl extends MessageServiceGrpc.MessageServiceImp
 
     private com.chatbot.message.grpc.MessageServiceProto.Conversation convertDomainConversationToGrpc(Conversation domainConversation) {
         return com.chatbot.message.grpc.MessageServiceProto.Conversation.newBuilder()
-            .setId(domainConversation.getId().toString())
-            .setTenantId(domainConversation.getTenantId().toString())
+            .setId(GrpcMapperUtil.longToString(domainConversation.getId()))
+            .setTenantId(GrpcMapperUtil.longToString(domainConversation.getTenantId()))
             // Tạo participants list từ externalUserId
             .addAllParticipants(domainConversation.getExternalUserId() != null ? 
                 java.util.Arrays.asList(domainConversation.getExternalUserId()) : 

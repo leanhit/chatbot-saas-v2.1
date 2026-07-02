@@ -1,5 +1,6 @@
 package com.chatbot.core.tenant.membership.service;
 
+import com.chatbot.core.tenant.membership.exception.NotificationException;
 import com.chatbot.shared.messaging.MessagePublisher;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -66,7 +67,7 @@ public class TenantNotificationService {
             log.info("Join request notification sent for tenant {} by {}", tenantName, requesterEmail);
         } catch (Exception e) {
             log.error("Failed to send join request notification", e);
-            throw new RuntimeException("Hệ thống gửi thông báo đang gặp sự cố, vui lòng thử lại sau.", e);
+            throw new NotificationException("Hệ thống gửi thông báo đang gặp sự cố, vui lòng thử lại sau.", e);
         }
     }
 
@@ -112,7 +113,7 @@ public class TenantNotificationService {
             log.info("Join request approved notification sent for tenant {} to {}", tenantName, memberEmail);
         } catch (Exception e) {
             log.error("Failed to send join request approved notification", e);
-            throw new RuntimeException("Hệ thống gửi thông báo đang gặp sự cố, vui lòng thử lại sau.", e);
+            throw new NotificationException("Hệ thống gửi thông báo đang gặp sự cố, vui lòng thử lại sau.", e);
         }
     }
 }

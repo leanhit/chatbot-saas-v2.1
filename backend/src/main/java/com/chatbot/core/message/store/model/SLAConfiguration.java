@@ -3,6 +3,10 @@ package com.chatbot.core.message.store.model;
 import com.chatbot.core.tenant.infra.BaseTenantEntity;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
@@ -36,12 +40,15 @@ public class SLAConfiguration extends BaseTenantEntity {
      * Customer tier (VIP, Enterprise, Standard)
      */
     @Column(name = "customer_tier", nullable = false)
+    @NotBlank(message = "Customer tier is required")
     private String customerTier;
 
     /**
      * Expected response time in seconds
      */
     @Column(nullable = false)
+    @NotNull(message = "Expected response time is required")
+    @Positive(message = "Expected response time must be positive")
     private Long expectedResponseTime;
 
     /**
@@ -49,6 +56,7 @@ public class SLAConfiguration extends BaseTenantEntity {
      */
     @Column(nullable = false)
     @Builder.Default
+    @Min(value = 1, message = "Max breach count must be at least 1")
     private Integer maxBreachCount = 3;
 
     /**

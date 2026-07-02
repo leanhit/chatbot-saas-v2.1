@@ -45,7 +45,7 @@ public class NotificationWebSocketHandler extends TextWebSocketHandler {
         Long tenantId = (Long) session.getAttributes().get("tenantId");
 
         if (email == null) {
-            log.warn("⚠️ [Notification WS] Connection missing email attribute. Closing session.");
+            log.warn("[Notification WS] Connection missing email attribute. Closing session.");
             session.close(CloseStatus.NOT_ACCEPTABLE);
             return;
         }
@@ -64,9 +64,9 @@ public class NotificationWebSocketHandler extends TextWebSocketHandler {
         if (tenantId != null) {
             tenantSessions.computeIfAbsent(tenantId, k -> ConcurrentHashMap.newKeySet()).add(session);
             sessionToTenantMap.put(session.getId(), tenantId);
-            log.info("✅ [Notification WS] Connected: {} (ID: {}) for tenant {}", email, userId, tenantId);
+            log.info("[Notification WS] Connected: {} (ID: {}) for tenant {}", email, userId, tenantId);
         } else {
-            log.info("✅ [Notification WS] Connected: {} (ID: {}) without tenant context", email, userId);
+            log.info("[Notification WS] Connected: {} (ID: {}) without tenant context", email, userId);
         }
     }
 
@@ -105,7 +105,7 @@ public class NotificationWebSocketHandler extends TextWebSocketHandler {
             }
         }
 
-        log.info("❌ [Notification WS] Disconnected session of {}. Status: {}", email, status);
+        log.info("[Notification WS] Disconnected session of {}. Status: {}", email, status);
     }
 
     @Override
@@ -141,7 +141,7 @@ public class NotificationWebSocketHandler extends TextWebSocketHandler {
         if (email == null) return;
         Set<WebSocketSession> sessions = emailSessions.get(email);
         if (sessions == null || sessions.isEmpty()) {
-            log.debug("⚠️ [Notification WS] No active WebSocket session for user {}", email);
+            log.debug("[Notification WS] No active WebSocket session for user {}", email);
             return;
         }
 
@@ -155,7 +155,7 @@ public class NotificationWebSocketHandler extends TextWebSocketHandler {
         if (userId == null) return;
         Set<WebSocketSession> sessions = userSessions.get(userId);
         if (sessions == null || sessions.isEmpty()) {
-            log.debug("⚠️ [Notification WS] No active WebSocket session for user ID {}", userId);
+            log.debug("[Notification WS] No active WebSocket session for user ID {}", userId);
             return;
         }
 
@@ -171,7 +171,7 @@ public class NotificationWebSocketHandler extends TextWebSocketHandler {
         if (userId == null) return;
         Set<WebSocketSession> sessions = userSessions.get(userId);
         if (sessions == null || sessions.isEmpty()) {
-            log.debug("⚠️ [Notification WS] No active WebSocket session for user ID {}", userId);
+            log.debug("[Notification WS] No active WebSocket session for user ID {}", userId);
             return;
         }
 
@@ -190,7 +190,7 @@ public class NotificationWebSocketHandler extends TextWebSocketHandler {
         if (tenantId == null) return;
         Set<WebSocketSession> sessions = tenantSessions.get(tenantId);
         if (sessions == null || sessions.isEmpty()) {
-            log.debug("⚠️ [Notification WS] No active WebSocket sessions for tenant ID {}", tenantId);
+            log.debug("[Notification WS] No active WebSocket sessions for tenant ID {}", tenantId);
             return;
         }
 
@@ -211,13 +211,13 @@ public class NotificationWebSocketHandler extends TextWebSocketHandler {
                         s.sendMessage(textMessage);
                         sentCount++;
                     } catch (IOException e) {
-                        log.warn("⚠️ [Notification WS] Failed to send message to session {}: {}", s.getId(), e.getMessage());
+                        log.warn("[Notification WS] Failed to send message to session {}: {}", s.getId(), e.getMessage());
                     }
                 }
             }
-            log.info("📡 [Notification WS] Broadcasted notification to {}/{} open sessions", sentCount, snapshot.size());
+            log.info("[Notification WS] Broadcasted notification to {}/{} open sessions", sentCount, snapshot.size());
         } catch (Exception e) {
-            log.error("❌ [Notification WS] Failed to serialize or send notification: {}", e.getMessage(), e);
+            log.error("[Notification WS] Failed to serialize or send notification: {}", e.getMessage(), e);
         }
     }
 }

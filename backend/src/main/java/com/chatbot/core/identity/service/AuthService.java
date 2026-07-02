@@ -212,7 +212,7 @@ public class AuthService implements UserDetailsService {
         return rateLimitService.getRemainingAttempts(email);
     }
 
-    @Transactional("userTransactionManager")
+    @Transactional(value = "userTransactionManager", rollbackFor = Exception.class)
     public TokenRefreshResponse refreshToken(String refreshToken) {
         String newAccessToken = refreshTokenService.refreshAccessToken(refreshToken);
         
@@ -230,7 +230,7 @@ public class AuthService implements UserDetailsService {
         );
     }
 
-    @Transactional("userTransactionManager")
+    @Transactional(value = "userTransactionManager", rollbackFor = Exception.class)
     public void logout(String email) {
         User user = authRepository.findByEmail(email)
                 .orElseThrow(() -> new UserNotFoundException(IdentityConstants.USER_NOT_FOUND + ": " + email));

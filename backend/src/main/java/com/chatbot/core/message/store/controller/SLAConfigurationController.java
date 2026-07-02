@@ -4,6 +4,7 @@ import com.chatbot.core.message.store.model.SLAConfiguration;
 import com.chatbot.core.message.store.repository.SLAConfigurationRepository;
 import com.chatbot.core.message.store.service.SLAMonitorService;
 import com.chatbot.core.tenant.infra.TenantContext;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -76,7 +77,7 @@ public class SLAConfigurationController {
     @PutMapping("/{id}")
     public ResponseEntity<SLAConfiguration> updateSLAConfiguration(
             @PathVariable Long id,
-            @RequestBody SLAConfiguration config) {
+            @Valid @RequestBody SLAConfiguration config) {
         Long tenantId = TenantContext.getTenantId();
         if (tenantId == null) {
             return ResponseEntity.badRequest().build();

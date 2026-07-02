@@ -1,5 +1,6 @@
 package com.chatbot.core.tenant.service;
 
+import com.chatbot.core.tenant.exception.GrpcIntegrationException;
 import com.chatbot.core.tenant.grpc.TenantGrpcClient;
 import com.chatbot.core.identity.grpc.IdentityGrpcClient;
 import com.chatbot.core.identity.grpc.IdentityServiceOuterClass.*;
@@ -110,10 +111,10 @@ public class IdentityGrpcService {
                 return response;
             }
             
-            throw new RuntimeException("No profile response from Identity Hub");
+            throw new GrpcIntegrationException("No profile response from Identity Hub");
         } catch (Exception e) {
             log.error("Lỗi khi get profile cho user {} từ Identity Hub", userId, e);
-            throw new RuntimeException("Failed to get user profile from Identity Hub", e);
+            throw new GrpcIntegrationException("Failed to get user profile from Identity Hub", e);
         }
     }
 }

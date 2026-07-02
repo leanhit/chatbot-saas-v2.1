@@ -18,7 +18,7 @@ public interface TenantProfileRepository
     List<TenantProfile> findByTenantIdIn(List<Long> tenantIds);
 
     @Modifying
-    @Transactional
+    @Transactional(value = "tenantTransactionManager", rollbackFor = Exception.class)
     @Query(value = "INSERT INTO tenant_profiles (tenant_id) VALUES (:tenantId)", nativeQuery = true)
     void insertProfile(Long tenantId);
 }

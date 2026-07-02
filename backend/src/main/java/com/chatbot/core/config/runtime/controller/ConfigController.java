@@ -11,6 +11,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -123,7 +124,7 @@ public class ConfigController {
     )
     public ResponseEntity<ConfigResponse> updateConfig(
             @PathVariable Long configId,
-            @RequestBody ConfigRequest request) {
+            @Valid @RequestBody ConfigRequest request) {
         
         ConfigResponse response = runtimeConfigService.updateConfig(configId, request);
         
