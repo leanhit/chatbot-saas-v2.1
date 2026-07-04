@@ -11,7 +11,7 @@ class TakeoverWebSocketService {
     this.currentConversationId = ref(null)
     this.connectionStatus = ref('disconnected') // disconnected, connecting, connected, error
     this.reconnectAttempts = 0
-    this.maxReconnectAttempts = 5
+    this.maxReconnectAttempts = 1000
     this.reconnectInterval = 3000
     this.heartbeatInterval = null
     this.messageQueue = ref([])
@@ -466,6 +466,7 @@ class TakeoverWebSocketService {
       // Exponential backoff for better stability
       const backoffDelay = Math.min(1000 * Math.pow(2, this.reconnectAttempts - 1), 30000)
       
+      console.warn(`⚠️ Takeover WebSocket reconnecting attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts} in ${backoffDelay}ms...`)
       setTimeout(() => {
         this.connect(this.currentConversationId.value)
       }, backoffDelay)

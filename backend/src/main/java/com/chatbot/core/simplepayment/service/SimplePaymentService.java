@@ -26,6 +26,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import com.chatbot.core.notification.websocket.NotificationWebSocketHandler;
 
 @Service
 @RequiredArgsConstructor
@@ -49,6 +50,7 @@ public class SimplePaymentService {
     private final PaymentAuditService paymentAuditService;
     private final PaymentMetricsService paymentMetricsService;
     private final PaymentNotificationService paymentNotificationService;
+    private final NotificationWebSocketHandler notificationWebSocketHandler;
 
     /**
      * Tạo yêu cầu nạp tiền mới
@@ -307,6 +309,43 @@ public class SimplePaymentService {
         if (payment.getTargetPackageId() != null && !payment.getTargetPackageId().trim().isEmpty()) {
             sendPackageUpgradeNotifications(payment);
         }
+
+        // 1. Send real-time SSE payment success notification to client
+        try {
+            PaymentStatusResponse response = new PaymentStatusResponse();
+            response.setReferenceCode(payment.getReferenceCode());
+            response.setStatus(payment.getStatus().name());
+            response.setAmount(payment.getAmount());
+            response.setCurrency(payment.getCurrency());
+            response.setDescription(payment.getDescription());
+            response.setBankTransactionId(payment.getBankTransactionId());
+            response.setTargetPackageId(payment.getTargetPackageId());
+            response.setCreatedAt(payment.getCreatedAt());
+            response.setCompletedAt(payment.getCompletedAt());
+            response.setExpiresAt(payment.getExpiresAt());
+            response.setUpdatedAt(payment.getUpdatedAt());
+            response.withFormattedDates();
+
+            paymentNotificationService.notifyPaymentSuccess(referenceCode, response);
+        } catch (Exception e) {
+            log.error("❌ Failed to send SSE success notification: {}", e.getMessage(), e);
+        }
+
+        // 2. Send WebSocket notification toast to the user
+        try {
+            Map<String, Object> wsPayload = Map.of(
+                "type", "PAYMENT_SUCCESS",
+                "data", Map.of(
+                    "amount", payment.getAmount(),
+                    "referenceCode", payment.getReferenceCode(),
+                    "status", payment.getStatus().name()
+                )
+            );
+            notificationWebSocketHandler.sendToUser(payment.getUserId(), wsPayload);
+            log.info("📧 Sent PAYMENT_SUCCESS WebSocket notification to user ID: {}", payment.getUserId());
+        } catch (Exception e) {
+            log.error("❌ Failed to send WebSocket success notification: {}", e.getMessage(), e);
+        }
     }
 
     private void sendPackageUpgradeNotifications(SimplePayment payment) {
@@ -454,6 +493,77 @@ public class SimplePaymentService {
         }
 
         log.info("✅ Expired {} pending payments", expiredPayments.size());
+    }
+
+    /**
+     * Expire a single pending payment
+     */
+    @Transactional("sharedTransactionManager")
+    public void expirePayment(String referenceCode) {
+        log.info("⏰ Expiring payment: {}", referenceCode);
+
+        SimplePayment payment = paymentRepository.findByReferenceCode(referenceCode)
+                .orElse(null);
+
+        if (payment == null) {
+            log.warn("Payment {} not found for expiration", referenceCode);
+            return;
+        }
+
+        if (payment.getStatus() != PaymentStatus.PENDING) {
+            log.info("Payment {} is already in status {}, skipping expiration", referenceCode, payment.getStatus());
+            return;
+        }
+
+        payment.setStatus(PaymentStatus.EXPIRED);
+        paymentRepository.save(payment);
+
+        // Publish Redis event for real-time notification
+        PaymentEvent event = redisPaymentService.createStatusUpdateEvent(
+            payment.getReferenceCode(), PaymentStatus.EXPIRED, null
+        );
+        redisPaymentService.publishPaymentEvent(event);
+
+        // Trigger email notification
+        emailNotificationService.sendPaymentExpiredEmail(payment.getReferenceCode());
+
+        // Trigger webhook notification
+        webhookService.triggerWebhook(com.chatbot.core.simplepayment.model.Webhook.WebhookEventType.PAYMENT_EXPIRED, payment);
+
+        // Log audit
+        paymentAuditService.logPaymentAction(
+            payment.getReferenceCode(),
+            payment.getUserId(),
+            payment.getTenantId(),
+            com.chatbot.core.simplepayment.model.PaymentAuditLog.AuditAction.PAYMENT_EXPIRED,
+            "PENDING",
+            "EXPIRED",
+            payment.getAmount(),
+            "Payment expired automatically",
+            null
+        );
+
+        // Track metrics
+        paymentMetricsService.incrementPaymentExpired();
+
+        // Send WebSocket notification toast to the user
+        try {
+            Map<String, Object> wsPayload = Map.of(
+                "type", "PAYMENT_FAILED",
+                "data", Map.of(
+                    "amount", payment.getAmount(),
+                    "referenceCode", payment.getReferenceCode(),
+                    "status", "EXPIRED",
+                    "reason", "Yêu cầu thanh toán đã hết hạn"
+                )
+            );
+            notificationWebSocketHandler.sendToUser(payment.getUserId(), wsPayload);
+            log.info("📧 Sent PAYMENT_FAILED (EXPIRED) WebSocket notification to user ID: {}", payment.getUserId());
+        } catch (Exception e) {
+            log.error("❌ Failed to send WebSocket expired notification: {}", e.getMessage(), e);
+        }
+        
+        log.info("✅ Payment {} expired successfully", referenceCode);
     }
 
     public void updateUserBalanceInSeparateTransaction(Long userId, BigDecimal amount) {

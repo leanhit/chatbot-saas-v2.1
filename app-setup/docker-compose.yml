@@ -228,6 +228,7 @@ services:
     image: redis:7-alpine
     container_name: chatbot_saas_redis
     restart: always
+    command: redis-server --notify-keyspace-events Ex
     ports:
       - "6380:6379"
     volumes:

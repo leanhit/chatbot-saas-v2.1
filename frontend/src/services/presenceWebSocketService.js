@@ -9,7 +9,7 @@ class PresenceWebSocketService {
     this.socket = null
     this.connectionStatus = ref('disconnected') // disconnected, connecting, connected, error
     this.reconnectAttempts = 0
-    this.maxReconnectAttempts = 5
+    this.maxReconnectAttempts = 1000
     this.reconnectInterval = 3000
     this.heartbeatInterval = null
     this.onlineMembers = ref(new Map()) // userId -> member info
@@ -225,6 +225,7 @@ class PresenceWebSocketService {
       
       const backoffDelay = Math.min(1000 * Math.pow(2, this.reconnectAttempts - 1), 30000)
       
+      console.warn(`⚠️ Presence WebSocket reconnecting attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts} in ${backoffDelay}ms...`)
       setTimeout(() => {
         this.connect(this.tenantKey)
       }, backoffDelay)

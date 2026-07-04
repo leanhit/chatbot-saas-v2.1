@@ -32,16 +32,18 @@ const paymentStore = usePaymentStore()
 authStore.initialize()
 tenantStore.initialize()
 
+// Connect WebSocket immediately on load if token is already present
+if (authStore.token) {
+  websocketService.connect(authStore.token)
+}
+
 // Initialize WebSocket when user is authenticated
-authStore.$subscribe(async (state, prevState) => {
-  if (state.isAuthenticated && !prevState.isAuthenticated) {
-    // User just logged in, initialize WebSocket
-    const token = authStore.token
-    if (token) {
-      websocketService.connect(token)
-    }
-  } else if (!state.isAuthenticated && prevState.isAuthenticated) {
-    // User just logged out, disconnect WebSocket
+authStore.$subscribe(async (mutation, state) => {
+  if (state.token) {
+    // User just logged in or is active, initialize WebSocket
+    websocketService.connect(state.token)
+  } else {
+    // User logged out, disconnect WebSocket
     websocketService.disconnect()
   }
 })

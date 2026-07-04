@@ -4,7 +4,7 @@ class WebSocketService {
   constructor() {
     this.socket = null
     this.reconnectAttempts = 0
-    this.maxReconnectAttempts = 5
+    this.maxReconnectAttempts = 1000
     this.reconnectInterval = 5000
     this.notificationStore = null
     this.token = null
@@ -177,21 +177,31 @@ class WebSocketService {
   }
 
   attemptReconnect() {
-    if (this.reconnectAttempts < this.maxReconnectAttempts) {
+    if (this.reconnectAttempts < this.maxReconnectAttempts && this.token) {
       this.reconnectAttempts++
+      // Exponential backoff for better stability (max 30s)
+      const backoffDelay = Math.min(1000 * Math.pow(2, this.reconnectAttempts - 1), 30000)
+      
+      console.warn(`⚠️ WebSocket reconnecting attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts} in ${backoffDelay}ms...`)
       setTimeout(() => {
         this.connect()
-      }, this.reconnectInterval)
+      }, backoffDelay)
+    } else if (!this.token) {
+      console.log('ℹ️ WebSocket reconnection aborted (no token/logged out)')
     } else {
-      }
+      console.error('❌ WebSocket reconnection failed after maximum attempts')
+    }
   }
 
   disconnect() {
+    this.token = null // Clear token to prevent reconnecting
     if (this.socket) {
       this.socket.close()
       this.socket = null
     }
-    this.notificationStore.isConnected = false
+    if (this.notificationStore) {
+      this.notificationStore.isConnected = false
+    }
   }
 
   send(message) {
