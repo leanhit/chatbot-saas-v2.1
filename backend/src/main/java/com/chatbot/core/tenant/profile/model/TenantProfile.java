@@ -1,6 +1,7 @@
 package com.chatbot.core.tenant.profile.model;
 
 import com.chatbot.core.tenant.model.Tenant;
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
@@ -28,6 +29,7 @@ public class TenantProfile {
     @OneToOne(fetch = FetchType.LAZY)
     @MapsId
     @JoinColumn(name = "tenant_id", nullable = false)
+    @JsonBackReference(value = "tenant-profile")
     private Tenant tenant;
 
     // ===== Mô tả / hiển thị =====

@@ -102,7 +102,7 @@ public class TakeoverMessageValidationTest {
             "conv456",
             "agent",
             "Hello world",
-            0L
+            null
         );
 
         Set<ConstraintViolation<TakeoverMessage>> violations = validator.validate(message);

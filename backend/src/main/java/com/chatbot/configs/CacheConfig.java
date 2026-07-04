@@ -78,6 +78,8 @@ public class CacheConfig {
         cacheConfigurations.put("activePackages",      defaultConfig.entryTtl(Duration.ofMinutes(30)));
         cacheConfigurations.put("packageValidation",   defaultConfig.entryTtl(Duration.ofMinutes(30)));
         cacheConfigurations.put("packageUsage",        defaultConfig.entryTtl(Duration.ofMinutes(30)));
+        cacheConfigurations.put("activeDiscounts",     defaultConfig.entryTtl(Duration.ofMinutes(30)));
+        cacheConfigurations.put("systemConfig",        defaultConfig.entryTtl(Duration.ofHours(2)));
 
         // --- Location caches ---
         cacheConfigurations.put("provinces",           defaultConfig.entryTtl(Duration.ofDays(1)));

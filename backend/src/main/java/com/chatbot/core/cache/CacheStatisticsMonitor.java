@@ -55,8 +55,8 @@ public class CacheStatisticsMonitor {
             }
             
             // Get key count
-            Set<String> allKeys = redisTemplate.keys("*");
-            int keyCount = allKeys != null ? allKeys.size() : 0;
+            Long size = connectionFactory.getConnection().dbSize();
+            int keyCount = size != null ? size.intValue() : 0;
             
             return CacheStatistics.builder()
                     .keyCount(keyCount)

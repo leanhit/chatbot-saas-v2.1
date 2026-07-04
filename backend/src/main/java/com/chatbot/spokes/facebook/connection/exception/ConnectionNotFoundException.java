@@ -19,4 +19,8 @@ public class ConnectionNotFoundException extends BaseException {
     public ConnectionNotFoundException(java.util.UUID connectionId) {
         super(ErrorCode.CONNECTION_NOT_FOUND, "Connection not found with ID: " + connectionId);
     }
+
+    public ConnectionNotFoundException(java.util.UUID connectionId, Throwable cause) {
+        super(ErrorCode.CONNECTION_NOT_FOUND, "Connection not found with ID: " + connectionId, cause);
+    }
 }

@@ -23,5 +23,5 @@ public class TakeoverMessage {
     private String content;
     
     @NotNull(message = "Timestamp is required")
-    private long timestamp;         // millis
+    private Long timestamp;         // millis
 }

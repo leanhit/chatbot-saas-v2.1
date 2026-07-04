@@ -34,13 +34,18 @@ public class UserEntityListener implements ApplicationContextAware {
         }
         try {
             CacheManager cacheManager = context.getBean(CacheManager.class);
-            Cache cache = cacheManager.getCache("userSessions");
-            if (cache != null && user.getEmail() != null) {
-                cache.evict(user.getEmail());
+            Cache sessionsCache = cacheManager.getCache("userSessions");
+            if (sessionsCache != null && user.getEmail() != null) {
+                sessionsCache.evict(user.getEmail());
                 log.info("🧹 [UserEntityListener] Evicted userSessions cache for email: {}", user.getEmail());
             }
+            Cache usersCache = cacheManager.getCache("users");
+            if (usersCache != null && user.getId() != null) {
+                usersCache.evict(user.getId());
+                log.info("🧹 [UserEntityListener] Evicted users cache for ID: {}", user.getId());
+            }
         } catch (Exception e) {
-            log.error("❌ [UserEntityListener] Failed to evict userSessions cache: {}", e.getMessage());
+            log.error("❌ [UserEntityListener] Failed to evict user caches: {}", e.getMessage());
         }
     }
 }

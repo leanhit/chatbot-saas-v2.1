@@ -4,6 +4,7 @@ import com.chatbot.core.tenant.profile.model.TenantProfile;
 import com.chatbot.core.tenant.professional.model.TenantProfessional;
 import com.chatbot.shared.utils.DateUtils;
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
@@ -16,6 +17,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@EntityListeners(TenantEntityListener.class)
 public class Tenant {
 
     @Id
@@ -74,9 +76,11 @@ public class Tenant {
     }
     
     @OneToOne(mappedBy = "tenant", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference(value = "tenant-profile")
     private TenantProfile profile;
 
     @OneToOne(mappedBy = "tenant", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference(value = "tenant-professional")
     private TenantProfessional professional;
 
     // Các phương thức prePersist và preUpdate vẫn giữ nguyên vì cần xử lý logic đặc biệt

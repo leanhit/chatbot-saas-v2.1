@@ -1,7 +1,7 @@
 package com.chatbot.core.cache;
 
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
@@ -25,10 +25,13 @@ import java.util.concurrent.TimeUnit;
  */
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class CacheService {
 
     private final RedisTemplate<String, Object> redisTemplate;
+
+    public CacheService(@Qualifier("cacheRedisTemplate") RedisTemplate<String, Object> redisTemplate) {
+        this.redisTemplate = redisTemplate;
+    }
 
     // ========================================
     // Basic Cache Operations
@@ -275,47 +278,6 @@ public class CacheService {
     }
 
     // ========================================
-    // Cache Warming
-    // ========================================
-
-    /**
-     * Warm up cache with frequently accessed data
-     */
-    public void warmUpCache() {
-        log.info("Starting cache warm-up");
-        
-        try {
-            // Warm up package configurations
-            warmUpPackages();
-            
-            // Warm up tenant data
-            warmUpTenants();
-            
-            // Warm up chatbot configurations
-            warmUpChatbots();
-            
-            log.info("Cache warm-up completed");
-        } catch (Exception e) {
-            log.error("Error during cache warm-up", e);
-        }
-    }
-
-    private void warmUpPackages() {
-        // Implementation would load all active packages into cache
-        log.debug("Warming up packages cache");
-    }
-
-    private void warmUpTenants() {
-        // Implementation would load active tenant data into cache
-        log.debug("Warming up tenants cache");
-    }
-
-    private void warmUpChatbots() {
-        // Implementation would load active chatbot configurations into cache
-        log.debug("Warming up chatbots cache");
-    }
-
-    // ========================================
     // Cache Invalidation
     // ========================================
 
@@ -376,18 +338,36 @@ public class CacheService {
      */
     public CacheStatistics getStatistics() {
         try {
-            // Get Redis info
-            Properties info = redisTemplate.getConnectionFactory()
+            // Get Redis info for memory
+            Properties memoryInfo = redisTemplate.getConnectionFactory()
                     .getConnection()
                     .info("memory");
             
-            // Parse memory info (simplified)
             long usedMemory = 0;
             long maxMemory = 0;
             
+            if (memoryInfo != null) {
+                String usedStr = memoryInfo.getProperty("used_memory");
+                if (usedStr != null) {
+                    try {
+                        usedMemory = Long.parseLong(usedStr);
+                    } catch (NumberFormatException e) {
+                        log.debug("Failed to parse used_memory: {}", usedStr);
+                    }
+                }
+                String maxStr = memoryInfo.getProperty("maxmemory");
+                if (maxStr != null) {
+                    try {
+                        maxMemory = Long.parseLong(maxStr);
+                    } catch (NumberFormatException e) {
+                        log.debug("Failed to parse maxmemory: {}", maxStr);
+                    }
+                }
+            }
+            
             // Get key count
-            Set<String> allKeys = redisTemplate.keys("*");
-            int keyCount = allKeys != null ? allKeys.size() : 0;
+            Long size = redisTemplate.getConnectionFactory().getConnection().dbSize();
+            int keyCount = size != null ? size.intValue() : 0;
             
             return CacheStatistics.builder()
                     .keyCount(keyCount)
@@ -402,8 +382,27 @@ public class CacheService {
     }
 
     private double calculateHitRate() {
-        // Implementation would calculate actual hit rate
-        return 0.85; // Placeholder
+        try {
+            Properties statsInfo = redisTemplate.getConnectionFactory()
+                    .getConnection()
+                    .info("stats");
+            
+            if (statsInfo != null) {
+                String hitsStr = statsInfo.getProperty("keyspace_hits");
+                String missesStr = statsInfo.getProperty("keyspace_misses");
+                if (hitsStr != null && missesStr != null) {
+                    long hits = Long.parseLong(hitsStr);
+                    long misses = Long.parseLong(missesStr);
+                    long total = hits + misses;
+                    if (total > 0) {
+                        return (double) hits / total;
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log.warn("Error calculating cache hit rate from Redis stats", e);
+        }
+        return 0.85; // Fallback default
     }
 
     // ========================================
