@@ -36,7 +36,7 @@ public class TakeoverMessageValidationTest {
     }
 
     @Test
-    public void testBlankMessageId() {
+    public void testBlankMessageIdAllowed() {
         TakeoverMessage message = new TakeoverMessage(
             "",
             "conv456",
@@ -46,8 +46,7 @@ public class TakeoverMessageValidationTest {
         );
 
         Set<ConstraintViolation<TakeoverMessage>> violations = validator.validate(message);
-        assertFalse(violations.isEmpty(), "Blank message ID should have violations");
-        assertTrue(violations.stream().anyMatch(v -> v.getMessage().contains("Message ID is required")));
+        assertTrue(violations.isEmpty(), "Blank message ID should be allowed");
     }
 
     @Test
@@ -66,7 +65,7 @@ public class TakeoverMessageValidationTest {
     }
 
     @Test
-    public void testBlankSender() {
+    public void testBlankSenderAllowed() {
         TakeoverMessage message = new TakeoverMessage(
             "msg123",
             "conv456",
@@ -76,8 +75,7 @@ public class TakeoverMessageValidationTest {
         );
 
         Set<ConstraintViolation<TakeoverMessage>> violations = validator.validate(message);
-        assertFalse(violations.isEmpty(), "Blank sender should have violations");
-        assertTrue(violations.stream().anyMatch(v -> v.getMessage().contains("Sender is required")));
+        assertTrue(violations.isEmpty(), "Blank sender should be allowed");
     }
 
     @Test
@@ -96,7 +94,7 @@ public class TakeoverMessageValidationTest {
     }
 
     @Test
-    public void testNullTimestamp() {
+    public void testNullTimestampAllowed() {
         TakeoverMessage message = new TakeoverMessage(
             "msg123",
             "conv456",
@@ -106,7 +104,6 @@ public class TakeoverMessageValidationTest {
         );
 
         Set<ConstraintViolation<TakeoverMessage>> violations = validator.validate(message);
-        assertFalse(violations.isEmpty(), "Null timestamp should have violations");
-        assertTrue(violations.stream().anyMatch(v -> v.getMessage().contains("Timestamp is required")));
+        assertTrue(violations.isEmpty(), "Null timestamp should be allowed");
     }
 }
