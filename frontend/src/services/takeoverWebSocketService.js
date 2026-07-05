@@ -19,6 +19,8 @@ class TakeoverWebSocketService {
     this.activeAgents = ref(new Map()) // conversationId -> Set of agent info
     this.typingIndicators = ref(new Map()) // conversationId -> Set of typing agents
     this.notificationStore = null
+    this.connectedToken = null
+    this.connectedTenantKey = null
     
     // Event callbacks
     this.onMessageReceived = null
@@ -35,14 +37,27 @@ class TakeoverWebSocketService {
    * Connect to WebSocket and start tracking conversation
    */
   async connect(conversationId) {
-    if (this.socket && this.socket.readyState === WebSocket.OPEN) {
-      if (this.currentConversationId.value === conversationId) {
-        return // Already connected to this conversation
-      }
-      this.disconnect() // Disconnect from previous conversation
+    const { useAuthStore } = await import('@/stores/authStore')
+    const authStore = useAuthStore()
+    const token = authStore.token || ''
+    const tenantKey = localStorage.getItem('active_tenant_id') || ''
+
+    // Prevent duplicate connections if we are already connected or connecting with the same conversation, token, and tenant key
+    if (this.socket && 
+        (this.socket.readyState === WebSocket.OPEN || this.socket.readyState === WebSocket.CONNECTING) && 
+        this.currentConversationId.value === conversationId &&
+        this.connectedToken === token &&
+        this.connectedTenantKey === tenantKey) {
+      return
+    }
+
+    if (this.socket) {
+      this.disconnect()
     }
 
     this.currentConversationId.value = conversationId
+    this.connectedToken = token
+    this.connectedTenantKey = tenantKey
     this.connectionStatus.value = 'connecting'
     this.notificationStore = useNotificationStore()
 
@@ -58,17 +73,14 @@ class TakeoverWebSocketService {
       // Remove any potential fragments or invalid characters
       const cleanUrl = wsUrl.split('#')[0].trim()
 
-      // Append JWT token and active tenant key for handshake authentication
-      const { useAuthStore } = await import('@/stores/authStore')
-      const authStore = useAuthStore()
-      const token = authStore.token || ''
-      const tenantKey = localStorage.getItem('active_tenant_id') || ''
       const separator = cleanUrl.includes('?') ? '&' : '?'
       const finalUrl = `${cleanUrl}${separator}token=${encodeURIComponent(token)}&tenantKey=${encodeURIComponent(tenantKey)}`
       
-      this.socket = new WebSocket(finalUrl)
+      const currentSocket = new WebSocket(finalUrl)
+      this.socket = currentSocket
       
-      this.socket.onopen = () => {
+      currentSocket.onopen = () => {
+        if (this.socket !== currentSocket) return
         this.connectionStatus.value = 'connected'
         this.reconnectAttempts = 0
         
@@ -84,11 +96,13 @@ class TakeoverWebSocketService {
         }
       }
 
-      this.socket.onmessage = (event) => {
+      currentSocket.onmessage = (event) => {
+        if (this.socket !== currentSocket) return
         this.handleMessage(event.data)
       }
 
-      this.socket.onclose = (event) => {
+      currentSocket.onclose = (event) => {
+        if (this.socket !== currentSocket) return
         this.connectionStatus.value = 'disconnected'
         this.stopHeartbeat()
         
@@ -101,19 +115,12 @@ class TakeoverWebSocketService {
           this.onConnectionStatusChanged('disconnected')
         }
         
-        // Analyze close code for better handling
-        const closeCode = event.code
-        if (closeCode === 1000) {
-          } else if (closeCode === 1001) {
-          } else if (closeCode === 1006) {
-          } else {
-          }
-        
         // Attempt reconnection
         this.attemptReconnect()
       }
 
-      this.socket.onerror = (error) => {
+      currentSocket.onerror = (error) => {
+        if (this.socket !== currentSocket) return
         console.error('🚨 Takeover WebSocket error:', error)
         this.connectionStatus.value = 'error'
         
@@ -482,12 +489,22 @@ class TakeoverWebSocketService {
     this.stopHeartbeat()
     
     if (this.socket) {
-      this.socket.close()
+      try {
+        this.socket.onopen = null
+        this.socket.onmessage = null
+        this.socket.onerror = null
+        this.socket.onclose = null
+        this.socket.close()
+      } catch (e) {
+        console.warn('Error closing Takeover WebSocket:', e)
+      }
       this.socket = null
     }
     
     this.connectionStatus.value = 'disconnected'
     this.currentConversationId.value = null
+    this.connectedToken = null
+    this.connectedTenantKey = null
     
     // Clean up
     this.activeAgents.value.clear()

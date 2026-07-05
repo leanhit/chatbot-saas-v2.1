@@ -37,6 +37,7 @@ const SkillsManagement = () => import("../views/admin/SkillsManagement.vue");
 const RoutingRules = () => import("../views/admin/RoutingRules.vue");
 const SLAMonitoring = () => import("../views/admin/SLAMonitoring.vue");
 const EscalationTiers = () => import("../views/admin/EscalationTiers.vue");
+const Notifications = () => import("../views/notification/Notifications.vue");
 var appname = " - Windzo Dashboard Admin Template";
 const routes = [
   // Root route - redirect to login
@@ -81,6 +82,12 @@ const routes = [
     name: "help",
     component: Help,
     meta: { requiresAuth: true, title: "Help Center" + appname, skipTenantCheck: true },
+  },
+  {
+    path: "/notifications",
+    name: "notifications",
+    component: Notifications,
+    meta: { requiresAuth: true, title: "Notification Center" + appname, skipTenantCheck: true },
   },
   
   {

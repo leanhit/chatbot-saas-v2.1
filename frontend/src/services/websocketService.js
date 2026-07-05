@@ -8,13 +8,11 @@ class WebSocketService {
     this.reconnectInterval = 5000
     this.notificationStore = null
     this.token = null
+    this.connectedToken = null
+    this.connectedTenantKey = null
   }
 
   connect(token) {
-    if (this.socket && this.socket.readyState === WebSocket.OPEN) {
-      return
-    }
-
     if (token) {
       this.token = token
     } else {
@@ -26,6 +24,33 @@ class WebSocketService {
       return
     }
 
+    const tenantKey = localStorage.getItem('active_tenant_id') || ''
+
+    // Prevent duplicate connections if already connected or connecting with same token & tenantKey
+    if (this.socket && 
+        (this.socket.readyState === WebSocket.OPEN || this.socket.readyState === WebSocket.CONNECTING) && 
+        this.connectedToken === token && 
+        this.connectedTenantKey === tenantKey) {
+      return
+    }
+
+    // Clean up any existing connection first
+    if (this.socket) {
+      console.log('🔄 Closing existing WebSocket connection before reconnecting...')
+      try {
+        this.socket.onopen = null
+        this.socket.onmessage = null
+        this.socket.onerror = null
+        this.socket.onclose = null
+        this.socket.close()
+      } catch (e) {
+        console.warn('Error closing WebSocket:', e)
+      }
+      this.socket = null
+    }
+
+    this.connectedToken = token
+    this.connectedTenantKey = tenantKey
     this.notificationStore = useNotificationStore()
 
     // Extract base URL from VUE_APP_WS_URL (e.g. ws://localhost:8080/ws/takeover -> ws://localhost:8080)
@@ -37,29 +62,33 @@ class WebSocketService {
       baseUrl = baseUrl.slice(0, -1)
     }
 
-    const tenantKey = localStorage.getItem('active_tenant_id') || ''
     const wsUrl = `${baseUrl}/ws/notifications?token=${encodeURIComponent(token)}&tenantKey=${encodeURIComponent(tenantKey)}`
     
     try {
-      this.socket = new WebSocket(wsUrl)
+      const currentSocket = new WebSocket(wsUrl)
+      this.socket = currentSocket
       
-      this.socket.onopen = () => {
+      currentSocket.onopen = () => {
+        if (this.socket !== currentSocket) return
         this.reconnectAttempts = 0
         this.notificationStore.isConnected = true
         console.log('✅ WebSocket connected successfully')
       }
 
-      this.socket.onmessage = (event) => {
+      currentSocket.onmessage = (event) => {
+        if (this.socket !== currentSocket) return
         this.handleMessage(event.data)
       }
 
-      this.socket.onclose = (event) => {
+      currentSocket.onclose = (event) => {
+        if (this.socket !== currentSocket) return
         this.notificationStore.isConnected = false
         console.warn('⚠️ WebSocket closed:', event.code, event.reason)
         this.attemptReconnect()
       }
 
-      this.socket.onerror = (error) => {
+      currentSocket.onerror = (error) => {
+        if (this.socket !== currentSocket) return
         console.error('❌ WebSocket error:', error)
         this.notificationStore.isConnected = false
         this.notificationStore.addNotification({
@@ -195,8 +224,18 @@ class WebSocketService {
 
   disconnect() {
     this.token = null // Clear token to prevent reconnecting
+    this.connectedToken = null
+    this.connectedTenantKey = null
     if (this.socket) {
-      this.socket.close()
+      try {
+        this.socket.onopen = null
+        this.socket.onmessage = null
+        this.socket.onerror = null
+        this.socket.onclose = null
+        this.socket.close()
+      } catch (e) {
+        console.warn('Error closing WebSocket:', e)
+      }
       this.socket = null
     }
     if (this.notificationStore) {

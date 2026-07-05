@@ -14,6 +14,7 @@ class PresenceWebSocketService {
     this.heartbeatInterval = null
     this.onlineMembers = ref(new Map()) // userId -> member info
     this.tenantKey = null
+    this.connectedToken = null
     
     // Event callbacks
     this.onMemberOnline = null
@@ -25,14 +26,24 @@ class PresenceWebSocketService {
    * Connect to Presence WebSocket
    */
   async connect(tenantKey) {
-    if (this.socket && this.socket.readyState === WebSocket.OPEN) {
-      if (this.tenantKey === tenantKey) {
-        return // Already connected to this tenant
-      }
-      this.disconnect() // Disconnect from previous tenant
+    const { useAuthStore } = await import('@/stores/authStore')
+    const authStore = useAuthStore()
+    const token = authStore.token || ''
+
+    // Prevent duplicate connections if we are already connected or connecting with the same tenant key and token
+    if (this.socket && 
+        (this.socket.readyState === WebSocket.OPEN || this.socket.readyState === WebSocket.CONNECTING) && 
+        this.tenantKey === tenantKey &&
+        this.connectedToken === token) {
+      return
+    }
+
+    if (this.socket) {
+      this.disconnect()
     }
 
     this.tenantKey = tenantKey
+    this.connectedToken = token
     this.connectionStatus.value = 'connecting'
 
     try {
@@ -55,16 +66,14 @@ class PresenceWebSocketService {
       
       const cleanUrl = wsUrl.split('#')[0].trim()
 
-      // Append JWT token and tenant key for handshake authentication
-      const { useAuthStore } = await import('@/stores/authStore')
-      const authStore = useAuthStore()
-      const token = authStore.token || ''
       const separator = cleanUrl.includes('?') ? '&' : '?'
       const finalUrl = `${cleanUrl}${separator}token=${encodeURIComponent(token)}&tenantKey=${encodeURIComponent(tenantKey)}`
       
-      this.socket = new WebSocket(finalUrl)
+      const currentSocket = new WebSocket(finalUrl)
+      this.socket = currentSocket
       
-      this.socket.onopen = () => {
+      currentSocket.onopen = () => {
+        if (this.socket !== currentSocket) return
         this.connectionStatus.value = 'connected'
         this.reconnectAttempts = 0
         
@@ -79,11 +88,13 @@ class PresenceWebSocketService {
         console.log('✅ Presence WebSocket connected for tenant:', tenantKey)
       }
 
-      this.socket.onmessage = (event) => {
+      currentSocket.onmessage = (event) => {
+        if (this.socket !== currentSocket) return
         this.handleMessage(event.data)
       }
 
-      this.socket.onclose = (event) => {
+      currentSocket.onclose = (event) => {
+        if (this.socket !== currentSocket) return
         this.connectionStatus.value = 'disconnected'
         this.stopHeartbeat()
         
@@ -98,7 +109,8 @@ class PresenceWebSocketService {
         this.attemptReconnect()
       }
 
-      this.socket.onerror = (error) => {
+      currentSocket.onerror = (error) => {
+        if (this.socket !== currentSocket) return
         console.error('🚨 Presence WebSocket error:', error)
         this.connectionStatus.value = 'error'
         
@@ -241,12 +253,21 @@ class PresenceWebSocketService {
     this.stopHeartbeat()
     
     if (this.socket) {
-      this.socket.close()
+      try {
+        this.socket.onopen = null
+        this.socket.onmessage = null
+        this.socket.onerror = null
+        this.socket.onclose = null
+        this.socket.close()
+      } catch (e) {
+        console.warn('Error closing Presence WebSocket:', e)
+      }
       this.socket = null
     }
     
     this.connectionStatus.value = 'disconnected'
     this.tenantKey = null
+    this.connectedToken = null
     
     // Clear online members
     this.onlineMembers.value.clear()

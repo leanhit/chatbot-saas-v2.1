@@ -130,7 +130,7 @@
                       v-for="(item, index) in notificationStore.notifications.slice(0, 5)"
                       :key="index"
                       class="p-4 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-colors"
-                      @click="markAsRead(item.id)"
+                      @click="handleNotificationClick(item)"
                     >
                       <div class="flex items-start">
                         <div class="flex-shrink-0">
@@ -151,9 +151,12 @@
                   </div>
                 </div>
                 
-                <div v-if="notificationStore.notifications.length > 5" class="p-4 border-t border-gray-200 dark:border-gray-700">
-                  <button class="w-full text-center text-sm text-blue-600 hover:text-blue-500 dark:text-blue-400">
-                    {{ $t('header.viewAllNotifications') }}
+                <div v-if="notificationStore.notifications.length > 0" class="p-4 border-t border-gray-200 dark:border-gray-700">
+                  <button 
+                    @click="viewAllNotifications"
+                    class="w-full text-center text-sm text-blue-600 hover:text-blue-500 dark:text-blue-400 font-medium"
+                  >
+                    {{ $t('header.viewAllNotifications', 'View all notifications') }}
                   </button>
                 </div>
               </div>
@@ -489,9 +492,52 @@
         const days = Math.floor(diff / 86400000);
         return `${days} day${days > 1 ? 's' : ''} ago`;
       },
-      // Mark notification as read
-      markAsRead(id) {
-        this.notificationStore.markAsRead(id);
+      // Mark notification as read and route to target link
+      handleNotificationClick(item) {
+        // Mark as read
+        this.notificationStore.markAsRead(item.id);
+        
+        // Close dropdown
+        this.notification = false;
+        
+        // Determine the target route path based on type or title
+        const title = (item.title || '').toLowerCase();
+        const type = (item.type || '').toLowerCase();
+        
+        if (type === 'tenant_invitation' || title.includes('invitation')) {
+          if (title.includes('accepted')) {
+            this.router.push('/tenant/members');
+          } else {
+            this.router.push('/tenant-gateway');
+          }
+        } else if (type === 'join_request' || title.includes('join request')) {
+          if (title.includes('approved')) {
+            this.router.push('/tenant-gateway');
+          } else {
+            this.router.push('/tenant/members');
+          }
+        } else if (title.includes('member')) {
+          this.router.push('/tenant/members');
+        } else if (type === 'agent_takeover' || title.includes('takeover') || title.includes('conversation')) {
+          this.router.push('/messages');
+        } else if (type === 'success' && title.includes('payment')) {
+          this.router.push('/payment/history');
+        } else if (type === 'error' && (title.includes('payment') || title.includes('expired'))) {
+          this.router.push('/payment/deposit');
+        } else if (title.includes('tenant updated')) {
+          this.router.push('/tenant/settings');
+        } else if (title.includes('role changed')) {
+          this.router.push('/tenant/overview');
+        } else {
+          // Default fallbacks
+          if (type === 'info' && title.includes('message')) {
+            this.router.push('/messages');
+          }
+        }
+      },
+      viewAllNotifications() {
+        this.notification = false;
+        this.router.push('/notifications');
       }
     },
     mounted() {

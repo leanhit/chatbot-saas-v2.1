@@ -1332,6 +1332,52 @@
       "deleteSuccess": "Package deleted successfully!"
     }
   },
+  "notifications": {
+    "title": "Trung tâm Thông báo",
+    "unread": "chưa đọc",
+    "subtitle": "Quản lý và theo dõi các hoạt động không gian làm việc, thanh toán và cập nhật hệ thống.",
+    "filters": {
+      "title": "Bộ lọc",
+      "all": "Tất cả",
+      "unread": "Chưa đọc",
+      "invitations": "Lời mời & Yêu cầu",
+      "system": "Cảnh báo Hệ thống"
+    },
+    "actions": {
+      "markAllRead": "Đánh dấu tất cả đã đọc",
+      "clearAll": "Xóa toàn bộ lịch sử",
+      "markRead": "Đánh dấu đã đọc",
+      "markUnread": "Đánh dấu chưa đọc",
+      "delete": "Xóa"
+    },
+    "empty": {
+      "title": "Bạn đã đọc hết thông báo!",
+      "desc": "Không tìm thấy thông báo nào cho bộ lọc này. Hãy kiểm tra lại sau."
+    },
+    "priority": {
+      "high": "Độ ưu tiên cao"
+    },
+    "cta": {
+      "viewMembers": "Xem thành viên",
+      "reviewInvitation": "Xem lời mời",
+      "enterWorkspace": "Vào Workspace",
+      "reviewRequest": "Xem yêu cầu",
+      "goToChat": "Đi đến Chat",
+      "paymentHistory": "Lịch sử thanh toán",
+      "paymentDeposit": "Nạp tiền ngay",
+      "tenantSettings": "Cài đặt Workspace",
+      "viewDetails": "Xem chi tiết"
+    },
+    "time": {
+      "justNow": "Vừa xong",
+      "minutesAgo": "{n} phút trước",
+      "hoursAgo": "{n} giờ trước",
+      "daysAgo": "{n} ngày trước"
+    },
+    "confirm": {
+      "clearAll": "Bạn có chắc chắn muốn xóa toàn bộ lịch sử thông báo?"
+    }
+  },
   "errors": {
     "NOT_FOUND": "Không tìm thấy tài nguyên",
     "VALIDATION_ERROR": "Dữ liệu đầu vào không hợp lệ",

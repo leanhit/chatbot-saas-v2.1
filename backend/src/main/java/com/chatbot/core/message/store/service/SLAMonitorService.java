@@ -178,44 +178,36 @@ public class SLAMonitorService {
         long expectedSeconds = getExpectedResponseTime(conversation);
         long actualSeconds = ChronoUnit.SECONDS.between(conversation.getCreatedAt(), LocalDateTime.now());
 
+        int currentBreachCount = conversation.getSlaBreachCount();
+
         // Increment breach count
-        conversation.setSlaBreachCount(conversation.getSlaBreachCount() + 1);
+        conversation.setSlaBreachCount(currentBreachCount + 1);
         conversationRepository.save(conversation);
 
         log.warn("SLA breach detected for conversation {}. Breach count: {}",
             conversation.getId(), conversation.getSlaBreachCount());
 
-        // 1. WebSocket notification
-        Map<String, Object> notification = new HashMap<>();
-        notification.put("type", "sla_breach");
-        notification.put("title", "SLA Breach Alert");
-        notification.put("message", String.format(
-            "Conversation %d has breached SLA. Breach count: %d. Customer: %s",
-            conversation.getId(),
-            conversation.getSlaBreachCount(),
-            conversation.getUserName() != null ? conversation.getUserName() : conversation.getExternalUserId()
-        ));
-        notification.put("conversationId", conversation.getId());
-        notification.put("priority", "high");
-        notification.put("timestamp", LocalDateTime.now());
-        notificationWebSocketHandler.broadcastToTenant(conversation.getTenantId(), notification);
+        // Send notifications (email, Slack) only on the first breach detection to prevent spamming
+        if (currentBreachCount == 0) {
+            // Note: Stopped broadcasting sla_breach to the frontend via WebSocket as requested by the user
 
-        // 2. Email notification (non-blocking)
-        try {
-            agentEmailNotificationService.sendSLABreachNotification(conversation, expectedSeconds, actualSeconds);
-        } catch (Exception e) {
-            log.warn("Failed to send SLA breach email for conversation {}: {}", conversation.getId(), e.getMessage());
+            // 1. Email notification (non-blocking)
+            try {
+                agentEmailNotificationService.sendSLABreachNotification(conversation, expectedSeconds, actualSeconds);
+            } catch (Exception e) {
+                log.warn("Failed to send SLA breach email for conversation {}: {}", conversation.getId(), e.getMessage());
+            }
+
+            // 2. Slack notification (non-blocking)
+            try {
+                slackNotificationService.sendSLABreachAlert(conversation, expectedSeconds, actualSeconds);
+            } catch (Exception e) {
+                log.warn("Failed to send SLA breach Slack alert for conversation {}: {}", conversation.getId(), e.getMessage());
+            }
         }
 
-        // 3. Slack notification (non-blocking)
-        try {
-            slackNotificationService.sendSLABreachAlert(conversation, expectedSeconds, actualSeconds);
-        } catch (Exception e) {
-            log.warn("Failed to send SLA breach Slack alert for conversation {}: {}", conversation.getId(), e.getMessage());
-        }
-
-        // If breach count is high, escalate
-        if (conversation.getSlaBreachCount() >= 3) {
+        // If breach count reaches 3, escalate (escalate only once)
+        if (conversation.getSlaBreachCount() == 3) {
             triggerEscalation(conversation);
         }
     }
@@ -224,21 +216,9 @@ public class SLAMonitorService {
      * Trigger escalation for SLA breach
      */
     private void triggerEscalation(Conversation conversation) {
-        log.warn("Triggering escalation for conversation {} due to repeated SLA breaches", conversation.getId());
-
-        Map<String, Object> escalationNotification = new HashMap<>();
-        escalationNotification.put("type", "escalation_required");
-        escalationNotification.put("title", "Escalation Required");
-        escalationNotification.put("message", String.format(
-            "Conversation %d requires immediate escalation due to %d SLA breaches",
-            conversation.getId(),
-            conversation.getSlaBreachCount()
-        ));
-        escalationNotification.put("conversationId", conversation.getId());
-        escalationNotification.put("priority", "urgent");
-        escalationNotification.put("timestamp", LocalDateTime.now());
-
-        notificationWebSocketHandler.broadcastToTenant(conversation.getTenantId(), escalationNotification);
+        log.warn("Triggering escalation for conversation {} due to repeated SLA breaches (Breach count: {})", 
+            conversation.getId(), conversation.getSlaBreachCount());
+        // Note: Stopped broadcasting escalation_required to the frontend via WebSocket as requested by the user
     }
 
     /**

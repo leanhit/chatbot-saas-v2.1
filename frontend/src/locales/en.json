@@ -1332,6 +1332,52 @@
       "deleteSuccess": "Package deleted successfully!"
     }
   },
+  "notifications": {
+    "title": "Notification Center",
+    "unread": "unread",
+    "subtitle": "Manage and track your workspace activities, payments, and system updates.",
+    "filters": {
+      "title": "Filters",
+      "all": "All",
+      "unread": "Unread",
+      "invitations": "Invitations & Requests",
+      "system": "System Alerts"
+    },
+    "actions": {
+      "markAllRead": "Mark all as read",
+      "clearAll": "Clear all history",
+      "markRead": "Mark as read",
+      "markUnread": "Mark as unread",
+      "delete": "Delete"
+    },
+    "empty": {
+      "title": "All caught up!",
+      "desc": "No notifications found for this filter. Check back later for system activities."
+    },
+    "priority": {
+      "high": "High Priority"
+    },
+    "cta": {
+      "viewMembers": "View Members",
+      "reviewInvitation": "Review Invitation",
+      "enterWorkspace": "Enter Workspace",
+      "reviewRequest": "Review Request",
+      "goToChat": "Go to Chat",
+      "paymentHistory": "Payment History",
+      "paymentDeposit": "Deposit Now",
+      "tenantSettings": "Tenant Settings",
+      "viewDetails": "View Details"
+    },
+    "time": {
+      "justNow": "Just now",
+      "minutesAgo": "{n}m ago",
+      "hoursAgo": "{n}h ago",
+      "daysAgo": "{n}d ago"
+    },
+    "confirm": {
+      "clearAll": "Are you sure you want to clear all notification history?"
+    }
+  },
   "errors": {
     "NOT_FOUND": "Resource not found",
     "VALIDATION_ERROR": "Invalid input data",
