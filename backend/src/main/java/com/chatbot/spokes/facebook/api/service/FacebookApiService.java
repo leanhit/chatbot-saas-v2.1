@@ -7,7 +7,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 import reactor.core.publisher.Mono;
-import reactor.util.retry.Retry;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.retry.annotation.Retry;
 
 import java.time.Duration;
 import java.util.List;
@@ -15,6 +16,8 @@ import java.util.Map;
 
 @Service
 @Slf4j
+@CircuitBreaker(name = "facebookApi")
+@Retry(name = "facebookApi")
 public class FacebookApiService {
 
     private final WebClient webClient;
@@ -154,11 +157,6 @@ public class FacebookApiService {
                 .retrieve()
                 .bodyToMono(Map.class)
                 .timeout(Duration.ofSeconds(10))
-                .retryWhen(Retry.backoff(2, Duration.ofSeconds(1))
-                    .maxBackoff(Duration.ofSeconds(5))
-                    .doBeforeRetry(retrySignal -> 
-                        log.warn("⚠️ Retrying Facebook API call, attempt: {}", 
-                            retrySignal.totalRetries() + 1)))
                 .block();
             
             if (response != null && response.containsKey("access_token")) {

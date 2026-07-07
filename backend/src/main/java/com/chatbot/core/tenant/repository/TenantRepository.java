@@ -42,7 +42,7 @@ public interface TenantRepository extends JpaRepository<Tenant, Long> {
     );
 
     // Optimized query with FETCH JOIN to avoid N+1 problem in searchTenants
-    @Query("SELECT t FROM Tenant t LEFT JOIN FETCH t.profile WHERE t.visibility = :visibility AND t.status = :status AND (:name IS NULL OR :name = '' OR LOWER(t.name) LIKE LOWER(CONCAT('%', :name, '%')))")
+    @Query("SELECT t FROM Tenant t LEFT JOIN FETCH t.profile LEFT JOIN FETCH t.professional WHERE t.visibility = :visibility AND t.status = :status AND (:name IS NULL OR :name = '' OR LOWER(t.name) LIKE LOWER(CONCAT('%', :name, '%')))")
     Page<Tenant> findByVisibilityAndStatusAndNameContainingIgnoreCaseWithProfile(
             @Param("visibility") TenantVisibility visibility,
             @Param("status") TenantStatus status,
@@ -51,11 +51,11 @@ public interface TenantRepository extends JpaRepository<Tenant, Long> {
     );
 
     // Lấy thông tin Tenant kèm Profile bằng ID (Dùng Fetch Join để tối ưu)
-    @Query("SELECT t FROM Tenant t LEFT JOIN FETCH t.profile WHERE t.id = :id")
+    @Query("SELECT t FROM Tenant t LEFT JOIN FETCH t.profile LEFT JOIN FETCH t.professional WHERE t.id = :id")
     Optional<Tenant> findByIdWithProfile(@Param("id") Long id);
 
     // Lấy thông tin Tenant kèm Profile bằng tenantKey (Dùng Fetch Join để tối ưu)
-    @Query("SELECT t FROM Tenant t LEFT JOIN FETCH t.profile WHERE t.tenantKey = :tenantKey")
+    @Query("SELECT t FROM Tenant t LEFT JOIN FETCH t.profile LEFT JOIN FETCH t.professional WHERE t.tenantKey = :tenantKey")
     Optional<Tenant> findByTenantKeyWithProfile(@Param("tenantKey") String tenantKey);
 
     // Tìm tenant bằng tenantKey
@@ -65,7 +65,7 @@ public interface TenantRepository extends JpaRepository<Tenant, Long> {
     boolean existsByTenantKey(String tenantKey);
 
     // Lấy danh sách Tenant theo ID kèm Profile
-    @Query("SELECT t FROM Tenant t LEFT JOIN FETCH t.profile WHERE t.id IN :ids")
+    @Query("SELECT t FROM Tenant t LEFT JOIN FETCH t.profile LEFT JOIN FETCH t.professional WHERE t.id IN :ids")
     List<Tenant> findAllByIdsWithProfile(@Param("ids") List<Long> ids);
 
     // Tìm tenant theo user ID (thông qua tenant membership)

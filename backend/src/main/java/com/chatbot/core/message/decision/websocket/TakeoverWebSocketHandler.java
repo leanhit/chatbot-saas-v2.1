@@ -97,7 +97,8 @@ public class TakeoverWebSocketHandler extends TextWebSocketHandler {
             return;
             
         } catch (Exception e) {
-            // Not JSON, treat as plain text conversation ID
+            // Not JSON, treat as plain text conversation ID. This is expected behavior.
+            log.debug("ℹ️ Received non-JSON message, treating as plain text conversation ID");
         }
         
         // Payload sẽ là conversationId mà Agent muốn xem

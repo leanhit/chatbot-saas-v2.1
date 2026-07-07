@@ -1,5 +1,6 @@
 package com.chatbot.core.identity.grpc;
 
+import lombok.RequiredArgsConstructor;
 import com.chatbot.core.identity.grpc.IdentityServiceOuterClass.*;
 import com.chatbot.core.identity.grpc.IdentityServiceGrpc;
 import com.chatbot.core.user.model.User;
@@ -14,13 +15,14 @@ import java.util.Optional;
 
 @Service
 @Slf4j
-public class IdentityServiceGrpcImpl extends IdentityServiceGrpc.IdentityServiceImplBase {
+public @RequiredArgsConstructor
+class IdentityServiceGrpcImpl extends IdentityServiceGrpc.IdentityServiceImplBase {
     
-    @Autowired
-    private AuthRepository authRepository;
+
+    private final AuthRepository authRepository;
     
-    @Autowired
-    private JwtService jwtService;
+
+    private final JwtService jwtService;
 
     @Override
     public void validateToken(ValidateTokenRequest request, StreamObserver<ValidateTokenResponse> responseObserver) {

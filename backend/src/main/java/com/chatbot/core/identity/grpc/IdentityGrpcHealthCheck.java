@@ -1,5 +1,6 @@
 package com.chatbot.core.identity.grpc;
 
+import lombok.RequiredArgsConstructor;
 import com.chatbot.core.identity.grpc.IdentityServiceOuterClass.*;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
@@ -19,10 +20,11 @@ import org.springframework.stereotype.Component;
 @Component
 @DependsOn("identityGrpcServer")
 @Slf4j
-public class IdentityGrpcHealthCheck {
+public @RequiredArgsConstructor
+class IdentityGrpcHealthCheck {
 
-    @Autowired
-    private IdentityServiceGrpcImpl grpcService;
+
+    private final IdentityServiceGrpcImpl grpcService;
 
     @EventListener(ApplicationReadyEvent.class)
     public void performHealthCheck() {

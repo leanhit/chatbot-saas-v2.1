@@ -1,5 +1,6 @@
 package com.chatbot.core.tenant.grpc;
 
+import lombok.RequiredArgsConstructor;
 import com.chatbot.core.tenant.exception.TenantNotFoundException;
 import com.chatbot.core.tenant.model.Tenant;
 import com.chatbot.core.tenant.repository.TenantRepository;
@@ -26,16 +27,17 @@ import java.util.stream.Collectors;
  */
 @Service
 @Slf4j
-public class TenantServiceGrpcImpl extends TenantServiceGrpc.TenantServiceImplBase {
+public @RequiredArgsConstructor
+class TenantServiceGrpcImpl extends TenantServiceGrpc.TenantServiceImplBase {
 
-    @Autowired
-    private TenantRepository tenantRepository;
 
-    @Autowired
-    private TenantService tenantService;
+    private final TenantRepository tenantRepository;
 
-    @Autowired
-    private com.chatbot.core.tenant.profile.repository.TenantProfileRepository tenantProfileRepository;
+
+    private final TenantService tenantService;
+
+
+    private final com.chatbot.core.tenant.profile.repository.TenantProfileRepository tenantProfileRepository;
 
     // =========================================================================
     // HELPERS

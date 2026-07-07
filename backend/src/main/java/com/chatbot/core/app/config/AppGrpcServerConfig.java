@@ -1,5 +1,6 @@
 package com.chatbot.core.app.config;
 
+import lombok.RequiredArgsConstructor;
 import com.chatbot.core.app.grpc.AppServiceGrpcImpl;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
@@ -14,13 +15,14 @@ import java.io.IOException;
 
 @Configuration
 @Slf4j
-public class AppGrpcServerConfig {
+public @RequiredArgsConstructor
+class AppGrpcServerConfig {
 
     @Value("${app.grpc.server.port:50054}")
     private int grpcPort;
 
-    @Autowired
-    private AppServiceGrpcImpl appServiceGrpcImpl;
+
+    private final AppServiceGrpcImpl appServiceGrpcImpl;
 
     private Server grpcServer;
 

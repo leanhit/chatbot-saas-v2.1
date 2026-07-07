@@ -236,6 +236,18 @@ services:
     networks:
       - internal
 
+  # ----------------------------------------
+  # Zipkin (Distributed Tracing)
+  # ----------------------------------------
+  zipkin:
+    image: openzipkin/zipkin:latest
+    container_name: chatbot_saas_zipkin
+    restart: always
+    ports:
+      - "9411:9411"
+    networks:
+      - internal
+
 volumes:
   postgres_identity_data:
     driver: local

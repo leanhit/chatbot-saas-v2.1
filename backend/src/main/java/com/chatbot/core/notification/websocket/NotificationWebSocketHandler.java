@@ -128,7 +128,7 @@ public class NotificationWebSocketHandler extends TextWebSocketHandler {
                 return;
             }
         } catch (Exception e) {
-            // Not a JSON heartbeat, log it
+            log.trace("ℹ️ [Notification WS] Non-JSON payload received: {}", payload);
         }
 
         log.debug("📨 [Notification WS] Received payload: {}", payload);

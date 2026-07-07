@@ -27,23 +27,23 @@ public class CacheWarmer {
 
     private final RedisTemplate<String, Object> redisTemplate;
 
-    @Autowired
-    private TenantRepository tenantRepository;
 
-    @Autowired
-    private PennyBotRepository pennyBotRepository;
+    private final TenantRepository tenantRepository;
 
-    @Autowired
+
+    private final PennyBotRepository pennyBotRepository;
+
+
     @Lazy
-    private TenantService tenantService;
+    private final TenantService tenantService;
 
-    @Autowired
-    @Lazy
-    private PennyBotService pennyBotService;
 
-    @Autowired
     @Lazy
-    private CachedPackageService cachedPackageService;
+    private final PennyBotService pennyBotService;
+
+
+    @Lazy
+    private final CachedPackageService cachedPackageService;
 
     /**
      * Auto-run cache warming once application is fully ready and started

@@ -1,5 +1,6 @@
 package com.chatbot.shared.messaging;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -9,10 +10,11 @@ import java.util.Map;
 import java.util.UUID;
 
 @Component
-public class MessagePublisher {
+public @RequiredArgsConstructor
+class MessagePublisher {
 
-    @Autowired
-    private RabbitTemplate rabbitTemplate;
+
+    private final RabbitTemplate rabbitTemplate;
 
     @Value("${rabbitmq.exchange.name:chatbot.exchange}")
     private String exchangeName;

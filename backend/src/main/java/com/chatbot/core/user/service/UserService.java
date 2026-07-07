@@ -428,7 +428,7 @@ public class UserService {
         try {
             addressDetail = addressService.getUserAddress(OwnerType.USER, userId);
         } catch (RuntimeException e) {
-            // User chưa có địa chỉ, bỏ qua
+            log.debug("ℹ️ User address not found or not initialized yet for user ID: {}. Message: {}", userId, e.getMessage());
         }
         
         return UserFullResponse.builder()

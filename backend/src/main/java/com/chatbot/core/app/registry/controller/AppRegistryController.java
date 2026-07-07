@@ -1,5 +1,6 @@
 package com.chatbot.core.app.registry.controller;
 
+import lombok.RequiredArgsConstructor;
 import com.chatbot.core.app.registry.dto.AppResponse;
 import com.chatbot.core.app.registry.dto.RegisterAppRequest;
 import com.chatbot.core.app.registry.model.AppStatus;
@@ -30,10 +31,11 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/apps")
 @Tag(name = "App Registry", description = "App Registry Management API")
-public class AppRegistryController {
+public @RequiredArgsConstructor
+class AppRegistryController {
     
-    @Autowired
-    private AppRegistryService appRegistryService;
+
+    private final AppRegistryService appRegistryService;
     
     /**
      * Extract current user ID from security context

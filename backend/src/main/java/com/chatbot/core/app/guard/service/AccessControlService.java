@@ -1,5 +1,6 @@
 package com.chatbot.core.app.guard.service;
 
+import lombok.RequiredArgsConstructor;
 import com.chatbot.core.app.guard.model.GuardRule;
 import com.chatbot.core.app.guard.model.GuardType;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -10,10 +11,11 @@ import java.util.HashMap;
 import java.util.Map;
 
 @Service
-public class AccessControlService {
+public @RequiredArgsConstructor
+class AccessControlService {
     
-    @Autowired
-    private ObjectMapper objectMapper;
+
+    private final ObjectMapper objectMapper;
     
     public boolean evaluateRule(GuardRule rule, String context, Object requestData) {
         try {

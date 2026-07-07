@@ -1,5 +1,6 @@
 package com.chatbot.core.tenant.config;
 
+import lombok.RequiredArgsConstructor;
 import com.chatbot.core.tenant.grpc.TenantServiceGrpcImpl;
 import com.chatbot.core.tenant.grpc.GrpcAuthInterceptor;
 import io.grpc.Server;
@@ -17,16 +18,17 @@ import java.io.IOException;
 
 @Configuration
 @Slf4j
-public class GrpcServerConfig {
+public @RequiredArgsConstructor
+class GrpcServerConfig {
 
     @Value("${tenant.grpc.server.port:50053}")
     private int grpcPort;
 
-    @Autowired
-    private TenantServiceGrpcImpl tenantServiceGrpcImpl;
 
-    @Autowired
-    private GrpcAuthInterceptor grpcAuthInterceptor;
+    private final TenantServiceGrpcImpl tenantServiceGrpcImpl;
+
+
+    private final GrpcAuthInterceptor grpcAuthInterceptor;
 
     private Server grpcServer;
 

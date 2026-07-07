@@ -1,5 +1,6 @@
 package com.chatbot.shared.penny.demo;
 
+import lombok.RequiredArgsConstructor;
 import com.chatbot.shared.penny.context.ConversationContext;
 import com.chatbot.shared.penny.dto.request.MiddlewareRequest;
 import com.chatbot.shared.penny.dto.response.MiddlewareResponse;
@@ -21,16 +22,17 @@ import java.util.UUID;
 @Component
 @ConditionalOnProperty(name = "penny.demo.enabled", havingValue = "true")
 @Slf4j
-public class CustomLogicDemo implements CommandLineRunner {
+public @RequiredArgsConstructor
+class CustomLogicDemo implements CommandLineRunner {
 
-    @Autowired
-    private CustomLogicEngine customLogicEngine;
 
-    @Autowired
-    private BotRuleManager botRuleManager;
+    private final CustomLogicEngine customLogicEngine;
 
-    @Autowired
-    private ResponseTemplateManager responseTemplateManager;
+
+    private final BotRuleManager botRuleManager;
+
+
+    private final ResponseTemplateManager responseTemplateManager;
 
     @Override
     public void run(String... args) throws Exception {

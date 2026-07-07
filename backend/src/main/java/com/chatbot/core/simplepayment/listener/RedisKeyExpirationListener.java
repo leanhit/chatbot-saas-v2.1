@@ -1,6 +1,6 @@
 package com.chatbot.core.simplepayment.listener;
 
-import com.chatbot.core.simplepayment.service.SimplePaymentService;
+import com.chatbot.core.simplepayment.service.PaymentExpirationService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.connection.Message;
 import org.springframework.data.redis.listener.KeyExpirationEventMessageListener;
@@ -11,13 +11,13 @@ import org.springframework.stereotype.Component;
 @Slf4j
 public class RedisKeyExpirationListener extends KeyExpirationEventMessageListener {
 
-    private final SimplePaymentService simplePaymentService;
+    private final PaymentExpirationService paymentExpirationService;
     private static final String PAYMENT_TTL_PREFIX = "payment:ttl:";
 
     public RedisKeyExpirationListener(RedisMessageListenerContainer listenerContainer,
-                                      SimplePaymentService simplePaymentService) {
+                                      PaymentExpirationService paymentExpirationService) {
         super(listenerContainer);
-        this.simplePaymentService = simplePaymentService;
+        this.paymentExpirationService = paymentExpirationService;
         log.info("⏰ RedisKeyExpirationListener initialized and registered to RedisMessageListenerContainer");
     }
 
@@ -30,7 +30,7 @@ public class RedisKeyExpirationListener extends KeyExpirationEventMessageListene
             String referenceCode = expiredKey.substring(PAYMENT_TTL_PREFIX.length());
             log.info("⏰ Payment TTL expired for reference: {}, triggering expiration", referenceCode);
             try {
-                simplePaymentService.expirePayment(referenceCode);
+                paymentExpirationService.expirePayment(referenceCode);
             } catch (Exception e) {
                 log.error("❌ Failed to expire payment {} on Redis key expiration: {}", referenceCode, e.getMessage(), e);
             }

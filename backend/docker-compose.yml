@@ -265,3 +265,15 @@ volumes:
 networks:
   internal:
     driver: bridge
+
+  # ========================================
+  # Zipkin (Distributed Tracing)
+  # ========================================
+  zipkin:
+    image: openzipkin/zipkin:latest
+    container_name: zipkin
+    restart: always
+    ports:
+      - "9411:9411"
+    networks:
+      - internal

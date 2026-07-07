@@ -1,5 +1,6 @@
 package com.chatbot.spokes.minio.image.category.controller;
 
+import lombok.RequiredArgsConstructor;
 import com.chatbot.spokes.minio.image.category.dto.CategoryRequestDTO;
 import com.chatbot.spokes.minio.image.category.dto.CategoryResponseDTO;
 import com.chatbot.spokes.minio.image.category.service.CategoryService;
@@ -13,10 +14,11 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/categories")
-public class CategoryController {
+public @RequiredArgsConstructor
+class CategoryController {
 
-    @Autowired
-    private CategoryService categoryService;
+
+    private final CategoryService categoryService;
 
     // READ (Đọc tất cả danh mục)
     @GetMapping

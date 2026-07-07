@@ -1,5 +1,6 @@
 package com.chatbot.shared.security;
 
+import lombok.RequiredArgsConstructor;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -16,10 +17,11 @@ import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 
 @Component
-public class RateLimitingFilter extends OncePerRequestFilter {
+public @RequiredArgsConstructor
+class RateLimitingFilter extends OncePerRequestFilter {
 
-    @Autowired
-    private RedisTemplate<String, String> redisTemplate;
+
+    private final RedisTemplate<String, String> redisTemplate;
 
     @Value("${rate.limit.requests:100}")
     private int requestLimit;

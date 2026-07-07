@@ -66,7 +66,7 @@ public class GlobalExceptionHandler {
         addContextToErrorResponse(errorResponse, request);
         log.warn("BaseException [{}]: {} at path: {}", code, ex.getMessage(), path);
         
-        HttpStatus status = mapErrorCodeToHttpStatus(errorCode);
+        HttpStatus status = ErrorCodeMapper.mapErrorCodeToHttpStatus(errorCode);
         return new ResponseEntity<>(errorResponse, status);
     }
 
@@ -161,26 +161,6 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(errorResponse, HttpStatus.CONFLICT);
     }
 
-    private ErrorCode mapHttpStatusToErrorCode(org.springframework.http.HttpStatusCode status) {
-        if (status == null) {
-            return ErrorCode.INTERNAL_ERROR;
-        }
-        int value = status.value();
-        switch (value) {
-            case 404:
-                return ErrorCode.NOT_FOUND;
-            case 401:
-                return ErrorCode.UNAUTHORIZED;
-            case 403:
-                return ErrorCode.FORBIDDEN;
-            case 409:
-                return ErrorCode.CONFLICT;
-            case 429:
-                return ErrorCode.RATE_LIMIT_EXCEEDED;
-            default:
-                return ErrorCode.BAD_REQUEST;
-        }
-    }
 
     @ExceptionHandler(org.springframework.web.server.ResponseStatusException.class)
     public ResponseEntity<ErrorResponse> handleResponseStatusException(
@@ -188,7 +168,7 @@ public class GlobalExceptionHandler {
         
         String path = getCleanPath(request);
         org.springframework.http.HttpStatusCode statusCode = ex.getStatusCode();
-        ErrorCode errorCode = mapHttpStatusToErrorCode(statusCode);
+        ErrorCode errorCode = ErrorCodeMapper.mapHttpStatusToErrorCode(statusCode);
         
         ErrorResponse errorResponse = new ErrorResponse(errorCode.getCode(), ex.getReason())
                 .withPath(path)
@@ -406,121 +386,7 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(errorResponse, HttpStatus.PAYLOAD_TOO_LARGE);
     }
 
-    /**
-     * Map ErrorCode to appropriate HTTP status
-     */
-    private HttpStatus mapErrorCodeToHttpStatus(ErrorCode errorCode) {
-        if (errorCode == null) {
-            return HttpStatus.INTERNAL_SERVER_ERROR;
-        }
-        
-        switch (errorCode) {
-            case NOT_FOUND:
-            case RESOURCE_NOT_FOUND:
-            case USER_NOT_FOUND:
-            case TENANT_NOT_FOUND:
-            case LICENSE_NOT_FOUND:
-            case PAYMENT_NOT_FOUND:
-            case CONVERSATION_NOT_FOUND:
-            case CONFIG_NOT_FOUND:
-            case INVITATION_NOT_FOUND:
-            case JOIN_REQUEST_NOT_FOUND:
-            case CONNECTION_NOT_FOUND:
-                return HttpStatus.NOT_FOUND;
-                
-            case VALIDATION_ERROR:
-            case BAD_REQUEST:
-            case INVALID_REQUEST_BODY:
-            case INVALID_TENANT_KEY:
-            case INVALID_PAYMENT_AMOUNT:
-            case INVALID_STATUS_TRANSITION:
-            case INVALID_JOIN_REQUEST:
-            case INVITATION_INVALID:
-            case CONVERSATION_IDS_REQUIRED:
-            case TENANT_ID_REQUIRED:
-                return HttpStatus.BAD_REQUEST;
-                
-            case UNAUTHORIZED:
-            case BAD_CREDENTIALS:
-            case AUTHENTICATION_FAILED:
-            case INVALID_TOKEN:
-            case LICENSE_EXPIRED:
-            case LICENSE_INACTIVE:
-            case TOKEN_INVALID_OR_EXPIRED:
-            case REFRESH_TOKEN_EXPIRED:
-            case USER_NOT_AUTHENTICATED:
-                return HttpStatus.UNAUTHORIZED;
-                
-            case FORBIDDEN:
-            case INSUFFICIENT_PERMISSION:
-            case TENANT_INACTIVE:
-            case NOT_TENANT_MEMBER:
-            case NOT_TENANT_MEMBER_SELF:
-            case NOT_CONVERSATION_MEMBER:
-            case CANNOT_ACCESS_TENANT:
-            case CANNOT_MANAGE_MEMBERS:
-            case CANNOT_VIEW_JOIN_REQUESTS:
-            case CANNOT_APPROVE_JOIN_REQUESTS:
-            case CANNOT_ASSIGN_CONVERSATION:
-            case CANNOT_RELEASE_CONVERSATION:
-            case CANNOT_TAKEOVER_CONVERSATION:
-            case INVITATION_PERMISSION_DENIED:
-            case CANNOT_ACCEPT_INVITATION:
-            case CANNOT_REJECT_INVITATION:
-            case CANNOT_REVOKE_INVITATION:
-            case CANNOT_SUSPEND_TENANT:
-            case CANNOT_RESUME_TENANT:
-            case CANNOT_DELETE_TENANT:
-            case CANNOT_UPLOAD_LOGO:
-            case CANNOT_UPDATE_LOGO:
-            case CANNOT_UPLOAD_AVATAR:
-            case CANNOT_CREATE_AVATAR_CATEGORY:
-            case CANNOT_DELETE_CONVERSATIONS:
-                return HttpStatus.FORBIDDEN;
-                
-            case CONFLICT:
-            case DATA_INTEGRITY_VIOLATION:
-            case OPTIMISTIC_LOCK:
-            case EMAIL_ALREADY_EXISTS:
-            case ALREADY_MEMBER:
-            case JOIN_REQUEST_ALREADY_SENT:
-            case INVITATION_ALREADY_PENDING:
-            case TENANT_STATUS_TRANSITION:
-            case TENANT_PROFILE_ERROR:
-                return HttpStatus.CONFLICT;
-                
-            case PAYLOAD_TOO_LARGE:
-                return HttpStatus.PAYLOAD_TOO_LARGE;
-                
-            case UNSUPPORTED_MEDIA_TYPE:
-                return HttpStatus.UNSUPPORTED_MEDIA_TYPE;
-                
-            case METHOD_NOT_ALLOWED:
-                return HttpStatus.METHOD_NOT_ALLOWED;
-                
-            case TIMEOUT:
-                return HttpStatus.REQUEST_TIMEOUT;
-                
-            case SERVICE_UNAVAILABLE:
-            case BANK_API_ERROR:
-                return HttpStatus.SERVICE_UNAVAILABLE;
-                
-            case RATE_LIMIT_EXCEEDED:
-                return HttpStatus.TOO_MANY_REQUESTS;
-                
-            case ENDPOINT_NOT_FOUND:
-                return HttpStatus.NOT_FOUND;
-                
-            case INTEGRATION_ERROR:
-            case INTERNAL_ERROR:
-            case RUNTIME_ERROR:
-            case PAYMENT_ERROR:
-            case NOTIFICATION_ERROR:
-            case BULK_DELETE_ERROR:
-            default:
-                return HttpStatus.INTERNAL_SERVER_ERROR;
-        }
-    }
+
 
     protected ErrorResponse createErrorResponse(String code, String message, String path) {
         return new ErrorResponse(code, message)

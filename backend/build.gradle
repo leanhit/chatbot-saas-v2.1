@@ -143,6 +143,17 @@ dependencies {
     // Email Notification (for agent alerts)
     // -------------------------------
     implementation 'org.springframework.boot:spring-boot-starter-mail'
+
+    // -------------------------------
+    // Resilience4j (Circuit Breaker)
+    // -------------------------------
+    implementation 'io.github.resilience4j:resilience4j-spring-boot3:2.2.0'
+
+    // -------------------------------
+    // Distributed Tracing (Micrometer & Zipkin)
+    // -------------------------------
+    implementation 'io.micrometer:micrometer-tracing-bridge-brave'
+    implementation 'io.zipkin.reporter2:zipkin-reporter-brave'
 }
 
 tasks.named('test') {

@@ -1,5 +1,6 @@
 package com.chatbot.core.app.registry.service;
 
+import lombok.RequiredArgsConstructor;
 import com.chatbot.core.app.registry.dto.AppResponse;
 import com.chatbot.core.app.registry.dto.RegisterAppRequest;
 import com.chatbot.core.app.registry.model.AppRegistry;
@@ -18,10 +19,11 @@ import java.util.stream.Collectors;
 
 @Service
 @Transactional(transactionManager = "tenantTransactionManager")
-public class AppRegistryService {
+public @RequiredArgsConstructor
+class AppRegistryService {
     
-    @Autowired
-    private AppRegistryRepository appRegistryRepository;
+
+    private final AppRegistryRepository appRegistryRepository;
     
     public AppResponse registerApp(RegisterAppRequest request, Long createdBy) {
         // Check if app name already exists

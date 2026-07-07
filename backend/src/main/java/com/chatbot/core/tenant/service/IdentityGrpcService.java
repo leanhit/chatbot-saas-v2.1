@@ -1,5 +1,6 @@
 package com.chatbot.core.tenant.service;
 
+import lombok.RequiredArgsConstructor;
 import com.chatbot.core.tenant.exception.GrpcIntegrationException;
 import com.chatbot.core.tenant.grpc.TenantGrpcClient;
 import com.chatbot.core.identity.grpc.IdentityGrpcClient;
@@ -10,10 +11,11 @@ import org.springframework.stereotype.Service;
 
 @Service
 @Slf4j
-public class IdentityGrpcService {
+public @RequiredArgsConstructor
+class IdentityGrpcService {
 
-    @Autowired
-    private IdentityGrpcClient identityGrpcClient;
+
+    private final IdentityGrpcClient identityGrpcClient;
 
     /**
      * Validate JWT token với Identity Hub

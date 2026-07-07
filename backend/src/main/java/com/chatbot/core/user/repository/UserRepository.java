@@ -22,7 +22,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
     
     Optional<User> findByEmailAndIsActive(String email, Boolean isActive);
     
-    @Query("SELECT u FROM User u WHERE " +
+    @Query("SELECT u FROM User u LEFT JOIN FETCH u.profile WHERE " +
            "(:keyword IS NULL OR :keyword = '' OR LOWER(u.email) LIKE LOWER(CONCAT('%', :keyword, '%')) OR CAST(u.id AS string) LIKE CONCAT('%', :keyword, '%')) " +
            "AND (:role IS NULL OR u.systemRole = :role)")
     org.springframework.data.domain.Page<User> searchUsers(

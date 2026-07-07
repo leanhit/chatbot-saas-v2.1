@@ -1,5 +1,6 @@
 package com.chatbot.spokes.pennybot.service;
 
+import lombok.RequiredArgsConstructor;
 import com.chatbot.spokes.facebook.webhook.service.ChatbotProviderService;
 import com.chatbot.spokes.pennybot.config.DefaultMessageConfig;
 import com.chatbot.core.message.store.service.MessageService;
@@ -20,10 +21,12 @@ import java.util.UUID;
 
 /**
  * PennyBot Provider Service Implementation for Facebook integration
- * Implements ChatbotProviderService interface to handle message processing
+ * Implements ChatbotProviderService
+ * interface to handle message processing
  */
 @Service("pennyBotProviderService")
 @Primary
+@RequiredArgsConstructor
 @Slf4j
 public class PennyBotProviderService implements ChatbotProviderService {
 
@@ -33,20 +36,20 @@ public class PennyBotProviderService implements ChatbotProviderService {
     @Value("${app.integrations.pennybot.api-key:pennybot-key}")
     private String pennyBotApiKey;
     
-    @Autowired
-    private DefaultMessageConfig messageConfig;
+
+    private final DefaultMessageConfig messageConfig;
     
-    @Autowired
-    private MessageService messageService;
+
+    private final MessageService messageService;
     
-    @Autowired
-    private ConversationRepository conversationRepository;
+
+    private final ConversationRepository conversationRepository;
     
-    @Autowired
-    private FacebookConnectionRepository facebookConnectionRepository;
+
+    private final FacebookConnectionRepository facebookConnectionRepository;
     
-    @Autowired
-    private FacebookMessengerService facebookMessengerService;
+
+    private final FacebookMessengerService facebookMessengerService;
 
     @Override
     public Map<String, Object> sendMessage(String botId, String senderId, String messageText) {

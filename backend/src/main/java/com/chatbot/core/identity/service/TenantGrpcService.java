@@ -1,5 +1,6 @@
 package com.chatbot.core.identity.service;
 
+import lombok.RequiredArgsConstructor;
 import com.chatbot.core.tenant.grpc.TenantGrpcClient;
 import com.chatbot.core.tenant.grpc.TenantServiceProto.*;
 import lombok.extern.slf4j.Slf4j;
@@ -8,10 +9,11 @@ import org.springframework.stereotype.Service;
 
 @Service
 @Slf4j
-public class TenantGrpcService {
+public @RequiredArgsConstructor
+class TenantGrpcService {
 
-    @Autowired
-    private TenantGrpcClient tenantGrpcClient;
+
+    private final TenantGrpcClient tenantGrpcClient;
 
     /**
      * Validate tenant với Tenant Hub

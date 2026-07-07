@@ -1,5 +1,6 @@
 package com.chatbot.shared.messaging;
 
+import lombok.RequiredArgsConstructor;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,18 +16,19 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 @Component
-public class MessageConsumer {
+public @RequiredArgsConstructor
+class MessageConsumer {
 
     private static final Logger log = LoggerFactory.getLogger(MessageConsumer.class);
 
-    @Autowired
-    private ObjectMapper objectMapper;
 
-    @Autowired
-    private EventHandler eventHandler;
+    private final ObjectMapper objectMapper;
 
-    @Autowired
-    private NotificationWebSocketHandler notificationWebSocketHandler;
+
+    private final EventHandler eventHandler;
+
+
+    private final NotificationWebSocketHandler notificationWebSocketHandler;
 
     @RabbitListener(queues = "${rabbitmq.queue.default:chatbot.queue.default}")
     public void handleDefaultMessage(@Payload Object message, 

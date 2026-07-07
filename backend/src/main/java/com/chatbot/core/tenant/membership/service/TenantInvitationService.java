@@ -245,7 +245,9 @@ public class TenantInvitationService {
             org.springframework.security.core.Authentication auth =
                 org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
             if (auth != null && auth.isAuthenticated()) return auth.getName();
-        } catch (Exception ignored) {}
+        } catch (Exception e) {
+            log.warn("⚠️ Failed to retrieve current user email: {}", e.getMessage());
+        }
         return "system";
     }
 }

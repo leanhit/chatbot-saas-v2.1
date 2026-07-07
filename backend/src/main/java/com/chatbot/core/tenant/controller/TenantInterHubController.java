@@ -1,5 +1,6 @@
 package com.chatbot.core.tenant.controller;
 
+import lombok.RequiredArgsConstructor;
 import com.chatbot.core.tenant.service.IdentityGrpcService;
 import com.chatbot.core.identity.grpc.IdentityServiceOuterClass.GetUserResponse;
 import lombok.extern.slf4j.Slf4j;
@@ -15,13 +16,14 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/tenant-inter-hub")
 @Slf4j
-public class TenantInterHubController {
+public @RequiredArgsConstructor
+class TenantInterHubController {
 
     @Value("${app.internal.api-key:default-secret-for-dev}")
     private String internalApiKey;
 
-    @Autowired
-    private IdentityGrpcService identityGrpcService;
+
+    private final IdentityGrpcService identityGrpcService;
 
     /**
      * Tenant Hub gọi Identity Hub để validate token

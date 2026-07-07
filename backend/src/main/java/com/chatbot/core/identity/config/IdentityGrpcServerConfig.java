@@ -1,5 +1,6 @@
 package com.chatbot.core.identity.config;
 
+import lombok.RequiredArgsConstructor;
 import com.chatbot.core.identity.grpc.IdentityServiceGrpcImpl;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
@@ -14,13 +15,14 @@ import java.io.IOException;
 
 @Configuration
 @Slf4j
-public class IdentityGrpcServerConfig {
+public @RequiredArgsConstructor
+class IdentityGrpcServerConfig {
 
     @Value("${identity.grpc.server.port}")
     private int grpcPort;
 
-    @Autowired
-    private IdentityServiceGrpcImpl identityServiceGrpcImpl;
+
+    private final IdentityServiceGrpcImpl identityServiceGrpcImpl;
 
     private Server grpcServer;
 

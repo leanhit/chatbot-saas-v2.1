@@ -60,6 +60,7 @@ public class TenantService {
     private final TenantAuditLogService auditLogService;
     private final TenantPermissionValidator permissionValidator;
     private final TenantCleanupService tenantCleanupService;
+    private final TenantValidationService tenantValidationService;
 
     @Value("${tenant.trial.days:30}")
     private int trialDays;
@@ -177,7 +178,7 @@ public class TenantService {
         try {
             addressDetail = addressService.getSingleAddressByOwner(tenantId, OwnerType.TENANT, tenantId);
         } catch (RuntimeException e) {
-            // Tenant chưa có địa chỉ — bỏ qua
+            log.debug("ℹ️ Address not found for tenant ID: {}", tenantId);
         }
 
         return TenantDetailResponse.from(tenantResponse, profile, addressDetail);
@@ -197,18 +198,7 @@ public class TenantService {
                 tenantKey, tenant.getId(), tenant.getCurrentPackageId());
 
         // Kiểm tra quyền truy cập cho PRIVATE tenant
-        if (tenant.getVisibility() == TenantVisibility.PRIVATE) {
-            String currentUserEmail = permissionValidator.getCurrentUserEmail();
-            Long userId = authRepository.findByEmail(currentUserEmail)
-                    .map(User::getId)
-                    .orElseThrow(() -> new ResourceNotFoundException("User not found"));
-            boolean isMember = tenantMemberRepository
-                    .findByTenantIdAndUserIdAndStatus(tenant.getId(), userId, MembershipStatus.ACTIVE)
-                    .isPresent();
-            if (!isMember) {
-                throw new InsufficientPermissionException(com.chatbot.shared.exceptions.ErrorCode.CANNOT_ACCESS_TENANT, "You do not have permission to access this tenant");
-            }
-        }
+        tenantValidationService.validatePrivateTenantAccess(tenant);
 
         TenantResponse tenantResponse = TenantMapper.toResponse(tenant);
         
@@ -325,7 +315,7 @@ public class TenantService {
                     province = address.getProvince();
                 }
             } catch (Exception e) {
-                // Address not available, leave province empty
+                log.debug("ℹ️ Address not available for tenant ID: {}", tenant.getId());
             }
 
             return TenantSearchResponse.builder()
@@ -357,7 +347,7 @@ public class TenantService {
             throw new InsufficientPermissionException(com.chatbot.shared.exceptions.ErrorCode.CANNOT_SUSPEND_TENANT, "Only admin can suspend tenant");
         }
 
-        validateStatusTransition(tenant.getStatus(), TenantStatus.SUSPENDED);
+        tenantValidationService.validateStatusTransition(tenant.getStatus(), TenantStatus.SUSPENDED);
         tenant.setStatus(TenantStatus.SUSPENDED);
         tenant.setUpdatedAt(LocalDateTime.now());
         tenantRepository.save(tenant);
@@ -376,7 +366,7 @@ public class TenantService {
             throw new InsufficientPermissionException(com.chatbot.shared.exceptions.ErrorCode.CANNOT_RESUME_TENANT, "Only admin can activate tenant");
         }
 
-        validateStatusTransition(tenant.getStatus(), TenantStatus.ACTIVE);
+        tenantValidationService.validateStatusTransition(tenant.getStatus(), TenantStatus.ACTIVE);
         tenant.setStatus(TenantStatus.ACTIVE);
         tenant.setUpdatedAt(LocalDateTime.now());
         tenantRepository.save(tenant);
@@ -395,7 +385,7 @@ public class TenantService {
             throw new InsufficientPermissionException(com.chatbot.shared.exceptions.ErrorCode.CANNOT_DELETE_TENANT, "Only owner can deactivate tenant");
         }
 
-        validateStatusTransition(tenant.getStatus(), TenantStatus.INACTIVE);
+        tenantValidationService.validateStatusTransition(tenant.getStatus(), TenantStatus.INACTIVE);
         tenant.setStatus(TenantStatus.INACTIVE);
         tenant.setUpdatedAt(LocalDateTime.now());
         tenantRepository.save(tenant);
@@ -479,7 +469,7 @@ public class TenantService {
             tenant.setName(req.getName().trim());
         }
         if (req.getStatus() != null) {
-            validateStatusTransition(tenant.getStatus(), req.getStatus());
+            tenantValidationService.validateStatusTransition(tenant.getStatus(), req.getStatus());
             tenant.setStatus(req.getStatus());
         }
         if (req.getVisibility() != null) {
@@ -579,21 +569,5 @@ public class TenantService {
     private void createEmptyAddressForTenant(Long tenantId) {
         addressService.getOrCreateSingleAddress(tenantId, OwnerType.TENANT, tenantId);
         log.info("[TenantService] Created empty address for tenant: {}", tenantId);
-    }
-
-    private void validateStatusTransition(TenantStatus currentStatus, TenantStatus newStatus) {
-        if (currentStatus == newStatus) return; // idempotent
-
-        boolean valid = switch (currentStatus) {
-            case ACTIVE    -> newStatus == TenantStatus.SUSPENDED || newStatus == TenantStatus.INACTIVE;
-            case SUSPENDED -> newStatus == TenantStatus.ACTIVE;
-            case INACTIVE  -> newStatus == TenantStatus.ACTIVE;
-            default        -> false;
-        };
-
-        if (!valid) {
-            throw new TenantStatusTransitionException(
-                "Không thể chuyển từ trạng thái " + currentStatus + " sang " + newStatus);
-        }
     }
 }

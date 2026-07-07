@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 
 import java.util.HashMap;
 import java.util.List;
@@ -49,6 +50,7 @@ public class SlackNotificationService {
      * @param tierLevel     Escalation tier level (1/2/3)
      * @param tierName      Escalation tier name (e.g. "Team Lead")
      */
+    @CircuitBreaker(name = "slackApi", fallbackMethod = "fallbackEscalationAlert")
     public void sendEscalationAlert(Conversation conversation, int tierLevel, String tierName) {
         if (!slackEnabled) {
             log.debug("Slack notifications disabled. Skipping escalation alert for conversation {}",
@@ -73,6 +75,10 @@ public class SlackNotificationService {
         sendMessage(text, tierLevel >= 2 ? "danger" : "warning");
     }
 
+    public void fallbackEscalationAlert(Conversation conversation, int tierLevel, String tierName, Throwable t) {
+        log.warn("Slack CircuitBreaker active - Failed to send escalation alert: {}", t.getMessage());
+    }
+
     /**
      * Send SLA breach alert to Slack.
      *
@@ -80,6 +86,7 @@ public class SlackNotificationService {
      * @param expectedSeconds    Expected response time in seconds
      * @param actualSeconds      Actual elapsed time in seconds
      */
+    @CircuitBreaker(name = "slackApi", fallbackMethod = "fallbackSLABreachAlert")
     public void sendSLABreachAlert(Conversation conversation, long expectedSeconds, long actualSeconds) {
         if (!slackEnabled) {
             log.debug("Slack notifications disabled. Skipping SLA breach alert for conversation {}",
@@ -105,12 +112,17 @@ public class SlackNotificationService {
         sendMessage(text, "warning");
     }
 
+    public void fallbackSLABreachAlert(Conversation conversation, long expectedSeconds, long actualSeconds, Throwable t) {
+        log.warn("Slack CircuitBreaker active - Failed to send SLA breach alert: {}", t.getMessage());
+    }
+
     /**
      * Send conversation timeout alert to Slack.
      *
      * @param conversation The timed-out conversation
      * @param inactiveMinutes Minutes the conversation has been inactive
      */
+    @CircuitBreaker(name = "slackApi", fallbackMethod = "fallbackTimeoutAlert")
     public void sendTimeoutAlert(Conversation conversation, long inactiveMinutes) {
         if (!slackEnabled) {
             log.debug("Slack notifications disabled. Skipping timeout alert for conversation {}",
@@ -129,6 +141,10 @@ public class SlackNotificationService {
         );
 
         sendMessage(text, "good");
+    }
+
+    public void fallbackTimeoutAlert(Conversation conversation, long inactiveMinutes, Throwable t) {
+        log.warn("Slack CircuitBreaker active - Failed to send timeout alert: {}", t.getMessage());
     }
 
     // -------------------------------------------------------
@@ -172,9 +188,11 @@ public class SlackNotificationService {
                 log.info("Sent Slack notification successfully");
             } else {
                 log.warn("Slack API returned non-2xx status: {}", response.getStatusCode());
+                throw new RuntimeException("Slack API error: " + response.getStatusCode());
             }
         } catch (Exception e) {
             log.warn("Failed to send Slack notification: {}", e.getMessage());
+            throw new RuntimeException("Failed to send Slack notification", e);
         }
     }
 }

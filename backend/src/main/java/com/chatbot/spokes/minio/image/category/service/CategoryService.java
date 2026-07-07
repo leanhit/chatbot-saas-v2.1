@@ -1,5 +1,6 @@
 package com.chatbot.spokes.minio.image.category.service;
 
+import lombok.RequiredArgsConstructor;
 import com.chatbot.spokes.minio.image.category.dto.CategoryRequestDTO;
 import com.chatbot.spokes.minio.image.category.dto.CategoryResponseDTO;
 import com.chatbot.spokes.minio.image.category.model.Category; // Correct import for Category model
@@ -15,10 +16,11 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
-public class CategoryService {
+public @RequiredArgsConstructor
+class CategoryService {
 
-    @Autowired
-    private CategoryRepository categoryRepository;
+
+    private final CategoryRepository categoryRepository;
 
     // --- Entity -> DTO ---
     private CategoryResponseDTO convertToResponseDTO(Category category) {

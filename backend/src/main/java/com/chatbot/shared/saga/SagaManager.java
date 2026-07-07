@@ -1,5 +1,6 @@
 package com.chatbot.shared.saga;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -7,10 +8,11 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Component
-public class SagaManager {
+public @RequiredArgsConstructor
+class SagaManager {
 
-    @Autowired
-    private SagaOrchestration sagaOrchestration;
+
+    private final SagaOrchestration sagaOrchestration;
 
     private final Map<String, SagaInstance> runningSagas = new ConcurrentHashMap<>();
 

@@ -7,6 +7,7 @@ import com.chatbot.core.message.store.model.Conversation;
 import com.chatbot.core.message.store.model.Channel;
 import com.chatbot.core.message.store.mapper.ConversationMapper;
 import com.chatbot.core.message.store.service.ConversationService;
+import com.chatbot.core.message.store.service.ConversationStatisticsService;
 import com.chatbot.core.message.store.service.SLAMonitorService;
 import com.chatbot.core.tenant.infra.TenantContext;
 import io.swagger.v3.oas.annotations.Operation;
@@ -39,6 +40,7 @@ import com.chatbot.core.user.model.User;
 public class ConversationController {
 
     private final ConversationService conversationService;
+    private final ConversationStatisticsService conversationStatisticsService;
     private final ConversationMapper conversationMapper; // Giả định đã có
     private final AuthRepository authRepository;
     private final SLAMonitorService slaMonitorService;
@@ -442,7 +444,7 @@ public class ConversationController {
     public ResponseEntity<?> getConversationStatistics(Principal principal) {
         try {
             String ownerId = principal.getName();
-            var statistics = conversationService.getConversationStatistics(ownerId);
+            var statistics = conversationStatisticsService.getConversationStatistics(ownerId);
             return ResponseEntity.ok(statistics);
         } catch (Exception e) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to retrieve statistics", e);
@@ -466,7 +468,7 @@ public class ConversationController {
             Principal principal) {
         try {
             String ownerId = principal.getName();
-            List<ChartDataPointDTO> chartData = conversationService.getConversationChartData(ownerId, period);
+            List<ChartDataPointDTO> chartData = conversationStatisticsService.getConversationChartData(ownerId, period);
             return ResponseEntity.ok(chartData);
         } catch (Exception e) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to retrieve chart data", e);
@@ -491,7 +493,7 @@ public class ConversationController {
             String ownerId = principal.getName();
             Long tenantId = com.chatbot.core.tenant.infra.TenantContext.getTenantId();
             org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(0, limit);
-            List<ActivityDTO> activities = conversationService.getRecentActivity(ownerId, tenantId, pageable);
+            List<ActivityDTO> activities = conversationStatisticsService.getRecentActivity(ownerId, tenantId, pageable);
             return ResponseEntity.ok(activities);
         } catch (Exception e) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to retrieve recent activity", e);

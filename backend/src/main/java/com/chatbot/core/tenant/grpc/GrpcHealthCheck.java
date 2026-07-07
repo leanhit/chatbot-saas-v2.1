@@ -1,5 +1,6 @@
 package com.chatbot.core.tenant.grpc;
 
+import lombok.RequiredArgsConstructor;
 import com.chatbot.core.tenant.grpc.TenantServiceProto.*;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
@@ -14,10 +15,11 @@ import javax.annotation.PostConstruct;
 
 @Component
 @Slf4j
-public class GrpcHealthCheck {
+public @RequiredArgsConstructor
+class GrpcHealthCheck {
 
-    @Autowired
-    private TenantServiceGrpcImpl grpcService;
+
+    private final TenantServiceGrpcImpl grpcService;
 
     @Value("${tenant.grpc.server.port:50057}")
     private int grpcPort;

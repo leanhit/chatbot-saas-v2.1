@@ -260,7 +260,7 @@ public class PennyMiddlewareEngine {
             try {
                 emitter.send("{\"error\":\"" + e.getMessage() + "\",\"requestId\":\"" + requestId + "\"}");
             } catch (Exception ex) {
-                // Ignore send errors
+                log.warn("⚠️ [{}] Failed to send streaming error response: {}", requestId, ex.getMessage());
             }
         }
     }

@@ -103,6 +103,7 @@ public class TenantController {
      * Suspend tenant (OWNER).
      */
     @PostMapping("/{id}/suspend")
+    @Operation(summary = "Suspend tenant", description = "Suspend a tenant by ID")
     public void suspend(@PathVariable Long id) {
         tenantService.suspendTenant(id);
     }
@@ -120,6 +121,7 @@ public class TenantController {
      * Activate tenant.
      */
     @PostMapping("/{id}/activate")
+    @Operation(summary = "Activate tenant", description = "Activate a tenant by ID")
     public void activate(@PathVariable Long id) {
         tenantService.activateTenant(id);
     }
@@ -137,6 +139,7 @@ public class TenantController {
      * Deactivate tenant.
      */
     @PostMapping("/{id}/deactivate")
+    @Operation(summary = "Deactivate tenant", description = "Deactivate a tenant by ID")
     public void deactivate(@PathVariable Long id) {
         tenantService.deactivateTenant(id);
     }
@@ -178,6 +181,7 @@ public class TenantController {
      * Switch tenant hiện tại.
      */
     @PostMapping("/{id}/switch")
+    @Operation(summary = "Switch tenant", description = "Switch context to another tenant")
     public TenantResponse switchTenant(@PathVariable Long id) {
         return tenantService.switchTenant(id);
     }
@@ -194,6 +198,7 @@ public class TenantController {
      * Search tenant.
      */
     @GetMapping("/search")
+    @Operation(summary = "Search tenants", description = "Search and paginate through tenants")
     public Page<TenantSearchResponse> searchTenants(
             @RequestParam(required = false) String keyword,
             @RequestParam(defaultValue = "0") int page,

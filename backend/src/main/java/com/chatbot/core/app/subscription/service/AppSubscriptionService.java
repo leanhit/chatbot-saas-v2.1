@@ -1,5 +1,6 @@
 package com.chatbot.core.app.subscription.service;
 
+import lombok.RequiredArgsConstructor;
 import com.chatbot.core.app.subscription.dto.SubscriptionResponse;
 import com.chatbot.core.app.subscription.dto.SubscribeAppRequest;
 import com.chatbot.core.app.subscription.model.AppSubscription;
@@ -14,25 +15,28 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import lombok.extern.slf4j.Slf4j;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
 @Transactional(transactionManager = "tenantTransactionManager")
-public class AppSubscriptionService {
+@Slf4j
+public @RequiredArgsConstructor
+class AppSubscriptionService {
     
-    @Autowired
-    private AppSubscriptionRepository subscriptionRepository;
+
+    private final AppSubscriptionRepository subscriptionRepository;
     
-    @Autowired
-    private AppRegistryService appRegistryService;
+
+    private final AppRegistryService appRegistryService;
     
-    @Autowired
-    private SubscriptionValidationService validationService;
+
+    private final SubscriptionValidationService validationService;
     
-    @Autowired
-    private PackageLimitValidationService limitValidationService;
+
+    private final PackageLimitValidationService limitValidationService;
     
     public SubscriptionResponse subscribeToApp(SubscribeAppRequest request, Long userId) {
         // Validate app exists and is active
@@ -198,8 +202,7 @@ public class AppSubscriptionService {
         try {
             response.setApp(appRegistryService.getAppById(subscription.getAppId()));
         } catch (Exception e) {
-            // Handle case where app might be deleted
-            // Set a minimal app response or null
+            log.warn("⚠️ App not found or deleted for app ID: {} in subscription ID: {}", subscription.getAppId(), subscription.getId(), e);
         }
         
         return response;

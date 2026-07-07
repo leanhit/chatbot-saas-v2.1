@@ -1,5 +1,6 @@
 package com.chatbot.core.identity.controller;
 
+import lombok.RequiredArgsConstructor;
 import com.chatbot.core.identity.service.TenantGrpcService;
 import com.chatbot.core.tenant.grpc.TenantServiceProto.*;
 import lombok.extern.slf4j.Slf4j;
@@ -13,10 +14,11 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/identity-inter-hub")
 @Slf4j
-public class IdentityInterHubController {
+public @RequiredArgsConstructor
+class IdentityInterHubController {
 
-    @Autowired
-    private TenantGrpcService tenantGrpcService;
+
+    private final TenantGrpcService tenantGrpcService;
 
     /**
      * Identity Hub gọi Tenant Hub để validate tenant

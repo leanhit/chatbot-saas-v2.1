@@ -22,6 +22,8 @@ import org.springframework.data.redis.serializer.StringRedisSerializer;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
+import com.github.benmanes.caffeine.cache.Caffeine;
+import org.springframework.cache.caffeine.CaffeineCacheManager;
 
 /**
  * Cache Configuration — single source of truth for RedisCacheManager.
@@ -98,12 +100,20 @@ public class CacheConfig {
     }
 
     /**
-     * Cache warming configuration
+     * Local In-Memory Cache Manager using Caffeine.
+     * Ideal for highly frequent reads that don't need distributed caching.
      */
-    @Bean
-    public CacheWarmer cacheWarmer(RedisTemplate<String, Object> redisTemplate) {
-        return new CacheWarmer(redisTemplate);
+    @Bean("localCacheManager")
+    public CacheManager caffeineCacheManager() {
+        CaffeineCacheManager cacheManager = new CaffeineCacheManager();
+        cacheManager.setCaffeine(Caffeine.newBuilder()
+                .expireAfterWrite(Duration.ofMinutes(5))
+                .maximumSize(1000)
+                .recordStats());
+        return cacheManager;
     }
+
+
 
     /**
      * Cache statistics monitor

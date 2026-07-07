@@ -1,5 +1,6 @@
 package com.chatbot.core.app.guard.service;
 
+import lombok.RequiredArgsConstructor;
 import com.chatbot.core.app.guard.model.AppGuard;
 import com.chatbot.core.app.guard.model.GuardRule;
 import com.chatbot.core.app.guard.model.GuardType;
@@ -14,16 +15,17 @@ import java.util.stream.Collectors;
 
 @Service
 @Transactional(transactionManager = "tenantTransactionManager")
-public class AppGuardService {
+public @RequiredArgsConstructor
+class AppGuardService {
     
-    @Autowired
-    private com.chatbot.core.app.guard.repository.AppGuardRepository appGuardRepository;
+
+    private final com.chatbot.core.app.guard.repository.AppGuardRepository appGuardRepository;
     
-    @Autowired
-    private com.chatbot.core.app.guard.repository.GuardRuleRepository guardRuleRepository;
+
+    private final com.chatbot.core.app.guard.repository.GuardRuleRepository guardRuleRepository;
     
-    @Autowired
-    private AccessControlService accessControlService;
+
+    private final AccessControlService accessControlService;
     
     public AppGuard createGuard(Long appId, String guardName, GuardType guardType, String description, Long createdBy) {
         // Validate app exists

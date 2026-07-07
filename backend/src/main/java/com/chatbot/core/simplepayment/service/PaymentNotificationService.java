@@ -105,7 +105,7 @@ public class PaymentNotificationService {
                 try {
                     entry.getValue().emitter.complete();
                 } catch (Exception e) {
-                    // Ignore
+                    log.debug("ℹ️ [PaymentNotificationService] SSE emitter completion error for key {}: {}", entry.getKey(), e.getMessage());
                 }
                 return true;
             }

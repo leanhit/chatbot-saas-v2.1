@@ -1,5 +1,6 @@
 package com.chatbot.core.message.grpc;
 
+import lombok.RequiredArgsConstructor;
 import com.chatbot.message.grpc.MessageServiceProto.*;
 import com.chatbot.message.grpc.MessageServiceGrpc;
 import com.chatbot.core.message.store.service.MessageService;
@@ -30,16 +31,17 @@ import java.util.stream.Collectors;
  */
 @Service
 @Slf4j
-public class MessageServiceGrpcImpl extends MessageServiceGrpc.MessageServiceImplBase {
+public @RequiredArgsConstructor
+class MessageServiceGrpcImpl extends MessageServiceGrpc.MessageServiceImplBase {
     
-    @Autowired
-    private MessageService messageService;
-    
-    @Autowired
-    private ConversationService conversationService;
 
-    @Autowired
-    private TenantService tenantService;
+    private final MessageService messageService;
+    
+
+    private final ConversationService conversationService;
+
+
+    private final TenantService tenantService;
 
     @Override
     public void sendMessage(SendMessageRequest request, StreamObserver<SendMessageResponse> responseObserver) {

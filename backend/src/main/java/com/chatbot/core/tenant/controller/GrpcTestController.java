@@ -1,5 +1,6 @@
 package com.chatbot.core.tenant.controller;
 
+import lombok.RequiredArgsConstructor;
 import com.chatbot.core.tenant.grpc.TenantGrpcClient;
 import com.chatbot.core.tenant.grpc.TenantServiceProto.*;
 import lombok.extern.slf4j.Slf4j;
@@ -13,10 +14,11 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/tenant/grpc-test")
 @Slf4j
-public class GrpcTestController {
+public @RequiredArgsConstructor
+class GrpcTestController {
 
-    @Autowired
-    private TenantGrpcClient grpcClient;
+
+    private final TenantGrpcClient grpcClient;
 
     @GetMapping("/validate/{tenantKey}")
     public ResponseEntity<Map<String, Object>> validateTenant(@PathVariable String tenantKey) {

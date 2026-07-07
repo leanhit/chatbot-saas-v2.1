@@ -1,5 +1,6 @@
 package com.chatbot.core.app.grpc;
 
+import lombok.RequiredArgsConstructor;
 import com.chatbot.core.app.grpc.AppGrpcMessage;
 import com.chatbot.core.app.grpc.AppServiceGrpc;
 import com.chatbot.core.app.grpc.EvaluateGuardRequest;
@@ -29,18 +30,19 @@ import java.util.stream.Collectors;
 import java.util.logging.Logger;
 
 @Service
-public class AppServiceGrpcImpl extends AppServiceGrpc.AppServiceImplBase {
+public @RequiredArgsConstructor
+class AppServiceGrpcImpl extends AppServiceGrpc.AppServiceImplBase {
     
     private static final Logger logger = Logger.getLogger(AppServiceGrpcImpl.class.getName());
     
-    @Autowired
-    private AppRegistryService appRegistryService;
+
+    private final AppRegistryService appRegistryService;
     
-    @Autowired
-    private AppSubscriptionService subscriptionService;
+
+    private final AppSubscriptionService subscriptionService;
     
-    @Autowired
-    private AppGuardService guardService;
+
+    private final AppGuardService guardService;
     
     @Override
     public void registerApp(RegisterAppRequest request, StreamObserver<RegisterAppResponse> responseObserver) {

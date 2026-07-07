@@ -8,6 +8,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.retry.annotation.Retry;
 
 import java.util.HashMap;
 import java.util.List;
@@ -20,6 +22,8 @@ import java.util.Map;
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@CircuitBreaker(name = "llmApi")
+@Retry(name = "llmApi")
 public class LLMClient {
 
     private final RestTemplate restTemplate;

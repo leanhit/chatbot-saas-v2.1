@@ -1,5 +1,6 @@
 package com.chatbot.shared.saga;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Component;
@@ -10,10 +11,11 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.lang.reflect.Method;
 
 @Component
-public class SagaOrchestration {
+public @RequiredArgsConstructor
+class SagaOrchestration {
 
-    @Autowired
-    private ApplicationContext applicationContext;
+
+    private final ApplicationContext applicationContext;
 
     private final Map<String, SagaDefinitionData> sagaDefinitions = new ConcurrentHashMap<>();
 
