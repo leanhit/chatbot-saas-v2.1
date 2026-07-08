@@ -28,6 +28,9 @@ public class TenantGrpcClient {
     @Value("${tenant.grpc.server.port:50057}")
     private int grpcPort;
 
+    @Value("${grpc.security.tls.enabled:false}")
+    private boolean tlsEnabled;
+
     @PostConstruct
     public void init() {
         try {
@@ -35,9 +38,13 @@ public class TenantGrpcClient {
             Thread.sleep(1000);
             
             // Tạo channel kết nối đến gRPC server
-            channel = ManagedChannelBuilder.forAddress(grpcHost, grpcPort)
-                    .usePlaintext()
-                    .build();
+            ManagedChannelBuilder<?> builder = ManagedChannelBuilder.forAddress(grpcHost, grpcPort);
+            if (tlsEnabled) {
+                builder.useTransportSecurity();
+            } else {
+                builder.usePlaintext();
+            }
+            channel = builder.build();
             
             blockingStub = TenantServiceGrpc.newBlockingStub(channel);
             

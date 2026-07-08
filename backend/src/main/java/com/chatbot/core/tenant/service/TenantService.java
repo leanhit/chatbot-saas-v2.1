@@ -14,7 +14,6 @@ import com.chatbot.core.tenant.dto.*;
 import com.chatbot.core.tenant.mapper.TenantMapper;
 import com.chatbot.core.tenant.model.*;
 import com.chatbot.core.tenant.repository.TenantRepository;
-import com.chatbot.core.tenant.membership.service.TenantMembershipFacade;
 import com.chatbot.core.tenant.membership.model.TenantRole;
 import com.chatbot.core.tenant.membership.repository.TenantMemberRepository;
 import com.chatbot.core.tenant.membership.model.TenantMember;
@@ -52,7 +51,6 @@ public class TenantService {
     private final AuthRepository authRepository;
     private final UserRepository userRepository;
     private final TenantMemberRepository tenantMemberRepository;
-    private final TenantMembershipFacade tenantMembershipFacade;
     private final TenantPackageService tenantPackageService;
     private final TenantProfileRepository tenantProfileRepository;
     private final TenantProfileService tenantProfileService;
@@ -529,38 +527,7 @@ public class TenantService {
         return TenantMapper.toResponseWithProfile(tenant, profile);
     }
 
-    // =========================================================================
-    // BULK INVITE
-    // =========================================================================
 
-    @Transactional(transactionManager = "tenantTransactionManager")
-    public List<InvitationResponse> bulkInviteUsers(String tenantKey, List<BulkInvitationRequest.Invitation> invitations) {
-        String currentUserEmail = permissionValidator.getCurrentUserEmail();
-
-        Tenant tenant = tenantRepository.findByTenantKey(tenantKey)
-                .orElseThrow(() -> new TenantNotFoundException("Tenant not found"));
-
-        if (!permissionValidator.isAdminOrOwner(tenant.getId(), currentUserEmail)) {
-            throw new InsufficientPermissionException("Insufficient permission for bulk invitation");
-        }
-
-        User adminUser = userRepository.findByEmail(currentUserEmail)
-                .orElseThrow(() -> new InsufficientPermissionException("User not found"));
-
-        List<InvitationResponse> results = new java.util.ArrayList<>();
-        for (BulkInvitationRequest.Invitation invite : invitations) {
-            try {
-                tenantMembershipFacade.createInvitation(tenant.getId(), invite.getEmail(), invite.getRole(), adminUser);
-                results.add(new InvitationResponse(invite.getEmail(), "SENT"));
-                auditLogService.logAction(tenant.getId(), currentUserEmail, "BULK_INVITE",
-                        "Invited " + invite.getEmail());
-            } catch (Exception e) {
-                log.error("[TenantService] Bulk invite failed for {}: {}", invite.getEmail(), e.getMessage());
-                results.add(new InvitationResponse(invite.getEmail(), "FAILED: " + e.getMessage()));
-            }
-        }
-        return results;
-    }
 
     // =========================================================================
     // PRIVATE HELPERS

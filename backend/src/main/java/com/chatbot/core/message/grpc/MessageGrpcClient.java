@@ -26,17 +26,26 @@ public class MessageGrpcClient {
     @Value("${message.grpc.client.timeout:30}")
     private int timeoutSeconds;
     
+    @Value("${grpc.security.tls.enabled:false}")
+    private boolean tlsEnabled;
+    
     private ManagedChannel channel;
     
     @PostConstruct
     public void init() {
         try {
-            channel = ManagedChannelBuilder.forAddress(host, port)
-                    .usePlaintext()
+            ManagedChannelBuilder<?> builder = ManagedChannelBuilder.forAddress(host, port)
                     .keepAliveTime(30, TimeUnit.SECONDS)
                     .keepAliveTimeout(5, TimeUnit.SECONDS)
-                    .keepAliveWithoutCalls(true)
-                    .build();
+                    .keepAliveWithoutCalls(true);
+            
+            if (tlsEnabled) {
+                builder.useTransportSecurity();
+            } else {
+                builder.usePlaintext();
+            }
+            
+            channel = builder.build();
             
             log.info("Message gRPC client initialized: {}:{}", host, port);
             

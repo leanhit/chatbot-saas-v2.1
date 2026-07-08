@@ -23,6 +23,8 @@ import org.springframework.stereotype.Component;
 public @RequiredArgsConstructor
 class IdentityGrpcHealthCheck {
 
+    @org.springframework.beans.factory.annotation.Value("${grpc.security.tls.enabled:false}")
+    private boolean tlsEnabled;
 
     private final IdentityServiceGrpcImpl grpcService;
 
@@ -32,9 +34,13 @@ class IdentityGrpcHealthCheck {
         try {
             log.info("=== Bắt đầu Health Check cho Identity gRPC Service ===");
 
-            channel = ManagedChannelBuilder.forAddress("localhost", 50051)
-                    .usePlaintext()
-                    .build();
+            ManagedChannelBuilder<?> builder = ManagedChannelBuilder.forAddress("localhost", 50051);
+            if (tlsEnabled) {
+                builder.useTransportSecurity();
+            } else {
+                builder.usePlaintext();
+            }
+            channel = builder.build();
 
             IdentityServiceGrpc.IdentityServiceBlockingStub blockingStub =
                     IdentityServiceGrpc.newBlockingStub(channel);

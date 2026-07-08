@@ -24,6 +24,9 @@ class GrpcHealthCheck {
     @Value("${tenant.grpc.server.port:50057}")
     private int grpcPort;
 
+    @Value("${grpc.security.tls.enabled:false}")
+    private boolean tlsEnabled;
+
     @PostConstruct
     public void performHealthCheck() {
         ManagedChannel channel = null;
@@ -31,9 +34,13 @@ class GrpcHealthCheck {
             log.info("=== Bắt đầu Health Check cho gRPC Tenant Service ===");
             
             // Tạo channel để test
-            channel = ManagedChannelBuilder.forAddress("localhost", grpcPort)
-                    .usePlaintext()
-                    .build();
+            ManagedChannelBuilder<?> builder = ManagedChannelBuilder.forAddress("localhost", grpcPort);
+            if (tlsEnabled) {
+                builder.useTransportSecurity();
+            } else {
+                builder.usePlaintext();
+            }
+            channel = builder.build();
             
             // Add authorization metadata for health check
             Metadata headers = new Metadata();

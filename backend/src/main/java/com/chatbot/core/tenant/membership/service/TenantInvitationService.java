@@ -3,6 +3,7 @@ package com.chatbot.core.tenant.membership.service;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.chatbot.core.tenant.dto.BulkInvitationRequest;
 import com.chatbot.core.tenant.membership.dto.InviteMemberRequest;
 import com.chatbot.core.tenant.membership.dto.InvitationResponse;
 import com.chatbot.core.tenant.model.Tenant;
@@ -212,6 +213,41 @@ public class TenantInvitationService {
 
         auditLogService.logAction(tenantId, currentUserEmail, "REVOKE_INVITATION",
             "Revoked invitation id=" + invitationId + " for " + invitation.getEmail());
+    }
+
+    /**
+     * Bulk invite members.
+     */
+    @Transactional(transactionManager = "tenantTransactionManager")
+    public List<com.chatbot.core.tenant.dto.InvitationResponse> bulkInviteUsers(String tenantKey, List<BulkInvitationRequest.Invitation> invitations) {
+        String currentUserEmail = permissionValidator.getCurrentUserEmail();
+
+        Tenant tenant = tenantRepo.findByTenantKey(tenantKey)
+                .orElseThrow(() -> new TenantNotFoundException("Tenant not found"));
+
+        if (!permissionValidator.isAdminOrOwner(tenant.getId(), currentUserEmail)) {
+            throw new InsufficientPermissionException(com.chatbot.shared.exceptions.ErrorCode.INVITATION_PERMISSION_DENIED, "Insufficient permission for bulk invitation");
+        }
+
+        User adminUser = userRepo.findByEmail(currentUserEmail)
+                .orElseThrow(() -> new InsufficientPermissionException(com.chatbot.shared.exceptions.ErrorCode.INVITATION_PERMISSION_DENIED, "User not found"));
+
+        List<com.chatbot.core.tenant.dto.InvitationResponse> results = new java.util.ArrayList<>();
+        for (BulkInvitationRequest.Invitation invite : invitations) {
+            try {
+                InviteMemberRequest request = new InviteMemberRequest();
+                request.setEmail(invite.getEmail());
+                request.setRole(com.chatbot.core.tenant.membership.model.TenantRole.valueOf(invite.getRole()));
+                inviteMember(tenant.getId(), request, adminUser);
+                results.add(new com.chatbot.core.tenant.dto.InvitationResponse(invite.getEmail(), "SENT"));
+                auditLogService.logAction(tenant.getId(), currentUserEmail, "BULK_INVITE",
+                        "Invited " + invite.getEmail());
+            } catch (Exception e) {
+                log.error("[TenantInvitationService] Bulk invite failed for {}: {}", invite.getEmail(), e.getMessage());
+                results.add(new com.chatbot.core.tenant.dto.InvitationResponse(invite.getEmail(), "FAILED: " + e.getMessage()));
+            }
+        }
+        return results;
     }
 
     /* ================= HELPERS ================= */

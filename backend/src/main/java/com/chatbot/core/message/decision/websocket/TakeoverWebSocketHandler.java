@@ -436,8 +436,7 @@ public class TakeoverWebSocketHandler extends TextWebSocketHandler {
             // This prevents duplicate saves since TakeoverService already handles persistence
 
         } catch (Exception e) {
-            log.error("❌ WebSocket: Error sending message to conversation {}: {}", conversationId, e.getMessage());
-            e.printStackTrace();
+            log.error("❌ WebSocket: Error sending message to conversation {}: {}", conversationId, e.getMessage(), e);
         }
     }
     

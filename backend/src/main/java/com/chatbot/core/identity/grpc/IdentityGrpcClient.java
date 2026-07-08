@@ -19,15 +19,22 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 public class IdentityGrpcClient {
 
+    @org.springframework.beans.factory.annotation.Value("${grpc.security.tls.enabled:false}")
+    private boolean tlsEnabled;
+
     private ManagedChannel channel;
     private IdentityServiceGrpc.IdentityServiceBlockingStub blockingStub;
 
     @PostConstruct
     public void init() {
         // Build the channel immediately — no delay needed since @DependsOn("identityGrpcServer") guarantees order
-        channel = ManagedChannelBuilder.forAddress("localhost", 50051)
-                .usePlaintext()
-                .build();
+        ManagedChannelBuilder<?> builder = ManagedChannelBuilder.forAddress("localhost", 50051);
+        if (tlsEnabled) {
+            builder.useTransportSecurity();
+        } else {
+            builder.usePlaintext();
+        }
+        channel = builder.build();
         blockingStub = IdentityServiceGrpc.newBlockingStub(channel);
         log.info("Identity gRPC Client đã khởi tạo thành công và kết nối đến port 50051");
     }

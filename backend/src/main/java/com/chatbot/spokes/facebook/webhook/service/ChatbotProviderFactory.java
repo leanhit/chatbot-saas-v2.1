@@ -1,7 +1,7 @@
 package com.chatbot.spokes.facebook.webhook.service;
 import lombok.extern.slf4j.Slf4j;
 
-import org.springframework.beans.factory.annotation.Autowired;
+
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -18,7 +18,6 @@ public class ChatbotProviderFactory {
 
     private final Map<String, ChatbotProviderService> providerMap;
 
-    @Autowired
     public ChatbotProviderFactory(List<ChatbotProviderService> providers) {
         // Tạo map của các providers theo loại
         this.providerMap = providers.stream()

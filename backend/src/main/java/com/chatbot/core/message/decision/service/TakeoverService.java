@@ -67,8 +67,7 @@ public class TakeoverService {
             // sendToConversation(message); // Removed to prevent duplicate messages 
             
         } catch (Exception e) {
-            log.error("❌ Lỗi khi lưu Message vào Redis/gửi WebSocket: " + e.getMessage());
-            e.printStackTrace();
+            log.error("❌ Lỗi khi lưu Message vào Redis/gửi WebSocket: {}", e.getMessage(), e);
         }
     }
 

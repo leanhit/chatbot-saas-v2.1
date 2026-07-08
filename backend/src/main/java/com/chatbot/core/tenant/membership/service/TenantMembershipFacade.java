@@ -109,6 +109,13 @@ public class TenantMembershipFacade {
     }
 
     /**
+     * Bulk invite members.
+     */
+    public List<com.chatbot.core.tenant.dto.InvitationResponse> bulkInviteUsers(String tenantKey, List<com.chatbot.core.tenant.dto.BulkInvitationRequest.Invitation> invitations) {
+        return invitationService.bulkInviteUsers(tenantKey, invitations);
+    }
+
+    /**
      * Convert tenantKey to tenantId
      */
     public Long getTenantIdByKey(String tenantKey) {

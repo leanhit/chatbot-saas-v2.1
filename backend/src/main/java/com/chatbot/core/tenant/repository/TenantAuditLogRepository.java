@@ -6,5 +6,8 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface TenantAuditLogRepository extends JpaRepository<TenantAuditLog, Long> {
-    // Additional query methods can be added if needed
+    @org.springframework.data.jpa.repository.Modifying
+    @org.springframework.transaction.annotation.Transactional(value = "tenantTransactionManager", rollbackFor = Exception.class)
+    @org.springframework.data.jpa.repository.Query("DELETE FROM TenantAuditLog l WHERE l.tenantId = :tenantId")
+    void deleteByTenantId(@org.springframework.data.repository.query.Param("tenantId") Long tenantId);
 }

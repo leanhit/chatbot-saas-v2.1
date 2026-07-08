@@ -51,11 +51,14 @@ public class JwtService {
     private PrivateKey privateKey;
     private PublicKey publicKey;
     
-    @Autowired(required = false)
-    private TokenBlacklistService tokenBlacklistService;
+    private final TokenBlacklistService tokenBlacklistService;
+    private final JwtKeyManagementService jwtKeyManagementService;
 
-    @Autowired(required = false)
-    private JwtKeyManagementService jwtKeyManagementService;
+    public JwtService(@Autowired(required = false) TokenBlacklistService tokenBlacklistService,
+                      @Autowired(required = false) JwtKeyManagementService jwtKeyManagementService) {
+        this.tokenBlacklistService = tokenBlacklistService;
+        this.jwtKeyManagementService = jwtKeyManagementService;
+    }
 
     @PostConstruct
     public void init() {

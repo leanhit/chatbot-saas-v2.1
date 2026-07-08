@@ -90,18 +90,18 @@ public class PennyBotProviderService implements ChatbotProviderService {
      */
     private void saveAgentMessageToDatabase(String botId, String senderId, String messageText) {
         try {
-            System.out.println("=== DEBUG PENNY BOT SAVING AGENT MESSAGE ===");
-            System.out.println("Bot ID: " + botId);
-            System.out.println("Sender ID: " + senderId);
-            System.out.println("Message: " + messageText);
+            log.debug("=== DEBUG PENNY BOT SAVING AGENT MESSAGE ===");
+            log.debug("Bot ID: {}", botId);
+            log.debug("Sender ID: {}", senderId);
+            log.debug("Message: {}", messageText);
             
             // Generate unique message ID for idempotency check
             String messageId = "penny_agent_" + botId + "_" + senderId + "_" + messageText.hashCode() + "_" + System.currentTimeMillis();
-            System.out.println("Generated Message ID: " + messageId);
+            log.debug("Generated Message ID: {}", messageId);
             
             // Check if message already exists (idempotency)
             if (messageService.messageExists(messageId)) {
-                System.out.println("=== PENNY BOT: Agent message ALREADY EXISTS, skipping save ===");
+                log.debug("=== PENNY BOT: Agent message ALREADY EXISTS, skipping save ===");
                 log.info("Agent message already exists, skipping save: {}", messageId);
                 return;
             }
@@ -114,7 +114,7 @@ public class PennyBotProviderService implements ChatbotProviderService {
             Conversation conversation = conversationRepository.findByExternalUserIdAndConnectionId(senderId, connection.getId())
                 .orElseThrow(() -> new RuntimeException("Conversation not found for senderId: " + senderId));
             
-            System.out.println("Conversation ID: " + conversation.getId());
+            log.debug("Conversation ID: {}", conversation.getId());
             
             // Save agent message
             messageService.saveMessage(
@@ -125,7 +125,7 @@ public class PennyBotProviderService implements ChatbotProviderService {
                 Map.of("externalMessageId", messageId, "botId", botId, "sentVia", "agent_ui")
             );
             
-            System.out.println("=== PENNY BOT: Agent message SAVED to DB ===");
+            log.debug("=== PENNY BOT: Agent message SAVED to DB ===");
             log.info(" Saved agent message to database. ConversationId: {}, SenderId: {}", conversation.getId(), senderId);
             
         } catch (Exception e) {

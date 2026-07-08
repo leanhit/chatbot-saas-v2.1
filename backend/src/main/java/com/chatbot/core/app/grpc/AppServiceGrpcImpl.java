@@ -58,6 +58,10 @@ class AppServiceGrpcImpl extends AppServiceGrpc.AppServiceImplBase {
             
             responseObserver.onNext(response);
             responseObserver.onCompleted();
+        } catch (IllegalArgumentException e) {
+            responseObserver.onError(io.grpc.Status.INVALID_ARGUMENT
+                .withDescription(e.getMessage())
+                .asRuntimeException());
         } catch (Exception e) {
             responseObserver.onError(io.grpc.Status.INTERNAL
                 .withDescription(e.getMessage())
@@ -73,6 +77,10 @@ class AppServiceGrpcImpl extends AppServiceGrpc.AppServiceImplBase {
             
             responseObserver.onNext(response);
             responseObserver.onCompleted();
+        } catch (IllegalArgumentException e) {
+            responseObserver.onError(io.grpc.Status.INVALID_ARGUMENT
+                .withDescription(e.getMessage())
+                .asRuntimeException());
         } catch (Exception e) {
             responseObserver.onError(io.grpc.Status.INTERNAL
                 .withDescription(e.getMessage())
@@ -95,6 +103,10 @@ class AppServiceGrpcImpl extends AppServiceGrpc.AppServiceImplBase {
             
             responseObserver.onNext(response);
             responseObserver.onCompleted();
+        } catch (IllegalArgumentException e) {
+            responseObserver.onError(io.grpc.Status.INVALID_ARGUMENT
+                .withDescription(e.getMessage())
+                .asRuntimeException());
         } catch (Exception e) {
             responseObserver.onError(io.grpc.Status.INTERNAL
                 .withDescription(e.getMessage())
@@ -112,6 +124,10 @@ class AppServiceGrpcImpl extends AppServiceGrpc.AppServiceImplBase {
             
             responseObserver.onNext(response);
             responseObserver.onCompleted();
+        } catch (IllegalArgumentException e) {
+            responseObserver.onError(io.grpc.Status.INVALID_ARGUMENT
+                .withDescription(e.getMessage())
+                .asRuntimeException());
         } catch (Exception e) {
             responseObserver.onError(io.grpc.Status.INTERNAL
                 .withDescription(e.getMessage())
@@ -127,6 +143,10 @@ class AppServiceGrpcImpl extends AppServiceGrpc.AppServiceImplBase {
             
             responseObserver.onNext(response);
             responseObserver.onCompleted();
+        } catch (IllegalArgumentException e) {
+            responseObserver.onError(io.grpc.Status.INVALID_ARGUMENT
+                .withDescription(e.getMessage())
+                .asRuntimeException());
         } catch (Exception e) {
             responseObserver.onError(io.grpc.Status.INTERNAL
                 .withDescription(e.getMessage())
@@ -146,6 +166,10 @@ class AppServiceGrpcImpl extends AppServiceGrpc.AppServiceImplBase {
             
             responseObserver.onNext(response);
             responseObserver.onCompleted();
+        } catch (IllegalArgumentException e) {
+            responseObserver.onError(io.grpc.Status.INVALID_ARGUMENT
+                .withDescription(e.getMessage())
+                .asRuntimeException());
         } catch (Exception e) {
             responseObserver.onError(io.grpc.Status.INTERNAL
                 .withDescription(e.getMessage())

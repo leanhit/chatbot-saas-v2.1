@@ -7,12 +7,6 @@ import com.chatbot.core.tenant.service.TenantService;
 import com.chatbot.core.tenant.profile.service.TenantProfileService;
 import com.chatbot.core.tenant.repository.TenantRepository;
 import com.chatbot.core.tenant.model.Tenant;
-import com.chatbot.core.tenant.exception.BusinessLogicException;
-import com.chatbot.core.user.repository.UserRepository;
-import com.chatbot.core.identity.model.SystemRole;
-import com.chatbot.core.tenant.membership.model.TenantRole;
-import com.chatbot.core.tenant.membership.model.MembershipStatus;
-import com.chatbot.core.tenant.membership.repository.TenantMemberRepository;
 import com.chatbot.core.tenant.membership.service.TenantMembershipFacade;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,19 +14,19 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
+
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
 import java.util.List;
-import java.util.Map;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
-import com.chatbot.core.user.repository.AuthRepository;
+
 import com.chatbot.core.tenant.service.TenantPermissionValidator;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
+
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -457,7 +451,7 @@ public class TenantController {
     public ResponseEntity<List<InvitationResponse>> bulkInvite(
             @PathVariable String tenantKey,
             @RequestBody BulkInvitationRequest request) {
-        List<InvitationResponse> results = tenantService.bulkInviteUsers(tenantKey, request.getInvitations());
+        List<InvitationResponse> results = tenantMembershipFacade.bulkInviteUsers(tenantKey, request.getInvitations());
         return ResponseEntity.ok(results);
     }
 

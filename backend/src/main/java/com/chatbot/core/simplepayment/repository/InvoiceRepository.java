@@ -29,4 +29,9 @@ public interface InvoiceRepository extends JpaRepository<Invoice, Long> {
     
     @Query("SELECT i FROM Invoice i WHERE i.status = :status ORDER BY i.createdAt DESC")
     List<Invoice> findByStatus(@Param("status") Invoice.InvoiceStatus status);
+
+    @org.springframework.data.jpa.repository.Modifying
+    @org.springframework.transaction.annotation.Transactional(value = "messageTransactionManager", rollbackFor = Exception.class)
+    @Query("DELETE FROM Invoice i WHERE i.tenantId = :tenantId")
+    void deleteByTenantId(@Param("tenantId") Long tenantId);
 }

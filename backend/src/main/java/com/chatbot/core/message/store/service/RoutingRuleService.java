@@ -198,7 +198,11 @@ public class RoutingRuleService {
     private boolean handleRouteToQueue(Conversation conversation, Map<String, Object> action) {
         String queueName = (String) action.get("queueName");
         log.info("Routing rule routed conversation {} to queue: {}", conversation.getId(), queueName);
-        // TODO: Implement queue routing logic
+        
+        if (queueName != null && !queueName.isEmpty()) {
+            conversation.setQueueName(queueName);
+            conversationRepository.save(conversation);
+        }
         return true;
     }
 

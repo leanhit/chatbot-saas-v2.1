@@ -20,12 +20,25 @@ public class UserGrpcServerConfig {
     @Value("${user.grpc.server.port:50052}")
     private int port;
 
+    @Value("${grpc.security.tls.enabled:false}")
+    private boolean tlsEnabled;
+
+    @Value("${grpc.security.tls.cert-chain-path:}")
+    private String certChainPath;
+
+    @Value("${grpc.security.tls.private-key-path:}")
+    private String privateKeyPath;
+
     @Bean
     public Server userGrpcServer(UserServiceGrpcImpl userService) throws IOException {
-        Server server = ServerBuilder.forPort(port)
-                .addService(userService)
-                .build()
-                .start();
+        io.grpc.ServerBuilder<?> serverBuilder = ServerBuilder.forPort(port)
+                .addService(userService);
+                
+        if (tlsEnabled && certChainPath != null && !certChainPath.isEmpty() && privateKeyPath != null && !privateKeyPath.isEmpty()) {
+            serverBuilder.useTransportSecurity(new java.io.File(certChainPath), new java.io.File(privateKeyPath));
+        }
+                
+        Server server = serverBuilder.build().start();
         
         log.info("User gRPC server started on port {}", port);
         

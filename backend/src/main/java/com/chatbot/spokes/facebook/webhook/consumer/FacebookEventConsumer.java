@@ -22,7 +22,7 @@ import com.chatbot.spokes.odoo.service.CustomerDataService;
 import com.chatbot.core.tenant.infra.TenantContext;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
+
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -41,6 +41,7 @@ import com.github.benmanes.caffeine.cache.Caffeine;
  */
 @Service
 @Slf4j
+@lombok.RequiredArgsConstructor
 public class FacebookEventConsumer {
 
     private final FacebookConnectionRepository connectionRepository;
@@ -62,32 +63,7 @@ public class FacebookEventConsumer {
             .maximumSize(10000)
             .build();
 
-    @Autowired
-    public FacebookEventConsumer(FacebookConnectionRepository connectionRepository,
-                                 PennyBotManager pennyBotManager,
-                                 FacebookMessengerService facebookMessengerService,
-                                 ConversationService conversationService,
-                                 MessageService messageService,
-                                 TakeoverService takeoverService,
-                                 CustomerDataService customerDataService,
-                                 AIEscalationService aiEscalationService,
-                                 ErrorWorkflow errorWorkflow,
-                                 ConversationEndWorkflow conversationEndWorkflow,
-                                 RedisTemplate<String, String> redisTemplate,
-                                 ObjectMapper objectMapper) {
-        this.connectionRepository = connectionRepository;
-        this.pennyBotManager = pennyBotManager;
-        this.facebookMessengerService = facebookMessengerService;
-        this.conversationService = conversationService;
-        this.messageService = messageService;
-        this.takeoverService = takeoverService;
-        this.customerDataService = customerDataService;
-        this.aiEscalationService = aiEscalationService;
-        this.errorWorkflow = errorWorkflow;
-        this.conversationEndWorkflow = conversationEndWorkflow;
-        this.redisTemplate = redisTemplate;
-        this.objectMapper = objectMapper;
-    }
+
 
     private boolean tryDedup(String mid) {
         if (mid == null) return false;

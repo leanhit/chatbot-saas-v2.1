@@ -185,4 +185,9 @@ public interface ConversationRepository extends JpaRepository<Conversation, Long
 
     // Timeout Workflow: Find conversations by status (tenant-independent for scheduled jobs)
     List<Conversation> findByStatus(@Param("status") String status);
+    
+    @org.springframework.data.jpa.repository.Modifying
+    @org.springframework.transaction.annotation.Transactional(value = "messageTransactionManager", rollbackFor = Exception.class)
+    @Query("DELETE FROM Conversation c WHERE c.tenantId = :tenantId")
+    void deleteByTenantId(@Param("tenantId") Long tenantId);
 }

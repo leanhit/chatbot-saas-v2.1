@@ -119,4 +119,9 @@ public interface TenantMemberRepository extends JpaRepository<TenantMember, Long
 
     // Kiểm tra tồn tại lời mời để tránh gửi trùng
     boolean existsByTenantIdAndUserId(Long tenantId, Long userId);
+
+    @org.springframework.data.jpa.repository.Modifying
+    @org.springframework.transaction.annotation.Transactional(value = "tenantTransactionManager", rollbackFor = Exception.class)
+    @Query("DELETE FROM TenantMember tm WHERE tm.tenant.id = :tenantId")
+    void deleteByTenantId(@Param("tenantId") Long tenantId);
 }

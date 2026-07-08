@@ -111,6 +111,9 @@ public class Conversation extends BaseTenantEntity {
     @Column(name = "last_escalated_at")
     private LocalDateTime lastEscalatedAt; // timestamp of last escalation
 
+    @Column(columnDefinition = "TEXT")
+    private String summary;
+
     // Timestamp
     @CreationTimestamp
     @JsonFormat(pattern = DateUtils.STANDARD_JSON_FORMAT, timezone = DateUtils.STANDARD_TIMEZONE)

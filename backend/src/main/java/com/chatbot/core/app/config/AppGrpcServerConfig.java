@@ -21,6 +21,14 @@ class AppGrpcServerConfig {
     @Value("${app.grpc.server.port:50054}")
     private int grpcPort;
 
+    @Value("${grpc.security.tls.enabled:false}")
+    private boolean tlsEnabled;
+
+    @Value("${grpc.security.tls.cert-chain-path:}")
+    private String certChainPath;
+
+    @Value("${grpc.security.tls.private-key-path:}")
+    private String privateKeyPath;
 
     private final AppServiceGrpcImpl appServiceGrpcImpl;
 
@@ -30,12 +38,17 @@ class AppGrpcServerConfig {
     public Server appGrpcServer() throws IOException {
         log.info("Starting App gRPC server on port: {}", grpcPort);
         
-        grpcServer = ServerBuilder.forPort(grpcPort)
+        io.grpc.ServerBuilder<?> serverBuilder = ServerBuilder.forPort(grpcPort)
                 .addService(appServiceGrpcImpl)
                 .maxInboundMessageSize(10 * 1024 * 1024) // 10MB
-                .maxInboundMetadataSize(10 * 1024 * 1024) // 10MB
-                .build()
-                .start();
+                .maxInboundMetadataSize(10 * 1024 * 1024); // 10MB
+
+        if (tlsEnabled && certChainPath != null && !certChainPath.isEmpty() && privateKeyPath != null && !privateKeyPath.isEmpty()) {
+            serverBuilder.useTransportSecurity(new java.io.File(certChainPath), new java.io.File(privateKeyPath));
+            log.info("App gRPC server TLS enabled");
+        }
+                
+        grpcServer = serverBuilder.build().start();
         
         log.info("App gRPC server started successfully on port: {}", grpcPort);
         

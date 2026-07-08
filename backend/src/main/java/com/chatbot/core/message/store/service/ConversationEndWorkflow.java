@@ -100,7 +100,8 @@ public class ConversationEndWorkflow {
 
         log.info("Conversation summary for {}: {}", conversation.getId(), summary);
 
-        // TODO: Store summary in conversation or separate table
+        conversation.setSummary(summary);
+        conversationRepository.save(conversation);
     }
 
     /**

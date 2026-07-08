@@ -139,7 +139,7 @@ public class TakeoverController {
                     try {
                         return objectMapper.readValue(json, TakeoverMessage.class);
                     } catch (Exception e) {
-                        e.printStackTrace(); 
+                        log.error("Failed to parse TakeoverMessage JSON", e); 
                         return null;
                     }
                 })

@@ -12,4 +12,9 @@ public interface TenantJoinRequestRepository extends JpaRepository<TenantJoinReq
     List<TenantJoinRequest> findByTenant_IdAndStatus(Long tenantId, MembershipStatus status);
     Optional<TenantJoinRequest> findByTenant_IdAndUserId(Long tenantId, Long userId);
     boolean existsByTenant_IdAndUserIdAndStatus(Long tenantId, Long userId, MembershipStatus status);
+
+    @org.springframework.data.jpa.repository.Modifying
+    @org.springframework.transaction.annotation.Transactional(value = "tenantTransactionManager", rollbackFor = Exception.class)
+    @org.springframework.data.jpa.repository.Query("DELETE FROM TenantJoinRequest r WHERE r.tenant.id = :tenantId")
+    void deleteByTenantId(@org.springframework.data.repository.query.Param("tenantId") Long tenantId);
 }

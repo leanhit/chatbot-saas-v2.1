@@ -29,4 +29,8 @@ public interface TenantInvitationRepository extends JpaRepository<TenantInvitati
     // Tìm kiếm lời mời cụ thể trong một Tenant (Tăng tính bảo mật khi revoke)
     Optional<TenantInvitation> findByIdAndTenantId(Long id, Long tenantId);
     
+    @org.springframework.data.jpa.repository.Modifying
+    @org.springframework.transaction.annotation.Transactional(value = "tenantTransactionManager", rollbackFor = Exception.class)
+    @org.springframework.data.jpa.repository.Query("DELETE FROM TenantInvitation i WHERE i.tenant.id = :tenantId")
+    void deleteByTenantId(@org.springframework.data.repository.query.Param("tenantId") Long tenantId);
 }

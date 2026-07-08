@@ -61,4 +61,9 @@ public interface SimplePaymentRepository extends JpaRepository<SimplePayment, Lo
 
     @Query("SELECT COUNT(p) FROM SimplePayment p WHERE p.status = :status")
     Long countByStatus(@Param("status") PaymentStatus status);
+
+    @org.springframework.data.jpa.repository.Modifying
+    @org.springframework.transaction.annotation.Transactional(value = "messageTransactionManager", rollbackFor = Exception.class)
+    @Query("DELETE FROM SimplePayment p WHERE p.tenantId = :tenantId")
+    void deleteByTenantId(@Param("tenantId") Long tenantId);
 }

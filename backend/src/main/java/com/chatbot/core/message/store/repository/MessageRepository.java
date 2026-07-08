@@ -96,4 +96,9 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
     // Count messages by sender and tenantId
     @Query("SELECT COUNT(m) FROM Message m WHERE m.sender = :sender AND m.tenantId = :tenantId")
     Long countBySenderAndTenantId(@Param("sender") String sender, @Param("tenantId") Long tenantId);
+    
+    @Modifying
+    @Transactional(value = "messageTransactionManager", rollbackFor = Exception.class)
+    @Query("DELETE FROM Message m WHERE m.tenantId = :tenantId")
+    void deleteByTenantId(@Param("tenantId") Long tenantId);
 }

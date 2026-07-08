@@ -73,8 +73,13 @@ public class FacebookConnectionService {
             botId = newBot.getId().toString();
             log.info("✅ Auto-created Penny bot: {}", botId);
         } else {
-            // TODO: Validate bot ownership if needed
-            log.info("🔍 Using existing bot: {}", botId);
+            // Validate bot ownership and existence for the tenant
+            try {
+                PennyBot bot = pennyBotManager.getBot(UUID.fromString(botId));
+                log.info("🔍 Using existing bot: {} ({})", botId, bot.getBotName());
+            } catch (Exception e) {
+                throw new RuntimeException("Invalid bot or bot does not belong to your tenant: " + botId, e);
+            }
         }
 
         // 2. KIỂM TRA TÍNH DUY NHẤT CỦA FANPAGE
@@ -448,8 +453,16 @@ public class FacebookConnectionService {
             
             // EDITOR: Can create connections for their own bots
             if (member.getRole() == TenantRole.EDITOR) {
-                // TODO: Check if user owns this bot
-                return true; // Simplified for now
+                if (botId != null && !botId.isEmpty()) {
+                    try {
+                        PennyBot bot = pennyBotManager.getBot(UUID.fromString(botId));
+                        return bot.getOwnerId().equals(userId);
+                    } catch (Exception e) {
+                        log.error("Error validating bot ownership for user {}: {}", userId, e.getMessage());
+                        return false;
+                    }
+                }
+                return true;
             }
             
             // MEMBER: Cannot create

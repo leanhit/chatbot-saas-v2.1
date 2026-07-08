@@ -187,7 +187,9 @@ public class ErrorWorkflow {
 
         notificationWebSocketHandler.broadcastToTenant(conversation.getTenantId(), notification);
 
-        // TODO: Integrate with ticket system if available
+        // Fallback for Ticket System: Log the escalation as a critical error entry in the conversation
+        log.info("Ticket System Fallback: Simulating ticket creation for conversation {}", conversation.getId());
+        logErrorToConversation(conversation, "ESCALATION_TICKET_CREATED", "Ticket created for error: " + errorType, "critical");
     }
 
     /**
@@ -204,7 +206,13 @@ public class ErrorWorkflow {
         // Check if conversation can be resumed
         if ("open".equals(conversation.getStatus())) {
             log.info("Conversation {} is open, can resume normal processing", conversationId);
-            // TODO: Resume bot processing if applicable
+            // Fallback: Notify admins that conversation is ready to be resumed
+            Map<String, Object> notification = new HashMap<>();
+            notification.put("type", "recovery_ready");
+            notification.put("message", "Conversation " + conversationId + " is ready for recovery.");
+            notification.put("conversationId", conversationId);
+            notification.put("timestamp", LocalDateTime.now());
+            notificationWebSocketHandler.broadcastToTenant(conversation.getTenantId(), notification);
         }
     }
 }

@@ -11,8 +11,11 @@ import org.springframework.data.domain.PageRequest;
 
 import java.util.List;
 
+import lombok.extern.slf4j.Slf4j;
+
 @RestController
 @RequestMapping("/api/images")
+@Slf4j
 public class FileMetadataController {
 
     private final FileMetadataService fileMetadataService;
@@ -111,7 +114,7 @@ public class FileMetadataController {
             }
         } catch (Exception e) {
             // Log the error for debugging
-            System.err.println("Error serving file by ID: " + id + ", error: " + e.getMessage());
+            log.error("Error serving file by ID: {}, error: {}", id, e.getMessage(), e);
             // Return 404 without triggering GlobalExceptionHandler to avoid content-type conflict
             return ResponseEntity.notFound().build();
         }
@@ -136,7 +139,7 @@ public class FileMetadataController {
             }
         } catch (Exception e) {
             // Log the error for debugging
-            System.err.println("Error serving public file by filename: " + filename + ", error: " + e.getMessage());
+            log.error("Error serving public file by filename: {}, error: {}", filename, e.getMessage(), e);
             // Return 404 without triggering GlobalExceptionHandler to avoid content-type conflict
             return ResponseEntity.notFound().build();
         }
@@ -161,7 +164,7 @@ public class FileMetadataController {
             }
         } catch (Exception e) {
             // Log the error for debugging
-            System.err.println("Error serving public file by ID: " + id + ", error: " + e.getMessage());
+            log.error("Error serving public file by ID: {}, error: {}", id, e.getMessage(), e);
             // Return 404 without triggering GlobalExceptionHandler to avoid content-type conflict
             return ResponseEntity.notFound().build();
         }

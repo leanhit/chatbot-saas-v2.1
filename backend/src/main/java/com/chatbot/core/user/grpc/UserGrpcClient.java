@@ -25,13 +25,20 @@ public class UserGrpcClient {
     @Value("${user.grpc.server.port:50052}")
     private int port;
 
+    @Value("${grpc.security.tls.enabled:false}")
+    private boolean tlsEnabled;
+
     private ManagedChannel channel;
 
     @PostConstruct
     public void init() {
-        channel = ManagedChannelBuilder.forAddress(host, port)
-                .usePlaintext()
-                .build();
+        ManagedChannelBuilder<?> builder = ManagedChannelBuilder.forAddress(host, port);
+        if (tlsEnabled) {
+            builder.useTransportSecurity();
+        } else {
+            builder.usePlaintext();
+        }
+        channel = builder.build();
         log.info("User gRPC client initialized: {}:{}", host, port);
     }
 

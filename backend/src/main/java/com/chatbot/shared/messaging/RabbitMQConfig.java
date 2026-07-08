@@ -10,8 +10,10 @@ import org.springframework.amqp.support.converter.MessageConverter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import lombok.extern.slf4j.Slf4j;
 
 @Configuration
+@Slf4j
 public class RabbitMQConfig {
 
     @Value("${rabbitmq.exchange.name:chatbot.exchange}")
@@ -57,13 +59,13 @@ public class RabbitMQConfig {
         
         // Handle returned messages
         rabbitTemplate.setReturnsCallback(returnedMessage -> {
-            System.err.println("Message returned: " + returnedMessage);
+            log.error("Message returned: {}", returnedMessage);
         });
         rabbitTemplate.setConfirmCallback((correlationData, ack, cause) -> {
             if (ack) {
-                System.out.println("Message confirmed: " + correlationData);
+                log.info("Message confirmed: {}", correlationData);
             } else {
-                System.err.println("Message not confirmed: " + correlationData + " cause: " + cause);
+                log.error("Message not confirmed: {} cause: {}", correlationData, cause);
             }
         });
         return rabbitTemplate;

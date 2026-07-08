@@ -82,4 +82,9 @@ public interface AgentRepository extends JpaRepository<Agent, Long> {
      */
     @Query(value = "SELECT * FROM agents WHERE tenant_id = :tenantId AND jsonb_exists(skills, :skill) AND status = 'ONLINE' AND active = true AND current_load < max_concurrent_conversations", nativeQuery = true)
     List<Agent> findAvailableAgentsBySkill(@Param("tenantId") Long tenantId, @Param("skill") String skill);
+
+    @org.springframework.data.jpa.repository.Modifying
+    @org.springframework.transaction.annotation.Transactional(value = "messageTransactionManager", rollbackFor = Exception.class)
+    @Query("DELETE FROM Agent a WHERE a.tenantId = :tenantId")
+    void deleteByTenantId(@Param("tenantId") Long tenantId);
 }

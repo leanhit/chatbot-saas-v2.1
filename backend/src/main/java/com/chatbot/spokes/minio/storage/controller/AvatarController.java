@@ -57,8 +57,7 @@ public class AvatarController {
             
             // Check for 413 size limit errors
             if (e.getMessage() != null && e.getMessage().contains("size")) {
-                System.err.println("413 ERROR - Avatar file size too large: " + e.getMessage());
-                e.printStackTrace();
+                log.error("413 ERROR - Avatar file size too large: {}", e.getMessage(), e);
                 Map<String, String> errorResponse = new HashMap<>();
                 errorResponse.put("error", "File size too large. Please choose a smaller image (max 5MB).");
                 return ResponseEntity.status(413).body(errorResponse);
@@ -96,8 +95,7 @@ public class AvatarController {
             
             // Check for 413 size limit errors
             if (e.getMessage() != null && e.getMessage().contains("size")) {
-                System.err.println("413 ERROR - Tenant logo file size too large: " + e.getMessage());
-                e.printStackTrace();
+                log.error("413 ERROR - Tenant logo file size too large: {}", e.getMessage(), e);
                 Map<String, String> errorResponse = new HashMap<>();
                 errorResponse.put("error", "File size too large. Please choose a smaller image (max 10MB).");
                 return ResponseEntity.status(413).body(errorResponse);

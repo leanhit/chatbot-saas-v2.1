@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.dao.DataAccessException;
 
 import java.time.Duration;
 import java.util.Collection;
@@ -44,7 +45,7 @@ public class CacheService {
         try {
             redisTemplate.opsForValue().set(key, value);
             log.debug("Cache SET: key={}, value={}", key, value);
-        } catch (Exception e) {
+        } catch (DataAccessException | IllegalArgumentException e) {
             log.error("Error setting cache key: {}", key, e);
         }
     }
@@ -56,7 +57,7 @@ public class CacheService {
         try {
             redisTemplate.opsForValue().set(key, value, ttl);
             log.debug("Cache SET: key={}, value={}, ttl={}", key, value, ttl);
-        } catch (Exception e) {
+        } catch (DataAccessException | IllegalArgumentException e) {
             log.error("Error setting cache key with TTL: {}", key, e);
         }
     }
@@ -69,7 +70,7 @@ public class CacheService {
             Object value = redisTemplate.opsForValue().get(key);
             log.debug("Cache GET: key={}, value={}", key, value);
             return value;
-        } catch (Exception e) {
+        } catch (DataAccessException | IllegalArgumentException e) {
             log.error("Error getting cache key: {}", key, e);
             return null;
         }
@@ -86,7 +87,7 @@ public class CacheService {
                 return (T) value;
             }
             return null;
-        } catch (Exception e) {
+        } catch (DataAccessException | IllegalArgumentException e) {
             log.error("Error getting typed cache key: {}", key, e);
             return null;
         }
@@ -99,7 +100,7 @@ public class CacheService {
         try {
             Boolean deleted = redisTemplate.delete(key);
             log.debug("Cache DELETE: key={}, deleted={}", key, deleted);
-        } catch (Exception e) {
+        } catch (DataAccessException | IllegalArgumentException e) {
             log.error("Error deleting cache key: {}", key, e);
         }
     }
@@ -111,7 +112,7 @@ public class CacheService {
         try {
             Long deleted = redisTemplate.delete(keys);
             log.debug("Cache DELETE: keys={}, deleted={}", keys, deleted);
-        } catch (Exception e) {
+        } catch (DataAccessException | IllegalArgumentException e) {
             log.error("Error deleting cache keys: {}", keys, e);
         }
     }
@@ -123,7 +124,7 @@ public class CacheService {
         try {
             Boolean exists = redisTemplate.hasKey(key);
             return exists != null && exists;
-        } catch (Exception e) {
+        } catch (DataAccessException | IllegalArgumentException e) {
             log.error("Error checking cache key existence: {}", key, e);
             return false;
         }
@@ -136,7 +137,7 @@ public class CacheService {
         try {
             Boolean expired = redisTemplate.expire(key, ttl);
             log.debug("Cache EXPIRE: key={}, ttl={}, expired={}", key, ttl, expired);
-        } catch (Exception e) {
+        } catch (DataAccessException | IllegalArgumentException e) {
             log.error("Error setting cache TTL: {}", key, e);
         }
     }
@@ -148,7 +149,7 @@ public class CacheService {
         try {
             Long ttl = redisTemplate.getExpire(key, TimeUnit.SECONDS);
             return ttl != null && ttl > 0 ? Duration.ofSeconds(ttl) : Duration.ZERO;
-        } catch (Exception e) {
+        } catch (DataAccessException | IllegalArgumentException e) {
             log.error("Error getting cache TTL: {}", key, e);
             return Duration.ZERO;
         }
@@ -165,7 +166,7 @@ public class CacheService {
         try {
             redisTemplate.opsForHash().put(hashKey, field, value);
             log.debug("Cache HSET: hashKey={}, field={}, value={}", hashKey, field, value);
-        } catch (Exception e) {
+        } catch (DataAccessException | IllegalArgumentException e) {
             log.error("Error setting hash field: {} {}", hashKey, field, e);
         }
     }
@@ -178,7 +179,7 @@ public class CacheService {
             Object value = redisTemplate.opsForHash().get(hashKey, field);
             log.debug("Cache HGET: hashKey={}, field={}, value={}", hashKey, field, value);
             return value;
-        } catch (Exception e) {
+        } catch (DataAccessException | IllegalArgumentException e) {
             log.error("Error getting hash field: {} {}", hashKey, field, e);
             return null;
         }
@@ -190,7 +191,7 @@ public class CacheService {
     public Map<Object, Object> hashGetAll(String hashKey) {
         try {
             return redisTemplate.opsForHash().entries(hashKey);
-        } catch (Exception e) {
+        } catch (DataAccessException | IllegalArgumentException e) {
             log.error("Error getting hash all: {}", hashKey, e);
             return Map.of();
         }
@@ -203,7 +204,7 @@ public class CacheService {
         try {
             Long deleted = redisTemplate.opsForHash().delete(hashKey, field);
             log.debug("Cache HDEL: hashKey={}, field={}, deleted={}", hashKey, field, deleted);
-        } catch (Exception e) {
+        } catch (DataAccessException | IllegalArgumentException e) {
             log.error("Error deleting hash field: {} {}", hashKey, field, e);
         }
     }
@@ -219,7 +220,7 @@ public class CacheService {
         try {
             Long added = redisTemplate.opsForSet().add(key, value);
             log.debug("Cache SADD: key={}, value={}, added={}", key, value, added);
-        } catch (Exception e) {
+        } catch (DataAccessException | IllegalArgumentException e) {
             log.error("Error adding to set: {} {}", key, value, e);
         }
     }
@@ -230,7 +231,7 @@ public class CacheService {
     public Set<Object> setMembers(String key) {
         try {
             return redisTemplate.opsForSet().members(key);
-        } catch (Exception e) {
+        } catch (DataAccessException | IllegalArgumentException e) {
             log.error("Error getting set members: {}", key, e);
             return Set.of();
         }
@@ -243,7 +244,7 @@ public class CacheService {
         try {
             Boolean isMember = redisTemplate.opsForSet().isMember(key, value);
             return isMember != null && isMember;
-        } catch (Exception e) {
+        } catch (DataAccessException | IllegalArgumentException e) {
             log.error("Error checking set membership: {} {}", key, value, e);
             return false;
         }
@@ -260,7 +261,7 @@ public class CacheService {
         try {
             Long pushed = redisTemplate.opsForList().rightPush(key, value);
             log.debug("Cache RPUSH: key={}, value={}, pushed={}", key, value, pushed);
-        } catch (Exception e) {
+        } catch (DataAccessException | IllegalArgumentException e) {
             log.error("Error pushing to list: {} {}", key, value, e);
         }
     }
@@ -271,7 +272,7 @@ public class CacheService {
     public List<Object> listRange(String key, long start, long end) {
         try {
             return redisTemplate.opsForList().range(key, start, end);
-        } catch (Exception e) {
+        } catch (DataAccessException | IllegalArgumentException e) {
             log.error("Error getting list range: {} {} {}", key, start, end, e);
             return List.of();
         }
@@ -292,7 +293,7 @@ public class CacheService {
                 redisTemplate.delete(keys);
                 log.info("Invalidated {} cache keys for tenant: {}", keys.size(), tenantId);
             }
-        } catch (Exception e) {
+        } catch (DataAccessException | IllegalArgumentException e) {
             log.error("Error invalidating tenant cache: {}", tenantId, e);
         }
     }
@@ -308,7 +309,7 @@ public class CacheService {
                 redisTemplate.delete(keys);
                 log.info("Invalidated {} cache keys for user: {}", keys.size(), userId);
             }
-        } catch (Exception e) {
+        } catch (DataAccessException | IllegalArgumentException e) {
             log.error("Error invalidating user cache: {}", userId, e);
         }
     }
@@ -324,7 +325,7 @@ public class CacheService {
                 redisTemplate.delete(keys);
                 log.info("Invalidated {} cache keys for chatbot: {}", keys.size(), chatbotId);
             }
-        } catch (Exception e) {
+        } catch (DataAccessException | IllegalArgumentException e) {
             log.error("Error invalidating chatbot cache: {}", chatbotId, e);
         }
     }
@@ -375,7 +376,7 @@ public class CacheService {
                     .maxMemory(maxMemory)
                     .hitRate(calculateHitRate())
                     .build();
-        } catch (Exception e) {
+        } catch (DataAccessException | IllegalArgumentException e) {
             log.error("Error getting cache statistics", e);
             return CacheStatistics.builder().build();
         }
@@ -399,7 +400,7 @@ public class CacheService {
                     }
                 }
             }
-        } catch (Exception e) {
+        } catch (DataAccessException | IllegalArgumentException e) {
             log.warn("Error calculating cache hit rate from Redis stats", e);
         }
         return 0.85; // Fallback default
@@ -444,7 +445,7 @@ public class CacheService {
         try {
             redisTemplate.getConnectionFactory().getConnection().flushDb();
             log.warn("All cache cleared");
-        } catch (Exception e) {
+        } catch (DataAccessException | IllegalArgumentException e) {
             log.error("Error clearing all cache", e);
         }
     }

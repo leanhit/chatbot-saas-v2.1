@@ -95,10 +95,8 @@ public class TenantCleanupService {
 
     private void cleanupMessages(Long tenantId) {
         try {
-            // Delete messages by conversation and tenant
-            // This is a soft delete approach - we would need to add deletedAt field to Message entity
             log.info("[TenantCleanupService] Cleaning up messages for tenant: {}", tenantId);
-            // messageRepository.softDeleteByTenantId(tenantId);
+            messageRepository.deleteByTenantId(tenantId);
         } catch (Exception e) {
             log.error("[TenantCleanupService] Error cleaning up messages for tenant: {}", tenantId, e);
         }
@@ -107,7 +105,7 @@ public class TenantCleanupService {
     private void cleanupConversations(Long tenantId) {
         try {
             log.info("[TenantCleanupService] Cleaning up conversations for tenant: {}", tenantId);
-            // conversationRepository.softDeleteByTenantId(tenantId);
+            conversationRepository.deleteByTenantId(tenantId);
         } catch (Exception e) {
             log.error("[TenantCleanupService] Error cleaning up conversations for tenant: {}", tenantId, e);
         }
@@ -116,7 +114,7 @@ public class TenantCleanupService {
     private void cleanupAgents(Long tenantId) {
         try {
             log.info("[TenantCleanupService] Cleaning up agents for tenant: {}", tenantId);
-            // agentRepository.softDeleteByTenantId(tenantId);
+            agentRepository.deleteByTenantId(tenantId);
         } catch (Exception e) {
             log.error("[TenantCleanupService] Error cleaning up agents for tenant: {}", tenantId, e);
         }
@@ -125,8 +123,7 @@ public class TenantCleanupService {
     private void cleanupRoutingRules(Long tenantId) {
         try {
             log.info("[TenantCleanupService] Cleaning up routing rules for tenant: {}", tenantId);
-            // TODO: Implement deleteByTenantId method in RoutingRuleRepository
-            // routingRuleRepository.deleteByTenantId(tenantId);
+            routingRuleRepository.deleteByTenantId(tenantId);
         } catch (Exception e) {
             log.error("[TenantCleanupService] Error cleaning up routing rules for tenant: {}", tenantId, e);
         }
@@ -135,8 +132,7 @@ public class TenantCleanupService {
     private void cleanupSLAConfigurations(Long tenantId) {
         try {
             log.info("[TenantCleanupService] Cleaning up SLA configurations for tenant: {}", tenantId);
-            // TODO: Implement deleteByTenantId method in SLAConfigurationRepository
-            // slaConfigurationRepository.deleteByTenantId(tenantId);
+            slaConfigurationRepository.deleteByTenantId(tenantId);
         } catch (Exception e) {
             log.error("[TenantCleanupService] Error cleaning up SLA configurations for tenant: {}", tenantId, e);
         }
@@ -145,8 +141,7 @@ public class TenantCleanupService {
     private void cleanupAutoAssignConfig(Long tenantId) {
         try {
             log.info("[TenantCleanupService] Cleaning up auto-assign config for tenant: {}", tenantId);
-            // TODO: Implement deleteByTenantId method in AutoAssignConfigRepository
-            // autoAssignConfigRepository.deleteByTenantId(tenantId);
+            autoAssignConfigRepository.deleteByTenantId(tenantId);
         } catch (Exception e) {
             log.error("[TenantCleanupService] Error cleaning up auto-assign config for tenant: {}", tenantId, e);
         }
@@ -155,7 +150,7 @@ public class TenantCleanupService {
     private void cleanupPayments(Long tenantId) {
         try {
             log.info("[TenantCleanupService] Cleaning up payments for tenant: {}", tenantId);
-            // simplePaymentRepository.softDeleteByTenantId(tenantId);
+            simplePaymentRepository.deleteByTenantId(tenantId);
         } catch (Exception e) {
             log.error("[TenantCleanupService] Error cleaning up payments for tenant: {}", tenantId, e);
         }
@@ -164,7 +159,7 @@ public class TenantCleanupService {
     private void cleanupInvoices(Long tenantId) {
         try {
             log.info("[TenantCleanupService] Cleaning up invoices for tenant: {}", tenantId);
-            // invoiceRepository.softDeleteByTenantId(tenantId);
+            invoiceRepository.deleteByTenantId(tenantId);
         } catch (Exception e) {
             log.error("[TenantCleanupService] Error cleaning up invoices for tenant: {}", tenantId, e);
         }
@@ -173,8 +168,7 @@ public class TenantCleanupService {
     private void cleanupTenantMembers(Long tenantId) {
         try {
             log.info("[TenantCleanupService] Cleaning up tenant members for tenant: {}", tenantId);
-            // TODO: Implement deleteByTenantId method in TenantMemberRepository
-            // tenantMemberRepository.deleteByTenantId(tenantId);
+            tenantMemberRepository.deleteByTenantId(tenantId);
         } catch (Exception e) {
             log.error("[TenantCleanupService] Error cleaning up tenant members for tenant: {}", tenantId, e);
         }
@@ -183,8 +177,7 @@ public class TenantCleanupService {
     private void cleanupTenantInvitations(Long tenantId) {
         try {
             log.info("[TenantCleanupService] Cleaning up tenant invitations for tenant: {}", tenantId);
-            // TODO: Implement deleteByTenantId method in TenantInvitationRepository
-            // tenantInvitationRepository.deleteByTenantId(tenantId);
+            tenantInvitationRepository.deleteByTenantId(tenantId);
         } catch (Exception e) {
             log.error("[TenantCleanupService] Error cleaning up tenant invitations for tenant: {}", tenantId, e);
         }
@@ -193,8 +186,7 @@ public class TenantCleanupService {
     private void cleanupTenantJoinRequests(Long tenantId) {
         try {
             log.info("[TenantCleanupService] Cleaning up tenant join requests for tenant: {}", tenantId);
-            // TODO: Implement deleteByTenantId method in TenantJoinRequestRepository
-            // tenantJoinRequestRepository.deleteByTenantId(tenantId);
+            tenantJoinRequestRepository.deleteByTenantId(tenantId);
         } catch (Exception e) {
             log.error("[TenantCleanupService] Error cleaning up tenant join requests for tenant: {}", tenantId, e);
         }
@@ -203,8 +195,7 @@ public class TenantCleanupService {
     private void cleanupTenantProfile(Long tenantId) {
         try {
             log.info("[TenantCleanupService] Cleaning up tenant profile for tenant: {}", tenantId);
-            // TODO: Implement deleteByTenantId method in TenantProfileRepository
-            // tenantProfileRepository.deleteByTenantId(tenantId);
+            tenantProfileRepository.deleteByTenantId(tenantId);
         } catch (Exception e) {
             log.error("[TenantCleanupService] Error cleaning up tenant profile for tenant: {}", tenantId, e);
         }
@@ -213,8 +204,7 @@ public class TenantCleanupService {
     private void cleanupTenantProfessional(Long tenantId) {
         try {
             log.info("[TenantCleanupService] Cleaning up tenant professional for tenant: {}", tenantId);
-            // TODO: Implement deleteByTenantId method in TenantProfessionalRepository
-            // tenantProfessionalRepository.deleteByTenantId(tenantId);
+            tenantProfessionalRepository.deleteByTenantId(tenantId);
         } catch (Exception e) {
             log.error("[TenantCleanupService] Error cleaning up tenant professional for tenant: {}", tenantId, e);
         }
@@ -223,8 +213,7 @@ public class TenantCleanupService {
     private void cleanupAuditLogs(Long tenantId) {
         try {
             log.info("[TenantCleanupService] Cleaning up audit logs for tenant: {}", tenantId);
-            // TODO: Implement deleteByTenantId method in TenantAuditLogRepository
-            // tenantAuditLogRepository.deleteByTenantId(tenantId);
+            tenantAuditLogRepository.deleteByTenantId(tenantId);
         } catch (Exception e) {
             log.error("[TenantCleanupService] Error cleaning up audit logs for tenant: {}", tenantId, e);
         }

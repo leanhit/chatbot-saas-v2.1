@@ -17,17 +17,26 @@ public class AppGrpcClient {
     @Value("${app.grpc.server.port:50054}")
     private int grpcPort;
     
+    @Value("${grpc.security.tls.enabled:false}")
+    private boolean tlsEnabled;
+
     private ManagedChannel channel;
     private AppServiceGrpc.AppServiceBlockingStub blockingStub;
     private AppServiceGrpc.AppServiceStub asyncStub;
     
     public void init() {
-        channel = ManagedChannelBuilder.forAddress(grpcHost, grpcPort)
-            .usePlaintext()
+        ManagedChannelBuilder<?> builder = ManagedChannelBuilder.forAddress(grpcHost, grpcPort)
             .keepAliveTime(30, TimeUnit.SECONDS)
             .keepAliveTimeout(5, TimeUnit.SECONDS)
-            .keepAliveWithoutCalls(true)
-            .build();
+            .keepAliveWithoutCalls(true);
+            
+        if (tlsEnabled) {
+            builder.useTransportSecurity();
+        } else {
+            builder.usePlaintext();
+        }
+        
+        channel = builder.build();
         
         blockingStub = AppServiceGrpc.newBlockingStub(channel);
         asyncStub = AppServiceGrpc.newStub(channel);
