@@ -206,6 +206,9 @@ export const tenantApi = {
   async removeMember(tenantKey, userId) {
     return axios.delete(`/tenants/key/${tenantKey}/members/${userId}`);
   },
+  async transferOwnership(tenantKey, newOwnerId) {
+    return axios.post(`/tenants/key/${tenantKey}/transfer-ownership`, { newOwnerId });
+  },
   async inviteMember(tenantKey, inviteData) {
     return axios.post(`/tenants/key/${tenantKey}/invitations`, inviteData);
   },

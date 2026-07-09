@@ -20,6 +20,11 @@ public interface BotRuleRepository extends JpaRepository<BotRule, UUID> {
     List<BotRule> findByBotIdAndIsActiveTrueOrderByPriorityDesc(UUID botId);
 
     /**
+     * Find all rules by bot ID (including inactive)
+     */
+    List<BotRule> findByBotIdOrderByPriorityDesc(UUID botId);
+
+    /**
      * Find rules by bot ID and trigger type
      */
     List<BotRule> findByBotIdAndTriggerTypeAndIsActiveTrueOrderByPriorityDesc(
@@ -59,8 +64,7 @@ public interface BotRuleRepository extends JpaRepository<BotRule, UUID> {
     boolean existsByBotIdAndNameAndIsActiveTrue(UUID botId, String name);
 
     /**
-     * Soft delete rule by setting isActive to false
+     * Hard delete rule by ID
      */
-    @Query("UPDATE BotRule r SET r.isActive = false, r.updatedAt = CURRENT_TIMESTAMP WHERE r.id = :ruleId")
-    void softDeleteRule(@Param("ruleId") UUID ruleId);
+    void deleteById(UUID ruleId);
 }

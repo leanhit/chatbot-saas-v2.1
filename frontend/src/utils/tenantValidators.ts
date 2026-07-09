@@ -19,7 +19,7 @@ import type {
 /**
  * Valid tenant roles (matches backend enum)
  */
-export const VALID_TENANT_ROLES = ['OWNER', 'ADMIN', 'EDITOR', 'VIEWER', 'MEMBER', 'NONE'] as const
+export const VALID_TENANT_ROLES = ['OWNER', 'EDITOR', 'MEMBER', 'NONE'] as const
 
 /**
  * Check if a value is a valid TenantRole

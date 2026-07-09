@@ -32,7 +32,6 @@
               v-model="formData.role"
               class="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
             >
-              <option v-if="currentUserRole === 'OWNER'" value="ADMIN">{{ $t('tenant.member.admin') }}</option>
               <option value="EDITOR">{{ $t('tenant.member.editor') }}</option>
               <option value="MEMBER">{{ $t('tenant.member.member') }}</option>
             </select>

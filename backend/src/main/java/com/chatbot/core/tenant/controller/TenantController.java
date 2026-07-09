@@ -21,6 +21,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
 import java.util.List;
+import java.util.Map;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -44,6 +45,7 @@ public class TenantController {
     private final TenantRepository tenantRepository;
     private final TenantMembershipFacade tenantMembershipFacade;
     private final TenantPermissionValidator permissionValidator;
+    private final com.chatbot.core.tenant.membership.service.TenantMemberService tenantMemberService;
 
 
     /**
@@ -453,6 +455,23 @@ public class TenantController {
             @RequestBody BulkInvitationRequest request) {
         List<InvitationResponse> results = tenantMembershipFacade.bulkInviteUsers(tenantKey, request.getInvitations());
         return ResponseEntity.ok(results);
+    }
+
+    /**
+     * Transfer ownership to another member
+     */
+    @PostMapping("/key/{tenantKey}/transfer-ownership")
+    @Operation(summary = "Transfer ownership", description = "Transfer ownership from current owner to another member")
+    public ResponseEntity<Void> transferOwnership(
+            @PathVariable String tenantKey,
+            @RequestBody Map<String, Long> request) {
+        Long tenantId = tenantMembershipFacade.getTenantIdByKey(tenantKey);
+        Long newOwnerId = request.get("newOwnerId");
+        if (newOwnerId == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "newOwnerId is required");
+        }
+        tenantMemberService.transferOwnership(tenantId, newOwnerId);
+        return ResponseEntity.ok().build();
     }
 
     /**

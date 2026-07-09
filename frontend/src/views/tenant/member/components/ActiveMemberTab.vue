@@ -9,7 +9,7 @@
         >
           <option value="">{{ $t('tenant.member.allRoles') }}</option>
           <option :value="TenantRole.OWNER">{{ $t('tenant.member.owner') }}</option>
-          <option :value="TenantRole.ADMIN">{{ $t('tenant.member.admin') }}</option>
+          <option :value="TenantRole.EDITOR">{{ $t('tenant.member.editor') }}</option>
           <option :value="TenantRole.MEMBER">{{ $t('tenant.member.member') }}</option>
         </select>
       </div>
@@ -61,6 +61,14 @@
             >
               <Icon icon="mdi:delete" class="h-4 w-4" />
             </button>
+            <button
+              v-if="canTransferOwnership(member)"
+              @click="confirmTransferOwnership(member)"
+              class="p-1 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400"
+              :title="$t('tenant.member.transferOwnership')"
+            >
+              <Icon icon="mdi:crown" class="h-4 w-4" />
+            </button>
           </div>
         </div>
         <div class="space-y-3">
@@ -80,7 +88,6 @@
               :disabled="!canChangeRole(member)"
               class="text-xs border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-primary dark:bg-gray-700 dark:border-gray-600 dark:text-white"
             >
-              <option v-if="currentUserRole === TenantRole.OWNER" :value="TenantRole.ADMIN">{{ $t('tenant.member.admin') }}</option>
               <option :value="TenantRole.EDITOR">{{ $t('tenant.member.editor') }}</option>
               <option :value="TenantRole.MEMBER">{{ $t('tenant.member.member') }}</option>
             </select>
@@ -136,6 +143,7 @@ import { useI18n } from 'vue-i18n'
 import { tenantApi } from '@/api/tenantApi'
 import { formatDate, getRelativeTime } from '@/utils/dateUtils'
 import { useGatewayTenantStore } from '@/stores/tenant/gateway/myTenantStore'
+import { useAuthStore } from '@/stores/authStore'
 import { TenantRole, MembershipStatus } from '@/types/tenant'
 import defaultAvatar from '@/assets/img/user.jpg'
 
@@ -158,6 +166,7 @@ export default {
   setup(props, { emit }) {
     const { t } = useI18n()
     const tenantStore = useGatewayTenantStore()
+    const authStore = useAuthStore()
     const loading = ref(false)
     const members = ref([])
     const roleFilter = ref('')
@@ -289,7 +298,6 @@ export default {
       if (!props.currentUserRole) return false;
       if (member.role === TenantRole.OWNER) return false; // Nobody can remove an OWNER (not even another OWNER)
       if (props.currentUserRole === TenantRole.OWNER) return true; // OWNER can remove anyone else
-      if (props.currentUserRole === TenantRole.ADMIN && (member.role === TenantRole.MEMBER || member.role === TenantRole.EDITOR)) return true;
       return false;
     }
 
@@ -297,8 +305,66 @@ export default {
       if (!props.currentUserRole) return false;
       if (member.role === TenantRole.OWNER) return false; // Cannot change OWNER role
       if (props.currentUserRole === TenantRole.OWNER) return true; // OWNER can change anyone else
-      if (props.currentUserRole === TenantRole.ADMIN && (member.role === TenantRole.MEMBER || member.role === TenantRole.EDITOR)) return true;
       return false;
+    }
+
+    const canTransferOwnership = (member) => {
+      if (!props.currentUserRole) return false;
+      // Only current OWNER can transfer ownership to another member
+      const result = props.currentUserRole === TenantRole.OWNER &&
+             member.role !== TenantRole.OWNER &&
+             member.status === MembershipStatus.ACTIVE;
+      console.log('canTransferOwnership check:', {
+        currentUserRole: props.currentUserRole,
+        memberRole: member.role,
+        memberStatus: member.status,
+        result: result
+      });
+      return result;
+    }
+
+    const confirmTransferOwnership = (member) => {
+      if (!confirm(t('tenant.member.confirmTransferOwnership', { name: member?.name || member?.email || t('tenant.member.member') }))) {
+        return
+      }
+      transferOwnership(member)
+    }
+
+    const transferOwnership = async (member) => {
+      try {
+        // Get tenantKey from current tenant
+        const tenantKey = tenantStore.currentTenant?.tenantKey
+        if (!tenantKey) {
+          alert(t('tenant.overview.unknownTenant'))
+          return
+        }
+
+        // Call API to transfer ownership
+        await tenantApi.transferOwnership(tenantKey, member.userId)
+
+        // Refresh user info to get updated role
+        try {
+          await authStore.fetchUser()
+          // Also refresh tenant info to get updated role
+          await tenantStore.fetchUserTenants()
+          // Refresh current tenant data to update role in sidebar
+          if (tenantStore.currentTenant?.tenantKey) {
+            await tenantStore.switchTenant(tenantStore.currentTenant.tenantKey)
+          }
+        } catch (error) {
+          console.error('Failed to refresh user info:', error)
+        }
+
+        // Show success message
+        alert(t('tenant.member.transferOwnershipSuccess'))
+
+        // Reload page to refresh user permissions
+        window.location.reload()
+      } catch (error) {
+        console.error('Failed to transfer ownership:', error)
+        const errorMessage = error.response?.data?.message || error.message || 'Failed to transfer ownership. Please try again.'
+        alert(errorMessage)
+      }
     }
     const getStatusBadgeClass = (status) => {
       switch (status) {
@@ -340,6 +406,9 @@ export default {
       handleAvatarError,
       canManageMember,
       canChangeRole,
+      canTransferOwnership,
+      confirmTransferOwnership,
+      transferOwnership,
       getStatusBadgeClass,
       getStatusLabel,
       formatDate,

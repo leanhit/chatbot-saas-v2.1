@@ -10,6 +10,8 @@ import com.chatbot.core.simplepayment.service.PaymentCancellationService;
 import com.chatbot.core.simplepayment.service.PaymentRefundService;
 import com.chatbot.core.simplepayment.service.PaymentRetryService;
 import com.chatbot.core.simplepayment.service.PaymentContextService;
+import com.chatbot.core.tenant.service.TenantPermissionValidator;
+import com.chatbot.core.tenant.exception.InsufficientPermissionException;
 
 import com.chatbot.shared.utils.DateUtils;
 import io.swagger.v3.oas.annotations.Operation;
@@ -47,20 +49,21 @@ public class SimplePaymentController {
     private final PaymentRetryService paymentRetryService;
     private final com.chatbot.core.simplepayment.validation.PaymentValidationService paymentValidationService;
     private final com.chatbot.core.simplepayment.service.SystemConfigService systemConfigService;
+    private final TenantPermissionValidator tenantPermissionValidator;
 
     /**
-     * Tạo yêu cầu nạp tiền mới
+     * Tạo yêu cầu nạp tiền mới (OWNER only)
      */
     @PostMapping("/deposit")
     @Operation(
         summary = "Create deposit request",
-        description = "Create a new deposit request with QR code for bank transfer"
+        description = "Create a new deposit request with QR code for bank transfer (OWNER only)"
     )
     public ResponseEntity<Object> createDeposit(
             @RequestBody DepositRequest request,
             @AuthenticationPrincipal UserDetails userDetails,
             HttpServletRequest httpRequest) {
-        
+
         log.info("📱 Creating deposit request for user: {}", userDetails.getUsername());
 
         try {
@@ -73,8 +76,14 @@ public class SimplePaymentController {
 
             paymentContextService.validateTenantAccess(userId, tenantId);
 
+            // Check if user is OWNER of the tenant
+            String userEmail = userDetails.getUsername();
+            if (!tenantPermissionValidator.isOwner(tenantId, userEmail)) {
+                throw new InsufficientPermissionException("Only OWNER can create deposits");
+            }
+
             DepositResponse response = simplePaymentService.createDeposit(request, userId, tenantId);
-            
+
             log.info("✅ Deposit request created: {}", response.getReferenceCode());
             return ResponseEntity.ok(response);
 
@@ -336,37 +345,45 @@ public class SimplePaymentController {
     }
 
     /**
-     * Cancel payment (user can cancel their own pending payments)
+     * Cancel payment (OWNER only)
      */
     @PostMapping("/cancel/{referenceCode}")
     @Operation(
         summary = "Cancel payment",
-        description = "Cancel a pending payment before it expires"
+        description = "Cancel a pending payment before it expires (OWNER only)"
     )
     public ResponseEntity<String> cancelPayment(
             @PathVariable String referenceCode,
             @RequestBody Map<String, String> request,
-            @AuthenticationPrincipal UserDetails userDetails) {
-        
+            @AuthenticationPrincipal UserDetails userDetails,
+            HttpServletRequest httpRequest) {
+
         log.info("🚫 User cancelling payment: {}", referenceCode);
-        
+
         try {
             Long userId = paymentContextService.extractUserId(userDetails);
+            Long tenantId = paymentContextService.extractTenantId(httpRequest);
             String reason = request.getOrDefault("reason", "User requested cancellation");
-            
-            com.chatbot.core.simplepayment.model.SimplePayment payment = 
+
+            // Check if user is OWNER of the tenant
+            String userEmail = userDetails.getUsername();
+            if (!tenantPermissionValidator.isOwner(tenantId, userEmail)) {
+                throw new InsufficientPermissionException("Only OWNER can cancel payments");
+            }
+
+            com.chatbot.core.simplepayment.model.SimplePayment payment =
                 simplePaymentService.getPaymentByReference(referenceCode);
-            
+
             // Security check: user can only cancel their own payments
             if (!payment.getUserId().equals(userId)) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You can only cancel your own payments");
             }
-            
-            com.chatbot.core.simplepayment.model.SimplePayment cancelled = 
+
+            com.chatbot.core.simplepayment.model.SimplePayment cancelled =
                 paymentCancellationService.cancelPayment(referenceCode, reason);
-            
+
             return ResponseEntity.ok("Payment cancelled successfully");
-            
+
         } catch (Exception e) {
             log.error("❌ Failed to cancel payment {}: {}", referenceCode, e.getMessage());
             return ResponseEntity.badRequest().body("Failed to cancel payment: " + e.getMessage());
@@ -405,29 +422,35 @@ public class SimplePaymentController {
     }
 
     /**
-     * Retry failed payment
+     * Retry failed payment (OWNER only)
      */
     @PostMapping("/retry/{referenceCode}")
     @Operation(
         summary = "Retry payment",
-        description = "Retry a failed or expired payment"
+        description = "Retry a failed or expired payment (OWNER only)"
     )
     public ResponseEntity<Object> retryPayment(
             @PathVariable String referenceCode,
             @AuthenticationPrincipal UserDetails userDetails,
             HttpServletRequest httpRequest) {
-        
+
         log.info("🔄 Retrying payment: {}", referenceCode);
-        
+
         try {
             Long userId = paymentContextService.extractUserId(userDetails);
             Long tenantId = paymentContextService.extractTenantId(httpRequest);
-            
-            com.chatbot.core.simplepayment.dto.DepositResponse response = 
+
+            // Check if user is OWNER of the tenant
+            String userEmail = userDetails.getUsername();
+            if (!tenantPermissionValidator.isOwner(tenantId, userEmail)) {
+                throw new InsufficientPermissionException("Only OWNER can retry payments");
+            }
+
+            com.chatbot.core.simplepayment.dto.DepositResponse response =
                 paymentRetryService.retryPayment(referenceCode, userId, tenantId);
-            
+
             return ResponseEntity.ok(response);
-            
+
         } catch (Exception e) {
             log.error("❌ Failed to retry payment {}: {}", referenceCode, e.getMessage());
             Map<String, String> error = new HashMap<>();

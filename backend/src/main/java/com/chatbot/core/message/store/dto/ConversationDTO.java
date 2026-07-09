@@ -35,6 +35,11 @@ public class ConversationDTO {
     private String lastMessageContent;
     private Boolean hasUnreadMessages; // Thay thế cho isRead trên entity, dùng logic tổng hợp
     
+    // Satisfaction and Resolution tracking fields
+    private Integer userSatisfactionRating; // 1-5 rating from user feedback
+    private String resolutionStatus; // resolved, unresolved, pending
+    private LocalDateTime resolutionTime; // When conversation was resolved
+    
     @JsonFormat(pattern = DateUtils.STANDARD_JSON_FORMAT, timezone = DateUtils.STANDARD_TIMEZONE)
     private LocalDateTime updatedAt;
     

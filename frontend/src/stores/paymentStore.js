@@ -109,7 +109,11 @@ export const usePaymentStore = defineStore('payment', {
      * Check if user can create payment
      */
     canCreatePayment: (state) => {
-      return state.selectedPackage && !state.loading
+      // Only OWNER can create payments
+      const user = JSON.parse(localStorage.getItem('user') || '{}')
+      // Check tenant role from user object - might be in different fields
+      const tenantRole = user.tenantRole || user.currentTenantRole || user.role
+      return state.selectedPackage && !state.loading && tenantRole === 'OWNER'
     },
 
     /**
@@ -130,18 +134,24 @@ export const usePaymentStore = defineStore('payment', {
      * Check if payment can be cancelled
      */
     canCancelPayment: (state) => {
-      return state.currentPayment && 
+      const user = JSON.parse(localStorage.getItem('user') || '{}')
+      const tenantRole = user.tenantRole || user.currentTenantRole || user.role
+      return state.currentPayment &&
              state.currentPayment.status === 'PENDING' &&
-             !state.loading
+             !state.loading &&
+             tenantRole === 'OWNER'
     },
 
     /**
      * Check if payment can be retried
      */
     canRetryPayment: (state) => {
-      return state.currentPayment && 
+      const user = JSON.parse(localStorage.getItem('user') || '{}')
+      const tenantRole = user.tenantRole || user.currentTenantRole || user.role
+      return state.currentPayment &&
              (state.currentPayment.status === 'FAILED' || state.currentPayment.status === 'EXPIRED') &&
-             !state.loading
+             !state.loading &&
+             tenantRole === 'OWNER'
     },
 
     /**

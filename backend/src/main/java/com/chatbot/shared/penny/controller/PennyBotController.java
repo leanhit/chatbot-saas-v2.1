@@ -1,6 +1,8 @@
 package com.chatbot.shared.penny.controller;
 
 import com.chatbot.core.tenant.infra.TenantContext;
+import com.chatbot.core.tenant.service.TenantPermissionValidator;
+import com.chatbot.core.tenant.exception.InsufficientPermissionException;
 import com.chatbot.shared.penny.service.PennyBotManager;
 import com.chatbot.shared.penny.model.PennyBot;
 import com.chatbot.shared.penny.model.PennyBotType;
@@ -22,21 +24,23 @@ import java.util.stream.Collectors;
 @RequestMapping("/api/penny/bots")
 @Slf4j
 public class PennyBotController {
-    
+
     private final PennyBotManager pennyBotManager;
-    
-    public PennyBotController(PennyBotManager pennyBotManager) {
+    private final TenantPermissionValidator tenantPermissionValidator;
+
+    public PennyBotController(PennyBotManager pennyBotManager, TenantPermissionValidator tenantPermissionValidator) {
         this.pennyBotManager = pennyBotManager;
+        this.tenantPermissionValidator = tenantPermissionValidator;
     }
     
     /**
-     * Create new Penny-enhanced bot
+     * Create new Penny-enhanced bot (OWNER or EDITOR only)
      */
     @PostMapping
     public ResponseEntity<Map<String, Object>> createBot(
             @RequestBody Map<String, String> request,
             Principal principal) {
-        
+
         // ✅ Validate tenant context
         Long tenantId = TenantContext.getTenantId();
         if (tenantId == null) {
@@ -44,19 +48,25 @@ public class PennyBotController {
                 "error", "Tenant context not found. Please provide X-Tenant-Key header"
             ));
         }
-        
+
+        // Check if user is OWNER or EDITOR of the tenant
+        String userEmail = principal.getName();
+        if (!tenantPermissionValidator.isOwnerOrEditor(tenantId, userEmail)) {
+            throw new InsufficientPermissionException("Only OWNER or EDITOR can create bots");
+        }
+
         String ownerId = principal.getName();
         String botName = request.get("botName");
         String botTypeStr = request.getOrDefault("botType", "CUSTOMER_SERVICE");
         String description = request.getOrDefault("botDescription", "");
-        
+
         PennyBotType botType = PennyBotType.fromString(botTypeStr);
-        
+
         log.info("🤖 Creating Penny bot for owner: {} in tenant: {}", ownerId, tenantId);
-        
+
         try {
             PennyBot createdBot = pennyBotManager.createBot(ownerId, botName, botType, description);
-            
+
             return ResponseEntity.ok(Map.of(
                 "botId", createdBot.getId().toString(),
                 "botName", createdBot.getBotName(),
@@ -87,20 +97,34 @@ public class PennyBotController {
     }
     
     /**
-     * Auto-create bot for Facebook connection
+     * Auto-create bot for Facebook connection (OWNER or EDITOR only)
      */
     @PostMapping("/auto")
     public ResponseEntity<Map<String, Object>> autoCreateBot(
             @RequestBody Map<String, String> request,
             Principal principal) {
-        
+
+        // ✅ Validate tenant context
+        Long tenantId = TenantContext.getTenantId();
+        if (tenantId == null) {
+            return ResponseEntity.badRequest().body(Map.of(
+                "error", "Tenant context not found. Please provide X-Tenant-Key header"
+            ));
+        }
+
+        // Check if user is OWNER or EDITOR of the tenant
+        String userEmail = principal.getName();
+        if (!tenantPermissionValidator.isOwnerOrEditor(tenantId, userEmail)) {
+            throw new InsufficientPermissionException("Only OWNER or EDITOR can auto-create bots");
+        }
+
         String ownerId = principal.getName();
         String pageId = request.get("pageId");
-        
+
         log.info("🤖 Auto-creating Penny bot for page: {} by owner: {}", pageId, ownerId);
-        
+
         PennyBot createdBot = pennyBotManager.autoCreateBotForConnection(ownerId, pageId);
-        
+
         if (createdBot != null) {
             return ResponseEntity.ok(Map.of(
                 "botId", createdBot.getId().toString(),
@@ -160,22 +184,36 @@ public class PennyBotController {
     }
     
     /**
-     * Update bot information
+     * Update bot information (OWNER or EDITOR only)
      */
     @PutMapping("/{botId}")
     public ResponseEntity<Map<String, Object>> updateBot(
             @PathVariable String botId,
             @RequestBody Map<String, Object> updates,
             Principal principal) {
-        
+
+        // ✅ Validate tenant context
+        Long tenantId = TenantContext.getTenantId();
+        if (tenantId == null) {
+            return ResponseEntity.badRequest().body(Map.of(
+                "error", "Tenant context not found. Please provide X-Tenant-Key header"
+            ));
+        }
+
+        // Check if user is OWNER or EDITOR of the tenant
+        String userEmail = principal.getName();
+        if (!tenantPermissionValidator.isOwnerOrEditor(tenantId, userEmail)) {
+            throw new InsufficientPermissionException("Only OWNER or EDITOR can update bots");
+        }
+
         String ownerId = principal.getName();
         UUID botUuid = UUID.fromString(botId);
-        
+
         log.info("📝 Updating Penny bot: {} by owner: {}", botId, ownerId);
-        
+
         try {
             PennyBot updatedBot = pennyBotManager.updateBot(botUuid, updates, ownerId);
-            
+
             return ResponseEntity.ok(Map.of(
                 "botId", updatedBot.getId().toString(),
                 "botName", updatedBot.getBotName(),
@@ -194,22 +232,36 @@ public class PennyBotController {
     }
     
     /**
-     * Toggle bot status (active/inactive)
+     * Toggle bot status (active/inactive) (OWNER or EDITOR only)
      */
     @PutMapping("/{botId}/toggle")
     public ResponseEntity<Map<String, Object>> toggleBotStatus(
             @PathVariable String botId,
             @RequestParam boolean enabled,
             Principal principal) {
-        
+
+        // ✅ Validate tenant context
+        Long tenantId = TenantContext.getTenantId();
+        if (tenantId == null) {
+            return ResponseEntity.badRequest().body(Map.of(
+                "error", "Tenant context not found. Please provide X-Tenant-Key header"
+            ));
+        }
+
+        // Check if user is OWNER or EDITOR of the tenant
+        String userEmail = principal.getName();
+        if (!tenantPermissionValidator.isOwnerOrEditor(tenantId, userEmail)) {
+            throw new InsufficientPermissionException("Only OWNER or EDITOR can toggle bot status");
+        }
+
         String ownerId = principal.getName();
         UUID botUuid = UUID.fromString(botId);
-        
+
         log.info("🔄 Toggling Penny bot: {} to {} by owner: {}", botId, enabled ? "enabled" : "disabled", ownerId);
-        
+
         try {
             PennyBot updatedBot = pennyBotManager.toggleBotStatus(botUuid, enabled, ownerId);
-            
+
             return ResponseEntity.ok(Map.of(
                 "botId", updatedBot.getId().toString(),
                 "botName", updatedBot.getBotName(),
@@ -357,21 +409,35 @@ public class PennyBotController {
     }
     
     /**
-     * Delete bot (hard delete)
+     * Delete bot (hard delete) (OWNER or EDITOR only)
      */
     @DeleteMapping("/{botId}")
     public ResponseEntity<Map<String, String>> deleteBot(
             @PathVariable String botId,
             Principal principal) {
-        
+
+        // ✅ Validate tenant context
+        Long tenantId = TenantContext.getTenantId();
+        if (tenantId == null) {
+            return ResponseEntity.badRequest().body(Map.of(
+                "error", "Tenant context not found. Please provide X-Tenant-Key header"
+            ));
+        }
+
+        // Check if user is OWNER or EDITOR of the tenant
+        String userEmail = principal.getName();
+        if (!tenantPermissionValidator.isOwnerOrEditor(tenantId, userEmail)) {
+            throw new InsufficientPermissionException("Only OWNER or EDITOR can delete bots");
+        }
+
         String ownerId = principal.getName();
         UUID botUuid = UUID.fromString(botId);
-        
+
         log.info("🗑️ Deleting Penny bot: {} by owner: {}", botId, ownerId);
-        
+
         try {
             boolean success = pennyBotManager.deleteBot(botUuid, ownerId);
-            
+
             if (success) {
                 return ResponseEntity.ok(Map.of(
                     "message", "Penny bot deleted successfully",

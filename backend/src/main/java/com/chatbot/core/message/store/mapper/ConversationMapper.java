@@ -50,6 +50,11 @@ public class ConversationMapper {
         dto.setIsTakenOverByAgent(c.getIsTakenOverByAgent());
         // =========================================================================
 
+        // Satisfaction and Resolution tracking fields
+        dto.setUserSatisfactionRating(c.getUserSatisfactionRating());
+        dto.setResolutionStatus(c.getResolutionStatus());
+        dto.setResolutionTime(c.getResolutionTime());
+
         // Timestamp
         dto.setCreatedAt(c.getCreatedAt());
         dto.setUpdatedAt(c.getUpdatedAt());

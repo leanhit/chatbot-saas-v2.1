@@ -377,7 +377,7 @@ export default {
     // Permission checks
     const canChangeRole = (role) => {
       if (!role) return false
-      return canModifyRole('ADMIN', role) // Assuming current user is ADMIN
+      return canModifyRole('OWNER', role) // Assuming current user is OWNER
     }
     
     const canRemoveMember = (member) => {

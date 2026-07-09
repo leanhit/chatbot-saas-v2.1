@@ -29,17 +29,20 @@ public class PennyBotManager {
     private final AnalyticsCollector analyticsCollector;
     private final PackageLimitValidationService limitValidationService;
     private final com.chatbot.shared.penny.core.PennyMiddlewareEngine pennyMiddlewareEngine;
+    private final com.chatbot.core.message.store.repository.ConversationRepository conversationRepository;
     
     public PennyBotManager(PennyBotRepository pennyBotRepository,
                          ContextManager contextManager,
                          AnalyticsCollector analyticsCollector,
                          PackageLimitValidationService limitValidationService,
-                         com.chatbot.shared.penny.core.PennyMiddlewareEngine pennyMiddlewareEngine) {
+                         com.chatbot.shared.penny.core.PennyMiddlewareEngine pennyMiddlewareEngine,
+                         com.chatbot.core.message.store.repository.ConversationRepository conversationRepository) {
         this.pennyBotRepository = pennyBotRepository;
         this.contextManager = contextManager;
         this.analyticsCollector = analyticsCollector;
         this.limitValidationService = limitValidationService;
         this.pennyMiddlewareEngine = pennyMiddlewareEngine;
+        this.conversationRepository = conversationRepository;
     }
     
     /**
@@ -469,12 +472,39 @@ public class PennyBotManager {
         collectorAnalytics.put("totalMessages", metrics.getTotalProcessed()); // approximation if no messages tracking exists
         collectorAnalytics.put("averageResponseTime", metrics.getAverageProcessingTime());
         collectorAnalytics.put("errorRate", metrics.getErrorRate() * 100);
-        // Satisfaction and resolution rates are approximated from success rate (1 - error rate)
-        // TODO: Implement real satisfaction tracking via user feedback/ratings
-        // TODO: Implement real resolution tracking via resolved vs unresolved conversations
-        double successRate = 1.0 - metrics.getErrorRate();
-        collectorAnalytics.put("satisfactionRate", successRate * 100);
-        collectorAnalytics.put("resolutionRate", successRate * 100);
+        
+        // Real satisfaction tracking via user feedback/ratings
+        Long tenantId = TenantContext.getTenantId();
+        Double averageSatisfactionRating = null;
+        if (tenantId != null) {
+            try {
+                averageSatisfactionRating = conversationRepository.getAverageSatisfactionRating(tenantId);
+            } catch (Exception e) {
+                log.warn("Failed to get average satisfaction rating for tenant {}: {}", tenantId, e.getMessage());
+            }
+        }
+        // Convert rating (1-5) to percentage (0-100)
+        double satisfactionRate = (averageSatisfactionRating != null) ? (averageSatisfactionRating / 5.0) * 100 : 0.0;
+        collectorAnalytics.put("satisfactionRate", satisfactionRate);
+        
+        // Real resolution tracking via resolved vs unresolved conversations
+        long resolvedCount = 0;
+        long unresolvedCount = 0;
+        long totalCount = 0;
+        if (tenantId != null) {
+            try {
+                resolvedCount = conversationRepository.countResolvedConversations(tenantId);
+                unresolvedCount = conversationRepository.countUnresolvedConversations(tenantId);
+                totalCount = conversationRepository.countTotalConversationsForResolution(tenantId);
+            } catch (Exception e) {
+                log.warn("Failed to get resolution counts for tenant {}: {}", tenantId, e.getMessage());
+            }
+        }
+        double resolutionRate = (totalCount > 0) ? ((double) resolvedCount / totalCount) * 100 : 0.0;
+        collectorAnalytics.put("resolutionRate", resolutionRate);
+        collectorAnalytics.put("resolvedCount", resolvedCount);
+        collectorAnalytics.put("unresolvedCount", unresolvedCount);
+        
         // Uptime should be calculated from PennyMetricsService which tracks actual startup time
         // Using 99.9% as placeholder for now - should be fetched from PennyMetricsService
         collectorAnalytics.put("uptime", 99.9);

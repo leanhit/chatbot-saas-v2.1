@@ -391,8 +391,8 @@ public class PennyBotService {
                 return false;
             }
             
-            // OWNER and ADMIN can manage bots
-            return member.getRole() == TenantRole.OWNER || member.getRole() == TenantRole.ADMIN;
+            // OWNER can manage bots
+            return member.getRole() == TenantRole.OWNER;
             
         } catch (Exception e) {
             log.error("Error checking bot management permissions for user: {}", userId, e);

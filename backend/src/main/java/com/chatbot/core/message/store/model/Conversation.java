@@ -114,6 +114,17 @@ public class Conversation extends BaseTenantEntity {
     @Column(columnDefinition = "TEXT")
     private String summary;
 
+    // Satisfaction and Resolution tracking fields
+    @Column(name = "user_satisfaction_rating")
+    private Integer userSatisfactionRating; // 1-5 rating from user feedback
+
+    @Column(name = "resolution_status")
+    private String resolutionStatus; // resolved, unresolved, pending
+
+    @JsonFormat(pattern = DateUtils.STANDARD_JSON_FORMAT, timezone = DateUtils.STANDARD_TIMEZONE)
+    @Column(name = "resolution_time")
+    private LocalDateTime resolutionTime; // When conversation was resolved
+
     // Timestamp
     @CreationTimestamp
     @JsonFormat(pattern = DateUtils.STANDARD_JSON_FORMAT, timezone = DateUtils.STANDARD_TIMEZONE)

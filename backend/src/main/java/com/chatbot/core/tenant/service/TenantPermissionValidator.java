@@ -89,7 +89,7 @@ public class TenantPermissionValidator {
         if (userId == null) return false;
         return tenantMemberRepository
                 .findByTenantIdAndUserIdAndStatus(tenantId, userId, MembershipStatus.ACTIVE)
-                .map(member -> member.getRole() == TenantRole.ADMIN || member.getRole() == TenantRole.OWNER)
+                .map(member -> member.getRole() == TenantRole.OWNER)
                 .orElse(false);
     }
 
@@ -128,9 +128,21 @@ public class TenantPermissionValidator {
         if (actorRole == TenantRole.OWNER) {
             return targetRole != TenantRole.OWNER;
         }
-        if (actorRole == TenantRole.ADMIN) {
-            return targetRole == TenantRole.EDITOR || targetRole == TenantRole.MEMBER;
-        }
         return false;
+    }
+
+    /**
+     * Kiểm tra user có phải OWNER hoặc EDITOR của tenant không.
+     * Dùng cho các quyền quản lý như create/update/delete bot.
+     */
+    public boolean isOwnerOrEditor(Long tenantId, String userEmail) {
+        Long userId = authRepository.findByEmail(userEmail)
+                .map(User::getId)
+                .orElse(null);
+        if (userId == null) return false;
+        return tenantMemberRepository
+                .findByTenantIdAndUserIdAndStatus(tenantId, userId, MembershipStatus.ACTIVE)
+                .map(member -> member.getRole() == TenantRole.OWNER || member.getRole() == TenantRole.EDITOR)
+                .orElse(false);
     }
 }

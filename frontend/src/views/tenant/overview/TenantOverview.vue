@@ -252,7 +252,7 @@ export default {
     
     const canEdit = computed(() => {
       const role = tenant.value?.role
-      return role === 'OWNER' || role === 'ADMIN'
+      return role === 'OWNER' || role === 'EDITOR'
     })
     
     // Methods

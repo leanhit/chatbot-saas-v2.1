@@ -399,7 +399,7 @@ const members = ref<MemberResponse[]>([])
 3. **Add type guards:**
 ```typescript
 // Before
-if (['OWNER', 'ADMIN'].includes(role)) {
+if (['OWNER', 'EDITOR'].includes(role)) {
 
 // After
 if (isValidTenantRole(role)) {
@@ -419,15 +419,15 @@ const response: ApiResponse<MemberResponse[]> = await tenantApi.getTenantMembers
 ### 1. Custom Type Guards
 
 ```typescript
-// Create custom type guard for active admins
-function isActiveAdmin(member: any): member is MemberResponse & { role: 'ADMIN' } {
-  return validateMemberResponse(member) && member.role === 'ADMIN' && member.status === 'ACTIVE'
+// Create custom type guard for active editors
+function isActiveEditor(member: any): member is MemberResponse & { role: 'EDITOR' } {
+  return validateMemberResponse(member) && member.role === 'EDITOR' && member.status === 'ACTIVE'
 }
 
 // Usage
-if (isActiveAdmin(member)) {
-  // TypeScript knows member is an active admin
-  console.log(`${member.name} is an active admin`)
+if (isActiveEditor(member)) {
+  // TypeScript knows member is an active editor
+  console.log(`${member.name} is an active editor`)
 }
 ```
 

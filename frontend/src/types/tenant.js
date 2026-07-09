@@ -23,7 +23,7 @@ export const TenantVisibility = {
 
 export const TenantRole = {
   MEMBER: 'MEMBER',
-  ADMIN: 'ADMIN',
+  EDITOR: 'EDITOR',
   OWNER: 'OWNER'
 }
 

@@ -3,6 +3,7 @@ package com.chatbot.shared.penny.rules;
 import com.chatbot.core.tenant.infra.TenantContext;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
@@ -29,6 +30,7 @@ public class BotRuleController {
      * Create new rule
      */
     @PostMapping
+    @PreAuthorize("hasAnyRole('OWNER', 'EDITOR')")
     public ResponseEntity<Map<String, Object>> createRule(
             @PathVariable String botId,
             @RequestBody Map<String, Object> request,
@@ -46,12 +48,19 @@ public class BotRuleController {
         UUID botUuid = UUID.fromString(botId);
         
         try {
+            String action = (String) request.get("action");
+            if (action == null || action.trim().isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of(
+                    "error", "Action field is required"
+                ));
+            }
+            
             BotRule rule = botRuleManager.createRule(
                 botUuid,
                 (String) request.getOrDefault("ruleName", request.get("name")),
                 (String) request.get("description"),
                 (String) request.get("condition"),
-                (String) request.get("action"),
+                action,
                 BotRule.RuleType.valueOf((String) request.getOrDefault("ruleType", "RESPONSE")),
                 BotRule.TriggerType.valueOf((String) request.getOrDefault("triggerType", "INTENT")),
                 (String) request.get("triggerValue"),
@@ -86,6 +95,7 @@ public class BotRuleController {
      * Update existing rule
      */
     @PutMapping("/{ruleId}")
+    @PreAuthorize("hasAnyRole('OWNER', 'EDITOR')")
     public ResponseEntity<Map<String, Object>> updateRule(
             @PathVariable String botId,
             @PathVariable String ruleId,
@@ -131,13 +141,13 @@ public class BotRuleController {
     }
 
     /**
-     * Get all rules for bot
+     * Get all rules for bot (including inactive)
      */
     @GetMapping
     public ResponseEntity<List<Map<String, Object>>> getRules(@PathVariable String botId) {
         UUID botUuid = UUID.fromString(botId);
         
-        List<BotRule> rules = botRuleManager.getRulesForBot(botUuid);
+        List<BotRule> rules = botRuleManager.getAllRulesForBot(botUuid);
         
         List<Map<String, Object>> response = rules.stream()
             .map(rule -> {
@@ -151,6 +161,8 @@ public class BotRuleController {
                 ruleMap.put("priority", rule.getPriority());
                 ruleMap.put("isActive", rule.getIsActive());
                 ruleMap.put("executionCount", rule.getExecutionCount());
+                ruleMap.put("action", rule.getAction());
+                ruleMap.put("condition", rule.getCondition());
                 ruleMap.put("createdAt", rule.getCreatedAt().toString());
                 ruleMap.put("updatedAt", rule.getUpdatedAt().toString());
                 return ruleMap;
@@ -194,6 +206,7 @@ public class BotRuleController {
      * Delete rule
      */
     @DeleteMapping("/{ruleId}")
+    @PreAuthorize("hasAnyRole('OWNER', 'EDITOR')")
     public ResponseEntity<Map<String, String>> deleteRule(
             @PathVariable String botId,
             @PathVariable String ruleId,
@@ -229,8 +242,8 @@ public class BotRuleController {
         UUID ruleUuid = UUID.fromString(ruleId);
         
         try {
-            // Get rule
-            List<BotRule> rules = botRuleManager.getRulesForBot(UUID.fromString(botId));
+            // Get rule (including inactive rules for testing)
+            List<BotRule> rules = botRuleManager.getAllRulesForBot(UUID.fromString(botId));
             BotRule rule = rules.stream()
                 .filter(r -> r.getId().equals(ruleUuid))
                 .findFirst()

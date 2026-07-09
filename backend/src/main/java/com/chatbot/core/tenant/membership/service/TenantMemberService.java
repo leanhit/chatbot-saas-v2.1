@@ -92,6 +92,46 @@ public class TenantMemberService {
                 "Changed userId=" + targetUserId + " role to " + newRole);
     }
 
+    /**
+     * Transfer ownership from current owner to another member
+     */
+    @Transactional(transactionManager = "tenantTransactionManager")
+    public void transferOwnership(Long tenantId, Long newOwnerId) {
+        String actorEmail = getCurrentUserEmail();
+
+        // Get current owner
+        Long actorUserId = authRepository.findByEmail(actorEmail)
+                .map(User::getId)
+                .orElseThrow(() -> new ResourceNotFoundException("Current user not found"));
+
+        TenantMember currentOwner = getMemberEntityRequired(tenantId, actorUserId);
+
+        // Only current owner can transfer ownership
+        if (currentOwner.getRole() != TenantRole.OWNER) {
+            throw new InsufficientPermissionException(com.chatbot.shared.exceptions.ErrorCode.CANNOT_MANAGE_MEMBERS, "Only OWNER can transfer ownership");
+        }
+
+        // Get new owner
+        TenantMember newOwner = getMemberEntityRequired(tenantId, newOwnerId);
+
+        // Validate new owner is an active member
+        if (newOwner.getStatus() != MembershipStatus.ACTIVE) {
+            throw new BusinessLogicException(com.chatbot.shared.exceptions.ErrorCode.BAD_REQUEST, "New owner must be an active member");
+        }
+
+        // Cannot transfer to self
+        if (actorUserId.equals(newOwnerId)) {
+            throw new BusinessLogicException(com.chatbot.shared.exceptions.ErrorCode.BAD_REQUEST, "Cannot transfer ownership to yourself");
+        }
+
+        // Perform transfer
+        currentOwner.setRole(TenantRole.EDITOR); // Demote current owner to EDITOR
+        newOwner.setRole(TenantRole.OWNER); // Promote new member to OWNER
+
+        auditLogService.logAction(tenantId, actorEmail, "TRANSFER_OWNERSHIP",
+                "Transferred ownership from userId=" + actorUserId + " to userId=" + newOwnerId);
+    }
+
     /* ================= DELETE ================= */
 
     @Transactional(transactionManager = "tenantTransactionManager")
@@ -149,8 +189,8 @@ public class TenantMemberService {
             if (actorUser != null && actorUser.getSystemRole() == com.chatbot.core.identity.model.SystemRole.ADMIN) {
                 return true;
             }
-            // OWNER và ADMIN của tenant có quyền quản lý member
-            return actor.getRole() == TenantRole.OWNER || actor.getRole() == TenantRole.ADMIN;
+            // OWNER của tenant có quyền quản lý member
+            return actor.getRole() == TenantRole.OWNER;
 
         } catch (Exception e) {
             log.error("Error checking manage-member permission for actor={}: {}", actorEmail, e.getMessage());

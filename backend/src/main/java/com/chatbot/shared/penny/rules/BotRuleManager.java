@@ -107,14 +107,14 @@ public class BotRuleManager {
     }
 
     /**
-     * Delete rule (soft delete)
+     * Delete rule (hard delete)
      */
     @Transactional
     public boolean deleteRule(UUID ruleId, String deletedBy) {
         log.info("🗑️ Deleting rule: {} by: {}", ruleId, deletedBy);
-        
+
         try {
-            botRuleRepository.softDeleteRule(ruleId);
+            botRuleRepository.deleteById(ruleId);
             log.info("✅ Rule deleted successfully: {}", ruleId);
             return true;
         } catch (Exception e) {
@@ -124,7 +124,14 @@ public class BotRuleManager {
     }
 
     /**
-     * Get rules for bot
+     * Get rules for bot (for UI display - includes inactive rules)
+     */
+    public List<BotRule> getAllRulesForBot(UUID botId) {
+        return botRuleRepository.findByBotIdOrderByPriorityDesc(botId);
+    }
+
+    /**
+     * Get active rules for bot (for rule evaluation)
      */
     public List<BotRule> getRulesForBot(UUID botId) {
         return botRuleRepository.findByBotIdAndIsActiveTrueOrderByPriorityDesc(botId);

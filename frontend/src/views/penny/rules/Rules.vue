@@ -441,7 +441,9 @@ export default {
         const duplicatedRule = {
           ...rule,
           name: `${rule.name} (Copy)`,
-          isActive: false
+          isActive: false,
+          action: rule.action || '',
+          condition: rule.condition || ''
         }
         delete duplicatedRule.ruleId
         delete duplicatedRule.createdAt

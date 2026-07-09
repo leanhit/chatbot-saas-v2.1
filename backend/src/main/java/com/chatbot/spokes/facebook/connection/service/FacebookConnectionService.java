@@ -412,10 +412,9 @@ public class FacebookConnectionService {
                         .findByTenant_IdAndUserId(tenantId, user.getId())
                         .orElse(null);
                 
-                return tenantMember != null && 
+                return tenantMember != null &&
                        tenantMember.getStatus() == MembershipStatus.ACTIVE &&
-                       (tenantMember.getRole() == TenantRole.OWNER || 
-                        tenantMember.getRole() == TenantRole.ADMIN);
+                       tenantMember.getRole() == TenantRole.OWNER;
             }
             
             return false;
@@ -446,8 +445,8 @@ public class FacebookConnectionService {
                 return false;
             }
             
-            // OWNER/ADMIN: Can create connections for any bot
-            if (member.getRole() == TenantRole.OWNER || member.getRole() == TenantRole.ADMIN) {
+            // OWNER: Can create connections for any bot
+            if (member.getRole() == TenantRole.OWNER) {
                 return true;
             }
             
@@ -500,8 +499,8 @@ public class FacebookConnectionService {
                 return false;
             }
             
-            // OWNER/ADMIN: Can update any connection in tenant
-            return member.getRole() == TenantRole.OWNER || member.getRole() == TenantRole.ADMIN;
+            // OWNER: Can update any connection in tenant
+            return member.getRole() == TenantRole.OWNER;
             
         } catch (Exception e) {
             log.error("Error checking update permissions for user: {}", userId, e);

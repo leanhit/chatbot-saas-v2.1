@@ -267,6 +267,7 @@
   import { useAuthStore } from '@/stores/authStore';
   import { useSearchStore } from '@/stores/searchStore';
   import { useNotificationStore } from '@/stores/notification/notificationStore';
+  import { useGatewayTenantStore } from '@/stores/tenant/gateway/myTenantStore';
   import { usersApi } from '@/api/usersApi';
   import { secureImageUrl } from '@/utils/imageUtils';
   export default {
@@ -294,6 +295,7 @@
       const authStore = useAuthStore();
       const searchStore = useSearchStore();
       const notificationStore = useNotificationStore();
+      const tenantStore = useGatewayTenantStore();
       const router = useRouter();
       const avatarTimestamp = ref(Date.now());
       
@@ -329,6 +331,7 @@
         authStore,
         searchStore,
         notificationStore,
+        tenantStore,
         router,
         t,
         avatarTimestamp,
@@ -346,7 +349,12 @@
         return this.authStore.currentUser?.email || '';
       },
       userRole() {
-        return this.authStore.currentUser?.systemRole || this.authStore.currentUser?.role || 'User';
+        // Display tenant role instead of system role
+        return this.tenantStore.currentTenant?.role ||
+               this.authStore.currentUser?.tenantRole ||
+               this.authStore.currentUser?.systemRole ||
+               this.authStore.currentUser?.role ||
+               'User';
       },
       userAvatar() {
         const user = this.authStore.currentUser;

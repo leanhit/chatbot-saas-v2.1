@@ -149,7 +149,7 @@ export default {
     const pendingInvitationsCount = ref(0)
     const refreshKey = ref(0)
     const currentUserRole = ref(null)
-    const isAdminOrOwner = computed(() => ['ADMIN', 'OWNER'].includes(currentUserRole.value))
+    const isAdminOrOwner = computed(() => ['OWNER'].includes(currentUserRole.value))
     const currentTenant = computed(() => tenantStore.currentTenant)
     
     // Set search context when component mounts

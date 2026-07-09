@@ -190,4 +190,20 @@ public interface ConversationRepository extends JpaRepository<Conversation, Long
     @org.springframework.transaction.annotation.Transactional(value = "messageTransactionManager", rollbackFor = Exception.class)
     @Query("DELETE FROM Conversation c WHERE c.tenantId = :tenantId")
     void deleteByTenantId(@Param("tenantId") Long tenantId);
+
+    // Satisfaction and Resolution tracking queries
+    @Query("SELECT AVG(c.userSatisfactionRating) FROM Conversation c WHERE c.tenantId = :tenantId AND c.userSatisfactionRating IS NOT NULL")
+    Double getAverageSatisfactionRating(@Param("tenantId") Long tenantId);
+
+    @Query("SELECT COUNT(c) FROM Conversation c WHERE c.tenantId = :tenantId AND c.resolutionStatus = 'resolved'")
+    Long countResolvedConversations(@Param("tenantId") Long tenantId);
+
+    @Query("SELECT COUNT(c) FROM Conversation c WHERE c.tenantId = :tenantId AND c.resolutionStatus = 'unresolved'")
+    Long countUnresolvedConversations(@Param("tenantId") Long tenantId);
+
+    @Query("SELECT COUNT(c) FROM Conversation c WHERE c.tenantId = :tenantId AND c.resolutionStatus = 'pending'")
+    Long countPendingConversations(@Param("tenantId") Long tenantId);
+
+    @Query("SELECT COUNT(c) FROM Conversation c WHERE c.tenantId = :tenantId AND (c.resolutionStatus IS NULL OR c.resolutionStatus = 'pending')")
+    Long countTotalConversationsForResolution(@Param("tenantId") Long tenantId);
 }
