@@ -109,10 +109,11 @@ export const usePaymentStore = defineStore('payment', {
      * Check if user can create payment
      */
     canCreatePayment: (state) => {
-      // Only OWNER can create payments
+      // Check tenant role from tenant_data (set by gateway tenant store)
+      const tenantData = JSON.parse(localStorage.getItem('tenant_data') || '{}')
       const user = JSON.parse(localStorage.getItem('user') || '{}')
-      // Check tenant role from user object - might be in different fields
-      const tenantRole = user.tenantRole || user.currentTenantRole || user.role
+      // Tenant role is stored in tenant_data.role by the gateway tenant store
+      const tenantRole = tenantData.role || user.tenantRole || user.currentTenantRole || user.role
       return state.selectedPackage && !state.loading && tenantRole === 'OWNER'
     },
 
@@ -134,8 +135,9 @@ export const usePaymentStore = defineStore('payment', {
      * Check if payment can be cancelled
      */
     canCancelPayment: (state) => {
+      const tenantData = JSON.parse(localStorage.getItem('tenant_data') || '{}')
       const user = JSON.parse(localStorage.getItem('user') || '{}')
-      const tenantRole = user.tenantRole || user.currentTenantRole || user.role
+      const tenantRole = tenantData.role || user.tenantRole || user.currentTenantRole || user.role
       return state.currentPayment &&
              state.currentPayment.status === 'PENDING' &&
              !state.loading &&
@@ -146,8 +148,9 @@ export const usePaymentStore = defineStore('payment', {
      * Check if payment can be retried
      */
     canRetryPayment: (state) => {
+      const tenantData = JSON.parse(localStorage.getItem('tenant_data') || '{}')
       const user = JSON.parse(localStorage.getItem('user') || '{}')
-      const tenantRole = user.tenantRole || user.currentTenantRole || user.role
+      const tenantRole = tenantData.role || user.tenantRole || user.currentTenantRole || user.role
       return state.currentPayment &&
              (state.currentPayment.status === 'FAILED' || state.currentPayment.status === 'EXPIRED') &&
              !state.loading &&

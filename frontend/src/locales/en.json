@@ -700,7 +700,8 @@
       "connectToFacebook": "Connect to Facebook",
       "complete": "Complete",
       "errors": "Errors ({count})",
-      "connectionsManagement": "Connections Management"
+      "connectionsManagement": "Connections Management",
+      "selectFanpagesToConnect": "Select fanpages to connect"
     },
     "rules": {
       "title": "Rules",

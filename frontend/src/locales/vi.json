@@ -700,7 +700,8 @@
       "active": "Hoạt động",
       "autoConnect": "Tự động kết nối",
       "selectBotToView": "Chọn một Bot để Xem Kết nối",
-      "selectBotDescription": "Vui lòng chọn một bot từ menu thả xuống ở trên để xem và quản lý kết nối của nó."
+      "selectBotDescription": "Vui lòng chọn một bot từ menu thả xuống ở trên để xem và quản lý kết nối của nó.",
+      "selectFanpagesToConnect": "Chọn fanpage để kết nối"
     },
     "rules": {
       "title": "Quy tắc",
