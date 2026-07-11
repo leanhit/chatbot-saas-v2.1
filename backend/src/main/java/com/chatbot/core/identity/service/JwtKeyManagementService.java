@@ -179,7 +179,7 @@ public class JwtKeyManagementService {
      */
     public SecretKey getCurrentSigningKey() {
         if (!rotationEnabled || currentKeyId == null) {
-            return null; // Fall back to static key from JwtUtils
+            return null; // Fall back to static key from JwtService
         }
 
         JwtKey currentKey = activeKeys.get(currentKeyId);
@@ -203,7 +203,7 @@ public class JwtKeyManagementService {
      */
     public SecretKey getKeyById(String keyId) {
         if (!rotationEnabled) {
-            return null; // Fall back to static key from JwtUtils
+            return null; // Fall back to static key from JwtService
         }
 
         JwtKey key = activeKeys.get(keyId);

@@ -51,7 +51,7 @@
       "enter": "Vào không gian",
       "suspend": "Tạm dừng",
       "activate": "Kích hoạt",
-      "join": "Tham gia",
+      "Join": "Tham gia",
       "leaveTenant": "Rời khỏi",
       "confirmLeave": "Bạn có chắc chắn muốn rời khỏi \"{name}\"? Bạn sẽ mất quyền truy cập vào không gian làm việc này.",
       "leaveSuccess": "Đã rời khỏi không gian làm việc thành công"

@@ -24,6 +24,11 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: false
         use_sql_comments: false
+
+# Hub Database DDL Strategy — 'validate' in production for ALL hub databases
+app:
+  hibernate:
+    ddl-auto: validate
         
   # Redis Configuration
   data:

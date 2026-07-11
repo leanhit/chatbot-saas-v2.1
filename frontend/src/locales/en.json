@@ -52,6 +52,7 @@
       "suspend": "Suspend",
       "activate": "Activate",
       "join": "Join",
+      "Join": "Join",
       "leaveTenant": "Leave",
       "confirmLeave": "Are you sure you want to leave \"{name}\"? You will lose access to this workspace.",
       "leaveSuccess": "Successfully left the workspace"

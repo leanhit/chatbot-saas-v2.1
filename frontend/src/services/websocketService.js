@@ -1,4 +1,5 @@
 import { useNotificationStore } from '@/stores/notification/notificationStore'
+import { useAuthStore } from '@/stores/authStore'
 
 class WebSocketService {
   constructor() {
@@ -212,13 +213,51 @@ class WebSocketService {
       const backoffDelay = Math.min(1000 * Math.pow(2, this.reconnectAttempts - 1), 30000)
       
       console.warn(`⚠️ WebSocket reconnecting attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts} in ${backoffDelay}ms...`)
-      setTimeout(() => {
-        this.connect()
+      setTimeout(async () => {
+        try {
+          // Check if token is expired before reconnecting
+          const authStore = useAuthStore()
+          let currentToken = authStore.token
+
+          if (currentToken && this._isTokenExpired(currentToken)) {
+            console.log('🔄 [WebSocket] Token expired, refreshing before reconnect...')
+            const newToken = await authStore.refreshAccessToken()
+            if (newToken) {
+              currentToken = newToken
+              console.log('✅ [WebSocket] Token refreshed successfully')
+            } else {
+              console.error('❌ [WebSocket] Token refresh failed, stopping reconnect')
+              this.token = null
+              return
+            }
+          }
+
+          // Use the latest token for reconnection
+          this.connectedToken = null // Force new connection
+          this.connect(currentToken)
+        } catch (err) {
+          console.error('❌ [WebSocket] Error during reconnect:', err)
+        }
       }, backoffDelay)
     } else if (!this.token) {
       console.log('ℹ️ WebSocket reconnection aborted (no token/logged out)')
     } else {
       console.error('❌ WebSocket reconnection failed after maximum attempts')
+    }
+  }
+
+  /**
+   * Check if a JWT token is expired (with 60s buffer)
+   */
+  _isTokenExpired(token) {
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]))
+      const expMs = payload.exp * 1000
+      // Consider expired if less than 60 seconds remaining
+      return Date.now() >= (expMs - 60000)
+    } catch (e) {
+      // If we can't decode, assume expired to trigger refresh
+      return true
     }
   }
 

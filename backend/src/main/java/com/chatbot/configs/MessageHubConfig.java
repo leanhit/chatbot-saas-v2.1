@@ -1,5 +1,6 @@
 package com.chatbot.configs;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.jdbc.DataSourceBuilder;
 import org.springframework.context.annotation.Bean;
@@ -26,6 +27,9 @@ import java.util.Properties;
 )
 public class MessageHubConfig {
 
+    @Value("${app.hibernate.ddl-auto:update}")
+    private String ddlAuto;
+
     @Bean
     @ConfigurationProperties(prefix = "app.datasource.message")
     public DataSource messageDataSource() {
@@ -45,7 +49,7 @@ public class MessageHubConfig {
         em.setJpaVendorAdapter(vendorAdapter);
 
         Map<String, Object> properties = new HashMap<>();
-        properties.put("hibernate.hbm2ddl.auto", "update");
+        properties.put("hibernate.hbm2ddl.auto", ddlAuto);
         properties.put("hibernate.dialect", "org.hibernate.dialect.PostgreSQLDialect");
         properties.put("hibernate.show_sql", "false");
         properties.put("hibernate.format_sql", "false");
