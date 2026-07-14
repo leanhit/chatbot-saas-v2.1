@@ -6,8 +6,10 @@ import com.chatbot.shared.penny.dto.response.MiddlewareResponse;
 import com.chatbot.shared.penny.error.exceptions.PennyException;
 import com.chatbot.shared.penny.routing.ProviderSelector;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
@@ -21,10 +23,17 @@ public class ErrorHandler {
     
     private final PennyProperties properties;
     private final Map<String, CircuitBreaker> circuitBreakers;
+    private final RedisTemplate<String, Object> redisTemplate;
     
-    public ErrorHandler(PennyProperties properties) {
+    private static final String CIRCUIT_BREAKER_KEY_PREFIX = "penny:circuitbreaker:";
+    
+    public ErrorHandler(PennyProperties properties, RedisTemplate<String, Object> redisTemplate) {
         this.properties = properties;
+        this.redisTemplate = redisTemplate;
         this.circuitBreakers = new HashMap<>();
+        
+        // Load circuit breaker state from Redis on startup
+        loadCircuitBreakerState();
     }
     
     /**
@@ -271,6 +280,48 @@ public class ErrorHandler {
             cb.recordSuccess();
         } else {
             cb.recordFailure();
+        }
+        
+        // Persist state to Redis
+        persistCircuitBreakerState(errorType, cb);
+    }
+    
+    /**
+     * Load circuit breaker state from Redis on startup
+     */
+    private void loadCircuitBreakerState() {
+        try {
+            // This would load state from Redis if needed
+            // For now, initialize fresh state
+            log.info("🔄 Loading circuit breaker state from Redis");
+        } catch (Exception e) {
+            log.error("❌ Error loading circuit breaker state from Redis: {}", e.getMessage(), e);
+        }
+    }
+    
+    /**
+     * Persist circuit breaker state to Redis
+     */
+    private void persistCircuitBreakerState(String errorType, CircuitBreaker cb) {
+        if (!properties.getError().isCircuitbreakerEnabled()) {
+            return;
+        }
+        
+        try {
+            String key = CIRCUIT_BREAKER_KEY_PREFIX + errorType;
+            Map<String, Object> state = new HashMap<>();
+            state.put("failureCount", cb.getFailureCount());
+            state.put("lastFailureTime", cb.getLastFailureTime());
+            state.put("nextAttemptTime", cb.getNextAttemptTime());
+            state.put("isOpen", cb.isOpen());
+            state.put("isHalfOpen", cb.isHalfOpen());
+            
+            redisTemplate.opsForHash().putAll(key, state);
+            redisTemplate.expire(key, Duration.ofHours(24));
+            
+            log.debug("💾 Persisted circuit breaker state for: {}", errorType);
+        } catch (Exception e) {
+            log.error("❌ Error persisting circuit breaker state for {}: {}", errorType, e.getMessage());
         }
     }
     

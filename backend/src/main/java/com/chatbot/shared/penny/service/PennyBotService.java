@@ -314,8 +314,8 @@ public class PennyBotService {
      * Get Penny Bots with pagination
      */
     public Page<PennyBotResponse> getBotsByTenant(Long tenantId, Pageable pageable) {
-        // Use findAll with custom query since findByTenantId doesn't exist
-        Page<PennyBot> bots = pennyBotRepository.findAll(pageable);
+        // ✅ Filter chính xác theo tenantId, tránh data leak giữa các tenant
+        Page<PennyBot> bots = pennyBotRepository.findByTenantIdAndIsActiveTruePaged(tenantId, pageable);
         
         return bots.map(bot -> PennyBotResponse.builder()
                 .id(bot.getId())
@@ -336,8 +336,10 @@ public class PennyBotService {
      * Search Penny Bots
      */
     public Page<PennyBotResponse> searchBots(Long tenantId, String keyword, Pageable pageable) {
-        // Use findAll with filtering since searchBots doesn't exist
-        Page<PennyBot> bots = pennyBotRepository.findAll(pageable);
+        // ✅ Filter chính xác theo tenantId + keyword, tránh data leak giữa các tenant
+        Page<PennyBot> bots = (keyword != null && !keyword.isBlank())
+                ? pennyBotRepository.searchByTenantIdAndBotName(tenantId, keyword, pageable)
+                : pennyBotRepository.findByTenantIdAndIsActiveTruePaged(tenantId, pageable);
         
         return bots.map(bot -> PennyBotResponse.builder()
                 .id(bot.getId())
@@ -391,8 +393,8 @@ public class PennyBotService {
                 return false;
             }
             
-            // OWNER can manage bots
-            return member.getRole() == TenantRole.OWNER;
+            // OWNER hoặc EDITOR đều có thể quản lý bots (consistent với Controller permission)
+            return member.getRole() == TenantRole.OWNER || member.getRole() == TenantRole.EDITOR;
             
         } catch (Exception e) {
             log.error("Error checking bot management permissions for user: {}", userId, e);

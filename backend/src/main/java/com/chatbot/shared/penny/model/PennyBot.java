@@ -70,6 +70,21 @@ public class PennyBot {
     @Column(name = "configuration")
     private String configuration; // JSON string for additional config
 
+    // ─── AI / LLM fields ───────────────────────────────────────────────
+
+    @Column(name = "system_prompt", columnDefinition = "TEXT")
+    private String systemPrompt; // Bot-specific system prompt for LLM
+
+    @Column(name = "business_name")
+    private String businessName; // Tên doanh nghiệp hiển thị cho bot
+
+    @Column(name = "business_description", columnDefinition = "TEXT")
+    private String businessDescription; // Mô tả ngắn về doanh nghiệp
+
+    @Column(name = "confidence_threshold")
+    @Builder.Default
+    private Float confidenceThreshold = 0.6f; // Dưới ngưỡng → escalate to human
+
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();

@@ -4,6 +4,7 @@ import com.chatbot.spokes.facebook.webhook.service.ChatbotProviderService;
 import com.chatbot.shared.penny.context.ConversationContext;
 import com.chatbot.shared.penny.routing.dto.IntentAnalysisResult;
 import com.chatbot.shared.penny.routing.dto.ProviderSelection;
+
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -17,15 +18,37 @@ import java.util.concurrent.ConcurrentHashMap;
 @Service
 @Slf4j
 public class ProviderSelector {
-    
+
     @Value("${penny.provider.selection.strategy:hybrid}")
     private String selectionStrategy;
-    
+
     @Value("${penny.provider.fallback.enabled:true}")
     private boolean fallbackEnabled;
-    
+
+    private final List<ChatbotProviderService> providers;
     private final Map<String, ProviderHealth> providerHealthMap = new ConcurrentHashMap<>();
+    private final Map<String, ChatbotProviderService> providerInstanceMap = new ConcurrentHashMap<>();
     private final Random random = new Random();
+
+    public ProviderSelector(List<ChatbotProviderService> providers) {
+        this.providers = providers;
+    }
+
+    /**
+     * Build provider instance map from injected providers after Spring context is ready.
+     * Maps getProviderType() string ("BOTPRESS", "PENNYBOT", "GPT") → service instance.
+     */
+    @jakarta.annotation.PostConstruct
+    public void initProviderMap() {
+        for (ChatbotProviderService provider : providers) {
+            String type = provider.getProviderType();
+            if (type != null) {
+                providerInstanceMap.put(type.toUpperCase(), provider);
+                log.info("✅ Registered provider: {} -> {}", type, provider.getClass().getSimpleName());
+            }
+        }
+        log.info("🗺️ Provider map initialized with {} providers: {}", providerInstanceMap.size(), providerInstanceMap.keySet());
+    }
     
     /**
      * Select appropriate provider for processing
@@ -160,45 +183,55 @@ public class ProviderSelector {
         String intent = analysis.getPrimaryIntent();
         String complexity = analysis.getComplexity();
         double confidence = analysis.getConfidence();
-        
-        // Rule 1: Business intents always go to PennyBot
+
+        // Rule 1: Business intents → PennyBot (has ERP / rule engine)
         if (isBusinessIntent(intent)) {
-            log.debug("🎯 Business intent detected, selecting PennyBot");
+            log.debug("🎯 Business intent → PennyBot");
             return ProviderType.PENNYBOT;
         }
-        
-        // Rule 2: High complexity with low confidence -> PennyBot (more robust)
-        if ("high".equals(complexity) && confidence < 0.7) {
-            log.debug("🎯 High complexity + low Confidence, selecting PennyBot");
-            return ProviderType.PENNYBOT;
-        }
-        
-        // Rule 3: Support intents -> PennyBot
+
+        // Rule 2: Support / complaint intents → PennyBot
         if (isSupportIntent(intent)) {
-            log.debug("🎯 Support intent detected, selecting PennyBot");
+            log.debug("🎯 Support intent → PennyBot");
             return ProviderType.PENNYBOT;
         }
-        
-        // Rule 4: Context continuity for ongoing conversations
-        if (context != null && context.getPreviousProvider() != null && 
-            context.getMessageCountInCurrentSession() < 5) {
-            ProviderType previousProvider = ProviderType.valueOf(context.getPreviousProvider().toString());
-            log.debug("🎯 Maintaining conversation continuity with previous provider: {}", previousProvider);
-            return previousProvider;
+
+        // Rule 3: General chat / unknown / greeting → GPT (natural language)
+        if (isGeneralIntent(intent)) {
+            if (isProviderHealthy(ProviderType.GPT)) {
+                log.debug("🎯 General intent → GPT");
+                return ProviderType.GPT;
+            }
+            // GPT down → try Claude
+            if (isProviderHealthy(ProviderType.CLAUDE)) {
+                log.debug("🎯 GPT unhealthy → Claude fallback");
+                return ProviderType.CLAUDE;
+            }
+            log.debug("🎯 LLM providers unhealthy → PennyBot fallback");
+            return ProviderType.PENNYBOT;
         }
-        
-        // Rule 5: Health-based fallback
-        List<ProviderType> healthyProviders = getHealthyProviders();
-        if (!healthyProviders.isEmpty()) {
-            // Prefer PennyBot if healthy
-            if (healthyProviders.contains(ProviderType.PENNYBOT)) {
-                log.debug("🎯 PennyBot is healthy, selecting PennyBot");
-                return ProviderType.PENNYBOT;
+
+        // Rule 4: Context continuity for ongoing conversations
+        if (context != null && context.getPreviousProvider() != null &&
+                context.getMessageCountInCurrentSession() < 5) {
+            try {
+                ProviderType previousProvider = ProviderType.valueOf(
+                    context.getPreviousProvider().toString());
+                log.debug("🎯 Continuing with previous provider: {}", previousProvider);
+                return previousProvider;
+            } catch (IllegalArgumentException e) {
+                log.warn("⚠️ Unknown previous provider: {}", context.getPreviousProvider());
             }
         }
-        
-        // Default fallback
-        log.debug("🎯 Using default provider: PennyBot");
+
+        // Rule 5: High complexity + low confidence → GPT for better reasoning
+        if ("high".equals(complexity) && confidence > 0.7 && isProviderHealthy(ProviderType.GPT)) {
+            log.debug("🎯 High complexity, high confidence → GPT");
+            return ProviderType.GPT;
+        }
+
+        // Default: PennyBot
+        log.debug("🎯 Default provider: PennyBot");
         return ProviderType.PENNYBOT;
     }
     
@@ -271,13 +304,20 @@ public class ProviderSelector {
     }
     
     /**
-     * Get provider instance (this would be injected in real implementation)
+     * Get provider instance from the injected provider map.
+     * Returns null and logs a warning if no matching provider is registered.
      */
     private ChatbotProviderService getProviderInstance(ProviderType type) {
-        // For now, return null since we're using PennyBotManager directly
-        // The actual bot processing happens in FacebookEventConsumer.routeToPennyBot()
-        // which calls pennyBotManager.processMessage() directly
-        return null;
+        if (type == null) {
+            log.warn("⚠️ Cannot get provider instance: ProviderType is null");
+            return null;
+        }
+        ChatbotProviderService instance = providerInstanceMap.get(type.name());
+        if (instance == null) {
+            log.warn("⚠️ No ChatbotProviderService registered for ProviderType: {}. Available: {}",
+                type, providerInstanceMap.keySet());
+        }
+        return instance;
     }
     
     /**
@@ -302,15 +342,23 @@ public class ProviderSelector {
     }
     
     /**
-     * Check if intent requires default response
+     * Check if intent requires LLM (general/open-ended conversation)
      */
-    private boolean isDefaultIntent(String intent) {
+    private boolean isGeneralIntent(String intent) {
         return intent.equals("unknown") ||
+               intent.equals("general_chat") ||
                intent.equals("greeting") ||
                intent.equals("gratitude") ||
                intent.equals("goodbye") ||
                intent.equals("smalltalk") ||
-               !isBusinessIntent(intent) && !isSupportIntent(intent);
+               (!isBusinessIntent(intent) && !isSupportIntent(intent));
+    }
+
+    /**
+     * Check if intent requires default response (legacy alias)
+     */
+    private boolean isDefaultIntent(String intent) {
+        return isGeneralIntent(intent);
     }
     
     /**
@@ -339,14 +387,15 @@ public class ProviderSelector {
     public enum ProviderType {
         BOTPRESS("Botpress"),
         PENNYBOT("PennyBot"),
-        GPT("GPT");
-        
+        GPT("GPT"),
+        CLAUDE("Claude");
+
         private final String displayName;
-        
+
         ProviderType(String displayName) {
             this.displayName = displayName;
         }
-        
+
         public String getDisplayName() {
             return displayName;
         }

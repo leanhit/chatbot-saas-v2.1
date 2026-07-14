@@ -23,7 +23,6 @@ import java.util.Properties;
     basePackages = {
         "com.chatbot.shared.address.repository",
         "com.chatbot.shared.infrastructure.repository",
-        "com.chatbot.shared.penny.repository",
         "com.chatbot.shared.penny.rules",
         "com.chatbot.spokes.odoo.repository",
         "com.chatbot.spokes.facebook.repository",
@@ -64,7 +63,7 @@ public class HubDatabaseConfig {
         em.setPackagesToScan(
             "com.chatbot.shared.address.model",
             "com.chatbot.shared.infrastructure.model",
-            "com.chatbot.shared.penny.model",
+            "com.chatbot.shared.penny.rules",
             "com.chatbot.spokes.odoo.model",
             "com.chatbot.spokes.facebook.model",
             "com.chatbot.spokes.facebook.connection.model",
@@ -72,8 +71,7 @@ public class HubDatabaseConfig {
             "com.chatbot.spokes.minio.model",
             "com.chatbot.spokes.minio.image.fileMetadata.model",
             "com.chatbot.spokes.minio.image.category.model",
-                        "com.chatbot.core.simplepayment.model",
-            "com.chatbot.shared.penny.rules"
+            "com.chatbot.core.simplepayment.model"
             );
 
         HibernateJpaVendorAdapter vendorAdapter = new HibernateJpaVendorAdapter();

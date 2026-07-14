@@ -1,68 +1,130 @@
 <template>
-  <div class="agent-management">
-    <div class="flex justify-between items-center mb-6">
-      <h1 class="text-2xl font-bold text-gray-900">Agent Management</h1>
-      <button
-        @click="showCreateModal = true"
-        class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-      >
-        <Icon icon="mdi:account-plus" class="inline-block mr-1" />
-        Add Agent
-      </button>
+  <div class="agent-management p-4">
+    <!-- Header -->
+    <div class="mt-2 w-full">
+      <div class="lg:flex grid-cols-1 lg:space-y-0 space-y-3 gap-5 justify-between">
+        <div>
+          <p class="uppercase text-xs text-gray-700 dark:text-gray-400 font-semibold">Admin</p>
+          <h1 class="text-2xl text-gray-900 dark:text-gray-200 font-medium">
+            Agent Management
+          </h1>
+        </div>
+        <div class="flex gap-2">
+          <button
+            @click="loadAgents"
+            :disabled="loading"
+            class="bg-white dark:bg-gray-800 hover:border-gray-200 dark:hover:bg-gray-700 dark:text-white dark:border-gray-700 border rounded py-2 px-5 flex items-center gap-2"
+          >
+            <Icon icon="mdi:refresh" :class="{'animate-spin': loading}" class="text-lg" />
+            Refresh
+          </button>
+          <button
+            @click="showCreateModal = true"
+            class="bg-primary border flex gap-2 text-white hover:bg-primary/80 dark:border-gray-700 rounded py-3 px-5"
+          >
+            <span class="icon text-2xl"><Icon icon="ic:twotone-plus" /></span>
+            <span class="text">Add Agent</span>
+          </button>
+        </div>
+      </div>
     </div>
 
     <!-- Statistics Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-      <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-sm text-gray-600">Total Agents</p>
-            <p class="text-2xl font-bold text-gray-900">{{ agents.length }}</p>
+    <div class="wrapper-card grid lg:grid-cols-4 grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+      <!-- Total Agents -->
+      <div class="card bg-white dark:bg-gray-800 w-full rounded-md p-5 border dark:border-gray-700 flex">
+        <div class="p-2 max-w-sm">
+          <div class="bg-blue-200 rounded-full w-14 h-14 text-lg p-3 text-blue-600 mx-auto">
+            <Icon icon="mdi:account-group" class="text-2xl" />
           </div>
-          <Icon icon="mdi:account-group" class="text-2xl text-blue-600" />
+        </div>
+        <div class="block p-2 w-full">
+          <p class="font-semibold text-gray-900 dark:text-gray-200 text-xl">
+            {{ agents.length }}
+          </p>
+          <h2 class="font-normal text-gray-400 text-md mt-1">Total Agents</h2>
+          <div class="flex items-center mt-2">
+            <span class="text-gray-400 text-sm">All registered agents</span>
+          </div>
         </div>
       </div>
-      <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-sm text-gray-600">Online Agents</p>
-            <p class="text-2xl font-bold text-green-600">{{ onlineAgentsCount }}</p>
+
+      <!-- Online Agents -->
+      <div class="card bg-white dark:bg-gray-800 w-full rounded-md p-5 border dark:border-gray-700 flex">
+        <div class="p-2 max-w-sm">
+          <div class="bg-green-200 rounded-full w-14 h-14 text-lg p-3 text-green-600 mx-auto">
+            <Icon icon="mdi:account-check" class="text-2xl" />
           </div>
-          <Icon icon="mdi:account-check" class="text-2xl text-green-600" />
+        </div>
+        <div class="block p-2 w-full">
+          <p class="font-semibold text-gray-900 dark:text-gray-200 text-xl">
+            {{ onlineAgentsCount }}
+          </p>
+          <h2 class="font-normal text-gray-400 text-md mt-1">Online Agents</h2>
+          <div class="flex items-center mt-2">
+            <span :class="onlineAgentsCount > 0 ? 'text-green-500' : 'text-gray-400'" class="text-sm flex items-center">
+              <Icon :icon="onlineAgentsCount > 0 ? 'mdi:check-circle' : 'mdi:information'" class="mr-1" />
+              {{ onlineAgentsCount > 0 ? 'Active now' : 'No agents online' }}
+            </span>
+          </div>
         </div>
       </div>
-      <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-sm text-gray-600">Available Agents</p>
-            <p class="text-2xl font-bold text-purple-600">{{ availableAgentsCount }}</p>
+
+      <!-- Available Agents -->
+      <div class="card bg-white dark:bg-gray-800 w-full rounded-md p-5 border dark:border-gray-700 flex">
+        <div class="p-2 max-w-sm">
+          <div class="bg-purple-200 rounded-full w-14 h-14 text-lg p-3 text-purple-600 mx-auto">
+            <Icon icon="mdi:account-circle" class="text-2xl" />
           </div>
-          <Icon icon="mdi:account-circle" class="text-2xl text-purple-600" />
+        </div>
+        <div class="block p-2 w-full">
+          <p class="font-semibold text-gray-900 dark:text-gray-200 text-xl">
+            {{ availableAgentsCount }}
+          </p>
+          <h2 class="font-normal text-gray-400 text-md mt-1">Available Agents</h2>
+          <div class="flex items-center mt-2">
+            <span :class="availableAgentsCount > 0 ? 'text-green-500' : 'text-gray-400'" class="text-sm flex items-center">
+              <Icon :icon="availableAgentsCount > 0 ? 'mdi:check-circle' : 'mdi:information'" class="mr-1" />
+              {{ availableAgentsCount > 0 ? 'Ready for assignments' : 'All agents busy' }}
+            </span>
+          </div>
         </div>
       </div>
-      <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-sm text-gray-600">Avg Load</p>
-            <p class="text-2xl font-bold text-orange-600">{{ avgLoad }}%</p>
+
+      <!-- Avg Load -->
+      <div class="card bg-white dark:bg-gray-800 w-full rounded-md p-5 border dark:border-gray-700 flex">
+        <div class="p-2 max-w-sm">
+          <div class="bg-orange-200 rounded-full w-14 h-14 text-lg p-3 text-orange-600 mx-auto">
+            <Icon icon="mdi:chart-line" class="text-2xl" />
           </div>
-          <Icon icon="mdi:chart-line" class="text-2xl text-orange-600" />
+        </div>
+        <div class="block p-2 w-full">
+          <p class="font-semibold text-gray-900 dark:text-gray-200 text-xl">
+            {{ avgLoad }}%
+          </p>
+          <h2 class="font-normal text-gray-400 text-md mt-1">Avg Load</h2>
+          <div class="flex items-center mt-2">
+            <span :class="avgLoad < 50 ? 'text-green-500' : avgLoad < 80 ? 'text-yellow-500' : 'text-red-500'" class="text-sm flex items-center">
+              <Icon :icon="avgLoad < 50 ? 'mdi:check-circle' : avgLoad < 80 ? 'mdi:alert' : 'mdi:alert-circle'" class="mr-1" />
+              {{ avgLoad < 50 ? 'Good load' : avgLoad < 80 ? 'Moderate load' : 'High load' }}
+            </span>
+          </div>
         </div>
       </div>
     </div>
 
     <!-- Agents List -->
     <div v-if="loading" class="p-8 text-center">
-      <Icon icon="mdi:loading" class="animate-spin text-2xl text-gray-400" />
-      <p class="mt-2 text-sm text-gray-500">Loading agents...</p>
+      <Icon icon="mdi:loading" class="animate-spin text-6xl text-gray-300 dark:text-gray-600 mx-auto" />
+      <p class="mt-2 text-gray-500 dark:text-gray-400">Loading agents...</p>
     </div>
 
     <div v-else-if="agents.length === 0" class="p-8 text-center">
-      <Icon icon="mdi:account-off" class="text-4xl text-gray-300 mx-auto" />
-      <p class="mt-2 text-sm text-gray-500">No agents found.</p>
+      <Icon icon="mdi:account-off" class="text-6xl text-gray-300 dark:text-gray-600 mx-auto" />
+      <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">No agents found.</p>
       <button
         @click="showCreateModal = true"
-        class="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+        class="mt-4 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/80"
       >
         Add First Agent
       </button>
@@ -74,7 +136,7 @@
         :key="agent.id"
         :class="[
           'p-4 border rounded-lg',
-          agent.active ? 'border-blue-200 bg-blue-50' : 'border-gray-200 bg-gray-50'
+          agent.active ? 'border-blue-200 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-800' : 'border-gray-200 bg-gray-50 dark:bg-gray-700 dark:border-gray-600'
         ]"
       >
         <div class="flex justify-between items-start">
@@ -84,13 +146,13 @@
                 {{ agent.name.charAt(0).toUpperCase() }}
               </div>
               <div>
-                <h3 class="font-semibold text-gray-900">{{ agent.name }}</h3>
-                <p class="text-sm text-gray-600">{{ agent.email }}</p>
+                <h3 class="font-semibold text-gray-900 dark:text-gray-200">{{ agent.name }}</h3>
+                <p class="text-sm text-gray-600 dark:text-gray-400">{{ agent.email }}</p>
               </div>
               <span
                 :class="[
                   'px-2 py-1 text-xs rounded-full',
-                  agent.status === 'ONLINE' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'
+                  agent.status === 'ONLINE' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400'
                 ]"
               >
                 {{ agent.status }}
@@ -98,31 +160,31 @@
               <span
                 :class="[
                   'px-2 py-1 text-xs rounded-full',
-                  agent.active ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-600'
+                  agent.active ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400' : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400'
                 ]"
               >
                 {{ agent.active ? 'Active' : 'Inactive' }}
               </span>
-              <span class="px-2 py-1 text-xs bg-purple-100 text-purple-800 rounded-full">
+              <span class="px-2 py-1 text-xs bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400 rounded-full">
                 {{ agent.role }}
               </span>
             </div>
             <div class="mt-3 grid grid-cols-4 gap-4 text-sm">
               <div>
-                <span class="font-medium text-gray-700">Current Load:</span>
-                <span class="ml-2 text-blue-600 font-semibold">{{ agent.currentLoad }}/{{ agent.maxConcurrentConversations }}</span>
+                <span class="font-medium text-gray-700 dark:text-gray-300">Current Load:</span>
+                <span class="ml-2 text-blue-600 dark:text-blue-400 font-semibold">{{ agent.currentLoad }}/{{ agent.maxConcurrentConversations }}</span>
               </div>
               <div>
-                <span class="font-medium text-gray-700">Skills:</span>
-                <span class="ml-2 text-gray-600">{{ agent.skills?.join(', ') || 'None' }}</span>
+                <span class="font-medium text-gray-700 dark:text-gray-300">Skills:</span>
+                <span class="ml-2 text-gray-600 dark:text-gray-400">{{ agent.skills?.join(', ') || 'None' }}</span>
               </div>
               <div>
-                <span class="font-medium text-gray-700">Last Activity:</span>
-                <span class="ml-2 text-gray-600">{{ formatDate(agent.lastActivityAt) }}</span>
+                <span class="font-medium text-gray-700 dark:text-gray-300">Last Activity:</span>
+                <span class="ml-2 text-gray-600 dark:text-gray-400">{{ formatDate(agent.lastActivityAt) }}</span>
               </div>
               <div>
-                <span class="font-medium text-gray-700">Created:</span>
-                <span class="ml-2 text-gray-600">{{ formatDate(agent.createdAt) }}</span>
+                <span class="font-medium text-gray-700 dark:text-gray-300">Created:</span>
+                <span class="ml-2 text-gray-600 dark:text-gray-400">{{ formatDate(agent.createdAt) }}</span>
               </div>
             </div>
           </div>
@@ -130,7 +192,7 @@
             <button
               @click="setAgentOnline(agent.id)"
               :disabled="agent.status === 'ONLINE'"
-              class="p-2 text-green-600 hover:bg-green-100 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              class="p-2 text-green-600 hover:bg-green-100 dark:hover:bg-green-900/30 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               title="Set Online"
             >
               <Icon icon="mdi:check-circle" class="text-lg" />
@@ -138,21 +200,21 @@
             <button
               @click="setAgentOffline(agent.id)"
               :disabled="agent.status === 'OFFLINE'"
-              class="p-2 text-gray-600 hover:bg-gray-200 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              class="p-2 text-gray-600 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               title="Set Offline"
             >
               <Icon icon="mdi:close-circle" class="text-lg" />
             </button>
             <button
               @click="editAgent(agent)"
-              class="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
+              class="p-2 text-blue-600 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded-lg transition-colors"
               title="Edit"
             >
               <Icon icon="mdi:pencil" class="text-lg" />
             </button>
             <button
               @click="deleteAgent(agent.id)"
-              class="p-2 text-red-600 hover:bg-red-100 rounded-lg transition-colors"
+              class="p-2 text-red-600 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg transition-colors"
               title="Delete"
             >
               <Icon icon="mdi:delete" class="text-lg" />
@@ -167,38 +229,38 @@
       v-if="showCreateModal || showEditModal"
       class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
     >
-      <div class="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-        <h2 class="text-xl font-bold mb-4">
+      <div class="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto border dark:border-gray-700">
+        <h2 class="text-xl font-bold mb-4 text-gray-900 dark:text-gray-200">
           {{ showCreateModal ? 'Create Agent' : 'Edit Agent' }}
         </h2>
         <form @submit.prevent="saveAgent">
           <div class="space-y-4">
             <div class="grid grid-cols-2 gap-4">
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Name</label>
                 <input
                   v-model="currentAgent.name"
                   type="text"
-                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500"
                   required
                 />
               </div>
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email</label>
                 <input
                   v-model="currentAgent.email"
                   type="email"
-                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500"
                   required
                 />
               </div>
             </div>
             <div class="grid grid-cols-2 gap-4">
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Role</label>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Role</label>
                 <select
                   v-model="currentAgent.role"
-                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500"
                   required
                 >
                   <option value="AGENT">Agent</option>
@@ -208,10 +270,10 @@
                 </select>
               </div>
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Status</label>
                 <select
                   v-model="currentAgent.status"
-                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500"
                   required
                 >
                   <option value="ONLINE">Online</option>
@@ -223,58 +285,58 @@
             </div>
             <div class="grid grid-cols-2 gap-4">
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Max Concurrent Conversations</label>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Max Concurrent Conversations</label>
                 <input
                   v-model.number="currentAgent.maxConcurrentConversations"
                   type="number"
-                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500"
                   required
                   min="1"
                 />
               </div>
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Current Load</label>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Current Load</label>
                 <input
                   v-model.number="currentAgent.currentLoad"
                   type="number"
-                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500"
                   required
                   min="0"
                 />
               </div>
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Skills (comma-separated)</label>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Skills (comma-separated)</label>
               <input
                 v-model="skillsString"
                 type="text"
-                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500"
                 placeholder="e.g., vip_support, technical_support, billing"
               />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Bio</label>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Bio</label>
               <textarea
                 v-model="currentAgent.bio"
-                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500"
                 rows="2"
               />
             </div>
             <div class="grid grid-cols-2 gap-4">
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Phone Number</label>
                 <input
                   v-model="currentAgent.phoneNumber"
                   type="text"
-                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500"
                 />
               </div>
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Avatar URL</label>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Avatar URL</label>
                 <input
                   v-model="currentAgent.avatarUrl"
                   type="text"
-                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500"
                 />
               </div>
             </div>
@@ -283,22 +345,22 @@
                 v-model="currentAgent.active"
                 type="checkbox"
                 id="active"
-                class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                class="w-4 h-4 text-blue-600 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 dark:bg-gray-700"
               />
-              <label for="active" class="ml-2 text-sm text-gray-700">Active</label>
+              <label for="active" class="ml-2 text-sm text-gray-700 dark:text-gray-300">Active</label>
             </div>
           </div>
           <div class="flex justify-end space-x-2 mt-6">
             <button
               type="button"
               @click="closeModal"
-              class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300"
+              class="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600"
             >
               Cancel
             </button>
             <button
               type="submit"
-              class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/80"
             >
               Save
             </button>
@@ -444,3 +506,18 @@ onMounted(() => {
   loadAgents()
 })
 </script>
+
+<style scoped>
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+</style>

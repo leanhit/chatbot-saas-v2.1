@@ -187,6 +187,33 @@
                 {{ $t('penny.manageRules') }}
               </button>
               
+              <!-- Knowledge Base Button -->
+              <button
+                @click="goToKnowledgeBase(bot)"
+                class="flex items-center justify-center px-3 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700 transition-colors"
+              >
+                <Icon icon="mdi:bookshelf" class="h-4 w-4 mr-1" />
+                Knowledge Base
+              </button>
+              
+              <!-- Escalation Tickets Button -->
+              <button
+                @click="goToEscalationTickets(bot)"
+                class="flex items-center justify-center px-3 py-2 bg-orange-600 text-white text-sm font-medium rounded-md hover:bg-orange-700 transition-colors"
+              >
+                <Icon icon="mdi:ticket-account" class="h-4 w-4 mr-1" />
+                Escalation
+              </button>
+              
+              <!-- Bot Configuration Button -->
+              <button
+                @click="goToBotConfig(bot)"
+                class="flex items-center justify-center px-3 py-2 bg-teal-600 text-white text-sm font-medium rounded-md hover:bg-teal-700 transition-colors col-span-2"
+              >
+                <Icon icon="mdi:cog" class="h-4 w-4 mr-1" />
+                Configuration
+              </button>
+              
               <!-- Chat/Test Button -->
               <button
                 @click="openChatModal(bot)"
@@ -466,6 +493,33 @@ export default {
       router.push({ name: 'penny-rules' })
     }
 
+    const goToKnowledgeBase = (bot) => {
+      if (!bot || !bot.id) {
+        console.warn('Invalid bot for knowledge base:', bot)
+        return
+      }
+      // Navigate with botId parameter
+      router.push({ name: 'penny-knowledge-base', params: { botId: bot.id } })
+    }
+
+    const goToEscalationTickets = (bot) => {
+      if (!bot || !bot.id) {
+        console.warn('Invalid bot for escalation tickets:', bot)
+        return
+      }
+      // Navigate with botId parameter
+      router.push({ name: 'penny-escalation', params: { botId: bot.id } })
+    }
+
+    const goToBotConfig = (bot) => {
+      if (!bot || !bot.id) {
+        console.warn('Invalid bot for configuration:', bot)
+        return
+      }
+      // Navigate with botId parameter
+      router.push({ name: 'penny-bot-config', params: { botId: bot.id } })
+    }
+
     const createConnection = (bot) => {
       if (!bot || !bot.id) {
         console.warn('Invalid bot for connection:', bot)
@@ -634,6 +688,9 @@ export default {
       openConnections,
       goToConnections,
       goToRules,
+      goToKnowledgeBase,
+      goToEscalationTickets,
+      goToBotConfig,
       createConnection,
       handleAutoConnect,
       createRule,

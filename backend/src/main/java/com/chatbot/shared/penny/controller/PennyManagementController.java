@@ -1,6 +1,6 @@
 package com.chatbot.shared.penny.controller;
 
-import com.chatbot.shared.penny.service.PennyMetricsService;
+import com.chatbot.shared.penny.monitoring.PennyMetricsService;
 import com.chatbot.shared.penny.service.PennyHealthService;
 import com.chatbot.shared.penny.service.PennyConfigurationService;
 import com.chatbot.shared.dto.ApiResponse;

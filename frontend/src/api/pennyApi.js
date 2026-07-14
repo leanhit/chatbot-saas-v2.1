@@ -135,7 +135,7 @@ export const pennyApi = {
     /**
      * Chat với Penny bot (public, không cần authentication)
      */
-    chatWithPennyBotPublic(botId, message) {
+    chatWithPennyBotPublic(botId, message, apiKey) {
         // Create middleware request
         const middlewareRequest = new MiddlewareRequest({
             userId: 'public-user',
@@ -144,7 +144,11 @@ export const pennyApi = {
             botId: botId
         });
         
-        return axios.post(`/penny/bots/${botId}/chat/public`, middlewareRequest.toApiRequest())
+        return axios.post(`/penny/bots/${botId}/chat/public`, middlewareRequest.toApiRequest(), {
+            headers: {
+                'X-Public-API-Key': apiKey
+            }
+        })
             .then(response => {
                 // Convert API response to DTO
                 response.data = new MiddlewareResponse(response.data);
@@ -164,5 +168,250 @@ export const pennyApi = {
                 return response;
             })
             .catch(handleApiError);
+    },
+
+    // ========================================
+    // Knowledge Base API
+    // ========================================
+
+    /**
+     * Get all knowledge articles for a bot (paginated)
+     */
+    getKnowledgeArticles(botId, page = 0, size = 20, sortBy = 'updatedAt', sortDir = 'desc') {
+        return axios.get(`/penny/bots/${botId}/kb/articles`, {
+            params: { page, size, sortBy, sortDir }
+        }).catch(handleApiError);
+    },
+
+    /**
+     * Get a specific knowledge article
+     */
+    getKnowledgeArticle(botId, articleId) {
+        return axios.get(`/penny/bots/${botId}/kb/articles/${articleId}`)
+            .catch(handleApiError);
+    },
+
+    /**
+     * Create a new knowledge article
+     */
+    createKnowledgeArticle(botId, articleData) {
+        return axios.post(`/penny/bots/${botId}/kb/articles`, articleData)
+            .catch(handleApiError);
+    },
+
+    /**
+     * Update a knowledge article
+     */
+    updateKnowledgeArticle(botId, articleId, articleData) {
+        return axios.put(`/penny/bots/${botId}/kb/articles/${articleId}`, articleData)
+            .catch(handleApiError);
+    },
+
+    /**
+     * Delete a knowledge article
+     */
+    deleteKnowledgeArticle(botId, articleId) {
+        return axios.delete(`/penny/bots/${botId}/kb/articles/${articleId}`)
+            .catch(handleApiError);
+    },
+
+    /**
+     * Import multiple knowledge articles in bulk
+     */
+    importKnowledgeArticles(botId, articles) {
+        return axios.post(`/penny/bots/${botId}/kb/import`, articles)
+            .catch(handleApiError);
+    },
+
+    /**
+     * Re-generate embedding for an article
+     */
+    reembedKnowledgeArticle(botId, articleId) {
+        return axios.post(`/penny/bots/${botId}/kb/articles/${articleId}/reembed`)
+            .catch(handleApiError);
+    },
+
+    /**
+     * Test knowledge base search
+     */
+    testKnowledgeBaseSearch(botId, query) {
+        return axios.get(`/penny/bots/${botId}/kb/search`, {
+            params: { q: query }
+        }).catch(handleApiError);
+    },
+
+    /**
+     * Get knowledge base statistics
+     */
+    getKnowledgeBaseStats(botId) {
+        return axios.get(`/penny/bots/${botId}/kb/stats`)
+            .catch(handleApiError);
+    },
+
+    // ========================================
+    // Metrics API
+    // ========================================
+
+    /**
+     * Get system metrics
+     */
+    getSystemMetrics() {
+        return axios.get('/penny/admin/metrics')
+            .catch(handleApiError);
+    },
+
+    /**
+     * Get metrics for a specific bot
+     */
+    getBotMetrics(botId) {
+        return axios.get(`/penny/admin/metrics/bot/${botId}`)
+            .catch(handleApiError);
+    },
+
+    /**
+     * Get provider health metrics
+     */
+    getProviderMetrics() {
+        return axios.get('/penny/admin/metrics/providers')
+            .catch(handleApiError);
+    },
+
+    /**
+     * Get knowledge base metrics
+     */
+    getKnowledgeBaseMetrics() {
+        return axios.get('/penny/admin/metrics/knowledge-base')
+            .catch(handleApiError);
+    },
+
+    // ========================================
+    // Escalation Tickets API
+    // ========================================
+
+    /**
+     * Get all escalation tickets for a bot (paginated)
+     */
+    getEscalationTickets(botId, page = 0, size = 20, sortBy = 'createdAt', sortDir = 'desc') {
+        return axios.get(`/penny/bots/${botId}/escalation/tickets`, {
+            params: { page, size, sortBy, sortDir }
+        }).catch(handleApiError);
+    },
+
+    /**
+     * Get tickets by status for a bot
+     */
+    getEscalationTicketsByStatus(botId, status) {
+        return axios.get(`/penny/bots/${botId}/escalation/tickets/status/${status}`)
+            .catch(handleApiError);
+    },
+
+    /**
+     * Get a specific escalation ticket
+     */
+    getEscalationTicket(botId, ticketId) {
+        return axios.get(`/penny/bots/${botId}/escalation/tickets/${ticketId}`)
+            .catch(handleApiError);
+    },
+
+    /**
+     * Create a new escalation ticket
+     */
+    createEscalationTicket(botId, ticketData) {
+        return axios.post(`/penny/bots/${botId}/escalation/tickets`, ticketData)
+            .catch(handleApiError);
+    },
+
+    /**
+     * Update an escalation ticket
+     */
+    updateEscalationTicket(botId, ticketId, ticketData) {
+        return axios.put(`/penny/bots/${botId}/escalation/tickets/${ticketId}`, ticketData)
+            .catch(handleApiError);
+    },
+
+    /**
+     * Delete an escalation ticket
+     */
+    deleteEscalationTicket(botId, ticketId) {
+        return axios.delete(`/penny/bots/${botId}/escalation/tickets/${ticketId}`)
+            .catch(handleApiError);
+    },
+
+    /**
+     * Assign ticket to an agent
+     */
+    assignEscalationTicket(botId, ticketId, agentId) {
+        return axios.post(`/penny/bots/${botId}/escalation/tickets/${ticketId}/assign`, { agentId })
+            .catch(handleApiError);
+    },
+
+    /**
+     * Resolve a ticket
+     */
+    resolveEscalationTicket(botId, ticketId, notes) {
+        return axios.post(`/penny/bots/${botId}/escalation/tickets/${ticketId}/resolve`, { notes })
+            .catch(handleApiError);
+    },
+
+    /**
+     * Cancel a ticket
+     */
+    cancelEscalationTicket(botId, ticketId) {
+        return axios.post(`/penny/bots/${botId}/escalation/tickets/${ticketId}/cancel`)
+            .catch(handleApiError);
+    },
+
+    /**
+     * Get pending tickets for a bot
+     */
+    getPendingEscalationTickets(botId) {
+        return axios.get(`/penny/bots/${botId}/escalation/tickets/pending`)
+            .catch(handleApiError);
+    },
+
+    /**
+     * Get escalation ticket statistics
+     */
+    getEscalationStats(botId) {
+        return axios.get(`/penny/bots/${botId}/escalation/stats`)
+            .catch(handleApiError);
+    },
+
+    // ========================================
+    // Monitoring & Metrics API (New)
+    // ========================================
+
+    /**
+     * Get Penny metrics summary
+     */
+    getPennyMetricsSummary() {
+        return axios.get('/penny/admin/metrics/summary')
+            .catch(handleApiError);
+    },
+
+    /**
+     * Get circuit breaker status
+     */
+    getCircuitBreakerStatus() {
+        return axios.get('/penny/admin/circuit-breaker/status')
+            .catch(handleApiError);
+    },
+
+    /**
+     * Get analytics events for a bot
+     */
+    getAnalyticsEvents(botId, timeRange = '7days', page = 0, size = 50) {
+        return axios.get(`/penny/admin/analytics/events`, {
+            params: { botId, timeRange, page, size }
+        }).catch(handleApiError);
+    },
+
+    /**
+     * Get analytics summary for a bot
+     */
+    getAnalyticsSummary(botId, timeRange = '7days') {
+        return axios.get(`/penny/admin/analytics/summary`, {
+            params: { botId, timeRange }
+        }).catch(handleApiError);
     }
 };

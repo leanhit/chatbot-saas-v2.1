@@ -63,6 +63,7 @@ public class PennyMiddlewareEngine {
                 requestId, request.getUserId(), request.getPlatform());
             
             // STEP 1: Validate request
+            validateRequest(request);
             ConversationContext conversationContext = (ConversationContext) contextManager.loadContext(request);
             
             // STEP 2: Analyze intent và entities

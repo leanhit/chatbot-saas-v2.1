@@ -20,7 +20,11 @@ import java.util.Properties;
 @EnableJpaRepositories(
     basePackages = {
         "com.chatbot.core.message.repository",
-        "com.chatbot.core.message.store.repository"
+        "com.chatbot.core.message.store.repository",
+        "com.chatbot.shared.penny.repository",
+        "com.chatbot.shared.penny.kb",
+        "com.chatbot.shared.penny.escalation",
+        "com.chatbot.shared.penny.analytics"
     },
     entityManagerFactoryRef = "messageEntityManagerFactory",
     transactionManagerRef = "messageTransactionManager"
@@ -42,7 +46,11 @@ public class MessageHubConfig {
         em.setDataSource(messageDataSource());
         em.setPackagesToScan(
             "com.chatbot.core.message.model",
-            "com.chatbot.core.message.store.model"
+            "com.chatbot.core.message.store.model",
+            "com.chatbot.shared.penny.model",
+            "com.chatbot.shared.penny.kb",
+            "com.chatbot.shared.penny.escalation",
+            "com.chatbot.shared.penny.analytics"
         );
 
         HibernateJpaVendorAdapter vendorAdapter = new HibernateJpaVendorAdapter();

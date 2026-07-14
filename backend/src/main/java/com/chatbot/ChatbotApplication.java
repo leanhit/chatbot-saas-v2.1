@@ -14,7 +14,12 @@ import org.springframework.boot.autoconfigure.domain.EntityScan;
     "com.chatbot.core.license.model",
     "com.chatbot.core.user.model",
     "com.chatbot.core.identity.model",
-    "com.chatbot.core.tenant.model"
+    "com.chatbot.core.tenant.model",
+    "com.chatbot.core.message.store.model",
+    "com.chatbot.shared.penny.model",
+    "com.chatbot.shared.penny.kb",
+    "com.chatbot.shared.penny.escalation",
+    "com.chatbot.shared.penny.analytics"
 })
 @ComponentScan(basePackages = {
     "com.chatbot.core",

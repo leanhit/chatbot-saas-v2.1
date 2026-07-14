@@ -4,9 +4,10 @@ import com.chatbot.shared.penny.core.config.PennyProperties;
 import com.chatbot.shared.penny.dto.request.MiddlewareRequest;
 import com.chatbot.shared.penny.dto.response.MiddlewareResponse;
 import com.chatbot.shared.penny.routing.dto.IntentAnalysisResult;
-import com.chatbot.shared.penny.routing.dto.ProviderSelection;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.*;
@@ -21,15 +22,17 @@ import java.util.concurrent.atomic.AtomicLong;
 public class AnalyticsCollector {
     
     private final PennyProperties properties;
-    private final Queue<AnalyticsEvent> eventQueue;
+    private final Queue<com.chatbot.shared.penny.analytics.AnalyticsEvent> eventQueue;
     private final AtomicLong totalProcessed;
     private final AtomicLong totalErrors;
     private final Map<String, AtomicLong> providerUsage;
     private final Map<String, AtomicLong> intentCounts;
     private final AtomicLong totalProcessingTime;
+    private final AnalyticsEventRepository analyticsEventRepository;
     
-    public AnalyticsCollector(PennyProperties properties) {
+    public AnalyticsCollector(PennyProperties properties, AnalyticsEventRepository analyticsEventRepository) {
         this.properties = properties;
+        this.analyticsEventRepository = analyticsEventRepository;
         this.eventQueue = new ConcurrentLinkedQueue<>();
         this.totalProcessed = new AtomicLong(0);
         this.totalErrors = new AtomicLong(0);
@@ -75,11 +78,19 @@ public class AnalyticsCollector {
             }
             
             // Create analytics event
-            AnalyticsEvent event = new AnalyticsEvent(
-                "message_processed",
-                Instant.now(),
-                buildEventData(request, response, analysis, processingTime)
-            );
+            com.chatbot.shared.penny.analytics.AnalyticsEvent event = 
+                com.chatbot.shared.penny.analytics.AnalyticsEvent.builder()
+                    .botId(UUID.fromString(request.getBotId()))
+                    .eventType("message_processed")
+                    .timestamp(Instant.now())
+                    .data(buildEventData(request, response, analysis, processingTime))
+                    .userId(request.getUserId())
+                    .platform(request.getPlatform())
+                    .intent(analysis != null ? analysis.getPrimaryIntent() : null)
+                    .providerUsed(response.getProviderUsed())
+                    .processingTimeMs(processingTime)
+                    .hasError(response.hasError())
+                    .build();
             
             // Add to queue for batch processing
             eventQueue.offer(event);
@@ -128,24 +139,25 @@ public class AnalyticsCollector {
     /**
      * Flush events to storage
      */
+    @Async
+    @Transactional
     public void flushEvents() {
         if (!properties.getAnalytics().isEnabled() || eventQueue.isEmpty()) {
             return;
         }
         
         try {
-            List<AnalyticsEvent> events = new ArrayList<>();
-            AnalyticsEvent event;
+            List<com.chatbot.shared.penny.analytics.AnalyticsEvent> events = new ArrayList<>();
+            com.chatbot.shared.penny.analytics.AnalyticsEvent event;
             while ((event = eventQueue.poll()) != null && events.size() < properties.getAnalytics().getBatchSize()) {
                 events.add(event);
             }
             
             if (!events.isEmpty()) {
-                // In real implementation, this would send to analytics storage
-                log.debug("📊 Flushing {} analytics events", events.size());
-                
-                // For now, just log the events
-                events.forEach(e -> log.debug("Event: {} - {}", e.getEventType(), e.getData()));
+                // Persist events to database
+                log.debug("📊 Persisting {} analytics events to database", events.size());
+                analyticsEventRepository.saveAll(events);
+                log.info("✅ Successfully persisted {} analytics events", events.size());
             }
             
         } catch (Exception e) {
@@ -162,11 +174,12 @@ public class AnalyticsCollector {
         }
         
         try {
-            AnalyticsEvent event = new AnalyticsEvent(
-                eventType,
-                Instant.now(),
-                data
-            );
+            com.chatbot.shared.penny.analytics.AnalyticsEvent event = 
+                com.chatbot.shared.penny.analytics.AnalyticsEvent.builder()
+                    .eventType(eventType)
+                    .timestamp(Instant.now())
+                    .data(data)
+                    .build();
             
             eventQueue.offer(event);
             

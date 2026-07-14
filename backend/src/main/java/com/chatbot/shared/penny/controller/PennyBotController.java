@@ -362,12 +362,22 @@ public class PennyBotController {
     }
     
     /**
-     * Chat with bot (public - no auth required for testing)
+     * Chat with bot (public - requires API key authentication)
      */
     @PostMapping("/{botId}/chat/public")
     public ResponseEntity<Map<String, Object>> chatWithBotPublic(
             @PathVariable String botId,
-            @RequestBody Map<String, String> request) {
+            @RequestBody Map<String, String> request,
+            @RequestHeader(value = "X-Public-API-Key", required = false) String apiKey) {
+        
+        // Validate API key for public access
+        if (!isValidPublicApiKey(apiKey)) {
+            log.warn("⚠️ Invalid or missing API key for public chat with bot: {}", botId);
+            return ResponseEntity.status(401).body(Map.of(
+                "error", "Invalid or missing API key",
+                "botId", botId
+            ));
+        }
         
         UUID botUuid = UUID.fromString(botId);
         String message = request.get("message");
@@ -406,6 +416,20 @@ public class PennyBotController {
                 "botId", botId
             ));
         }
+    }
+    
+    /**
+     * Validate public API key
+     */
+    private boolean isValidPublicApiKey(String apiKey) {
+        // In production, this should validate against a secure store
+        // For now, check if it's configured and matches expected format
+        String expectedKey = System.getenv("PENNY_PUBLIC_API_KEY");
+        if (expectedKey == null || expectedKey.isBlank()) {
+            log.warn("⚠️ PENNY_PUBLIC_API_KEY not configured, public endpoint disabled");
+            return false;
+        }
+        return expectedKey.equals(apiKey);
     }
     
     /**

@@ -30,19 +30,22 @@ public class PennyBotManager {
     private final PackageLimitValidationService limitValidationService;
     private final com.chatbot.shared.penny.core.PennyMiddlewareEngine pennyMiddlewareEngine;
     private final com.chatbot.core.message.store.repository.ConversationRepository conversationRepository;
+    private final com.chatbot.shared.penny.security.InputSanitizer inputSanitizer;
     
     public PennyBotManager(PennyBotRepository pennyBotRepository,
                          ContextManager contextManager,
                          AnalyticsCollector analyticsCollector,
                          PackageLimitValidationService limitValidationService,
                          com.chatbot.shared.penny.core.PennyMiddlewareEngine pennyMiddlewareEngine,
-                         com.chatbot.core.message.store.repository.ConversationRepository conversationRepository) {
+                         com.chatbot.core.message.store.repository.ConversationRepository conversationRepository,
+                         com.chatbot.shared.penny.security.InputSanitizer inputSanitizer) {
         this.pennyBotRepository = pennyBotRepository;
         this.contextManager = contextManager;
         this.analyticsCollector = analyticsCollector;
         this.limitValidationService = limitValidationService;
         this.pennyMiddlewareEngine = pennyMiddlewareEngine;
         this.conversationRepository = conversationRepository;
+        this.inputSanitizer = inputSanitizer;
     }
     
     /**
@@ -395,6 +398,21 @@ public class PennyBotManager {
         log.info("💬 Processing message for bot {} by {} - TestMode: {} - Message: {}", botId, ownerId, isTestMode, message);
         
         try {
+            // Sanitize input to prevent XSS and injection attacks
+            String sanitizedMessage = inputSanitizer.sanitizeMessage(message);
+            
+            // Check for malicious content
+            if (inputSanitizer.isMalicious(message)) {
+                log.warn("⚠️ Potentially malicious content detected in message for bot {}", botId);
+                return "Tin nhắn của bạn chứa nội dung không hợp lệ. Vui lòng thử lại.";
+            }
+            
+            // Validate message length
+            if (!inputSanitizer.isValidLength(message)) {
+                log.warn("⚠️ Message too long for bot {}", botId);
+                return "Tin nhắn quá dài. Vui lòng gửi tin nhắn ngắn hơn.";
+            }
+            
             PennyBot bot = getBot(botId);
             
             // Skip ownership check for public access (ownerId = "public")
@@ -410,39 +428,35 @@ public class PennyBotManager {
                 return "Bot is currently inactive. Please activate the bot first.";
             }
             
-            // Direct PennyBot processing - bypass PennyMiddlewareEngine for now
-            // PennyMiddlewareEngine requires provider instances which are not yet implemented
-            // Use direct processing through context manager instead
+            // Process through PennyMiddlewareEngine
             try {
-                // Load or create context for this conversation
                 com.chatbot.shared.penny.dto.request.MiddlewareRequest middlewareRequest = 
                     com.chatbot.shared.penny.dto.request.MiddlewareRequest.builder()
                         .userId(ownerId)
-                        .message(message)
+                        .message(sanitizedMessage)
                         .platform("facebook")
                         .botId(botId.toString())
                         .timestamp(java.time.Instant.now())
                         .build();
                 
-                com.chatbot.shared.penny.context.ConversationContext context = contextManager.loadContext(middlewareRequest);
+                com.chatbot.shared.penny.dto.response.MiddlewareResponse response = 
+                    pennyMiddlewareEngine.processMessage(middlewareRequest);
                 
-                // Update context with new message
-                contextManager.updateContext(context, middlewareRequest,
-                    com.chatbot.shared.penny.dto.response.MiddlewareResponse.builder()
-                        .response("Xin chào! Tôi đã nhận được tin nhắn của bạn.")
-                        .timestamp(java.time.Instant.now())
-                        .build());
+                // Update bot's last used timestamp
+                bot.setLastUsedAt(java.time.LocalDateTime.now());
+                pennyBotRepository.save(bot);
                 
-                // For now, return a simple response
-                // In production, this would call the actual PennyBot API
-                return "Xin chào! Tôi đã nhận được tin nhắn: " + message + ". Hiện tại tôi đang trong chế độ xử lý cơ bản.";
+                return response.getResponse();
                 
             } catch (Exception e) {
-                log.error("❌ Error in direct PennyBot processing: {}", e.getMessage(), e);
+                log.error("❌ Error in PennyMiddlewareEngine processing: {}", e.getMessage(), e);
                 // Fallback to simple response
-                return "Xin chào! Tôi đã nhận được tin nhắn của bạn.";
+                return "Xin chào! Tôi đã nhận được tin nhắn của bạn. Hiện tại hệ thống đang gặp sự cố kỹ thuật, vui lòng thử lại sau.";
             }
             
+        } catch (AccessDeniedException e) {
+            log.error("❌ Access denied for bot {}: {}", botId, e.getMessage());
+            return "Bạn không có quyền truy cập vào bot này.";
         } catch (Exception e) {
             log.error("❌ Error processing message for bot {}: {}", botId, e.getMessage(), e);
             return "Sorry, I encountered an error while processing your message. Please try again.";

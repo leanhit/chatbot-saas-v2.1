@@ -79,4 +79,22 @@ public interface PennyBotRepository extends JpaRepository<PennyBot, UUID> {
      * Find bot by ID and tenant ID (for multi-tenant safety)
      */
     Optional<PennyBot> findByIdAndTenantId(UUID id, Long tenantId);
+
+    /**
+     * Find active bots by tenant ID with pagination (multi-tenant safe)
+     */
+    @Query("SELECT b FROM PennyBot b WHERE b.tenantId = :tenantId AND b.isActive = true ORDER BY b.createdAt DESC")
+    org.springframework.data.domain.Page<PennyBot> findByTenantIdAndIsActiveTruePaged(
+            @Param("tenantId") Long tenantId,
+            org.springframework.data.domain.Pageable pageable);
+
+    /**
+     * Search active bots by tenant ID and bot name keyword (multi-tenant safe)
+     */
+    @Query("SELECT b FROM PennyBot b WHERE b.tenantId = :tenantId AND b.isActive = true " +
+           "AND LOWER(b.botName) LIKE LOWER(CONCAT('%', :keyword, '%')) ORDER BY b.createdAt DESC")
+    org.springframework.data.domain.Page<PennyBot> searchByTenantIdAndBotName(
+            @Param("tenantId") Long tenantId,
+            @Param("keyword") String keyword,
+            org.springframework.data.domain.Pageable pageable);
 }

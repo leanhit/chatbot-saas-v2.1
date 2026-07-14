@@ -1,49 +1,57 @@
 <template>
-  <div class="escalation-tiers">
-    <div class="flex justify-between items-center mb-6">
-      <h1 class="text-2xl font-bold text-gray-900">Escalation Tiers</h1>
-      <div class="space-x-2">
-        <button
-          @click="createDefaultTiers"
-          class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
-        >
-          <Icon icon="mdi:refresh" class="inline-block mr-1" />
-          Create Defaults
-        </button>
-        <button
-          @click="showCreateModal = true"
-          class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-        >
-          <Icon icon="mdi:plus" class="inline-block mr-1" />
-          Add Tier
-        </button>
+  <div class="escalation-tiers p-4">
+    <!-- Header -->
+    <div class="mt-2 w-full">
+      <div class="lg:flex grid-cols-1 lg:space-y-0 space-y-3 gap-5 justify-between">
+        <div>
+          <p class="uppercase text-xs text-gray-700 dark:text-gray-400 font-semibold">Admin</p>
+          <h1 class="text-2xl text-gray-900 dark:text-gray-200 font-medium">
+            Escalation Tiers
+          </h1>
+        </div>
+        <div class="flex gap-2">
+          <button
+            @click="createDefaultTiers"
+            class="bg-white dark:bg-gray-800 hover:border-gray-200 dark:hover:bg-gray-700 dark:text-white dark:border-gray-700 border rounded py-2 px-5 flex items-center gap-2"
+          >
+            <Icon icon="mdi:refresh" class="text-lg" />
+            Create Defaults
+          </button>
+          <button
+            @click="showCreateModal = true"
+            class="bg-primary border flex gap-2 text-white hover:bg-primary/80 dark:border-gray-700 rounded py-3 px-5"
+          >
+            <span class="icon text-2xl"><Icon icon="ic:twotone-plus" /></span>
+            <span class="text">Add Tier</span>
+          </button>
+        </div>
       </div>
     </div>
 
     <!-- Tiers List -->
-    <div v-if="loading" class="p-8 text-center">
-      <Icon icon="mdi:loading" class="animate-spin text-2xl text-gray-400" />
-      <p class="mt-2 text-sm text-gray-500">Loading escalation tiers...</p>
+    <div v-if="loading" class="p-8 text-center mt-6">
+      <Icon icon="mdi:loading" class="animate-spin text-6xl text-gray-300 dark:text-gray-600 mx-auto" />
+      <p class="mt-2 text-gray-500 dark:text-gray-400">Loading escalation tiers...</p>
     </div>
 
-    <div v-else-if="tiers.length === 0" class="p-8 text-center">
-      <Icon icon="mdi:layers" class="text-4xl text-gray-300 mx-auto" />
-      <p class="mt-2 text-sm text-gray-500">No escalation tiers found.</p>
+    <div v-else-if="tiers.length === 0" class="p-8 text-center mt-6">
+      <Icon icon="mdi:layers" class="text-6xl text-gray-300 dark:text-gray-600 mx-auto" />
+      <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">No escalation tiers found.</p>
       <button
         @click="createDefaultTiers"
-        class="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+        class="mt-4 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/80"
       >
         Create Default Tiers
       </button>
     </div>
 
-    <div v-else class="space-y-4">
+    <div v-else class="space-y-4 mt-6">
       <div
         v-for="tier in sortedTiers"
         :key="tier.id"
         :class="[
           'p-4 border rounded-lg',
-          tier.active ? 'border-blue-200 bg-blue-50' : 'border-gray-200 bg-gray-50'
+          tier.active ? 'border-blue-200 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-800' : 'border-gray-200 bg-gray-50 dark:bg-gray-700 dark:border-gray-600'
         ]"
       >
         <div class="flex justify-between items-start">
@@ -52,35 +60,35 @@
               <div class="flex items-center justify-center w-8 h-8 rounded-full bg-blue-600 text-white font-bold">
                 {{ tier.level }}
               </div>
-              <h3 class="font-semibold text-gray-900">{{ tier.name }}</h3>
+              <h3 class="font-semibold text-gray-900 dark:text-gray-200">{{ tier.name }}</h3>
               <span
                 :class="[
                   'px-2 py-1 text-xs rounded-full',
-                  tier.active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'
+                  tier.active ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400'
                 ]"
               >
                 {{ tier.active ? 'Active' : 'Inactive' }}
               </span>
-              <span v-if="tier.requiredRole" class="px-2 py-1 text-xs bg-purple-100 text-purple-800 rounded-full">
+              <span v-if="tier.requiredRole" class="px-2 py-1 text-xs bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400 rounded-full">
                 {{ tier.requiredRole }}
               </span>
             </div>
-            <p class="mt-1 text-sm text-gray-600">{{ tier.description }}</p>
+            <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">{{ tier.description }}</p>
             <div class="mt-3 grid grid-cols-2 gap-4 text-sm">
               <div>
-                <span class="font-medium text-gray-700">Timeout:</span>
-                <span class="ml-2 text-orange-600 font-semibold">{{ formatTimeout(tier.timeoutSeconds) }}</span>
+                <span class="font-medium text-gray-700 dark:text-gray-300">Timeout:</span>
+                <span class="ml-2 text-orange-600 dark:text-orange-400 font-semibold">{{ formatTimeout(tier.timeoutSeconds) }}</span>
               </div>
               <div>
-                <span class="font-medium text-gray-700">Created:</span>
-                <span class="ml-2 text-gray-600">{{ formatDate(tier.createdAt) }}</span>
+                <span class="font-medium text-gray-700 dark:text-gray-300">Created:</span>
+                <span class="ml-2 text-gray-600 dark:text-gray-400">{{ formatDate(tier.createdAt) }}</span>
               </div>
             </div>
           </div>
           <div class="flex space-x-2 ml-4">
             <button
               @click="editTier(tier)"
-              class="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
+              class="p-2 text-blue-600 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded-lg transition-colors"
             >
               <Icon icon="mdi:pencil" class="text-lg" />
             </button>
@@ -88,14 +96,14 @@
               @click="toggleTierStatus(tier)"
               :class="[
                 'p-2 rounded-lg transition-colors',
-                tier.active ? 'text-green-600 hover:bg-green-100' : 'text-gray-600 hover:bg-gray-200'
+                tier.active ? 'text-green-600 hover:bg-green-100 dark:hover:bg-green-900/30' : 'text-gray-600 hover:bg-gray-200 dark:hover:bg-gray-600'
               ]"
             >
               <Icon :icon="tier.active ? 'mdi:toggle-switch' : 'mdi:toggle-switch-off'" class="text-lg" />
             </button>
             <button
               @click="deleteTier(tier.id)"
-              class="p-2 text-red-600 hover:bg-red-100 rounded-lg transition-colors"
+              class="p-2 text-red-600 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg transition-colors"
             >
               <Icon icon="mdi:delete" class="text-lg" />
             </button>
@@ -109,58 +117,58 @@
       v-if="showCreateModal || showEditModal"
       class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
     >
-      <div class="bg-white rounded-lg p-6 w-full max-w-lg">
-        <h2 class="text-xl font-bold mb-4">
+      <div class="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-lg border dark:border-gray-700">
+        <h2 class="text-xl font-bold mb-4 text-gray-900 dark:text-gray-200">
           {{ showCreateModal ? 'Create Escalation Tier' : 'Edit Escalation Tier' }}
         </h2>
         <form @submit.prevent="saveTier">
           <div class="space-y-4">
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Level</label>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Level</label>
               <input
                 v-model.number="currentTier.level"
                 type="number"
-                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500"
                 required
                 min="1"
               />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Name</label>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Name</label>
               <input
                 v-model="currentTier.name"
                 type="text"
-                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500"
                 required
               />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description</label>
               <textarea
                 v-model="currentTier.description"
-                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500"
                 rows="2"
               />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Timeout (seconds)</label>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Timeout (seconds)</label>
               <input
                 v-model.number="currentTier.timeoutSeconds"
                 type="number"
-                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500"
                 required
                 min="60"
               />
-              <p class="mt-1 text-xs text-gray-500">
+              <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
                 {{ formatTimeout(currentTier.timeoutSeconds) }}
               </p>
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Required Role (optional)</label>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Required Role (optional)</label>
               <input
                 v-model="currentTier.requiredRole"
                 type="text"
-                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500"
                 placeholder="e.g., TEAM_LEAD, SUPERVISOR"
               />
             </div>
@@ -169,22 +177,22 @@
                 v-model="currentTier.active"
                 type="checkbox"
                 id="active"
-                class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                class="w-4 h-4 text-blue-600 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 dark:bg-gray-700"
               />
-              <label for="active" class="ml-2 text-sm text-gray-700">Active</label>
+              <label for="active" class="ml-2 text-sm text-gray-700 dark:text-gray-300">Active</label>
             </div>
           </div>
           <div class="flex justify-end space-x-2 mt-6">
             <button
               type="button"
               @click="closeModal"
-              class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300"
+              class="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600"
             >
               Cancel
             </button>
             <button
               type="submit"
-              class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/80"
             >
               Save
             </button>

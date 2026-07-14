@@ -1,10 +1,6 @@
 package com.chatbot.shared.penny.core.config;
 
-import com.chatbot.spokes.facebook.connection.service.FacebookConnectionService;
-import com.chatbot.spokes.facebook.webhook.service.ChatbotProviderFactory;
 import com.chatbot.spokes.facebook.webhook.service.ChatbotProviderService;
-import com.chatbot.core.message.store.service.ConversationService;
-import com.chatbot.core.message.store.service.MessageService;
 import com.chatbot.shared.penny.analytics.AnalyticsCollector;
 import com.chatbot.shared.penny.context.ContextManager;
 import com.chatbot.shared.penny.context.storage.DatabaseContextStorage;
@@ -27,7 +23,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.scheduling.annotation.EnableScheduling;
-import org.springframework.scheduling.annotation.Scheduled;
+
 
 import java.util.List;
 
@@ -111,12 +107,12 @@ public class PennyConfig {
     @Bean
     @ConditionalOnMissingBean
     public ProviderSelector providerSelector(PennyProperties properties,
-                                          ChatbotProviderFactory providerFactory) {
-        log.info("🎯 Initializing Provider Selector...");
-        
-        ProviderSelector providerSelector = new ProviderSelector();
-        
-        log.info("✅ Provider Selector initialized with strategy: {}", 
+                                             List<com.chatbot.spokes.facebook.webhook.service.ChatbotProviderService> chatbotProviders) {
+        log.info("🎯 Initializing Provider Selector with {} providers...", chatbotProviders.size());
+
+        ProviderSelector providerSelector = new ProviderSelector(chatbotProviders);
+
+        log.info("✅ Provider Selector initialized with strategy: {}",
             properties.getProvider().getSelectionStrategy());
         return providerSelector;
     }
@@ -126,10 +122,10 @@ public class PennyConfig {
      */
     @Bean
     @ConditionalOnMissingBean
-    public ErrorHandler errorHandler(PennyProperties properties) {
+    public ErrorHandler errorHandler(PennyProperties properties, RedisTemplate<String, Object> redisTemplate) {
         log.info("⚠️ Initializing Error Handler...");
         
-        ErrorHandler errorHandler = new ErrorHandler(properties);
+        ErrorHandler errorHandler = new ErrorHandler(properties, redisTemplate);
         
         log.info("✅ Error Handler initialized (Circuit breaker: {}, Fallback: {})", 
             properties.getError().isCircuitbreakerEnabled(),
@@ -144,10 +140,11 @@ public class PennyConfig {
     @ConditionalOnMissingBean
     public BotRuleManager botRuleManager(BotRuleRepository botRuleRepository,
                                         ResponseTemplateRepository responseTemplateRepository,
-                                        com.fasterxml.jackson.databind.ObjectMapper objectMapper) {
-        log.info("� Initializing Bot Rule Manager...");
+                                        com.fasterxml.jackson.databind.ObjectMapper objectMapper,
+                                        org.springframework.web.client.RestTemplate restTemplate) {
+        log.info("📐 Initializing Bot Rule Manager...");
         
-        BotRuleManager botRuleManager = new BotRuleManager(botRuleRepository, responseTemplateRepository, objectMapper);
+        BotRuleManager botRuleManager = new BotRuleManager(botRuleRepository, responseTemplateRepository, objectMapper, restTemplate);
         
         log.info("✅ Bot Rule Manager initialized successfully");
         return botRuleManager;

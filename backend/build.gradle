@@ -154,6 +154,19 @@ dependencies {
     // -------------------------------
     implementation 'io.micrometer:micrometer-tracing-bridge-brave'
     implementation 'io.zipkin.reporter2:zipkin-reporter-brave'
+
+    // -------------------------------
+    // Penny Bot — AI / LLM
+    // -------------------------------
+    // OpenAI Java SDK (GPT-4o, Embeddings)
+    implementation 'com.openai:openai-java:2.9.0'
+
+    // pgvector — Vector similarity search trong PostgreSQL
+    implementation 'com.pgvector:pgvector:0.1.6'
+
+    // Bucket4j — Rate limiting (Redis-backed)
+    implementation 'com.bucket4j:bucket4j-core:8.10.1'
+    implementation 'com.bucket4j:bucket4j-redis:8.10.1'
 }
 
 tasks.named('test') {

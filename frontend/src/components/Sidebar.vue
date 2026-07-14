@@ -129,6 +129,14 @@
                 >
                   {{ $t('sidebar.rules') }}
                 </router-link>
+                <hr class="my-1 border-gray-200 dark:border-gray-700" />
+                <router-link
+                  to="/penny/metrics"
+                  @click.stop
+                  class="w-full text-left block rounded-md p-3 hover:bg-gray-200 dark:hover:bg-gray-700"
+                >
+                  Metrics
+                </router-link>
               </template>
             </menu-accordion>
           </div>
