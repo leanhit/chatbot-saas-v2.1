@@ -13,9 +13,12 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 
 /**
  * Error Handler - Xử lý lỗi và fallback strategies
+ * Supports retry with exponential backoff
  */
 @Service
 @Slf4j
@@ -26,6 +29,8 @@ public class ErrorHandler {
     private final RedisTemplate<String, Object> redisTemplate;
     
     private static final String CIRCUIT_BREAKER_KEY_PREFIX = "penny:circuitbreaker:";
+    private static final long INITIAL_RETRY_DELAY_MS = 100;
+    private static final double BACKOFF_MULTIPLIER = 2.0;
     
     public ErrorHandler(PennyProperties properties, RedisTemplate<String, Object> redisTemplate) {
         this.properties = properties;
@@ -418,5 +423,56 @@ public class ErrorHandler {
         
         public Instant getNextAttemptTime() { return nextAttemptTime; }
         public void setNextAttemptTime(Instant nextAttemptTime) { this.nextAttemptTime = nextAttemptTime; }
+    }
+    
+    /**
+     * Execute operation with retry and exponential backoff
+     */
+    public <T> T executeWithRetry(Supplier<T> operation, String operationName) {
+        int maxRetries = properties.getError().getMaxRetries();
+        long currentDelay = INITIAL_RETRY_DELAY_MS;
+        
+        for (int attempt = 0; attempt <= maxRetries; attempt++) {
+            try {
+                if (attempt > 0) {
+                    log.info("🔄 Retry attempt {} for operation: {}", attempt, operationName);
+                    Thread.sleep(currentDelay);
+                    currentDelay = (long) (currentDelay * BACKOFF_MULTIPLIER);
+                }
+                
+                T result = operation.get();
+                
+                if (attempt > 0) {
+                    log.info("✅ Operation succeeded after {} retries: {}", attempt, operationName);
+                }
+                
+                return result;
+                
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                log.error("❌ Retry interrupted for operation: {}", operationName);
+                throw new RuntimeException("Retry interrupted", e);
+            } catch (Exception e) {
+                log.warn("⚠️ Attempt {} failed for operation {}: {}", 
+                    attempt, operationName, e.getMessage());
+                
+                if (attempt == maxRetries) {
+                    log.error("❌ All retry attempts exhausted for operation: {}", operationName);
+                    throw new RuntimeException("Operation failed after " + maxRetries + " retries", e);
+                }
+            }
+        }
+        
+        throw new RuntimeException("Operation failed after retries");
+    }
+    
+    /**
+     * Execute operation with retry and exponential backoff (async version)
+     */
+    public <T> java.util.concurrent.CompletableFuture<T> executeWithRetryAsync(
+            java.util.function.Supplier<T> operation, String operationName) {
+        return java.util.concurrent.CompletableFuture.supplyAsync(() -> 
+            executeWithRetry(operation, operationName)
+        );
     }
 }

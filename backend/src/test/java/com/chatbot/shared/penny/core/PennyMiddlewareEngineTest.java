@@ -11,6 +11,8 @@ import com.chatbot.shared.penny.routing.dto.IntentAnalysisResult;
 import com.chatbot.shared.penny.routing.dto.ProviderSelection;
 import com.chatbot.shared.penny.rules.CustomLogicEngine;
 import com.chatbot.shared.penny.service.IntentAnalyzer;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -39,12 +41,14 @@ class PennyMiddlewareEngineTest {
     @Mock private CustomLogicEngine customLogicEngine;
 
     private PennyMiddlewareEngine engine;
+    private MeterRegistry meterRegistry;
 
     @BeforeEach
     void setUp() {
+        meterRegistry = new SimpleMeterRegistry();
         engine = new PennyMiddlewareEngine(
             contextManager, intentAnalyzer, providerSelector,
-            errorHandler, analyticsCollector, customLogicEngine);
+            errorHandler, analyticsCollector, customLogicEngine, meterRegistry);
 
         // ErrorHandler should always return an error MiddlewareResponse for any exception
         lenient().when(errorHandler.handleError(any(Exception.class), any(), anyLong()))

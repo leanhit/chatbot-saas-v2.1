@@ -17,6 +17,8 @@ public class PennyProperties {
     private Context context = new Context();
     private Analytics analytics = new Analytics();
     private Error error = new Error();
+    private Rag rag = new Rag();
+    private ResponseCache responseCache = new ResponseCache();
     
     @Data
     public static class Middleware {
@@ -98,5 +100,21 @@ public class PennyProperties {
         private Duration timeoutDuration = Duration.ofSeconds(30);
         private Duration recoveryDuration = Duration.ofSeconds(60);
         private int failureThreshold = 5;
+    }
+    
+    @Data
+    public static class Rag {
+        private boolean batchEnabled = false;
+        private int batchSize = 10;
+        private Duration cacheTtl = Duration.ofHours(24);
+        private boolean circuitBreakerFallbackEnabled = true;
+    }
+    
+    @Data
+    public static class ResponseCache {
+        private boolean enabled = true;
+        private Duration ttl = Duration.ofMinutes(30);
+        private int maxSize = 1000;
+        private boolean cacheCommonQueries = true;
     }
 }

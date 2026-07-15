@@ -169,6 +169,29 @@ public class PennyBotController {
         
         return ResponseEntity.ok(response);
     }
+
+    /**
+     * Get single bot by ID
+     */
+    @GetMapping("/{botId}")
+    public ResponseEntity<Map<String, Object>> getBotById(@PathVariable String botId) {
+        log.info("🔍 Getting bot details for ID: {}", botId);
+        
+        UUID botUuid = UUID.fromString(botId);
+        PennyBot bot = pennyBotManager.getBot(botUuid);
+        
+        Map<String, Object> botMap = new java.util.HashMap<>();
+        botMap.put("botId", bot.getId().toString());
+        botMap.put("botName", bot.getBotName());
+        botMap.put("botType", bot.getBotType().name());
+        botMap.put("pennyBotId", bot.getPennyBotId());
+        botMap.put("isActive", bot.isActive());
+        botMap.put("isEnabled", bot.isEnabled());
+        botMap.put("createdAt", bot.getCreatedAt().toString());
+        botMap.put("description", bot.getDescription() != null ? bot.getDescription() : "");
+        
+        return ResponseEntity.ok(botMap);
+    }
     
     /**
      * Get bot health status

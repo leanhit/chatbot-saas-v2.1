@@ -14,6 +14,7 @@ import com.chatbot.shared.penny.rules.ResponseTemplateManager;
 import com.chatbot.shared.penny.rules.ResponseTemplateRepository;
 import com.chatbot.shared.penny.service.IntentAnalyzer;
 import com.chatbot.shared.penny.routing.ProviderSelector;
+import io.micrometer.core.instrument.MeterRegistry;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -47,7 +48,8 @@ public class PennyConfig {
             ProviderSelector providerSelector,
             ErrorHandler errorHandler,
             AnalyticsCollector analyticsCollector,
-            CustomLogicEngine customLogicEngine) {
+            CustomLogicEngine customLogicEngine,
+            MeterRegistry meterRegistry) {
         
         log.info("🚀 Initializing Penny Middleware Engine...");
         
@@ -57,7 +59,8 @@ public class PennyConfig {
             providerSelector,
             errorHandler,
             analyticsCollector,
-            customLogicEngine
+            customLogicEngine,
+            meterRegistry
         );
         
         log.info("✅ Penny Middleware Engine initialized successfully");

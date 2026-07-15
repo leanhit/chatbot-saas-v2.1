@@ -1,5 +1,6 @@
 package com.chatbot.shared.penny.kb;
 
+import com.chatbot.shared.penny.core.config.PennyProperties;
 import com.chatbot.shared.penny.security.ApiKeyManager;
 import com.openai.client.OpenAIClient;
 import com.openai.client.okhttp.OpenAIOkHttpClient;
@@ -20,13 +21,17 @@ import org.springframework.stereotype.Service;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.function.Supplier;
 
 /**
  * EmbeddingService — Generate and cache text embeddings using OpenAI API
  *
  * Uses text-embedding-3-small model (1536 dimensions) for vector similarity search.
- * Caches embeddings in Redis with 7-day TTL to reduce API calls.
+ * Caches embeddings in Redis with configurable TTL to reduce API calls.
+ * Supports batch processing with parallel calls when enabled.
  */
 @Service
 @RequiredArgsConstructor
@@ -36,18 +41,17 @@ public class EmbeddingService {
     @Value("${penny.rag.embedding-model:text-embedding-3-small}")
     private String embeddingModel;
 
-    @Value("${penny.rag.cache.ttl-days:7}")
-    private int cacheTtlDays;
-
     private final RedisTemplate<String, Object> redisTemplate;
     private final ApiKeyManager apiKeyManager;
     private final CircuitBreakerRegistry circuitBreakerRegistry;
     private final RetryRegistry retryRegistry;
+    private final PennyProperties pennyProperties;
 
     private OpenAIClient openAIClient;
     private boolean enabled = false;
     private CircuitBreaker circuitBreaker;
     private Retry retry;
+    private ExecutorService batchExecutor;
 
     @PostConstruct
     public void init() {
@@ -64,6 +68,14 @@ public class EmbeddingService {
         // Initialize circuit breaker and retry
         this.circuitBreaker = circuitBreakerRegistry.circuitBreaker("embeddingService");
         this.retry = retryRegistry.retry("embeddingService");
+        
+        // Initialize batch executor for parallel processing
+        if (pennyProperties.getRag().isBatchEnabled()) {
+            this.batchExecutor = Executors.newFixedThreadPool(
+                Math.min(pennyProperties.getRag().getBatchSize(), 10)
+            );
+            log.info("✅ Batch embedding enabled with pool size: {}", pennyProperties.getRag().getBatchSize());
+        }
         
         log.info("✅ EmbeddingService initialized with model: {}", embeddingModel);
     }
@@ -126,7 +138,27 @@ public class EmbeddingService {
                 )
             );
 
-            float[] embedding = embeddingSupplier.get();
+            float[] embedding;
+            try {
+                embedding = embeddingSupplier.get();
+            } catch (Exception e) {
+                // Circuit breaker fallback: try to return cached embedding
+                if (pennyProperties.getRag().isCircuitBreakerFallbackEnabled()) {
+                    log.warn("⚠️ Circuit breaker open, attempting fallback to cached embedding");
+                    @SuppressWarnings("unchecked")
+                    List<Double> cachedFallback = (List<Double>) redisTemplate.opsForValue().get(cacheKey);
+                    if (cachedFallback != null && !cachedFallback.isEmpty()) {
+                        log.info("✅ Fallback to cached embedding successful");
+                        float[] cachedEmbedding = new float[cachedFallback.size()];
+                        for (int i = 0; i < cachedFallback.size(); i++) {
+                            cachedEmbedding[i] = cachedFallback.get(i).floatValue();
+                        }
+                        return cachedEmbedding;
+                    }
+                    log.warn("⚠️ No cached embedding available for fallback");
+                }
+                throw e;
+            }
 
             log.info("✅ Generated embedding for text ({} chars), dimensions: {}", text.length(), embedding.length);
 
@@ -138,7 +170,7 @@ public class EmbeddingService {
             redisTemplate.opsForValue().set(
                 cacheKey,
                 redisEmbeddingList,
-                Duration.ofDays(cacheTtlDays)
+                pennyProperties.getRag().getCacheTtl()
             );
 
             return embedding;
@@ -151,8 +183,8 @@ public class EmbeddingService {
 
     /**
      * Generate embeddings for multiple texts (batch processing)
-     * For now, calls generateEmbedding() for each text individually
-     * TODO: Optimize with true batch API when OpenAI SDK supports it properly
+     * Uses parallel processing when batch mode is enabled
+     * Falls back to sequential processing when batch mode is disabled
      */
     public List<float[]> generateEmbeddingsBatch(List<String> texts) {
         if (!enabled) {
@@ -164,14 +196,68 @@ public class EmbeddingService {
             return List.of();
         }
 
+        // Use parallel processing if batch mode is enabled
+        if (pennyProperties.getRag().isBatchEnabled() && batchExecutor != null) {
+            return generateEmbeddingsBatchParallel(texts);
+        }
+
+        // Sequential processing (fallback)
         List<float[]> embeddings = new ArrayList<>();
-        
         for (String text : texts) {
             float[] embedding = generateEmbedding(text);
             embeddings.add(embedding);
         }
         
-        log.info("✅ Generated {} embeddings (batch)", embeddings.size());
+        log.info("✅ Generated {} embeddings (sequential batch)", embeddings.size());
+        return embeddings;
+    }
+
+    /**
+     * Generate embeddings in parallel using thread pool
+     */
+    private List<float[]> generateEmbeddingsBatchParallel(List<String> texts) {
+        List<CompletableFuture<float[]>> futures = new ArrayList<>();
+        
+        for (String text : texts) {
+            CompletableFuture<float[]> future = CompletableFuture.supplyAsync(
+                () -> generateEmbedding(text),
+                batchExecutor
+            );
+            futures.add(future);
+        }
+        
+        // Wait for all futures to complete
+        CompletableFuture<Void> allFutures = CompletableFuture.allOf(
+            futures.toArray(new CompletableFuture[0])
+        );
+        
+        try {
+            allFutures.join();
+            
+            List<float[]> embeddings = new ArrayList<>();
+            for (CompletableFuture<float[]> future : futures) {
+                embeddings.add(future.get());
+            }
+            
+            log.info("✅ Generated {} embeddings (parallel batch)", embeddings.size());
+            return embeddings;
+            
+        } catch (Exception e) {
+            log.error("❌ Error in parallel batch embedding generation: {}", e.getMessage(), e);
+            // Fallback to sequential processing
+            return generateEmbeddingsBatchSequential(texts);
+        }
+    }
+
+    /**
+     * Sequential batch processing (fallback)
+     */
+    private List<float[]> generateEmbeddingsBatchSequential(List<String> texts) {
+        List<float[]> embeddings = new ArrayList<>();
+        for (String text : texts) {
+            float[] embedding = generateEmbedding(text);
+            embeddings.add(embedding);
+        }
         return embeddings;
     }
 

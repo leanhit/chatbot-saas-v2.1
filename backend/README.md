@@ -23,7 +23,7 @@ Tất cả tài liệu kỹ thuật và hướng dẫn vận hành hệ thống 
 ## 🚀 Hướng dẫn khởi chạy nhanh (Quick Start)
 
 ### Yêu cầu hệ thống
-*   Java 17 (JDK 17) hoặc cao hơn.
+*   Java 21 (JDK 21) hoặc cao hơn.
 *   PostgreSQL & Redis.
 *   RabbitMQ.
 
@@ -32,3 +32,53 @@ Tất cả tài liệu kỹ thuật và hướng dẫn vận hành hệ thống 
 ./gradlew bootRun
 ```
 Ứng dụng sẽ tự động chạy trên cổng `8080` và tài liệu API Swagger sẽ có sẵn tại: `http://localhost:8080/swagger-ui/index.html`.
+
+## 🤖 Penny Package - Intelligent Middleware
+
+The Penny package provides intelligent routing, context management, and analytics for the chatbot system.
+
+### Key Features (v1.5.0)
+- **Unicode-aware Vietnamese Intent Analysis**: Case-insensitive patterns for accented and unaccented Vietnamese text
+- **Cost-aware Provider Selection**: Estimate and compare costs across different AI providers
+- **Enhanced Monitoring**: Spring Actuator metrics integration for request tracking and error monitoring
+- **Admin Metrics Endpoints**: Comprehensive monitoring APIs for provider health and cost metrics
+- **Async Processing**: CompletableFuture support for non-blocking intent analysis
+- **Response Caching**: Caffeine-based caching for common query responses
+- **Rate Limiting**: Bucket4j token bucket algorithm for API endpoint protection
+- **Retry with Exponential Backoff**: Resilient error handling with automatic retries
+
+### Configuration
+
+Enable Penny features in `application.yml`:
+```yaml
+penny:
+  enabled: true
+  analytics:
+    enabled: true
+  provider:
+    selection-strategy: hybrid
+```
+
+### API Endpoints
+
+#### Admin Metrics
+- `GET /api/penny/admin/metrics` - System-wide metrics
+- `GET /api/penny/admin/metrics/providers` - Provider health status
+- `GET /api/penny/admin/metrics/providers/costs` - Provider cost comparison
+
+#### Monitoring Metrics
+- `penny_requests_total` - Total requests processed
+- `penny_errors_total` - Total processing errors
+
+Access metrics via Actuator: `GET /actuator/prometheus`
+
+### Testing
+
+Run Penny-specific tests:
+```bash
+./gradlew test --tests "*penny*"
+```
+
+### Documentation
+
+See [docs/api/penny-hub.md](docs/api/penny-hub.md) for complete API documentation.

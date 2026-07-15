@@ -4,13 +4,16 @@ import com.chatbot.shared.penny.context.ConversationContext;
 import com.chatbot.shared.penny.dto.request.MiddlewareRequest;
 import com.chatbot.shared.penny.routing.dto.IntentAnalysisResult;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.regex.Pattern;
 
 /**
  * Intent Analyzer - Phân tích ý định người dùng và trích xuất entities
+ * Supports async processing for improved performance
  */
 @Service
 @Slf4j
@@ -54,6 +57,24 @@ public class IntentAnalyzer {
         // Determine message type
         String messageType = determineMessageType(message, unaccentedMessage, entities);
         
+        return buildResult(request, primaryIntent, confidence, entities, allIntents, messageType, message);
+    }
+
+    /**
+     * Async analyze intent and entities from message
+     * Returns CompletableFuture for non-blocking processing
+     */
+    @Async
+    public CompletableFuture<IntentAnalysisResult> analyzeAsync(MiddlewareRequest request, ConversationContext context) {
+        return CompletableFuture.completedFuture(analyze(request, context));
+    }
+
+    /**
+     * Build IntentAnalysisResult from analysis components
+     */
+    private IntentAnalysisResult buildResult(MiddlewareRequest request, String primaryIntent, 
+            double confidence, Map<String, Object> entities, List<String> allIntents, 
+            String messageType, String message) {
         // Calculate complexity
         String complexity = calculateComplexity(message, entities, allIntents);
         
@@ -136,13 +157,35 @@ public class IntentAnalyzer {
             return "price_inquiry";
         }
         
+        // Check for price keywords in message to prioritize price_inquiry over product_inquiry
+        // This handles cases like "sản phẩm này giá bao nhiêu" where both product and price keywords exist
+        if (message.matches(".*(giá|bao nhiêu|price|cost).*") ||
+            unaccentedMessage.matches(".*(gia|bao nhieu|price|cost).*")) {
+            return "price_inquiry";
+        }
+        
         if (entities.containsKey("products")) {
             return "product_inquiry";
         }
         
-        // Check intent patterns
+        // Check intent patterns - prioritize specific intents
+        // Check customer support first
+        if (matchesIntent("customer_support", message, unaccentedMessage)) {
+            return "customer_support";
+        }
+        
+        // Check price inquiry before product inquiry to avoid conflicts
+        if (matchesIntent("price_inquiry", message, unaccentedMessage)) {
+            return "price_inquiry";
+        }
+        
+        // Check other intents
         for (Map.Entry<String, List<Pattern>> entry : VIETNAMESE_INTENT_PATTERNS.entrySet()) {
             String intent = entry.getKey();
+            if (intent.equals("customer_support") || intent.equals("price_inquiry")) {
+                continue; // Already checked above
+            }
+            
             List<Pattern> patterns = entry.getValue();
             
             for (Pattern pattern : patterns) {
@@ -162,6 +205,21 @@ public class IntentAnalyzer {
         
         // Default intent
         return "general_chat";
+    }
+    
+    /**
+     * Helper method to check if message matches a specific intent
+     */
+    private boolean matchesIntent(String intent, String message, String unaccentedMessage) {
+        List<Pattern> patterns = VIETNAMESE_INTENT_PATTERNS.get(intent);
+        if (patterns == null) return false;
+        
+        for (Pattern pattern : patterns) {
+            if (pattern.matcher(message).find() || pattern.matcher(unaccentedMessage).find()) {
+                return true;
+            }
+        }
+        return false;
     }
     
     /**
@@ -256,9 +314,10 @@ public class IntentAnalyzer {
     private String calculateComplexity(String message, Map<String, Object> entities, List<String> intents) {
         int complexityScore = 0;
         
-        // Message length factor
-        if (message.length() > 50) complexityScore += 1;
-        if (message.length() > 100) complexityScore += 1;
+        // Message length factor - increased scoring for longer messages
+        if (message.length() > 50) complexityScore += 2;
+        if (message.length() >= 100) complexityScore += 3;
+        if (message.length() > 200) complexityScore += 3;
         
         // Entity complexity
         complexityScore += Math.min(entities.size(), 3);
@@ -336,44 +395,52 @@ public class IntentAnalyzer {
     // Initialize patterns
     
     private static void initializeVietnamesePatterns() {
-        // Order related intents
+        // Order related intents - Unicode-aware with case-insensitive flag
         VIETNAMESE_INTENT_PATTERNS.put("order_inquiry", Arrays.asList(
-            Pattern.compile(".*\\b(kiểm tra|tình trạng|thông tin)\\s+(đơn|order)\\b.*"),
-            Pattern.compile(".*\\b(đơn hàng|order)\\s+(của tôi|của mình)\\b.*"),
-            Pattern.compile(".*\\b(mã|số)\\s+(đơn|order)\\b.*")
+            Pattern.compile(".*\\b(kiểm tra|tình trạng|thông tin)\\s+(đơn|order)\\b.*", Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE),
+            Pattern.compile(".*\\b(đơn hàng|order)\\s+(của tôi|của mình)\\b.*", Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE),
+            Pattern.compile(".*\\b(mã|số)\\s+(đơn|order)\\b.*", Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE),
+            Pattern.compile(".*\\b(kiem tra|tinh trang|thong tin)\\s+(don|order)\\b.*", Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE)
         ));
         
-        // Product inquiry intents
+        // Product inquiry intents - Unicode-aware with case-insensitive flag
         VIETNAMESE_INTENT_PATTERNS.put("product_inquiry", Arrays.asList(
-            Pattern.compile(".*\\b(thông tin|chi tiết|giá)\\s+(sản phẩm|sp)\\b.*"),
-            Pattern.compile(".*\\b(mua|đặt|order)\\s+(sản phẩm|sp|hàng)\\b.*"),
-            Pattern.compile(".*\\b(sản phẩm|sp|hàng)\\s+(này|kia|đó)\\b.*")
+            Pattern.compile(".*\\b(thông tin|chi tiết)\\s+(sản phẩm|sp|san pham)\\b.*", Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE),
+            Pattern.compile(".*\\b(mua|đặt|order)\\s+(sản phẩm|sp|hàng|hang)\\b.*", Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE),
+            Pattern.compile(".*\\b(sản phẩm|sp|hàng|san pham|hang)\\s+(này|kia|đó)\\b.*", Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE),
+            Pattern.compile(".*\\b(thong tin|chi tiet)\\s+(san pham|sp)\\b.*", Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE)
         ));
         
-        // Price inquiry intents
+        // Price inquiry intents - Unicode-aware with case-insensitive flag
         VIETNAMESE_INTENT_PATTERNS.put("price_inquiry", Arrays.asList(
-            Pattern.compile(".*\\b(giá|giá bao nhiêu|bao nhiêu tiền)\\b.*"),
-            Pattern.compile(".*\\b(bao nhiêu|giá)\\s+(tiền|vnđ|đ)\\b.*"),
-            Pattern.compile(".*\\b(cost|price)\\b.*")
+            Pattern.compile(".*(giá bao nhiêu|bao nhiêu tiền|giá là bao nhiêu).*", Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE),
+            Pattern.compile(".*\\b(giá)\\s+(sản phẩm|sp|hàng|san pham|hang)\\b.*", Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE),
+            Pattern.compile(".*\\b(sản phẩm|sp|hàng|san pham|hang)\\s+(giá)\\b.*", Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE),
+            Pattern.compile(".*\\b(bao nhiêu|giá)\\s+(tiền|vnđ|đ)\\b.*", Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE),
+            Pattern.compile(".*\\b(cost|price)\\b.*", Pattern.CASE_INSENSITIVE),
+            Pattern.compile(".*(gia bao nhieu|bao nhieu tien|gia la bao nhieu).*", Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE)
         ));
         
-        // Customer support intents
+        // Customer support intents - Unicode-aware with case-insensitive flag
         VIETNAMESE_INTENT_PATTERNS.put("customer_support", Arrays.asList(
-            Pattern.compile(".*\\b(hỗ trợ|trợ giúp|help)\\b.*"),
-            Pattern.compile(".*\\b(liên hệ|contact)\\s+(nhân viên|admin|support)\\b.*"),
-            Pattern.compile(".*\\b(khó khăn|vấn đề|lỗi)\\b.*")
+            Pattern.compile(".*(tôi cần hỗ trợ|cần hỗ trợ|hỗ trợ|trợ giúp|help).*", Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE),
+            Pattern.compile(".*\\b(liên hệ|contact)\\s+(nhân viên|admin|support)\\b.*", Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE),
+            Pattern.compile(".*\\b(khó khăn|vấn đề|lỗi|gặp lỗi)\\b.*", Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE),
+            Pattern.compile(".*(toi can ho tro|can ho tro|ho tro|tro giup|help).*", Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE)
         ));
         
-        // Greeting intents
+        // Greeting intents - Unicode-aware with case-insensitive flag
         VIETNAMESE_INTENT_PATTERNS.put("greeting", Arrays.asList(
-            Pattern.compile(".*\\b(chào|xin chào|hello|hi)\\b.*"),
-            Pattern.compile(".*\\b(chào buổi sáng|chào buổi chiều|chào buổi tối)\\b.*")
+            Pattern.compile(".*\\b(chào|xin chào|hello|hi|xin chao|chao)\\b.*", Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE),
+            Pattern.compile(".*\\b(chào buổi sáng|chào buổi chiều|chào buổi tối)\\b.*", Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE),
+            Pattern.compile(".*\\b(chao buoi sang|chao buoi chieu|chao buoi toi)\\b.*", Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE)
         ));
         
-        // Gratitude intents
+        // Gratitude intents - Unicode-aware with case-insensitive flag
         VIETNAMESE_INTENT_PATTERNS.put("gratitude", Arrays.asList(
-            Pattern.compile(".*\\b(cảm ơn|thanks|thank|cảm on)\\b.*"),
-            Pattern.compile(".*\\b(good|tuyệt vời|hay)\\b.*")
+            Pattern.compile(".*\\b(cảm ơn|thanks|thank|cảm on)\\b.*", Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE),
+            Pattern.compile(".*\\b(good|tuyệt vời|hay)\\b.*", Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE),
+            Pattern.compile(".*\\b(cam on|thanks|thank)\\b.*", Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE)
         ));
     }
     

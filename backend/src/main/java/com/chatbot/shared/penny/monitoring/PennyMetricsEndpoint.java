@@ -3,6 +3,7 @@ package com.chatbot.shared.penny.monitoring;
 import com.chatbot.shared.penny.kb.KnowledgeArticleRepository;
 import com.chatbot.shared.penny.repository.PennyBotRepository;
 import com.chatbot.shared.penny.routing.ProviderSelector;
+import com.chatbot.shared.security.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -81,8 +82,9 @@ public class PennyMetricsEndpoint {
         });
         
         // Knowledge base count for this bot
-        // Note: tenantId should come from security context
-        Long tenantId = 1L; // TODO: Get from security context
+        Long tenantId = SecurityUtils.getCurrentTenantId().orElseThrow(
+            () -> new IllegalStateException("Tenant ID not found in security context")
+        );
         long kbCount = knowledgeArticleRepository.countByBotIdAndTenantIdAndIsActiveTrue(botId, tenantId);
         metrics.put("knowledgeArticleCount", kbCount);
         
@@ -111,6 +113,36 @@ public class PennyMetricsEndpoint {
             providerInfo.put("consecutiveFailures", health.getConsecutiveFailures());
             
             metrics.put(entry.getKey(), providerInfo);
+        }
+        
+        return metrics;
+    }
+
+    /**
+     * Get provider cost metrics
+     * GET /api/penny/admin/metrics/providers/costs
+     */
+    @GetMapping("/providers/costs")
+    public Map<String, Object> getProviderCostMetrics() {
+        log.debug("📊 Fetching provider cost metrics");
+
+        Map<String, Object> metrics = new HashMap<>();
+        
+        // Get cost metadata for all providers
+        for (ProviderSelector.ProviderType type : ProviderSelector.ProviderType.values()) {
+            Map<String, Object> costInfo = new HashMap<>();
+            
+            costInfo.put("displayName", type.getDisplayName());
+            costInfo.put("costPer1kTokens", type.getCostPer1kTokens());
+            costInfo.put("costPerRequest", type.getCostPerRequest());
+            
+            // Sample cost estimation for a 100-character message
+            String sampleMessage = "a".repeat(100);
+            ProviderSelector.ProviderCost sampleCost = providerSelector.estimateProviderCost(type, sampleMessage);
+            costInfo.put("sampleCost100Chars", sampleCost.getEstimatedCost());
+            costInfo.put("sampleTokens100Chars", sampleCost.getEstimatedTokens());
+            
+            metrics.put(type.name(), costInfo);
         }
         
         return metrics;

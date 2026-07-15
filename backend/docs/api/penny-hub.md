@@ -195,6 +195,36 @@ DELETE /api/penny/rules/templates/{templateId}
 
 ### Management APIs
 
+#### Get System Metrics
+```http
+GET /api/penny/admin/metrics
+Authorization: Bearer <admin-token>
+```
+
+#### Get Bot Metrics
+```http
+GET /api/penny/admin/metrics/bot/{botId}
+Authorization: Bearer <admin-token>
+```
+
+#### Get Provider Health Metrics
+```http
+GET /api/penny/admin/metrics/providers
+Authorization: Bearer <admin-token>
+```
+
+#### Get Provider Cost Metrics
+```http
+GET /api/penny/admin/metrics/providers/costs
+Authorization: Bearer <admin-token>
+```
+
+#### Get Knowledge Base Metrics
+```http
+GET /api/penny/admin/metrics/knowledge-base
+Authorization: Bearer <admin-token>
+```
+
 #### Get Metrics
 ```http
 GET /api/penny/management/metrics
@@ -514,3 +544,50 @@ logging:
 - Custom rule engine
 - Response templates
 - Multi-tenant improvements
+
+### v1.3.0 (Phase 1 Improvements)
+- Unicode-aware Vietnamese intent analysis with case-insensitive patterns
+- Enhanced unit tests for accent variations and edge cases
+- Provider cost calculation metadata and estimation
+- Cost-aware provider selection API
+- Spring Actuator metrics integration (penny_requests_total, penny_errors_total)
+- Enhanced admin metrics endpoints with provider cost data
+- Updated API documentation
+
+### v1.4.0 (Phase 2 Improvements)
+- Batch embedding processing with parallel execution
+- Configurable Redis cache TTL for embeddings
+- Circuit breaker fallback to cached embeddings
+- Testcontainers integration for integration testing
+- Enhanced provider cost calculation tests
+
+### v1.5.0 (Phase 3 Improvements)
+- Async intent analysis with CompletableFuture support
+- Response caching for common queries using Caffeine
+- Rate limiting for Penny API endpoints using Bucket4j
+- Retry with exponential backoff for error handling
+- Enhanced performance and security features
+
+## OpenAPI/Swagger Documentation
+
+The Penny Hub API includes automatic OpenAPI 3.0 specification generation via SpringDoc OpenAPI.
+
+### Access Swagger UI
+- **Development**: `http://localhost:8080/swagger-ui.html`
+- **Production**: `https://your-domain.com/swagger-ui.html`
+
+### Access OpenAPI JSON
+- **Development**: `http://localhost:8080/v3/api-docs`
+- **Production**: `https://your-domain.com/v3/api-docs`
+
+### Key Endpoints in OpenAPI Spec
+- `/api/penny/bots/*` - Bot management endpoints
+- `/api/penny/rules/*` - Custom rules and templates
+- `/api/penny/admin/metrics/*` - Admin metrics and monitoring
+- `/api/penny/management/*` - Management APIs
+
+### Security
+All endpoints require JWT authentication. Configure in Swagger UI by:
+1. Click "Authorize" button
+2. Enter: `Bearer <your-jwt-token>`
+3. Click "Authorize"

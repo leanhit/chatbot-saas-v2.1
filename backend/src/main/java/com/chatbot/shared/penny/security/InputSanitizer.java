@@ -29,18 +29,17 @@ public class InputSanitizer {
         Pattern.compile("<svg[^>]*>.*?</svg>", Pattern.CASE_INSENSITIVE)
     };
 
-    // SQL injection patterns (basic detection)
+    // SQL injection patterns (refined detection to avoid false positives on normal words/characters)
     private static final Pattern[] SQL_INJECTION_PATTERNS = {
-        Pattern.compile("(?i)(\\b(SELECT|INSERT|UPDATE|DELETE|DROP|ALTER|EXEC|UNION|CREATE)\\b)"),
-        Pattern.compile("(?i)(--|;|\\/\\*|\\*\\/|@@|@|xp_|sp_)"),
-        Pattern.compile("(?i)(\\b(OR|AND)\\s+\\d+\\s*=\\s*\\d+)")
+        Pattern.compile("(?i)\\b(SELECT\\s+.*\\s+FROM|INSERT\\s+INTO|UPDATE\\s+.*\\s+SET|DELETE\\s+FROM|UNION\\s+(ALL\\s+)?SELECT|DROP\\s+(TABLE|DATABASE))\\b"),
+        Pattern.compile("(?i)(--|\\/\\*|\\*\\/|xp_|sp_)"),
+        Pattern.compile("(?i)(\\b(OR|AND)\\s+['\"]?\\d+['\"]?\\s*=\\s*['\"]?\\d+['\"]?)")
     };
 
-    // Command injection patterns
+    // Command injection patterns (refined detection to avoid false positives on punctuation like semicolons, parentheses, and ampersands)
     private static final Pattern[] COMMAND_INJECTION_PATTERNS = {
-        Pattern.compile("[;&|`$()]", Pattern.CASE_INSENSITIVE),
-        Pattern.compile("\\$\\(.*\\)", Pattern.CASE_INSENSITIVE),
-        Pattern.compile("`.*`", Pattern.CASE_INSENSITIVE)
+        Pattern.compile("(?i)(;|&&|\\|\\||\\|)\\s*\\b(rm|cat|ls|pwd|whoami|sh|bash|curl|wget|chmod|chown|kill|systemctl|exec)\\b"),
+        Pattern.compile("(?i)\\$\\(\\s*(rm|cat|ls|pwd|whoami|sh|bash|curl|wget|chmod|chown|kill|systemctl|exec)\\b")
     };
 
     private static final int MAX_MESSAGE_LENGTH = 10000;

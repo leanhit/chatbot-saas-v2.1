@@ -382,23 +382,120 @@ public class ProviderSelector {
         return new HashMap<>(providerHealthMap);
     }
     
+    /**
+     * Estimate cost for a provider based on message length
+     * Uses a simple heuristic: ~4 characters per token for Vietnamese/English
+     */
+    public ProviderCost estimateProviderCost(ProviderType providerType, String message) {
+        int estimatedTokens = estimateTokenCount(message);
+        return new ProviderCost(providerType, estimatedTokens);
+    }
+    
+    /**
+     * Estimate token count from message
+     * Heuristic: ~4 characters per token for Vietnamese/English text
+     */
+    private int estimateTokenCount(String message) {
+        if (message == null || message.isEmpty()) {
+            return 0;
+        }
+        // Simple heuristic: ~4 characters per token
+        return Math.max(1, (int) Math.ceil(message.length() / 4.0));
+    }
+    
+    /**
+     * Get cost comparison for all providers for a given message
+     */
+    public Map<String, ProviderCost> getAllProviderCosts(String message) {
+        Map<String, ProviderCost> costs = new HashMap<>();
+        
+        for (ProviderType type : ProviderType.values()) {
+            costs.put(type.name(), estimateProviderCost(type, message));
+        }
+        
+        return costs;
+    }
+    
+    /**
+     * Select cheapest healthy provider based on cost estimation
+     */
+    public ProviderType selectCheapestHealthyProvider(String message) {
+        Map<String, ProviderCost> costs = getAllProviderCosts(message);
+        ProviderType cheapest = null;
+        double minCost = Double.MAX_VALUE;
+        
+        for (Map.Entry<String, ProviderCost> entry : costs.entrySet()) {
+            ProviderType type = ProviderType.valueOf(entry.getKey());
+            ProviderCost cost = entry.getValue();
+            
+            if (isProviderHealthy(type) && cost.getEstimatedCost() < minCost) {
+                minCost = cost.getEstimatedCost();
+                cheapest = type;
+            }
+        }
+        
+        return cheapest != null ? cheapest : ProviderType.PENNYBOT;
+    }
+    
     // Inner classes
     
     public enum ProviderType {
-        BOTPRESS("Botpress"),
-        PENNYBOT("PennyBot"),
-        GPT("GPT"),
-        CLAUDE("Claude");
+        BOTPRESS("Botpress", 0.001, 0.0),
+        PENNYBOT("PennyBot", 0.0005, 0.0),
+        GPT("GPT", 0.002, 0.001),
+        CLAUDE("Claude", 0.003, 0.0015);
 
         private final String displayName;
+        private final double costPer1kTokens;
+        private final double costPerRequest;
 
-        ProviderType(String displayName) {
+        ProviderType(String displayName, double costPer1kTokens, double costPerRequest) {
             this.displayName = displayName;
+            this.costPer1kTokens = costPer1kTokens;
+            this.costPerRequest = costPerRequest;
         }
 
         public String getDisplayName() {
             return displayName;
         }
+
+        public double getCostPer1kTokens() {
+            return costPer1kTokens;
+        }
+
+        public double getCostPerRequest() {
+            return costPerRequest;
+        }
+    }
+    
+    /**
+     * Cost metadata for provider selection
+     */
+    public static class ProviderCost {
+        private final ProviderType providerType;
+        private final double estimatedCost;
+        private final int estimatedTokens;
+        private final double costPer1kTokens;
+        private final double costPerRequest;
+        
+        public ProviderCost(ProviderType providerType, int estimatedTokens) {
+            this.providerType = providerType;
+            this.estimatedTokens = estimatedTokens;
+            this.costPer1kTokens = providerType.getCostPer1kTokens();
+            this.costPerRequest = providerType.getCostPerRequest();
+            this.estimatedCost = calculateEstimatedCost(estimatedTokens, costPer1kTokens, costPerRequest);
+        }
+        
+        private double calculateEstimatedCost(int tokens, double costPer1kTokens, double costPerRequest) {
+            double tokenCost = (tokens / 1000.0) * costPer1kTokens;
+            return tokenCost + costPerRequest;
+        }
+        
+        public ProviderType getProviderType() { return providerType; }
+        public double getEstimatedCost() { return estimatedCost; }
+        public int getEstimatedTokens() { return estimatedTokens; }
+        public double getCostPer1kTokens() { return costPer1kTokens; }
+        public double getCostPerRequest() { return costPerRequest; }
     }
     
     public static class ProviderHealth {

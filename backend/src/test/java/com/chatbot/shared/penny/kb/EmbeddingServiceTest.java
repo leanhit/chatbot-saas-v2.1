@@ -1,6 +1,11 @@
 package com.chatbot.shared.penny.kb;
 
+import com.chatbot.shared.penny.core.config.PennyProperties;
 import com.chatbot.shared.penny.security.ApiKeyManager;
+import io.github.resilience4j.circuitbreaker.CircuitBreaker;
+import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry;
+import io.github.resilience4j.retry.Retry;
+import io.github.resilience4j.retry.RetryRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -9,6 +14,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.test.util.ReflectionTestUtils;
+
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -23,13 +30,41 @@ class EmbeddingServiceTest {
     @Mock
     private ApiKeyManager apiKeyManager;
 
+    @Mock
+    private CircuitBreakerRegistry circuitBreakerRegistry;
+
+    @Mock
+    private RetryRegistry retryRegistry;
+
+    @Mock
+    private CircuitBreaker circuitBreaker;
+
+    @Mock
+    private Retry retry;
+
+    @Mock
+    private PennyProperties pennyProperties;
+
+    @Mock
+    private PennyProperties.Rag mockRagProperties;
+
     @InjectMocks
     private EmbeddingService embeddingService;
 
     @BeforeEach
     void setUp() {
         ReflectionTestUtils.setField(embeddingService, "embeddingModel", "text-embedding-3-small");
-        ReflectionTestUtils.setField(embeddingService, "cacheTtlDays", 7);
+        
+        // Mock circuit breaker and retry registry behavior
+        lenient().when(circuitBreakerRegistry.circuitBreaker(anyString())).thenReturn(circuitBreaker);
+        lenient().when(retryRegistry.retry(anyString())).thenReturn(retry);
+        
+        // Mock PennyProperties
+        lenient().when(pennyProperties.getRag()).thenReturn(mockRagProperties);
+        lenient().when(mockRagProperties.isBatchEnabled()).thenReturn(false);
+        lenient().when(mockRagProperties.getBatchSize()).thenReturn(10);
+        lenient().when(mockRagProperties.getCacheTtl()).thenReturn(java.time.Duration.ofHours(24));
+        lenient().when(mockRagProperties.isCircuitBreakerFallbackEnabled()).thenReturn(true);
     }
 
     @Test
@@ -193,6 +228,7 @@ class EmbeddingServiceTest {
         embeddingService.clearAllCache();
 
         // Assert
-        verify(redisTemplate, times(1)).delete(anyString());
+        verify(redisTemplate, times(1)).keys("embedding:*");
+        verify(redisTemplate, times(1)).delete(any(java.util.Collection.class));
     }
 }

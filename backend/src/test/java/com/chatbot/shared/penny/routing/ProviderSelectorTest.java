@@ -246,4 +246,112 @@ class ProviderSelectorTest {
             assertEquals(0, health.get("PENNYBOT").getConsecutiveFailures());
         }
     }
+
+    @Nested
+    @DisplayName("Cost Calculation")
+    class CostCalculationTests {
+
+        @Test
+        @DisplayName("should estimate provider cost for message")
+        void shouldEstimateProviderCost() {
+            // Given
+            ProviderSelector selector = createSelector(List.of(pennybotProvider));
+            selector.initProviderMap();
+
+            String message = "Hello, this is a test message";
+
+            // When
+            ProviderSelector.ProviderCost cost = selector.estimateProviderCost(
+                ProviderSelector.ProviderType.PENNYBOT, message);
+
+            // Then
+            assertNotNull(cost);
+            assertEquals(ProviderSelector.ProviderType.PENNYBOT, cost.getProviderType());
+            assertTrue(cost.getEstimatedTokens() > 0);
+            assertTrue(cost.getEstimatedCost() >= 0);
+        }
+
+        @Test
+        @DisplayName("should get cost comparison for all providers")
+        void shouldGetAllProviderCosts() {
+            // Given
+            ProviderSelector selector = createSelector(
+                List.of(botpressProvider, pennybotProvider, gptProvider));
+            selector.initProviderMap();
+
+            String message = "Test message";
+
+            // When
+            Map<String, ProviderSelector.ProviderCost> costs = selector.getAllProviderCosts(message);
+
+            // Then
+            assertNotNull(costs);
+            assertTrue(costs.containsKey("BOTPRESS"));
+            assertTrue(costs.containsKey("PENNYBOT"));
+            assertTrue(costs.containsKey("GPT"));
+            assertTrue(costs.containsKey("CLAUDE"));
+        }
+
+        @Test
+        @DisplayName("should select cheapest healthy provider")
+        void shouldSelectCheapestHealthyProvider() {
+            // Given
+            ProviderSelector selector = createSelector(
+                List.of(botpressProvider, pennybotProvider, gptProvider));
+            selector.initProviderMap();
+
+            // Mark all providers as healthy
+            selector.updateProviderHealth(ProviderSelector.ProviderType.BOTPRESS, true, "OK");
+            selector.updateProviderHealth(ProviderSelector.ProviderType.PENNYBOT, true, "OK");
+            selector.updateProviderHealth(ProviderSelector.ProviderType.GPT, true, "OK");
+
+            String message = "Test message";
+
+            // When
+            ProviderSelector.ProviderType cheapest = selector.selectCheapestHealthyProvider(message);
+
+            // Then
+            assertNotNull(cheapest);
+            // PENNYBOT should be cheapest (costPer1kTokens: 0.0005, costPerRequest: 0.0)
+            assertEquals(ProviderSelector.ProviderType.PENNYBOT, cheapest);
+        }
+
+        @Test
+        @DisplayName("should fallback to default when no healthy providers")
+        void shouldFallbackToDefaultWhenNoHealthyProviders() {
+            // Given
+            ProviderSelector selector = createSelector(List.of(pennybotProvider));
+            selector.initProviderMap();
+
+            // Mark provider as unhealthy
+            selector.updateProviderHealth(ProviderSelector.ProviderType.PENNYBOT, false, "fail");
+
+            String message = "Test message";
+
+            // When
+            ProviderSelector.ProviderType result = selector.selectCheapestHealthyProvider(message);
+
+            // Then
+            assertNotNull(result);
+            assertEquals(ProviderSelector.ProviderType.PENNYBOT, result);
+        }
+
+        @Test
+        @DisplayName("should calculate correct token count estimation")
+        void shouldEstimateTokenCount() {
+            // Given
+            ProviderSelector selector = createSelector(List.of(pennybotProvider));
+            selector.initProviderMap();
+
+            String message = "a".repeat(100); // 100 characters
+
+            // When
+            ProviderSelector.ProviderCost cost = selector.estimateProviderCost(
+                ProviderSelector.ProviderType.PENNYBOT, message);
+
+            // Then
+            // 100 chars / 4 = 25 tokens (rounded up)
+            assertEquals(25, cost.getEstimatedTokens());
+        }
+    }
 }

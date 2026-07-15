@@ -11,6 +11,8 @@ import com.chatbot.shared.penny.service.IntentAnalyzer;
 import com.chatbot.shared.penny.routing.ProviderSelector;
 import com.chatbot.shared.penny.routing.dto.IntentAnalysisResult;
 import com.chatbot.shared.penny.routing.dto.ProviderSelection;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.NoArgsConstructor;
@@ -36,19 +38,35 @@ public class PennyMiddlewareEngine {
     private final ErrorHandler errorHandler;
     private final AnalyticsCollector analyticsCollector;
     private final CustomLogicEngine customLogicEngine;
+    private final MeterRegistry meterRegistry;
+    
+    // Metrics counters
+    private final Counter pennyRequestsTotal;
+    private final Counter pennyErrorsTotal;
     
     public PennyMiddlewareEngine(ContextManager contextManager,
                                 IntentAnalyzer intentAnalyzer,
                                 ProviderSelector providerSelector,
                                 ErrorHandler errorHandler,
                                 AnalyticsCollector analyticsCollector,
-                                CustomLogicEngine customLogicEngine) {
+                                CustomLogicEngine customLogicEngine,
+                                MeterRegistry meterRegistry) {
         this.contextManager = contextManager;
         this.intentAnalyzer = intentAnalyzer;
         this.providerSelector = providerSelector;
         this.errorHandler = errorHandler;
         this.analyticsCollector = analyticsCollector;
         this.customLogicEngine = customLogicEngine;
+        this.meterRegistry = meterRegistry;
+        
+        // Initialize metrics counters
+        this.pennyRequestsTotal = Counter.builder("penny_requests_total")
+            .description("Total number of Penny requests processed")
+            .register(meterRegistry);
+        
+        this.pennyErrorsTotal = Counter.builder("penny_errors_total")
+            .description("Total number of Penny processing errors")
+            .register(meterRegistry);
     }
     
     /**
@@ -59,6 +77,9 @@ public class PennyMiddlewareEngine {
         String requestId = generateRequestId();
         
         try {
+            // Increment request counter
+            pennyRequestsTotal.increment();
+            
             log.info("🚀 [{}] Processing message from {} on {}", 
                 requestId, request.getUserId(), request.getPlatform());
             
@@ -132,6 +153,8 @@ public class PennyMiddlewareEngine {
             return response;
             
         } catch (Exception e) {
+            // Increment error counter
+            pennyErrorsTotal.increment();
             log.error("❌ [{}] Error processing message: {}", requestId, e.getMessage(), e);
             return errorHandler.handleError(e, request, startTime);
         }

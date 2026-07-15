@@ -21,7 +21,7 @@ import java.io.IOException;
 public @RequiredArgsConstructor
 class GrpcServerConfig {
 
-    @Value("${tenant.grpc.server.port:50053}")
+    @Value("${tenant.grpc.server.port:0}")
     private int grpcPort;
 
     @Value("${grpc.security.tls.enabled:false}")

@@ -177,4 +177,94 @@ class IntentAnalyzerTest {
         
         assertEquals("greeting", result.getPrimaryIntent());
     }
+
+    @Test
+    @DisplayName("Should handle uppercase Vietnamese")
+    void shouldHandleUppercaseVietnamese() {
+        request.setMessage("XIN CHÀO");
+        IntentAnalysisResult result = intentAnalyzer.analyze(request, context);
+        
+        assertEquals("greeting", result.getPrimaryIntent());
+    }
+
+    @Test
+    @DisplayName("Should handle mixed case Vietnamese")
+    void shouldHandleMixedCaseVietnamese() {
+        request.setMessage("Xin Chào Bạn");
+        IntentAnalysisResult result = intentAnalyzer.analyze(request, context);
+        
+        assertEquals("greeting", result.getPrimaryIntent());
+    }
+
+    @Test
+    @DisplayName("Should detect price inquiry with unaccented Vietnamese")
+    void shouldDetectPriceInquiryWithUnaccentedVietnamese() {
+        request.setMessage("san pham nay gia bao nhieu");
+        IntentAnalysisResult result = intentAnalyzer.analyze(request, context);
+        
+        assertEquals("price_inquiry", result.getPrimaryIntent());
+    }
+
+    @Test
+    @DisplayName("Should detect customer support with unaccented Vietnamese")
+    void shouldDetectCustomerSupportWithUnaccentedVietnamese() {
+        request.setMessage("toi can ho tro");
+        IntentAnalysisResult result = intentAnalyzer.analyze(request, context);
+        
+        assertEquals("customer_support", result.getPrimaryIntent());
+    }
+
+    @Test
+    @DisplayName("Should detect order inquiry with unaccented Vietnamese")
+    void shouldDetectOrderInquiryWithUnaccentedVietnamese() {
+        request.setMessage("kiem tra tinh trang don hang cua toi");
+        IntentAnalysisResult result = intentAnalyzer.analyze(request, context);
+        
+        assertEquals("order_inquiry", result.getPrimaryIntent());
+    }
+
+    @Test
+    @DisplayName("Should handle mixed accent variations")
+    void shouldHandleMixedAccentVariations() {
+        request.setMessage("xin chao ban, toi can ho tro");
+        IntentAnalysisResult result = intentAnalyzer.analyze(request, context);
+        
+        assertEquals("customer_support", result.getPrimaryIntent());
+    }
+
+    @Test
+    @DisplayName("Should detect gratitude with unaccented Vietnamese")
+    void shouldDetectGratitudeWithUnaccentedVietnamese() {
+        request.setMessage("cam on ban rat nhieu");
+        IntentAnalysisResult result = intentAnalyzer.analyze(request, context);
+        
+        assertEquals("gratitude", result.getPrimaryIntent());
+    }
+
+    @Test
+    @DisplayName("Should handle special characters in Vietnamese")
+    void shouldHandleSpecialCharactersInVietnamese() {
+        request.setMessage("xin chào! tôi cần hỗ trợ?");
+        IntentAnalysisResult result = intentAnalyzer.analyze(request, context);
+        
+        assertEquals("customer_support", result.getPrimaryIntent());
+    }
+
+    @Test
+    @DisplayName("Should detect product inquiry with unaccented Vietnamese")
+    void shouldDetectProductInquiryWithUnaccentedVietnamese() {
+        request.setMessage("thong tin san pham");
+        IntentAnalysisResult result = intentAnalyzer.analyze(request, context);
+        
+        assertEquals("product_inquiry", result.getPrimaryIntent());
+    }
+
+    @Test
+    @DisplayName("Should handle Vietnamese with numbers")
+    void shouldHandleVietnameseWithNumbers() {
+        request.setMessage("kiểm tra đơn hàng 12345");
+        IntentAnalysisResult result = intentAnalyzer.analyze(request, context);
+        
+        assertEquals("order_inquiry", result.getPrimaryIntent());
+    }
 }

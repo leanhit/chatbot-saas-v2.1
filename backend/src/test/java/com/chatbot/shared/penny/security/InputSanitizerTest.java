@@ -94,6 +94,12 @@ class InputSanitizerTest {
         
         assertEquals(safe, sanitized);
         assertFalse(inputSanitizer.isMalicious(safe));
+
+        // Test normal sentences containing email addresses, semicolons, parentheses, and common verbs
+        String normalWithVerbs = "Please select the option and update my email address: info@example.com (primary). Hello; how are you?";
+        String sanitizedVerbs = inputSanitizer.sanitizeMessage(normalWithVerbs);
+        assertEquals(normalWithVerbs, sanitizedVerbs);
+        assertFalse(inputSanitizer.isMalicious(normalWithVerbs));
     }
 
     @Test
