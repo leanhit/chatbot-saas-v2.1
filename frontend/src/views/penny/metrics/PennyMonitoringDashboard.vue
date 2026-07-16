@@ -1,32 +1,32 @@
 <template>
-  <div class="dashboard p-4">
+  <div class="penny-monitoring">
     <!-- Header -->
-    <div class="mt-2 w-full">
-      <div class="lg:flex grid-cols-1 lg:space-y-0 space-y-3 gap-5 justify-between">
-        <div>
-          <p class="uppercase text-xs text-gray-700 font-semibold">Penny Monitoring</p>
-          <h1 class="text-2xl text-gray-900 dark:text-gray-200 font-medium">
-            Monitoring Dashboard
-          </h1>
-        </div>
-        <div class="flex gap-2">
-          <button
-            @click="refreshMetrics"
-            :disabled="loading"
-            class="bg-white dark:bg-gray-800 hover:border-gray-200 dark:hover:bg-gray-700 dark:text-white dark:border-gray-700 border rounded py-2 px-5 flex items-center gap-2"
-          >
-            <Icon icon="mdi:refresh" :class="{'animate-spin': loading}" class="text-lg" />
-            Refresh
-          </button>
-        </div>
+    <div class="flex justify-between items-center mb-6">
+      <div>
+        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
+          {{ $t('penny.monitoring.title') }}
+        </h1>
+        <p class="text-gray-600 dark:text-gray-400 mt-1">
+          {{ $t('penny.monitoring.subtitle') }}
+        </p>
+      </div>
+      <div class="flex items-center space-x-4">
+        <button
+          @click="refreshMetrics"
+          :disabled="loading"
+          class="inline-flex items-center px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/80 transition-colors disabled:opacity-50"
+        >
+          <Icon icon="mdi:refresh" :class="{'animate-spin': loading}" class="mr-2" />
+          {{ $t('penny.monitoring.refresh') }}
+        </button>
       </div>
     </div>
 
     <!-- System Metrics Summary -->
     <div class="wrapper-card grid lg:grid-cols-4 grid-cols-1 md:grid-cols-2 gap-4 mt-6">
-      <div class="card bg-white dark:bg-gray-800 w-full rounded-md p-5 border dark:border-gray-700 flex">
+      <div class="card bg-white dark:bg-gray-800 w-full rounded-md p-5 border border-gray-200 dark:border-gray-700 flex">
         <div class="p-2 max-w-sm">
-          <div class="bg-blue-200 rounded-full w-14 h-14 text-lg p-3 text-blue-600 mx-auto">
+          <div class="bg-blue-200 rounded-full w-14 h-14 text-lg p-3 text-blue-600 mx-auto flex items-center justify-center">
             <Icon icon="mdi:message-processing" class="text-2xl" />
           </div>
         </div>
@@ -34,7 +34,7 @@
           <p class="font-semibold text-gray-900 dark:text-gray-200 text-xl">
             {{ formatNumber(metricsSummary.messagesProcessed) }}
           </p>
-          <h2 class="font-normal text-gray-400 text-md mt-1">Messages Processed</h2>
+          <h2 class="font-normal text-gray-400 text-md mt-1">{{ $t('penny.monitoring.messagesProcessed') }}</h2>
           <div class="flex items-center mt-2">
             <span class="text-blue-500 text-sm flex items-center">
               <Icon icon="mdi:check-circle" class="mr-1" />
@@ -44,9 +44,9 @@
         </div>
       </div>
 
-      <div class="card bg-white dark:bg-gray-800 w-full rounded-md p-5 border dark:border-gray-700 flex">
+      <div class="card bg-white dark:bg-gray-800 w-full rounded-md p-5 border border-gray-200 dark:border-gray-700 flex">
         <div class="p-2 max-w-sm">
-          <div class="bg-green-200 rounded-full w-14 h-14 text-lg p-3 text-green-600 mx-auto">
+          <div class="bg-green-200 rounded-full w-14 h-14 text-lg p-3 text-green-600 mx-auto flex items-center justify-center">
             <Icon icon="mdi:alert-circle" class="text-2xl" />
           </div>
         </div>
@@ -54,7 +54,7 @@
           <p class="font-semibold text-gray-900 dark:text-gray-200 text-xl">
             {{ formatPercentage(metricsSummary.errorRate) }}
           </p>
-          <h2 class="font-normal text-gray-400 text-md mt-1">Error Rate</h2>
+          <h2 class="font-normal text-gray-400 text-md mt-1">{{ $t('penny.monitoring.errorRate') }}</h2>
           <div class="flex items-center mt-2">
             <span :class="metricsSummary.errorRate < 0.05 ? 'text-green-500' : 'text-red-500'" class="text-sm flex items-center">
               <Icon :icon="metricsSummary.errorRate < 0.05 ? 'mdi:check-circle' : 'mdi:alert'" class="mr-1" />
@@ -64,9 +64,9 @@
         </div>
       </div>
 
-      <div class="card bg-white dark:bg-gray-800 w-full rounded-md p-5 border dark:border-gray-700 flex">
+      <div class="card bg-white dark:bg-gray-800 w-full rounded-md p-5 border border-gray-200 dark:border-gray-700 flex">
         <div class="p-2 max-w-sm">
-          <div class="bg-purple-200 rounded-full w-14 h-14 text-lg p-3 text-purple-600 mx-auto">
+          <div class="bg-purple-200 rounded-full w-14 h-14 text-lg p-3 text-purple-600 mx-auto flex items-center justify-center">
             <Icon icon="mdi:timer" class="text-2xl" />
           </div>
         </div>
@@ -74,7 +74,7 @@
           <p class="font-semibold text-gray-900 dark:text-gray-200 text-xl">
             {{ formatNumber(metricsSummary.averageProcessingTime) }}ms
           </p>
-          <h2 class="font-normal text-gray-400 text-md mt-1">Avg Processing Time</h2>
+          <h2 class="font-normal text-gray-400 text-md mt-1">{{ $t('penny.monitoring.avgProcessingTime') }}</h2>
           <div class="flex items-center mt-2">
             <span class="text-blue-500 text-sm flex items-center">
               <Icon icon="mdi:speedometer" class="mr-1" />
@@ -84,9 +84,9 @@
         </div>
       </div>
 
-      <div class="card bg-white dark:bg-gray-800 w-full rounded-md p-5 border dark:border-gray-700 flex">
+      <div class="card bg-white dark:bg-gray-800 w-full rounded-md p-5 border border-gray-200 dark:border-gray-700 flex">
         <div class="p-2 max-w-sm">
-          <div class="bg-orange-200 rounded-full w-14 h-14 text-lg p-3 text-orange-600 mx-auto">
+          <div class="bg-orange-200 rounded-full w-14 h-14 text-lg p-3 text-orange-600 mx-auto flex items-center justify-center">
             <Icon icon="mdi:robot" class="text-2xl" />
           </div>
         </div>
@@ -94,7 +94,7 @@
           <p class="font-semibold text-gray-900 dark:text-gray-200 text-xl">
             {{ metricsSummary.activeBots }}
           </p>
-          <h2 class="font-normal text-gray-400 text-md mt-1">Active Bots</h2>
+          <h2 class="font-normal text-gray-400 text-md mt-1">{{ $t('penny.monitoring.activeBots') }}</h2>
           <div class="flex items-center mt-2">
             <span class="text-green-500 text-sm flex items-center">
               <Icon icon="mdi:check-circle" class="mr-1" />
@@ -106,16 +106,16 @@
     </div>
 
     <!-- Circuit Breaker Status -->
-    <div class="mt-6 bg-white dark:bg-gray-800 p-6 rounded-md border dark:border-gray-700">
+    <div class="mt-6 bg-white dark:bg-gray-800 p-6 rounded-md border border-gray-200 dark:border-gray-700">
       <div class="flex justify-between items-center mb-4">
-        <h2 class="font-medium text-sm text-gray-800 dark:text-gray-200">Circuit Breaker Status</h2>
+        <h2 class="font-medium text-sm text-gray-800 dark:text-gray-200">{{ $t('penny.monitoring.circuitBreakerStatus') }}</h2>
       </div>
       <div v-if="loadingCircuitBreaker" class="text-center py-4">
         <Icon icon="mdi:loading" class="text-6xl text-gray-300 animate-spin mx-auto" />
         <p class="mt-2 text-gray-500">Loading circuit breaker status...</p>
       </div>
       <div v-else-if="Object.keys(circuitBreakerStatus).length === 0" class="text-center py-4 text-gray-500">
-        No circuit breakers configured
+        {{ $t('penny.monitoring.noCircuitBreakers') }}
       </div>
       <div v-else class="space-y-3">
         <div
@@ -143,9 +143,9 @@
     </div>
 
     <!-- Provider Metrics -->
-    <div class="mt-6 bg-white dark:bg-gray-800 p-6 rounded-md border dark:border-gray-700">
+    <div class="mt-6 bg-white dark:bg-gray-800 p-6 rounded-md border border-gray-200 dark:border-gray-700">
       <div class="flex justify-between items-center mb-4">
-        <h2 class="font-medium text-sm text-gray-800 dark:text-gray-200">Provider Usage</h2>
+        <h2 class="font-medium text-sm text-gray-800 dark:text-gray-200">{{ $t('penny.monitoring.providerUsage') }}</h2>
       </div>
       <div v-if="loadingProviderMetrics" class="text-center py-4">
         <Icon icon="mdi:loading" class="text-6xl text-gray-300 animate-spin mx-auto" />
@@ -172,9 +172,9 @@
     </div>
 
     <!-- Intent Distribution -->
-    <div class="mt-6 bg-white dark:bg-gray-800 p-6 rounded-md border dark:border-gray-700">
+    <div class="mt-6 bg-white dark:bg-gray-800 p-6 rounded-md border border-gray-200 dark:border-gray-700">
       <div class="flex justify-between items-center mb-4">
-        <h2 class="font-medium text-sm text-gray-800 dark:text-gray-200">Intent Distribution</h2>
+        <h2 class="font-medium text-sm text-gray-800 dark:text-gray-200">{{ $t('penny.monitoring.intentDistribution') }}</h2>
       </div>
       <div v-if="loadingIntentMetrics" class="text-center py-4">
         <Icon icon="mdi:loading" class="text-6xl text-gray-300 animate-spin mx-auto" />
@@ -317,6 +317,11 @@ export default {
 </script>
 
 <style scoped>
+.penny-monitoring {
+  width: 100%;
+  padding: 20px;
+}
+
 .animate-spin {
   animation: spin 1s linear infinite;
 }

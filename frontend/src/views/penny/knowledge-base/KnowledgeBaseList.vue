@@ -1,159 +1,325 @@
 <template>
-  <div class="knowledge-base-list">
-    <div class="page-header">
-      <h1>Knowledge Base</h1>
-      <button @click="showCreateModal = true" class="btn btn-primary">
-        <i class="fas fa-plus"></i> Add Article
-      </button>
+  <div class="penny-knowledge-base">
+    <!-- Header -->
+    <div class="flex justify-between items-center mb-6">
+      <div>
+        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
+          {{ $t('penny.knowledgeBase.title') }}
+        </h1>
+        <p class="text-gray-600 dark:text-gray-400 mt-1">
+          {{ $t('penny.knowledgeBase.subtitle') }}
+        </p>
+      </div>
+      <div>
+        <button
+          @click="showCreateModal = true"
+          class="inline-flex items-center px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/80 transition-colors text-sm font-medium"
+        >
+          <Icon icon="mdi:plus" class="mr-2" />
+          {{ $t('penny.knowledgeBase.addArticle') }}
+        </button>
+      </div>
     </div>
 
     <!-- Stats Cards -->
-    <div class="stats-grid">
-      <div class="stat-card">
-        <div class="stat-label">Total Articles</div>
-        <div class="stat-value">{{ stats.totalArticles || 0 }}</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">RAG Enabled</div>
-        <div class="stat-value" :class="{ 'text-success': stats.ragEnabled }">
-          {{ stats.ragEnabled ? 'Yes' : 'No' }}
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+      <!-- Total Articles -->
+      <div class="bg-white dark:bg-gray-800 p-5 rounded-md border border-gray-200 dark:border-gray-700 flex items-center shadow-sm">
+        <div class="p-3 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-full mr-4">
+          <Icon icon="mdi:file-document-outline" class="text-2xl" />
+        </div>
+        <div>
+          <p class="text-sm font-medium text-gray-500 dark:text-gray-400">
+            {{ $t('penny.knowledgeBase.totalArticles') }}
+          </p>
+          <p class="text-2xl font-bold text-gray-900 dark:text-white mt-1">
+            {{ stats.totalArticles || 0 }}
+          </p>
         </div>
       </div>
-      <div class="stat-card">
-        <div class="stat-label">Embedding Model</div>
-        <div class="stat-value">{{ stats.embeddingModel || 'N/A' }}</div>
+
+      <!-- RAG Enabled -->
+      <div class="bg-white dark:bg-gray-800 p-5 rounded-md border border-gray-200 dark:border-gray-700 flex items-center shadow-sm">
+        <div class="p-3 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-full mr-4">
+          <Icon icon="mdi:brain" class="text-2xl" />
+        </div>
+        <div>
+          <p class="text-sm font-medium text-gray-500 dark:text-gray-400">
+            {{ $t('penny.knowledgeBase.ragEnabled') }}
+          </p>
+          <p class="text-2xl font-bold mt-1" :class="stats.ragEnabled ? 'text-green-600 dark:text-green-400' : 'text-red-500'">
+            {{ stats.ragEnabled ? $t('common.yes') || 'Yes' : $t('common.no') || 'No' }}
+          </p>
+        </div>
+      </div>
+
+      <!-- Embedding Model -->
+      <div class="bg-white dark:bg-gray-800 p-5 rounded-md border border-gray-200 dark:border-gray-700 flex items-center shadow-sm">
+        <div class="p-3 bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 rounded-full mr-4">
+          <Icon icon="mdi:vector-difference" class="text-2xl" />
+        </div>
+        <div>
+          <p class="text-sm font-medium text-gray-500 dark:text-gray-400">
+            {{ $t('penny.knowledgeBase.embeddingModel') }}
+          </p>
+          <p class="text-lg font-bold text-gray-900 dark:text-white mt-1 truncate max-w-[200px]" :title="stats.embeddingModel">
+            {{ stats.embeddingModel || 'N/A' }}
+          </p>
+        </div>
       </div>
     </div>
 
     <!-- Search and Filter -->
-    <div class="search-bar">
-      <input
-        v-model="searchQuery"
-        type="text"
-        placeholder="Search articles..."
-        class="search-input"
-        @keyup.enter="handleSearch"
-      />
-      <button @click="handleSearch" class="btn btn-secondary">Search</button>
-      <button @click="showTestSearch = true" class="btn btn-info">
-        <i class="fas fa-search"></i> Test Search
-      </button>
+    <div class="flex flex-col md:flex-row gap-3 mb-6">
+      <div class="flex-1 relative">
+        <input
+          v-model="searchQuery"
+          type="text"
+          :placeholder="$t('penny.knowledgeBase.searchPlaceholder')"
+          class="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-primary text-sm"
+          @keyup.enter="handleSearch"
+        />
+        <Icon icon="mdi:magnify" class="absolute left-3 top-2.5 text-gray-400 text-lg" />
+      </div>
+      <div class="flex gap-2">
+        <button
+          @click="handleSearch"
+          class="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-md text-sm font-medium transition-colors"
+        >
+          {{ $t('penny.knowledgeBase.search') }}
+        </button>
+        <button
+          @click="showTestSearch = true"
+          class="inline-flex items-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md text-sm font-medium transition-colors"
+        >
+          <Icon icon="mdi:file-search" class="mr-2" />
+          {{ $t('penny.knowledgeBase.testSearch') }}
+        </button>
+      </div>
     </div>
 
     <!-- Articles Table -->
-    <div class="table-container">
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th>Title</th>
-            <th>Category</th>
-            <th>Priority</th>
-            <th>Status</th>
-            <th>Updated</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-if="loading">
-            <td colspan="6" class="text-center">Loading...</td>
-          </tr>
-          <tr v-else-if="articles.length === 0">
-            <td colspan="6" class="text-center">No articles found</td>
-          </tr>
-          <tr v-for="article in articles" :key="article.id">
-            <td>{{ article.title }}</td>
-            <td>{{ article.category || '-' }}</td>
-            <td>{{ article.priority || 0 }}</td>
-            <td>
-              <span :class="['status-badge', article.isActive ? 'active' : 'inactive']">
-                {{ article.isActive ? 'Active' : 'Inactive' }}
-              </span>
-            </td>
-            <td>{{ formatDate(article.updatedAt) }}</td>
-            <td class="actions">
-              <button @click="editArticle(article)" class="btn btn-sm btn-primary">
-                <i class="fas fa-edit"></i>
-              </button>
-              <button @click="reembedArticle(article)" class="btn btn-sm btn-info" title="Re-embed">
-                <i class="fas fa-sync"></i>
-              </button>
-              <button @click="deleteArticle(article)" class="btn btn-sm btn-danger">
-                <i class="fas fa-trash"></i>
-              </button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+    <div class="bg-white dark:bg-gray-800 rounded-md border border-gray-200 dark:border-gray-700 overflow-hidden shadow-sm">
+      <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+          <thead class="bg-gray-50 dark:bg-gray-700">
+            <tr>
+              <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                {{ $t('penny.knowledgeBase.articleTitle') }}
+              </th>
+              <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                {{ $t('penny.knowledgeBase.category') }}
+              </th>
+              <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                {{ $t('penny.knowledgeBase.priority') }}
+              </th>
+              <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                {{ $t('penny.knowledgeBase.status') }}
+              </th>
+              <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                {{ $t('penny.knowledgeBase.updated') }}
+              </th>
+              <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                {{ $t('penny.knowledgeBase.actions') }}
+              </th>
+            </tr>
+          </thead>
+          <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+            <tr v-if="loading">
+              <td colspan="6" class="px-6 py-10 text-center text-gray-500">
+                <Icon icon="mdi:loading" class="text-4xl text-gray-300 animate-spin mx-auto mb-2" />
+                {{ $t('penny.knowledgeBase.loading') }}
+              </td>
+            </tr>
+            <tr v-else-if="articles.length === 0">
+              <td colspan="6" class="px-6 py-10 text-center text-gray-500">
+                {{ $t('penny.knowledgeBase.noArticles') }}
+              </td>
+            </tr>
+            <tr v-for="article in articles" :key="article.id" v-else>
+              <td class="px-6 py-4 text-sm text-gray-900 dark:text-white font-medium">
+                {{ article.title }}
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                {{ article.category ? $t('penny.knowledgeBase.categories.' + article.category.toLowerCase()) : '-' }}
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                {{ article.priority || 0 }}
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm">
+                <span
+                  :class="[
+                    'px-2.5 py-1 rounded-full text-xs font-medium',
+                    article.isActive
+                      ? 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300'
+                      : 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300'
+                  ]"
+                >
+                  {{ article.isActive ? $t('penny.knowledgeBase.activeLabel') : $t('penny.knowledgeBase.categories.inactive') || 'Inactive' }}
+                </span>
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                {{ formatDate(article.updatedAt) }}
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm">
+                <div class="flex gap-2">
+                  <button
+                    @click="editArticle(article)"
+                    class="inline-flex items-center p-1.5 bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300 rounded hover:bg-blue-200 dark:hover:bg-blue-900 transition-colors"
+                    :title="$t('penny.knowledgeBase.edit')"
+                  >
+                    <Icon icon="mdi:pencil" class="text-lg" />
+                  </button>
+                  <button
+                    @click="reembedArticle(article)"
+                    class="inline-flex items-center p-1.5 bg-indigo-100 text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300 rounded hover:bg-indigo-200 dark:hover:bg-indigo-900 transition-colors"
+                    :title="$t('penny.knowledgeBase.reembed')"
+                  >
+                    <Icon icon="mdi:refresh" class="text-lg" />
+                  </button>
+                  <button
+                    @click="deleteArticle(article)"
+                    class="inline-flex items-center p-1.5 bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-300 rounded hover:bg-red-200 dark:hover:bg-red-900 transition-colors"
+                    :title="$t('penny.knowledgeBase.delete')"
+                  >
+                    <Icon icon="mdi:delete" class="text-lg" />
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
 
       <!-- Pagination -->
-      <div class="pagination" v-if="totalPages > 1">
+      <div v-if="totalPages > 1" class="flex justify-center items-center py-4 border-t border-gray-200 dark:border-gray-700 space-x-2 bg-gray-50 dark:bg-gray-800">
         <button
           @click="changePage(currentPage - 1)"
           :disabled="currentPage === 0"
-          class="btn btn-sm"
+          class="px-3 py-1.5 border border-gray-300 dark:border-gray-650 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white disabled:opacity-50 text-sm font-medium transition-colors hover:bg-gray-50 dark:hover:bg-gray-600"
         >
-          Previous
+          {{ $t('penny.knowledgeBase.previous') }}
         </button>
-        <span>Page {{ currentPage + 1 }} of {{ totalPages }}</span>
+        <span class="px-3 py-1.5 text-gray-900 dark:text-white text-sm">
+          {{ $t('penny.knowledgeBase.pageOf', { page: currentPage + 1, total: totalPages }) }}
+        </span>
         <button
           @click="changePage(currentPage + 1)"
           :disabled="currentPage === totalPages - 1"
-          class="btn btn-sm"
+          class="px-3 py-1.5 border border-gray-300 dark:border-gray-650 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white disabled:opacity-50 text-sm font-medium transition-colors hover:bg-gray-50 dark:hover:bg-gray-600"
         >
-          Next
+          {{ $t('penny.knowledgeBase.next') }}
         </button>
       </div>
     </div>
 
     <!-- Create/Edit Modal -->
-    <div v-if="showCreateModal || showEditModal" class="modal-overlay">
-      <div class="modal">
-        <div class="modal-header">
-          <h2>{{ showEditModal ? 'Edit Article' : 'Create Article' }}</h2>
-          <button @click="closeModal" class="btn-close">&times;</button>
+    <div v-if="showCreateModal || showEditModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+      <div class="bg-white dark:bg-gray-800 rounded-lg max-w-2xl w-full border border-gray-200 dark:border-gray-700 shadow-xl overflow-hidden max-h-[90vh] overflow-y-auto">
+        <div class="flex justify-between items-center px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+          <h2 class="text-lg font-bold text-gray-900 dark:text-white">
+            {{ showEditModal ? $t('penny.knowledgeBase.editArticle') : $t('penny.knowledgeBase.createArticle') }}
+          </h2>
+          <button @click="closeModal" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-250">
+            <Icon icon="mdi:close" class="text-xl" />
+          </button>
         </div>
-        <div class="modal-body">
-          <form @submit.prevent="saveArticle">
-            <div class="form-group">
-              <label>Title *</label>
-              <input v-model="articleForm.title" type="text" required class="form-control" />
+        <div class="p-6">
+          <form @submit.prevent="saveArticle" class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                {{ $t('penny.knowledgeBase.titleLabel') }}
+              </label>
+              <input
+                v-model="articleForm.title"
+                type="text"
+                required
+                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-primary text-sm"
+              />
             </div>
-            <div class="form-group">
-              <label>Category</label>
-              <select v-model="articleForm.category" class="form-control">
-                <option value="">Select category</option>
-                <option value="faq">FAQ</option>
-                <option value="product">Product</option>
-                <option value="policy">Policy</option>
-                <option value="shipping">Shipping</option>
-                <option value="price">Price</option>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                {{ $t('penny.knowledgeBase.categoryLabel') }}
+              </label>
+              <select
+                v-model="articleForm.category"
+                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-primary text-sm"
+              >
+                <option value="">{{ $t('penny.knowledgeBase.selectCategory') }}</option>
+                <option value="faq">{{ $t('penny.knowledgeBase.categories.faq') }}</option>
+                <option value="product">{{ $t('penny.knowledgeBase.categories.product') }}</option>
+                <option value="policy">{{ $t('penny.knowledgeBase.categories.policy') }}</option>
+                <option value="shipping">{{ $t('penny.knowledgeBase.categories.shipping') }}</option>
+                <option value="price">{{ $t('penny.knowledgeBase.categories.price') }}</option>
               </select>
             </div>
-            <div class="form-group">
-              <label>Content *</label>
-              <textarea v-model="articleForm.content" required class="form-control" rows="6"></textarea>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                {{ $t('penny.knowledgeBase.contentLabel') }}
+              </label>
+              <textarea
+                v-model="articleForm.content"
+                required
+                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-primary text-sm"
+                rows="6"
+              ></textarea>
             </div>
-            <div class="form-group">
-              <label>Tags (comma-separated)</label>
-              <input v-model="articleForm.tags" type="text" class="form-control" />
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                {{ $t('penny.knowledgeBase.tagsLabel') }}
+              </label>
+              <input
+                v-model="articleForm.tags"
+                type="text"
+                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-primary text-sm"
+              />
             </div>
-            <div class="form-group">
-              <label>Source URL</label>
-              <input v-model="articleForm.sourceUrl" type="url" class="form-control" />
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                {{ $t('penny.knowledgeBase.sourceUrlLabel') }}
+              </label>
+              <input
+                v-model="articleForm.sourceUrl"
+                type="url"
+                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-primary text-sm"
+              />
             </div>
-            <div class="form-group">
-              <label>Priority</label>
-              <input v-model="articleForm.priority" type="number" class="form-control" min="0" />
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                {{ $t('penny.knowledgeBase.priorityLabel') }}
+              </label>
+              <input
+                v-model="articleForm.priority"
+                type="number"
+                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-primary text-sm"
+                min="0"
+              />
             </div>
-            <div class="form-group">
-              <label>
-                <input v-model="articleForm.isActive" type="checkbox" />
-                Active
+            <div class="flex items-center">
+              <input
+                v-model="articleForm.isActive"
+                type="checkbox"
+                id="article-active"
+                class="w-4 h-4 text-primary border-gray-300 dark:border-gray-700 rounded focus:ring-primary bg-white dark:bg-gray-900"
+              />
+              <label for="article-active" class="ml-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                {{ $t('penny.knowledgeBase.activeLabel') }}
               </label>
             </div>
-            <div class="modal-footer">
-              <button type="button" @click="closeModal" class="btn btn-secondary">Cancel</button>
-              <button type="submit" class="btn btn-primary">Save</button>
+            <div class="flex justify-end gap-3 mt-6">
+              <button
+                type="button"
+                @click="closeModal"
+                class="px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 text-sm font-medium transition-colors"
+              >
+                {{ $t('penny.knowledgeBase.cancel') }}
+              </button>
+              <button
+                type="submit"
+                class="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/80 text-sm font-medium transition-colors"
+              >
+                {{ $t('penny.knowledgeBase.save') }}
+              </button>
             </div>
           </form>
         </div>
@@ -161,24 +327,44 @@
     </div>
 
     <!-- Test Search Modal -->
-    <div v-if="showTestSearch" class="modal-overlay">
-      <div class="modal">
-        <div class="modal-header">
-          <h2>Test Knowledge Base Search</h2>
-          <button @click="showTestSearch = false" class="btn-close">&times;</button>
+    <div v-if="showTestSearch" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+      <div class="bg-white dark:bg-gray-800 rounded-lg max-w-lg w-full border border-gray-200 dark:border-gray-700 shadow-xl overflow-hidden max-h-[90vh] overflow-y-auto">
+        <div class="flex justify-between items-center px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+          <h2 class="text-lg font-bold text-gray-900 dark:text-white">
+            {{ $t('penny.knowledgeBase.testSearchTitle') }}
+          </h2>
+          <button @click="showTestSearch = false" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-250">
+            <Icon icon="mdi:close" class="text-xl" />
+          </button>
         </div>
-        <div class="modal-body">
-          <div class="form-group">
-            <label>Search Query</label>
-            <input v-model="testQuery" type="text" class="form-control" />
+        <div class="p-6">
+          <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              {{ $t('penny.knowledgeBase.searchQueryLabel') }}
+            </label>
+            <input
+              v-model="testQuery"
+              type="text"
+              class="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-primary text-sm"
+              @keyup.enter="handleTestSearch"
+            />
           </div>
-          <button @click="handleTestSearch" class="btn btn-primary">Search</button>
-          
-          <div v-if="testResults" class="test-results">
-            <h3>Results ({{ testResults.count }})</h3>
-            <div v-for="article in testResults.articles" :key="article.id" class="result-item">
-              <h4>{{ article.title }}</h4>
-              <p>{{ article.content.substring(0, 200) }}...</p>
+          <button
+            @click="handleTestSearch"
+            class="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/80 text-sm font-medium transition-colors"
+          >
+            {{ $t('penny.knowledgeBase.search') }}
+          </button>
+
+          <div v-if="testResults" class="mt-6 border-t border-gray-200 dark:border-gray-700 pt-4">
+            <h3 class="text-sm font-semibold text-gray-900 dark:text-white mb-3">
+              {{ $t('penny.knowledgeBase.results', { count: testResults.count }) }}
+            </h3>
+            <div class="space-y-3 max-h-[40vh] overflow-y-auto pr-2">
+              <div v-for="article in testResults.articles" :key="article.id" class="p-3 border border-gray-200 dark:border-gray-700 rounded bg-gray-50 dark:bg-gray-700/30">
+                <h4 class="font-medium text-sm text-gray-900 dark:text-white mb-1">{{ article.title }}</h4>
+                <p class="text-xs text-gray-500 dark:text-gray-400 line-clamp-3">{{ article.content }}</p>
+              </div>
             </div>
           </div>
         </div>
@@ -188,10 +374,14 @@
 </template>
 
 <script>
+import { Icon } from '@iconify/vue';
 import { pennyApi } from '@/api/pennyApi';
 
 export default {
   name: 'KnowledgeBaseList',
+  components: {
+    Icon
+  },
   props: {
     botId: {
       type: String,
@@ -247,7 +437,7 @@ export default {
         this.totalPages = response.data.totalPages || 1;
       } catch (error) {
         console.error('Error loading articles:', error);
-        this.$toast.error('Failed to load articles');
+        this.$toast.error(this.$t('penny.knowledgeBase.failedToLoad'));
       } finally {
         this.loading = false;
       }
@@ -290,41 +480,41 @@ export default {
       try {
         if (this.showEditModal) {
           await pennyApi.updateKnowledgeArticle(this.botId, this.editingArticle.id, this.articleForm);
-          this.$toast.success('Article updated successfully');
+          this.$toast.success(this.$t('penny.knowledgeBase.articleUpdated'));
         } else {
           await pennyApi.createKnowledgeArticle(this.botId, this.articleForm);
-          this.$toast.success('Article created successfully');
+          this.$toast.success(this.$t('penny.knowledgeBase.articleCreated'));
         }
         this.closeModal();
         this.loadArticles();
         this.loadStats();
       } catch (error) {
         console.error('Error saving article:', error);
-        this.$toast.error('Failed to save article');
+        this.$toast.error(this.$t('penny.knowledgeBase.failedToSave'));
       }
     },
     
     async deleteArticle(article) {
-      if (!confirm('Are you sure you want to delete this article?')) return;
+      if (!confirm(this.$t('penny.knowledgeBase.deleteConfirm'))) return;
       
       try {
         await pennyApi.deleteKnowledgeArticle(this.botId, article.id);
-        this.$toast.success('Article deleted successfully');
+        this.$toast.success(this.$t('penny.knowledgeBase.articleDeleted'));
         this.loadArticles();
         this.loadStats();
       } catch (error) {
         console.error('Error deleting article:', error);
-        this.$toast.error('Failed to delete article');
+        this.$toast.error(this.$t('penny.knowledgeBase.failedToDelete'));
       }
     },
     
     async reembedArticle(article) {
       try {
         await pennyApi.reembedKnowledgeArticle(this.botId, article.id);
-        this.$toast.success('Embedding regenerated successfully');
+        this.$toast.success(this.$t('penny.knowledgeBase.embeddingRegenerated'));
       } catch (error) {
         console.error('Error re-embedding article:', error);
-        this.$toast.error('Failed to regenerate embedding');
+        this.$toast.error(this.$t('penny.knowledgeBase.failedToReembed'));
       }
     },
     
@@ -336,7 +526,7 @@ export default {
         this.testResults = response.data;
       } catch (error) {
         console.error('Error testing search:', error);
-        this.$toast.error('Search failed');
+        this.$toast.error(this.$t('penny.knowledgeBase.failedToSearch'));
       }
     },
     
@@ -364,238 +554,21 @@ export default {
 </script>
 
 <style scoped>
-.knowledge-base-list {
+.penny-knowledge-base {
+  width: 100%;
   padding: 20px;
 }
 
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
+.animate-spin {
+  animation: spin 1s linear infinite;
 }
 
-.page-header h1 {
-  margin: 0;
-}
-
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 15px;
-  margin-bottom: 20px;
-}
-
-.stat-card {
-  background: white;
-  padding: 15px;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
-.stat-label {
-  font-size: 14px;
-  color: #666;
-  margin-bottom: 5px;
-}
-
-.stat-value {
-  font-size: 24px;
-  font-weight: bold;
-}
-
-.text-success {
-  color: #28a745;
-}
-
-.search-bar {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 20px;
-}
-
-.search-input {
-  flex: 1;
-  padding: 8px 12px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-}
-
-.table-container {
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  overflow: hidden;
-}
-
-.data-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.data-table th,
-.data-table td {
-  padding: 12px;
-  text-align: left;
-  border-bottom: 1px solid #eee;
-}
-
-.data-table th {
-  background: #f8f9fa;
-  font-weight: 600;
-}
-
-.actions {
-  display: flex;
-  gap: 5px;
-}
-
-.status-badge {
-  padding: 4px 8px;
-  border-radius: 12px;
-  font-size: 12px;
-}
-
-.status-badge.active {
-  background: #d4edda;
-  color: #155724;
-}
-
-.status-badge.inactive {
-  background: #f8d7da;
-  color: #721c24;
-}
-
-.pagination {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 15px;
-  padding: 15px;
-}
-
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0,0,0,0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-}
-
-.modal {
-  background: white;
-  border-radius: 8px;
-  max-width: 600px;
-  width: 90%;
-  max-height: 90vh;
-  overflow-y: auto;
-}
-
-.modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 15px 20px;
-  border-bottom: 1px solid #eee;
-}
-
-.modal-header h2 {
-  margin: 0;
-}
-
-.btn-close {
-  background: none;
-  border: none;
-  font-size: 24px;
-  cursor: pointer;
-}
-
-.modal-body {
-  padding: 20px;
-}
-
-.form-group {
-  margin-bottom: 15px;
-}
-
-.form-group label {
-  display: block;
-  margin-bottom: 5px;
-  font-weight: 500;
-}
-
-.form-control {
-  width: 100%;
-  padding: 8px 12px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  box-sizing: border-box;
-}
-
-.modal-footer {
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-  margin-top: 20px;
-}
-
-.btn {
-  padding: 8px 16px;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 14px;
-}
-
-.btn-primary {
-  background: #007bff;
-  color: white;
-}
-
-.btn-secondary {
-  background: #6c757d;
-  color: white;
-}
-
-.btn-info {
-  background: #17a2b8;
-  color: white;
-}
-
-.btn-danger {
-  background: #dc3545;
-  color: white;
-}
-
-.btn-sm {
-  padding: 4px 8px;
-  font-size: 12px;
-}
-
-.test-results {
-  margin-top: 20px;
-  border-top: 1px solid #eee;
-  padding-top: 15px;
-}
-
-.result-item {
-  padding: 10px;
-  border: 1px solid #eee;
-  border-radius: 4px;
-  margin-bottom: 10px;
-}
-
-.result-item h4 {
-  margin: 0 0 5px 0;
-}
-
-.result-item p {
-  margin: 0;
-  color: #666;
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 </style>

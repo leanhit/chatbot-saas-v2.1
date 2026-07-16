@@ -1,52 +1,52 @@
 <template>
-  <div class="dashboard p-4">
+  <div class="penny-analytics">
     <!-- Header -->
-    <div class="mt-2 w-full">
-      <div class="lg:flex grid-cols-1 lg:space-y-0 space-y-3 gap-5 justify-between">
-        <div>
-          <p class="uppercase text-xs text-gray-700 font-semibold">Penny Analytics</p>
-          <h1 class="text-2xl text-gray-900 dark:text-gray-200 font-medium">
-            Analytics Dashboard
-          </h1>
-        </div>
-        <div class="flex gap-2">
-          <select
-            v-model="selectedBotId"
-            @change="loadAnalytics"
-            class="bg-white dark:bg-gray-800 hover:border-gray-200 dark:hover:bg-gray-700 dark:text-white dark:border-gray-700 border rounded py-2 px-3"
-          >
-            <option value="">All Bots</option>
-            <option v-for="bot in availableBots" :key="bot.id" :value="bot.id">
-              {{ bot.botName }}
-            </option>
-          </select>
-          <select
-            v-model="timeRange"
-            @change="loadAnalytics"
-            class="bg-white dark:bg-gray-800 hover:border-gray-200 dark:hover:bg-gray-700 dark:text-white dark:border-gray-700 border rounded py-2 px-3"
-          >
-            <option value="1day">Last 24 Hours</option>
-            <option value="7days">Last 7 Days</option>
-            <option value="30days">Last 30 Days</option>
-            <option value="90days">Last 90 Days</option>
-          </select>
-          <button
-            @click="loadAnalytics"
-            :disabled="loading"
-            class="bg-white dark:bg-gray-800 hover:border-gray-200 dark:hover:bg-gray-700 dark:text-white dark:border-gray-700 border rounded py-2 px-5 flex items-center gap-2"
-          >
-            <Icon icon="mdi:refresh" :class="{'animate-spin': loading}" class="text-lg" />
-            Refresh
-          </button>
-        </div>
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+      <div>
+        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
+          {{ $t('penny.analyticsDashboard.title') }}
+        </h1>
+        <p class="text-gray-600 dark:text-gray-400 mt-1">
+          {{ $t('penny.analyticsDashboard.subtitle') }}
+        </p>
+      </div>
+      <div class="flex flex-wrap items-center gap-3 w-full md:w-auto">
+        <select
+          v-model="selectedBotId"
+          @change="loadAnalytics"
+          class="bg-white dark:bg-gray-800 hover:border-gray-300 dark:hover:border-gray-600 dark:text-white dark:border-gray-700 border border-gray-200 rounded-md py-2 px-3 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+        >
+          <option value="">{{ $t('penny.analyticsDashboard.allBots') }}</option>
+          <option v-for="bot in availableBots" :key="bot.id" :value="bot.id">
+            {{ bot.botName }}
+          </option>
+        </select>
+        <select
+          v-model="timeRange"
+          @change="loadAnalytics"
+          class="bg-white dark:bg-gray-800 hover:border-gray-300 dark:hover:border-gray-600 dark:text-white dark:border-gray-700 border border-gray-200 rounded-md py-2 px-3 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+        >
+          <option value="1day">{{ $t('penny.analyticsDashboard.last24Hours') }}</option>
+          <option value="7days">{{ $t('penny.analyticsDashboard.last7Days') }}</option>
+          <option value="30days">{{ $t('penny.analyticsDashboard.last30Days') }}</option>
+          <option value="90days">{{ $t('penny.analyticsDashboard.last90Days') }}</option>
+        </select>
+        <button
+          @click="loadAnalytics"
+          :disabled="loading"
+          class="inline-flex items-center px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/80 transition-colors disabled:opacity-50 text-sm font-medium"
+        >
+          <Icon icon="mdi:refresh" :class="{'animate-spin': loading}" class="mr-2" />
+          {{ $t('penny.analyticsDashboard.refresh') }}
+        </button>
       </div>
     </div>
 
     <!-- Analytics Summary Cards -->
     <div class="wrapper-card grid lg:grid-cols-4 grid-cols-1 md:grid-cols-2 gap-4 mt-6">
-      <div class="card bg-white dark:bg-gray-800 w-full rounded-md p-5 border dark:border-gray-700 flex">
+      <div class="card bg-white dark:bg-gray-800 w-full rounded-md p-5 border border-gray-200 dark:border-gray-700 flex">
         <div class="p-2 max-w-sm">
-          <div class="bg-blue-200 rounded-full w-14 h-14 text-lg p-3 text-blue-600 mx-auto">
+          <div class="bg-blue-200 rounded-full w-14 h-14 text-lg p-3 text-blue-600 mx-auto flex items-center justify-center">
             <Icon icon="mdi:message-text" class="text-2xl" />
           </div>
         </div>
@@ -54,7 +54,7 @@
           <p class="font-semibold text-gray-900 dark:text-gray-200 text-xl">
             {{ formatNumber(analyticsSummary.totalMessages) }}
           </p>
-          <h2 class="font-normal text-gray-400 text-md mt-1">Total Messages</h2>
+          <h2 class="font-normal text-gray-400 text-md mt-1">{{ $t('penny.analyticsDashboard.totalMessages') }}</h2>
           <div class="flex items-center mt-2">
             <span class="text-blue-500 text-sm flex items-center">
               <Icon icon="mdi:check-circle" class="mr-1" />
@@ -64,9 +64,9 @@
         </div>
       </div>
 
-      <div class="card bg-white dark:bg-gray-800 w-full rounded-md p-5 border dark:border-gray-700 flex">
+      <div class="card bg-white dark:bg-gray-800 w-full rounded-md p-5 border border-gray-200 dark:border-gray-700 flex">
         <div class="p-2 max-w-sm">
-          <div class="bg-green-200 rounded-full w-14 h-14 text-lg p-3 text-green-600 mx-auto">
+          <div class="bg-green-200 rounded-full w-14 h-14 text-lg p-3 text-green-600 mx-auto flex items-center justify-center">
             <Icon icon="mdi:alert" class="text-2xl" />
           </div>
         </div>
@@ -74,7 +74,7 @@
           <p class="font-semibold text-gray-900 dark:text-gray-200 text-xl">
             {{ formatNumber(analyticsSummary.totalErrors) }}
           </p>
-          <h2 class="font-normal text-gray-400 text-md mt-1">Total Errors</h2>
+          <h2 class="font-normal text-gray-400 text-md mt-1">{{ $t('penny.analyticsDashboard.totalErrors') }}</h2>
           <div class="flex items-center mt-2">
             <span :class="analyticsSummary.errorRate < 0.05 ? 'text-green-500' : 'text-red-500'" class="text-sm flex items-center">
               <Icon :icon="analyticsSummary.errorRate < 0.05 ? 'mdi:check-circle' : 'mdi:alert'" class="mr-1" />
@@ -84,9 +84,9 @@
         </div>
       </div>
 
-      <div class="card bg-white dark:bg-gray-800 w-full rounded-md p-5 border dark:border-gray-700 flex">
+      <div class="card bg-white dark:bg-gray-800 w-full rounded-md p-5 border border-gray-200 dark:border-gray-700 flex">
         <div class="p-2 max-w-sm">
-          <div class="bg-purple-200 rounded-full w-14 h-14 text-lg p-3 text-purple-600 mx-auto">
+          <div class="bg-purple-200 rounded-full w-14 h-14 text-lg p-3 text-purple-600 mx-auto flex items-center justify-center">
             <Icon icon="mdi:speedometer" class="text-2xl" />
           </div>
         </div>
@@ -94,7 +94,7 @@
           <p class="font-semibold text-gray-900 dark:text-gray-200 text-xl">
             {{ formatNumber(analyticsSummary.averageProcessingTime) }}ms
           </p>
-          <h2 class="font-normal text-gray-400 text-md mt-1">Avg Response Time</h2>
+          <h2 class="font-normal text-gray-400 text-md mt-1">{{ $t('penny.analyticsDashboard.avgResponseTime') }}</h2>
           <div class="flex items-center mt-2">
             <span class="text-blue-500 text-sm flex items-center">
               <Icon icon="mdi:speedometer" class="mr-1" />
@@ -104,9 +104,9 @@
         </div>
       </div>
 
-      <div class="card bg-white dark:bg-gray-800 w-full rounded-md p-5 border dark:border-gray-700 flex">
+      <div class="card bg-white dark:bg-gray-800 w-full rounded-md p-5 border border-gray-200 dark:border-gray-700 flex">
         <div class="p-2 max-w-sm">
-          <div class="bg-orange-200 rounded-full w-14 h-14 text-lg p-3 text-orange-600 mx-auto">
+          <div class="bg-orange-200 rounded-full w-14 h-14 text-lg p-3 text-orange-600 mx-auto flex items-center justify-center">
             <Icon icon="mdi:chart-bar" class="text-2xl" />
           </div>
         </div>
@@ -114,7 +114,7 @@
           <p class="font-semibold text-gray-900 dark:text-gray-200 text-xl truncate">
             {{ analyticsSummary.mostUsedProvider || 'N/A' }}
           </p>
-          <h2 class="font-normal text-gray-400 text-md mt-1">Most Used Provider</h2>
+          <h2 class="font-normal text-gray-400 text-md mt-1">{{ $t('penny.analyticsDashboard.mostUsedProvider') }}</h2>
           <div class="flex items-center mt-2">
             <span class="text-green-500 text-sm flex items-center">
               <Icon icon="mdi:check-circle" class="mr-1" />
@@ -126,42 +126,42 @@
     </div>
 
     <!-- Analytics Events Table -->
-    <div class="mt-6 bg-white dark:bg-gray-800 p-6 rounded-md border dark:border-gray-700">
+    <div class="mt-6 bg-white dark:bg-gray-800 p-6 rounded-md border border-gray-200 dark:border-gray-700">
       <div class="flex justify-between items-center mb-4">
-        <h2 class="font-medium text-sm text-gray-800 dark:text-gray-200">Recent Analytics Events</h2>
+        <h2 class="font-medium text-sm text-gray-800 dark:text-gray-200">{{ $t('penny.analyticsDashboard.recentEvents') }}</h2>
       </div>
       <div v-if="loadingEvents" class="text-center py-4">
         <Icon icon="mdi:loading" class="text-6xl text-gray-300 animate-spin mx-auto" />
         <p class="mt-2 text-gray-500">Loading analytics events...</p>
       </div>
       <div v-else-if="analyticsEvents.length === 0" class="text-center py-4 text-gray-500">
-        No analytics events found
+        {{ $t('penny.analyticsDashboard.noEvents') }}
       </div>
       <div v-else class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+        <table class="min-w-full divide-y divide-gray-250 dark:divide-gray-700">
           <thead class="bg-gray-50 dark:bg-gray-700">
             <tr>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                Timestamp
+              <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                {{ $t('penny.analyticsDashboard.timestamp') }}
               </th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                Event Type
+              <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                {{ $t('penny.analyticsDashboard.eventType') }}
               </th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                Intent
+              <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                {{ $t('penny.analyticsDashboard.intent') }}
               </th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                Provider
+              <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                {{ $t('penny.analyticsDashboard.provider') }}
               </th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                Processing Time
+              <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                {{ $t('penny.analyticsDashboard.processingTime') }}
               </th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                Status
+              <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                {{ $t('penny.analyticsDashboard.status') }}
               </th>
             </tr>
           </thead>
-          <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+          <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-250 dark:divide-gray-700">
             <tr v-for="event in analyticsEvents" :key="event.id">
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                 {{ formatDateTime(event.timestamp) }}
@@ -196,31 +196,31 @@
       </div>
       
       <!-- Pagination -->
-      <div v-if="totalPages > 1" class="flex justify-center mt-4 space-x-2">
+      <div v-if="totalPages > 1" class="flex justify-center items-center mt-4 space-x-2">
         <button
           @click="loadEvents(currentPage - 1)"
           :disabled="currentPage === 1"
-          class="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white disabled:opacity-50"
+          class="px-3 py-1.5 border border-gray-300 dark:border-gray-650 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white disabled:opacity-50 text-sm font-medium transition-colors hover:bg-gray-50 dark:hover:bg-gray-600"
         >
-          Previous
+          {{ $t('penny.analyticsDashboard.previous') }}
         </button>
-        <span class="px-3 py-1 text-gray-900 dark:text-white">
-          Page {{ currentPage }} of {{ totalPages }}
+        <span class="px-3 py-1.5 text-gray-900 dark:text-white text-sm">
+          {{ $t('penny.analyticsDashboard.pageOf', { page: currentPage, total: totalPages }) }}
         </span>
         <button
           @click="loadEvents(currentPage + 1)"
           :disabled="currentPage === totalPages"
-          class="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white disabled:opacity-50"
+          class="px-3 py-1.5 border border-gray-300 dark:border-gray-650 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white disabled:opacity-50 text-sm font-medium transition-colors hover:bg-gray-50 dark:hover:bg-gray-600"
         >
-          Next
+          {{ $t('penny.analyticsDashboard.next') }}
         </button>
       </div>
     </div>
 
     <!-- Intent Distribution Chart -->
-    <div class="mt-6 bg-white dark:bg-gray-800 p-6 rounded-md border dark:border-gray-700">
+    <div class="mt-6 bg-white dark:bg-gray-800 p-6 rounded-md border border-gray-200 dark:border-gray-700">
       <div class="flex justify-between items-center mb-4">
-        <h2 class="font-medium text-sm text-gray-800 dark:text-gray-200">Intent Distribution</h2>
+        <h2 class="font-medium text-sm text-gray-800 dark:text-gray-200">{{ $t('penny.analyticsDashboard.intentDistribution') }}</h2>
       </div>
       <div v-if="loadingAnalytics" class="text-center py-4">
         <Icon icon="mdi:loading" class="text-6xl text-gray-300 animate-spin mx-auto" />
@@ -356,6 +356,11 @@ export default {
 </script>
 
 <style scoped>
+.penny-analytics {
+  width: 100%;
+  padding: 20px;
+}
+
 .animate-spin {
   animation: spin 1s linear infinite;
 }
