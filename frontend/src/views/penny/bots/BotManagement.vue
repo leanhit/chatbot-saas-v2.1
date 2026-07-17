@@ -10,17 +10,28 @@
           {{ $t('penny.subtitle') }}
         </p>
       </div>
-      <button
-        @click="showCreateModal = true"
-        class="inline-flex items-center px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/80 transition-colors"
-      >
-        <Icon icon="mdi:plus" class="mr-2" />
-        {{ $t('penny.createBot') }}
-      </button>
+      <div class="flex items-center space-x-2">
+        <button
+          id="btn-tour-guide"
+          @click="startTour"
+          class="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors shadow-sm"
+        >
+          <Icon icon="mdi:help-circle-outline" class="mr-2 text-primary" />
+          {{ $t('penny.guide') }}
+        </button>
+        <button
+          id="btn-create-bot"
+          @click="showCreateModal = true"
+          class="inline-flex items-center px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/80 transition-colors"
+        >
+          <Icon icon="mdi:plus" class="mr-2" />
+          {{ $t('penny.createBot') }}
+        </button>
+      </div>
     </div>
 
     <!-- Stats Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+    <div id="penny-stats-container" class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
       <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
         <div class="flex items-center">
           <div class="p-3 bg-green-100 dark:bg-green-900 rounded-full">
@@ -112,11 +123,12 @@
     </div>
 
     <!-- Bot Grid -->
-    <div v-else class="bot-grid">
+    <div v-else class="bot-grid" id="penny-bot-grid">
       <div
-        v-for="bot in pennyBots"
+        v-for="(bot, index) in pennyBots"
         :key="bot.id"
         v-show="bot && bot.id"
+        :id="index === 0 ? 'first-bot-card' : null"
         class="bg-white dark:bg-gray-800 rounded-lg shadow-md border border-gray-200 dark:border-gray-700 hover:shadow-lg transition-shadow duration-200 p-6"
       >
         <div class="card-header">
@@ -172,7 +184,7 @@
               <!-- Connection Button -->
               <button
                 @click="goToConnections(bot)"
-                class="flex items-center justify-center px-3 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 transition-colors"
+                class="tour-btn-connections flex items-center justify-center px-3 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 transition-colors"
               >
                 <Icon icon="mdi:link-variant" class="h-4 w-4 mr-1" />
                 {{ $t('penny.connection') }}
@@ -181,7 +193,7 @@
               <!-- Rules Management Button -->
               <button
                 @click="goToRules(bot)"
-                class="flex items-center justify-center px-3 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 transition-colors"
+                class="tour-btn-rules flex items-center justify-center px-3 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 transition-colors"
               >
                 <Icon icon="mdi:book-open-variant" class="h-4 w-4 mr-1" />
                 {{ $t('penny.manageRules') }}
@@ -190,7 +202,7 @@
               <!-- Knowledge Base Button -->
               <button
                 @click="goToKnowledgeBase(bot)"
-                class="flex items-center justify-center px-3 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700 transition-colors"
+                class="tour-btn-kb flex items-center justify-center px-3 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700 transition-colors"
               >
                 <Icon icon="mdi:bookshelf" class="h-4 w-4 mr-1" />
                 Knowledge Base
@@ -199,7 +211,7 @@
               <!-- Escalation Tickets Button -->
               <button
                 @click="goToEscalationTickets(bot)"
-                class="flex items-center justify-center px-3 py-2 bg-orange-600 text-white text-sm font-medium rounded-md hover:bg-orange-700 transition-colors"
+                class="tour-btn-escalation flex items-center justify-center px-3 py-2 bg-orange-600 text-white text-sm font-medium rounded-md hover:bg-orange-700 transition-colors"
               >
                 <Icon icon="mdi:ticket-account" class="h-4 w-4 mr-1" />
                 Escalation
@@ -208,7 +220,7 @@
               <!-- Bot Configuration Button -->
               <button
                 @click="goToBotConfig(bot)"
-                class="flex items-center justify-center px-3 py-2 bg-teal-600 text-white text-sm font-medium rounded-md hover:bg-teal-700 transition-colors col-span-2"
+                class="tour-btn-config flex items-center justify-center px-3 py-2 bg-teal-600 text-white text-sm font-medium rounded-md hover:bg-teal-700 transition-colors col-span-2"
               >
                 <Icon icon="mdi:cog" class="h-4 w-4 mr-1" />
                 Configuration
@@ -218,7 +230,7 @@
               <button
                 @click="openChatModal(bot)"
                 :disabled="!bot.isFullyActive()"
-                class="flex items-center justify-center px-3 py-2 bg-purple-600 text-white text-sm font-medium rounded-md hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed col-span-2"
+                class="tour-btn-chat flex items-center justify-center px-3 py-2 bg-purple-600 text-white text-sm font-medium rounded-md hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed col-span-2"
               >
                 <Icon icon="mdi:chat" class="h-4 w-4 mr-1" />
                 {{ $t('penny.chat') }}
@@ -335,6 +347,8 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
+import { driver } from 'driver.js'
+import 'driver.js/dist/driver.css'
 import { formatDate, formatDateTime } from '@/utils/dateUtils'
 import { usePennyBotStore } from '@/stores/pennyBotStore'
 import { usePennyRuleStore } from '@/stores/pennyRuleStore'
@@ -630,6 +644,124 @@ export default {
       return PennyBotTypeDisplay[botType] || botType
     }
 
+    const startTour = () => {
+      const tourDriver = driver({
+        showProgress: true,
+        animate: true,
+        allowClose: true,
+        overlayColor: 'rgba(0, 0, 0, 0.75)',
+        nextBtnText: t('penny.next') || 'Tiếp theo',
+        prevBtnText: t('penny.prev') || 'Quay lại',
+        doneBtnText: t('penny.done') || 'Xong',
+        steps: [
+          {
+            element: '#btn-tour-guide',
+            popover: {
+              title: 'Chào mừng đến với Penny Bot! 👋',
+              description: 'Penny Bot là giải pháp chatbot AI tiên tiến cho doanh nghiệp của bạn, hỗ trợ RAG (Knowledge Base), Rules động và Chuyển giao hỗ trợ (Escalation).',
+              side: 'bottom',
+              align: 'end'
+            }
+          },
+          {
+            element: '#btn-create-bot',
+            popover: {
+              title: 'Tạo Bot Mới 🤖',
+              description: 'Click vào đây để bắt đầu tạo chú bot AI đầu tiên của bạn chỉ trong vài bước.',
+              side: 'bottom',
+              align: 'end'
+            }
+          },
+          {
+            element: '#penny-stats-container',
+            popover: {
+              title: 'Thống kê Bot 📊',
+              description: 'Nơi hiển thị tổng số bot của bạn, bao gồm số bot đang hoạt động và số bot tạm dừng.',
+              side: 'bottom',
+              align: 'center'
+            }
+          },
+          ...(pennyBots.value.length > 0 ? [
+            {
+              element: '#first-bot-card',
+              popover: {
+                title: 'Thẻ Quản lý Bot 📇',
+                description: 'Mỗi bot được biểu diễn bằng một thẻ chứa thông tin chi tiết và các phím tắt quản trị nhanh.',
+                side: 'right',
+                align: 'start'
+              }
+            },
+            {
+              element: '#first-bot-card .tour-btn-kb',
+              popover: {
+                title: 'Cơ sở Tri thức (RAG) 📚',
+                description: 'Nạp tri thức cho bot bằng cách tải lên tài liệu FAQ hoặc tài liệu nghiệp vụ. AI sẽ đọc và trả lời khách hàng dựa trên dữ liệu này.',
+                side: 'top',
+                align: 'center'
+              }
+            },
+            {
+              element: '#first-bot-card .tour-btn-rules',
+              popover: {
+                title: 'Quản lý Quy tắc (Rules) ⚙️',
+                description: 'Định nghĩa các từ khóa hoặc kịch bản trả lời tĩnh (ví dụ: khách hỏi "STK" -> gửi thông tin ngân hàng) để phản hồi lập tức và tiết kiệm chi phí LLM.',
+                side: 'top',
+                align: 'center'
+              }
+            },
+            {
+              element: '#first-bot-card .tour-btn-connections',
+              popover: {
+                title: 'Kết nối Kênh 🔗',
+                description: 'Cấu hình kết nối bot của bạn với Facebook Fanpage hoặc các kênh chat khác để tự động chăm sóc khách hàng.',
+                side: 'top',
+                align: 'center'
+              }
+            },
+            {
+              element: '#first-bot-card .tour-btn-escalation',
+              popover: {
+                title: 'Chuyển giao cho Người thật (Escalation) 🚨',
+                description: 'Quản lý các yêu cầu hỗ trợ khi AI không tự tin trả lời hoặc khách hàng yêu cầu gặp tư vấn viên.',
+                side: 'top',
+                align: 'center'
+              }
+            },
+            {
+              element: '#first-bot-card .tour-btn-config',
+              popover: {
+                title: 'Cấu hình AI 🛠️',
+                description: 'Thiết lập Prompt hệ thống (System Prompt) và Ngưỡng độ tin cậy tối thiểu trước khi chuyển cho người thật.',
+                side: 'top',
+                align: 'center'
+              }
+            },
+            {
+              element: '#first-bot-card .tour-btn-chat',
+              popover: {
+                title: 'Chat Thử nghiệm 💬',
+                description: 'Kiểm tra độ thông minh của bot bằng cách trò chuyện trực tiếp trước khi kết nối chính thức ra fanpage.',
+                side: 'top',
+                align: 'center'
+              }
+            }
+          ] : [
+            {
+              element: '#penny-stats-container',
+              popover: {
+                title: 'Thiết lập Bot Đầu Tiên 🎉',
+                description: 'Sau khi bạn tạo thành công bot đầu tiên, các nút chức năng RAG, Rules, Connections, Escalation và Chat thử nghiệm sẽ xuất hiện trên thẻ của Bot.',
+                side: 'bottom',
+                align: 'center'
+              }
+            }
+          ])
+        ]
+      })
+
+      tourDriver.drive()
+    }
+
     const copyToClipboard = async (text, fieldName) => {
       try {
         await navigator.clipboard.writeText(text)
@@ -649,6 +781,14 @@ export default {
     // Lifecycle
     onMounted(() => {
       fetchBots()
+      
+      // Auto-start tour if not completed
+      setTimeout(() => {
+        if (!localStorage.getItem('penny_tour_completed')) {
+          startTour()
+          localStorage.setItem('penny_tour_completed', 'true')
+        }
+      }, 1000)
     })
 
     return {
@@ -679,6 +819,7 @@ export default {
       selectedBot,
 
       // Methods
+      startTour,
       fetchBots,
       toggleBotStatus,
       editBot,
@@ -904,5 +1045,92 @@ export default {
 
 .loading-state {
   margin-top: 20px;
+}
+
+/* Style overrides for driver.js popover to support Windzo theme & dark mode */
+:deep(.driver-popover) {
+  background-color: #ffffff !important;
+  color: #1f2937 !important;
+  border-radius: 8px !important;
+  padding: 16px !important;
+  font-family: inherit !important;
+  border: 1px solid #e5e7eb !important;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
+  max-width: 350px !important;
+}
+
+.dark :deep(.driver-popover) {
+  background-color: #1f2937 !important;
+  color: #f3f4f6 !important;
+  border-color: #374151 !important;
+}
+
+:deep(.driver-popover-title) {
+  font-size: 16px !important;
+  font-weight: 700 !important;
+  color: #111827 !important;
+  margin-bottom: 8px !important;
+}
+
+.dark :deep(.driver-popover-title) {
+  color: #ffffff !important;
+}
+
+:deep(.driver-popover-description) {
+  font-size: 14px !important;
+  color: #4b5563 !important;
+  line-height: 1.5 !important;
+}
+
+.dark :deep(.driver-popover-description) {
+  color: #d1d5db !important;
+}
+
+:deep(.driver-popover-footer) {
+  margin-top: 14px !important;
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+}
+
+:deep(.driver-popover-btn) {
+  background-color: #f3f4f6 !important;
+  color: #374151 !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  border-radius: 6px !important;
+  border: 1px solid #d1d5db !important;
+  padding: 6px 12px !important;
+  text-shadow: none !important;
+  transition: all 0.2s ease !important;
+}
+
+:deep(.driver-popover-btn:hover) {
+  background-color: #e5e7eb !important;
+}
+
+.dark :deep(.driver-popover-btn) {
+  background-color: #374151 !important;
+  color: #e5e7eb !important;
+  border-color: #4b5563 !important;
+}
+
+.dark :deep(.driver-popover-btn:hover) {
+  background-color: #4b5563 !important;
+}
+
+:deep(.driver-popover-next-btn) {
+  background-color: #2563eb !important;
+  color: #ffffff !important;
+  border: none !important;
+}
+
+:deep(.driver-popover-next-btn:hover) {
+  background-color: #1d4ed8 !important;
+}
+
+:deep(.driver-popover-progress-text) {
+  color: #9ca3af !important;
+  font-size: 12px !important;
 }
 </style>

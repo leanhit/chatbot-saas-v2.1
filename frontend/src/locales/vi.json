@@ -453,6 +453,9 @@
   "penny": {
     "title": "Quản lý Bot Penny",
     "subtitle": "Quản lý trợ lý AI và tự động hóa cuộc trò chuyện",
+    "guide": "Hướng dẫn",
+    "next": "Tiếp theo",
+    "prev": "Quay lại",
     "createBot": "Tạo Bot",
     "activeBots": "Bot Hoạt động",
     "inactiveBots": "Bot Không hoạt động",

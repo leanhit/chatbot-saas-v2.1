@@ -454,6 +454,7 @@
   "penny": {
     "title": "Penny Bot Management",
     "subtitle": "Manage your AI assistants and automate conversations",
+    "guide": "Guide",
     "createBot": "Create Bot",
     "activeBots": "Active Bots",
     "inactiveBots": "Inactive Bots",
