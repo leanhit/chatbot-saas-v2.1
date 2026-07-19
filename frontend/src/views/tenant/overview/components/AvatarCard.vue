@@ -1,5 +1,5 @@
 <template>
-  <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+  <div id="tenant-avatar-card" class="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
     <!-- Profile Header -->
     <div class="text-center">
       <!-- Avatar Section - Like User Profile -->
@@ -21,6 +21,7 @@
           </div>
           <button
             v-if="canEdit"
+            id="btn-update-logo"
             @click="$emit('update-logo')"
             class="absolute bottom-0 right-0 bg-primary text-white p-2 rounded-full shadow-lg hover:bg-primary/80 transition-colors"
             :title="$t('tenant.overview.updateLogo')"
@@ -80,6 +81,7 @@
           <Icon icon="mdi:web" class="h-5 w-5" />
         </button>
         <button
+          id="btn-manage-members"
           @click="$emit('manage-members')"
           class="p-2 text-gray-400 hover:text-green-600 transition-colors"
           :title="$t('tenant.member.title')"
@@ -87,6 +89,7 @@
           <Icon icon="mdi:account-group" class="h-5 w-5" />
         </button>
         <button
+          id="btn-switch-tenant"
           @click="switchTenant"
           class="p-2 text-gray-400 hover:text-blue-500 transition-colors"
           :title="$t('sidebar.switchTenant')"

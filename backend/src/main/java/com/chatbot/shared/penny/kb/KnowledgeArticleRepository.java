@@ -97,4 +97,12 @@ public interface KnowledgeArticleRepository extends JpaRepository<KnowledgeArtic
         @Param("botId") UUID botId,
         @Param("tenantId") Long tenantId,
         @Param("topK") int topK);
+
+    /**
+     * Sum total content length for all active knowledge articles of a tenant.
+     * Used to estimate storage consumed by the knowledge base.
+     */
+    @Query("SELECT COALESCE(SUM(LENGTH(ka.content)), 0) FROM KnowledgeArticle ka " +
+           "WHERE ka.tenantId = :tenantId AND ka.isActive = true")
+    long sumContentLengthByTenantId(@Param("tenantId") Long tenantId);
 }
