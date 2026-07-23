@@ -7,6 +7,7 @@ import com.chatbot.core.tenant.model.Tenant;
 import com.chatbot.core.tenant.repository.TenantRepository;
 import com.chatbot.core.tenant.exception.TenantNotFoundException;
 import com.chatbot.core.tenant.exception.BusinessLogicException;
+import com.chatbot.shared.exceptions.FileValidationException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -68,7 +69,7 @@ public class TenantProfileController {
         log.info("[TenantProfileController] ===== START updateProfile: tenantKey={}", tenantKey);
         try {
             Tenant tenant = tenantRepository.findByTenantKey(tenantKey)
-                    .orElseThrow(() -> new RuntimeException("Tenant not found with key: " + tenantKey));
+                    .orElseThrow(() -> new TenantNotFoundException("Tenant not found with key: " + tenantKey));
             log.info("[TenantProfileController] Found tenant: id={}, name={}", tenant.getId(), tenant.getName());
             
             TenantProfileResponse response = tenantProfileService.upsertProfile(tenant.getId(), request);
@@ -102,7 +103,7 @@ public class TenantProfileController {
             // Validate file
             if (file == null) {
                 log.error("❌ [TENANT PROFILE CONTROLLER] File is null");
-                throw new IllegalArgumentException("File cannot be null");
+                throw FileValidationException.fileNull();
             }
             
             // Temporarily allow empty files for debugging
@@ -115,13 +116,13 @@ public class TenantProfileController {
             String contentType = file.getContentType();
             if (contentType == null || !contentType.startsWith("image/")) {
                 log.error("❌ [TENANT PROFILE CONTROLLER] Invalid file type: {}", contentType);
-                throw new IllegalArgumentException("Only image files are allowed");
+                throw FileValidationException.invalidFileType("image/*");
             }
             
             // Validate file size (max 10MB)
             if (file.getSize() > 10 * 1024 * 1024) {
                 log.error("413 ERROR - File too large: {} bytes", file.getSize());
-                throw new IllegalArgumentException("File size cannot exceed 10MB");
+                throw FileValidationException.fileTooLarge(10 * 1024 * 1024);
             }
             
             log.info("✅ [TENANT PROFILE CONTROLLER] File validation passed, finding tenant");
@@ -129,7 +130,7 @@ public class TenantProfileController {
             Tenant tenant = tenantRepository.findByTenantKey(tenantKey)
                     .orElseThrow(() -> {
                         log.error("❌ [TENANT PROFILE CONTROLLER] Tenant not found: {}", tenantKey);
-                        return new RuntimeException("Tenant not found with key: " + tenantKey);
+                        return new TenantNotFoundException("Tenant not found with key: " + tenantKey);
                     });
             
             log.info("✅ [TENANT PROFILE CONTROLLER] Found tenant: {} (ID: {}), calling service", tenant.getTenantKey(), tenant.getId());
@@ -139,7 +140,7 @@ public class TenantProfileController {
             log.info("✅ [TENANT PROFILE CONTROLLER] Logo updated successfully for tenant: {}", tenantKey);
             return ResponseEntity.ok(response);
             
-        } catch (IllegalArgumentException e) {
+        } catch (FileValidationException e) {
             log.error("❌ [TENANT PROFILE CONTROLLER] Validation error: {}", e.getMessage());
             throw e;
         } catch (Exception e) {
@@ -211,6 +212,8 @@ public class TenantProfileController {
         }
         
         // Neither file nor request provided
-        throw new IllegalArgumentException("Either profile data or logo file must be provided");
+        throw new com.chatbot.core.identity.exception.ValidationException(
+            "Either profile data or logo file must be provided"
+        );
     }
 }

@@ -13,6 +13,8 @@ import com.chatbot.shared.address.repository.AddressRepository;
 import com.chatbot.core.tenant.model.Tenant;
 import com.chatbot.core.tenant.repository.TenantRepository;
 
+import com.chatbot.shared.exceptions.ResourceNotFoundException;
+
 import java.util.Optional;
 
 @Service
@@ -29,7 +31,7 @@ public class AddressService {
         // Kiểm tra xem owner đã có địa chỉ chưa
         Optional<Address> existingAddress = addressRepository.findByTenantIdAndOwnerTypeAndOwnerId(tenantId, dto.getOwnerType(), dto.getOwnerId());
         if (existingAddress.isPresent()) {
-            throw new RuntimeException("Owner already has an address. Use update instead.");
+            throw new ResourceNotFoundException("Owner already has an address. Use update instead.");
         }
         
         Address address = addressMapper.toEntity(tenantId, dto);
@@ -64,7 +66,7 @@ public class AddressService {
     public AddressDetailResponseDTO getUserAddress(OwnerType type, Long ownerId) {
         Optional<Address> address = addressRepository.findByOwnerTypeAndOwnerId(type, ownerId);
         return address.map(addressMapper::toDetailDTO)
-                .orElseThrow(() -> new RuntimeException("Address not found for user"));
+                .orElseThrow(() -> new ResourceNotFoundException("Address not found for user"));
     }
 
     // Lấy hoặc tạo địa chỉ duy nhất cho user (không cần tenant)
@@ -95,12 +97,12 @@ public class AddressService {
     public AddressDetailResponseDTO getSingleAddressByOwner(Long tenantId, OwnerType type, Long ownerId) {
         Optional<Address> address = addressRepository.findByTenantIdAndOwnerTypeAndOwnerId(tenantId, type, ownerId);
         return address.map(addressMapper::toDetailDTO)
-                .orElseThrow(() -> new RuntimeException("Address not found for owner"));
+                .orElseThrow(() -> new ResourceNotFoundException("Address not found for owner"));
     }
 
     public AddressDetailResponseDTO getAddressDetail(Long tenantId, Long id) {
         Address address = addressRepository.findByIdAndTenantId(id, tenantId)
-                .orElseThrow(() -> new RuntimeException("Address not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Address not found"));
         return addressMapper.toDetailDTO(address);
     }
 
@@ -134,7 +136,7 @@ public class AddressService {
     @Transactional
     public AddressDetailResponseDTO updateUserAddress(OwnerType type, Long ownerId, AddressUpdateRequest dto) {
         Address address = addressRepository.findByOwnerTypeAndOwnerId(type, ownerId)
-                .orElseThrow(() -> new RuntimeException("Address not found for user"));
+                .orElseThrow(() -> new ResourceNotFoundException("Address not found for user"));
 
         updateAddressFields(address, dto);
         return addressMapper.toDetailDTO(addressRepository.save(address));
@@ -144,11 +146,11 @@ public class AddressService {
     public AddressDetailResponseDTO updateTenantAddress(String tenantKey, AddressUpdateRequest dto) {
         // Find tenant by tenantKey to get tenantId
         Tenant tenant = tenantRepository.findByTenantKey(tenantKey)
-                .orElseThrow(() -> new RuntimeException("Tenant not found with key: " + tenantKey));
+                .orElseThrow(() -> new ResourceNotFoundException("Tenant not found with key: " + tenantKey));
         
         Address address = addressRepository.findByTenantIdAndOwnerTypeAndOwnerId(
             tenant.getId(), OwnerType.TENANT, tenant.getId())
-                .orElseThrow(() -> new RuntimeException("Tenant address not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Tenant address not found"));
 
         updateAddressFields(address, dto);
         return addressMapper.toDetailDTO(addressRepository.save(address));
@@ -157,7 +159,7 @@ public class AddressService {
     @Transactional
     public AddressResponseDTO updateAddressField(Long tenantId, Long id, String field, String value) {
         Address address = addressRepository.findByIdAndTenantId(id, tenantId)
-                .orElseThrow(() -> new RuntimeException("Address not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Address not found"));
 
         switch (field) {
             case "houseNumber":
@@ -179,7 +181,7 @@ public class AddressService {
                 address.setCountry(value != null ? value : "Vietnam");
                 break;
             default:
-                throw new RuntimeException("Invalid field: " + field);
+                throw new IllegalArgumentException("Invalid field: " + field);
         }
 
         return addressMapper.toResponseDTO(addressRepository.save(address));
@@ -188,7 +190,7 @@ public class AddressService {
     @Transactional
     public AddressDetailResponseDTO updateAddressFields(Long tenantId, Long id, AddressUpdateRequest dto) {
         Address address = addressRepository.findByIdAndTenantId(id, tenantId)
-                .orElseThrow(() -> new RuntimeException("Address not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Address not found"));
 
         updateAddressFields(address, dto);
         return addressMapper.toDetailDTO(addressRepository.save(address));
@@ -232,13 +234,13 @@ public class AddressService {
             // Validate suspicious content
             if (dto.getStreet() != null && dto.getStreet().contains("gradlew")) {
                 log.error("🚨 [SECURITY] Suspicious content detected in street field: {}", dto.getStreet());
-                throw new RuntimeException("Invalid content in street field");
+                throw new ResourceNotFoundException("Invalid content in street field");
             }
             
             Address address = addressRepository.findByIdAndTenantId(id, tenantId)
                     .orElseThrow(() -> {
                         log.error("❌ [ADDRESS UPDATE] Address not found - id: {}, tenantId: {}", id, tenantId);
-                        return new RuntimeException("Address not found");
+                        return new ResourceNotFoundException("Address not found");
                     });
 
             log.info("✅ [ADDRESS UPDATE] Found existing address: {}", address.getId());
@@ -254,14 +256,14 @@ public class AddressService {
             throw e;
         } catch (Exception e) {
             log.error("💥 [ADDRESS UPDATE] Unexpected error: {}", e.getMessage(), e);
-            throw new RuntimeException("Failed to update address: " + e.getMessage(), e);
+            throw new ResourceNotFoundException("Failed to update address: " + e.getMessage(), e);
         }
     }
 
     @Transactional
     public void deleteAddress(Long tenantId, Long id) {
         Address address = addressRepository.findByIdAndTenantId(id, tenantId)
-                .orElseThrow(() -> new RuntimeException("Address not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Address not found"));
         addressRepository.delete(address);
     }
 

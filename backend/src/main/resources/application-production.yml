@@ -138,3 +138,12 @@ rate-limit:
   enabled: true
   requests-per-minute: 100
   burst-capacity: 200
+
+# gRPC Security Configuration
+grpc:
+  security:
+    tls:
+      enabled: ${GRPC_TLS_ENABLED:true}
+      cert-chain-path: ${GRPC_TLS_CERT_PATH:/etc/letsencrypt/live/cwsv.truyenthongviet.vn/fullchain.pem}
+      private-key-path: ${GRPC_TLS_KEY_PATH:/etc/letsencrypt/live/cwsv.truyenthongviet.vn/privkey.pem}
+      ca-cert-path: ${GRPC_TLS_CA_CERT_PATH:/etc/letsencrypt/live/cwsv.truyenthongviet.vn/chain.pem}

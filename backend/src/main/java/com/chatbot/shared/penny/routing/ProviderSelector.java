@@ -25,9 +25,16 @@ public class ProviderSelector {
     @Value("${penny.provider.fallback.enabled:true}")
     private boolean fallbackEnabled;
 
+    @Value("${penny.provider.abtesting.enabled:false}")
+    private boolean abTestingEnabled;
+
+    @Value("${penny.provider.abtesting.traffic.split:50}")
+    private int abTestingTrafficSplit; // Percentage of traffic to variant B
+
     private final List<ChatbotProviderService> providers;
     private final Map<String, ProviderHealth> providerHealthMap = new ConcurrentHashMap<>();
     private final Map<String, ChatbotProviderService> providerInstanceMap = new ConcurrentHashMap<>();
+    private final Map<String, ABTestMetrics> abTestMetricsMap = new ConcurrentHashMap<>();
     private final Random random = new Random();
 
     public ProviderSelector(List<ChatbotProviderService> providers) {
@@ -59,6 +66,28 @@ public class ProviderSelector {
         ProviderType selectedType;
         String selectionReason;
         double confidence;
+        
+        // Apply A/B testing if enabled
+        if (abTestingEnabled) {
+            ProviderType abTestSelection = selectByABTest(analysis, context);
+            if (abTestSelection != null) {
+                selectedType = abTestSelection;
+                selectionReason = "A/B test selection";
+                confidence = 0.5; // Neutral confidence for A/B test
+                recordABTestSelection(selectedType, analysis);
+                
+                ProviderSelection result = ProviderSelection.builder()
+                    .providerType(selectedType)
+                    .provider(getProviderInstance(selectedType))
+                    .selectionReason(selectionReason)
+                    .confidence(confidence)
+                    .fallbackProviders(getFallbackProviders(selectedType))
+                    .build();
+                
+                log.info("🎯 Provider selected via A/B test: {} (Reason: {})", selectedType, selectionReason);
+                return result;
+            }
+        }
         
         switch (selectionStrategy.toLowerCase()) {
             case "intent_based":
@@ -362,6 +391,103 @@ public class ProviderSelector {
     }
     
     /**
+     * A/B testing provider selection
+     * Routes traffic between two providers based on configured split percentage
+     */
+    private ProviderType selectByABTest(IntentAnalysisResult analysis, ConversationContext context) {
+        // Define A/B test variants (Control: PennyBot, Variant: GPT)
+        ProviderType controlProvider = ProviderType.PENNYBOT;
+        ProviderType variantProvider = ProviderType.GPT;
+        
+        // Check if both providers are healthy
+        if (!isProviderHealthy(controlProvider) || !isProviderHealthy(variantProvider)) {
+            log.debug("⚠️ A/B test providers not healthy, falling back to standard selection");
+            return null;
+        }
+        
+        // Use consistent hashing based on conversation/user ID for sticky sessions
+        String sessionKey = getSessionKey(context);
+        int hash = Math.abs(sessionKey.hashCode());
+        int bucket = hash % 100;
+        
+        // Route to variant based on traffic split
+        if (bucket < abTestingTrafficSplit) {
+            log.debug("🧪 A/B test: Routing to variant B (GPT) - bucket: {}", bucket);
+            return variantProvider;
+        } else {
+            log.debug("🧪 A/B test: Routing to control A (PennyBot) - bucket: {}", bucket);
+            return controlProvider;
+        }
+    }
+    
+    /**
+     * Generate consistent session key for A/B test sticky routing
+     */
+    private String getSessionKey(ConversationContext context) {
+        if (context != null && context.getUserId() != null) {
+            return "user:" + context.getUserId();
+        }
+        if (context != null && context.getContextId() != null) {
+            return "conv:" + context.getContextId();
+        }
+        // Fallback to random for stateless requests
+        return "random:" + random.nextInt(10000);
+    }
+    
+    /**
+     * Record A/B test selection for metrics
+     */
+    private void recordABTestSelection(ProviderType selectedType, IntentAnalysisResult analysis) {
+        String testKey = "ab_test_pennybot_vs_gpt";
+        ABTestMetrics metrics = abTestMetricsMap.computeIfAbsent(testKey, k -> new ABTestMetrics());
+        
+        if (selectedType == ProviderType.PENNYBOT) {
+            metrics.incrementControlSelections();
+        } else if (selectedType == ProviderType.GPT) {
+            metrics.incrementVariantSelections();
+        }
+        
+        // Record intent for analysis
+        metrics.recordIntent(analysis.getPrimaryIntent());
+    }
+    
+    /**
+     * Record A/B test result (success/failure, response time, etc.)
+     */
+    public void recordABTestResult(ProviderType providerType, boolean success, long responseTimeMs, String userFeedback) {
+        String testKey = "ab_test_pennybot_vs_gpt";
+        ABTestMetrics metrics = abTestMetricsMap.get(testKey);
+        
+        if (metrics != null) {
+            if (providerType == ProviderType.PENNYBOT) {
+                metrics.recordControlResult(success, responseTimeMs, userFeedback);
+            } else if (providerType == ProviderType.GPT) {
+                metrics.recordVariantResult(success, responseTimeMs, userFeedback);
+            }
+        }
+    }
+    
+    /**
+     * Get A/B test metrics
+     */
+    public Map<String, ABTestMetrics> getABTestMetrics() {
+        return new HashMap<>(abTestMetricsMap);
+    }
+    
+    /**
+     * Reset A/B test metrics
+     */
+    public void resetABTestMetrics(String testKey) {
+        if (testKey != null) {
+            abTestMetricsMap.remove(testKey);
+            log.info("🧪 A/B test metrics reset for: {}", testKey);
+        } else {
+            abTestMetricsMap.clear();
+            log.info("🧪 All A/B test metrics reset");
+        }
+    }
+    
+    /**
      * Update provider health status
      */
     public void updateProviderHealth(ProviderType type, boolean isHealthy, String message) {
@@ -525,5 +651,97 @@ public class ProviderSelector {
         public String getLastMessage() { return lastMessage; }
         public long getLastCheck() { return lastCheck; }
         public int getConsecutiveFailures() { return consecutiveFailures; }
+    }
+    
+    /**
+     * A/B Test Metrics - Tracks performance metrics for A/B testing
+     */
+    public static class ABTestMetrics {
+        private long controlSelections = 0;
+        private long variantSelections = 0;
+        private long controlSuccesses = 0;
+        private long variantSuccesses = 0;
+        private long controlFailures = 0;
+        private long variantFailures = 0;
+        private double controlAvgResponseTime = 0.0;
+        private double variantAvgResponseTime = 0.0;
+        private long controlTotalResponseTime = 0;
+        private long variantTotalResponseTime = 0;
+        private Map<String, Long> intentDistribution = new ConcurrentHashMap<>();
+        private int positiveFeedbackControl = 0;
+        private int positiveFeedbackVariant = 0;
+        private int negativeFeedbackControl = 0;
+        private int negativeFeedbackVariant = 0;
+        
+        public synchronized void incrementControlSelections() {
+            controlSelections++;
+        }
+        
+        public synchronized void incrementVariantSelections() {
+            variantSelections++;
+        }
+        
+        public synchronized void recordControlResult(boolean success, long responseTimeMs, String userFeedback) {
+            if (success) {
+                controlSuccesses++;
+            } else {
+                controlFailures++;
+            }
+            controlTotalResponseTime += responseTimeMs;
+            controlAvgResponseTime = controlTotalResponseTime / (double) (controlSuccesses + controlFailures);
+            
+            if (userFeedback != null) {
+                if (userFeedback.toLowerCase().contains("good") || userFeedback.toLowerCase().contains("like")) {
+                    positiveFeedbackControl++;
+                } else if (userFeedback.toLowerCase().contains("bad") || userFeedback.toLowerCase().contains("dislike")) {
+                    negativeFeedbackControl++;
+                }
+            }
+        }
+        
+        public synchronized void recordVariantResult(boolean success, long responseTimeMs, String userFeedback) {
+            if (success) {
+                variantSuccesses++;
+            } else {
+                variantFailures++;
+            }
+            variantTotalResponseTime += responseTimeMs;
+            variantAvgResponseTime = variantTotalResponseTime / (double) (variantSuccesses + variantFailures);
+            
+            if (userFeedback != null) {
+                if (userFeedback.toLowerCase().contains("good") || userFeedback.toLowerCase().contains("like")) {
+                    positiveFeedbackVariant++;
+                } else if (userFeedback.toLowerCase().contains("bad") || userFeedback.toLowerCase().contains("dislike")) {
+                    negativeFeedbackVariant++;
+                }
+            }
+        }
+        
+        public synchronized void recordIntent(String intent) {
+            intentDistribution.merge(intent, 1L, Long::sum);
+        }
+        
+        // Getters
+        public long getControlSelections() { return controlSelections; }
+        public long getVariantSelections() { return variantSelections; }
+        public long getControlSuccesses() { return controlSuccesses; }
+        public long getVariantSuccesses() { return variantSuccesses; }
+        public long getControlFailures() { return controlFailures; }
+        public long getVariantFailures() { return variantFailures; }
+        public double getControlSuccessRate() {
+            long total = controlSuccesses + controlFailures;
+            return total > 0 ? (double) controlSuccesses / total : 0.0;
+        }
+        public double getVariantSuccessRate() {
+            long total = variantSuccesses + variantFailures;
+            return total > 0 ? (double) variantSuccesses / total : 0.0;
+        }
+        public double getControlAvgResponseTime() { return controlAvgResponseTime; }
+        public double getVariantAvgResponseTime() { return variantAvgResponseTime; }
+        public Map<String, Long> getIntentDistribution() { return new HashMap<>(intentDistribution); }
+        public int getPositiveFeedbackControl() { return positiveFeedbackControl; }
+        public int getPositiveFeedbackVariant() { return positiveFeedbackVariant; }
+        public int getNegativeFeedbackControl() { return negativeFeedbackControl; }
+        public int getNegativeFeedbackVariant() { return negativeFeedbackVariant; }
     }
 }

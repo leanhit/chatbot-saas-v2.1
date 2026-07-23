@@ -1,7 +1,9 @@
 package com.chatbot.core.message.store.service;
 
 import com.chatbot.core.message.store.model.Agent;
+import com.chatbot.core.message.decision.exception.AgentNotFoundException;
 import com.chatbot.core.message.store.repository.AgentRepository;
+import com.chatbot.shared.exceptions.AgentValidationException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -33,35 +35,43 @@ public class AgentService {
      */
     private void validateAgent(Agent agent) {
         if (agent.getName() == null || agent.getName().trim().isEmpty()) {
-            throw new IllegalArgumentException("Agent name cannot be empty");
+            throw AgentValidationException.nameEmpty();
         }
         
         if (agent.getEmail() == null || agent.getEmail().trim().isEmpty()) {
-            throw new IllegalArgumentException("Agent email cannot be empty");
+            throw AgentValidationException.emailEmpty();
         }
         
         if (!EMAIL_PATTERN.matcher(agent.getEmail()).matches()) {
-            throw new IllegalArgumentException("Invalid email format: " + agent.getEmail());
+            throw AgentValidationException.invalidEmail(agent.getEmail());
         }
         
         if (agent.getRole() == null) {
-            throw new IllegalArgumentException("Agent role cannot be null");
+            throw AgentValidationException.roleNull();
         }
         
         if (agent.getMaxConcurrentConversations() == null || agent.getMaxConcurrentConversations() <= 0) {
-            throw new IllegalArgumentException("Max concurrent conversations must be greater than 0");
+            throw AgentValidationException.invalidMaxConcurrent(
+                agent.getMaxConcurrentConversations() != null ? agent.getMaxConcurrentConversations() : 0
+            );
         }
         
         if (agent.getCurrentLoad() == null || agent.getCurrentLoad() < 0) {
-            throw new IllegalArgumentException("Current load cannot be negative");
+            throw AgentValidationException.invalidCurrentLoad(
+                agent.getCurrentLoad() != null ? agent.getCurrentLoad() : -1,
+                agent.getMaxConcurrentConversations()
+            );
         }
         
         if (agent.getCurrentLoad() > agent.getMaxConcurrentConversations()) {
-            throw new IllegalArgumentException("Current load cannot exceed max concurrent conversations");
+            throw AgentValidationException.invalidCurrentLoad(
+                agent.getCurrentLoad(),
+                agent.getMaxConcurrentConversations()
+            );
         }
         
         if (agent.getTenantId() == null) {
-            throw new IllegalArgumentException("Tenant ID cannot be null");
+            throw AgentValidationException.tenantIdRequired();
         }
     }
 
@@ -106,7 +116,7 @@ public class AgentService {
                 
                 return agentRepository.save(existingAgent);
             })
-            .orElseThrow(() -> new RuntimeException("Agent not found: " + agentId));
+            .orElseThrow(() -> new AgentNotFoundException(agentId));
     }
 
     /**
@@ -115,7 +125,7 @@ public class AgentService {
     @Transactional
     public void deleteAgent(Long agentId) {
         if (!agentRepository.existsById(agentId)) {
-            throw new RuntimeException("Agent not found: " + agentId);
+            throw new AgentNotFoundException(agentId);
         }
         
         agentRepository.deleteById(agentId);

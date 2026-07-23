@@ -123,7 +123,10 @@ export function isAuthError(error) {
   return code === 'UNAUTHORIZED' || 
          code === 'BAD_CREDENTIALS' || 
          code === 'AUTHENTICATION_FAILED' ||
-         code === 'INVALID_TOKEN'
+         code === 'INVALID_TOKEN' ||
+         code === 'TOKEN_INVALID_OR_EXPIRED' ||
+         code === 'REFRESH_TOKEN_EXPIRED' ||
+         code === 'USER_NOT_AUTHENTICATED'
 }
 
 /**
@@ -151,4 +154,153 @@ export function getValidationErrors(error) {
   }
   
   return []
+}
+
+/**
+ * Check if error is file validation error
+ * @param {Error} error - Error object
+ * @returns {boolean}
+ */
+export function isFileValidationError(error) {
+  const code = extractErrorCode(error)
+  return code === 'INVALID_FILE_TYPE' ||
+         code === 'FILE_TOO_LARGE' ||
+         code === 'FILE_EMPTY' ||
+         code === 'FILE_NULL'
+}
+
+/**
+ * Check if error is agent validation error
+ * @param {Error} error - Error object
+ * @returns {boolean}
+ */
+export function isAgentValidationError(error) {
+  const code = extractErrorCode(error)
+  return code === 'INVALID_AGENT_NAME' ||
+         code === 'INVALID_AGENT_EMAIL' ||
+         code === 'INVALID_AGENT_ROLE' ||
+         code === 'INVALID_AGENT_MAX_CONCURRENT' ||
+         code === 'INVALID_AGENT_CURRENT_LOAD' ||
+         code === 'AGENT_TENANT_ID_REQUIRED'
+}
+
+/**
+ * Check if error is webhook validation error
+ * @param {Error} error - Error object
+ * @returns {boolean}
+ */
+export function isWebhookValidationError(error) {
+  const code = extractErrorCode(error)
+  return code === 'WEBHOOK_URL_EXISTS' ||
+         code === 'INVALID_WEBHOOK_URL' ||
+         code === 'WEBHOOK_SIGNATURE_ERROR' ||
+         code === 'WEBHOOK_TEST_FAILED'
+}
+
+/**
+ * Check if error is package validation error
+ * @param {Error} error - Error object
+ * @returns {boolean}
+ */
+export function isPackageValidationError(error) {
+  const code = extractErrorCode(error)
+  return code === 'PACKAGE_ID_EXISTS' ||
+         code === 'PACKAGE_NOT_ACTIVE'
+}
+
+/**
+ * Check if error is discount validation error
+ * @param {Error} error - Error object
+ * @returns {boolean}
+ */
+export function isDiscountValidationError(error) {
+  return extractErrorCode(error) === 'DISCOUNT_CODE_EXISTS'
+}
+
+/**
+ * Check if error is tenant-related error
+ * @param {Error} error - Error object
+ * @returns {boolean}
+ */
+export function isTenantError(error) {
+  const code = extractErrorCode(error)
+  return code === 'TENANT_NOT_FOUND' ||
+         code === 'TENANT_INACTIVE' ||
+         code === 'TENANT_CONTEXT_MISSING' ||
+         code === 'NOT_TENANT_MEMBER' ||
+         code === 'CANNOT_ACCESS_TENANT'
+}
+
+/**
+ * Check if error is payment-related error
+ * @param {Error} error - Error object
+ * @returns {boolean}
+ */
+export function isPaymentError(error) {
+  const code = extractErrorCode(error)
+  return code === 'PAYMENT_ERROR' ||
+         code === 'PAYMENT_NOT_FOUND' ||
+         code === 'PAYMENT_EXPIRED' ||
+         code === 'INVALID_PAYMENT_AMOUNT' ||
+         code === 'INSUFFICIENT_BALANCE' ||
+         code === 'BANK_API_ERROR'
+}
+
+/**
+ * Get file error details for user-friendly message
+ * @param {Error} error - Error object
+ * @returns {Object|null} File error details or null
+ */
+export function getFileErrorDetails(error) {
+  if (!isFileValidationError(error)) return null
+  
+  const code = extractErrorCode(error)
+  const details = error?.response?.data?.details || {}
+  
+  switch (code) {
+    case 'INVALID_FILE_TYPE':
+      return {
+        type: 'invalid_type',
+        allowedTypes: details.allowedTypes || 'image/*',
+        message: getErrorMessage(code, 'Invalid file type')
+      }
+    case 'FILE_TOO_LARGE':
+      return {
+        type: 'too_large',
+        maxSize: details.maxSize || 10485760,
+        message: getErrorMessage(code, 'File size exceeds limit')
+      }
+    case 'FILE_EMPTY':
+      return {
+        type: 'empty',
+        message: getErrorMessage(code, 'File is empty')
+      }
+    case 'FILE_NULL':
+      return {
+        type: 'null',
+        message: getErrorMessage(code, 'File cannot be null')
+      }
+    default:
+      return null
+  }
+}
+
+/**
+ * Log error with correlation ID for debugging
+ * @param {Error} error - Error object
+ * @param {string} context - Additional context
+ */
+export function logErrorWithCorrelation(error, context = '') {
+  const correlationId = error?.response?.data?.correlationId
+  const requestId = error?.response?.data?.requestId
+  const code = extractErrorCode(error)
+  
+  console.error('API Error:', {
+    context,
+    code,
+    correlationId,
+    requestId,
+    message: error?.response?.data?.message,
+    timestamp: error?.response?.data?.timestamp
+  })
 }

@@ -3,6 +3,8 @@ package com.chatbot.core.identity.service;
 import com.chatbot.core.identity.constants.IdentityConstants;
 import com.chatbot.core.identity.exception.InvalidTokenException;
 import com.chatbot.core.user.model.User;
+import com.chatbot.shared.exceptions.BaseException;
+import com.chatbot.shared.exceptions.ErrorCode;
 import lombok.extern.slf4j.Slf4j;
 
 import io.jsonwebtoken.Claims;
@@ -69,10 +71,10 @@ public class JwtService {
             // Initialize RSA keys for RS256
             if ("RS256".equals(jwtAlgorithm)) {
                 if (rsaPrivateKey == null || rsaPrivateKey.isEmpty()) {
-                    throw new IllegalArgumentException("RSA private key is required for RS256 algorithm");
+                    throw new BaseException(ErrorCode.RSA_PRIVATE_KEY_REQUIRED, "RSA private key is required for RS256 algorithm");
                 }
                 if (rsaPublicKey == null || rsaPublicKey.isEmpty()) {
-                    throw new IllegalArgumentException("RSA public key is required for RS256 algorithm");
+                    throw new BaseException(ErrorCode.RSA_PUBLIC_KEY_REQUIRED, "RSA public key is required for RS256 algorithm");
                 }
                 
                 KeyFactory keyFactory = KeyFactory.getInstance("RSA");

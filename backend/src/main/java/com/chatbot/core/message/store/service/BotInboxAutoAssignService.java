@@ -14,6 +14,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -33,13 +34,22 @@ public class BotInboxAutoAssignService {
     private final RoutingRuleService routingRuleService;
     private final TenantRepository tenantRepository;
     private final AutoAssignConfigRepository autoAssignConfigRepository;
+    private final org.springframework.data.redis.core.RedisTemplate<String, String> redisTemplate;
 
     /**
      * Auto-assign bot inbox conversations to available agents
      * Scheduled to run every 30 seconds
+     * Uses Redis-based distributed locking to prevent duplicate execution across multiple instances
      */
     @Scheduled(fixedRate = 30000) // Every 30 seconds
     public void autoAssignBotInbox() {
+        String lockKey = "lock:scheduler:autoAssignBotInbox";
+        Boolean acquired = redisTemplate.opsForValue().setIfAbsent(lockKey, "locked", Duration.ofSeconds(25));
+        if (!Boolean.TRUE.equals(acquired)) {
+            log.debug("🤖 [BotInboxAutoAssignService] Lock already held by another instance. Skipping auto-assign.");
+            return;
+        }
+
         try {
             // Iterate over all active tenants (same pattern as SLAMonitorService)
             List<Tenant> activeTenants = tenantRepository.findAll();
@@ -75,6 +85,8 @@ public class BotInboxAutoAssignService {
             }
         } catch (Exception e) {
             log.error("Error in bot inbox auto-assign scheduled job", e);
+        } finally {
+            redisTemplate.delete(lockKey);
         }
     }
 

@@ -1,9 +1,11 @@
 package com.chatbot.core.simplepayment.service;
 
 import com.chatbot.core.simplepayment.model.Invoice;
+import com.chatbot.core.simplepayment.exception.*;
 import com.chatbot.core.simplepayment.model.SimplePayment;
 import com.chatbot.core.simplepayment.repository.InvoiceRepository;
 import com.chatbot.core.simplepayment.repository.SimplePaymentRepository;
+import com.chatbot.core.identity.exception.UserNotFoundException;
 import com.chatbot.core.user.model.User;
 import com.chatbot.core.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -37,7 +39,7 @@ public class InvoiceService {
         log.info("📄 Generating invoice for payment: {}", referenceCode);
 
         SimplePayment payment = paymentRepository.findByReferenceCode(referenceCode)
-                .orElseThrow(() -> new RuntimeException("Payment not found: " + referenceCode));
+                .orElseThrow(() -> new PaymentNotFoundException(referenceCode));
 
         // Check if invoice already exists
         if (invoiceRepository.findByPaymentId(payment.getId()).isPresent()) {
@@ -47,7 +49,7 @@ public class InvoiceService {
 
         // Get user information
         User user = userRepository.findById(payment.getUserId())
-                .orElseThrow(() -> new RuntimeException("User not found: " + payment.getUserId()));
+                .orElseThrow(() -> new UserNotFoundException("User not found: " + payment.getUserId()));
 
         // Generate invoice number
         String invoiceNumber = generateInvoiceNumber();
@@ -135,7 +137,7 @@ public class InvoiceService {
         log.info("🔄 Updating invoice status: {} to {}", invoiceId, status);
 
         Invoice invoice = invoiceRepository.findById(invoiceId)
-                .orElseThrow(() -> new RuntimeException("Invoice not found: " + invoiceId));
+                .orElseThrow(() -> new InvoiceNotFoundException(invoiceId));
 
         invoice.setStatus(status);
         

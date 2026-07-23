@@ -34,6 +34,7 @@ public class PennyMetricsEndpoint {
     private final PennyBotRepository pennyBotRepository;
     private final KnowledgeArticleRepository knowledgeArticleRepository;
     private final ProviderSelector providerSelector;
+    private final PennyMetricsService pennyMetricsService;
 
     /**
      * Get overall system metrics
@@ -164,6 +165,48 @@ public class PennyMetricsEndpoint {
         
         // RAG status
         metrics.put("ragEnabled", true); // Based on configuration
+        
+        return metrics;
+    }
+
+    /**
+     * Get latency percentile metrics
+     * GET /api/penny/admin/metrics/latency
+     */
+    @GetMapping("/latency")
+    public Map<String, Object> getLatencyMetrics() {
+        log.debug("📊 Fetching latency percentile metrics");
+
+        PennyMetricsService.MetricsSummary summary = pennyMetricsService.getMetricsSummary();
+        
+        Map<String, Object> metrics = new HashMap<>();
+        
+        // Message processing percentiles
+        Map<String, Object> processingLatency = new HashMap<>();
+        processingLatency.put("p50", summary.getProcessingTimeP50());
+        processingLatency.put("p90", summary.getProcessingTimeP90());
+        processingLatency.put("p95", summary.getProcessingTimeP95());
+        processingLatency.put("p99", summary.getProcessingTimeP99());
+        processingLatency.put("average", summary.getAverageProcessingTime());
+        metrics.put("messageProcessing", processingLatency);
+        
+        // Intent analysis percentiles
+        Map<String, Object> intentLatency = new HashMap<>();
+        intentLatency.put("p50", summary.getIntentAnalysisP50());
+        intentLatency.put("p90", summary.getIntentAnalysisP90());
+        intentLatency.put("p95", summary.getIntentAnalysisP95());
+        intentLatency.put("p99", summary.getIntentAnalysisP99());
+        intentLatency.put("average", summary.getAverageIntentAnalysisTime());
+        metrics.put("intentAnalysis", intentLatency);
+        
+        // Provider selection percentiles
+        Map<String, Object> selectionLatency = new HashMap<>();
+        selectionLatency.put("p50", summary.getProviderSelectionP50());
+        selectionLatency.put("p90", summary.getProviderSelectionP90());
+        selectionLatency.put("p95", summary.getProviderSelectionP95());
+        selectionLatency.put("p99", summary.getProviderSelectionP99());
+        selectionLatency.put("average", summary.getAverageProviderSelectionTime());
+        metrics.put("providerSelection", selectionLatency);
         
         return metrics;
     }

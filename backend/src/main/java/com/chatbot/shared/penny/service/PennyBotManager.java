@@ -2,6 +2,7 @@ package com.chatbot.shared.penny.service;
 
 import com.chatbot.shared.penny.context.ContextManager;
 import com.chatbot.shared.penny.analytics.AnalyticsCollector;
+import com.chatbot.shared.penny.error.exceptions.PennyException;
 import com.chatbot.shared.penny.model.PennyBot;
 import com.chatbot.shared.penny.model.PennyBotType;
 import com.chatbot.shared.penny.repository.PennyBotRepository;
@@ -164,7 +165,7 @@ public class PennyBotManager {
      * Kiểm tra bot có thể xóa được không (connections và conversations)
      */
     public void checkBotCanBeDeleted(UUID botId, String ownerId) {
-        log.info("� Checking if bot can be deleted: {} by owner: {}", botId, ownerId);
+        log.info("🔍 Checking if bot can be deleted: {} by owner: {}", botId, ownerId);
         
         PennyBot bot = getBot(botId);
         
@@ -222,7 +223,7 @@ public class PennyBotManager {
             
         } catch (Exception e) {
             log.error("❌ Critical error deleting Penny bot {}: {}", botId, e.getMessage(), e);
-            throw new RuntimeException("Failed to delete bot: " + e.getMessage(), e);
+            throw new PennyException("Failed to delete bot: " + e.getMessage(), e);
         }
     }
     

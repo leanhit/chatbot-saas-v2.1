@@ -3,6 +3,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import com.chatbot.core.message.store.model.Conversation;
 import com.chatbot.core.message.store.model.Message;
+import com.chatbot.core.message.decision.exception.*;
 import com.chatbot.core.message.store.repository.ConversationRepository;
 import com.chatbot.core.message.store.repository.MessageRepository;
 import com.chatbot.core.tenant.infra.TenantContext;
@@ -57,7 +58,7 @@ public class MessageService {
         // Agent có thể gửi message bất cứ lúc nào để hỗ trợ user
         if ("agent".equals(sender)) {
             Conversation conversation = conversationRepo.findById(conversationId)
-                .orElseThrow(() -> new RuntimeException("Conversation not found with id: " + conversationId));
+                .orElseThrow(() -> new ConversationNotFoundException(conversationId));
             
             // Agent có thể gửi message mà không cần takeover
             // Điều này cho phép agent hỗ trợ user mà không cần takeover conversation
@@ -156,7 +157,7 @@ public class MessageService {
     @Transactional
     public void deleteMessage(Long messageId) {
         if (!messageRepo.existsById(messageId)) {
-            throw new RuntimeException("Message not found with id: " + messageId);
+            throw new MessageNotFoundException(messageId);
         }
         messageRepo.deleteById(messageId);
         Long tenantId = TenantContext.getTenantId();
@@ -236,7 +237,7 @@ public class MessageService {
         
         // Validate message exists và thuộc tenant
         Message existingMessage = messageRepo.findByIdAndTenantId(message.getId(), tenantId)
-            .orElseThrow(() -> new RuntimeException("Message not found with id: " + message.getId()));
+            .orElseThrow(() -> new MessageNotFoundException("Message not found with id: " + message.getId()));
         
         // Cập nhật các trường cho phép
         existingMessage.setContent(message.getContent());

@@ -6,6 +6,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+import java.time.Duration;
+
 @Component
 @RequiredArgsConstructor
 @Slf4j
@@ -17,11 +19,12 @@ public class PaymentCheckScheduler {
     /**
      * ENABLED - Payment checking for automatic payment completion
      * Runs every 30 seconds to check pending payments
+     * Uses Redis-based distributed locking to prevent duplicate execution across multiple instances
      */
     @Scheduled(fixedDelay = 30000) // ENABLED - Check every 30 seconds
     public void checkPendingPayments() {
         String lockKey = "lock:scheduler:checkPendingPayments";
-        Boolean acquired = redisTemplate.opsForValue().setIfAbsent(lockKey, "locked", java.time.Duration.ofSeconds(25));
+        Boolean acquired = redisTemplate.opsForValue().setIfAbsent(lockKey, "locked", Duration.ofSeconds(25));
         if (!Boolean.TRUE.equals(acquired)) {
             log.debug("🏦 [PaymentCheckScheduler] Lock already held by another instance. Skipping check.");
             return;

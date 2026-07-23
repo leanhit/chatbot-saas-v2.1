@@ -6,6 +6,7 @@ import com.chatbot.core.simplepayment.repository.SimplePaymentRepository;
 import com.chatbot.core.simplepayment.model.PaymentStatus;
 import com.chatbot.core.user.repository.UserRepository;
 import com.chatbot.core.user.model.User;
+import com.chatbot.core.identity.exception.UserNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -219,7 +220,7 @@ public class PackageValidationService {
     private void validateUserBalance(Long userId, BigDecimal requiredAmount, PackageValidationResult result) {
         try {
             User user = userRepository.findById(userId)
-                    .orElseThrow(() -> new RuntimeException("User not found: " + userId));
+                    .orElseThrow(() -> new UserNotFoundException("User not found: " + userId));
 
             // Initialize balance if null
             if (user.getBalance() == null) {

@@ -31,10 +31,10 @@ class IdentityGrpcService {
                 return response.getValid();
             }
             
-            throw new RuntimeException("No response from Identity Hub for token validation");
+            throw new GrpcIntegrationException("No response from Identity Hub for token validation");
         } catch (Exception e) {
             log.error("Lỗi khi validate token với Identity Hub", e);
-            throw new RuntimeException("Failed to validate token with Identity Hub", e);
+            throw new GrpcIntegrationException("Failed to validate token with Identity Hub", e);
         }
     }
 
@@ -52,10 +52,10 @@ class IdentityGrpcService {
                 return response.getValid();
             }
             
-            throw new RuntimeException("No response from Identity Hub for user validation");
+            throw new GrpcIntegrationException("No response from Identity Hub for user validation");
         } catch (Exception e) {
             log.error("Lỗi khi validate user {} với Identity Hub", userId, e);
-            throw new RuntimeException("Failed to validate user with Identity Hub", e);
+            throw new GrpcIntegrationException("Failed to validate user with Identity Hub", e);
         }
     }
 
@@ -72,10 +72,10 @@ class IdentityGrpcService {
                 return response.getRole();
             }
             
-            throw new RuntimeException("Role not found or empty from Identity Hub");
+            throw new GrpcIntegrationException("Role not found or empty from Identity Hub");
         } catch (Exception e) {
             log.error("Lỗi khi get role cho user {} từ Identity Hub", userId, e);
-            throw new RuntimeException("Failed to get user role from Identity Hub", e);
+            throw new GrpcIntegrationException("Failed to get user role from Identity Hub", e);
         }
     }
 
@@ -92,10 +92,10 @@ class IdentityGrpcService {
                 return response.getIsActive();
             }
             
-            throw new RuntimeException("No response from Identity Hub for active status");
+            throw new GrpcIntegrationException("No response from Identity Hub for active status");
         } catch (Exception e) {
             log.error("Lỗi khi check active status cho user {} với Identity Hub", userId, e);
-            throw new RuntimeException("Failed to check active status with Identity Hub", e);
+            throw new GrpcIntegrationException("Failed to check active status with Identity Hub", e);
         }
     }
 

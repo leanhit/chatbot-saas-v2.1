@@ -20,6 +20,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 
 /**
@@ -45,6 +46,7 @@ public class TenantCleanupService {
     private final AutoAssignConfigRepository autoAssignConfigRepository;
     private final SimplePaymentRepository simplePaymentRepository;
     private final InvoiceRepository invoiceRepository;
+    private final org.springframework.data.redis.core.RedisTemplate<String, String> redisTemplate;
 
     /**
      * Cleanup all related data for a deleted tenant
@@ -81,16 +83,30 @@ public class TenantCleanupService {
     /**
      * Scheduled job to clean up data for tenants deleted more than 30 days ago
      * Runs daily at 2 AM
+     * Uses Redis-based distributed locking to prevent duplicate execution across multiple instances
      */
     @Scheduled(cron = "0 0 2 * * ?")
     @Transactional(value = "tenantTransactionManager", rollbackFor = Exception.class)
     public void scheduledCleanup() {
-        log.info("[TenantCleanupService] Starting scheduled cleanup for old deleted tenants");
-        LocalDateTime cutoffDate = LocalDateTime.now().minusDays(30);
-        
-        // Note: This would require adding a method to find deleted tenants by date
-        // For now, this is a placeholder for the scheduled cleanup logic
-        log.info("[TenantCleanupService] Scheduled cleanup completed");
+        String lockKey = "lock:scheduler:tenantCleanup";
+        Boolean acquired = redisTemplate.opsForValue().setIfAbsent(lockKey, "locked", Duration.ofHours(23));
+        if (!Boolean.TRUE.equals(acquired)) {
+            log.debug("🧹 [TenantCleanupService] Lock already held by another instance. Skipping cleanup.");
+            return;
+        }
+
+        try {
+            log.info("[TenantCleanupService] Starting scheduled cleanup for old deleted tenants");
+            LocalDateTime cutoffDate = LocalDateTime.now().minusDays(30);
+            
+            // Note: This would require adding a method to find deleted tenants by date
+            // For now, this is a placeholder for the scheduled cleanup logic
+            log.info("[TenantCleanupService] Scheduled cleanup completed");
+        } catch (Exception e) {
+            log.error("[TenantCleanupService] Error during scheduled cleanup", e);
+        } finally {
+            redisTemplate.delete(lockKey);
+        }
     }
 
     private void cleanupMessages(Long tenantId) {

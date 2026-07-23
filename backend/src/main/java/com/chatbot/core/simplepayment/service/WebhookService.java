@@ -3,6 +3,7 @@ package com.chatbot.core.simplepayment.service;
 import com.chatbot.core.simplepayment.model.SimplePayment;
 import com.chatbot.core.simplepayment.model.Webhook;
 import com.chatbot.core.simplepayment.repository.WebhookRepository;
+import com.chatbot.shared.exceptions.WebhookValidationException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.*;
@@ -40,7 +41,7 @@ public class WebhookService {
 
         // Check if URL already exists
         if (webhookRepository.existsByUrl(webhook.getUrl())) {
-            throw new IllegalArgumentException("Webhook URL already exists: " + webhook.getUrl());
+            throw WebhookValidationException.urlExists(webhook.getUrl());
         }
 
         // Generate secret if not provided
@@ -100,7 +101,7 @@ public class WebhookService {
         );
 
         if (!response.getStatusCode().is2xxSuccessful()) {
-            throw new RuntimeException("Webhook returned status: " + response.getStatusCode());
+            throw WebhookValidationException.testFailed(webhook.getName(), "Returned status: " + response.getStatusCode());
         }
     }
 

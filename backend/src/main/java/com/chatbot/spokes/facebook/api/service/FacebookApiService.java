@@ -1,6 +1,7 @@
 package com.chatbot.spokes.facebook.api.service;
 
 import lombok.extern.slf4j.Slf4j;
+import com.chatbot.spokes.facebook.exception.FacebookApiException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Service;
@@ -167,23 +168,23 @@ public class FacebookApiService {
                 return newToken;
             } else {
                 log.error("❌ Invalid response from Facebook API: {}", response);
-                throw new RuntimeException("Invalid response from Facebook API");
+                throw new FacebookApiException("Invalid response from Facebook API");
             }
             
         } catch (WebClientResponseException e) {
             log.error("❌ Facebook API error: {} - {}", e.getStatusCode(), e.getResponseBodyAsString());
             
             if (e.getStatusCode().value() == 400) {
-                throw new RuntimeException("OAuthException: Invalid or expired user access token", e);
+                throw new FacebookApiException("OAuthException: Invalid or expired user access token", e);
             } else if (e.getStatusCode().value() == 403) {
-                throw new RuntimeException("Forbidden: Insufficient permissions", e);
+                throw new FacebookApiException("Forbidden: Insufficient permissions", e);
             } else {
-                throw new RuntimeException("Facebook API error: " + e.getMessage(), e);
+                throw new FacebookApiException("Facebook API error: " + e.getMessage(), e);
             }
             
         } catch (Exception e) {
             log.error("❌ Failed to refresh page access token", e);
-            throw new RuntimeException("Failed to refresh page access token", e);
+            throw new FacebookApiException("Failed to refresh page access token", e);
         }
     }
 
@@ -218,15 +219,15 @@ public class FacebookApiService {
                 }
             } else {
                 log.error("❌ Invalid validation response: {}", response);
-                throw new RuntimeException("Invalid validation response");
+                throw new FacebookApiException("Invalid validation response");
             }
             
         } catch (WebClientResponseException e) {
             log.error("❌ Token validation error: {} - {}", e.getStatusCode(), e.getResponseBodyAsString());
-            throw new RuntimeException("Token validation failed", e);
+            throw new FacebookApiException("Token validation failed", e);
         } catch (Exception e) {
             log.error("❌ Failed to validate token", e);
-            throw new RuntimeException("Token validation failed", e);
+            throw new FacebookApiException("Token validation failed", e);
         }
     }
 
@@ -252,7 +253,7 @@ public class FacebookApiService {
             
         } catch (Exception e) {
             log.error("❌ Failed to get page info", e);
-            throw new RuntimeException("Failed to get page info", e);
+            throw new FacebookApiException("Failed to get page info", e);
         }
     }
 

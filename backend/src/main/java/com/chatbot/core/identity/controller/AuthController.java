@@ -9,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import com.chatbot.core.identity.dto.*;
+import com.chatbot.core.identity.exception.ValidationException;
 import com.chatbot.core.identity.security.CustomUserDetails;
 import com.chatbot.core.identity.service.AuthService;
 import com.chatbot.core.identity.service.JwtService;
@@ -83,7 +84,7 @@ public class AuthController {
             @Parameter(description = "Password change details", required = true)
             @RequestBody ChangePasswordRequest request) {
         if (!request.getNewPassword().equals(request.getConfirmPassword())) {
-            throw new RuntimeException("New password confirmation does not match");
+            throw new ValidationException("New password confirmation does not match");
         }
         UserResponse response = authService.changePassword(currentUser.getUser().getEmail(), request);
         return ResponseEntity.ok(ApiResponse.success(response, "Password changed successfully"));

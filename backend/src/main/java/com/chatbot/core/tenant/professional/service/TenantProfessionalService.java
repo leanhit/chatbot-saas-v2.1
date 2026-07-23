@@ -5,6 +5,7 @@ import com.chatbot.core.tenant.professional.dto.TenantProfessionalResponse;
 import com.chatbot.core.tenant.professional.mapper.TenantProfessionalMapper;
 import com.chatbot.core.tenant.professional.model.TenantProfessional;
 import com.chatbot.core.tenant.professional.repository.TenantProfessionalRepository;
+import com.chatbot.core.tenant.exception.TenantNotFoundException;
 import com.chatbot.core.tenant.model.Tenant;
 import com.chatbot.core.tenant.repository.TenantRepository;
 import lombok.RequiredArgsConstructor;
@@ -33,7 +34,7 @@ public class TenantProfessionalService {
 
     public TenantProfessionalResponse upsertProfessional(Long tenantId, TenantProfessionalRequest request) {
         Tenant tenant = tenantRepository.findById(tenantId)
-                .orElseThrow(() -> new RuntimeException("Tenant not found with id: " + tenantId));
+                .orElseThrow(() -> new TenantNotFoundException("Tenant not found with id: " + tenantId));
 
         TenantProfessional professional = tenantProfessionalRepository.findByTenantId(tenantId)
                 .orElse(TenantProfessional.builder()
