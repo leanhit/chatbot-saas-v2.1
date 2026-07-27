@@ -56,14 +56,12 @@ public class PennyBotProviderService implements ChatbotProviderService {
         log.info("Sending message to PennyBot - Bot: {}, Sender: {}, Message: {}", botId, senderId, messageText);
         
         try {
-            // Check if message requires default response
+            // Generate bot response
             String responseMessage = generateDefaultResponse(messageText);
             
-            // Save agent message to database
-            saveAgentMessageToDatabase(botId, senderId, messageText);
-            
-            // Send message to Facebook
-            sendMessageToFacebook(botId, senderId, messageText);
+            // NOTE: Do NOT save to database or send to Facebook here
+            // FacebookEventConsumer handles database saving and Facebook sending
+            // to avoid duplicate messages
             
             Map<String, Object> response = new HashMap<>();
             response.put("status", "success");
@@ -86,9 +84,9 @@ public class PennyBotProviderService implements ChatbotProviderService {
     }
     
     /**
-     * Save agent message to database
+     * Save bot message to database
      */
-    private void saveAgentMessageToDatabase(String botId, String senderId, String messageText) {
+    private void saveBotMessageToDatabase(String botId, String senderId, String messageText) {
         try {
             log.debug("=== DEBUG PENNY BOT SAVING AGENT MESSAGE ===");
             log.debug("Bot ID: {}", botId);
@@ -106,30 +104,50 @@ public class PennyBotProviderService implements ChatbotProviderService {
                 return;
             }
             
-            // Find Facebook connection by botId (botId is String)
-            FacebookConnection connection = facebookConnectionRepository.findByBotIdAndIsActiveTrue(botId)
-                .orElseThrow(() -> new RuntimeException("Facebook connection not found for botId: " + botId));
+            // Find all Facebook connections by botId (smart routing)
+            java.util.List<FacebookConnection> connections = facebookConnectionRepository.findAllByBotIdAndIsActiveTrue(botId);
+            
+            if (connections.isEmpty()) {
+                throw new RuntimeException("Facebook connection not found for botId: " + botId);
+            }
+            
+            // Smart routing: Find the right connection by looking for conversation with this senderId
+            FacebookConnection targetConnection = null;
+            for (FacebookConnection connection : connections) {
+                java.util.Optional<Conversation> conversation = conversationRepository.findByExternalUserIdAndConnectionId(senderId, connection.getId());
+                if (conversation.isPresent()) {
+                    targetConnection = connection;
+                    log.info("🎯 Found matching connection {} for senderId {} via conversation lookup", connection.getId(), senderId);
+                    break;
+                }
+            }
+            
+            // If no matching conversation found, use first connection (fallback)
+            if (targetConnection == null) {
+                targetConnection = connections.get(0);
+                log.warn("⚠️ No matching conversation found for senderId {}. Using first connection: {}", senderId, targetConnection.getId());
+            }
             
             // Find conversation by externalUserId and connectionId
-            Conversation conversation = conversationRepository.findByExternalUserIdAndConnectionId(senderId, connection.getId())
+            Conversation conversation = conversationRepository.findByExternalUserIdAndConnectionId(senderId, targetConnection.getId())
                 .orElseThrow(() -> new RuntimeException("Conversation not found for senderId: " + senderId));
             
             log.debug("Conversation ID: {}", conversation.getId());
             
-            // Save agent message
+            // Save bot message
             messageService.saveMessage(
                 conversation.getId(),
-                "agent",
+                "bot",
                 messageText,
                 "TEXT",
-                Map.of("externalMessageId", messageId, "botId", botId, "sentVia", "agent_ui")
+                Map.of("externalMessageId", messageId, "botId", botId, "sentVia", "penny_bot")
             );
             
-            log.debug("=== PENNY BOT: Agent message SAVED to DB ===");
-            log.info(" Saved agent message to database. ConversationId: {}, SenderId: {}", conversation.getId(), senderId);
+            log.debug("=== PENNY BOT: Bot message SAVED to DB ===");
+            log.info(" Saved bot message to database. ConversationId: {}, SenderId: {}", conversation.getId(), senderId);
             
         } catch (Exception e) {
-            log.error("❌ Failed to save agent message to database: {}", e.getMessage(), e);
+            log.error("❌ Failed to save bot message to database: {}", e.getMessage(), e);
             // Don't throw exception to avoid blocking message flow
         }
     }
@@ -139,12 +157,32 @@ public class PennyBotProviderService implements ChatbotProviderService {
      */
     private void sendMessageToFacebook(String botId, String senderId, String messageText) {
         try {
-            // Find Facebook connection by botId
-            FacebookConnection connection = facebookConnectionRepository.findByBotIdAndIsActiveTrue(botId)
-                .orElseThrow(() -> new RuntimeException("Facebook connection not found for botId: " + botId));
+            // Find all Facebook connections by botId (smart routing)
+            java.util.List<FacebookConnection> connections = facebookConnectionRepository.findAllByBotIdAndIsActiveTrue(botId);
+            
+            if (connections.isEmpty()) {
+                throw new RuntimeException("Facebook connection not found for botId: " + botId);
+            }
+            
+            // Smart routing: Find the right connection by looking for conversation with this senderId
+            FacebookConnection targetConnection = null;
+            for (FacebookConnection connection : connections) {
+                java.util.Optional<Conversation> conversation = conversationRepository.findByExternalUserIdAndConnectionId(senderId, connection.getId());
+                if (conversation.isPresent()) {
+                    targetConnection = connection;
+                    log.info("🎯 Found matching connection {} for senderId {} via conversation lookup", connection.getId(), senderId);
+                    break;
+                }
+            }
+            
+            // If no matching conversation found, use first connection (fallback)
+            if (targetConnection == null) {
+                targetConnection = connections.get(0);
+                log.warn("⚠️ No matching conversation found for senderId {}. Using first connection: {}", senderId, targetConnection.getId());
+            }
             
             // Get page access token from connection
-            String pageAccessToken = connection.getPageAccessToken();
+            String pageAccessToken = targetConnection.getPageAccessToken();
             
             // Send message via FacebookMessengerService
             facebookMessengerService.sendTextMessage(
@@ -153,7 +191,7 @@ public class PennyBotProviderService implements ChatbotProviderService {
                 messageText
             );
             
-            log.info("✅ Sent agent message to Facebook. PageId: {}, RecipientId: {}", connection.getPageId(), senderId);
+            log.info("✅ Sent agent message to Facebook. PageId: {}, RecipientId: {}", targetConnection.getPageId(), senderId);
             
         } catch (Exception e) {
             log.error("❌ Failed to send agent message to Facebook: {}", e.getMessage(), e);

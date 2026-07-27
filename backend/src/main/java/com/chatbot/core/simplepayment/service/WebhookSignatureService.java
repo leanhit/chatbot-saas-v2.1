@@ -1,7 +1,6 @@
 package com.chatbot.core.simplepayment.service;
 
 import jakarta.servlet.http.HttpServletRequest;
-import com.chatbot.shared.exceptions.WebhookValidationException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -115,7 +114,7 @@ public class WebhookSignatureService {
             return "sha256=" + signature;
         } catch (Exception e) {
             log.error("Error generating webhook signature", e);
-            throw WebhookValidationException.signatureError("Failed to generate webhook signature: " + e.getMessage());
+            throw new RuntimeException("Failed to generate webhook signature", e);
         }
     }
 }

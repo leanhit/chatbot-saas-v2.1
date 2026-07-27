@@ -308,18 +308,6 @@ public class PennyMetricsService {
             .averageProcessingTime(messageProcessingTimer.mean(java.util.concurrent.TimeUnit.MILLISECONDS))
             .averageIntentAnalysisTime(intentAnalysisTimer.mean(java.util.concurrent.TimeUnit.MILLISECONDS))
             .averageProviderSelectionTime(providerSelectionTimer.mean(java.util.concurrent.TimeUnit.MILLISECONDS))
-            .processingTimeP50(messageProcessingTimer.percentile(0.5, java.util.concurrent.TimeUnit.MILLISECONDS))
-            .processingTimeP90(messageProcessingTimer.percentile(0.9, java.util.concurrent.TimeUnit.MILLISECONDS))
-            .processingTimeP95(messageProcessingTimer.percentile(0.95, java.util.concurrent.TimeUnit.MILLISECONDS))
-            .processingTimeP99(messageProcessingTimer.percentile(0.99, java.util.concurrent.TimeUnit.MILLISECONDS))
-            .intentAnalysisP50(intentAnalysisTimer.percentile(0.5, java.util.concurrent.TimeUnit.MILLISECONDS))
-            .intentAnalysisP90(intentAnalysisTimer.percentile(0.9, java.util.concurrent.TimeUnit.MILLISECONDS))
-            .intentAnalysisP95(intentAnalysisTimer.percentile(0.95, java.util.concurrent.TimeUnit.MILLISECONDS))
-            .intentAnalysisP99(intentAnalysisTimer.percentile(0.99, java.util.concurrent.TimeUnit.MILLISECONDS))
-            .providerSelectionP50(providerSelectionTimer.percentile(0.5, java.util.concurrent.TimeUnit.MILLISECONDS))
-            .providerSelectionP90(providerSelectionTimer.percentile(0.9, java.util.concurrent.TimeUnit.MILLISECONDS))
-            .providerSelectionP95(providerSelectionTimer.percentile(0.95, java.util.concurrent.TimeUnit.MILLISECONDS))
-            .providerSelectionP99(providerSelectionTimer.percentile(0.99, java.util.concurrent.TimeUnit.MILLISECONDS))
             .build();
     }
 
@@ -485,17 +473,5 @@ public class PennyMetricsService {
         private double averageProcessingTime;
         private double averageIntentAnalysisTime;
         private double averageProviderSelectionTime;
-        private double processingTimeP50;
-        private double processingTimeP90;
-        private double processingTimeP95;
-        private double processingTimeP99;
-        private double intentAnalysisP50;
-        private double intentAnalysisP90;
-        private double intentAnalysisP95;
-        private double intentAnalysisP99;
-        private double providerSelectionP50;
-        private double providerSelectionP90;
-        private double providerSelectionP95;
-        private double providerSelectionP99;
     }
 }

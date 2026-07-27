@@ -35,7 +35,6 @@ public class PennyProperties {
         private Duration healthCheckInterval = Duration.ofSeconds(30);
         private boolean fallbackEnabled = true;
         private Health health = new Health();
-        private ABTesting abTesting = new ABTesting();
         
         @Data
         public static class Health {
@@ -43,16 +42,6 @@ public class PennyProperties {
             private Duration checkInterval = Duration.ofSeconds(30);
             private int maxFailures = 3;
             private Duration recoveryTime = Duration.ofMinutes(5);
-        }
-        
-        @Data
-        public static class ABTesting {
-            private boolean enabled = false;
-            private int trafficSplit = 50; // Percentage of traffic to variant B
-            private String controlProvider = "PENNYBOT";
-            private String variantProvider = "GPT";
-            private boolean stickySessions = true;
-            private Duration testDuration = Duration.ofDays(7);
         }
     }
     

@@ -363,7 +363,8 @@ public class FacebookEventConsumer {
                 UUID botId = UUID.fromString(connection.getBotId());
                 String botReply = null;
                 try {
-                    botReply = pennyBotManager.processMessage(botId, messageText, connection.getOwnerId(), false);
+                    // Pass senderId (Facebook PSID) as userId, and ownerId for authorization
+                    botReply = pennyBotManager.processMessage(botId, messageText, senderId, connection.getOwnerId(), false);
                 } catch (IllegalArgumentException e) {
                     log.error("❌ Bot not found for connection {}: {}. Sending fallback response.", connection.getId(), e.getMessage());
                     botReply = "Sorry, the bot configuration is missing. Please contact the administrator.";

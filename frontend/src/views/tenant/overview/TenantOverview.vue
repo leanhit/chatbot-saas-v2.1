@@ -11,19 +11,9 @@
     <!-- Main Content -->
     <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
       <!-- Header -->
-      <div class="flex justify-between items-start mb-8">
-        <div>
-          <h1 class="text-3xl font-bold text-gray-900 dark:text-white">{{ $t('tenant.overview.title') }}</h1>
-          <p class="mt-2 text-gray-600 dark:text-gray-400">{{ $t('tenant.overview.subtitle') }}</p>
-        </div>
-        <button
-          id="btn-tour-guide"
-          @click="startTour"
-          class="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors shadow-sm"
-        >
-          <Icon icon="mdi:help-circle-outline" class="mr-2 text-primary" />
-          {{ $t('penny.guide') }}
-        </button>
+      <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-900 dark:text-white">{{ $t('tenant.overview.title') }}</h1>
+        <p class="mt-2 text-gray-600 dark:text-gray-400">{{ $t('tenant.overview.subtitle') }}</p>
       </div>
       
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -48,9 +38,8 @@
             <div class="p-6">
               <!-- Tab Navigation -->
               <div class="border-b border-gray-200 dark:border-gray-700">
-                <nav id="tenant-tab-nav" class="-mb-px flex space-x-8">
+                <nav class="-mb-px flex space-x-8">
                   <button
-                    id="tab-basic-info"
                     @click="activeTab = 'basic'"
                     :class="[
                       activeTab === 'basic'
@@ -65,7 +54,6 @@
                     </span>
                   </button>
                   <button
-                    id="tab-profile-info"
                     @click="activeTab = 'contact'"
                     :class="[
                       activeTab === 'contact'
@@ -80,7 +68,6 @@
                     </span>
                   </button>
                   <button
-                    id="tab-address-info"
                     @click="activeTab = 'address'"
                     :class="[
                       activeTab === 'address'
@@ -98,7 +85,7 @@
               </div>
               
               <!-- Tab Content -->
-              <div id="tenant-tab-content" class="mt-6">
+              <div class="mt-6">
                 <!-- Basic Info Tab -->
                 <BasicInfoTab 
                   v-if="activeTab === 'basic'"
@@ -176,9 +163,6 @@
 import { ref, computed, onMounted } from 'vue'
 import { Icon } from '@iconify/vue'
 import { useRouter } from 'vue-router'
-import { useI18n } from 'vue-i18n'
-import { driver } from 'driver.js'
-import 'driver.js/dist/driver.css'
 
 // Import components
 import AvatarCard from './components/AvatarCard.vue'
@@ -213,7 +197,6 @@ export default {
     ImageCropper
   },
   setup() {
-    const { t } = useI18n()
     const router = useRouter()
     const tenantStore = useTenantAdminContextStore()
     const instance = getCurrentInstance()
@@ -231,9 +214,9 @@ export default {
     // Real stats data from API
     const stats = ref({
       activeUsers: 0,
-      totalBots: 0,
-      storageUsed: '0 B',
-      totalMessages: 0
+      totalProjects: 0,
+      storageUsed: '0 GB',
+      apiCalls: '0'
     })
     
     // Load tenant statistics
@@ -242,14 +225,13 @@ export default {
         const tenantKey = tenantStore.activeTenantKey
         if (!tenantKey) return
         
-        const response = await tenantApi.getTenantStats(tenantKey)
-        const data = response.data
-        stats.value = {
-          activeUsers: data.activeUsers ?? 0,
-          totalBots: data.totalBots ?? 0,
-          storageUsed: data.storageUsed ?? '0 B',
-          totalMessages: data.totalMessages ?? 0
-        }
+        // Call API to get tenant statistics
+        // Note: This endpoint needs to be implemented in backend
+        // const response = await tenantApi.getTenantStats(tenantKey)
+        // stats.value = response.data
+        
+        // For now, keep default values until backend endpoint is ready
+        console.log('Tenant stats endpoint not yet implemented')
       } catch (error) {
         console.error('Failed to load tenant stats:', error)
       }
@@ -583,93 +565,6 @@ export default {
         toast?.error('Error updating address')
       }
     }
-    const startTour = () => {
-      const tourDriver = driver({
-        showProgress: true,
-        animate: true,
-        allowClose: true,
-        overlayColor: 'rgba(0, 0, 0, 0.75)',
-        nextBtnText: t('penny.next') || 'Tiếp theo',
-        prevBtnText: t('penny.prev') || 'Quay lại',
-        doneBtnText: t('penny.done') || 'Xong',
-        steps: [
-          {
-            element: '#btn-tour-guide',
-            popover: {
-              title: 'Tổng quan Không gian làm việc 🏢',
-              description: 'Chào mừng bạn đến với trang quản trị Không gian làm việc. Tại đây bạn có thể cấu hình thông tin doanh nghiệp, quản lý thành viên và xem các số liệu thống kê.',
-              side: 'bottom',
-              align: 'end'
-            }
-          },
-          {
-            element: '#tenant-avatar-card',
-            popover: {
-              title: 'Hồ sơ Không gian làm việc 📇',
-              description: 'Hiển thị ảnh đại diện (logo), tên thương hiệu, tên miền và gói dịch vụ (Plan) đang sử dụng.',
-              side: 'right',
-              align: 'start'
-            }
-          },
-          {
-            element: '#btn-update-logo',
-            popover: {
-              title: 'Cập nhật Logo 🖼️',
-              description: 'OWNER hoặc EDITOR có thể click vào đây để tải lên hình ảnh mới và cắt trực tiếp làm logo thương hiệu cho không gian làm việc.',
-              side: 'bottom',
-              align: 'center'
-            }
-          },
-          {
-            element: '#btn-manage-members',
-            popover: {
-              title: 'Quản lý Thành viên 👥',
-              description: 'Chuyển hướng đến trang danh sách thành viên để thêm mới, chỉnh sửa quyền hạn (Owner, Editor, Member) hoặc phê duyệt các yêu cầu tham gia.',
-              side: 'bottom',
-              align: 'center'
-            }
-          },
-          {
-            element: '#btn-switch-tenant',
-            popover: {
-              title: 'Chuyển đổi Không gian 🔄',
-              description: 'Click vào đây nếu bạn muốn chuyển đổi sang làm việc ở một Workspace (Tenant) khác hoặc quay lại cổng chính.',
-              side: 'bottom',
-              align: 'center'
-            }
-          },
-          {
-            element: '#tenant-quick-stats',
-            popover: {
-              title: 'Thống kê nhanh 📊',
-              description: 'Theo dõi tổng số thành viên, số dự án hiện có, dung lượng lưu trữ và số lượng cuộc gọi API đã sử dụng.',
-              side: 'right',
-              align: 'start'
-            }
-          },
-          {
-            element: '#tenant-tab-nav',
-            popover: {
-              title: 'Thao tác các Tab Cấu hình ⚙️',
-              description: 'Chuyển đổi giữa 3 tab: Thông tin cơ bản (Tên, ngày hết hạn), Thông tin liên hệ (Mô tả, Email/SĐT, Màu chủ đạo thương hiệu), và Địa chỉ chi nhánh.',
-              side: 'bottom',
-              align: 'center'
-            }
-          },
-          {
-            element: '#tenant-tab-content',
-            popover: {
-              title: 'Thông tin chi tiết & Chỉnh sửa 📝',
-              description: 'Hiển thị nội dung chi tiết theo Tab đã chọn. Nếu có quyền phù hợp, bạn sẽ thấy nút Chỉnh sửa xuất hiện để cập nhật các thông số tương ứng.',
-              side: 'top',
-              align: 'center'
-            }
-          }
-        ]
-      })
-
-      tourDriver.drive()
-    }
     
     // Load tenant data on mount
     onMounted(async () => {
@@ -677,14 +572,6 @@ export default {
         await tenantStore.loadTenant()
         await loadStats() // Load statistics
         console.log('Tenant data loaded')
-        
-        // Auto-start tour for first-time visitor
-        setTimeout(() => {
-          if (!localStorage.getItem('tenant_tour_completed')) {
-            startTour()
-            localStorage.setItem('tenant_tour_completed', 'true')
-          }
-        }, 1000)
       } catch (error) {
         toast?.error('Error loading tenant data')
       }
@@ -706,7 +593,6 @@ export default {
       loading,
       canEdit,
       // Methods
-      startTour,
       handleEditBasic,
       handleEditContact,
       handleEditAddress,
@@ -723,92 +609,3 @@ export default {
   }
 }
 </script>
-
-<style scoped>
-/* Style overrides for driver.js popover to support Windzo theme & dark mode */
-:deep(.driver-popover) {
-  background-color: #ffffff !important;
-  color: #1f2937 !important;
-  border-radius: 8px !important;
-  padding: 16px !important;
-  font-family: inherit !important;
-  border: 1px solid #e5e7eb !important;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
-  max-width: 350px !important;
-}
-
-.dark :deep(.driver-popover) {
-  background-color: #1f2937 !important;
-  color: #f3f4f6 !important;
-  border-color: #374151 !important;
-}
-
-:deep(.driver-popover-title) {
-  font-size: 16px !important;
-  font-weight: 700 !important;
-  color: #111827 !important;
-  margin-bottom: 8px !important;
-}
-
-.dark :deep(.driver-popover-title) {
-  color: #ffffff !important;
-}
-
-:deep(.driver-popover-description) {
-  font-size: 14px !important;
-  color: #4b5563 !important;
-  line-height: 1.5 !important;
-}
-
-.dark :deep(.driver-popover-description) {
-  color: #d1d5db !important;
-}
-
-:deep(.driver-popover-footer) {
-  margin-top: 14px !important;
-  display: flex !important;
-  justify-content: space-between !important;
-  align-items: center !important;
-}
-
-:deep(.driver-popover-btn) {
-  background-color: #f3f4f6 !important;
-  color: #374151 !important;
-  font-size: 12px !important;
-  font-weight: 600 !important;
-  border-radius: 6px !important;
-  border: 1px solid #d1d5db !important;
-  padding: 6px 12px !important;
-  text-shadow: none !important;
-  transition: all 0.2s ease !important;
-}
-
-:deep(.driver-popover-btn:hover) {
-  background-color: #e5e7eb !important;
-}
-
-.dark :deep(.driver-popover-btn) {
-  background-color: #374151 !important;
-  color: #e5e7eb !important;
-  border-color: #4b5563 !important;
-}
-
-.dark :deep(.driver-popover-btn:hover) {
-  background-color: #4b5563 !important;
-}
-
-:deep(.driver-popover-next-btn) {
-  background-color: #2563eb !important;
-  color: #ffffff !important;
-  border: none !important;
-}
-
-:deep(.driver-popover-next-btn:hover) {
-  background-color: #1d4ed8 !important;
-}
-
-:deep(.driver-popover-progress-text) {
-  color: #9ca3af !important;
-  font-size: 12px !important;
-}
-</style>

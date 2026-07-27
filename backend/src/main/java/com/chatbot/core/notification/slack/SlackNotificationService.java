@@ -2,8 +2,6 @@ package com.chatbot.core.notification.slack;
 
 import com.chatbot.core.message.store.model.Conversation;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.chatbot.shared.exceptions.BaseException;
-import com.chatbot.shared.exceptions.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -190,11 +188,11 @@ public class SlackNotificationService {
                 log.info("Sent Slack notification successfully");
             } else {
                 log.warn("Slack API returned non-2xx status: {}", response.getStatusCode());
-                throw new BaseException(ErrorCode.NOTIFICATION_SEND_FAILED, "Slack API error: " + response.getStatusCode());
+                throw new RuntimeException("Slack API error: " + response.getStatusCode());
             }
         } catch (Exception e) {
             log.warn("Failed to send Slack notification: {}", e.getMessage());
-            throw new BaseException(ErrorCode.NOTIFICATION_SEND_FAILED, "Failed to send Slack notification", e);
+            throw new RuntimeException("Failed to send Slack notification", e);
         }
     }
 }

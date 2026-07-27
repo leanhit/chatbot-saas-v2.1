@@ -493,7 +493,9 @@ export default {
       
       console.log('📶 SSE: Connecting for reference', referenceCode)
       const apiBaseUrl = process.env.VUE_APP_API_URL || 'http://localhost:8080'
-      eventSource = new EventSource(`${apiBaseUrl}/api/public/simple-payment/events/${referenceCode}`)
+      // Remove /api prefix if it exists in apiBaseUrl to avoid double /api/api
+      const cleanBaseUrl = apiBaseUrl.replace(/\/api$/, '')
+      eventSource = new EventSource(`${cleanBaseUrl}/api/public/simple-payment/events/${referenceCode}`)
       
       eventSource.addEventListener('payment_completed', (event) => {
         try {

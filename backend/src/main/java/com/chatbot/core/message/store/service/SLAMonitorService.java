@@ -10,15 +10,12 @@ import com.chatbot.core.notification.slack.SlackNotificationService;
 import com.chatbot.core.tenant.model.Tenant;
 import com.chatbot.core.tenant.model.TenantStatus;
 import com.chatbot.core.tenant.repository.TenantRepository;
-import com.chatbot.shared.exceptions.BaseException;
-import com.chatbot.shared.exceptions.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
@@ -40,7 +37,6 @@ public class SLAMonitorService {
     private final SLAConfigurationRepository slaConfigurationRepository;
     private final AgentEmailNotificationService agentEmailNotificationService;
     private final SlackNotificationService slackNotificationService;
-    private final org.springframework.data.redis.core.RedisTemplate<String, String> redisTemplate;
 
     // Default SLA thresholds (in seconds) - used as fallback
     private static final long DEFAULT_VIP_RESPONSE_TIME = 300; // 5 minutes for VIP
@@ -142,17 +138,9 @@ public class SLAMonitorService {
      * Check for SLA breaches and trigger escalation
      * Scheduled to run every minute
      * Loops through all active tenants to check SLA compliance
-     * Uses Redis-based distributed locking to prevent duplicate execution across multiple instances
      */
     @Scheduled(fixedRate = 60000) // Every minute
     public void checkSLABreaches() {
-        String lockKey = "lock:scheduler:checkSLABreaches";
-        Boolean acquired = redisTemplate.opsForValue().setIfAbsent(lockKey, "locked", Duration.ofSeconds(55));
-        if (!Boolean.TRUE.equals(acquired)) {
-            log.debug("⏰ [SLAMonitorService] Lock already held by another instance. Skipping SLA check.");
-            return;
-        }
-
         try {
             // Get all active tenants
             List<Tenant> activeTenants = tenantRepository.findAll();
@@ -179,8 +167,6 @@ public class SLAMonitorService {
             }
         } catch (Exception e) {
             log.error("Error in SLA breach check scheduled job", e);
-        } finally {
-            redisTemplate.delete(lockKey);
         }
     }
 
@@ -348,7 +334,7 @@ public class SLAMonitorService {
                 existingConfig.setDescription(updatedConfig.getDescription());
                 return slaConfigurationRepository.save(existingConfig);
             })
-            .orElseThrow(() -> new BaseException(ErrorCode.SLA_CONFIG_NOT_FOUND, "SLA configuration not found: " + configId));
+            .orElseThrow(() -> new RuntimeException("SLA configuration not found: " + configId));
     }
 
     /**

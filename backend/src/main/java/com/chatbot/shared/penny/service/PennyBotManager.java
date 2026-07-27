@@ -2,7 +2,6 @@ package com.chatbot.shared.penny.service;
 
 import com.chatbot.shared.penny.context.ContextManager;
 import com.chatbot.shared.penny.analytics.AnalyticsCollector;
-import com.chatbot.shared.penny.error.exceptions.PennyException;
 import com.chatbot.shared.penny.model.PennyBot;
 import com.chatbot.shared.penny.model.PennyBotType;
 import com.chatbot.shared.penny.repository.PennyBotRepository;
@@ -165,7 +164,7 @@ public class PennyBotManager {
      * Kiểm tra bot có thể xóa được không (connections và conversations)
      */
     public void checkBotCanBeDeleted(UUID botId, String ownerId) {
-        log.info("🔍 Checking if bot can be deleted: {} by owner: {}", botId, ownerId);
+        log.info("� Checking if bot can be deleted: {} by owner: {}", botId, ownerId);
         
         PennyBot bot = getBot(botId);
         
@@ -223,7 +222,7 @@ public class PennyBotManager {
             
         } catch (Exception e) {
             log.error("❌ Critical error deleting Penny bot {}: {}", botId, e.getMessage(), e);
-            throw new PennyException("Failed to delete bot: " + e.getMessage(), e);
+            throw new RuntimeException("Failed to delete bot: " + e.getMessage(), e);
         }
     }
     
@@ -395,8 +394,15 @@ public class PennyBotManager {
     /**
      * Process message through Penny middleware
      */
-    public String processMessage(UUID botId, String message, String ownerId, boolean isTestMode) {
-        log.info("💬 Processing message for bot {} by {} - TestMode: {} - Message: {}", botId, ownerId, isTestMode, message);
+    public String processMessage(UUID botId, String message, String userId, boolean isTestMode) {
+        return processMessage(botId, message, userId, null, isTestMode);
+    }
+
+    /**
+     * Process message through Penny middleware with explicit ownerId for authorization
+     */
+    public String processMessage(UUID botId, String message, String userId, String ownerId, boolean isTestMode) {
+        log.info("💬 Processing message for bot {} by userId {} - ownerId {} - TestMode: {} - Message: {}", botId, userId, ownerId, isTestMode, message);
         
         try {
             // Sanitize input to prevent XSS and injection attacks
@@ -416,8 +422,8 @@ public class PennyBotManager {
             
             PennyBot bot = getBot(botId);
             
-            // Skip ownership check for public access (ownerId = "public")
-            if (!"public".equals(ownerId)) {
+            // Skip ownership check if ownerId is null (webhook context) or public access
+            if (ownerId != null && !"public".equals(ownerId)) {
                 // Verify ownership for authenticated access
                 if (!bot.getOwnerId().equals(ownerId)) {
                     throw new AccessDeniedException("Not authorized to process messages for this bot");
@@ -433,7 +439,7 @@ public class PennyBotManager {
             try {
                 com.chatbot.shared.penny.dto.request.MiddlewareRequest middlewareRequest = 
                     com.chatbot.shared.penny.dto.request.MiddlewareRequest.builder()
-                        .userId(ownerId)
+                        .userId(userId)
                         .message(sanitizedMessage)
                         .platform("facebook")
                         .botId(botId.toString())

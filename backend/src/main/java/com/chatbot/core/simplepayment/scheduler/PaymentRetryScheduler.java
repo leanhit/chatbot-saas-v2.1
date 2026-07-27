@@ -8,7 +8,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
-import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -19,21 +18,12 @@ public class PaymentRetryScheduler {
 
     private final SimplePaymentRepository paymentRepository;
     private final RetryablePaymentService retryablePaymentService;
-    private final org.springframework.data.redis.core.RedisTemplate<String, String> redisTemplate;
 
     /**
      * Retry failed payments every 5 minutes
-     * Uses Redis-based distributed locking to prevent duplicate execution across multiple instances
      */
     @Scheduled(fixedRate = 300000) // Every 5 minutes
     public void retryFailedPayments() {
-        String lockKey = "lock:scheduler:retryFailedPayments";
-        Boolean acquired = redisTemplate.opsForValue().setIfAbsent(lockKey, "locked", Duration.ofMinutes(4));
-        if (!Boolean.TRUE.equals(acquired)) {
-            log.debug("🔄 [PaymentRetryScheduler] Lock already held by another instance. Skipping retry.");
-            return;
-        }
-
         log.info("🔄 Starting retry of failed payments");
         
         try {
@@ -72,24 +62,14 @@ public class PaymentRetryScheduler {
             
         } catch (Exception e) {
             log.error("❌ Error during payment retry scheduler", e);
-        } finally {
-            redisTemplate.delete(lockKey);
         }
     }
 
     /**
      * Check stuck pending payments every 10 minutes
-     * Uses Redis-based distributed locking to prevent duplicate execution across multiple instances
      */
     @Scheduled(fixedRate = 600000) // Every 10 minutes
     public void checkStuckPendingPayments() {
-        String lockKey = "lock:scheduler:checkStuckPendingPayments";
-        Boolean acquired = redisTemplate.opsForValue().setIfAbsent(lockKey, "locked", Duration.ofMinutes(9));
-        if (!Boolean.TRUE.equals(acquired)) {
-            log.debug("🔍 [PaymentRetryScheduler] Lock already held by another instance. Skipping check.");
-            return;
-        }
-
         log.info("🔍 Checking for stuck pending payments");
         
         try {
@@ -127,8 +107,6 @@ public class PaymentRetryScheduler {
             
         } catch (Exception e) {
             log.error("❌ Error during stuck payment check scheduler", e);
-        } finally {
-            redisTemplate.delete(lockKey);
         }
     }
 }

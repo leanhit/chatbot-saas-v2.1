@@ -67,6 +67,10 @@ public interface FacebookConnectionRepository extends JpaRepository<FacebookConn
     // Tìm theo botId và isActive (cho agent messages)
     Optional<FacebookConnection> findByBotIdAndIsActiveTrue(@Param("botId") String botId);
     
+    // Tìm tất cả theo botId và isActive (return List cho nhiều pages per bot)
+    @Query("SELECT fc FROM FacebookConnection fc WHERE fc.botId = :botId AND fc.isActive = true")
+    List<FacebookConnection> findAllByBotIdAndIsActiveTrue(@Param("botId") String botId);
+    
     // Tìm theo botId, tenantId và isActive (phiên bản cũ style)
     @Query("SELECT fc FROM FacebookConnection fc WHERE fc.botId = :botId AND fc.tenantId = :tenantId AND fc.isActive = true")
     Optional<FacebookConnection> findByBotIdAndTenantIdAndIsActiveTrue(@Param("botId") String botId, @Param("tenantId") Long tenantId);

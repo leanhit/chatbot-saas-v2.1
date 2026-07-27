@@ -4,8 +4,6 @@ import com.chatbot.core.message.store.model.Conversation;
 import com.chatbot.core.message.store.model.RoutingRule;
 import com.chatbot.core.message.store.repository.RoutingRuleRepository;
 import com.chatbot.core.message.store.repository.ConversationRepository;
-import com.chatbot.shared.exceptions.BaseException;
-import com.chatbot.shared.exceptions.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -275,7 +273,7 @@ public class RoutingRuleService {
                 existingRule.setRuleType(updatedRule.getRuleType());
                 return routingRuleRepository.save(existingRule);
             })
-            .orElseThrow(() -> new BaseException(ErrorCode.ROUTING_RULE_NOT_FOUND, "Routing rule not found: " + ruleId));
+            .orElseThrow(() -> new RuntimeException("Routing rule not found: " + ruleId));
     }
 
     /**

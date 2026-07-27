@@ -15,7 +15,6 @@ import com.chatbot.core.tenant.infra.TenantContext;
 import com.chatbot.shared.exceptions.ResourceNotFoundException;
 import com.chatbot.core.simplepayment.exception.PaymentNotFoundException;
 import com.chatbot.core.simplepayment.exception.PaymentException;
-import com.chatbot.core.simplepayment.exception.PackageNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -68,13 +67,10 @@ public class SimplePaymentService {
         if (request.getTargetPackageId() != null) {
             // Only validate package exists, skip balance validation for QR creation
             targetPackage = packageRepository.findByPackageId(request.getTargetPackageId())
-                .orElseThrow(() -> new PackageNotFoundException(request.getTargetPackageId()));
+                .orElseThrow(() -> new IllegalArgumentException("Package not found: " + request.getTargetPackageId()));
             
             if (!targetPackage.getIsActive()) {
-                throw new com.chatbot.shared.exceptions.BaseException(
-                    com.chatbot.shared.exceptions.ErrorCode.PACKAGE_NOT_ACTIVE,
-                    "Package is not active: " + request.getTargetPackageId()
-                );
+                throw new IllegalArgumentException("Package is not active: " + request.getTargetPackageId());
             }
             
             log.info("   Package validated for QR creation: {} (balance check skipped)", targetPackage.getName());

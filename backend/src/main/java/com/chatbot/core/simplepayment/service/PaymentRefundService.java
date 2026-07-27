@@ -1,17 +1,17 @@
 package com.chatbot.core.simplepayment.service;
 
 import com.chatbot.core.simplepayment.model.PaymentStatus;
-import com.chatbot.core.simplepayment.exception.*;
 import com.chatbot.core.simplepayment.model.SimplePayment;
 import com.chatbot.core.simplepayment.repository.SimplePaymentRepository;
+import com.chatbot.core.user.model.User;
 import com.chatbot.core.user.repository.UserRepository;
-import com.chatbot.shared.exceptions.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @Service
 @RequiredArgsConstructor
@@ -33,18 +33,18 @@ public class PaymentRefundService {
         log.info("💰 Refunding payment: {}, reason: {}, admin: {}", referenceCode, reason, adminUserId);
 
         SimplePayment payment = paymentRepository.findByReferenceCode(referenceCode)
-                .orElseThrow(() -> new PaymentNotFoundException(referenceCode));
+                .orElseThrow(() -> new RuntimeException("Payment not found: " + referenceCode));
 
         // Validate payment can be refunded
         if (payment.getStatus() != PaymentStatus.COMPLETED) {
-            throw new PaymentCannotBeRefundedException(
+            throw new RuntimeException(
                 String.format("Payment cannot be refunded. Current status: %s", payment.getStatus())
             );
         }
 
         // Check if payment was already refunded
         if (payment.getDescription() != null && payment.getDescription().contains("[REFUNDED]")) {
-            throw new PaymentAlreadyRefundedException(referenceCode);
+            throw new RuntimeException("Payment has already been refunded");
         }
 
         // Deduct from user balance (or reverse the package upgrade)
@@ -60,7 +60,7 @@ public class PaymentRefundService {
             }
         } catch (Exception e) {
             log.error("❌ Failed to deduct balance for refund: {}", e.getMessage(), e);
-            throw new PaymentException(ErrorCode.PAYMENT_ERROR, "Failed to process refund: " + e.getMessage(), e);
+            throw new RuntimeException("Failed to process refund: " + e.getMessage());
         }
 
         // Update payment status

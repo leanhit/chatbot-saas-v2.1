@@ -27,8 +27,6 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 
 import com.chatbot.core.tenant.service.TenantPermissionValidator;
-import com.chatbot.core.tenant.service.TenantStatsService;
-import com.chatbot.core.tenant.dto.TenantStatsResponse;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -48,7 +46,6 @@ public class TenantController {
     private final TenantMembershipFacade tenantMembershipFacade;
     private final TenantPermissionValidator permissionValidator;
     private final com.chatbot.core.tenant.membership.service.TenantMemberService tenantMemberService;
-    private final TenantStatsService tenantStatsService;
 
 
     /**
@@ -446,23 +443,6 @@ public class TenantController {
             @Valid @RequestBody com.chatbot.core.tenant.membership.dto.UpdateJoinRequest request) {
         Long tenantId = tenantMembershipFacade.getTenantIdByKey(tenantKey);
         tenantMembershipFacade.updateJoinRequest(tenantId, requestId, request.getStatus());
-    }
-
-    /**
-     * Get tenant statistics for Overview dashboard
-     */
-    @GetMapping("/key/{tenantKey}/stats")
-    @Operation(
-        summary = "Get tenant statistics",
-        description = "Returns aggregated stats: active members, active bots, storage used, and total messages.",
-        responses = {
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Statistics retrieved successfully"),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Tenant not found")
-        }
-    )
-    public ResponseEntity<TenantStatsResponse> getTenantStats(@PathVariable String tenantKey) {
-        TenantStatsResponse stats = tenantStatsService.getTenantStats(tenantKey);
-        return ResponseEntity.ok(stats);
     }
 
     /**

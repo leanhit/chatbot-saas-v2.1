@@ -10,7 +10,6 @@ import org.springframework.stereotype.Service;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 import java.security.NoSuchAlgorithmException;
-import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Base64;
 import java.util.Map;
@@ -33,7 +32,6 @@ public class JwtKeyManagementService {
 
     private final Map<String, JwtKey> activeKeys = new ConcurrentHashMap<>();
     private String currentKeyId;
-    private final org.springframework.data.redis.core.RedisTemplate<String, String> redisTemplate;
 
     @Data
     public static class JwtKey {
@@ -70,27 +68,17 @@ public class JwtKeyManagementService {
     /**
      * Scheduled task to rotate JWT keys
      * Runs daily to check if rotation is needed
-     * Uses Redis-based distributed locking to prevent duplicate execution across multiple instances
      */
     @Scheduled(cron = "0 0 2 * * ?") // Run at 2 AM daily
     public void scheduledKeyRotation() {
-        String lockKey = "lock:scheduler:jwtKeyRotation";
-        Boolean acquired = redisTemplate.opsForValue().setIfAbsent(lockKey, "locked", Duration.ofHours(23));
-        if (!Boolean.TRUE.equals(acquired)) {
-            log.debug("🔑 [JwtKeyManagementService] Lock already held by another instance. Skipping key rotation.");
+        if (!rotationEnabled) {
             return;
         }
 
         try {
-            if (!rotationEnabled) {
-                return;
-            }
-
             checkAndRotateKeys();
         } catch (Exception e) {
             log.error("Error during scheduled key rotation: {}", e.getMessage(), e);
-        } finally {
-            redisTemplate.delete(lockKey);
         }
     }
 

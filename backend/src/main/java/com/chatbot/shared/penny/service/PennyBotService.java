@@ -14,8 +14,6 @@ import com.chatbot.shared.penny.dto.PennyBotDto;
 import com.chatbot.shared.penny.dto.PennyBotRequest;
 import com.chatbot.shared.penny.dto.PennyBotResponse;
 import com.chatbot.shared.exceptions.ResourceNotFoundException;
-import com.chatbot.core.tenant.exception.TenantException;
-import com.chatbot.spokes.facebook.connection.exception.AccessDeniedException;
 import com.chatbot.shared.constants.CacheConstants;
 import com.chatbot.core.tenant.infra.TenantContext;
 import com.chatbot.core.tenant.service.PackageLimitValidationService;
@@ -54,13 +52,13 @@ public class PennyBotService {
         try {
             // Look up tenant in database using tenantId
             Tenant tenant = tenantRepository.findById(tenantId)
-                .orElseThrow(() -> new ResourceNotFoundException("Tenant not found with ID: " + tenantId));
+                .orElseThrow(() -> new RuntimeException("Tenant not found with ID: " + tenantId));
             
             log.info("Found tenant: {} with key: {}", tenantId, tenant.getTenantKey());
             return tenant.getTenantKey();
         } catch (Exception e) {
             log.error("Error converting tenantId to tenantKey: {}", tenantId, e);
-            throw new TenantException(com.chatbot.shared.exceptions.ErrorCode.TENANT_NOT_FOUND, "Invalid tenant ID: " + tenantId, e);
+            throw new RuntimeException("Invalid tenant ID: " + tenantId, e);
         }
     }
 
@@ -72,13 +70,13 @@ public class PennyBotService {
         try {
             // Look up tenant in database using tenantKey
             Tenant tenant = tenantRepository.findByTenantKey(tenantKey)
-                .orElseThrow(() -> new ResourceNotFoundException("Tenant not found with key: " + tenantKey));
+                .orElseThrow(() -> new RuntimeException("Tenant not found with key: " + tenantKey));
             
             log.info("Found tenant: {} with ID: {}", tenantKey, tenant.getId());
             return tenant.getId();
         } catch (Exception e) {
             log.error("Error converting tenantKey to tenantId: {}", tenantKey, e);
-            throw new TenantException(com.chatbot.shared.exceptions.ErrorCode.INVALID_TENANT_KEY, "Invalid tenant key: " + tenantKey, e);
+            throw new RuntimeException("Invalid tenant key: " + tenantKey, e);
         }
     }
 
@@ -89,7 +87,7 @@ public class PennyBotService {
     public PennyBotResponse createBot(String ownerId, PennyBotRequest request) {
         // Check create permissions
         if (!canManageBots(ownerId)) {
-            throw new AccessDeniedException("Insufficient privileges to create bots. Only OWNER/ADMIN can create bots.");
+            throw new RuntimeException("Insufficient privileges to create bots. Only OWNER/ADMIN can create bots.");
         }
         
         log.info("Creating Penny bot: {}", request.getBotName());

@@ -1,7 +1,6 @@
 package com.chatbot.core.simplepayment.service;
 
 import com.chatbot.core.simplepayment.exception.BankApiException;
-import com.chatbot.core.simplepayment.exception.PaymentNotFoundException;
 import com.chatbot.core.simplepayment.model.PaymentStatus;
 import com.chatbot.core.simplepayment.model.SimplePayment;
 import com.chatbot.core.simplepayment.repository.SimplePaymentRepository;
@@ -167,7 +166,7 @@ public class RetryablePaymentService {
     private void markPaymentAsFailed(String referenceCode, String errorMessage) {
         try {
             SimplePayment payment = paymentRepository.findByReferenceCode(referenceCode)
-                .orElseThrow(() -> new PaymentNotFoundException(referenceCode));
+                .orElseThrow(() -> new RuntimeException("Payment not found: " + referenceCode));
             
             payment.setStatus(PaymentStatus.FAILED);
             payment.setDescription(payment.getDescription() + " [FAILED: " + errorMessage + "]");

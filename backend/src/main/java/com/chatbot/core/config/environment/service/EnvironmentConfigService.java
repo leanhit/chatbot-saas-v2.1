@@ -2,8 +2,6 @@ package com.chatbot.core.config.environment.service;
 
 import com.chatbot.core.config.environment.model.EnvironmentConfig;
 import com.chatbot.core.config.environment.repository.EnvironmentConfigRepository;
-import com.chatbot.shared.exceptions.BaseException;
-import com.chatbot.shared.exceptions.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -105,7 +103,7 @@ public class EnvironmentConfigService {
     @Transactional
     public EnvironmentConfig updateConfig(Long configId, String configValue, String description) {
         EnvironmentConfig config = environmentConfigRepository.findById(configId)
-                .orElseThrow(() -> new BaseException(ErrorCode.ENVIRONMENT_CONFIG_NOT_FOUND, "Environment config not found"));
+                .orElseThrow(() -> new RuntimeException("Environment config not found"));
 
         config.setConfigValue(configValue);
         config.setDescription(description);
@@ -124,7 +122,7 @@ public class EnvironmentConfigService {
     @Transactional
     public void deactivateConfig(Long configId) {
         EnvironmentConfig config = environmentConfigRepository.findById(configId)
-                .orElseThrow(() -> new BaseException(ErrorCode.ENVIRONMENT_CONFIG_NOT_FOUND, "Environment config not found"));
+                .orElseThrow(() -> new RuntimeException("Environment config not found"));
 
         config.setIsActive(false);
         environmentConfigRepository.save(config);

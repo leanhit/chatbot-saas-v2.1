@@ -136,7 +136,7 @@ public class PennyMiddlewareEngine {
             }
             
             Object providerResponse = providerSelection.getProvider()
-                .sendMessage(providerSelection.getProviderType().toString(), request.getUserId(), request.getMessage());
+                .sendMessage(request.getBotId(), request.getUserId(), request.getMessage());
             
             // STEP 6: Build final response
             MiddlewareResponse response = buildResponse(providerResponse, analysis, providerSelection);
@@ -255,13 +255,29 @@ public class PennyMiddlewareEngine {
     
     private String extractResponseText(Object providerResponse) {
         // Extract response text from provider response
-        // This will be implemented based on provider response format
+        // Support multiple provider response formats
         if (providerResponse instanceof Map) {
             Map<?, ?> responseMap = (Map<?, ?>) providerResponse;
+            
+            // Try PennyBotProviderService format: {response: "..."}
+            Object response = responseMap.get("response");
+            if (response != null) {
+                return response.toString();
+            }
+            
+            // Try Botpress format: {payload: {text: "..."}}
             Object payload = responseMap.get("payload");
             if (payload instanceof Map) {
                 Object text = ((Map<?, ?>) payload).get("text");
-                return text != null ? text.toString() : "Xin lỗi, tôi không hiểu yêu cầu của bạn.";
+                if (text != null) {
+                    return text.toString();
+                }
+            }
+            
+            // Try direct text format: {text: "..."}
+            Object text = responseMap.get("text");
+            if (text != null) {
+                return text.toString();
             }
         }
         return "Xin lỗi, tôi không hiểu yêu cầu của bạn.";

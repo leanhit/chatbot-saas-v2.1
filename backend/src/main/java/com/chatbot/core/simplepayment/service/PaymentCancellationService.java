@@ -1,7 +1,6 @@
 package com.chatbot.core.simplepayment.service;
 
 import com.chatbot.core.simplepayment.model.PaymentStatus;
-import com.chatbot.core.simplepayment.exception.*;
 import com.chatbot.core.simplepayment.model.SimplePayment;
 import com.chatbot.core.simplepayment.repository.SimplePaymentRepository;
 import lombok.RequiredArgsConstructor;
@@ -29,18 +28,18 @@ public class PaymentCancellationService {
         log.info("🚫 Cancelling payment: {}, reason: {}", referenceCode, reason);
 
         SimplePayment payment = paymentRepository.findByReferenceCode(referenceCode)
-                .orElseThrow(() -> new PaymentNotFoundException(referenceCode));
+                .orElseThrow(() -> new RuntimeException("Payment not found: " + referenceCode));
 
         // Validate payment can be cancelled
         if (payment.getStatus() != PaymentStatus.PENDING) {
-            throw new PaymentCannotBeCancelledException(
+            throw new RuntimeException(
                 String.format("Payment cannot be cancelled. Current status: %s", payment.getStatus())
             );
         }
 
         // Check if payment has expired
         if (payment.getExpiresAt() != null && payment.getExpiresAt().isBefore(LocalDateTime.now())) {
-            throw new PaymentExpiredException("Payment has already expired");
+            throw new RuntimeException("Payment has already expired");
         }
 
         // Update payment status

@@ -260,8 +260,8 @@ import OnlineMembers from '@/components/OnlineMembers.vue'
 
 const router = useRouter()
 
-// Get tenant key from localStorage
-const tenantKey = computed(() => localStorage.getItem('active_tenant_id'))
+// Get tenant key from localStorage (use ref to prevent reactivity issues)
+const tenantKey = ref(localStorage.getItem('active_tenant_id'))
 
 // State
 const selectedPeriod = ref('7d')

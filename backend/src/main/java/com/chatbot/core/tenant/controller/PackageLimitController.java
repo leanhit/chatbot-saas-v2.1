@@ -3,8 +3,6 @@ package com.chatbot.core.tenant.controller;
 import com.chatbot.core.tenant.service.PackageLimitValidationService;
 import com.chatbot.shared.constants.ApiConstants;
 import com.chatbot.shared.dto.ApiResponse;
-import com.chatbot.shared.exceptions.BaseException;
-import com.chatbot.shared.exceptions.ErrorCode;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -32,7 +30,7 @@ public class PackageLimitController {
         try {
             Long tenantId = com.chatbot.core.tenant.infra.TenantContext.getTenantId();
             if (tenantId == null) {
-                throw new BaseException(ErrorCode.TENANT_CONTEXT_MISSING, "Tenant ID not found in context");
+                throw new RuntimeException("Tenant ID not found in context");
             }
             
             PackageLimitValidationService.ChatbotLimitInfo limitInfo = 

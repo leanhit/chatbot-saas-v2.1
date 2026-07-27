@@ -2,7 +2,6 @@ package com.chatbot.core.simplepayment.service;
 
 import com.chatbot.core.simplepayment.model.Discount;
 import com.chatbot.core.simplepayment.repository.DiscountRepository;
-import com.chatbot.core.simplepayment.exception.DiscountCodeExistsException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import com.chatbot.shared.exceptions.ResourceNotFoundException;
@@ -31,7 +30,7 @@ public class DiscountService {
 
         // Check if code already exists
         if (discountRepository.existsByCode(discount.getCode())) {
-            throw new DiscountCodeExistsException(discount.getCode());
+            throw new IllegalArgumentException("Discount code already exists: " + discount.getCode());
         }
 
         // Set default values

@@ -91,7 +91,7 @@ public class TenantNotificationService {
             log.info("Invitation accepted notification sent for tenant {} by {}", tenantName, memberEmail);
         } catch (Exception e) {
             log.error("Failed to send invitation accepted notification", e);
-            throw new NotificationException("Hệ thống gửi thông báo đang gặp sự cố, vui lòng thử lại sau.", e);
+            throw new RuntimeException("Hệ thống gửi thông báo đang gặp sự cố, vui lòng thử lại sau.", e);
         }
     }
 

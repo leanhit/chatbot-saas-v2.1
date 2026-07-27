@@ -12,7 +12,6 @@ import com.chatbot.spokes.facebook.connection.repository.FacebookConnectionRepos
 import com.chatbot.shared.penny.service.PennyBotManager;
 import com.chatbot.shared.penny.model.PennyBot;
 import com.chatbot.spokes.facebook.connection.exception.*;
-import com.chatbot.spokes.facebook.exception.FacebookTokenException;
 
 import com.chatbot.core.user.model.User;
 import com.chatbot.core.user.repository.UserRepository;
@@ -60,7 +59,7 @@ public class FacebookConnectionService {
     public String createConnection(String ownerId, CreateFacebookConnectionRequest request) {
         // Check create permissions
         if (!canCreateConnections(ownerId, request.getBotId())) {
-            throw new AccessDeniedException("Insufficient privileges to create connections.");
+            throw new RuntimeException("Insufficient privileges to create connections.");
         }
         
         // 1. AUTO-CREATE PENNY BOT nếu chưa có botId
@@ -69,7 +68,7 @@ public class FacebookConnectionService {
             log.info("🤖 Auto-creating Penny bot for connection");
             PennyBot newBot = pennyBotManager.autoCreateBotForConnection(ownerId, request.getPageId());
             if (newBot == null) {
-                throw new ResourceAlreadyExistsException("Failed to auto-create Penny bot for connection");
+                throw new RuntimeException("Failed to auto-create Penny bot for connection");
             }
             botId = newBot.getId().toString();
             log.info("✅ Auto-created Penny bot: {}", botId);
@@ -79,7 +78,7 @@ public class FacebookConnectionService {
                 PennyBot bot = pennyBotManager.getBot(UUID.fromString(botId));
                 log.info("🔍 Using existing bot: {} ({})", botId, bot.getBotName());
             } catch (Exception e) {
-                throw new ConnectionNotFoundException("Invalid bot or bot does not belong to your tenant: " + botId, e);
+                throw new RuntimeException("Invalid bot or bot does not belong to your tenant: " + botId, e);
             }
         }
 
@@ -120,13 +119,13 @@ public class FacebookConnectionService {
                 // Convert user token to long-lived token
                 String longLivedUserToken = facebookApiService.getLongLivedUserToken(request.getUserAccessToken());
                 if (longLivedUserToken == null) {
-                    throw new FacebookTokenException("Failed to convert user access token to long-lived token", request.getPageId());
+                    throw new RuntimeException("Failed to convert user access token to long-lived token");
                 }
                 
                 // Get pages with long-lived token to find the correct page access token
                 List<Map<String, Object>> userPages = facebookApiService.getUserPages(longLivedUserToken);
                 if (userPages == null || userPages.isEmpty()) {
-                    throw new FacebookTokenException("No pages found for user token", request.getPageId());
+                    throw new RuntimeException("No pages found for user token");
                 }
                 
                 // Find the specific page that matches the requested pageId
@@ -136,7 +135,7 @@ public class FacebookConnectionService {
                     .orElse(null);
                 
                 if (targetPage == null) {
-                    throw new ConnectionNotFoundException("Page ID " + request.getPageId() + " not found in user's pages");
+                    throw new RuntimeException("Page ID " + request.getPageId() + " not found in user's pages");
                 }
                 
                 // Extract page access token from the page data
@@ -145,7 +144,7 @@ public class FacebookConnectionService {
                 
             } catch (Exception e) {
                 log.error("❌ Failed to exchange token for page {}: {}", request.getPageId(), e.getMessage());
-                throw new FacebookTokenException("Token exchange failed: " + e.getMessage(), request.getPageId(), e);
+                throw new RuntimeException("Token exchange failed: " + e.getMessage(), e);
             }
         }
         
@@ -182,13 +181,13 @@ public class FacebookConnectionService {
             }
             
             if (targetPage == null) {
-                throw new ConnectionNotFoundException("Page ID " + pageId + " not found in user's managed pages");
+                throw new RuntimeException("Page ID " + pageId + " not found in user's managed pages");
             }
             
             // 3. Extract long-lived page access token
             String pageAccessToken = (String) targetPage.get("access_token");
             if (pageAccessToken == null || pageAccessToken.isEmpty()) {
-                throw new FacebookTokenException("No access token found for page " + pageId, pageId);
+                throw new RuntimeException("No access token found for page " + pageId);
             }
             
             log.info("✅ Obtained long-lived page access token for page: {}", pageId);
@@ -219,19 +218,19 @@ public class FacebookConnectionService {
             
         } catch (Exception e) {
             log.error("❌ Failed to create connection with long-lived token: {}", e.getMessage(), e);
-            throw new ConnectionNotFoundException("Failed to create Facebook connection: " + e.getMessage(), e);
+            throw new RuntimeException("Failed to create Facebook connection: " + e.getMessage(), e);
         }
     }
 
     public List<FacebookConnectionResponse> getConnectionsByOwnerId(String ownerId) {
         // Check view permissions
         if (!canViewConnections(ownerId)) {
-            throw new AccessDeniedException("Insufficient privileges to view connections.");
+            throw new RuntimeException("Insufficient privileges to view connections.");
         }
         
         Long tenantId = TenantContext.getTenantId();
         if (tenantId == null) {
-            throw new IllegalStateException("Không tìm thấy tenant ID trong context");
+            throw new RuntimeException("Không tìm thấy tenant ID trong context");
         }
         List<FacebookConnection> connections = connectionRepository.findByOwnerIdAndIsActiveTrueAndTenantId(ownerId, tenantId);
         return connections.stream()
@@ -243,7 +242,7 @@ public class FacebookConnectionService {
         Pageable pageable = PageRequest.of(page, size);
         Long tenantId = TenantContext.getTenantId();
         if (tenantId == null) {
-            throw new IllegalStateException("Không tìm thấy tenant ID trong context");
+            throw new RuntimeException("Không tìm thấy tenant ID trong context");
         }
         Page<FacebookConnection> connectionsPage = connectionRepository.findByOwnerIdAndIsActiveTrueAndTenantId(ownerId, tenantId, pageable);
         List<FacebookConnectionResponse> dtoList = connectionsPage.getContent().stream()
@@ -256,7 +255,7 @@ public class FacebookConnectionService {
     public List<FacebookConnectionResponse> getConnectionsByOwnerIdAll(String ownerId) {
         Long tenantId = TenantContext.getTenantId();
         if (tenantId == null) {
-            throw new IllegalStateException("Không tìm thấy tenant ID trong context");
+            throw new RuntimeException("Không tìm thấy tenant ID trong context");
         }
         List<FacebookConnection> connections = connectionRepository.findByOwnerIdAndTenantId(ownerId, tenantId);
         return connections.stream()
@@ -268,7 +267,7 @@ public class FacebookConnectionService {
         Pageable pageable = PageRequest.of(page, size);
         Long tenantId = TenantContext.getTenantId();
         if (tenantId == null) {
-            throw new IllegalStateException("Không tìm thấy tenant ID trong context");
+            throw new RuntimeException("Không tìm thấy tenant ID trong context");
         }
         Page<FacebookConnection> connectionsPage = connectionRepository.findByOwnerIdAndTenantId(ownerId, tenantId, pageable);
         List<FacebookConnectionResponse> dtoList = connectionsPage.getContent().stream()
@@ -281,7 +280,7 @@ public class FacebookConnectionService {
         Pageable pageable = PageRequest.of(page, size);
         Long tenantId = TenantContext.getTenantId();
         if (tenantId == null) {
-            throw new IllegalStateException("Không tìm thấy tenant ID trong context");
+            throw new RuntimeException("Không tìm thấy tenant ID trong context");
         }
         
         // Get connections by botId and verify ownership
@@ -295,7 +294,7 @@ public class FacebookConnectionService {
     public List<Map<String, Object>> getConnectionsByBotIdList(String botId, String ownerId) {
         Long tenantId = TenantContext.getTenantId();
         if (tenantId == null) {
-            throw new IllegalStateException("Không tìm thấy tenant ID trong context");
+            throw new RuntimeException("Không tìm thấy tenant ID trong context");
         }
         
         // Get connections by botId and verify ownership
@@ -343,11 +342,11 @@ public class FacebookConnectionService {
 
     public void updateConnection(UUID connectionId, String ownerId, UpdateFacebookConnectionRequest request) {
         FacebookConnection connection = connectionRepository.findById(connectionId)
-                .orElseThrow(() -> new ConnectionNotFoundException(connectionId));
+                .orElseThrow(() -> new RuntimeException("Connection not found."));
         
         // Check update permissions
         if (!canUpdateConnection(ownerId, connection)) {
-            throw new AccessDeniedException("Insufficient privileges to update this connection.");
+            throw new RuntimeException("Insufficient privileges to update this connection.");
         }
         if (request.getBotName() != null) {
             connection.setBotName(request.getBotName());
@@ -377,17 +376,17 @@ public class FacebookConnectionService {
     public void deleteConnection(String id, String ownerId) {
         // Check admin permissions (System ADMIN or Tenant ADMIN/OWNER)
         if (!hasAdminPrivileges(ownerId)) {
-            throw new AccessDeniedException("Admin privileges required to delete connections.");
+            throw new RuntimeException("Admin privileges required to delete connections.");
         }
         
         UUID connectionId = UUID.fromString(id);
         
         // Verify ownership before deletion
         FacebookConnection connection = connectionRepository.findById(connectionId)
-                .orElseThrow(() -> new ConnectionNotFoundException(connectionId));
+                .orElseThrow(() -> new RuntimeException("Connection not found."));
         
         if (!connection.getOwnerId().equals(ownerId)) {
-            throw new AccessDeniedException("Access denied: You can only delete your own connections.");
+            throw new RuntimeException("Access denied: You can only delete your own connections.");
         }
         
         log.info("🗑️ Admin user {} deleting Facebook connection: {}", ownerId, connectionId);

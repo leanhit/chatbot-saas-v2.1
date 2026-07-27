@@ -80,6 +80,10 @@ class PresenceWebSocketService {
         // Start heartbeat
         this.startHeartbeat()
         
+        // Send immediate heartbeat to keep connection alive
+        this.send('ping')
+        console.log('💓 Sent immediate heartbeat ping')
+        
         // Notify connection status change
         if (this.onConnectionStatusChanged) {
           this.onConnectionStatusChanged('connected')
@@ -131,6 +135,12 @@ class PresenceWebSocketService {
    */
   handleMessage(data) {
     try {
+      // Handle plain text "pong" response from backend heartbeat
+      if (data === 'pong') {
+        console.log('💓 Presence heartbeat pong received')
+        return
+      }
+
       const message = JSON.parse(data)
       
       switch (message.type) {
@@ -139,13 +149,6 @@ class PresenceWebSocketService {
           break
         case 'MEMBER_OFFLINE':
           this.handleMemberOffline(message.data)
-          break
-        case 'HEARTBEAT':
-          // Respond to heartbeat
-          this.send({ type: 'HEARTBEAT_PONG', timestamp: Date.now() })
-          break
-        case 'HEARTBEAT_PONG':
-          // Handle heartbeat response from server
           break
         default:
           console.log('Unknown message type:', message.type)
@@ -212,9 +215,9 @@ class PresenceWebSocketService {
     this.stopHeartbeat()
     this.heartbeatInterval = setInterval(() => {
       if (this.socket && this.socket.readyState === WebSocket.OPEN) {
-        this.send({ type: 'HEARTBEAT', timestamp: Date.now() })
+        this.send('ping') // Send plain text "ping" to match backend expectation
       }
-    }, 30000) // 30 seconds
+    }, 3000) // 3 seconds - reduced to send heartbeat before server timeout
   }
 
   /**

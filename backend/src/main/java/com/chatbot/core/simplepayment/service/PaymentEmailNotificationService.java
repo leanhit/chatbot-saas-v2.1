@@ -1,10 +1,8 @@
 package com.chatbot.core.simplepayment.service;
 
 import com.chatbot.core.simplepayment.model.PaymentStatus;
-import com.chatbot.core.simplepayment.exception.PaymentNotFoundException;
 import com.chatbot.core.simplepayment.model.SimplePayment;
 import com.chatbot.core.simplepayment.repository.SimplePaymentRepository;
-import com.chatbot.core.identity.exception.UserNotFoundException;
 import com.chatbot.core.user.model.User;
 import com.chatbot.core.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -37,10 +35,10 @@ public class PaymentEmailNotificationService {
 
         try {
             SimplePayment payment = paymentRepository.findByReferenceCode(referenceCode)
-                    .orElseThrow(() -> new PaymentNotFoundException(referenceCode));
+                    .orElseThrow(() -> new RuntimeException("Payment not found: " + referenceCode));
 
             User user = userRepository.findById(payment.getUserId())
-                    .orElseThrow(() -> new UserNotFoundException("User not found: " + payment.getUserId()));
+                    .orElseThrow(() -> new RuntimeException("User not found: " + payment.getUserId()));
 
             String subject = "Thanh toán thành công - " + referenceCode;
             String content = buildPaymentSuccessEmail(payment, user);
@@ -63,10 +61,10 @@ public class PaymentEmailNotificationService {
 
         try {
             SimplePayment payment = paymentRepository.findByReferenceCode(referenceCode)
-                    .orElseThrow(() -> new PaymentNotFoundException(referenceCode));
+                    .orElseThrow(() -> new RuntimeException("Payment not found: " + referenceCode));
 
             User user = userRepository.findById(payment.getUserId())
-                    .orElseThrow(() -> new UserNotFoundException("User not found: " + payment.getUserId()));
+                    .orElseThrow(() -> new RuntimeException("User not found: " + payment.getUserId()));
 
             String subject = "Thanh toán thất bại - " + referenceCode;
             String content = buildPaymentFailureEmail(payment, user);
@@ -89,10 +87,10 @@ public class PaymentEmailNotificationService {
 
         try {
             SimplePayment payment = paymentRepository.findByReferenceCode(referenceCode)
-                    .orElseThrow(() -> new PaymentNotFoundException(referenceCode));
+                    .orElseThrow(() -> new RuntimeException("Payment not found: " + referenceCode));
 
             User user = userRepository.findById(payment.getUserId())
-                    .orElseThrow(() -> new UserNotFoundException("User not found: " + payment.getUserId()));
+                    .orElseThrow(() -> new RuntimeException("User not found: " + payment.getUserId()));
 
             String subject = "Thanh toán đã hủy - " + referenceCode;
             String content = buildPaymentCancelledEmail(payment, user);
@@ -115,10 +113,10 @@ public class PaymentEmailNotificationService {
 
         try {
             SimplePayment payment = paymentRepository.findByReferenceCode(referenceCode)
-                    .orElseThrow(() -> new PaymentNotFoundException(referenceCode));
+                    .orElseThrow(() -> new RuntimeException("Payment not found: " + referenceCode));
 
             User user = userRepository.findById(payment.getUserId())
-                    .orElseThrow(() -> new UserNotFoundException("User not found: " + payment.getUserId()));
+                    .orElseThrow(() -> new RuntimeException("User not found: " + payment.getUserId()));
 
             String subject = "Thanh toán đã hết hạn - " + referenceCode;
             String content = buildPaymentExpiredEmail(payment, user);
@@ -141,10 +139,10 @@ public class PaymentEmailNotificationService {
 
         try {
             SimplePayment payment = paymentRepository.findByReferenceCode(referenceCode)
-                    .orElseThrow(() -> new PaymentNotFoundException(referenceCode));
+                    .orElseThrow(() -> new RuntimeException("Payment not found: " + referenceCode));
 
             User user = userRepository.findById(payment.getUserId())
-                    .orElseThrow(() -> new UserNotFoundException("User not found: " + payment.getUserId()));
+                    .orElseThrow(() -> new RuntimeException("User not found: " + payment.getUserId()));
 
             String subject = "Hoàn tiền - " + referenceCode;
             String content = buildPaymentRefundEmail(payment, user);
@@ -167,10 +165,10 @@ public class PaymentEmailNotificationService {
 
         try {
             SimplePayment payment = paymentRepository.findByReferenceCode(referenceCode)
-                    .orElseThrow(() -> new PaymentNotFoundException(referenceCode));
+                    .orElseThrow(() -> new RuntimeException("Payment not found: " + referenceCode));
 
             User user = userRepository.findById(payment.getUserId())
-                    .orElseThrow(() -> new UserNotFoundException("User not found: " + payment.getUserId()));
+                    .orElseThrow(() -> new RuntimeException("User not found: " + payment.getUserId()));
 
             String subject = "Nâng cấp gói thành công - " + packageId;
             String content = buildPackageUpgradeEmail(payment, user, packageId);

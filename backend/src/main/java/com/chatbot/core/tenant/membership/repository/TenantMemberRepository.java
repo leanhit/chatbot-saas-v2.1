@@ -124,7 +124,4 @@ public interface TenantMemberRepository extends JpaRepository<TenantMember, Long
     @org.springframework.transaction.annotation.Transactional(value = "tenantTransactionManager", rollbackFor = Exception.class)
     @Query("DELETE FROM TenantMember tm WHERE tm.tenant.id = :tenantId")
     void deleteByTenantId(@Param("tenantId") Long tenantId);
-
-    /** Count members in a tenant by membership status */
-    long countByTenant_IdAndStatus(Long tenantId, MembershipStatus status);
 }

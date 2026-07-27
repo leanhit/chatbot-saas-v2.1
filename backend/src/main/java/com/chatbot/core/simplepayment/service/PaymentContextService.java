@@ -5,7 +5,6 @@ import com.chatbot.core.tenant.model.Tenant;
 import com.chatbot.core.tenant.repository.TenantRepository;
 import com.chatbot.core.user.model.User;
 import com.chatbot.core.user.repository.AuthRepository;
-import com.chatbot.core.identity.exception.UserNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.AccessDeniedException;
@@ -29,7 +28,7 @@ public class PaymentContextService {
         }
         String username = userDetails.getUsername();
         User user = authRepository.findByEmail(username)
-                .orElseThrow(() -> new UserNotFoundException("User not found: " + username));
+                .orElseThrow(() -> new IllegalArgumentException("User not found: " + username));
         return user.getId();
     }
 

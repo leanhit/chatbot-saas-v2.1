@@ -2,11 +2,8 @@ package com.chatbot.core.simplepayment.service;
 
 import com.chatbot.core.simplepayment.config.PackageConfig;
 import com.chatbot.core.simplepayment.config.PackageConfigLoader;
-import com.chatbot.core.simplepayment.exception.PackageExistsException;
-import com.chatbot.core.simplepayment.exception.PackageNotFoundException;
 import com.chatbot.core.simplepayment.model.Package;
 import com.chatbot.core.simplepayment.repository.PackageRepository;
-import com.chatbot.shared.exceptions.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
@@ -72,7 +69,7 @@ public class PackageService {
         
         // Check if package ID already exists
         if (cachedPackageService.existsByPackageId(packageData.getPackageId())) {
-            throw new PackageExistsException(packageData.getPackageId());
+            throw new IllegalArgumentException("Package ID already exists: " + packageData.getPackageId());
         }
 
         // Set default values
@@ -103,7 +100,7 @@ public class PackageService {
         log.info("Updating package ID: {}", id);
         
         Package existingPackage = packageRepository.findById(id)
-                .orElseThrow(() -> new PackageNotFoundException(id));
+                .orElseThrow(() -> new IllegalArgumentException("Package not found: " + id));
 
         // Update fields
         existingPackage.setName(packageData.getName());
@@ -142,7 +139,7 @@ public class PackageService {
         log.info("Deleting package ID: {}", id);
         
         Package packageData = packageRepository.findById(id)
-                .orElseThrow(() -> new PackageNotFoundException(id));
+                .orElseThrow(() -> new IllegalArgumentException("Package not found: " + id));
 
         packageData.setIsActive(false);
         packageRepository.save(packageData);
@@ -163,7 +160,7 @@ public class PackageService {
         log.info("Permanently deleting package ID: {}", id);
         
         Package packageData = packageRepository.findById(id)
-                .orElseThrow(() -> new PackageNotFoundException(id));
+                .orElseThrow(() -> new IllegalArgumentException("Package not found: " + id));
 
         packageRepository.delete(packageData);
         
