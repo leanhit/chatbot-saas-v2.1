@@ -27,7 +27,7 @@ import java.util.Properties;
 )
 public class UserHubConfig {
 
-    @Value("${app.hibernate.ddl-auto:update}")
+    @Value("${app.hibernate.ddl-auto:none}")
     private String ddlAuto;
 
     @Bean

@@ -28,7 +28,7 @@ import java.util.Properties;
 )
 public class ConfigHubConfig {
 
-    @Value("${app.hibernate.ddl-auto:update}")
+    @Value("${app.hibernate.ddl-auto:none}")
     private String ddlAuto;
 
     @Bean

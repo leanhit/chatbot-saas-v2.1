@@ -231,7 +231,7 @@ public class ConversationService {
     /**
      * Thêm phương thức để đóng Conversation
      */
-    @Transactional
+    @Transactional(transactionManager = "messageTransactionManager", rollbackFor = Exception.class)
     public Conversation closeConversation(Long conversationId) {
         Conversation conversation = conversationRepo.findById(conversationId)
             .orElseThrow(() -> new RuntimeException("Conversation not found"));
@@ -252,7 +252,7 @@ public class ConversationService {
      * @param agentAssignedId ID của Agent tiếp quản
      * @return Conversation đã được cập nhật
      */
-    @Transactional
+    @Transactional(transactionManager = "messageTransactionManager", rollbackFor = Exception.class)
     public Conversation takeoverConversation(Long conversationId, Long agentAssignedId) {
         return conversationRepo.findById(conversationId)
             .map(c -> {
@@ -274,7 +274,7 @@ public class ConversationService {
      * @param conversationId ID của Conversation
      * @return Conversation đã được cập nhật
      */
-    @Transactional
+    @Transactional(transactionManager = "messageTransactionManager", rollbackFor = Exception.class)
     public Conversation releaseConversation(Long conversationId) {
         return conversationRepo.findById(conversationId)
             .map(c -> {
@@ -301,7 +301,7 @@ public class ConversationService {
      * @param ownerId ID của chủ sở hữu
      * @throws RuntimeException nếu không tìm thấy conversation hoặc không có quyền
      */
-    @Transactional
+    @Transactional(transactionManager = "messageTransactionManager", rollbackFor = Exception.class)
     public void deleteConversation(Long conversationId, String ownerId) {
         Conversation conversation = conversationRepo.findById(conversationId)
             .orElseThrow(() -> new RuntimeException("Conversation not found with id: " + conversationId));
@@ -327,7 +327,7 @@ public class ConversationService {
      * @param ownerId ID của chủ sở hữu
      * @return Số lượng conversation đã xóa
      */
-    @Transactional
+    @Transactional(transactionManager = "messageTransactionManager", rollbackFor = Exception.class)
     public int deleteConversations(List<Long> conversationIds, String ownerId) {
         if (conversationIds == null || conversationIds.isEmpty()) {
             return 0;
@@ -504,7 +504,7 @@ public class ConversationService {
     /**
      * Create new conversation
      */
-    @Transactional
+    @Transactional(transactionManager = "messageTransactionManager", rollbackFor = Exception.class)
     public Conversation createConversation(Conversation conversation) {
         Long tenantId = TenantContext.getTenantId();
         if (tenantId == null) {

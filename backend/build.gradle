@@ -169,6 +169,12 @@ dependencies {
     implementation 'com.bucket4j:bucket4j-redis:8.10.1'
 
     // -------------------------------
+    // ShedLock — Distributed locking for scheduled tasks
+    // -------------------------------
+    implementation 'net.javacrumbs.shedlock:shedlock-spring:4.42.0'
+    implementation 'net.javacrumbs.shedlock:shedlock-provider-redis-spring:4.42.0'
+
+    // -------------------------------
     // Testcontainers (for integration testing with real services)
     // -------------------------------
     testImplementation 'org.testcontainers:testcontainers:1.19.8'

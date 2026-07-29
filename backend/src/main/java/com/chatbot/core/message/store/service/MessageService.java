@@ -31,7 +31,7 @@ public class MessageService {
     /**
      * Lưu tin nhắn và cập nhật Conversation tương ứng.
      */
-    @Transactional // Đảm bảo việc lưu message và cập nhật conversation là 1 transaction
+    @Transactional(transactionManager = "messageTransactionManager", rollbackFor = Exception.class)
     public Message saveMessage(Long conversationId, String sender, String content, String messageType, Map<String, Object> raw) {
         // Validate message limit for user messages only
         if ("user".equals(sender)) {
@@ -128,7 +128,7 @@ public class MessageService {
      * Lấy tin nhắn theo ConversationId.
      * Thêm logic đánh dấu tin nhắn là đã đọc (Mark as Read)
      */
-    @Transactional
+    @Transactional(transactionManager = "messageTransactionManager", rollbackFor = Exception.class)
     public Page<Message> getMessages(Long conversationId, int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
         Long tenantId = TenantContext.getTenantId();
@@ -153,7 +153,7 @@ public class MessageService {
      * @param messageId ID của message cần xóa
      * @throws RuntimeException nếu không tìm thấy message
      */
-    @Transactional
+    @Transactional(transactionManager = "messageTransactionManager", rollbackFor = Exception.class)
     public void deleteMessage(Long messageId) {
         if (!messageRepo.existsById(messageId)) {
             throw new RuntimeException("Message not found with id: " + messageId);
@@ -170,7 +170,7 @@ public class MessageService {
      * @param messageIds Danh sách ID của các message cần xóa
      * @return Số lượng message đã xóa
      */
-    @Transactional
+    @Transactional(transactionManager = "messageTransactionManager", rollbackFor = Exception.class)
     public int deleteMessages(Iterable<Long> messageIds) {
         int count = 0;
         for (Long id : messageIds) {
@@ -193,7 +193,7 @@ public class MessageService {
      * @param conversationId ID của conversation
      * @return Số lượng message đã xóa
      */
-    @Transactional
+    @Transactional(transactionManager = "messageTransactionManager", rollbackFor = Exception.class)
     public int deleteAllMessagesInConversation(Long conversationId) {
         Long tenantId = TenantContext.getTenantId();
         if (tenantId == null) {
@@ -213,7 +213,7 @@ public class MessageService {
      * @param messageId ID của message
      * @return Optional<Message>
      */
-    @Transactional(readOnly = true)
+    @Transactional(transactionManager = "messageTransactionManager", readOnly = true, rollbackFor = Exception.class)
     public Optional<Message> getMessageById(Long messageId) {
         Long tenantId = TenantContext.getTenantId();
         if (tenantId == null) {

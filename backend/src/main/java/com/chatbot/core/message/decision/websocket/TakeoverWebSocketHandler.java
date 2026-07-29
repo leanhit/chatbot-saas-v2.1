@@ -4,10 +4,12 @@ import com.chatbot.core.message.decision.model.TakeoverMessage;
 import com.chatbot.core.message.store.repository.ConversationRepository;
 import com.chatbot.spokes.facebook.connection.repository.FacebookConnectionRepository;
 import com.chatbot.core.notification.websocket.NotificationWebSocketHandler;
+import com.chatbot.configs.RedisPubSubConfig;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.TextMessage;
@@ -36,6 +38,7 @@ public class TakeoverWebSocketHandler extends TextWebSocketHandler {
     private final ConversationRepository conversationRepository;
     private final FacebookConnectionRepository facebookConnectionRepository;
     private final NotificationWebSocketHandler notificationWebSocketHandler;
+    private final RedisTemplate<String, String> redisTemplate;
 
     // Session tracking with metadata like traloitudongV2
     private final ConcurrentMap<String, Set<WebSocketSession>> conversationSessions = new ConcurrentHashMap<>();
@@ -328,6 +331,15 @@ public class TakeoverWebSocketHandler extends TextWebSocketHandler {
      * @param message JSON message to broadcast
      */
     public void broadcastToTenant(Long tenantId, String message) {
+        // Publish to Redis for cluster-wide broadcast
+        try {
+            redisTemplate.convertAndSend(RedisPubSubConfig.WEBSOCKET_TAKEOVER_TOPIC, message);
+            log.debug("📡 [Redis Pub/Sub] Published takeover event for tenant {}", tenantId);
+        } catch (Exception e) {
+            log.error("❌ [Redis Pub/Sub] Failed to publish takeover event: {}", e.getMessage());
+        }
+
+        // Also broadcast to local sessions
         Set<WebSocketSession> sessions = tenantSessions.get(tenantId);
         if (sessions == null || sessions.isEmpty()) {
             log.debug("⚠️ WebSocket: No sessions for tenant {}", tenantId);

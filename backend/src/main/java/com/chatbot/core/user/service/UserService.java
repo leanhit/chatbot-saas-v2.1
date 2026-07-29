@@ -119,7 +119,7 @@ public class UserService {
     /**
      * Get user profile by ID
      */
-    @Transactional(readOnly = true)
+    @Transactional(transactionManager = "userTransactionManager", readOnly = true, rollbackFor = Exception.class)
     public UserProfileResponse getProfile(Long userId) {
         // Auto-create UserProfile if not exists (migration compatibility)
         UserProfile profile = userProfileRepository.findByUserId(userId)
@@ -138,7 +138,7 @@ public class UserService {
     /**
      * Update user profile
      */
-    @Transactional
+    @Transactional(transactionManager = "userTransactionManager", rollbackFor = Exception.class)
     public UserProfileResponse updateProfile(Long userId, UserRequest request) {
         // Auto-create UserProfile if not exists (migration compatibility)
         UserProfile profile = userProfileRepository.findByUserId(userId)
@@ -182,7 +182,7 @@ public class UserService {
     /**
      * Update user avatar
      */
-    @Transactional
+    @Transactional(transactionManager = "userTransactionManager", rollbackFor = Exception.class)
     public UserProfileResponse updateAvatar(Long userId, MultipartFile file) {
         try {
             log.info("🔄 [AVATAR UPDATE] Starting avatar update for userId: {}, fileName: {}, fileSize: {}", 
@@ -307,7 +307,7 @@ public class UserService {
     /**
      * Create empty profile for new user
      */
-    @Transactional
+    @Transactional(transactionManager = "userTransactionManager", rollbackFor = Exception.class)
     public void createEmptyProfile(User user) {
         // Insert directly using native query to avoid detached entity issues
         userProfileRepository.insertProfile(user.getId());
@@ -317,7 +317,7 @@ public class UserService {
     /**
      * Create empty address for new user
      */
-    @Transactional
+    @Transactional(transactionManager = "userTransactionManager", rollbackFor = Exception.class)
     public void createEmptyAddress(Long userId) {
         try {
             addressService.createEmptyAddressForUser(userId);
@@ -330,7 +330,7 @@ public class UserService {
     /**
      * Cancel user's own join request
      */
-    @Transactional
+    @Transactional(transactionManager = "userTransactionManager", rollbackFor = Exception.class)
     public void cancelJoinRequest(Long requestId, User user) {
         // Find the join request
         TenantJoinRequest request = joinRequestRepository.findById(requestId)
@@ -408,7 +408,7 @@ public class UserService {
     /**
      * Get full user profile with address information
      */
-    @Transactional
+    @Transactional(transactionManager = "userTransactionManager", rollbackFor = Exception.class)
     public UserFullResponse getFullProfile(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found with ID: " + userId));
@@ -444,7 +444,7 @@ public class UserService {
     /**
      * Update basic user information only
      */
-    @Transactional
+    @Transactional(transactionManager = "userTransactionManager", rollbackFor = Exception.class)
     public UserProfileResponse updateBasicInfo(Long userId, UserRequest request) {
         try {
             log.info("Updating basic info for user ID: {}", userId);
@@ -468,7 +468,7 @@ public class UserService {
         }
     }
     
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    @Transactional(transactionManager = "userTransactionManager", propagation = Propagation.REQUIRES_NEW, rollbackFor = Exception.class)
     public UserProfile ensureProfileExists(Long userId) {
         return userProfileRepository.findByUserId(userId)
                 .orElseGet(() -> {
@@ -483,7 +483,7 @@ public class UserService {
     /**
      * Update professional user information only
      */
-    @Transactional
+    @Transactional(transactionManager = "userTransactionManager", rollbackFor = Exception.class)
     public UserProfileResponse updateProfessionalInfo(Long userId, UserRequest request) {
         // Auto-create UserProfile if not exists (same as updateProfile)
         UserProfile profile = userProfileRepository.findByUserId(userId)
@@ -520,7 +520,7 @@ public class UserService {
     /**
      * Save user entity (for registration)
      */
-    @Transactional
+    @Transactional(transactionManager = "userTransactionManager", rollbackFor = Exception.class)
     public User save(User user) {
         return userRepository.saveAndFlush(user);
     }

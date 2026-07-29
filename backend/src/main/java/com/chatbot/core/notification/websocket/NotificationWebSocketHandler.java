@@ -1,8 +1,10 @@
 package com.chatbot.core.notification.websocket;
 
+import com.chatbot.configs.RedisPubSubConfig;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.TextMessage;
@@ -23,6 +25,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class NotificationWebSocketHandler extends TextWebSocketHandler {
 
     private final ObjectMapper objectMapper;
+    private final RedisTemplate<String, String> redisTemplate;
 
     // Track sessions by email (since invitations/approvals can be targeted by email)
     private final Map<String, Set<WebSocketSession>> emailSessions = new ConcurrentHashMap<>();
@@ -188,6 +191,17 @@ public class NotificationWebSocketHandler extends TextWebSocketHandler {
      */
     public void broadcastToTenant(Long tenantId, Object notification) {
         if (tenantId == null) return;
+
+        // Publish to Redis for cluster-wide broadcast
+        try {
+            String notificationJson = objectMapper.writeValueAsString(notification);
+            redisTemplate.convertAndSend(RedisPubSubConfig.WEBSOCKET_NOTIFICATION_TOPIC, notificationJson);
+            log.debug("📡 [Redis Pub/Sub] Published notification event for tenant {}", tenantId);
+        } catch (Exception e) {
+            log.error("❌ [Redis Pub/Sub] Failed to publish notification event: {}", e.getMessage());
+        }
+
+        // Also broadcast to local sessions
         Set<WebSocketSession> sessions = tenantSessions.get(tenantId);
         if (sessions == null || sessions.isEmpty()) {
             log.debug("[Notification WS] No active WebSocket sessions for tenant ID {}", tenantId);

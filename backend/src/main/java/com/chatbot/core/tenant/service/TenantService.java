@@ -71,7 +71,7 @@ public class TenantService {
     // CREATE
     // =========================================================================
 
-    @Transactional(rollbackFor = Exception.class)
+    @Transactional(transactionManager = "tenantTransactionManager", rollbackFor = Exception.class)
     public TenantResponse createTenant(CreateTenantRequest request) {
         log.info("[TenantService] Starting tenant creation");
 

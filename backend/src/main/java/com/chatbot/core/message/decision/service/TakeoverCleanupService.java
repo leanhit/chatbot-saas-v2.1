@@ -8,6 +8,7 @@ import com.chatbot.core.message.store.repository.ConversationRepository;
 import com.chatbot.core.message.store.service.MessageService;
 import com.chatbot.core.tenant.infra.TenantContext;
 import lombok.RequiredArgsConstructor;
+import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
@@ -29,7 +30,6 @@ public class TakeoverCleanupService {
     private final ConversationRepository conversationRepository;
     private final ConversationService conversationService;
     private final MessageService messageService;
-    private final org.springframework.data.redis.core.RedisTemplate<String, String> redisTemplate;
     private final com.chatbot.core.message.decision.websocket.TakeoverWebSocketHandler websocketHandler;
     
     private final ExecutorService cleanupExecutor = Executors.newFixedThreadPool(5);
@@ -43,16 +43,10 @@ public class TakeoverCleanupService {
      * Scheduled cleanup of idle conversations
      */
     @Scheduled(fixedRate = SCHEDULE_INTERVAL_MS)
+    @SchedulerLock(name = "TakeoverCleanupService_autoReleaseIdleConversations", lockAtMostFor = "35s", lockAtLeastFor = "25s")
     public void autoReleaseIdleConversations() {
-        String lockKey = "lock:scheduler:autoReleaseIdleConversations";
-        Boolean acquired = redisTemplate.opsForValue().setIfAbsent(lockKey, "locked", java.time.Duration.ofSeconds(25));
-        if (!Boolean.TRUE.equals(acquired)) {
-            log.debug("⏰ [TakeoverCleanup] Lock already held by another instance. Skipping check.");
-            return;
-        }
-
         log.info("⏰ [TakeoverCleanup] Starting idle conversation cleanup check...");
-        
+
         try {
             // Get all taken over conversations across all tenants
             List<Conversation> takenOverConversations = conversationRepository.findAllByIsTakenOverByAgent(true);
@@ -86,11 +80,9 @@ public class TakeoverCleanupService {
             }
             
             log.info("✅ [TakeoverCleanup] Cleanup completed: {}", stats.getSummary());
-            
+
         } catch (Exception e) {
             log.error("❌ [TakeoverCleanup] Critical error in cleanup process", e);
-        } finally {
-            redisTemplate.delete(lockKey);
         }
     }
     
