@@ -5,6 +5,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.jdbc.DataSourceBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.DependsOn;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.orm.jpa.JpaTransactionManager;
 import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
@@ -39,14 +40,15 @@ public class TenantHubConfig {
     }
 
     @Bean
+    @DependsOn("tenantFlyway")
     public LocalContainerEntityManagerFactoryBean tenantEntityManagerFactory() {
         LocalContainerEntityManagerFactoryBean em = new LocalContainerEntityManagerFactoryBean();
         em.setDataSource(tenantDataSource());
         em.setPackagesToScan(
             "com.chatbot.core.tenant.model",
             "com.chatbot.core.tenant.membership.model",
-            "com.chatbot.core.tenant.profile",
-            "com.chatbot.core.tenant.professional"
+            "com.chatbot.core.tenant.profile.model",
+            "com.chatbot.core.tenant.professional.model"
         );
 
         HibernateJpaVendorAdapter vendorAdapter = new HibernateJpaVendorAdapter();

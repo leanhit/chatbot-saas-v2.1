@@ -5,6 +5,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.jdbc.DataSourceBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.DependsOn;
 import org.springframework.context.annotation.Primary;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -24,13 +25,6 @@ import java.util.Properties;
         "com.chatbot.shared.address.repository",
         "com.chatbot.shared.infrastructure.repository",
         "com.chatbot.shared.penny.rules",
-        "com.chatbot.spokes.odoo.repository",
-        "com.chatbot.spokes.facebook.repository",
-        "com.chatbot.spokes.facebook.connection.repository",
-        "com.chatbot.spokes.facebook.user.repository",
-        "com.chatbot.spokes.minio.repository",
-        "com.chatbot.spokes.minio.image.fileMetadata.repository",
-        "com.chatbot.spokes.minio.image.category.repository",
         "com.chatbot.core.simplepayment.repository"
     },
     entityManagerFactoryRef = "sharedEntityManagerFactory",
@@ -42,7 +36,7 @@ public class HubDatabaseConfig {
     private String ddlAuto;
 
     // ========================================
-    // Shared/Spokes Database Configuration
+    // Shared Database Configuration
     // ========================================
     @Bean
     @ConfigurationProperties(prefix = "app.datasource.shared")
@@ -57,6 +51,7 @@ public class HubDatabaseConfig {
     }
 
     @Bean
+    @DependsOn("sharedFlyway")
     public LocalContainerEntityManagerFactoryBean sharedEntityManagerFactory() {
         LocalContainerEntityManagerFactoryBean em = new LocalContainerEntityManagerFactoryBean();
         em.setDataSource(sharedDataSource());
@@ -64,13 +59,6 @@ public class HubDatabaseConfig {
             "com.chatbot.shared.address.model",
             "com.chatbot.shared.infrastructure.model",
             "com.chatbot.shared.penny.rules",
-            "com.chatbot.spokes.odoo.model",
-            "com.chatbot.spokes.facebook.model",
-            "com.chatbot.spokes.facebook.connection.model",
-            "com.chatbot.spokes.facebook.user.model",
-            "com.chatbot.spokes.minio.model",
-            "com.chatbot.spokes.minio.image.fileMetadata.model",
-            "com.chatbot.spokes.minio.image.category.model",
             "com.chatbot.core.simplepayment.model"
             );
 

@@ -19,6 +19,7 @@ import java.math.BigDecimal;
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@Transactional("userTransactionManager")
 public class UserBalanceService {
 
     private final UserRepository userRepository;

@@ -6,8 +6,8 @@ import com.chatbot.core.message.store.dto.ChartDataPointDTO;
 import com.chatbot.core.message.store.dto.ActivityDTO;
 import com.chatbot.core.message.store.repository.ConversationRepository;
 import com.chatbot.core.message.store.repository.MessageRepository;
-import com.chatbot.spokes.facebook.connection.repository.FacebookConnectionRepository;
 import com.chatbot.core.tenant.infra.TenantContext;
+import com.chatbot.shared.messenger.ChannelMessengerService;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -25,7 +25,7 @@ import org.springframework.stereotype.Service;
 public class ConversationStatisticsService {
 
     private final ConversationRepository conversationRepo;
-    private final FacebookConnectionRepository facebookConnectionRepo;
+    private final ChannelMessengerService channelMessengerService;
     private final MessageRepository messageRepo;
 
     /**
@@ -61,7 +61,7 @@ public class ConversationStatisticsService {
             Double responseRate = totalMessages > 0 ? (botResponses * 100.0 / totalMessages) : 0.0;
 
             // --- Active Connections ---
-            Long activeConnections = facebookConnectionRepo.countByTenantIdAndIsActiveTrue(tenantId);
+            Long activeConnections = channelMessengerService.countActiveConnections(tenantId);
 
             // --- User Growth: so sánh last month vs prev month ---
             Long lastMonthUsers = conversationRepo.countDistinctActiveUsers(tenantId, lastMonth);

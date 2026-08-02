@@ -1,5 +1,6 @@
 -- V4__add_missing_tenant_tables.sql
 -- Create missing tables for tenant module to match entities
+-- Note: Cross-database foreign keys removed - validation handled at application level
 
 CREATE TABLE IF NOT EXISTS tenant_profiles (
     tenant_id BIGINT PRIMARY KEY,
@@ -16,8 +17,7 @@ CREATE TABLE IF NOT EXISTS tenant_profiles (
     favicon_url VARCHAR(255),
     primary_color VARCHAR(50),
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_tenant_profile_tenant FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE INDEX IF NOT EXISTS idx_tenant_profile_tenant ON tenant_profiles(tenant_id);
@@ -31,9 +31,10 @@ CREATE TABLE IF NOT EXISTS tenant_professionals (
     status VARCHAR(50) NOT NULL DEFAULT 'ACTIVE',
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_tenant_professional_tenant FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE,
     CONSTRAINT uk_tenant_professional UNIQUE (tenant_id, provider_type, professional_id)
 );
+
+CREATE INDEX IF NOT EXISTS idx_tenant_professional_tenant ON tenant_professionals(tenant_id);
 
 CREATE TABLE IF NOT EXISTS tenant_audit_logs (
     id BIGSERIAL PRIMARY KEY,
@@ -43,8 +44,7 @@ CREATE TABLE IF NOT EXISTS tenant_audit_logs (
     details TEXT,
     ip_address VARCHAR(100),
     user_agent VARCHAR(500),
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_tenant_audit_log_tenant FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE INDEX IF NOT EXISTS idx_tenant_audit_tenant ON tenant_audit_logs(tenant_id);

@@ -1,4 +1,4 @@
-package com.chatbot.config;
+package com.chatbot.configs;
 
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.producer.ProducerConfig;

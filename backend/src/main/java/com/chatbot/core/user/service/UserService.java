@@ -11,14 +11,7 @@ import com.chatbot.core.tenant.membership.repository.TenantJoinRequestRepository
 import com.chatbot.shared.address.service.AddressService;
 import com.chatbot.shared.address.dto.AddressDetailResponseDTO;
 import com.chatbot.shared.address.model.OwnerType;
-import com.chatbot.spokes.minio.image.fileMetadata.service.FileMetadataService;
-import com.chatbot.spokes.minio.image.fileMetadata.dto.FileRequestDTO;
-import com.chatbot.spokes.minio.image.category.service.CategoryService;
-import com.chatbot.spokes.minio.image.category.model.Category;
-import com.chatbot.spokes.minio.image.category.dto.CategoryRequestDTO;
-import com.chatbot.spokes.minio.image.category.dto.CategoryResponseDTO;
-import io.minio.MinioClient;
-import io.minio.PutObjectArgs;
+import com.chatbot.shared.storage.StorageService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -47,15 +40,7 @@ public class UserService {
     private final UserProfileRepository userProfileRepository;
     private final TenantJoinRequestRepository joinRequestRepository;
     private final AddressService addressService;
-    private final FileMetadataService fileMetadataService;
-    private final CategoryService categoryService;
-    private final MinioClient minioClient;
-
-    @Value("${app.integrations.minio.endpoint:http://localhost:9000}")
-    private String minioEndpoint;
-
-    @Value("${app.integrations.minio.bucket:chatbot-files}")
-    private String minioBucketName;
+    private final StorageService storageService;
     
     // Expose repository for direct access
     public UserProfileRepository getUserProfileRepository() {
@@ -220,71 +205,8 @@ public class UserService {
 
             log.info("👤 [AVATAR UPDATE] Found/created profile for userId: {}", userId);
 
-            // Upload avatar file using FileMetadataService (same pattern as existing user avatar)
-            String avatarUrl;
-            try {
-                log.info("📂 [AVATAR UPDATE] Starting file upload process");
-                
-                // 1. Find category for avatar - use default category or create new
-                Category avatarCategory;
-                List<CategoryResponseDTO> categories = categoryService.getAllCategoriesGlobal();
-                log.info("📂 [AVATAR UPDATE] Found {} global categories", categories.size());
-                
-                Optional<Category> existingCategory = categories.stream()
-                    .filter(cat -> "avatar".equals(cat.getName()))
-                    .findFirst()
-                    .map(catDto -> {
-                        log.debug("📂 [AVATAR UPDATE] Found existing avatar category: {}", catDto.getId());
-                        return categoryService.getCategoryById(catDto.getId()).orElse(null);
-                    });
-
-                if (existingCategory.isEmpty()) {
-                    // Create default category for avatar if not exists
-                    log.info("📂 [AVATAR UPDATE] Creating new avatar category");
-                    CategoryRequestDTO categoryRequest = new CategoryRequestDTO();
-                    categoryRequest.setName("avatar");
-                    categoryRequest.setDescription("User avatar images");
-                    CategoryResponseDTO newCategoryDto = categoryService.createCategoryGlobal(categoryRequest);
-                    avatarCategory = categoryService.getCategoryById(newCategoryDto.getId()).orElse(null);
-                    log.info("📂 [AVATAR UPDATE] Created new category with ID: {}", newCategoryDto.getId());
-                } else {
-                    avatarCategory = existingCategory.get();
-                    log.debug("📂 [AVATAR UPDATE] Using existing category: {}", avatarCategory.getId());
-                }
-
-                if (avatarCategory == null) {
-                    log.error("❌ [AVATAR UPDATE] Failed to create or find avatar category for userId: {}", userId);
-                    throw new com.chatbot.shared.exceptions.BaseException(com.chatbot.shared.exceptions.ErrorCode.CANNOT_CREATE_AVATAR_CATEGORY, "Cannot create or find category for avatar");
-                }
-
-                log.info("✅ [AVATAR UPDATE] Category ready: {} (ID: {})", avatarCategory.getName(), avatarCategory.getId());
-
-                // 2. Upload file to MinIO using FileMetadataService
-                log.info("📤 [AVATAR UPDATE] Preparing file upload to MinIO");
-                FileRequestDTO fileRequest = new FileRequestDTO();
-                fileRequest.setCategoryId(avatarCategory.getId());
-                fileRequest.setTitle("Avatar for user " + userId);
-                fileRequest.setDescription("User avatar uploaded from profile");
-                fileRequest.setTags(List.of("avatar", "user"));
-                fileRequest.setFiles(List.of(file));
-
-                log.info("📤 [AVATAR UPDATE] Calling FileMetadataService.processUploadRequest");
-                List<com.chatbot.spokes.minio.image.fileMetadata.dto.FileResponseDTO> uploadedFiles = 
-                    fileMetadataService.processUploadRequest(fileRequest, getCurrentUserEmail(userId));
-
-                if (uploadedFiles.isEmpty()) {
-                    log.error("❌ [AVATAR UPDATE] No files returned from upload service for userId: {}", userId);
-                    throw new com.chatbot.shared.exceptions.BaseException(com.chatbot.shared.exceptions.ErrorCode.CANNOT_UPLOAD_AVATAR, "Cannot upload avatar");
-                }
-
-                // 3. Get public URL from FileResponse (not manual construct)
-                avatarUrl = uploadedFiles.get(0).getFileUrl();
-                log.info("✅ [AVATAR UPDATE] File uploaded successfully to: {}", avatarUrl);
-                
-            } catch (Exception e) {
-                log.error("❌ [AVATAR UPDATE] Failed to upload avatar for user ID: {}", userId, e);
-                throw new RuntimeException("Failed to upload avatar: " + e.getMessage(), e);
-            }
+            // Upload avatar file using StorageService abstraction
+            String avatarUrl = storageService.uploadUserAvatar(userId, getCurrentUserEmail(userId), file);
             
             // Update profile with new avatar URL
             log.info("💾 [AVATAR UPDATE] Updating profile with new avatar URL for userId: {}", userId);

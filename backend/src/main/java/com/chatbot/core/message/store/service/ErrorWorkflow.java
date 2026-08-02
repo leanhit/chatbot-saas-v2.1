@@ -3,8 +3,10 @@ package com.chatbot.core.message.store.service;
 import com.chatbot.core.message.store.model.Conversation;
 import com.chatbot.core.message.store.repository.ConversationRepository;
 import com.chatbot.core.notification.websocket.NotificationWebSocketHandler;
-import com.chatbot.spokes.facebook.connection.repository.FacebookConnectionRepository;
-import com.chatbot.spokes.facebook.messenger.service.FacebookMessengerService;
+import com.chatbot.core.message.store.model.Conversation;
+import com.chatbot.core.message.store.repository.ConversationRepository;
+import com.chatbot.core.notification.websocket.NotificationWebSocketHandler;
+import com.chatbot.shared.messenger.ChannelMessengerService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -24,8 +26,7 @@ public class ErrorWorkflow {
 
     private final ConversationRepository conversationRepository;
     private final NotificationWebSocketHandler notificationWebSocketHandler;
-    private final FacebookConnectionRepository facebookConnectionRepository;
-    private final FacebookMessengerService facebookMessengerService;
+    private final ChannelMessengerService channelMessengerService;
 
     /**
      * Handle error in conversation processing
@@ -127,23 +128,9 @@ public class ErrorWorkflow {
         log.info("Sending fallback message to user in conversation {}: {}",
             conversation.getId(), fallbackMessage);
 
-        // Send message via Facebook if conversation has Facebook connection
         try {
-            facebookConnectionRepository.findById(conversation.getConnectionId())
-                .ifPresent(connection -> {
-                    try {
-                        facebookMessengerService.sendMessageToUser(
-                            connection.getPageId(),
-                            conversation.getExternalUserId(),
-                            fallbackMessage,
-                            connection.getPageAccessToken()
-                        );
-                        log.info("Fallback message sent via Facebook for conversation {}", conversation.getId());
-                    } catch (Exception e) {
-                        log.error("Failed to send fallback message via Facebook for conversation {}: {}", 
-                            conversation.getId(), e.getMessage());
-                    }
-                });
+            channelMessengerService.sendMessage(conversation.getConnectionId(), conversation.getExternalUserId(), fallbackMessage);
+            log.info("Fallback message sent for conversation {}", conversation.getId());
         } catch (Exception e) {
             log.error("Error in sendFallbackMessage for conversation {}: {}", conversation.getId(), e.getMessage());
         }

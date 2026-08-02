@@ -18,13 +18,14 @@ import java.util.Optional;
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@Transactional("sharedTransactionManager")
 public class AddressService {
 
     private final AddressRepository addressRepository;
     private final AddressMapper addressMapper;
     private final TenantRepository tenantRepository;
 
-    @Transactional
+    @Transactional("sharedTransactionManager")
     public AddressResponseDTO createAddress(Long tenantId, AddressRequestDTO dto) {
         // Kiểm tra xem owner đã có địa chỉ chưa
         Optional<Address> existingAddress = addressRepository.findByTenantIdAndOwnerTypeAndOwnerId(tenantId, dto.getOwnerType(), dto.getOwnerId());
@@ -37,7 +38,7 @@ public class AddressService {
     }
 
     // Lấy địa chỉ duy nhất của owner, nếu chưa có thì tạo mới
-    @Transactional
+    @Transactional("sharedTransactionManager")
     public AddressDetailResponseDTO getOrCreateSingleAddress(Long tenantId, OwnerType type, Long ownerId) {
         Optional<Address> existingAddress = addressRepository.findByTenantIdAndOwnerTypeAndOwnerId(tenantId, type, ownerId);
         
@@ -68,7 +69,7 @@ public class AddressService {
     }
 
     // Lấy hoặc tạo địa chỉ duy nhất cho user (không cần tenant)
-    @Transactional
+    @Transactional("sharedTransactionManager")
     public AddressDetailResponseDTO getOrCreateUserAddress(OwnerType type, Long ownerId) {
         Optional<Address> existingAddress = addressRepository.findByOwnerTypeAndOwnerId(type, ownerId);
         
@@ -131,7 +132,7 @@ public class AddressService {
         }
     }
 
-    @Transactional
+    @Transactional("sharedTransactionManager")
     public AddressDetailResponseDTO updateUserAddress(OwnerType type, Long ownerId, AddressUpdateRequest dto) {
         Address address = addressRepository.findByOwnerTypeAndOwnerId(type, ownerId)
                 .orElseThrow(() -> new RuntimeException("Address not found for user"));
@@ -140,7 +141,7 @@ public class AddressService {
         return addressMapper.toDetailDTO(addressRepository.save(address));
     }
 
-    @Transactional
+    @Transactional("sharedTransactionManager")
     public AddressDetailResponseDTO updateTenantAddress(String tenantKey, AddressUpdateRequest dto) {
         // Find tenant by tenantKey to get tenantId
         Tenant tenant = tenantRepository.findByTenantKey(tenantKey)
@@ -154,7 +155,7 @@ public class AddressService {
         return addressMapper.toDetailDTO(addressRepository.save(address));
     }
 
-    @Transactional
+    @Transactional("sharedTransactionManager")
     public AddressResponseDTO updateAddressField(Long tenantId, Long id, String field, String value) {
         Address address = addressRepository.findByIdAndTenantId(id, tenantId)
                 .orElseThrow(() -> new RuntimeException("Address not found"));
@@ -185,7 +186,7 @@ public class AddressService {
         return addressMapper.toResponseDTO(addressRepository.save(address));
     }
 
-    @Transactional
+    @Transactional("sharedTransactionManager")
     public AddressDetailResponseDTO updateAddressFields(Long tenantId, Long id, AddressUpdateRequest dto) {
         Address address = addressRepository.findByIdAndTenantId(id, tenantId)
                 .orElseThrow(() -> new RuntimeException("Address not found"));
@@ -221,7 +222,7 @@ public class AddressService {
         }
     }
 
-    @Transactional
+    @Transactional("sharedTransactionManager")
     public AddressResponseDTO updateAddress(Long tenantId, Long id, AddressRequestDTO dto) {
         try {
             log.info("🔄 [ADDRESS UPDATE] Starting address update - tenantId: {}, addressId: {}", tenantId, id);
@@ -258,14 +259,14 @@ public class AddressService {
         }
     }
 
-    @Transactional
+    @Transactional("sharedTransactionManager")
     public void deleteAddress(Long tenantId, Long id) {
         Address address = addressRepository.findByIdAndTenantId(id, tenantId)
                 .orElseThrow(() -> new RuntimeException("Address not found"));
         addressRepository.delete(address);
     }
 
-    @Transactional
+    @Transactional("sharedTransactionManager")
     public void createEmptyAddressForUser(Long userId) {
         AddressRequestDTO emptyAddress = new AddressRequestDTO();
         emptyAddress.setOwnerType(OwnerType.USER);

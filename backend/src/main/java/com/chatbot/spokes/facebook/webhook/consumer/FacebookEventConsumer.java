@@ -1,6 +1,6 @@
 package com.chatbot.spokes.facebook.webhook.consumer;
 
-import com.chatbot.config.KafkaConfig;
+import com.chatbot.configs.KafkaConfig;
 import com.chatbot.core.message.store.model.Conversation;
 import com.chatbot.core.message.store.model.Channel;
 import com.chatbot.core.message.store.model.Message;

@@ -7,7 +7,7 @@ import org.apache.kafka.clients.producer.ProducerRecord;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
-import com.chatbot.config.KafkaConfig;
+import com.chatbot.configs.KafkaConfig;
 
 /**
  * Kafka producer that forwards Facebook webhook payloads to the {@code facebook-events}

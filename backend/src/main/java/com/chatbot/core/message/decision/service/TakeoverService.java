@@ -12,10 +12,9 @@ import org.springframework.data.redis.core.ListOperations;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import com.chatbot.core.message.store.repository.ConversationRepository;
 import com.chatbot.core.message.store.model.Conversation;
-import com.chatbot.spokes.facebook.connection.model.FacebookConnection;
-import com.chatbot.spokes.facebook.connection.repository.FacebookConnectionRepository;
-import com.chatbot.spokes.facebook.connection.exception.ConnectionNotFoundException;
-import com.chatbot.spokes.facebook.messenger.service.FacebookMessengerService;
+import com.chatbot.core.message.store.repository.ConversationRepository;
+import com.chatbot.core.message.store.model.Conversation;
+import com.chatbot.shared.messenger.ChannelMessengerService;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
 
@@ -34,9 +33,8 @@ public class TakeoverService {
     // 1. INJECT WEBSOCKET HANDLER
     private final TakeoverWebSocketHandler websocketHandler;
     private final MessageService messageService;
-    private final FacebookMessengerService facebookMessengerService;
+    private final ChannelMessengerService channelMessengerService;
     private final ConversationRepository conversationRepository;
-    private final FacebookConnectionRepository connectionRepository;
 
     private final long MESSAGE_TTL_HOURS = 24;
     private final long MAX_MESSAGE_COUNT = 100; // Giới hạn 100 tin nhắn lịch sử
@@ -71,34 +69,22 @@ public class TakeoverService {
         }
     }
 
-    /**
-     * Gửi tin nhắn agent ra Facebook.
-     * @param conversationDbId ID conversation trong DB
-     * @param content Nội dung tin nhắn
-     * @param agentId ID của agent gửi (dùng cho audit log)
-     */
     private void sendAgentTextMessage(Long conversationDbId, String content, Long agentId) {
         Conversation conversation = conversationRepository.findById(conversationDbId)
                 .orElseThrow(() -> new ConversationNotFoundException(conversationDbId));
 
-        UUID connectionId = conversation.getConnectionId();
-        FacebookConnection connection = connectionRepository.findById(connectionId)
-                .orElseThrow(() -> new ConnectionNotFoundException(connectionId));
-
-        String pageId = connection.getPageId();
-        String recipientId = conversation.getExternalUserId();
-        String pageAccessToken = connection.getPageAccessToken();
-
-        log.info("🤖 [AgentMsg] Bắt đầu gửi tin nhắn Agent ra Facebook. Page ID: {}, AgentId: {}", pageId, agentId);
+        log.info("🤖 [AgentMsg] Dispatching agent message to channel. ConnectionId: {}, AgentId: {}", conversation.getConnectionId(), agentId);
         
         try {
-            facebookMessengerService.sendMessageToUser(pageId, recipientId, content, pageAccessToken);
-            log.info("📤 [AgentMsg] Agent (ID: {}) sent message to Facebook user: {}", agentId, content);
+            boolean success = channelMessengerService.sendMessage(conversation.getConnectionId(), conversation.getExternalUserId(), content);
+            if (success) {
+                log.info("📤 [AgentMsg] Agent (ID: {}) sent message to user: {}", agentId, content);
+            }
         } catch (Exception e) {
-            log.error("❌ [AgentMsg] Error sending agent message to Facebook: {}", e.getMessage());
+            log.error("❌ [AgentMsg] Error sending agent message: {}", e.getMessage());
         }
 
-        log.info("✅ [AgentMsg] Hoàn tất luồng gửi tin nhắn Agent (ID: {}).", agentId);
+        log.info("✅ [AgentMsg] Finished agent message workflow (ID: {}).", agentId);
     }
 
     /**

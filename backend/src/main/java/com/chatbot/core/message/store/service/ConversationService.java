@@ -7,11 +7,12 @@ import com.chatbot.core.message.store.dto.ChartDataPointDTO;
 import com.chatbot.core.message.store.dto.ActivityDTO;
 import com.chatbot.core.message.store.repository.ConversationRepository;
 import com.chatbot.core.message.store.repository.MessageRepository;
-import com.chatbot.spokes.facebook.connection.model.FacebookConnection;
-import com.chatbot.spokes.facebook.connection.repository.FacebookConnectionRepository;
-import com.chatbot.spokes.facebook.user.service.FacebookUserService;
+import com.chatbot.core.message.store.repository.ConversationRepository;
+import com.chatbot.core.message.store.repository.MessageRepository;
 import com.chatbot.core.message.store.model.Channel;
 import com.chatbot.core.tenant.infra.TenantContext;
+import com.chatbot.shared.messenger.ChannelMessengerService;
+import com.chatbot.shared.messenger.ChannelUserInfo;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -32,9 +33,8 @@ import lombok.extern.slf4j.Slf4j;
 public class ConversationService {
 
     private final ConversationRepository conversationRepo;
-    private final FacebookConnectionRepository facebookConnectionRepo;
+    private final ChannelMessengerService channelMessengerService;
     private final MessageRepository messageRepo;
-    private final FacebookUserService facebookUserService;
     private final RoutingRuleService routingRuleService;
     private final ConversationEndWorkflow conversationEndWorkflow;
 
@@ -52,12 +52,11 @@ public class ConversationService {
         return conversationRepo
                 .findByConnectionIdAndExternalUserIdAndTenantId(connectionId, externalUserId, tenantId)
                 .orElseGet(() -> {
-                    // Lấy ownerId từ Connection.
-                    String ownerId = facebookConnectionRepo.findById(connectionId)
-                        .map(FacebookConnection::getOwnerId)
-                        .orElseThrow(() -> new RuntimeException("Connection not found with ID: " + connectionId));
+                    String ownerId = channelMessengerService.getOwnerIdForConnection(connectionId);
+                    if (ownerId == null) {
+                        throw new RuntimeException("Connection not found with ID: " + connectionId);
+                    }
 
-                    // Tạo conversation mới
                     Conversation c = Conversation.builder()
                             .connectionId(connectionId)
                             .externalUserId(externalUserId)
@@ -66,45 +65,20 @@ public class ConversationService {
                             .isClosedByAgent(false)
                             .isTakenOverByAgent(false)
                             .ownerId(ownerId)
-                            .customerTier("Standard") // Default tier
-                            .language("en") // Default language
+                            .customerTier("Standard")
+                            .language("en")
                             .build();
                     
-                    // Nếu là kênh Facebook, lấy thông tin người dùng
-                    if (channel == Channel.FACEBOOK) {
-                        try {
-                            // Lấy thông tin kết nối để lấy pageId thực tế
-                            FacebookConnection fbConnection = facebookConnectionRepo.findById(connectionId)
-                                .orElseThrow(() -> new com.chatbot.shared.exceptions.BaseException(com.chatbot.shared.exceptions.ErrorCode.CONNECTION_NOT_FOUND, "Connection not found with ID: " + connectionId));
-                            
-                            String pageId = fbConnection.getPageId();
-                            log.info("🔄 Đang lấy thông tin người dùng Facebook - PSID: {}, Page ID: {}", 
-                                externalUserId, pageId);
-                                
-                            var userInfo = facebookUserService.getUserInfo(externalUserId, pageId);
-                            
-                            if (userInfo != null) {
-                                log.info("✅ Đã lấy được thông tin người dùng - Tên: {}, Avatar: {}", 
-                                    userInfo.getName(), 
-                                    userInfo.getProfilePic() != null ? "[Có ảnh đại diện]" : "[Không có ảnh]");
-                                    
-                                c.setUserName(userInfo.getName());
-                                c.setUserAvatar(userInfo.getProfilePic());
-                                
-                                // Extract additional attributes for attribute-based routing
-                                extractAndStoreUserAttributes(c, userInfo);
-                            } else {
-                                log.warn("⚠️ Không lấy được thông tin người dùng từ Facebook cho PSID: {}", externalUserId);
-                            }
-                        } catch (Exception e) {
-                            log.error("❌ Lỗi khi lấy thông tin người dùng từ Facebook - PSID: {}, Lỗi: {}", 
-                                externalUserId, e.getMessage(), e);
-                        }
+                    ChannelUserInfo userInfo = channelMessengerService.getUserInfo(connectionId, externalUserId);
+                    if (userInfo != null) {
+                        log.info("✅ Obtained user profile info for external user ID: {} - Name: {}", externalUserId, userInfo.getName());
+                        c.setUserName(userInfo.getName());
+                        c.setUserAvatar(userInfo.getAvatarUrl());
+                        extractAndStoreUserAttributes(c, userInfo);
                     }
                     
                     Conversation savedConversation = conversationRepo.save(c);
                     
-                    // Apply routing rules to the new conversation
                     try {
                         routingRuleService.applyRoutingRules(savedConversation);
                     } catch (Exception e) {
@@ -115,43 +89,10 @@ public class ConversationService {
                 });
     }
 
-    /**
-     * Extract and store user attributes from Facebook user info for attribute-based routing
-     * Implements Phase 1.3: Attribute-based Routing
-     */
     @SuppressWarnings("unchecked")
-    private void extractAndStoreUserAttributes(Conversation conversation, com.chatbot.spokes.facebook.user.dto.FacebookUserInfo userInfo) {
+    private void extractAndStoreUserAttributes(Conversation conversation, ChannelUserInfo userInfo) {
         try {
-            java.util.Map<String, Object> attributes = new java.util.HashMap<>();
-            
-            // Extract available attributes from FacebookUserInfo
-            if (userInfo.getName() != null) {
-                attributes.put("name", userInfo.getName());
-                // Try to extract first name from full name
-                String[] nameParts = userInfo.getName().split(" ", 2);
-                if (nameParts.length > 0) {
-                    attributes.put("firstName", nameParts[0]);
-                }
-                if (nameParts.length > 1) {
-                    attributes.put("lastName", nameParts[1]);
-                }
-            }
-            if (userInfo.getPsid() != null) {
-                attributes.put("psid", userInfo.getPsid());
-            }
-            if (userInfo.getProfilePic() != null) {
-                attributes.put("hasProfilePic", true);
-            }
-            if (userInfo.getOdooPartnerId() != null) {
-                attributes.put("odooPartnerId", userInfo.getOdooPartnerId());
-                attributes.put("isOdooCustomer", true);
-            }
-            if (userInfo.getLastInteraction() != null) {
-                attributes.put("lastInteraction", userInfo.getLastInteraction().toString());
-            }
-            
-            // Store in custom attributes as JSON
-            if (!attributes.isEmpty()) {
+            if (userInfo.getAttributes() != null && !userInfo.getAttributes().isEmpty()) {
                 String existingAttributes = conversation.getCustomAttributes();
                 java.util.Map<String, Object> allAttributes;
                 
@@ -164,14 +105,14 @@ public class ConversationService {
                     allAttributes = new java.util.HashMap<>();
                 }
                 
-                allAttributes.put("facebookUserAttributes", attributes);
+                allAttributes.put("channelUserAttributes", userInfo.getAttributes());
                 conversation.setCustomAttributes(new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(allAttributes));
                 
-                log.info("Extracted and stored {} attributes from Facebook user info for conversation {}", 
-                    attributes.size(), conversation.getId());
+                log.info("Extracted and stored {} attributes from channel user info for conversation {}", 
+                    userInfo.getAttributes().size(), conversation.getId());
             }
         } catch (Exception e) {
-            log.error("Error extracting user attributes from Facebook user info", e);
+            log.error("Error extracting user attributes from channel user info", e);
         }
     }
 

@@ -6,8 +6,7 @@ import com.chatbot.core.notification.websocket.NotificationWebSocketHandler;
 import com.chatbot.core.tenant.model.Tenant;
 import com.chatbot.core.tenant.model.TenantStatus;
 import com.chatbot.core.tenant.repository.TenantRepository;
-import com.chatbot.spokes.facebook.connection.repository.FacebookConnectionRepository;
-import com.chatbot.spokes.facebook.messenger.service.FacebookMessengerService;
+import com.chatbot.shared.messenger.ChannelMessengerService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -33,8 +32,7 @@ public class TimeoutWorkflow {
     private final NotificationWebSocketHandler notificationWebSocketHandler;
     private final TenantRepository tenantRepository;
     private final ConversationEndWorkflow conversationEndWorkflow;
-    private final FacebookConnectionRepository facebookConnectionRepository;
-    private final FacebookMessengerService facebookMessengerService;
+    private final ChannelMessengerService channelMessengerService;
 
     // Timeout thresholds (in minutes)
     private static final long INACTIVE_TIMEOUT = 30; // 30 minutes of inactivity
@@ -115,23 +113,9 @@ public class TimeoutWorkflow {
         log.info("Sending timeout message to user in conversation {}: {}",
             conversation.getId(), timeoutMessage);
 
-        // Send message via Facebook if conversation has Facebook connection
         try {
-            facebookConnectionRepository.findById(conversation.getConnectionId())
-                .ifPresent(connection -> {
-                    try {
-                        facebookMessengerService.sendMessageToUser(
-                            connection.getPageId(),
-                            conversation.getExternalUserId(),
-                            timeoutMessage,
-                            connection.getPageAccessToken()
-                        );
-                        log.info("Timeout message sent via Facebook for conversation {}", conversation.getId());
-                    } catch (Exception e) {
-                        log.error("Failed to send timeout message via Facebook for conversation {}: {}", 
-                            conversation.getId(), e.getMessage());
-                    }
-                });
+            channelMessengerService.sendMessage(conversation.getConnectionId(), conversation.getExternalUserId(), timeoutMessage);
+            log.info("Timeout message sent for conversation {}", conversation.getId());
         } catch (Exception e) {
             log.error("Error in sendTimeoutMessage for conversation {}: {}", conversation.getId(), e.getMessage());
         }

@@ -2,7 +2,6 @@ package com.chatbot.core.message.decision.websocket;
 
 import com.chatbot.core.message.decision.model.TakeoverMessage;
 import com.chatbot.core.message.store.repository.ConversationRepository;
-import com.chatbot.spokes.facebook.connection.repository.FacebookConnectionRepository;
 import com.chatbot.core.notification.websocket.NotificationWebSocketHandler;
 import com.chatbot.configs.RedisPubSubConfig;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -36,7 +35,6 @@ public class TakeoverWebSocketHandler extends TextWebSocketHandler {
 
     private final ObjectMapper objectMapper;
     private final ConversationRepository conversationRepository;
-    private final FacebookConnectionRepository facebookConnectionRepository;
     private final NotificationWebSocketHandler notificationWebSocketHandler;
     private final RedisTemplate<String, String> redisTemplate;
 

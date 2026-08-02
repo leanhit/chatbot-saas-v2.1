@@ -46,11 +46,9 @@ public class AppRegistry extends BaseTenantEntity {
     private String webhookUrl;
     
     @Column(name = "config_schema")
-    @Lob
     private String configSchema;
     
     @Column(name = "default_config")
-    @Lob
     private String defaultConfig;
     
     @Builder.Default

@@ -5,12 +5,7 @@ import com.chatbot.core.tenant.profile.dto.TenantProfileRequest;
 import com.chatbot.core.tenant.profile.dto.TenantProfileResponse;
 import com.chatbot.core.tenant.profile.model.TenantProfile;
 import com.chatbot.core.tenant.profile.repository.TenantProfileRepository;
-import com.chatbot.core.tenant.infra.TenantContext;
-import com.chatbot.spokes.minio.image.fileMetadata.service.FileMetadataService;
-import com.chatbot.spokes.minio.image.category.service.CategoryService;
-import com.chatbot.spokes.minio.image.category.model.Category;
-import com.chatbot.spokes.minio.image.category.dto.CategoryRequestDTO;
-import com.chatbot.spokes.minio.image.category.dto.CategoryResponseDTO;
+import com.chatbot.shared.storage.StorageService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -36,8 +31,7 @@ public class TenantProfileService {
 
     private final TenantProfileRepository profileRepo;
     private final TenantRepository tenantRepo;
-    private final FileMetadataService fileMetadataService;
-    private final CategoryService categoryService;
+    private final StorageService storageService;
 
     private String getCurrentUserEmail() {
         return SecurityContextHolder.getContext().getAuthentication().getName();
@@ -139,72 +133,10 @@ public class TenantProfileService {
         try {
             log.info("🔄 [LOGO START] Starting logo update for tenantId: {}, fileName: {}, fileSize: {}", 
                     tenantId, file.getOriginalFilename(), file.getSize());
-            
-            // 1. Clear any existing tenant context to get global categories (like user avatar)
-            log.debug("🧹 [CONTEXT] Clearing tenant context for global category access");
-            TenantContext.clear();
-            
-            // 2. Find or create GLOBAL category for tenant logos (like avatar category)
-            log.debug("📂 [CATEGORY] Finding or creating tenant-logo category");
-            Category logoCategory;
-            List<CategoryResponseDTO> categories = categoryService.getAllCategoriesGlobal();
-            log.debug("📂 [CATEGORY] Found {} global categories", categories.size());
-            
-            Optional<Category> existingCategory = categories.stream()
-                .filter(cat -> "tenant-logo".equals(cat.getName()))
-                .findFirst()
-                .map(catDto -> {
-                    log.debug("📂 [CATEGORY] Found existing tenant-logo category: {}", catDto.getId());
-                    return categoryService.getCategoryById(catDto.getId()).orElse(null);
-                });
 
-            if (existingCategory.isEmpty()) {
-                // Create default GLOBAL category for tenant logos if not exists
-                log.info("📂 [CATEGORY] Creating new tenant-logo category");
-                CategoryRequestDTO categoryRequest = new CategoryRequestDTO();
-                categoryRequest.setName("tenant-logo");
-                categoryRequest.setDescription("Tenant logo images");
-                CategoryResponseDTO newCategoryDto = categoryService.createCategoryGlobal(categoryRequest);
-                logoCategory = categoryService.getCategoryById(newCategoryDto.getId()).orElse(null);
-                log.info("📂 [CATEGORY] Created new category with ID: {}", newCategoryDto.getId());
-            } else {
-                logoCategory = existingCategory.get();
-                log.debug("📂 [CATEGORY] Using existing category: {}", logoCategory.getId());
-            }
-
-            if (logoCategory == null) {
-                log.error("❌ [CATEGORY] Failed to create or find tenant-logo category");
-                throw new com.chatbot.shared.exceptions.BaseException(com.chatbot.shared.exceptions.ErrorCode.CANNOT_UPLOAD_LOGO, "Cannot create or find category for tenant logo");
-            }
-
-            // 3. Set tenant context for file upload
-            log.debug("🏢 [CONTEXT] Setting tenant context for file upload: tenantId={}", tenantId);
-            TenantContext.setTenantId(tenantId);
-
-            // 4. Upload file to MinIO using FileMetadataService
-            log.debug("📤 [UPLOAD] Preparing file upload to MinIO");
-            com.chatbot.spokes.minio.image.fileMetadata.dto.FileRequestDTO fileRequest =
-                new com.chatbot.spokes.minio.image.fileMetadata.dto.FileRequestDTO();
-            fileRequest.setCategoryId(logoCategory.getId());
-            fileRequest.setTitle("Tenant logo");
-            fileRequest.setDescription("Tenant logo uploaded from profile");
-            fileRequest.setTags(List.of("tenant", "logo"));
-            fileRequest.setFiles(List.of(file));
-
-            log.debug("📤 [UPLOAD] Calling FileMetadataService.processUploadRequest");
-            List<com.chatbot.spokes.minio.image.fileMetadata.dto.FileResponseDTO> uploadedFiles =
-                fileMetadataService.processUploadRequest(fileRequest, getCurrentUserEmail());
-
-            if (uploadedFiles.isEmpty()) {
-                log.error("❌ [UPLOAD] No files returned from upload service");
-                throw new com.chatbot.shared.exceptions.BaseException(com.chatbot.shared.exceptions.ErrorCode.CANNOT_UPLOAD_LOGO, "Cannot upload tenant logo");
-            }
-
-            String logoUrl = uploadedFiles.get(0).getFileUrl(); // Use direct MinIO URL like user avatar
+            String logoUrl = storageService.uploadTenantLogo(tenantId, getCurrentUserEmail(), file);
             log.info("✅ [UPLOAD] File uploaded successfully to: {}", logoUrl);
 
-            // 4. Update tenant profile with new logo URL
-            log.debug("💾 [PROFILE] Updating tenant profile with new logo URL");
             TenantProfileRequest profileRequest = new TenantProfileRequest();
             profileRequest.setLogoUrl(logoUrl);
             
