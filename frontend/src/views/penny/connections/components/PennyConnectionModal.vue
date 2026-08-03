@@ -563,13 +563,10 @@ export default {
 
     const getBotTypeDisplayName = (botType) => {
       const names = {
-        'CUSTOMER_SERVICE': 'Customer Service',
-        'SALES': 'Sales',
-        'SUPPORT': 'Support',
-        'MARKETING': 'Marketing',
-        'HR': 'HR',
-        'FINANCE': 'Finance',
-        'GENERAL': 'General'
+        'GENERAL': 'General Purpose',
+        'SUPPORT': 'Customer Support',
+        'BUSINESS': 'Business & Sales',
+        'BOTPRESS': 'Botpress Integration'
       }
       return names[botType] || botType
     }

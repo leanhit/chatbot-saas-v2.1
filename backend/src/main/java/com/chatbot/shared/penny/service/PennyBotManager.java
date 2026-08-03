@@ -559,9 +559,9 @@ public class PennyBotManager {
     private PennyBotType determineBestBotType(Long tenantId) {
         List<PennyBot> existingBots = pennyBotRepository.findByTenantIdAndIsActiveTrue(tenantId);
         
-        // If tenant has no bots, default to CUSTOMER_SERVICE
+        // If tenant has no bots, default to SUPPORT
         if (existingBots.isEmpty()) {
-            return PennyBotType.CUSTOMER_SERVICE;
+            return PennyBotType.SUPPORT;
         }
         
         // Check what types they already have

@@ -629,13 +629,10 @@ export default {
 
     const getBotTypeIcon = (botType) => {
       const icons = {
-        'CUSTOMER_SERVICE': 'mdi:headset',
-        'SALES': 'mdi:cash-register',
-        'SUPPORT': 'mdi:tools',
-        'MARKETING': 'mdi:bullhorn',
-        'HR': 'mdi:account-tie',
-        'FINANCE': 'mdi:currency-usd',
-        'GENERAL': 'mdi:robot'
+        'GENERAL': 'mdi:robot',
+        'SUPPORT': 'mdi:headset',
+        'BUSINESS': 'mdi:cash-register',
+        'BOTPRESS': 'mdi:connection'
       }
       return icons[botType] || 'mdi:robot'
     }

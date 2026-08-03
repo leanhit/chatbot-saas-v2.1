@@ -25,10 +25,10 @@ public class RefreshToken {
     @Column(name = "user_id", nullable = false)
     private Long userId;
     
-    @Column(nullable = false)
+    @Column(name = "expiry_date", nullable = false)
     private Instant expiryDate;
     
-    @Column(nullable = false)
+    @Column(name = "created_date", nullable = false)
     private Instant createdDate;
     
     @PrePersist

@@ -3,11 +3,6 @@ package com.chatbot.spokes.odoo.model;
 import com.chatbot.core.tenant.infra.BaseTenantEntity;
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
-import com.fasterxml.jackson.annotation.JsonFormat;
-import com.chatbot.shared.utils.DateUtils;
-import java.time.LocalDateTime;
 
 @Data
 @NoArgsConstructor
@@ -45,16 +40,6 @@ public class FbCustomerStaging extends BaseTenantEntity {
 
 
 
-    // ✅ Thêm 2 cột thời gian
-    @CreationTimestamp
-    @Column(name = "created_at", updatable = false)
-    @JsonFormat(pattern = DateUtils.STANDARD_JSON_FORMAT, timezone = DateUtils.STANDARD_TIMEZONE)
-    private LocalDateTime createdAt;
-
-    @UpdateTimestamp
-    @Column(name = "updated_at")
-    @JsonFormat(pattern = DateUtils.STANDARD_JSON_FORMAT, timezone = DateUtils.STANDARD_TIMEZONE)
-    private LocalDateTime updatedAt;
 
     // ✅ Constructor tiện dụng
     public FbCustomerStaging(String psid) {
@@ -68,8 +53,6 @@ public class FbCustomerStaging extends BaseTenantEntity {
     public void setPageId(String pageId) { this.pageId = pageId; }
     public CustomerStatus getStatus() { return status; }
     public void setStatus(CustomerStatus status) { this.status = status; }
-    public LocalDateTime getUpdatedAt() { return updatedAt; }
-    public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
     public String getOwnerId() { return ownerId; }
     public void setOwnerId(String ownerId) { this.ownerId = ownerId; }
     

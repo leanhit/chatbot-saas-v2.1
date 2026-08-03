@@ -141,10 +141,12 @@ export default {
       description: ''
     })
 
-    const botTypes = Object.values(PennyBotType).map(type => ({
-      value: type,
-      label: PennyBotTypeDisplay[type]
-    }))
+    const botTypes = Object.values(PennyBotType)
+      .filter(type => type !== PennyBotType.BOTPRESS)
+      .map(type => ({
+        value: type,
+        label: PennyBotTypeDisplay[type]
+      }))
 
     // Initialize form data when bot prop changes
     watch(() => props.bot, (newBot) => {
@@ -239,13 +241,10 @@ export default {
 
     const getBotTypeDescription = (botType) => {
       const descriptions = {
-        'CUSTOMER_SERVICE': 'Handle customer inquiries, support requests, and provide assistance with products or services.',
-        'SALES': 'Engage with potential customers, provide product information, and assist with sales processes.',
-        'SUPPORT': 'Provide technical support, troubleshooting assistance, and help resolve technical issues.',
-        'MARKETING': 'Promote products, run marketing campaigns, and engage with customers for marketing purposes.',
-        'HR': 'Handle HR-related inquiries, employee assistance, and provide HR policy information.',
-        'FINANCE': 'Assist with financial inquiries, billing questions, and provide financial guidance.',
-        'GENERAL': 'Handle general inquiries and provide versatile assistance across multiple domains.'
+        'GENERAL': 'Handle general inquiries and provide versatile assistance across multiple domains.',
+        'SUPPORT': 'Handle customer inquiries, support requests, and provide assistance with products or services.',
+        'BUSINESS': 'Engage with potential customers, provide product information, and assist with sales processes.',
+        'BOTPRESS': 'Integration with Botpress platform for advanced bot capabilities.'
       }
       return descriptions[botType] || 'General purpose bot for various tasks.'
     }

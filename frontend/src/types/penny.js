@@ -3,37 +3,28 @@
  * Corresponds to backend DTOs in com.chatbot.shared.penny.dto
  */
 
-// Penny Bot Type Enum
+// Penny Bot Type Enum (Simplified from 8 to 3 core types)
 export const PennyBotType = {
-  CUSTOMER_SERVICE: 'CUSTOMER_SERVICE',
-  SALES: 'SALES',
+  GENERAL: 'GENERAL',
   SUPPORT: 'SUPPORT',
-  MARKETING: 'MARKETING',
-  HR: 'HR',
-  FINANCE: 'FINANCE',
-  GENERAL: 'GENERAL'
+  BUSINESS: 'BUSINESS',
+  BOTPRESS: 'BOTPRESS'
 };
 
 // Penny Bot Type Display Names
 export const PennyBotTypeDisplay = {
-  [PennyBotType.CUSTOMER_SERVICE]: 'Customer Service',
-  [PennyBotType.SALES]: 'Sales',
-  [PennyBotType.SUPPORT]: 'Technical Support',
-  [PennyBotType.MARKETING]: 'Marketing',
-  [PennyBotType.HR]: 'Human Resources',
-  [PennyBotType.FINANCE]: 'Finance',
-  [PennyBotType.GENERAL]: 'General Purpose'
+  [PennyBotType.GENERAL]: 'General Purpose',
+  [PennyBotType.SUPPORT]: 'Customer Support',
+  [PennyBotType.BUSINESS]: 'Business & Sales',
+  [PennyBotType.BOTPRESS]: 'Botpress Integration'
 };
 
 // Penny Bot Type Botpress IDs
 export const PennyBotTypeBotpressId = {
-  [PennyBotType.CUSTOMER_SERVICE]: 'botpress-customer-service-001',
-  [PennyBotType.SALES]: 'botpress-sales-001',
-  [PennyBotType.SUPPORT]: 'botpress-support-001',
-  [PennyBotType.MARKETING]: 'botpress-marketing-001',
-  [PennyBotType.HR]: 'botpress-hr-001',
-  [PennyBotType.FINANCE]: 'botpress-finance-001',
-  [PennyBotType.GENERAL]: 'botpress-general-001'
+  [PennyBotType.GENERAL]: 'penny-general-001',
+  [PennyBotType.SUPPORT]: 'penny-support-001',
+  [PennyBotType.BUSINESS]: 'penny-business-001',
+  [PennyBotType.BOTPRESS]: null // Dynamic for Botpress
 };
 
 /**

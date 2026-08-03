@@ -56,6 +56,7 @@ public class Message extends BaseTenantEntity {
 
     // Timestamp
     @CreationTimestamp
+    @Column(name = "created_at", nullable = false)
     @JsonFormat(pattern = DateUtils.STANDARD_JSON_FORMAT, timezone = DateUtils.STANDARD_TIMEZONE)
     private LocalDateTime createdAt;
     

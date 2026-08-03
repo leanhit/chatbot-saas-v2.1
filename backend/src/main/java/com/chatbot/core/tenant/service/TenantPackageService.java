@@ -248,8 +248,8 @@ public class TenantPackageService {
                 .orElseThrow(() -> new TenantNotFoundException("Tenant not found: " + tenantId));
 
         if (tenant.getCurrentPackageId() == null) {
-            log.warn("[TenantPackageService] Tenant {} has no package assigned", tenant.getTenantKey());
-            return null;
+            log.warn("[TenantPackageService] Tenant {} has no package assigned, falling back to default package '{}'", tenant.getTenantKey(), defaultPackageId);
+            return resolvePackage(defaultPackageId);
         }
         if (tenant.getExpiresAt() != null && tenant.getExpiresAt().isBefore(LocalDateTime.now())) {
             return resolvePackage(defaultPackageId);
@@ -263,8 +263,8 @@ public class TenantPackageService {
                 .orElseThrow(() -> new TenantNotFoundException("Tenant not found: " + tenantKey));
 
         if (tenant.getCurrentPackageId() == null) {
-            log.warn("[TenantPackageService] Tenant {} has no package assigned", tenantKey);
-            return null;
+            log.warn("[TenantPackageService] Tenant {} has no package assigned, falling back to default package '{}'", tenantKey, defaultPackageId);
+            return resolvePackage(defaultPackageId);
         }
         if (tenant.getExpiresAt() != null && tenant.getExpiresAt().isBefore(LocalDateTime.now())) {
             return resolvePackage(defaultPackageId);

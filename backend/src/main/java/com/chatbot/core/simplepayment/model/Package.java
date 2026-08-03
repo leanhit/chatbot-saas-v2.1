@@ -24,7 +24,7 @@ public class Package {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     
-    @Column(unique = true, nullable = false, length = 50)
+    @Column(name = "package_id", unique = true, nullable = false, length = 50)
     private String packageId; // free, pro, business, enterprise
     
     @Column(nullable = false, length = 100)
@@ -42,38 +42,38 @@ public class Package {
     @Column(columnDefinition = "TEXT")
     private String description;
     
-    @Column(nullable = false)
+    @Column(name = "message_limit", nullable = false)
     private Integer messageLimit;
     
-    @Column(nullable = false)
+    @Column(name = "chatbot_limit", nullable = false)
     private Integer chatbotLimit;
     
-    @Column(nullable = false)
+    @Column(name = "has_priority_support", nullable = false)
     private Boolean hasPrioritySupport;
     
-    @Column(nullable = false)
+    @Column(name = "has_analytics", nullable = false)
     private Boolean hasAnalytics;
     
-    @Column(nullable = false)
+    @Column(name = "has_advanced_analytics", nullable = false)
     private Boolean hasAdvancedAnalytics;
     
-    @Column(nullable = false)
+    @Column(name = "has_custom_integrations", nullable = false)
     private Boolean hasCustomIntegrations;
     
-    @Column(nullable = false)
+    @Column(name = "has_dedicated_support", nullable = false)
     private Boolean hasDedicatedSupport;
     
-    @Column(nullable = false)
+    @Column(name = "has_custom_features", nullable = false)
     private Boolean hasCustomFeatures;
     
-    @Column(nullable = false)
+    @Column(name = "has_sla_guarantee", nullable = false)
     private Boolean hasSlaGuarantee;
     
     @Column(name = "isactive", nullable = false, columnDefinition = "BOOLEAN DEFAULT TRUE")
     @Builder.Default
     private Boolean isActive = true;
     
-    @Column(nullable = false)
+    @Column(name = "sort_order", nullable = false)
     private Integer sortOrder;
     
     @Column(length = 20)
