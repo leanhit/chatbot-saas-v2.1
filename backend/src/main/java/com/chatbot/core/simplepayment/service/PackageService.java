@@ -124,8 +124,7 @@ public class PackageService {
         Package updatedPackage = packageRepository.save(existingPackage);
         
         // Clear caches after update
-        cachedPackageService.clearPackageCache(id);
-        cachedPackageService.clearPackageCacheByPackageId(updatedPackage.getPackageId());
+        cachedPackageService.clearAllPackageCache();
         
         log.info("✅ Updated package: {}", updatedPackage.getPackageId());
         return updatedPackage;
@@ -145,9 +144,7 @@ public class PackageService {
         packageRepository.save(packageData);
         
         // Clear caches after deletion
-        cachedPackageService.clearPackageCache(id);
-        cachedPackageService.clearPackageCacheByPackageId(packageData.getPackageId());
-        cachedPackageService.clearActivePackagesCache();
+        cachedPackageService.clearAllPackageCache();
         
         log.info("✅ Soft deleted package: {}", packageData.getPackageId());
     }
