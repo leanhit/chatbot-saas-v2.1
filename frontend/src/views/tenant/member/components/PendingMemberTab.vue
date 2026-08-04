@@ -9,7 +9,8 @@
         >
           <option value="">{{ $t('tenant.member.allStatuses') }}</option>
           <option value="PENDING">{{ $t('tenant.overview.statusPending') }}</option>
-          <option value="REVIEWING">{{ $t('tenant.member.reviewing') }}</option>
+          <option value="APPROVED">{{ $t('tenant.overview.statusActive') }}</option>
+          <option value="REJECTED">{{ $t('tenant.overview.statusInactive') }}</option>
         </select>
       </div>
     </div>
@@ -222,8 +223,9 @@ export default {
         // Call API to approve request
         await tenantApi.updateJoinRequestStatus(tenantKey, request.id, 'APPROVED')
         
-        // Remove from local list
-        requests.value = requests.value.filter(r => r.id !== request.id)
+        // Update local item status
+        const item = requests.value.find(r => r.id === request.id)
+        if (item) item.status = 'APPROVED'
         emit('request-approved', request)
       } catch (error) {
         console.error('Failed to approve request:', error)
@@ -245,8 +247,9 @@ export default {
         // Call API to reject request
         await tenantApi.updateJoinRequestStatus(tenantKey, request.id, 'REJECTED')
         
-        // Remove from local list
-        requests.value = requests.value.filter(r => r.id !== request.id)
+        // Update local item status
+        const item = requests.value.find(r => r.id === request.id)
+        if (item) item.status = 'REJECTED'
         emit('request-rejected', request)
       } catch (error) {
         console.error('Failed to reject request:', error)

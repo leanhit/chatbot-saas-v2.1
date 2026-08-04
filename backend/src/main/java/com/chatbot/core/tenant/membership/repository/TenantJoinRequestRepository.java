@@ -10,6 +10,7 @@ import java.util.Optional;
 public interface TenantJoinRequestRepository extends JpaRepository<TenantJoinRequest, Long> {
     List<TenantJoinRequest> findByUserIdAndStatus(Long userId, MembershipStatus status);
     List<TenantJoinRequest> findByTenant_IdAndStatus(Long tenantId, MembershipStatus status);
+    List<TenantJoinRequest> findByTenant_IdOrderByCreatedAtDesc(Long tenantId);
     Optional<TenantJoinRequest> findByTenant_IdAndUserId(Long tenantId, Long userId);
     boolean existsByTenant_IdAndUserIdAndStatus(Long tenantId, Long userId, MembershipStatus status);
 

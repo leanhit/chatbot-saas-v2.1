@@ -44,24 +44,32 @@ public class TenantJoinRequestService {
             throw new BusinessLogicException(com.chatbot.shared.exceptions.ErrorCode.ALREADY_MEMBER, "You are already a member of this tenant");
         }
 
-        if (joinRequestRepo.existsByTenant_IdAndUserIdAndStatus(
-                tenantId, user.getId(), MembershipStatus.PENDING)) {
-            throw new BusinessLogicException(com.chatbot.shared.exceptions.ErrorCode.JOIN_REQUEST_ALREADY_SENT, "You have already sent a join request for this tenant");
+        java.util.Optional<TenantJoinRequest> existingOpt = joinRequestRepo.findByTenant_IdAndUserId(tenantId, user.getId());
+        TenantJoinRequest joinRequest;
+        if (existingOpt.isPresent()) {
+            joinRequest = existingOpt.get();
+            if (joinRequest.getStatus() == MembershipStatus.PENDING) {
+                throw new BusinessLogicException(com.chatbot.shared.exceptions.ErrorCode.JOIN_REQUEST_ALREADY_SENT, "You have already sent a join request for this tenant");
+            }
+            joinRequest.setStatus(MembershipStatus.PENDING);
+            joinRequest.setCreatedAt(LocalDateTime.now());
+        } else {
+            Tenant tenant = tenantRepo.findById(tenantId)
+                    .orElseThrow(() -> new TenantNotFoundException("Không tìm thấy tenant"));
+
+            joinRequest = TenantJoinRequest.builder()
+                    .tenant(tenant)
+                    .userId(user.getId()) // Application-level join: store userId instead of User object
+                    .status(MembershipStatus.PENDING)
+                    .createdAt(LocalDateTime.now())
+                    .build();
         }
 
-        Tenant tenant = tenantRepo.findById(tenantId)
-                .orElseThrow(() -> new TenantNotFoundException("Không tìm thấy tenant"));
-
-        joinRequestRepo.save(TenantJoinRequest.builder()
-                .tenant(tenant)
-                .userId(user.getId()) // Application-level join: store userId instead of User object
-                .status(MembershipStatus.PENDING)
-                .createdAt(LocalDateTime.now())
-                .build());
+        joinRequestRepo.save(joinRequest);
 
         notificationService.sendJoinRequestNotification(
             tenantId,
-            tenant.getName(),
+            joinRequest.getTenant().getName(),
             user.getEmail(),
             user.getEmail()
         );
@@ -78,7 +86,7 @@ public class TenantJoinRequestService {
             throw new InsufficientPermissionException(com.chatbot.shared.exceptions.ErrorCode.CANNOT_VIEW_JOIN_REQUESTS, "Only Admin or Tenant Owner can view join request list");
         }
 
-        return joinRequestRepo.findByTenant_IdAndStatus(tenantId, MembershipStatus.PENDING)
+        return joinRequestRepo.findByTenant_IdOrderByCreatedAtDesc(tenantId)
                 .stream()
                 .map(this::toResponse)
                 .toList();
@@ -118,14 +126,16 @@ public class TenantJoinRequestService {
                 auditLogService.logAction(tenantId, actorEmail, "APPROVE_JOIN_REQUEST",
                     "Approved join request from " + user.getEmail());
             }
-            joinRequestRepo.delete(request);
+            request.setStatus(MembershipStatus.APPROVED);
+            joinRequestRepo.save(request);
 
         } else if (status == MembershipStatus.REJECTED) {
             // Application-level join: fetch user by userId
             User user = userRepo.findById(request.getUserId()).orElse(null);
             String userEmail = user != null ? user.getEmail() : "unknown";
             
-            joinRequestRepo.delete(request);
+            request.setStatus(MembershipStatus.REJECTED);
+            joinRequestRepo.save(request);
             auditLogService.logAction(tenantId, actorEmail, "REJECT_JOIN_REQUEST",
                 "Rejected join request from " + userEmail);
         } else {

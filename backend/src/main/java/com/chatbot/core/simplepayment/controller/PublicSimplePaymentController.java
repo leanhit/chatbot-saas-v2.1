@@ -8,9 +8,8 @@ import com.chatbot.core.simplepayment.service.SimplePaymentService;
 import com.chatbot.core.simplepayment.service.QRCodeService;
 import com.chatbot.core.tenant.service.TenantPackageService;
 import com.chatbot.core.tenant.infra.TenantContext;
-import com.chatbot.core.tenant.membership.repository.TenantJoinRequestRepository;
-import com.chatbot.core.tenant.membership.model.MembershipStatus;
-import com.chatbot.core.tenant.membership.model.TenantJoinRequest;
+import com.chatbot.core.tenant.membership.repository.TenantMemberRepository;
+import com.chatbot.core.tenant.membership.model.TenantMember;
 import com.chatbot.core.user.model.User;
 import com.chatbot.core.user.repository.UserRepository;
 import io.swagger.v3.oas.annotations.Operation;
@@ -42,7 +41,7 @@ public class PublicSimplePaymentController {
     private final UserRepository userRepository;
     private final BankApiService bankApiService;
     private final TenantPackageService tenantPackageService;
-    private final TenantJoinRequestRepository tenantJoinRequestRepository;
+    private final TenantMemberRepository tenantMemberRepository;
     private final com.chatbot.core.simplepayment.validation.PaymentValidationService paymentValidationService;
     private final PaymentNotificationService paymentNotificationService;
 
@@ -117,8 +116,8 @@ public class PublicSimplePaymentController {
             // Get tenant ID from context or user's tenant
             Long tenantId = TenantContext.getTenantId();
             if (tenantId == null) {
-                // Fallback to user's primary tenant - get from TenantJoinRequest
-                List<TenantJoinRequest> activeMemberships = tenantJoinRequestRepository.findByUserIdAndStatus(user.getId(), MembershipStatus.ACTIVE);
+                // Fallback to user's primary tenant
+                List<TenantMember> activeMemberships = tenantMemberRepository.findActiveTenantsOfUser(user.getId());
                 if (!activeMemberships.isEmpty()) {
                     tenantId = activeMemberships.get(0).getTenant().getId();
                 } else {
