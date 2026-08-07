@@ -41,8 +41,8 @@
 }
 
 body {
-  overflow: hidden;
-  background-color: "#EEF6FF";
+  min-height: 100vh;
+  background-color: #EEF6FF;
 }
 
 .flex-sidebar {

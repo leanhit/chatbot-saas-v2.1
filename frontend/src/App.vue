@@ -1,10 +1,10 @@
 <template>
   <!-- App -->
-  <div class="flex bg-gray-50 font-lexend dark:bg-gray-900">
+  <div class="flex min-h-screen bg-gray-50 font-lexend dark:bg-gray-900">
     <div
       v-if="!$route.meta.hideNav"
       :class="sidebar ? 'block lg:block' : 'hidden lg:hidden'"
-      class="lg:flex-auto w-sidebar bg-white dark:bg-gray-800 border-r-2 dark:border-gray-700 lg:z-0 z-20 overflow-auto lg:relative fixed"
+      class="lg:flex-auto w-sidebar bg-white dark:bg-gray-800 border-r-2 dark:border-gray-700 lg:z-0 z-20 overflow-y-auto lg:sticky top-0 h-screen fixed"
     >
         <perfect-scrollbar class="h-screen">
           <Sidebar
@@ -14,7 +14,7 @@
         </perfect-scrollbar>
     </div>
     <div
-      class="flex-auto w-full overflow-auto h-screen transition-colors"
+      class="flex-auto w-full min-h-screen flex flex-col transition-colors"
       id="body-scroll"
     >
       <Header
@@ -22,14 +22,16 @@
         :sidebar-open="sidebar"
         @sidebarToggle="toggle"
       />
-      <router-view v-slot="{ Component }">
-        <transition
-          name="slide-up"
-          mode="out-in"
-        >
-          <component :is="Component" />
-        </transition>
-      </router-view>
+      <div class="flex-grow">
+        <router-view v-slot="{ Component }">
+          <transition
+            name="slide-up"
+            mode="out-in"
+          >
+            <component :is="Component" />
+          </transition>
+        </router-view>
+      </div>
       <Footer v-if="!$route.meta.hideNav" />
     </div>
   </div>
@@ -41,7 +43,6 @@
   import Header from "@/components/Header";
   import Footer from "@/components/Footer";
   // npm-js
-  import Scrollbar from "smooth-scrollbar";
   import { useAuthStore } from '@/stores/authStore';
   import { ACTIVE_TENANT_ID } from '@/utils/constant';
   export default {
@@ -67,9 +68,6 @@
       toggle() {
         this.sidebar = !this.sidebar;
       },
-    },
-    mounted() {
-      Scrollbar.init(document.querySelector("#body-scroll"));
     },
   };
 </script>

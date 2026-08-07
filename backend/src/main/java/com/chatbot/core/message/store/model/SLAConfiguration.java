@@ -1,18 +1,12 @@
 package com.chatbot.core.message.store.model;
 
 import com.chatbot.core.tenant.infra.BaseTenantEntity;
-import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import lombok.*;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
-
-import com.chatbot.shared.utils.DateUtils;
-import java.time.LocalDateTime;
 
 /**
  * SLA Configuration entity for storing tenant-specific SLA thresholds
@@ -46,7 +40,7 @@ public class SLAConfiguration extends BaseTenantEntity {
     /**
      * Expected response time in seconds
      */
-    @Column(nullable = false)
+    @Column(name = "expected_response_time", nullable = false)
     @NotNull(message = "Expected response time is required")
     @Positive(message = "Expected response time must be positive")
     private Long expectedResponseTime;
@@ -54,7 +48,7 @@ public class SLAConfiguration extends BaseTenantEntity {
     /**
      * Maximum allowed SLA breaches before escalation
      */
-    @Column(nullable = false)
+    @Column(name = "max_breach_count", nullable = false)
     @Builder.Default
     @Min(value = 1, message = "Max breach count must be at least 1")
     private Integer maxBreachCount = 3;
@@ -71,17 +65,6 @@ public class SLAConfiguration extends BaseTenantEntity {
      */
     @Column(columnDefinition = "TEXT")
     private String description;
-
-    // Timestamp
-    @CreationTimestamp
-    @Column(name = "created_at", nullable = false)
-    @JsonFormat(pattern = DateUtils.STANDARD_JSON_FORMAT, timezone = DateUtils.STANDARD_TIMEZONE)
-    private LocalDateTime createdAt;
-
-    @UpdateTimestamp
-    @Column(name = "updated_at", nullable = false)
-    @JsonFormat(pattern = DateUtils.STANDARD_JSON_FORMAT, timezone = DateUtils.STANDARD_TIMEZONE)
-    private LocalDateTime updatedAt;
 
     @Column(name = "tenant_id")
     private Long tenantId;

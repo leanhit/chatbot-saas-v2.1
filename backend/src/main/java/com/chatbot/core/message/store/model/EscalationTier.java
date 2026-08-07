@@ -50,7 +50,7 @@ public class EscalationTier extends BaseTenantEntity {
      * Tier 2: 900 seconds (15 minutes)
      * Tier 3: 1800 seconds (30 minutes)
      */
-    @Column(nullable = false)
+    @Column(name = "timeout_seconds", nullable = false)
     private Long timeoutSeconds;
 
     /**
@@ -69,17 +69,6 @@ public class EscalationTier extends BaseTenantEntity {
      * Required role for agents at this tier
      */
     private String requiredRole;
-
-    // Timestamp
-    @CreationTimestamp
-    @Column(name = "created_at", nullable = false)
-    @JsonFormat(pattern = DateUtils.STANDARD_JSON_FORMAT, timezone = DateUtils.STANDARD_TIMEZONE)
-    private LocalDateTime createdAt;
-
-    @UpdateTimestamp
-    @Column(name = "updated_at", nullable = false)
-    @JsonFormat(pattern = DateUtils.STANDARD_JSON_FORMAT, timezone = DateUtils.STANDARD_TIMEZONE)
-    private LocalDateTime updatedAt;
 
     @Column(name = "tenant_id")
     private Long tenantId;
