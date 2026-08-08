@@ -41,6 +41,9 @@ public class NotificationWebSocketHandler extends TextWebSocketHandler {
     private final Map<String, Long> sessionToUserMap = new ConcurrentHashMap<>();
     private final Map<String, Long> sessionToTenantMap = new ConcurrentHashMap<>();
 
+    // Locks per session to prevent concurrent writes
+    private final Map<String, Object> sessionLocks = new ConcurrentHashMap<>();
+
     @Override
     public void afterConnectionEstablished(WebSocketSession session) throws Exception {
         String email = (String) session.getAttributes().get("email");
@@ -71,6 +74,9 @@ public class NotificationWebSocketHandler extends TextWebSocketHandler {
         } else {
             log.info("[Notification WS] Connected: {} (ID: {}) without tenant context", email, userId);
         }
+
+        // Initialize lock for this session
+        sessionLocks.put(session.getId(), new Object());
     }
 
     @Override
@@ -107,6 +113,9 @@ public class NotificationWebSocketHandler extends TextWebSocketHandler {
                 }
             }
         }
+
+        // Clean up lock for this session
+        sessionLocks.remove(session.getId());
 
         log.info("[Notification WS] Disconnected session of {}. Status: {}", email, status);
     }
@@ -187,14 +196,26 @@ public class NotificationWebSocketHandler extends TextWebSocketHandler {
     }
 
     /**
-     * Send notification to all active sessions in a tenant
+     * Send notification to all active sessions in a tenant (includes Redis pub/sub)
      */
+    @SuppressWarnings("unchecked")
     public void broadcastToTenant(Long tenantId, Object notification) {
         if (tenantId == null) return;
 
         // Publish to Redis for cluster-wide broadcast
         try {
-            String notificationJson = objectMapper.writeValueAsString(notification);
+            // Include tenantId in the notification for Redis pub/sub
+            Map<String, Object> notificationWithTenant;
+            if (notification instanceof Map) {
+                notificationWithTenant = new java.util.HashMap<>((Map<String, Object>) notification);
+            } else {
+                notificationWithTenant = new java.util.HashMap<>();
+                notificationWithTenant.put("data", notification);
+            }
+            notificationWithTenant.put("tenantId", tenantId);
+            // Preserve original type if it exists, don't overwrite
+
+            String notificationJson = objectMapper.writeValueAsString(notificationWithTenant);
             redisTemplate.convertAndSend(RedisPubSubConfig.WEBSOCKET_NOTIFICATION_TOPIC, notificationJson);
             log.debug("📡 [Redis Pub/Sub] Published notification event for tenant {}", tenantId);
         } catch (Exception e) {
@@ -202,6 +223,16 @@ public class NotificationWebSocketHandler extends TextWebSocketHandler {
         }
 
         // Also broadcast to local sessions
+        broadcastToTenantLocal(tenantId, notification);
+    }
+
+    /**
+     * Send notification to local sessions only (no Redis pub/sub)
+     * Used by RedisNotificationMessageListener to avoid infinite loop
+     */
+    public void broadcastToTenantLocal(Long tenantId, Object notification) {
+        if (tenantId == null) return;
+
         Set<WebSocketSession> sessions = tenantSessions.get(tenantId);
         if (sessions == null || sessions.isEmpty()) {
             log.debug("[Notification WS] No active WebSocket sessions for tenant ID {}", tenantId);
@@ -215,17 +246,23 @@ public class NotificationWebSocketHandler extends TextWebSocketHandler {
         try {
             String payload = objectMapper.writeValueAsString(notification);
             TextMessage textMessage = new TextMessage(payload);
-            
+
             // Avoid ConcurrentModificationException by taking a copy of the sessions set
             Set<WebSocketSession> snapshot = new java.util.HashSet<>(sessions);
             int sentCount = 0;
             for (WebSocketSession s : snapshot) {
                 if (s.isOpen()) {
-                    try {
-                        s.sendMessage(textMessage);
-                        sentCount++;
-                    } catch (IOException e) {
-                        log.warn("[Notification WS] Failed to send message to session {}: {}", s.getId(), e.getMessage());
+                    // Use per-session lock to prevent concurrent writes
+                    Object lock = sessionLocks.computeIfAbsent(s.getId(), k -> new Object());
+                    synchronized (lock) {
+                        try {
+                            if (s.isOpen()) {
+                                s.sendMessage(textMessage);
+                                sentCount++;
+                            }
+                        } catch (IOException e) {
+                            log.warn("[Notification WS] Failed to send message to session {}: {}", s.getId(), e.getMessage());
+                        }
                     }
                 }
             }
