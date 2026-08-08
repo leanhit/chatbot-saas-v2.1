@@ -192,7 +192,7 @@
                 <input
                   v-model.number="formData.messageLimit"
                   type="number"
-                  min="1"
+                  min="-1"
                   class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:text-white"
                   :placeholder="$t('admin.package.messageLimitPlaceholder')"
                 />
@@ -205,7 +205,7 @@
                 <input
                   v-model.number="formData.chatbotLimit"
                   type="number"
-                  min="1"
+                  min="-1"
                   class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:text-white"
                   :placeholder="$t('admin.package.chatbotLimitPlaceholder')"
                 />
@@ -426,17 +426,24 @@ export default {
     const editPackage = (pkg) => {
       editingPackage.value = pkg
       formData.value = { ...pkg }
+      // Convert unlimited values (2147483647) to -1 for editing
+      if (formData.value.messageLimit === 2147483647) {
+        formData.value.messageLimit = -1
+      }
+      if (formData.value.chatbotLimit === 2147483647) {
+        formData.value.chatbotLimit = -1
+      }
       showEditModal.value = true
     }
 
     const savePackage = async () => {
       saving.value = true
       try {
-        // Set unlimited values if empty
-        if (!formData.value.messageLimit) {
+        // Convert -1 to unlimited value (2147483647)
+        if (formData.value.messageLimit === -1 || !formData.value.messageLimit) {
           formData.value.messageLimit = 2147483647
         }
-        if (!formData.value.chatbotLimit) {
+        if (formData.value.chatbotLimit === -1 || !formData.value.chatbotLimit) {
           formData.value.chatbotLimit = 2147483647
         }
 

@@ -118,7 +118,8 @@
     "error": "Error",
     "edit": "Edit",
     "yes": "Yes",
-    "no": "No"
+    "no": "No",
+    "update": "Update"
   },
   "auth": {
     "login": {
