@@ -10,6 +10,7 @@ import com.chatbot.core.notification.slack.SlackNotificationService;
 import com.chatbot.core.tenant.model.Tenant;
 import com.chatbot.core.tenant.model.TenantStatus;
 import com.chatbot.core.tenant.repository.TenantRepository;
+import com.chatbot.shared.exceptions.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
@@ -86,25 +87,25 @@ public class SLAMonitorService {
         if (tier == null) {
             tier = "Standard";
         }
+        final String finalTier = tier;
 
         // Try to get from database configuration
         try {
             SLAConfiguration config = slaConfigurationRepository
                 .findByTenantIdAndCustomerTierAndActiveTrue(
                     conversation.getTenantId(),
-                    tier
+                    finalTier
                 )
-                .orElse(null);
-            
-            if (config != null) {
-                return config.getExpectedResponseTime();
-            }
+                .orElseThrow(() -> new ResourceNotFoundException("SLA configuration not found for tenant " + conversation.getTenantId() + " and tier " + finalTier));
+            return config.getExpectedResponseTime();
+        } catch (ResourceNotFoundException e) {
+            log.warn("SLA configuration not found, using fallback: {}", e.getMessage());
         } catch (Exception e) {
             log.warn("Failed to get SLA configuration from database, using fallback: {}", e.getMessage());
         }
 
         // Fallback to hardcoded defaults
-        switch (tier) {
+        switch (finalTier) {
             case "VIP":
                 return DEFAULT_VIP_RESPONSE_TIME;
             case "Enterprise":
@@ -320,7 +321,7 @@ public class SLAMonitorService {
     public SLAConfiguration getSLAConfiguration(Long tenantId, String customerTier) {
         return slaConfigurationRepository
             .findByTenantIdAndCustomerTierAndActiveTrue(tenantId, customerTier)
-            .orElse(null);
+            .orElseThrow(() -> new ResourceNotFoundException("SLA configuration not found for tenant " + tenantId + " and tier " + customerTier));
     }
 
     /**
@@ -336,7 +337,7 @@ public class SLAMonitorService {
                 existingConfig.setDescription(updatedConfig.getDescription());
                 return slaConfigurationRepository.save(existingConfig);
             })
-            .orElseThrow(() -> new RuntimeException("SLA configuration not found: " + configId));
+            .orElseThrow(() -> new ResourceNotFoundException("SLA configuration not found: " + configId));
     }
 
     /**

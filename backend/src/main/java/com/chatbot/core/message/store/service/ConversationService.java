@@ -1,5 +1,6 @@
 package com.chatbot.core.message.store.service;
 
+import com.chatbot.core.message.decision.exception.ConversationNotFoundException;
 import com.chatbot.core.message.store.model.Conversation;
 import com.chatbot.core.message.store.model.Message;
 import com.chatbot.core.message.store.dto.ConversationStatisticsDTO;
@@ -54,7 +55,7 @@ public class ConversationService {
                 .orElseGet(() -> {
                     String ownerId = channelMessengerService.getOwnerIdForConnection(connectionId);
                     if (ownerId == null) {
-                        throw new RuntimeException("Connection not found with ID: " + connectionId);
+                        throw new ConversationNotFoundException("Connection not found with ID: " + connectionId);
                     }
 
                     Conversation c = Conversation.builder()
@@ -175,7 +176,7 @@ public class ConversationService {
     @Transactional(transactionManager = "messageTransactionManager", rollbackFor = Exception.class)
     public Conversation closeConversation(Long conversationId) {
         Conversation conversation = conversationRepo.findById(conversationId)
-            .orElseThrow(() -> new RuntimeException("Conversation not found"));
+            .orElseThrow(() -> new ConversationNotFoundException("Conversation not found"));
         
         conversationEndWorkflow.handleConversationEnd(conversationId, "agent_closed");
         
@@ -206,7 +207,7 @@ public class ConversationService {
                 c.setStatus("active_agent"); // Cập nhật trạng thái
                 return conversationRepo.save(c);
             })
-            .orElseThrow(() -> new RuntimeException("Conversation not found for takeover"));
+            .orElseThrow(() -> new ConversationNotFoundException("Conversation not found for takeover"));
     }
 
     /**
@@ -228,7 +229,7 @@ public class ConversationService {
                 c.setStatus("open"); // Quay về trạng thái mở để bot xử lý
                 return conversationRepo.save(c);
             })
-            .orElseThrow(() -> new RuntimeException("Conversation not found for release"));
+            .orElseThrow(() -> new ConversationNotFoundException("Conversation not found for release"));
     }
     
     /**
@@ -245,10 +246,10 @@ public class ConversationService {
     @Transactional(transactionManager = "messageTransactionManager", rollbackFor = Exception.class)
     public void deleteConversation(Long conversationId, String ownerId) {
         Conversation conversation = conversationRepo.findById(conversationId)
-            .orElseThrow(() -> new RuntimeException("Conversation not found with id: " + conversationId));
+            .orElseThrow(() -> new ConversationNotFoundException("Conversation not found with id: " + conversationId));
             
         if (!ownerId.equals(conversation.getOwnerId())) {
-            throw new RuntimeException("You don't have permission to delete this conversation");
+            throw new com.chatbot.shared.exceptions.UnauthorizedException("You don't have permission to delete this conversation");
         }
         
         // Xóa tất cả tin nhắn liên quan
@@ -290,7 +291,7 @@ public class ConversationService {
             // Xóa tất cả tin nhắn của các conversation này
             Long tenantId = TenantContext.getTenantId();
             if (tenantId == null) {
-                throw new RuntimeException("Không tìm thấy tenant ID trong context");
+                throw new com.chatbot.shared.exceptions.BaseException(com.chatbot.shared.exceptions.ErrorCode.TENANT_CONTEXT_MISSING, "Tenant ID not found in context");
             }
             messageRepo.deleteAllByConversationIdInAndTenantId(idsToDelete, tenantId);
             
@@ -330,7 +331,7 @@ public class ConversationService {
                     "Permission denied. CallerOwnerId={} != ConversationOwnerId={}, ConversationId={}",
                     ownerId, conversation.getOwnerId(), conversationId
                 );
-                throw new RuntimeException("You don't have permission to update this conversation");
+                throw new com.chatbot.shared.exceptions.UnauthorizedException("You don't have permission to update this conversation");
             }
 
             // Không cho phép update nếu đã đóng
@@ -369,7 +370,7 @@ public class ConversationService {
         })
         .orElseThrow(() -> {
             log.error("Conversation not found with id {}", conversationId);
-            return new RuntimeException("Conversation not found with id: " + conversationId);
+            return new ConversationNotFoundException("Conversation not found with id: " + conversationId);
         });
 }
 
@@ -428,7 +429,7 @@ public class ConversationService {
     public Conversation getConversationById(Long conversationId) {
         Long tenantId = TenantContext.getTenantId();
         return conversationRepo.findByIdAndTenantId(conversationId, tenantId)
-                .orElseThrow(() -> new RuntimeException("Conversation not found"));
+                .orElseThrow(() -> new ConversationNotFoundException("Conversation not found"));
     }
 
     /**
@@ -475,7 +476,7 @@ public class ConversationService {
     public Conversation updateConversation(Long conversationId, Object conversationDTO, String ownerId) {
         Conversation conversation = getConversationById(conversationId);
         if (!ownerId.equals(conversation.getOwnerId())) {
-            throw new RuntimeException("You don't have permission to update this conversation");
+            throw new com.chatbot.shared.exceptions.UnauthorizedException("You don't have permission to update this conversation");
         }
         // Status update if DTO contains status field (handled via PATCH endpoints)
         return conversationRepo.save(conversation);

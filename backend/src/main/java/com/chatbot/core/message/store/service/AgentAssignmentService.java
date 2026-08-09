@@ -1,9 +1,11 @@
 package com.chatbot.core.message.store.service;
 
+import com.chatbot.core.message.decision.exception.ConversationNotFoundException;
 import com.chatbot.core.message.store.model.Agent;
 import com.chatbot.core.message.store.model.Conversation;
 import com.chatbot.core.message.store.repository.AgentRepository;
 import com.chatbot.core.message.store.repository.ConversationRepository;
+import com.chatbot.shared.exceptions.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -163,17 +165,11 @@ public class AgentAssignmentService {
      * Reassign conversation to different agent
      */
     public boolean reassignConversation(Long conversationId, Long newAgentId) {
-        Conversation conversation = conversationRepository.findById(conversationId).orElse(null);
-        if (conversation == null) {
-            log.error("Conversation not found for reassignment: {}", conversationId);
-            return false;
-        }
+        Conversation conversation = conversationRepository.findById(conversationId)
+            .orElseThrow(() -> new ConversationNotFoundException("Conversation not found for reassignment: " + conversationId));
 
-        Agent newAgent = agentRepository.findById(newAgentId).orElse(null);
-        if (newAgent == null) {
-            log.error("Agent not found for reassignment: {}", newAgentId);
-            return false;
-        }
+        Agent newAgent = agentRepository.findById(newAgentId)
+            .orElseThrow(() -> new ResourceNotFoundException("Agent not found for reassignment: " + newAgentId));
 
         // Check if new agent can accept more conversations
         if (!newAgent.canAcceptMoreConversations()) {

@@ -179,31 +179,21 @@ public class TenantPackageService {
         Tenant tenant = tenantRepository.findById(tenantId)
                 .orElseThrow(() -> new TenantNotFoundException("Tenant not found"));
 
-        Package currentPackage = null;
-        String packageId = tenant.getCurrentPackageId();
-        LocalDateTime expiresAt = tenant.getExpiresAt();
-        
-        if (expiresAt != null && expiresAt.isBefore(LocalDateTime.now())) {
-            packageId = defaultPackageId;
-            expiresAt = null;
-        }
-
-        if (packageId != null) {
-            currentPackage = packageRepository.findByPackageId(packageId).orElse(null);
-        }
+        PackageExpirationResult result = resolvePackageWithExpiration(tenant.getCurrentPackageId(), tenant.getExpiresAt());
+        Package currentPackage = resolvePackage(result.packageId);
 
         return TenantPackageDetailResponse.builder()
                 .tenantId(tenantId)
                 .tenantKey(tenant.getTenantKey())
-                .currentPackageId(packageId)
+                .currentPackageId(result.packageId)
                 .packageActivatedAt(tenant.getPackageActivatedAt())
-                .expiresAt(expiresAt)
-                .packageName(currentPackage != null ? currentPackage.getName() : null)
-                .packagePrice(currentPackage != null ? currentPackage.getPrice() : null)
-                .packageCurrency(currentPackage != null ? currentPackage.getCurrency() : null)
-                .packageDuration(currentPackage != null ? currentPackage.getDuration() : null)
-                .chatbotLimit(currentPackage != null ? currentPackage.getChatbotLimit() : null)
-                .messageLimit(currentPackage != null ? currentPackage.getMessageLimit() : null)
+                .expiresAt(result.expiresAt)
+                .packageName(currentPackage.getName())
+                .packagePrice(currentPackage.getPrice())
+                .packageCurrency(currentPackage.getCurrency())
+                .packageDuration(currentPackage.getDuration())
+                .chatbotLimit(currentPackage.getChatbotLimit())
+                .messageLimit(currentPackage.getMessageLimit())
                 .build();
     }
 
@@ -214,62 +204,28 @@ public class TenantPackageService {
     public TenantPackageInfo getCurrentTenantPackageInfo(Long tenantId) {
         Tenant tenant = tenantRepository.findById(tenantId)
                 .orElseThrow(() -> new TenantNotFoundException("Tenant not found: " + tenantId));
-
-        Package currentPackage;
-        LocalDateTime expiresAt = tenant.getExpiresAt();
-        if (expiresAt != null && expiresAt.isBefore(LocalDateTime.now())) {
-            currentPackage = resolvePackage(defaultPackageId);
-            expiresAt = null;
-        } else {
-            currentPackage = resolvePackage(tenant.getCurrentPackageId());
-        }
-        return TenantPackageInfo.from(tenantId, currentPackage, tenant.getPackageActivatedAt(), expiresAt);
+        return buildPackageInfoWithExpirationCheck(tenant);
     }
 
     @Transactional(readOnly = true, transactionManager = "tenantTransactionManager")
     public TenantPackageInfo getCurrentTenantPackageInfoByKey(String tenantKey) {
         Tenant tenant = tenantRepository.findByTenantKey(tenantKey)
                 .orElseThrow(() -> new TenantNotFoundException("Tenant not found: " + tenantKey));
-
-        Package currentPackage;
-        LocalDateTime expiresAt = tenant.getExpiresAt();
-        if (expiresAt != null && expiresAt.isBefore(LocalDateTime.now())) {
-            currentPackage = resolvePackage(defaultPackageId);
-            expiresAt = null;
-        } else {
-            currentPackage = resolvePackage(tenant.getCurrentPackageId());
-        }
-        return TenantPackageInfo.from(tenant.getId(), currentPackage, tenant.getPackageActivatedAt(), expiresAt);
+        return buildPackageInfoWithExpirationCheck(tenant);
     }
 
     @Transactional(readOnly = true, transactionManager = "tenantTransactionManager")
     public Package getCurrentTenantPackage(Long tenantId) {
         Tenant tenant = tenantRepository.findById(tenantId)
                 .orElseThrow(() -> new TenantNotFoundException("Tenant not found: " + tenantId));
-
-        if (tenant.getCurrentPackageId() == null) {
-            log.warn("[TenantPackageService] Tenant {} has no package assigned, falling back to default package '{}'", tenant.getTenantKey(), defaultPackageId);
-            return resolvePackage(defaultPackageId);
-        }
-        if (tenant.getExpiresAt() != null && tenant.getExpiresAt().isBefore(LocalDateTime.now())) {
-            return resolvePackage(defaultPackageId);
-        }
-        return resolvePackage(tenant.getCurrentPackageId());
+        return resolveCurrentPackageForTenant(tenant);
     }
 
     @Transactional(readOnly = true, transactionManager = "tenantTransactionManager")
     public Package getCurrentTenantPackageByKey(String tenantKey) {
         Tenant tenant = tenantRepository.findByTenantKey(tenantKey)
                 .orElseThrow(() -> new TenantNotFoundException("Tenant not found: " + tenantKey));
-
-        if (tenant.getCurrentPackageId() == null) {
-            log.warn("[TenantPackageService] Tenant {} has no package assigned, falling back to default package '{}'", tenantKey, defaultPackageId);
-            return resolvePackage(defaultPackageId);
-        }
-        if (tenant.getExpiresAt() != null && tenant.getExpiresAt().isBefore(LocalDateTime.now())) {
-            return resolvePackage(defaultPackageId);
-        }
-        return resolvePackage(tenant.getCurrentPackageId());
+        return resolveCurrentPackageForTenant(tenant);
     }
 
     @Transactional(readOnly = true, transactionManager = "tenantTransactionManager")
@@ -296,9 +252,59 @@ public class TenantPackageService {
 
     /* ================= PRIVATE HELPERS ================= */
 
+    /**
+     * Result holder for package resolution with expiration check.
+     */
+    private static record PackageExpirationResult(String packageId, LocalDateTime expiresAt) {}
+
+    /**
+     * Resolve package ID and expiration date, handling expiration fallback to default.
+     */
+    private PackageExpirationResult resolvePackageWithExpiration(String packageId, LocalDateTime expiresAt) {
+        if (expiresAt != null && expiresAt.isBefore(LocalDateTime.now())) {
+            return new PackageExpirationResult(defaultPackageId, null);
+        }
+        return new PackageExpirationResult(packageId, expiresAt);
+    }
+
+    /**
+     * Resolve the current package for a tenant, handling expiration and fallback to default.
+     */
+    private Package resolveCurrentPackageForTenant(Tenant tenant) {
+        if (tenant.getCurrentPackageId() == null) {
+            log.warn("[TenantPackageService] Tenant {} has no package assigned, falling back to default package '{}'", tenant.getTenantKey(), defaultPackageId);
+            return resolvePackage(defaultPackageId);
+        }
+        if (tenant.getExpiresAt() != null && tenant.getExpiresAt().isBefore(LocalDateTime.now())) {
+            return resolvePackage(defaultPackageId);
+        }
+        return resolvePackage(tenant.getCurrentPackageId());
+    }
+
+    /**
+     * Build package info with expiration check for a tenant.
+     */
+    private TenantPackageInfo buildPackageInfoWithExpirationCheck(Tenant tenant) {
+        Package currentPackage;
+        LocalDateTime expiresAt = tenant.getExpiresAt();
+        if (expiresAt != null && expiresAt.isBefore(LocalDateTime.now())) {
+            currentPackage = resolvePackage(defaultPackageId);
+            expiresAt = null;
+        } else {
+            currentPackage = resolvePackage(tenant.getCurrentPackageId());
+        }
+        return TenantPackageInfo.from(tenant.getId(), currentPackage, tenant.getPackageActivatedAt(), expiresAt);
+    }
+
     private Package resolvePackage(String packageId) {
-        if (packageId == null) return null;
-        // Use repository directly to avoid redundant fallback (packageService likely calls repository internally)
-        return packageRepository.findByPackageId(packageId).orElse(null);
+        if (packageId == null) {
+            log.warn("[TenantPackageService] Package ID is null");
+            throw new ResourceNotFoundException("Package ID cannot be null");
+        }
+        return packageRepository.findByPackageId(packageId)
+                .orElseThrow(() -> {
+                    log.warn("[TenantPackageService] Package not found: {}", packageId);
+                    return new ResourceNotFoundException("Package not found: " + packageId);
+                });
     }
 }

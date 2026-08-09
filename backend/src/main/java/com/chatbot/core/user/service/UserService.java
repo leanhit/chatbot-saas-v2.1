@@ -8,6 +8,7 @@ import com.chatbot.core.user.repository.UserProfileRepository;
 import com.chatbot.core.tenant.membership.model.TenantJoinRequest;
 import com.chatbot.core.tenant.membership.model.MembershipStatus;
 import com.chatbot.core.tenant.membership.repository.TenantJoinRequestRepository;
+import com.chatbot.core.identity.exception.UserNotFoundException;
 import com.chatbot.shared.address.service.AddressService;
 import com.chatbot.shared.address.dto.AddressDetailResponseDTO;
 import com.chatbot.shared.address.model.OwnerType;
@@ -54,7 +55,7 @@ public class UserService {
     @Transactional(value = "userTransactionManager", readOnly = true, rollbackFor = Exception.class)
     public User getUser(Long userId) {
         return userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found with ID: " + userId));
+                .orElseThrow(() -> new UserNotFoundException("User not found with ID: " + userId));
     }
 
     /**
@@ -95,7 +96,7 @@ public class UserService {
     @Transactional(value = "userTransactionManager", rollbackFor = Exception.class)
     public void updateUserStatus(Long userId, boolean isActive) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found with ID: " + userId));
+                .orElseThrow(() -> new UserNotFoundException("User not found with ID: " + userId));
         user.setIsActive(isActive);
         userRepository.save(user);
         log.info("Updated status for user {}: isActive={}", userId, isActive);
@@ -111,7 +112,7 @@ public class UserService {
                 .orElseGet(() -> {
                     log.info("Auto-creating UserProfile for user ID: {}", userId);
                     User user = userRepository.findById(userId)
-                            .orElseThrow(() -> new RuntimeException("User not found with ID: " + userId));
+                            .orElseThrow(() -> new UserNotFoundException("User not found with ID: " + userId));
                     UserProfile newProfile = UserProfile.builder()
                             .user(user)
                             .build();
@@ -256,16 +257,16 @@ public class UserService {
     public void cancelJoinRequest(Long requestId, User user) {
         // Find the join request
         TenantJoinRequest request = joinRequestRepository.findById(requestId)
-                .orElseThrow(() -> new RuntimeException("Join request not found: " + requestId));
+                .orElseThrow(() -> new UserNotFoundException("Join request not found: " + requestId));
 
         // Verify that the request belongs to the user
         if (!request.getUserId().equals(user.getId())) {
-            throw new RuntimeException("You can only cancel your own join requests");
+            throw new com.chatbot.shared.exceptions.UnauthorizedException("You can only cancel your own join requests");
         }
 
         // Verify that the request is still pending
         if (request.getStatus() != MembershipStatus.PENDING) {
-            throw new RuntimeException("Can only cancel pending requests");
+            throw new IllegalStateException("Can only cancel pending requests");
         }
 
         // Delete the request
@@ -333,7 +334,7 @@ public class UserService {
     @Transactional(transactionManager = "userTransactionManager", rollbackFor = Exception.class)
     public UserFullResponse getFullProfile(Long userId) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found with ID: " + userId));
+                .orElseThrow(() -> new UserNotFoundException("User not found with ID: " + userId));
         
         // Auto-create UserProfile if not exists (migration compatibility)
         UserProfile profile = userProfileRepository.findById(userId)
@@ -453,7 +454,7 @@ public class UserService {
     private String getCurrentUserEmail(Long userId) {
         try {
             User user = userRepository.findById(userId)
-                    .orElseThrow(() -> new RuntimeException("User not found with ID: " + userId));
+                    .orElseThrow(() -> new UserNotFoundException("User not found with ID: " + userId));
             return user.getEmail();
         } catch (Exception e) {
             log.error("Failed to get user email for ID: {}", userId, e);

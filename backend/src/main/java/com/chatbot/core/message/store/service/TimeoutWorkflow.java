@@ -1,5 +1,6 @@
 package com.chatbot.core.message.store.service;
 
+import com.chatbot.core.message.decision.exception.ConversationNotFoundException;
 import com.chatbot.core.message.store.model.Conversation;
 import com.chatbot.core.message.store.repository.ConversationRepository;
 import com.chatbot.core.notification.websocket.NotificationWebSocketHandler;
@@ -225,10 +226,8 @@ public class TimeoutWorkflow {
      */
     @Transactional
     public void autoCloseInactiveConversation(Long conversationId) {
-        Conversation conversation = conversationRepository.findById(conversationId).orElse(null);
-        if (conversation == null) {
-            return;
-        }
+        conversationRepository.findById(conversationId)
+            .orElseThrow(() -> new ConversationNotFoundException("Conversation not found: " + conversationId));
 
         log.info("Auto-closing inactive conversation {}", conversationId);
         conversationEndWorkflow.handleConversationEnd(conversationId, "timeout");
@@ -239,10 +238,8 @@ public class TimeoutWorkflow {
      */
     @Transactional(transactionManager = "messageTransactionManager", rollbackFor = Exception.class)
     public void reassignToBot(Long conversationId) {
-        Conversation conversation = conversationRepository.findById(conversationId).orElse(null);
-        if (conversation == null) {
-            return;
-        }
+        Conversation conversation = conversationRepository.findById(conversationId)
+            .orElseThrow(() -> new ConversationNotFoundException("Conversation not found: " + conversationId));
 
         log.info("Reassigning conversation {} back to bot", conversationId);
 

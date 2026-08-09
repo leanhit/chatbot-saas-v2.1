@@ -1,8 +1,6 @@
 package com.chatbot.core.message.store.service;
 
-import com.chatbot.core.message.store.model.Conversation;
-import com.chatbot.core.message.store.repository.ConversationRepository;
-import com.chatbot.core.notification.websocket.NotificationWebSocketHandler;
+import com.chatbot.core.message.decision.exception.ConversationNotFoundException;
 import com.chatbot.core.message.store.model.Conversation;
 import com.chatbot.core.message.store.repository.ConversationRepository;
 import com.chatbot.core.notification.websocket.NotificationWebSocketHandler;
@@ -39,11 +37,8 @@ public class ConversationEndWorkflow {
     public void handleConversationEnd(Long conversationId, String endReason) {
         log.info("Handling conversation end for {} - Reason: {}", conversationId, endReason);
 
-        Conversation conversation = conversationRepository.findById(conversationId).orElse(null);
-        if (conversation == null) {
-            log.error("Conversation not found for end workflow: {}", conversationId);
-            return;
-        }
+        Conversation conversation = conversationRepository.findById(conversationId)
+            .orElseThrow(() -> new ConversationNotFoundException("Conversation not found for end workflow: " + conversationId));
 
         // Close the conversation
         closeConversation(conversation, endReason);
@@ -167,11 +162,8 @@ public class ConversationEndWorkflow {
      */
     @Transactional(transactionManager = "messageTransactionManager", rollbackFor = Exception.class)
     public void reopenConversation(Long conversationId) {
-        Conversation conversation = conversationRepository.findById(conversationId).orElse(null);
-        if (conversation == null) {
-            log.error("Conversation not found for reopen: {}", conversationId);
-            return;
-        }
+        Conversation conversation = conversationRepository.findById(conversationId)
+            .orElseThrow(() -> new ConversationNotFoundException("Conversation not found for reopen: " + conversationId));
 
         log.info("Reopening conversation {}", conversationId);
 
@@ -198,10 +190,8 @@ public class ConversationEndWorkflow {
      * Generate conversation report
      */
     public Map<String, Object> generateConversationReport(Long conversationId) {
-        Conversation conversation = conversationRepository.findById(conversationId).orElse(null);
-        if (conversation == null) {
-            return null;
-        }
+        Conversation conversation = conversationRepository.findById(conversationId)
+            .orElseThrow(() -> new ConversationNotFoundException("Conversation not found: " + conversationId));
 
         Map<String, Object> report = new HashMap<>();
         report.put("conversationId", conversation.getId());

@@ -2,6 +2,7 @@ package com.chatbot.core.message.store.service;
 
 import com.chatbot.core.message.store.model.Agent;
 import com.chatbot.core.message.store.repository.AgentRepository;
+import com.chatbot.shared.exceptions.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -106,7 +107,7 @@ public class AgentService {
                 
                 return agentRepository.save(existingAgent);
             })
-            .orElseThrow(() -> new RuntimeException("Agent not found: " + agentId));
+            .orElseThrow(() -> new ResourceNotFoundException("Agent not found: " + agentId));
     }
 
     /**
@@ -115,7 +116,7 @@ public class AgentService {
     @Transactional
     public void deleteAgent(Long agentId) {
         if (!agentRepository.existsById(agentId)) {
-            throw new RuntimeException("Agent not found: " + agentId);
+            throw new ResourceNotFoundException("Agent not found: " + agentId);
         }
         
         agentRepository.deleteById(agentId);

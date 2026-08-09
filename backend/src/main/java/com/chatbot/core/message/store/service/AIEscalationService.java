@@ -1,5 +1,6 @@
 package com.chatbot.core.message.store.service;
 
+import com.chatbot.core.message.decision.exception.ConversationNotFoundException;
 import com.chatbot.core.message.store.model.Conversation;
 import com.chatbot.core.message.store.repository.ConversationRepository;
 import com.chatbot.core.message.store.repository.MessageRepository;
@@ -40,11 +41,8 @@ public class AIEscalationService {
             return;
         }
 
-        Conversation conversation = conversationRepository.findById(conversationId).orElse(null);
-        if (conversation == null) {
-            log.error("Conversation not found for AI escalation: {}", conversationId);
-            return;
-        }
+        Conversation conversation = conversationRepository.findById(conversationId)
+            .orElseThrow(() -> new ConversationNotFoundException("Conversation not found for AI escalation: " + conversationId));
 
         // Skip if already taken over by agent
         if (conversation.getIsTakenOverByAgent()) {
@@ -91,10 +89,8 @@ public class AIEscalationService {
      */
     private String getConversationText(Long conversationId, int messageCount) {
         try {
-            Conversation conversation = conversationRepository.findById(conversationId).orElse(null);
-            if (conversation == null) {
-                return "";
-            }
+            Conversation conversation = conversationRepository.findById(conversationId)
+                .orElseThrow(() -> new ConversationNotFoundException("Conversation not found: " + conversationId));
 
             List<com.chatbot.core.message.store.model.Message> messages = 
                 messageRepository.findByConversationIdAndTenantId(
@@ -241,8 +237,9 @@ public class AIEscalationService {
      */
     @SuppressWarnings("unchecked")
     public Map<String, Object> getAIAnalysis(Long conversationId) {
-        Conversation conversation = conversationRepository.findById(conversationId).orElse(null);
-        if (conversation == null || conversation.getCustomAttributes() == null) {
+        Conversation conversation = conversationRepository.findById(conversationId)
+            .orElseThrow(() -> new ConversationNotFoundException("Conversation not found: " + conversationId));
+        if (conversation.getCustomAttributes() == null) {
             return null;
         }
 

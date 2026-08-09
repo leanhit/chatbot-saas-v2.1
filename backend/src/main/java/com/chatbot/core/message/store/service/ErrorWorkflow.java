@@ -1,8 +1,6 @@
 package com.chatbot.core.message.store.service;
 
-import com.chatbot.core.message.store.model.Conversation;
-import com.chatbot.core.message.store.repository.ConversationRepository;
-import com.chatbot.core.notification.websocket.NotificationWebSocketHandler;
+import com.chatbot.core.message.decision.exception.ConversationNotFoundException;
 import com.chatbot.core.message.store.model.Conversation;
 import com.chatbot.core.message.store.repository.ConversationRepository;
 import com.chatbot.core.notification.websocket.NotificationWebSocketHandler;
@@ -38,11 +36,8 @@ public class ErrorWorkflow {
     public void handleError(Long conversationId, String errorType, String errorMessage, String severity) {
         log.error("Error in conversation {}: {} - {}", conversationId, errorType, errorMessage);
 
-        Conversation conversation = conversationRepository.findById(conversationId).orElse(null);
-        if (conversation == null) {
-            log.error("Conversation not found for error handling: {}", conversationId);
-            return;
-        }
+        Conversation conversation = conversationRepository.findById(conversationId)
+            .orElseThrow(() -> new ConversationNotFoundException("Conversation not found for error handling: " + conversationId));
 
         // Log error details
         logErrorToConversation(conversation, errorType, errorMessage, severity);
@@ -185,10 +180,8 @@ public class ErrorWorkflow {
     public void recoverFromError(Long conversationId) {
         log.info("Attempting to recover from error in conversation {}", conversationId);
 
-        Conversation conversation = conversationRepository.findById(conversationId).orElse(null);
-        if (conversation == null) {
-            return;
-        }
+        Conversation conversation = conversationRepository.findById(conversationId)
+            .orElseThrow(() -> new ConversationNotFoundException("Conversation not found: " + conversationId));
 
         // Check if conversation can be resumed
         if ("open".equals(conversation.getStatus())) {
