@@ -30,6 +30,8 @@ public class CacheConstants {
         public static final String TENANT_SETTINGS = PREFIX + "settings" + SEPARATOR;
         public static final String TENANT_CONFIG = PREFIX + "config" + SEPARATOR;
         public static final String TENANT_SUBSCRIPTIONS = PREFIX + "subscriptions" + SEPARATOR;
+        public static final String TENANT_PACKAGE_INFO = PREFIX + "package" + SEPARATOR + "info" + SEPARATOR;
+        public static final String TENANT_PACKAGE = PREFIX + "package" + SEPARATOR;
     }
 
     public static final class App {
@@ -173,6 +175,7 @@ public class CacheConstants {
         public static final long RATE_LIMIT = 60; // 1 minute
         public static final long ANALYTICS = 300; // 5 minutes
         public static final long EXTERNAL_DATA = 86400; // 24 hours
+        public static final long TENANT_PACKAGE = 300; // 5 minutes - short TTL for tenant package info
     }
 
     public static final class Keys {

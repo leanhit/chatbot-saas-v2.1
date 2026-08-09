@@ -9,6 +9,8 @@ import com.chatbot.core.tenant.model.Tenant;
 import com.chatbot.core.tenant.repository.TenantRepository;
 import com.chatbot.core.simplepayment.model.Package;
 import com.chatbot.core.simplepayment.repository.PackageRepository;
+import com.chatbot.core.cache.CacheService;
+import com.chatbot.shared.constants.CacheConstants;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -19,9 +21,8 @@ import com.chatbot.core.user.model.User;
 import com.chatbot.core.user.repository.AuthRepository;
 import com.chatbot.shared.security.SecurityUtils;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -32,6 +33,7 @@ public class TenantPackageService {
     private final PackageRepository packageRepository;
     private final AuthRepository authRepository;
     private final TenantAuditLogService auditLogService;
+    private final CacheService cacheService;
 
     @Value("${tenant.default.package:free}")
     private String defaultPackageId;
@@ -56,6 +58,8 @@ public class TenantPackageService {
         tenant.setExpiresAt(null); // Free package không có hạn
 
         tenantRepository.save(tenant);
+
+        invalidateTenantPackageCache(tenant.getId(), tenant.getTenantKey());
 
         log.info("[TenantPackageService] Assigned '{}' package to tenant: {} at {}",
                 defaultPackageId, tenant.getTenantKey(), tenant.getPackageActivatedAt());
@@ -103,6 +107,8 @@ public class TenantPackageService {
         }
 
         tenantRepository.save(tenant);
+
+        invalidateTenantPackageCache(tenantId, tenant.getTenantKey());
 
         log.debug("📝 [DEBUG] After save - tenantId: {}, currentPackageId: {}, expiresAt: {}",
                 tenantId, tenant.getCurrentPackageId(), tenant.getExpiresAt());
@@ -202,30 +208,82 @@ public class TenantPackageService {
      */
     @Transactional(readOnly = true, transactionManager = "tenantTransactionManager")
     public TenantPackageInfo getCurrentTenantPackageInfo(Long tenantId) {
+        String cacheKey = CacheConstants.Tenant.TENANT_PACKAGE_INFO + tenantId;
+        
+        TenantPackageInfo cached = cacheService.get(cacheKey, TenantPackageInfo.class);
+        if (cached != null) {
+            log.debug("[TenantPackageService] Cache hit for tenant package info: {}", tenantId);
+            return cached;
+        }
+        
         Tenant tenant = tenantRepository.findById(tenantId)
                 .orElseThrow(() -> new TenantNotFoundException("Tenant not found: " + tenantId));
-        return buildPackageInfoWithExpirationCheck(tenant);
+        TenantPackageInfo result = buildPackageInfoWithExpirationCheck(tenant);
+        
+        cacheService.set(cacheKey, result, Duration.ofSeconds(CacheConstants.TTL.TENANT_PACKAGE));
+        log.debug("[TenantPackageService] Cached tenant package info: {}", tenantId);
+        
+        return result;
     }
 
     @Transactional(readOnly = true, transactionManager = "tenantTransactionManager")
     public TenantPackageInfo getCurrentTenantPackageInfoByKey(String tenantKey) {
+        String cacheKey = CacheConstants.Tenant.TENANT_PACKAGE_INFO + "key:" + tenantKey;
+        
+        TenantPackageInfo cached = cacheService.get(cacheKey, TenantPackageInfo.class);
+        if (cached != null) {
+            log.debug("[TenantPackageService] Cache hit for tenant package info by key: {}", tenantKey);
+            return cached;
+        }
+        
         Tenant tenant = tenantRepository.findByTenantKey(tenantKey)
                 .orElseThrow(() -> new TenantNotFoundException("Tenant not found: " + tenantKey));
-        return buildPackageInfoWithExpirationCheck(tenant);
+        TenantPackageInfo result = buildPackageInfoWithExpirationCheck(tenant);
+        
+        cacheService.set(cacheKey, result, Duration.ofSeconds(CacheConstants.TTL.TENANT_PACKAGE));
+        log.debug("[TenantPackageService] Cached tenant package info by key: {}", tenantKey);
+        
+        return result;
     }
 
     @Transactional(readOnly = true, transactionManager = "tenantTransactionManager")
     public Package getCurrentTenantPackage(Long tenantId) {
+        String cacheKey = CacheConstants.Tenant.TENANT_PACKAGE + tenantId;
+        
+        Package cached = cacheService.get(cacheKey, Package.class);
+        if (cached != null) {
+            log.debug("[TenantPackageService] Cache hit for tenant package: {}", tenantId);
+            return cached;
+        }
+        
         Tenant tenant = tenantRepository.findById(tenantId)
                 .orElseThrow(() -> new TenantNotFoundException("Tenant not found: " + tenantId));
-        return resolveCurrentPackageForTenant(tenant);
+        Package result = resolveCurrentPackageForTenant(tenant);
+        
+        cacheService.set(cacheKey, result, Duration.ofSeconds(CacheConstants.TTL.TENANT_PACKAGE));
+        log.debug("[TenantPackageService] Cached tenant package: {}", tenantId);
+        
+        return result;
     }
 
     @Transactional(readOnly = true, transactionManager = "tenantTransactionManager")
     public Package getCurrentTenantPackageByKey(String tenantKey) {
+        String cacheKey = CacheConstants.Tenant.TENANT_PACKAGE + "key:" + tenantKey;
+        
+        Package cached = cacheService.get(cacheKey, Package.class);
+        if (cached != null) {
+            log.debug("[TenantPackageService] Cache hit for tenant package by key: {}", tenantKey);
+            return cached;
+        }
+        
         Tenant tenant = tenantRepository.findByTenantKey(tenantKey)
                 .orElseThrow(() -> new TenantNotFoundException("Tenant not found: " + tenantKey));
-        return resolveCurrentPackageForTenant(tenant);
+        Package result = resolveCurrentPackageForTenant(tenant);
+        
+        cacheService.set(cacheKey, result, Duration.ofSeconds(CacheConstants.TTL.TENANT_PACKAGE));
+        log.debug("[TenantPackageService] Cached tenant package by key: {}", tenantKey);
+        
+        return result;
     }
 
     @Transactional(readOnly = true, transactionManager = "tenantTransactionManager")
@@ -251,6 +309,26 @@ public class TenantPackageService {
     }
 
     /* ================= PRIVATE HELPERS ================= */
+
+    /**
+     * Invalidate tenant package cache for both ID and key lookups.
+     */
+    private void invalidateTenantPackageCache(Long tenantId, String tenantKey) {
+        if (tenantId != null) {
+            String infoKey = CacheConstants.Tenant.TENANT_PACKAGE_INFO + tenantId;
+            String packageKey = CacheConstants.Tenant.TENANT_PACKAGE + tenantId;
+            cacheService.delete(infoKey);
+            cacheService.delete(packageKey);
+            log.debug("[TenantPackageService] Invalidated cache for tenant ID: {}", tenantId);
+        }
+        if (tenantKey != null && !tenantKey.isBlank()) {
+            String infoKey = CacheConstants.Tenant.TENANT_PACKAGE_INFO + "key:" + tenantKey;
+            String packageKey = CacheConstants.Tenant.TENANT_PACKAGE + "key:" + tenantKey;
+            cacheService.delete(infoKey);
+            cacheService.delete(packageKey);
+            log.debug("[TenantPackageService] Invalidated cache for tenant key: {}", tenantKey);
+        }
+    }
 
     /**
      * Result holder for package resolution with expiration check.
