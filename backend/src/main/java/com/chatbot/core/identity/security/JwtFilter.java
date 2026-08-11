@@ -37,6 +37,8 @@ public class JwtFilter extends OncePerRequestFilter {
         this.jwtService = jwtService;
         this.authService = authService;
         this.objectMapper = new ObjectMapper();
+        this.objectMapper.registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule());
+        this.objectMapper.configure(com.fasterxml.jackson.databind.SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
     }
 
     @Override

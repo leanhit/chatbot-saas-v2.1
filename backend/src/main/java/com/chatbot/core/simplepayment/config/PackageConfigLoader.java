@@ -16,7 +16,13 @@ import java.util.Map;
 public class PackageConfigLoader {
 
     private PackageConfig packageConfig;
-    private final ObjectMapper yamlMapper = new ObjectMapper(new YAMLFactory());
+    private final ObjectMapper yamlMapper;
+
+    public PackageConfigLoader() {
+        this.yamlMapper = new ObjectMapper(new YAMLFactory());
+        this.yamlMapper.registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule());
+        this.yamlMapper.configure(com.fasterxml.jackson.databind.SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
+    }
 
     @PostConstruct
     public void loadConfiguration() {

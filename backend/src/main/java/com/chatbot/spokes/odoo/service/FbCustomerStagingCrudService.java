@@ -16,10 +16,13 @@ import org.springframework.transaction.annotation.Transactional;
 public class FbCustomerStagingCrudService {
 
     private final FbCustomerStagingRepository repository;
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper;
 
     public FbCustomerStagingCrudService(FbCustomerStagingRepository repository) {
         this.repository = repository;
+        this.objectMapper = new ObjectMapper();
+        this.objectMapper.registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule());
+        this.objectMapper.configure(com.fasterxml.jackson.databind.SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
     }
 
     /** 🔹 Tạo hoặc cập nhật thông tin tạm */

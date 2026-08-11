@@ -27,6 +27,8 @@ public class LocationService {
     public void initData() {
         try {
             ObjectMapper mapper = new ObjectMapper();
+            mapper.registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule());
+            mapper.configure(com.fasterxml.jackson.databind.SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
             
             // Load provinces
             InputStream provincesStream = getClass().getClassLoader()

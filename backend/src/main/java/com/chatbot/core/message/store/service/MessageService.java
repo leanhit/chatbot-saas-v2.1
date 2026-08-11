@@ -9,7 +9,6 @@ import com.chatbot.core.message.store.repository.MessageRepository;
 import com.chatbot.core.tenant.infra.TenantContext;
 import com.chatbot.core.message.usage.service.MessageUsageService;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,14 +19,22 @@ import java.util.List;
 import java.util.Optional;
 
 @Service
-@RequiredArgsConstructor
 @Slf4j
 public class MessageService {
 
     private final MessageRepository messageRepo;
     private final ConversationRepository conversationRepo; // Cần inject ConversationRepository để cập nhật lastMessageId
     private final MessageUsageService messageUsageService;
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper;
+
+    public MessageService(MessageRepository messageRepo, ConversationRepository conversationRepo, MessageUsageService messageUsageService) {
+        this.messageRepo = messageRepo;
+        this.conversationRepo = conversationRepo;
+        this.messageUsageService = messageUsageService;
+        this.objectMapper = new ObjectMapper();
+        this.objectMapper.registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule());
+        this.objectMapper.configure(com.fasterxml.jackson.databind.SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
+    }
 
     /**
      * Lưu tin nhắn và cập nhật Conversation tương ứng.

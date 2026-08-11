@@ -23,7 +23,7 @@ public class BankApiService {
     private final RedisTemplate<String, Object> redisTemplate;
     private final RedisPaymentService redisPaymentService;
     private final SimplePaymentRepository paymentRepository;
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper;
 
     public BankApiService(
             RedisTemplate<String, Object> redisTemplate,
@@ -32,6 +32,9 @@ public class BankApiService {
         this.redisTemplate = redisTemplate;
         this.redisPaymentService = redisPaymentService;
         this.paymentRepository = paymentRepository;
+        this.objectMapper = new ObjectMapper();
+        this.objectMapper.registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule());
+        this.objectMapper.configure(com.fasterxml.jackson.databind.SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
     }
 
     /**

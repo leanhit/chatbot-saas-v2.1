@@ -24,7 +24,7 @@ public class CustomerDataService {
     private final FacebookConnectionRepository connectionRepository;
     private final FbCustomerStagingCrudService crudService;
     private final CustomerInfoExtractor infoExtractor;
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper;
     private final FbCapturedPhoneService phoneService;
 
     public CustomerDataService(
@@ -37,6 +37,9 @@ public class CustomerDataService {
         this.connectionRepository = connectionRepository;
         this.infoExtractor = infoExtractor;
         this.phoneService = phoneService;
+        this.objectMapper = new ObjectMapper();
+        this.objectMapper.registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule());
+        this.objectMapper.configure(com.fasterxml.jackson.databind.SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
     }
 
     public boolean processAndAccumulate(String pageId, String senderId, String text) {
