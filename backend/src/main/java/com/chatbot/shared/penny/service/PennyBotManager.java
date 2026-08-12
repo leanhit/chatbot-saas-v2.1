@@ -1,580 +1,81 @@
 package com.chatbot.shared.penny.service;
 
-import com.chatbot.shared.penny.context.ContextManager;
-import com.chatbot.shared.penny.analytics.AnalyticsCollector;
 import com.chatbot.shared.penny.model.PennyBot;
 import com.chatbot.shared.penny.model.PennyBotType;
-import com.chatbot.shared.penny.repository.PennyBotRepository;
-import com.chatbot.core.tenant.infra.TenantContext;
-import com.chatbot.core.tenant.service.PackageLimitValidationService;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.security.access.AccessDeniedException;
 
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
 /**
- * Penny Bot Manager - Enhanced bot management with intelligent features
- * Manages CRUD operations directly on middleware layer
+ * Penny Bot Manager - Facade service delegating lifecycle, analytics, and health operations
+ * to specialized domain services (PennyBotCrudService, PennyBotAnalyticsService, PennyBotHealthService).
  */
 @Service
+@RequiredArgsConstructor
 @Slf4j
 public class PennyBotManager {
     
-    private final PennyBotRepository pennyBotRepository;
-    private final ContextManager contextManager;
-    private final AnalyticsCollector analyticsCollector;
-    private final PackageLimitValidationService limitValidationService;
-    private final com.chatbot.shared.penny.core.PennyMiddlewareEngine pennyMiddlewareEngine;
-    private final com.chatbot.core.message.store.repository.ConversationRepository conversationRepository;
-    private final com.chatbot.shared.penny.security.InputSanitizer inputSanitizer;
+    private final PennyBotCrudService pennyBotCrudService;
+    private final PennyBotAnalyticsService pennyBotAnalyticsService;
+    private final PennyBotHealthService pennyBotHealthService;
     
-    public PennyBotManager(PennyBotRepository pennyBotRepository,
-                         ContextManager contextManager,
-                         AnalyticsCollector analyticsCollector,
-                         PackageLimitValidationService limitValidationService,
-                         com.chatbot.shared.penny.core.PennyMiddlewareEngine pennyMiddlewareEngine,
-                         com.chatbot.core.message.store.repository.ConversationRepository conversationRepository,
-                         com.chatbot.shared.penny.security.InputSanitizer inputSanitizer) {
-        this.pennyBotRepository = pennyBotRepository;
-        this.contextManager = contextManager;
-        this.analyticsCollector = analyticsCollector;
-        this.limitValidationService = limitValidationService;
-        this.pennyMiddlewareEngine = pennyMiddlewareEngine;
-        this.conversationRepository = conversationRepository;
-        this.inputSanitizer = inputSanitizer;
-    }
-    
-    /**
-     * Create Penny Bot with tenant validation and type selection
-     */
-    @Transactional
     public PennyBot createBot(String ownerId, String botName, PennyBotType botType, String description) {
-        log.info("🤖 Creating Penny bot: {} of type: {} for owner: {}", botName, botType, ownerId);
-        
-        // 1. Get current tenant context
-        Long tenantId = TenantContext.getTenantId();
-        if (tenantId == null) {
-            throw new IllegalStateException("Tenant context not found");
-        }
-        
-        // 2. VALIDATE CHATBOT LIMIT FROM SIMPLE PAYMENT SYSTEM
-        log.info("🔍 Checking chatbot limit for tenant {} before creating bot", tenantId);
-        limitValidationService.validateChatbotCreation(tenantId);
-        log.info("✅ Chatbot limit validation passed for tenant {}", tenantId);
-        
-        // 3. Check if tenant already has bot of this type
-        if (pennyBotRepository.existsByTenantIdAndBotTypeAndIsActiveTrue(tenantId, botType)) {
-            throw new IllegalStateException(
-                "Tenant " + tenantId + " already has an active " + botType.getDisplayName() + " bot"
-            );
-        }
-        
-        // 4. Create Penny Bot entity
-        PennyBot newBot = PennyBot.builder()
-            .id(UUID.randomUUID())
-            .botName(botName)
-            .botType(botType)
-            .tenantId(tenantId)
-            .ownerId(ownerId)
-            .pennyBotId(botType.getPennyBotId()) // Get from enum mapping
-            .description(description)
-            .isActive(true)
-            .isEnabled(true)
-            .build();
-        
-        // 5. Save to database
-        PennyBot savedBot = pennyBotRepository.save(newBot);
-        
-        // 5. Initialize Penny context for bot
-        try {
-            contextManager.initializeBotContext(savedBot.getId().toString(), tenantId, botType);
-            log.info("🧠 Initialized Penny context for bot: {}", savedBot.getId());
-        } catch (Exception e) {
-            log.error("❌ Failed to initialize context for bot {}: {}", savedBot.getId(), e.getMessage());
-            // Continue anyway - bot is created, context can be fixed later
-        }
-        
-        // 6. Configure analytics
-        try {
-            analyticsCollector.configureBotAnalytics(savedBot.getId().toString());
-            log.info("📊 Configured analytics for bot: {}", savedBot.getId());
-        } catch (Exception e) {
-            log.error("❌ Failed to configure analytics for bot {}: {}", savedBot.getId(), e.getMessage());
-            // Continue anyway - bot is created, analytics can be fixed later
-        }
-        
-        log.info("✅ Penny bot created successfully: {} (ID: {})", savedBot.getBotName(), savedBot.getId());
-        return savedBot;
+        return pennyBotCrudService.createBot(ownerId, botName, botType, description);
     }
     
-    /**
-     * Auto-create bot for Facebook connection based on tenant needs
-     */
-    @Transactional
     public PennyBot autoCreateBotForConnection(String ownerId, String pageId) {
-        log.info("🤖 Auto-creating Penny bot for connection: pageId={}, owner={}", pageId, ownerId);
-        
-        Long tenantId = TenantContext.getTenantId();
-        if (tenantId == null) {
-            throw new IllegalStateException("Tenant context not found for auto-creation");
-        }
-        
-        // Determine best bot type based on tenant's existing bots
-        PennyBotType botType = determineBestBotType(tenantId);
-        
-        String botName = "Auto-Bot-" + pageId + "-" + botType.name().toLowerCase();
-        String description = "Auto-generated " + botType.getDisplayName() + " bot for Facebook page: " + pageId;
-        
-        return createBot(ownerId, botName, botType, description);
+        return pennyBotCrudService.autoCreateBotForConnection(ownerId, pageId);
     }
     
-    /**
-     * Update bot information
-     */
-    @Transactional
     public PennyBot updateBot(UUID botId, String botName, String description, Boolean isEnabled) {
-        log.info("🔄 Updating Penny bot: {}", botId);
-        
-        PennyBot bot = pennyBotRepository.findById(botId)
-            .orElseThrow(() -> new IllegalArgumentException("Bot not found: " + botId));
-        
-        if (botName != null && !botName.isBlank()) {
-            bot.setBotName(botName);
-        }
-        
-        if (description != null) {
-            bot.setDescription(description);
-        }
-        
-        if (isEnabled != null) {
-            bot.setEnabled(isEnabled);
-        }
-        
-        PennyBot updatedBot = pennyBotRepository.save(bot);
-        log.info("✅ Penny bot updated successfully: {}", updatedBot.getId());
-        
-        return updatedBot;
+        return pennyBotCrudService.updateBot(botId, botName, description, isEnabled);
     }
     
-    /**
-     * Kiểm tra bot có thể xóa được không (connections và conversations)
-     */
-    public void checkBotCanBeDeleted(UUID botId, String ownerId) {
-        log.info("� Checking if bot can be deleted: {} by owner: {}", botId, ownerId);
-        
-        PennyBot bot = getBot(botId);
-        
-        // Verify ownership
-        if (!bot.getOwnerId().equals(ownerId)) {
-            throw new IllegalArgumentException("Bot does not belong to owner: " + ownerId);
-        }
-        
-        // 1. Check active connections
-        if (hasActiveConnections(botId)) {
-            throw new IllegalStateException("Cannot delete bot: Bot has active connections. Please disconnect them first.");
-        }
-        
-        // 2. Check recent conversations
-        if (hasRecentConversations(botId)) {
-            throw new IllegalStateException("Cannot delete bot: Bot has recent conversations. Please wait or archive them first.");
-        }
-        
-        log.info("✅ Bot {} can be safely deleted", botId);
-    }
-    
-    /**
-     * Delete bot (soft delete) with basic checks
-     */
-    @Transactional
-    public boolean deleteBot(UUID botId, String ownerId) {
-        log.info("🗑️ Deleting Penny bot: {} by owner: {}", botId, ownerId);
-        
-        // Check if bot can be deleted
-        checkBotCanBeDeleted(botId, ownerId);
-        
-        try {
-            // 1. Cleanup Penny context (non-critical)
-            try {
-                contextManager.cleanupBotContext(botId.toString());
-                log.info("✅ Cleaned up Penny context for bot: {}", botId);
-            } catch (Exception e) {
-                log.warn("⚠️ Failed to cleanup Penny context for bot {}: {}", botId, e.getMessage());
-            }
-            
-            // 2. Cleanup analytics (non-critical)
-            try {
-                analyticsCollector.cleanupBotAnalytics(botId.toString());
-                log.info("✅ Cleaned up analytics for bot: {}", botId);
-            } catch (Exception e) {
-                log.warn("⚠️ Failed to cleanup analytics for bot {}: {}", botId, e.getMessage());
-            }
-            
-            // 3. Hard delete from database (critical)
-            pennyBotRepository.hardDeleteBot(botId);
-            log.info("✅ Hard deleted bot from database: {}", botId);
-            
-            log.info("✅ Penny bot deleted successfully: {}", botId);
-            return true;
-            
-        } catch (Exception e) {
-            log.error("❌ Critical error deleting Penny bot {}: {}", botId, e.getMessage(), e);
-            throw new RuntimeException("Failed to delete bot: " + e.getMessage(), e);
-        }
-    }
-    
-    // Helper methods
-    private boolean hasActiveConnections(UUID botId) {
-        // Check for active Facebook connections
-        try {
-            // Note: botId in PennyBot is UUID, but in FacebookConnection it's stored as String
-            // We need to check if there are any active connections for this bot
-            Long tenantId = TenantContext.getTenantId();
-            if (tenantId == null) {
-                return false;
-            }
-            
-            // For now, we'll check if there are any active connections for the tenant
-            // In a full implementation, we would need to inject FacebookConnectionRepository
-            // and query by botId specifically
-            return false; // Will be implemented when connection tracking is added
-        } catch (Exception e) {
-            log.warn("Error checking active connections for bot {}: {}", botId, e.getMessage());
-            return false;
-        }
-    }
-    
-    private boolean hasRecentConversations(UUID botId) {
-        // Check for recent conversations (last 7 days)
-        try {
-            // Note: PennyBot uses UUID for botId, but Conversation uses connectionId (UUID)
-            // We would need to map botId to connectionId to check conversations
-            // For now, return false as conversation tracking for PennyBot needs to be implemented
-            return false;
-        } catch (Exception e) {
-            log.warn("Error checking recent conversations for bot {}: {}", botId, e.getMessage());
-            return false;
-        }
-    }
-    
-    /**
-     * Get bot by ID with tenant context
-     */
-    public PennyBot getBot(UUID botId) {
-        Long tenantId = TenantContext.getTenantId();
-        if (tenantId != null) {
-            return pennyBotRepository.findByIdAndTenantId(botId, tenantId)
-                .orElseThrow(() -> new IllegalArgumentException("Bot not found for tenant " + tenantId + ": " + botId));
-        }
-        // Fallback to non-tenant lookup if no tenant context
-        return pennyBotRepository.findById(botId)
-            .orElseThrow(() -> new IllegalArgumentException("Bot not found: " + botId));
-    }
-    
-    /**
-     * Get all bots for owner
-     */
-    public List<PennyBot> getBotsForOwner(String ownerId) {
-        return pennyBotRepository.findActiveBotsByOwner(ownerId);
-    }
-    
-    /**
-     * Get all bots for current tenant
-     */
-    public List<PennyBot> getBotsForCurrentTenant() {
-        Long tenantId = TenantContext.getTenantId();
-        if (tenantId == null) {
-            throw new IllegalStateException("Tenant context not found");
-        }
-        return pennyBotRepository.findByTenantIdAndIsActiveTrue(tenantId);
-    }
-    
-    /**
-     * Get bot health status
-     */
-    public Map<String, Object> getBotHealth(UUID botId) {
-        PennyBot bot = getBot(botId);
-        
-        Map<String, Object> health = new java.util.HashMap<>();
-        
-        // Bot status
-        health.put("botStatus", bot.isActive() && bot.isEnabled() ? "healthy" : "unhealthy");
-        health.put("botType", bot.getBotType().name());
-        health.put("pennyBotId", bot.getPennyBotId());
-        
-        // Penny context health
-        boolean contextHealthy = contextManager.isBotContextHealthy(botId.toString());
-        health.put("context", contextHealthy ? "healthy" : "unhealthy");
-        
-        // Analytics health
-        boolean analyticsHealthy = analyticsCollector.isBotAnalyticsHealthy(botId.toString());
-        health.put("analytics", analyticsHealthy ? "healthy" : "unhealthy");
-        
-        // Overall status
-        boolean overallHealthy = bot.isActive() && bot.isEnabled() && contextHealthy && analyticsHealthy;
-        health.put("overall", overallHealthy ? "healthy" : "unhealthy");
-        
-        return health;
-    }
-    
-    /**
-     * Update bot information
-     */
-    @Transactional
     public PennyBot updateBot(UUID botId, Map<String, Object> updates, String ownerId) {
-        log.info("📝 Updating Penny bot: {} with updates: {}", botId, updates);
-        
-        PennyBot bot = getBot(botId);
-        
-        // Verify ownership
-        if (!bot.getOwnerId().equals(ownerId)) {
-            throw new AccessDeniedException("Not authorized to update this bot");
-        }
-        
-        // Update fields
-        if (updates.containsKey("botName")) {
-            bot.setBotName((String) updates.get("botName"));
-        }
-        
-        if (updates.containsKey("botType")) {
-            String botTypeStr = (String) updates.get("botType");
-            bot.setBotType(PennyBotType.fromString(botTypeStr));
-        }
-        
-        if (updates.containsKey("description")) {
-            bot.setDescription((String) updates.get("description"));
-        }
-        
-        if (updates.containsKey("isActive")) {
-            bot.setActive((Boolean) updates.get("isActive"));
-        }
-        
-        if (updates.containsKey("isEnabled")) {
-            bot.setEnabled((Boolean) updates.get("isEnabled"));
-        }
-        
-        // Update timestamp
-        bot.setUpdatedAt(java.time.LocalDateTime.now());
-        
-        PennyBot savedBot = pennyBotRepository.save(bot);
-        
-        log.info("✅ Penny bot updated successfully: {}", savedBot.getBotName());
-        return savedBot;
+        return pennyBotCrudService.updateBot(botId, updates, ownerId);
     }
     
-    /**
-     * Toggle bot status (active/inactive)
-     */
-    @Transactional
     public PennyBot toggleBotStatus(UUID botId, boolean enabled, String ownerId) {
-        log.info("🔄 Toggling Penny bot: {} to {} by owner: {}", botId, enabled, ownerId);
-        
-        PennyBot bot = getBot(botId);
-        
-        // Verify ownership
-        if (!bot.getOwnerId().equals(ownerId)) {
-            throw new AccessDeniedException("Not authorized to toggle this bot status");
-        }
-        
-        // Update both isActive and isEnabled for proper functionality
-        bot.setEnabled(enabled);
-        bot.setActive(enabled); // Also update isActive to match frontend logic
-        bot.setUpdatedAt(java.time.LocalDateTime.now());
-        
-        PennyBot savedBot = pennyBotRepository.save(bot);
-        
-        log.info("✅ Penny bot status toggled successfully: {} -> active: {}, enabled: {}", 
-                savedBot.getBotName(), savedBot.isActive(), savedBot.isEnabled());
-        return savedBot;
+        return pennyBotCrudService.toggleBotStatus(botId, enabled, ownerId);
     }
     
-    /**
-     * Process message through Penny middleware
-     */
+    public void checkBotCanBeDeleted(UUID botId, String ownerId) {
+        pennyBotCrudService.checkBotCanBeDeleted(botId, ownerId);
+    }
+    
+    public boolean deleteBot(UUID botId, String ownerId) {
+        return pennyBotCrudService.deleteBot(botId, ownerId);
+    }
+    
+    public PennyBot getBot(UUID botId) {
+        return pennyBotCrudService.getBot(botId);
+    }
+    
+    public List<PennyBot> getBotsForOwner(String ownerId) {
+        return pennyBotCrudService.getBotsForOwner(ownerId);
+    }
+    
+    public List<PennyBot> getBotsForCurrentTenant() {
+        return pennyBotCrudService.getBotsForCurrentTenant();
+    }
+    
     public String processMessage(UUID botId, String message, String userId, boolean isTestMode) {
-        return processMessage(botId, message, userId, null, isTestMode);
+        return pennyBotCrudService.processMessage(botId, message, userId, isTestMode);
     }
 
-    /**
-     * Process message through Penny middleware with explicit ownerId for authorization
-     */
     public String processMessage(UUID botId, String message, String userId, String ownerId, boolean isTestMode) {
-        log.info("💬 Processing message for bot {} by userId {} - ownerId {} - TestMode: {} - Message: {}", botId, userId, ownerId, isTestMode, message);
-        
-        try {
-            // Sanitize input to prevent XSS and injection attacks
-            String sanitizedMessage = inputSanitizer.sanitizeMessage(message);
-            
-            // Check for malicious content
-            if (inputSanitizer.isMalicious(message)) {
-                log.warn("⚠️ Potentially malicious content detected in message for bot {}", botId);
-                return "Tin nhắn của bạn chứa nội dung không hợp lệ. Vui lòng thử lại.";
-            }
-            
-            // Validate message length
-            if (!inputSanitizer.isValidLength(message)) {
-                log.warn("⚠️ Message too long for bot {}", botId);
-                return "Tin nhắn quá dài. Vui lòng gửi tin nhắn ngắn hơn.";
-            }
-            
-            PennyBot bot = getBot(botId);
-            
-            // Skip ownership check if ownerId is null (webhook context) or public access
-            if (ownerId != null && !"public".equals(ownerId)) {
-                // Verify ownership for authenticated access
-                if (!bot.getOwnerId().equals(ownerId)) {
-                    throw new AccessDeniedException("Not authorized to process messages for this bot");
-                }
-            }
-            
-            // Check if bot is active
-            if (!bot.isActive() || !bot.isEnabled()) {
-                return "Bot is currently inactive. Please activate the bot first.";
-            }
-            
-            // Process through PennyMiddlewareEngine
-            try {
-                com.chatbot.shared.penny.dto.request.MiddlewareRequest middlewareRequest = 
-                    com.chatbot.shared.penny.dto.request.MiddlewareRequest.builder()
-                        .userId(userId)
-                        .message(sanitizedMessage)
-                        .platform("facebook")
-                        .botId(botId.toString())
-                        .timestamp(java.time.Instant.now())
-                        .build();
-                
-                com.chatbot.shared.penny.dto.response.MiddlewareResponse response = 
-                    pennyMiddlewareEngine.processMessage(middlewareRequest);
-                
-                // Update bot's last used timestamp
-                bot.setLastUsedAt(java.time.LocalDateTime.now());
-                pennyBotRepository.save(bot);
-                
-                return response.getResponse();
-                
-            } catch (Exception e) {
-                log.error("❌ Error in PennyMiddlewareEngine processing: {}", e.getMessage(), e);
-                // Fallback to simple response
-                return "Xin chào! Tôi đã nhận được tin nhắn của bạn. Hiện tại hệ thống đang gặp sự cố kỹ thuật, vui lòng thử lại sau.";
-            }
-            
-        } catch (AccessDeniedException e) {
-            log.error("❌ Access denied for bot {}: {}", botId, e.getMessage());
-            return "Bạn không có quyền truy cập vào bot này.";
-        } catch (Exception e) {
-            log.error("❌ Error processing message for bot {}: {}", botId, e.getMessage(), e);
-            return "Sorry, I encountered an error while processing your message. Please try again.";
-        }
+        return pennyBotCrudService.processMessage(botId, message, userId, ownerId, isTestMode);
     }
     
-    /**
-     * Get bot analytics
-     */
+    public Map<String, Object> getBotHealth(UUID botId) {
+        return pennyBotHealthService.getBotHealth(botId);
+    }
+    
     public Map<String, Object> getBotAnalytics(UUID botId, String timeRange, String ownerId) {
-        log.info("📊 Getting analytics for bot: {} with range: {}", botId, timeRange);
-        
-        PennyBot bot = getBot(botId);
-        
-        // Verify ownership
-        if (!bot.getOwnerId().equals(ownerId)) {
-            throw new AccessDeniedException("Not authorized to view analytics for this bot");
-        }
-        
-        Map<String, Object> analytics = new java.util.HashMap<>();
-        
-        // Get real analytics from engine
-        com.chatbot.shared.penny.core.PennyMiddlewareEngine.EngineMetrics metrics = pennyMiddlewareEngine.getEngineMetrics();
-        
-        Map<String, Object> collectorAnalytics = new java.util.HashMap<>();
-        collectorAnalytics.put("totalConversations", metrics.getTotalProcessed());
-        collectorAnalytics.put("totalMessages", metrics.getTotalProcessed()); // approximation if no messages tracking exists
-        collectorAnalytics.put("averageResponseTime", metrics.getAverageProcessingTime());
-        collectorAnalytics.put("errorRate", metrics.getErrorRate() * 100);
-        
-        // Real satisfaction tracking via user feedback/ratings
-        Long tenantId = TenantContext.getTenantId();
-        Double averageSatisfactionRating = null;
-        if (tenantId != null) {
-            try {
-                averageSatisfactionRating = conversationRepository.getAverageSatisfactionRating(tenantId);
-            } catch (Exception e) {
-                log.warn("Failed to get average satisfaction rating for tenant {}: {}", tenantId, e.getMessage());
-            }
-        }
-        // Convert rating (1-5) to percentage (0-100)
-        double satisfactionRate = (averageSatisfactionRating != null) ? (averageSatisfactionRating / 5.0) * 100 : 0.0;
-        collectorAnalytics.put("satisfactionRate", satisfactionRate);
-        
-        // Real resolution tracking via resolved vs unresolved conversations
-        long resolvedCount = 0;
-        long unresolvedCount = 0;
-        long totalCount = 0;
-        if (tenantId != null) {
-            try {
-                resolvedCount = conversationRepository.countResolvedConversations(tenantId);
-                unresolvedCount = conversationRepository.countUnresolvedConversations(tenantId);
-                totalCount = conversationRepository.countTotalConversationsForResolution(tenantId);
-            } catch (Exception e) {
-                log.warn("Failed to get resolution counts for tenant {}: {}", tenantId, e.getMessage());
-            }
-        }
-        double resolutionRate = (totalCount > 0) ? ((double) resolvedCount / totalCount) * 100 : 0.0;
-        collectorAnalytics.put("resolutionRate", resolutionRate);
-        collectorAnalytics.put("resolvedCount", resolvedCount);
-        collectorAnalytics.put("unresolvedCount", unresolvedCount);
-        
-        // Uptime should be calculated from PennyMetricsService which tracks actual startup time
-        // Using 99.9% as placeholder for now - should be fetched from PennyMetricsService
-        collectorAnalytics.put("uptime", 99.9);
-        
-        // Add bot information
-        analytics.put("botId", botId.toString());
-        analytics.put("botName", bot.getBotName());
-        analytics.put("botType", bot.getBotType().name());
-        analytics.put("timeRange", timeRange);
-        analytics.put("isActive", bot.isActive());
-        analytics.put("isEnabled", bot.isEnabled());
-        analytics.put("createdAt", bot.getCreatedAt().toString());
-        analytics.put("lastUsedAt", bot.getLastUsedAt() != null ? bot.getLastUsedAt().toString() : null);
-        
-        // Add analytics data
-        analytics.putAll(collectorAnalytics);
-        
-        // Add calculated metrics
-        analytics.put("totalConversations", collectorAnalytics.getOrDefault("totalConversations", 0));
-        analytics.put("totalMessages", collectorAnalytics.getOrDefault("totalMessages", 0));
-        analytics.put("averageResponseTime", collectorAnalytics.getOrDefault("averageResponseTime", 0));
-        analytics.put("satisfactionRate", collectorAnalytics.getOrDefault("satisfactionRate", 0));
-        analytics.put("resolutionRate", collectorAnalytics.getOrDefault("resolutionRate", 0));
-        
-        return analytics;
-    }
-    
-    /**
-     * Determine the best bot type for a tenant based on existing bots
-     */
-    private PennyBotType determineBestBotType(Long tenantId) {
-        List<PennyBot> existingBots = pennyBotRepository.findByTenantIdAndIsActiveTrue(tenantId);
-        
-        // If tenant has no bots, default to SUPPORT
-        if (existingBots.isEmpty()) {
-            return PennyBotType.SUPPORT;
-        }
-        
-        // Check what types they already have
-        for (PennyBotType type : PennyBotType.values()) {
-            boolean hasType = existingBots.stream()
-                .anyMatch(bot -> bot.getBotType() == type);
-            
-            if (!hasType) {
-                return type; // Return first missing type
-            }
-        }
-        
-        // If they have all types, default to GENERAL
-        return PennyBotType.GENERAL;
+        return pennyBotAnalyticsService.getBotAnalytics(botId, timeRange, ownerId);
     }
 }

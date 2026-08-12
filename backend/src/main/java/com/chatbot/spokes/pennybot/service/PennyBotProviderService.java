@@ -88,10 +88,7 @@ public class PennyBotProviderService implements ChatbotProviderService {
      */
     private void saveBotMessageToDatabase(String botId, String senderId, String messageText) {
         try {
-            log.debug("=== DEBUG PENNY BOT SAVING AGENT MESSAGE ===");
-            log.debug("Bot ID: {}", botId);
-            log.debug("Sender ID: {}", senderId);
-            log.debug("Message: {}", messageText);
+            log.debug("Saving agent message to DB - botId: {}, senderId: {}", botId, senderId);
             
             // Generate unique message ID for idempotency check
             String messageId = "penny_agent_" + botId + "_" + senderId + "_" + messageText.hashCode() + "_" + System.currentTimeMillis();
@@ -99,7 +96,6 @@ public class PennyBotProviderService implements ChatbotProviderService {
             
             // Check if message already exists (idempotency)
             if (messageService.messageExists(messageId)) {
-                log.debug("=== PENNY BOT: Agent message ALREADY EXISTS, skipping save ===");
                 log.info("Agent message already exists, skipping save: {}", messageId);
                 return;
             }
@@ -117,7 +113,7 @@ public class PennyBotProviderService implements ChatbotProviderService {
                 java.util.Optional<Conversation> conversation = conversationRepository.findByExternalUserIdAndConnectionId(senderId, connection.getId());
                 if (conversation.isPresent()) {
                     targetConnection = connection;
-                    log.info("🎯 Found matching connection {} for senderId {} via conversation lookup", connection.getId(), senderId);
+                    log.info("Found matching connection {} for senderId {} via conversation lookup", connection.getId(), senderId);
                     break;
                 }
             }
@@ -125,7 +121,7 @@ public class PennyBotProviderService implements ChatbotProviderService {
             // If no matching conversation found, use first connection (fallback)
             if (targetConnection == null) {
                 targetConnection = connections.get(0);
-                log.warn("⚠️ No matching conversation found for senderId {}. Using first connection: {}", senderId, targetConnection.getId());
+                log.warn("No matching conversation found for senderId {}. Using first connection: {}", senderId, targetConnection.getId());
             }
             
             // Find conversation by externalUserId and connectionId
@@ -143,11 +139,10 @@ public class PennyBotProviderService implements ChatbotProviderService {
                 Map.of("externalMessageId", messageId, "botId", botId, "sentVia", "penny_bot")
             );
             
-            log.debug("=== PENNY BOT: Bot message SAVED to DB ===");
-            log.info(" Saved bot message to database. ConversationId: {}, SenderId: {}", conversation.getId(), senderId);
+            log.info("Saved bot message to database. ConversationId: {}, SenderId: {}", conversation.getId(), senderId);
             
         } catch (Exception e) {
-            log.error("❌ Failed to save bot message to database: {}", e.getMessage(), e);
+            log.error("Failed to save bot message to database: {}", e.getMessage(), e);
             // Don't throw exception to avoid blocking message flow
         }
     }
@@ -170,7 +165,7 @@ public class PennyBotProviderService implements ChatbotProviderService {
                 java.util.Optional<Conversation> conversation = conversationRepository.findByExternalUserIdAndConnectionId(senderId, connection.getId());
                 if (conversation.isPresent()) {
                     targetConnection = connection;
-                    log.info("🎯 Found matching connection {} for senderId {} via conversation lookup", connection.getId(), senderId);
+                    log.info("Found matching connection {} for senderId {} via conversation lookup", connection.getId(), senderId);
                     break;
                 }
             }
@@ -178,7 +173,7 @@ public class PennyBotProviderService implements ChatbotProviderService {
             // If no matching conversation found, use first connection (fallback)
             if (targetConnection == null) {
                 targetConnection = connections.get(0);
-                log.warn("⚠️ No matching conversation found for senderId {}. Using first connection: {}", senderId, targetConnection.getId());
+                log.warn("No matching conversation found for senderId {}. Using first connection: {}", senderId, targetConnection.getId());
             }
             
             // Get page access token from connection
@@ -191,10 +186,10 @@ public class PennyBotProviderService implements ChatbotProviderService {
                 messageText
             );
             
-            log.info("✅ Sent agent message to Facebook. PageId: {}, RecipientId: {}", targetConnection.getPageId(), senderId);
+            log.info("Sent agent message to Facebook. PageId: {}, RecipientId: {}", targetConnection.getPageId(), senderId);
             
         } catch (Exception e) {
-            log.error("❌ Failed to send agent message to Facebook: {}", e.getMessage(), e);
+            log.error("Failed to send agent message to Facebook: {}", e.getMessage(), e);
             // Don't throw exception to avoid blocking message flow
         }
     }

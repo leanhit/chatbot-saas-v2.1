@@ -206,4 +206,10 @@ public interface ConversationRepository extends JpaRepository<Conversation, Long
 
     @Query("SELECT COUNT(c) FROM Conversation c WHERE c.tenantId = :tenantId AND (c.resolutionStatus IS NULL OR c.resolutionStatus = 'pending')")
     Long countTotalConversationsForResolution(@Param("tenantId") Long tenantId);
+
+    @Query("SELECT COUNT(c) > 0 FROM Conversation c WHERE c.connectionId IN :connectionIds AND c.updatedAt >= :since")
+    boolean existsByConnectionIdInAndUpdatedAtAfter(
+        @Param("connectionIds") List<UUID> connectionIds,
+        @Param("since") java.time.LocalDateTime since
+    );
 }
