@@ -15,6 +15,7 @@ import java.util.stream.Collectors;
 
 /**
  * Penny Bot Selection Controller - API for selecting bots in connections
+ * All exceptions bubble up to GlobalExceptionHandler for standardized ErrorResponse output.
  */
 @RestController
 @RequestMapping("/api/penny/bots-selection")
@@ -27,19 +28,20 @@ public class PennyBotSelectionController {
         this.pennyBotManager = pennyBotManager;
     }
     
+    private Long getValidatedTenantId() {
+        Long tenantId = TenantContext.getTenantId();
+        if (tenantId == null) {
+            throw new IllegalStateException("Tenant context not found. Please provide X-Tenant-Key header");
+        }
+        return tenantId;
+    }
+
     /**
      * Get available bots for current tenant (for connection selection)
      */
     @GetMapping("/available")
     public ResponseEntity<List<Map<String, Object>>> getAvailableBots(Principal principal) {
-        // ✅ Validate tenant context
-        Long tenantId = TenantContext.getTenantId();
-        if (tenantId == null) {
-            return ResponseEntity.badRequest().body(List.of(Map.of(
-                "error", "Tenant context not found. Please provide X-Tenant-Key header"
-            )));
-        }
-        
+        Long tenantId = getValidatedTenantId();
         String ownerId = principal.getName();
         log.info("📋 Getting available Penny bots for owner: {} in tenant: {}", ownerId, tenantId);
         
@@ -87,16 +89,9 @@ public class PennyBotSelectionController {
      */
     @GetMapping("/can-create/{botType}")
     public ResponseEntity<Map<String, Object>> canCreateBotType(@PathVariable String botType) {
-        Long tenantId = TenantContext.getTenantId();
-        if (tenantId == null) {
-            return ResponseEntity.badRequest().body(Map.of(
-                "error", "Tenant context not found. Please provide X-Tenant-Key header"
-            ));
-        }
-        
+        Long tenantId = getValidatedTenantId();
         PennyBotType type = PennyBotType.fromString(botType);
         
-        // Check if tenant already has bot of this type
         List<PennyBot> existingBots = pennyBotManager.getBotsForCurrentTenant();
         boolean hasType = existingBots.stream()
             .anyMatch(bot -> bot.getBotType() == type);

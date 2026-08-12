@@ -7,8 +7,8 @@ import com.chatbot.shared.penny.service.PennyBotManager;
 import com.chatbot.shared.penny.model.PennyBot;
 import com.chatbot.shared.penny.model.PennyBotType;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
@@ -19,6 +19,7 @@ import java.util.stream.Collectors;
 
 /**
  * Penny Bot Controller - Unified bot management API
+ * All exceptions bubble up to GlobalExceptionHandler for standardized ErrorResponse output.
  */
 @RestController
 @RequestMapping("/api/penny/bots")
@@ -33,6 +34,20 @@ public class PennyBotController {
         this.tenantPermissionValidator = tenantPermissionValidator;
     }
     
+    private Long getValidatedTenantId() {
+        Long tenantId = TenantContext.getTenantId();
+        if (tenantId == null) {
+            throw new IllegalStateException("Tenant context not found. Please provide X-Tenant-Key header");
+        }
+        return tenantId;
+    }
+
+    private void validateOwnerOrEditor(Long tenantId, String userEmail, String action) {
+        if (!tenantPermissionValidator.isOwnerOrEditor(tenantId, userEmail)) {
+            throw new InsufficientPermissionException("Only OWNER or EDITOR can " + action);
+        }
+    }
+
     /**
      * Create new Penny-enhanced bot (OWNER or EDITOR only)
      */
@@ -41,21 +56,10 @@ public class PennyBotController {
             @RequestBody Map<String, String> request,
             Principal principal) {
 
-        // ✅ Validate tenant context
-        Long tenantId = TenantContext.getTenantId();
-        if (tenantId == null) {
-            return ResponseEntity.badRequest().body(Map.of(
-                "error", "Tenant context not found. Please provide X-Tenant-Key header"
-            ));
-        }
-
-        // Check if user is OWNER or EDITOR of the tenant
-        String userEmail = principal.getName();
-        if (!tenantPermissionValidator.isOwnerOrEditor(tenantId, userEmail)) {
-            throw new InsufficientPermissionException("Only OWNER or EDITOR can create bots");
-        }
-
+        Long tenantId = getValidatedTenantId();
         String ownerId = principal.getName();
+        validateOwnerOrEditor(tenantId, ownerId, "create bots");
+
         String botName = request.get("botName");
         String botTypeStr = request.getOrDefault("botType", "CUSTOMER_SERVICE");
         String description = request.getOrDefault("botDescription", "");
@@ -64,36 +68,18 @@ public class PennyBotController {
 
         log.info("🤖 Creating Penny bot for owner: {} in tenant: {}", ownerId, tenantId);
 
-        try {
-            PennyBot createdBot = pennyBotManager.createBot(ownerId, botName, botType, description);
+        PennyBot createdBot = pennyBotManager.createBot(ownerId, botName, botType, description);
 
-            return ResponseEntity.ok(Map.of(
-                "botId", createdBot.getId().toString(),
-                "botName", createdBot.getBotName(),
-                "botType", createdBot.getBotType().name(),
-                "pennyBotId", createdBot.getPennyBotId(),
-                "tenantId", tenantId,
-                "ownerId", ownerId,
-                "status", "created",
-                "message", "Penny bot created successfully"
-            ));
-        } catch (IllegalStateException e) {
-            return ResponseEntity.badRequest().body(Map.of(
-                "error", e.getMessage(),
-                "type", "VALIDATION_ERROR"
-            ));
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(Map.of(
-                "error", e.getMessage(),
-                "type", "BUSINESS_ERROR"
-            ));
-        } catch (Exception e) {
-            log.error("❌ [PennyBotController] Failed to create bot", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
-                "error", "Internal server error: " + e.getMessage(),
-                "type", "SYSTEM_ERROR"
-            ));
-        }
+        return ResponseEntity.ok(Map.of(
+            "botId", createdBot.getId().toString(),
+            "botName", createdBot.getBotName(),
+            "botType", createdBot.getBotType().name(),
+            "pennyBotId", createdBot.getPennyBotId(),
+            "tenantId", tenantId,
+            "ownerId", ownerId,
+            "status", "created",
+            "message", "Penny bot created successfully"
+        ));
     }
     
     /**
@@ -104,41 +90,24 @@ public class PennyBotController {
             @RequestBody Map<String, String> request,
             Principal principal) {
 
-        // ✅ Validate tenant context
-        Long tenantId = TenantContext.getTenantId();
-        if (tenantId == null) {
-            return ResponseEntity.badRequest().body(Map.of(
-                "error", "Tenant context not found. Please provide X-Tenant-Key header"
-            ));
-        }
-
-        // Check if user is OWNER or EDITOR of the tenant
-        String userEmail = principal.getName();
-        if (!tenantPermissionValidator.isOwnerOrEditor(tenantId, userEmail)) {
-            throw new InsufficientPermissionException("Only OWNER or EDITOR can auto-create bots");
-        }
-
+        Long tenantId = getValidatedTenantId();
         String ownerId = principal.getName();
+        validateOwnerOrEditor(tenantId, ownerId, "auto-create bots");
+
         String pageId = request.get("pageId");
 
         log.info("🤖 Auto-creating Penny bot for page: {} by owner: {}", pageId, ownerId);
 
         PennyBot createdBot = pennyBotManager.autoCreateBotForConnection(ownerId, pageId);
 
-        if (createdBot != null) {
-            return ResponseEntity.ok(Map.of(
-                "botId", createdBot.getId().toString(),
-                "pageId", pageId,
-                "ownerId", ownerId,
-                "botType", createdBot.getBotType().name(),
-                "status", "auto-created",
-                "message", "Penny bot auto-created for Facebook connection"
-            ));
-        } else {
-            return ResponseEntity.badRequest().body(Map.of(
-                "error", "Failed to auto-create Penny bot"
-            ));
-        }
+        return ResponseEntity.ok(Map.of(
+            "botId", createdBot.getId().toString(),
+            "pageId", pageId,
+            "ownerId", ownerId,
+            "botType", createdBot.getBotType().name(),
+            "status", "auto-created",
+            "message", "Penny bot auto-created for Facebook connection"
+        ));
     }
     
     /**
@@ -215,43 +184,25 @@ public class PennyBotController {
             @RequestBody Map<String, Object> updates,
             Principal principal) {
 
-        // ✅ Validate tenant context
-        Long tenantId = TenantContext.getTenantId();
-        if (tenantId == null) {
-            return ResponseEntity.badRequest().body(Map.of(
-                "error", "Tenant context not found. Please provide X-Tenant-Key header"
-            ));
-        }
-
-        // Check if user is OWNER or EDITOR of the tenant
-        String userEmail = principal.getName();
-        if (!tenantPermissionValidator.isOwnerOrEditor(tenantId, userEmail)) {
-            throw new InsufficientPermissionException("Only OWNER or EDITOR can update bots");
-        }
-
+        Long tenantId = getValidatedTenantId();
         String ownerId = principal.getName();
+        validateOwnerOrEditor(tenantId, ownerId, "update bots");
+
         UUID botUuid = UUID.fromString(botId);
 
         log.info("📝 Updating Penny bot: {} by owner: {}", botId, ownerId);
 
-        try {
-            PennyBot updatedBot = pennyBotManager.updateBot(botUuid, updates, ownerId);
+        PennyBot updatedBot = pennyBotManager.updateBot(botUuid, updates, ownerId);
 
-            return ResponseEntity.ok(Map.of(
-                "botId", updatedBot.getId().toString(),
-                "botName", updatedBot.getBotName(),
-                "botType", updatedBot.getBotType().name(),
-                "isActive", updatedBot.isActive(),
-                "isEnabled", updatedBot.isEnabled(),
-                "description", updatedBot.getDescription() != null ? updatedBot.getDescription() : "",
-                "message", "Penny bot updated successfully"
-            ));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of(
-                "error", "Failed to update Penny bot: " + e.getMessage(),
-                "botId", botId
-            ));
-        }
+        return ResponseEntity.ok(Map.of(
+            "botId", updatedBot.getId().toString(),
+            "botName", updatedBot.getBotName(),
+            "botType", updatedBot.getBotType().name(),
+            "isActive", updatedBot.isActive(),
+            "isEnabled", updatedBot.isEnabled(),
+            "description", updatedBot.getDescription() != null ? updatedBot.getDescription() : "",
+            "message", "Penny bot updated successfully"
+        ));
     }
     
     /**
@@ -263,42 +214,24 @@ public class PennyBotController {
             @RequestParam boolean enabled,
             Principal principal) {
 
-        // ✅ Validate tenant context
-        Long tenantId = TenantContext.getTenantId();
-        if (tenantId == null) {
-            return ResponseEntity.badRequest().body(Map.of(
-                "error", "Tenant context not found. Please provide X-Tenant-Key header"
-            ));
-        }
-
-        // Check if user is OWNER or EDITOR of the tenant
-        String userEmail = principal.getName();
-        if (!tenantPermissionValidator.isOwnerOrEditor(tenantId, userEmail)) {
-            throw new InsufficientPermissionException("Only OWNER or EDITOR can toggle bot status");
-        }
-
+        Long tenantId = getValidatedTenantId();
         String ownerId = principal.getName();
+        validateOwnerOrEditor(tenantId, ownerId, "toggle bot status");
+
         UUID botUuid = UUID.fromString(botId);
 
         log.info("🔄 Toggling Penny bot: {} to {} by owner: {}", botId, enabled ? "enabled" : "disabled", ownerId);
 
-        try {
-            PennyBot updatedBot = pennyBotManager.toggleBotStatus(botUuid, enabled, ownerId);
+        PennyBot updatedBot = pennyBotManager.toggleBotStatus(botUuid, enabled, ownerId);
 
-            return ResponseEntity.ok(Map.of(
-                "botId", updatedBot.getId().toString(),
-                "botName", updatedBot.getBotName(),
-                "isActive", updatedBot.isActive(),
-                "isEnabled", updatedBot.isEnabled(),
-                "botType", updatedBot.getBotType().name(),
-                "message", "Penny bot status updated successfully"
-            ));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of(
-                "error", "Failed to toggle bot status: " + e.getMessage(),
-                "botId", botId
-            ));
-        }
+        return ResponseEntity.ok(Map.of(
+            "botId", updatedBot.getId().toString(),
+            "botName", updatedBot.getBotName(),
+            "isActive", updatedBot.isActive(),
+            "isEnabled", updatedBot.isEnabled(),
+            "botType", updatedBot.getBotType().name(),
+            "message", "Penny bot status updated successfully"
+        ));
     }
     
     /**
@@ -315,16 +248,8 @@ public class PennyBotController {
         
         log.info("📊 Getting analytics for bot: {} by owner: {} with range: {}", botId, ownerId, timeRange);
         
-        try {
-            Map<String, Object> analytics = pennyBotManager.getBotAnalytics(botUuid, timeRange, ownerId);
-            
-            return ResponseEntity.ok(analytics);
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of(
-                "error", "Failed to get bot analytics: " + e.getMessage(),
-                "botId", botId
-            ));
-        }
+        Map<String, Object> analytics = pennyBotManager.getBotAnalytics(botUuid, timeRange, ownerId);
+        return ResponseEntity.ok(analytics);
     }
     
     /**
@@ -343,45 +268,26 @@ public class PennyBotController {
         
         log.info("💬 Chatting with Penny bot: {} by owner: {} - Message: {} - TestMode: {}", botId, ownerId, message, isTestMode);
         
-        try {
-            // Verify ownership
-            PennyBot bot = pennyBotManager.getBot(botUuid);
-            if (!bot.getOwnerId().equals(ownerId)) {
-                return ResponseEntity.status(403).body(Map.of(
-                    "error", "Not authorized to chat with this bot",
-                    "botId", botId
-                ));
-            }
-            
-            // Check if bot is active
-            if (!bot.isActive() || !bot.isEnabled()) {
-                return ResponseEntity.badRequest().body(Map.of(
-                    "error", "Bot is not active. Please activate the bot first.",
-                    "botId", botId,
-                    "botStatus", bot.isActive() && bot.isEnabled() ? "active" : "inactive"
-                ));
-            }
-            
-            // Process message through Penny middleware
-            String botResponse = pennyBotManager.processMessage(botUuid, message, ownerId, isTestMode);
-            
-            return ResponseEntity.ok(Map.of(
-                "botId", botId,
-                "botName", bot.getBotName(),
-                "message", message,
-                "response", botResponse,
-                "testMode", isTestMode,
-                "timestamp", java.time.LocalDateTime.now().toString(),
-                "status", "success"
-            ));
-            
-        } catch (Exception e) {
-            log.error("❌ Error processing chat message for bot {}: {}", botId, e.getMessage(), e);
-            return ResponseEntity.badRequest().body(Map.of(
-                "error", "Failed to process message: " + e.getMessage(),
-                "botId", botId
-            ));
+        PennyBot bot = pennyBotManager.getBot(botUuid);
+        if (!bot.getOwnerId().equals(ownerId)) {
+            throw new AccessDeniedException("Not authorized to chat with this bot");
         }
+        
+        if (!bot.isActive() || !bot.isEnabled()) {
+            throw new IllegalStateException("Bot is not active. Please activate the bot first.");
+        }
+        
+        String botResponse = pennyBotManager.processMessage(botUuid, message, ownerId, isTestMode);
+        
+        return ResponseEntity.ok(Map.of(
+            "botId", botId,
+            "botName", bot.getBotName(),
+            "message", message,
+            "response", botResponse,
+            "testMode", isTestMode,
+            "timestamp", java.time.LocalDateTime.now().toString(),
+            "status", "success"
+        ));
     }
     
     /**
@@ -393,13 +299,9 @@ public class PennyBotController {
             @RequestBody Map<String, String> request,
             @RequestHeader(value = "X-Public-API-Key", required = false) String apiKey) {
         
-        // Validate API key for public access
         if (!isValidPublicApiKey(apiKey)) {
             log.warn("⚠️ Invalid or missing API key for public chat with bot: {}", botId);
-            return ResponseEntity.status(401).body(Map.of(
-                "error", "Invalid or missing API key",
-                "botId", botId
-            ));
+            throw new AccessDeniedException("Invalid or missing API key");
         }
         
         UUID botUuid = UUID.fromString(botId);
@@ -407,46 +309,25 @@ public class PennyBotController {
         
         log.info("💬 Public chat with Penny bot: {} - Message: {}", botId, message);
         
-        try {
-            // Get bot without ownership check
-            PennyBot bot = pennyBotManager.getBot(botUuid);
-            
-            // Check if bot is active
-            if (!bot.isActive() || !bot.isEnabled()) {
-                return ResponseEntity.badRequest().body(Map.of(
-                    "error", "Bot is not active. Please activate the bot first.",
-                    "botId", botId,
-                    "botStatus", bot.isActive() && bot.isEnabled() ? "active" : "inactive"
-                ));
-            }
-            
-            // Process message through Penny middleware
-            String botResponse = pennyBotManager.processMessage(botUuid, message, "public", false);
-            
-            return ResponseEntity.ok(Map.of(
-                "botId", botId,
-                "botName", bot.getBotName(),
-                "message", message,
-                "response", botResponse,
-                "timestamp", java.time.LocalDateTime.now().toString(),
-                "status", "success"
-            ));
-            
-        } catch (Exception e) {
-            log.error("❌ Error processing public chat message for bot {}: {}", botId, e.getMessage(), e);
-            return ResponseEntity.badRequest().body(Map.of(
-                "error", "Failed to process message: " + e.getMessage(),
-                "botId", botId
-            ));
+        PennyBot bot = pennyBotManager.getBot(botUuid);
+        
+        if (!bot.isActive() || !bot.isEnabled()) {
+            throw new IllegalStateException("Bot is not active. Please activate the bot first.");
         }
+        
+        String botResponse = pennyBotManager.processMessage(botUuid, message, "public", false);
+        
+        return ResponseEntity.ok(Map.of(
+            "botId", botId,
+            "botName", bot.getBotName(),
+            "message", message,
+            "response", botResponse,
+            "timestamp", java.time.LocalDateTime.now().toString(),
+            "status", "success"
+        ));
     }
     
-    /**
-     * Validate public API key
-     */
     private boolean isValidPublicApiKey(String apiKey) {
-        // In production, this should validate against a secure store
-        // For now, check if it's configured and matches expected format
         String expectedKey = System.getenv("PENNY_PUBLIC_API_KEY");
         if (expectedKey == null || expectedKey.isBlank()) {
             log.warn("⚠️ PENNY_PUBLIC_API_KEY not configured, public endpoint disabled");
@@ -463,63 +344,23 @@ public class PennyBotController {
             @PathVariable String botId,
             Principal principal) {
 
-        // ✅ Validate tenant context
-        Long tenantId = TenantContext.getTenantId();
-        if (tenantId == null) {
-            return ResponseEntity.badRequest().body(Map.of(
-                "error", "Tenant context not found. Please provide X-Tenant-Key header"
-            ));
-        }
-
-        // Check if user is OWNER or EDITOR of the tenant
-        String userEmail = principal.getName();
-        if (!tenantPermissionValidator.isOwnerOrEditor(tenantId, userEmail)) {
-            throw new InsufficientPermissionException("Only OWNER or EDITOR can delete bots");
-        }
-
+        Long tenantId = getValidatedTenantId();
         String ownerId = principal.getName();
+        validateOwnerOrEditor(tenantId, ownerId, "delete bots");
+
         UUID botUuid = UUID.fromString(botId);
 
         log.info("🗑️ Deleting Penny bot: {} by owner: {}", botId, ownerId);
 
-        try {
-            boolean success = pennyBotManager.deleteBot(botUuid, ownerId);
+        boolean success = pennyBotManager.deleteBot(botUuid, ownerId);
 
-            if (success) {
-                return ResponseEntity.ok(Map.of(
-                    "message", "Penny bot deleted successfully",
-                    "botId", botId
-                ));
-            } else {
-                return ResponseEntity.badRequest().body(Map.of(
-                    "error", "Failed to delete Penny bot - unknown reason",
-                    "botId", botId
-                ));
-            }
-        } catch (IllegalArgumentException e) {
-            log.warn("⚠️ Validation error deleting bot {}: {}", botId, e.getMessage());
-            return ResponseEntity.badRequest().body(Map.of(
-                "error", e.getMessage(),
+        if (success) {
+            return ResponseEntity.ok(Map.of(
+                "message", "Penny bot deleted successfully",
                 "botId", botId
             ));
-        } catch (IllegalStateException e) {
-            log.warn("⚠️ Cannot delete bot {}: {}", botId, e.getMessage());
-            return ResponseEntity.badRequest().body(Map.of(
-                "error", e.getMessage(),
-                "botId", botId
-            ));
-        } catch (RuntimeException e) {
-            log.error("❌ Runtime error deleting bot {}: {}", botId, e.getMessage(), e);
-            return ResponseEntity.badRequest().body(Map.of(
-                "error", e.getMessage(),
-                "botId", botId
-            ));
-        } catch (Exception e) {
-            log.error("❌ Unexpected error deleting bot {}: {}", botId, e.getMessage(), e);
-            return ResponseEntity.internalServerError().body(Map.of(
-                "error", "Internal server error: " + e.getMessage(),
-                "botId", botId
-            ));
+        } else {
+            throw new IllegalStateException("Failed to delete Penny bot - unknown reason");
         }
     }
 }
