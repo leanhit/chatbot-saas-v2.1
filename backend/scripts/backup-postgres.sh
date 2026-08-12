@@ -44,13 +44,28 @@ log_success() {
     log "✅ $1"
 }
 
+# MIN_FREE_SPACE_MB: Dung lượng đĩa khả dụng tối thiểu (MB)
+MIN_FREE_SPACE_MB="${MIN_FREE_SPACE_MB:-1024}"
+
+check_disk_space() {
+    local target_dir="$1"
+    local available_mb
+    available_mb=$(df -m "$target_dir" | awk 'NR==2 {print $4}')
+    if [ "$available_mb" -lt "$MIN_FREE_SPACE_MB" ]; then
+        log_error "Dung lượng ổ đĩa khả dụng quá thấp: ${available_mb}MB (yêu cầu tối thiểu ${MIN_FREE_SPACE_MB}MB)!"
+        return 1
+    fi
+    log "Dung lượng đĩa khả dụng: ${available_mb}MB (yêu cầu tối thiểu ${MIN_FREE_SPACE_MB}MB) → PASS"
+    return 0
+}
+
 # ==================== BACKUP FUNCTIONS ====================
 
 backup_single_db() {
     local container="$1"
     local db_name="$2"
     local db_user="$3"
-    local backup_file="${BACKUP_DIR}/${db_name}_${TIMESTAMP}.sql.gz"
+    local target_dump="${BACKUP_DIR}/${db_name}_${TIMESTAMP}.dump"
 
     log "Đang backup: ${db_name} (container: ${container})..."
 
@@ -70,14 +85,21 @@ backup_single_db() {
         --compress=6 \
         --verbose \
         2>> "$LOG_FILE" \
-        > "${BACKUP_DIR}/${db_name}_${TIMESTAMP}.dump"; then
+        > "${target_dump}"; then
 
-        local size=$(du -sh "${BACKUP_DIR}/${db_name}_${TIMESTAMP}.dump" | cut -f1)
-        log_success "${db_name} → ${db_name}_${TIMESTAMP}.dump (${size})"
-        return 0
+        # Kiểm tra tính toàn vẹn của file dump bằng pg_restore -l
+        if docker exec -i "${container}" pg_restore -l < "${target_dump}" >/dev/null 2>&1; then
+            local size=$(du -sh "${target_dump}" | cut -f1)
+            log_success "${db_name} → ${db_name}_${TIMESTAMP}.dump (${size}) [Kiểm tra tính toàn vẹn OK]"
+            return 0
+        else
+            log_error "File backup ${db_name}_${TIMESTAMP}.dump bị hỏng hoặc không hợp lệ (Integrity Check Failed)!"
+            rm -f "${target_dump}"
+            return 1
+        fi
     else
         log_error "Backup thất bại cho ${db_name}!"
-        rm -f "${BACKUP_DIR}/${db_name}_${TIMESTAMP}.dump"
+        rm -f "${target_dump}"
         return 1
     fi
 }
@@ -92,6 +114,11 @@ backup_all_databases() {
     log "Tổng số databases: ${total}"
     log "Thư mục backup: ${BACKUP_DIR}"
     log "=========================================="
+
+    if ! check_disk_space "$BACKUP_DIR"; then
+        log_error "Hủy quá trình backup do thiếu dung lượng đĩa!"
+        return 1
+    fi
 
     for db_info in "${DATABASES[@]}"; do
         IFS='|' read -r container db_name db_user <<< "$db_info"

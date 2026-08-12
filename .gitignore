@@ -55,3 +55,8 @@ docker-compose.override.yml
 /frontend/.env
 /frontend/.env.local
 /frontend/.env.*.local
+
+# Backups
+/backups/
+*.dump
+
