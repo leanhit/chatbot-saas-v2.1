@@ -23,18 +23,62 @@ public class ConversationRoutingService {
      * Determine routing priority based on conversation attributes
      * Returns a priority level: urgent, high, medium, low
      */
+    @SuppressWarnings("unchecked")
     public String determineRoutingPriority(Conversation conversation) {
-        // VIP customers get high priority
+        // VIP and Enterprise customers get high priority
         if ("VIP".equals(conversation.getCustomerTier()) || "Enterprise".equals(conversation.getCustomerTier())) {
             return "high";
         }
 
         // Check custom attributes for priority flags
-        if (conversation.getCustomAttributes() != null) {
-            // Parse custom attributes if needed
-            // For now, return medium priority
+        if (conversation.getCustomAttributes() != null && !conversation.getCustomAttributes().isEmpty()) {
+            try {
+                Map<String, Object> attrs = objectMapper.readValue(
+                    conversation.getCustomAttributes(),
+                    Map.class
+                );
+                
+                // Check for explicit priority flag
+                if (attrs.containsKey("priority")) {
+                    String priority = (String) attrs.get("priority");
+                    if ("urgent".equalsIgnoreCase(priority) || "high".equalsIgnoreCase(priority) || 
+                        "medium".equalsIgnoreCase(priority) || "low".equalsIgnoreCase(priority)) {
+                        log.debug("Priority from custom attributes: {} for conversation {}", priority, conversation.getId());
+                        return priority.toLowerCase();
+                    }
+                }
+                
+                // Check for escalation required flag
+                if (Boolean.TRUE.equals(attrs.get("escalationRequired"))) {
+                    return "high";
+                }
+                
+                // Check for urgent flag
+                if (Boolean.TRUE.equals(attrs.get("urgent"))) {
+                    return "urgent";
+                }
+                
+                // Check for VIP flag in custom attributes
+                if (Boolean.TRUE.equals(attrs.get("vip"))) {
+                    return "high";
+                }
+                
+                // Check for new customer flag (new customers get higher priority)
+                if (Boolean.TRUE.equals(attrs.get("newCustomer"))) {
+                    return "high";
+                }
+                
+                // Check for returning customer flag
+                if (Boolean.TRUE.equals(attrs.get("returningCustomer"))) {
+                    return "medium";
+                }
+                
+            } catch (Exception e) {
+                log.error("Failed to parse custom attributes for conversation {}: {}", conversation.getId(), e.getMessage());
+            }
         }
 
+        // Default to medium priority
         return "medium";
     }
 

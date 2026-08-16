@@ -10,6 +10,8 @@ import com.chatbot.core.notification.slack.SlackNotificationService;
 import com.chatbot.core.tenant.model.Tenant;
 import com.chatbot.core.tenant.model.TenantStatus;
 import com.chatbot.core.tenant.repository.TenantRepository;
+import com.chatbot.core.tenant.service.TenantPackageService;
+import com.chatbot.core.simplepayment.model.Package;
 import com.chatbot.shared.exceptions.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -39,6 +41,7 @@ public class SLAMonitorService {
     private final SLAConfigurationRepository slaConfigurationRepository;
     private final AgentEmailNotificationService agentEmailNotificationService;
     private final SlackNotificationService slackNotificationService;
+    private final TenantPackageService tenantPackageService;
 
     // Default SLA thresholds (in seconds) - used as fallback
     private static final long DEFAULT_VIP_RESPONSE_TIME = 300; // 5 minutes for VIP
@@ -74,8 +77,8 @@ public class SLAMonitorService {
     }
 
     /**
-     * Get expected response time based on customer tier
-     * First checks database configuration, falls back to hardcoded defaults
+     * Get expected response time based on customer tier and package
+     * First checks database configuration, then package-based rules, finally falls back to defaults
      */
     public long getExpectedResponseTime(Conversation conversation) {
         // Check if conversation has custom expected response time
@@ -99,12 +102,36 @@ public class SLAMonitorService {
                 .orElseThrow(() -> new ResourceNotFoundException("SLA configuration not found for tenant " + conversation.getTenantId() + " and tier " + finalTier));
             return config.getExpectedResponseTime();
         } catch (ResourceNotFoundException e) {
-            log.warn("SLA configuration not found, using fallback: {}", e.getMessage());
+            log.debug("SLA configuration not found for tenant {} and tier {}, checking package-based rules", 
+                    conversation.getTenantId(), finalTier);
         } catch (Exception e) {
-            log.warn("Failed to get SLA configuration from database, using fallback: {}", e.getMessage());
+            log.warn("Failed to get SLA configuration from database, checking package-based rules: {}", e.getMessage());
         }
 
-        // Fallback to hardcoded defaults
+        // Fallback to package-based SLA rules
+        try {
+            Package tenantPackage = tenantPackageService.getCurrentTenantPackage(conversation.getTenantId());
+            if (tenantPackage != null && tenantPackage.getHasSlaGuarantee()) {
+                // Package has SLA guarantee - use package-specific response time
+                // Higher-tier packages get better SLA
+                String packageId = tenantPackage.getPackageId();
+                log.debug("Using package-based SLA for package: {}", packageId);
+                
+                // Define SLA based on package tier
+                if ("enterprise".equalsIgnoreCase(packageId) || "business".equalsIgnoreCase(packageId)) {
+                    return DEFAULT_ENTERPRISE_RESPONSE_TIME; // 3 minutes
+                } else if ("pro".equalsIgnoreCase(packageId)) {
+                    return DEFAULT_VIP_RESPONSE_TIME; // 5 minutes
+                } else if ("premium".equalsIgnoreCase(packageId)) {
+                    return 420; // 7 minutes
+                }
+            }
+        } catch (Exception e) {
+            log.debug("Failed to get tenant package for SLA calculation: {}", e.getMessage());
+        }
+
+        // Final fallback to hardcoded defaults based on customer tier
+        log.debug("Using tier-based default SLA for tier: {}", finalTier);
         switch (finalTier) {
             case "VIP":
                 return DEFAULT_VIP_RESPONSE_TIME;
