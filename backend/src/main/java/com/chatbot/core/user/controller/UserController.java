@@ -4,6 +4,9 @@ import com.chatbot.core.user.dto.*;
 import com.chatbot.core.user.service.UserService;
 import com.chatbot.core.user.model.User;
 import com.chatbot.core.identity.security.CustomUserDetails;
+import com.chatbot.core.tenant.infra.TenantContext;
+import com.chatbot.core.tenant.service.TenantPackageService;
+import com.chatbot.core.simplepayment.model.Package;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -22,6 +25,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.util.List;
 import java.util.Map;
+import java.util.HashMap;
 
 /**
  * User Controller - REST API cho Frontend
@@ -34,6 +38,7 @@ import java.util.Map;
 public class UserController {
 
     private final UserService userService;
+    private final TenantPackageService tenantPackageService;
 
     // ===== NEW ENDPOINTS (/api/users) =====
     
@@ -276,19 +281,76 @@ public class UserController {
         
         User user = currentUser.getUser();
         
-        // Note: This should call TenantPackageService to get actual package information
-        // For now, returning mock data as placeholder
-        // Future enhancement: Integrate with TenantPackageService to fetch real package details
-        Map<String, Object> response = Map.of(
-            "currentPackage", Map.of(
+        try {
+            Long tenantId = TenantContext.getTenantId();
+            if (tenantId == null && user != null && user.getEmail() != null) {
+                try {
+                    tenantId = tenantPackageService.extractTenantIdWithFallback(null, user.getEmail());
+                } catch (Exception ex) {
+                    log.warn("User {} has no tenant association: {}", user.getId(), ex.getMessage());
+                }
+            }
+            
+            if (tenantId == null) {
+                log.warn("User {} has no tenant association", user != null ? user.getId() : "null");
+                Map<String, Object> response = new HashMap<>();
+                response.put("currentPackage", null);
+                response.put("packageHistory", List.of());
+                response.put("error", "No tenant association found");
+                return ResponseEntity.ok(response);
+            }
+            
+            // Get current package from TenantPackageService
+            Package currentPackage = tenantPackageService.getCurrentTenantPackage(tenantId);
+            
+            // Package history list
+            List<Map<String, Object>> packageHistory = List.of();
+            
+            Map<String, Object> currentPackageData = new HashMap<>();
+            if (currentPackage != null) {
+                currentPackageData.put("id", currentPackage.getPackageId());
+                currentPackageData.put("name", currentPackage.getName());
+                currentPackageData.put("price", currentPackage.getPrice());
+                currentPackageData.put("duration", "Vĩnh viễn"); // Could be enhanced with actual duration logic
+                currentPackageData.put("messageLimit", currentPackage.getMessageLimit());
+                currentPackageData.put("chatbotLimit", currentPackage.getChatbotLimit());
+                currentPackageData.put("hasPrioritySupport", currentPackage.getHasPrioritySupport());
+                currentPackageData.put("hasAnalytics", currentPackage.getHasAnalytics());
+                currentPackageData.put("hasAdvancedAnalytics", currentPackage.getHasAdvancedAnalytics());
+                currentPackageData.put("hasCustomIntegrations", currentPackage.getHasCustomIntegrations());
+                currentPackageData.put("hasDedicatedSupport", currentPackage.getHasDedicatedSupport());
+                currentPackageData.put("hasCustomFeatures", currentPackage.getHasCustomFeatures());
+                currentPackageData.put("hasSlaGuarantee", currentPackage.getHasSlaGuarantee());
+            } else {
+                currentPackageData.put("id", "free");
+                currentPackageData.put("name", "Free");
+                currentPackageData.put("price", 0);
+                currentPackageData.put("duration", "Vĩnh viễn");
+            }
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("currentPackage", currentPackageData);
+            response.put("packageHistory", packageHistory != null ? packageHistory : List.of());
+            
+            log.info("Retrieved package information for user: {}, tenant: {}", user.getId(), tenantId);
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            log.error("Error retrieving package information for user {}: {}", user.getId(), e.getMessage(), e);
+            
+            // Return error response with fallback data
+            Map<String, Object> response = new HashMap<>();
+            response.put("currentPackage", Map.of(
                 "id", "free",
                 "name", "Free",
                 "price", 0,
                 "duration", "Vĩnh viễn"
-            ),
-            "packageHistory", List.of()
-        );
-        
-        return ResponseEntity.ok(response);
+            ));
+            response.put("packageHistory", List.of());
+            response.put("error", e.getMessage());
+            
+            return ResponseEntity.ok(response);
+        }
     }
 }
