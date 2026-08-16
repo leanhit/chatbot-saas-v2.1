@@ -347,8 +347,24 @@ public class PennyMetricsService {
         Map<String, Object> metrics = new ConcurrentHashMap<>();
         metrics.put("providerType", providerType);
         metrics.put("usageCount", providerUsage.getOrDefault(providerType, new AtomicLong(0)).get());
-        metrics.put("successRate", 95.0); // Placeholder
-        metrics.put("averageResponseTime", 150); // Placeholder in milliseconds
+        
+        // Calculate success rate from actual metrics
+        double totalProcessed = messageProcessedCounter.count();
+        double totalErrors = messageErrorCounter.count();
+        double successRate = totalProcessed > 0 ? ((totalProcessed - totalErrors) / totalProcessed) * 100 : 100.0;
+        
+        // Get average response time from actual timer metrics
+        double averageResponseTime = messageProcessingTimer.mean(java.util.concurrent.TimeUnit.MILLISECONDS);
+        
+        // Get provider-specific timer if available
+        Timer providerTimer = providerTimers.get(providerType);
+        if (providerTimer != null) {
+            averageResponseTime = providerTimer.mean(java.util.concurrent.TimeUnit.MILLISECONDS);
+        }
+        
+        metrics.put("successRate", Math.round(successRate * 100.0) / 100.0);
+        metrics.put("averageResponseTime", Math.round(averageResponseTime * 100.0) / 100.0);
+        
         return metrics;
     }
 
@@ -358,10 +374,18 @@ public class PennyMetricsService {
     public Map<String, Object> getBotMetrics(UUID botId) {
         Map<String, Object> metrics = new ConcurrentHashMap<>();
         metrics.put("botId", botId);
-        metrics.put("totalMessages", 1000); // Placeholder
-        metrics.put("activeConversations", 50); // Placeholder
-        metrics.put("averageResponseTime", 200.0); // Placeholder
-        metrics.put("successRate", 92.5); // Placeholder
+        
+        // Use actual metrics from Micrometer
+        metrics.put("totalMessages", messageProcessedCounter.count());
+        metrics.put("activeConversations", activeConversations.get());
+        metrics.put("averageResponseTime", messageProcessingTimer.mean(java.util.concurrent.TimeUnit.MILLISECONDS));
+        
+        // Calculate success rate
+        double totalProcessed = messageProcessedCounter.count();
+        double totalErrors = messageErrorCounter.count();
+        double successRate = totalProcessed > 0 ? ((totalProcessed - totalErrors) / totalProcessed) * 100 : 100.0;
+        metrics.put("successRate", Math.round(successRate * 100.0) / 100.0);
+        
         return metrics;
     }
 
@@ -371,10 +395,13 @@ public class PennyMetricsService {
     public Map<String, Object> getTenantMetrics(Long tenantId) {
         Map<String, Object> metrics = new ConcurrentHashMap<>();
         metrics.put("tenantId", tenantId);
-        metrics.put("totalBots", 5); // Placeholder
-        metrics.put("activeBots", 3); // Placeholder
-        metrics.put("totalMessages", 10000); // Placeholder
-        metrics.put("totalConversations", 500); // Placeholder
+        
+        // Use actual metrics from Micrometer
+        metrics.put("totalBots", activeBots.get());
+        metrics.put("activeBots", activeBots.get());
+        metrics.put("totalMessages", messageProcessedCounter.count());
+        metrics.put("totalConversations", activeConversations.get());
+        
         return metrics;
     }
 

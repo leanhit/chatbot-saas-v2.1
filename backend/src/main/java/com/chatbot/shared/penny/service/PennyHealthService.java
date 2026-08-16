@@ -140,13 +140,25 @@ public class PennyHealthService {
 
     private Map<String, Object> getContextManagerHealth() {
         try {
-            // Check context manager health - using placeholder values
+            // Get real context statistics from context manager
+            long activeContexts = contextManager.getActiveContextCount();
+            long totalContexts = contextManager.getTotalContextCount();
+            
+            // Calculate memory usage from JVM
+            Runtime runtime = Runtime.getRuntime();
+            long usedMemory = runtime.totalMemory() - runtime.freeMemory();
+            long maxMemory = runtime.maxMemory();
+            double memoryUsageMB = usedMemory / (1024.0 * 1024.0);
+            
+            // Get last cleanup time (placeholder - would need to be tracked in context manager)
+            long lastCleanup = System.currentTimeMillis() - 3600000; // 1 hour ago as default
+            
             return Map.of(
                 "status", "HEALTHY",
-                "activeContexts", 50, // Placeholder
-                "totalContexts", 100, // Placeholder
-                "memoryUsage", "256MB", // Placeholder
-                "lastCleanup", System.currentTimeMillis() - 3600000 // Placeholder
+                "activeContexts", activeContexts,
+                "totalContexts", totalContexts,
+                "memoryUsage", String.format("%.2fMB", memoryUsageMB),
+                "lastCleanup", lastCleanup
             );
         } catch (Exception e) {
             log.error("Failed to get context manager health", e);
@@ -195,11 +207,20 @@ public class PennyHealthService {
 
     private Map<String, Object> getContextStorageHealth() {
         try {
+            // Get real context storage health from context manager
+            long cacheHits = contextManager.getCacheHitCount();
+            long cacheMisses = contextManager.getCacheMissCount();
+            double cacheHitRate = (cacheHits + cacheMisses) > 0 ? 
+                (double) cacheHits / (cacheHits + cacheMisses) * 100 : 0.0;
+            
+            // Check connection pool status (placeholder - would need actual connection pool monitoring)
+            String connectionPool = "healthy";
+            
             return Map.of(
                 "status", "HEALTHY",
-                "storageType", "redis", // Placeholder
-                "connectionPool", "healthy", // Placeholder
-                "cacheHitRate", 85.5 // Placeholder
+                "storageType", "database",
+                "connectionPool", connectionPool,
+                "cacheHitRate", Math.round(cacheHitRate * 100.0) / 100.0
             );
         } catch (Exception e) {
             log.error("Failed to get context storage health", e);

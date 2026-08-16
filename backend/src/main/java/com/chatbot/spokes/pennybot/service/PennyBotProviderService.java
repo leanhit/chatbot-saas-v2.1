@@ -344,6 +344,46 @@ public class PennyBotProviderService implements ChatbotProviderService {
         }
     }
 
+    /**
+     * Check if there are active conversations for a bot
+     */
+    public boolean checkActiveConversations(String botId) {
+        try {
+            log.debug("Checking active conversations for bot: {}", botId);
+            
+            // Query conversation repository for active conversations with this botId
+            java.util.List<FacebookConnection> connections = facebookConnectionRepository.findAllByBotIdAndIsActiveTrue(botId);
+            
+            if (connections.isEmpty()) {
+                log.debug("No active connections found for bot: {}", botId);
+                return false;
+            }
+            
+            // Check if any connection has recent activity
+            java.time.LocalDateTime oneHourAgo = java.time.LocalDateTime.now().minusHours(1);
+            
+            for (FacebookConnection connection : connections) {
+                java.util.Optional<Conversation> recentConversation = conversationRepository
+                    .findByExternalUserIdAndConnectionId("", connection.getId())
+                    .stream()
+                    .filter(c -> c.getUpdatedAt().isAfter(oneHourAgo))
+                    .findFirst();
+                
+                if (recentConversation.isPresent()) {
+                    log.debug("Found active conversation for bot: {}", botId);
+                    return true;
+                }
+            }
+            
+            log.debug("No active conversations found for bot: {}", botId);
+            return false;
+            
+        } catch (Exception e) {
+            log.error("Error checking active conversations for bot {}: {}", botId, e.getMessage());
+            return false;
+        }
+    }
+
     @Override
     public String getProviderType() {
         return "PENNYBOT";

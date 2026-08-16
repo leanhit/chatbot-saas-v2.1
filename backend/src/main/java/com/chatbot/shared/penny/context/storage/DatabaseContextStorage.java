@@ -1,23 +1,30 @@
 package com.chatbot.shared.penny.context.storage;
 
+import com.chatbot.core.message.store.model.Conversation;
+import com.chatbot.core.message.store.repository.ConversationRepository;
+import com.chatbot.core.tenant.infra.TenantContext;
 import com.chatbot.shared.penny.context.ConversationContext;
 import com.chatbot.shared.penny.dto.request.MiddlewareRequest;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 /**
  * Database Context Storage - Lưu trữ context trong database cho persistence
  */
 @Service
+@RequiredArgsConstructor
 @Slf4j
 public class DatabaseContextStorage {
     
-    // This would integrate with existing ConversationService
-    // For now, we'll create a simplified implementation
+    private final ConversationRepository conversationRepository;
     
     /**
      * Load context from database
@@ -27,9 +34,39 @@ public class DatabaseContextStorage {
             log.debug("🔍 Loading context from database for user: {} on {}", 
                 request.getUserId(), request.getPlatform());
             
-            // In real implementation, this would query the existing conversation table
-            // For now, return null to trigger new context creation
-            return null;
+            Long tenantId = TenantContext.getTenantId();
+            if (tenantId == null) {
+                log.warn("No tenant context found, cannot load context");
+                return null;
+            }
+            
+            // Find conversation by external user ID and platform
+            // For now, we'll use externalUserId as the primary key
+            List<Conversation> conversations = conversationRepository.findByTenantId(tenantId);
+            
+            // Filter by external user ID and platform (if available)
+            List<Conversation> userConversations = conversations.stream()
+                .filter(c -> request.getUserId().equals(c.getExternalUserId()))
+                .filter(c -> request.getPlatform() == null || 
+                           (c.getChannel() != null && request.getPlatform().equalsIgnoreCase(c.getChannel().name())))
+                .collect(Collectors.toList());
+            
+            if (userConversations.isEmpty()) {
+                log.debug("No existing conversation found for user: {}", request.getUserId());
+                return null;
+            }
+            
+            // Get the most recent conversation
+            Conversation latestConversation = userConversations.stream()
+                .max((c1, c2) -> c1.getUpdatedAt().compareTo(c2.getUpdatedAt()))
+                .orElse(null);
+            
+            if (latestConversation == null) {
+                return null;
+            }
+            
+            // Convert Conversation to ConversationContext
+            return convertToConversationContext(latestConversation);
             
         } catch (Exception e) {
             log.error("❌ Error loading context from database: {}", e.getMessage(), e);
@@ -94,10 +131,12 @@ public class DatabaseContextStorage {
         try {
             log.debug("📋 Getting active contexts for tenant: {}", tenantId);
             
-            // In real implementation, this would query the conversation table
-            // with tenant isolation and active status filter
+            Long tenantIdLong = Long.parseLong(tenantId);
+            List<Conversation> activeConversations = conversationRepository.findByTenantIdAndStatus(tenantIdLong, "open");
             
-            return List.of(); // Return empty for now
+            return activeConversations.stream()
+                .map(this::convertToConversationContext)
+                .collect(Collectors.toList());
             
         } catch (Exception e) {
             log.error("❌ Error getting active contexts for tenant {}: {}", tenantId, e.getMessage(), e);
@@ -152,9 +191,23 @@ public class DatabaseContextStorage {
         try {
             log.debug("🔍 Finding context for user: {} on platform: {}", userId, platform);
             
-            // In real implementation, this would query the conversation table
+            List<Conversation> conversations = conversationRepository.findByTenantId(tenantId);
             
-            return null; // Return null for now
+            List<Conversation> userConversations = conversations.stream()
+                .filter(c -> userId.equals(c.getExternalUserId()))
+                .filter(c -> platform == null || (c.getChannel() != null && platform.equalsIgnoreCase(c.getChannel().name())))
+                .collect(Collectors.toList());
+            
+            if (userConversations.isEmpty()) {
+                return null;
+            }
+            
+            // Get the most recent conversation
+            Conversation latestConversation = userConversations.stream()
+                .max((c1, c2) -> c1.getUpdatedAt().compareTo(c2.getUpdatedAt()))
+                .orElse(null);
+            
+            return convertToConversationContext(latestConversation);
             
         } catch (Exception e) {
             log.error("❌ Error finding context for user {} on platform {}: {}", 
@@ -170,9 +223,11 @@ public class DatabaseContextStorage {
         try {
             log.debug("📋 Getting contexts by status: {} for tenant: {}", status, tenantId);
             
-            // In real implementation, this would query by status
+            List<Conversation> conversations = conversationRepository.findByTenantIdAndStatus(tenantId, status);
             
-            return List.of(); // Return empty for now
+            return conversations.stream()
+                .map(this::convertToConversationContext)
+                .collect(Collectors.toList());
             
         } catch (Exception e) {
             log.error("❌ Error getting contexts by status {} for tenant {}: {}", 
@@ -188,7 +243,23 @@ public class DatabaseContextStorage {
         try {
             log.debug("🔄 Updating context status: {} -> {}", contextId, status);
             
-            // In real implementation, this would update the conversation status
+            Long conversationId = Long.parseLong(contextId);
+            Long tenantId = TenantContext.getTenantId();
+            
+            if (tenantId == null) {
+                log.warn("No tenant context found");
+                return;
+            }
+            
+            Conversation conversation = conversationRepository.findByIdAndTenantId(conversationId, tenantId)
+                .orElse(null);
+            
+            if (conversation != null) {
+                conversation.setStatus(status);
+                conversation.setUpdatedAt(LocalDateTime.now());
+                conversationRepository.save(conversation);
+                log.debug("✅ Updated context status: {} -> {}", contextId, status);
+            }
             
         } catch (Exception e) {
             log.error("❌ Error updating context status {}: {}", contextId, e.getMessage(), e);
@@ -202,9 +273,18 @@ public class DatabaseContextStorage {
         try {
             log.debug("🔍 Getting context by ID: {}", contextId);
             
-            // In real implementation, this would query by context ID
+            Long conversationId = Long.parseLong(contextId);
+            Long tenantId = TenantContext.getTenantId();
             
-            return null; // Return null for now
+            if (tenantId == null) {
+                log.warn("No tenant context found");
+                return null;
+            }
+            
+            Conversation conversation = conversationRepository.findByIdAndTenantId(conversationId, tenantId)
+                .orElse(null);
+            
+            return convertToConversationContext(conversation);
             
         } catch (Exception e) {
             log.error("❌ Error getting context by ID {}: {}", contextId, e.getMessage(), e);
@@ -273,8 +353,31 @@ public class DatabaseContextStorage {
     public ConversationContext loadContextByBotId(UUID botId) {
         try {
             log.debug("🔍 Loading context by bot ID: {}", botId);
-            // In real implementation, this would query database by bot ID
-            return null; // Placeholder
+            
+            Long tenantId = TenantContext.getTenantId();
+            if (tenantId == null) {
+                log.warn("No tenant context found");
+                return null;
+            }
+            
+            // Find conversations by tenant and filter by botId in metadata
+            List<Conversation> conversations = conversationRepository.findByTenantId(tenantId);
+            
+            List<Conversation> botConversations = conversations.stream()
+                .filter(c -> c.getCustomAttributes() != null && c.getCustomAttributes().contains(botId.toString()))
+                .collect(Collectors.toList());
+            
+            if (botConversations.isEmpty()) {
+                return null;
+            }
+            
+            // Get the most recent conversation
+            Conversation latestConversation = botConversations.stream()
+                .max((c1, c2) -> c1.getUpdatedAt().compareTo(c2.getUpdatedAt()))
+                .orElse(null);
+            
+            return convertToConversationContext(latestConversation);
+            
         } catch (Exception e) {
             log.error("❌ Error loading context by bot ID {}: {}", botId, e.getMessage());
             return null;
@@ -287,9 +390,54 @@ public class DatabaseContextStorage {
     public void deleteContextByBotId(UUID botId) {
         try {
             log.debug("🗑️ Deleting context by bot ID: {}", botId);
-            // In real implementation, this would delete from database
+            
+            Long tenantId = TenantContext.getTenantId();
+            if (tenantId == null) {
+                log.warn("No tenant context found");
+                return;
+            }
+            
+            List<Conversation> conversations = conversationRepository.findByTenantId(tenantId);
+            
+            List<Conversation> botConversations = conversations.stream()
+                .filter(c -> c.getCustomAttributes() != null && c.getCustomAttributes().contains(botId.toString()))
+                .collect(Collectors.toList());
+            
+            for (Conversation conversation : botConversations) {
+                conversationRepository.delete(conversation);
+            }
+            
+            log.info("✅ Deleted {} contexts for bot ID: {}", botConversations.size(), botId);
+            
         } catch (Exception e) {
             log.error("❌ Error deleting context by bot ID {}: {}", botId, e.getMessage());
         }
+    }
+    
+    /**
+     * Convert Conversation entity to ConversationContext
+     */
+    private ConversationContext convertToConversationContext(Conversation conversation) {
+        if (conversation == null) {
+            return null;
+        }
+        
+        ConversationContext context = new ConversationContext();
+        context.setContextId(conversation.getId().toString());
+        context.setUserId(conversation.getExternalUserId());
+        context.setPlatform(conversation.getChannel() != null ? conversation.getChannel().name() : "unknown");
+        context.setTenantId(conversation.getTenantId());
+        context.setCreatedAt(conversation.getCreatedAt().atZone(ZoneId.systemDefault()).toInstant());
+        context.setLastUpdated(conversation.getUpdatedAt().atZone(ZoneId.systemDefault()).toInstant());
+        
+        // Set additional context data from conversation
+        if (conversation.getCustomAttributes() != null) {
+            context.setMetadata(java.util.Map.of("customAttributes", conversation.getCustomAttributes()));
+        }
+        
+        // Set status
+        context.setStatus(conversation.getStatus());
+        
+        return context;
     }
 }

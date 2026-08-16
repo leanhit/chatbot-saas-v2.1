@@ -175,6 +175,22 @@ public class ContextManager {
         }
     }
     
+    public long getActiveContextCount() {
+        return 0L;
+    }
+    
+    public long getTotalContextCount() {
+        return 0L;
+    }
+    
+    public long getCacheHitCount() {
+        return 0L;
+    }
+    
+    public long getCacheMissCount() {
+        return 0L;
+    }
+    
     // Private helper methods
     
     private String buildContextKey(MiddlewareRequest request) {

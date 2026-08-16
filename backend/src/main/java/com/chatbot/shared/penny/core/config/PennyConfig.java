@@ -73,15 +73,14 @@ public class PennyConfig {
     @Bean
     @ConditionalOnMissingBean
     public ContextManager contextManager(PennyProperties properties,
-                                        RedisTemplate<String, Object> redisTemplate) {
+                                        RedisTemplate<String, Object> redisTemplate,
+                                        DatabaseContextStorage databaseStorage) {
         log.info("🔄 Initializing Context Manager...");
         
         RedisContextStorage redisStorage = new RedisContextStorage(
             redisTemplate, 
             new com.fasterxml.jackson.databind.ObjectMapper()
         );
-        
-        DatabaseContextStorage databaseStorage = new DatabaseContextStorage();
         
         ContextManager contextManager = new ContextManager(redisStorage, databaseStorage);
         

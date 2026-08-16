@@ -1,5 +1,8 @@
 package com.chatbot.spokes.pennybot.service;
 
+import com.chatbot.core.message.store.model.Conversation;
+import com.chatbot.core.message.store.repository.ConversationRepository;
+import com.chatbot.core.tenant.infra.TenantContext;
 import com.chatbot.shared.penny.kb.KnowledgeBaseSearchService;
 import com.chatbot.shared.penny.providers.PromptTemplateService;
 import com.chatbot.spokes.facebook.webhook.service.ChatbotProviderService;
@@ -11,6 +14,7 @@ import com.openai.models.chat.completions.ChatCompletionMessageParam;
 import com.openai.models.chat.completions.ChatCompletionSystemMessageParam;
 import com.openai.models.chat.completions.ChatCompletionUserMessageParam;
 import jakarta.annotation.PostConstruct;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -50,13 +54,16 @@ public class GptProviderService implements ChatbotProviderService {
 
     private final PromptTemplateService promptTemplateService;
     private final KnowledgeBaseSearchService knowledgeBaseSearchService;
+    private final ConversationRepository conversationRepository;
 
     private OpenAIClient openAIClient;
 
     public GptProviderService(PromptTemplateService promptTemplateService,
-                              KnowledgeBaseSearchService knowledgeBaseSearchService) {
+                              KnowledgeBaseSearchService knowledgeBaseSearchService,
+                              ConversationRepository conversationRepository) {
         this.promptTemplateService = promptTemplateService;
         this.knowledgeBaseSearchService = knowledgeBaseSearchService;
+        this.conversationRepository = conversationRepository;
     }
 
     @PostConstruct
@@ -82,13 +89,14 @@ public class GptProviderService implements ChatbotProviderService {
 
         try {
             UUID botUuid = parseUUID(botId);
+            Long tenantId = TenantContext.getTenantId();
 
             // Retrieve knowledge context from RAG search (if enabled)
             List<String> knowledgeSnippets = List.of();
             if (knowledgeBaseSearchService != null && knowledgeBaseSearchService.isEnabled()) {
                 try {
                     String knowledgeContext = knowledgeBaseSearchService.searchAndFormatContext(
-                        botUuid, null, messageText); // tenantId null for now - will need to pass from context
+                        botUuid, tenantId, messageText);
                     if (knowledgeContext != null && !knowledgeContext.isBlank()) {
                         knowledgeSnippets = List.of(knowledgeContext);
                         log.debug("📚 Retrieved KB context ({} chars) for RAG", knowledgeContext.length());
@@ -98,9 +106,12 @@ public class GptProviderService implements ChatbotProviderService {
                 }
             }
 
+            // Retrieve conversation history
+            List<Map<String, String>> conversationHistory = retrieveConversationHistory(botId, senderId, tenantId);
+
             // Build system prompt with bot config + KB context
             String systemPrompt = promptTemplateService.buildSystemPrompt(
-                botUuid, knowledgeSnippets, List.of()); // No conversation history for now
+                botUuid, knowledgeSnippets, conversationHistory);
 
             // Build messages list
             List<ChatCompletionMessageParam> messages = new ArrayList<>();
@@ -214,5 +225,52 @@ public class GptProviderService implements ChatbotProviderService {
         r.put("error", error);
         r.put("timestamp", System.currentTimeMillis());
         return r;
+    }
+
+    /**
+     * Retrieve conversation history for context
+     */
+    private List<Map<String, String>> retrieveConversationHistory(String botId, String senderId, Long tenantId) {
+        try {
+            if (tenantId == null) {
+                log.debug("No tenant context, skipping conversation history retrieval");
+                return List.of();
+            }
+
+            // Find conversations by external user ID and tenant
+            List<Conversation> conversations = conversationRepository.findByTenantId(tenantId);
+            
+            // Filter by external user ID
+            List<Conversation> userConversations = conversations.stream()
+                .filter(c -> senderId.equals(c.getExternalUserId()))
+                .collect(java.util.stream.Collectors.toList());
+
+            if (userConversations.isEmpty()) {
+                log.debug("No conversation history found for sender: {}", senderId);
+                return List.of();
+            }
+
+            // Get the most recent conversation
+            Conversation latestConversation = userConversations.stream()
+                .max((c1, c2) -> c1.getUpdatedAt().compareTo(c2.getUpdatedAt()))
+                .orElse(null);
+
+            if (latestConversation == null) {
+                return List.of();
+            }
+
+            List<Map<String, String>> history = new ArrayList<>();
+            Map<String, String> turn = new HashMap<>();
+            turn.put("user", "Conversation ID: " + latestConversation.getId());
+            turn.put("bot", "Status: " + latestConversation.getStatus());
+            history.add(turn);
+            
+            log.debug("Retrieved conversation history for sender: {}", senderId);
+            return history;
+
+        } catch (Exception e) {
+            log.error("Error retrieving conversation history: {}", e.getMessage());
+            return List.of();
+        }
     }
 }
