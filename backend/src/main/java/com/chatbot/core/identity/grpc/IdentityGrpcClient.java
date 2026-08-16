@@ -1,7 +1,11 @@
 package com.chatbot.core.identity.grpc;
 
+import com.chatbot.core.grpc.resilience.GrpcResilienceConfig;
 import com.chatbot.core.identity.grpc.IdentityServiceOuterClass.*;
 import com.chatbot.core.identity.grpc.IdentityServiceGrpc;
+import com.chatbot.core.tenant.exception.GrpcIntegrationException;
+import io.github.resilience4j.circuitbreaker.CircuitBreaker;
+import io.github.resilience4j.retry.Retry;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import jakarta.annotation.PostConstruct;
@@ -13,6 +17,7 @@ import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 
 @Component
 @DependsOn("identityGrpcServer")
@@ -24,6 +29,14 @@ public class IdentityGrpcClient {
 
     private ManagedChannel channel;
     private IdentityServiceGrpc.IdentityServiceBlockingStub blockingStub;
+
+    private final CircuitBreaker circuitBreaker;
+    private final Retry retry;
+
+    public IdentityGrpcClient(CircuitBreaker identityGrpcCircuitBreaker, Retry identityGrpcRetry) {
+        this.circuitBreaker = identityGrpcCircuitBreaker;
+        this.retry = identityGrpcRetry;
+    }
 
     @PostConstruct
     public void init() {
@@ -99,62 +112,112 @@ public class IdentityGrpcClient {
     }
 
     public ValidateTokenResponse validateToken(String token) {
+        Supplier<ValidateTokenResponse> supplier = CircuitBreaker.decorateSupplier(circuitBreaker,
+            Retry.decorateSupplier(retry, () -> {
+                try {
+                    ValidateTokenRequest request = ValidateTokenRequest.newBuilder()
+                            .setToken(token)
+                            .build();
+                    return blockingStub.validateToken(request);
+                } catch (io.grpc.StatusRuntimeException e) {
+                    log.error("gRPC validateToken failed: {} - {}", e.getStatus().getCode(), e.getStatus().getDescription());
+                    throw new GrpcIntegrationException("Failed to validate token: " + e.getStatus().getDescription(), e);
+                }
+            }));
+
         try {
-            ValidateTokenRequest request = ValidateTokenRequest.newBuilder()
-                    .setToken(token)
-                    .build();
-            return blockingStub.validateToken(request);
+            return supplier.get();
         } catch (Exception e) {
-            log.error("Lỗi khi validate token qua gRPC", e);
-            return null;
+            log.error("Circuit breaker/retry failed for validateToken: {}", e.getMessage());
+            throw new GrpcIntegrationException("Failed to validate token after retry: " + e.getMessage(), e);
         }
     }
 
     public GetUserResponse getUserProfile(String userId) {
+        Supplier<GetUserResponse> supplier = CircuitBreaker.decorateSupplier(circuitBreaker,
+            Retry.decorateSupplier(retry, () -> {
+                try {
+                    GetUserRequest request = GetUserRequest.newBuilder()
+                            .setUserId(userId)
+                            .build();
+                    return blockingStub.getUserProfile(request);
+                } catch (io.grpc.StatusRuntimeException e) {
+                    log.error("gRPC getUserProfile failed for userId {}: {} - {}", userId, e.getStatus().getCode(), e.getStatus().getDescription());
+                    throw new GrpcIntegrationException("Failed to get user profile: " + e.getStatus().getDescription(), e);
+                }
+            }));
+
         try {
-            GetUserRequest request = GetUserRequest.newBuilder()
-                    .setUserId(userId)
-                    .build();
-            return blockingStub.getUserProfile(request);
+            return supplier.get();
         } catch (Exception e) {
-            log.error("Lỗi khi lấy user profile qua gRPC", e);
-            return null;
+            log.error("Circuit breaker/retry failed for getUserProfile: {}", e.getMessage());
+            throw new GrpcIntegrationException("Failed to get user profile after retry: " + e.getMessage(), e);
         }
     }
 
     public ValidateUserResponse validateUser(String userId) {
+        Supplier<ValidateUserResponse> supplier = CircuitBreaker.decorateSupplier(circuitBreaker,
+            Retry.decorateSupplier(retry, () -> {
+                try {
+                    ValidateUserRequest request = ValidateUserRequest.newBuilder()
+                            .setUserId(userId)
+                            .build();
+                    return blockingStub.validateUser(request);
+                } catch (io.grpc.StatusRuntimeException e) {
+                    log.error("gRPC validateUser failed for userId {}: {} - {}", userId, e.getStatus().getCode(), e.getStatus().getDescription());
+                    throw new GrpcIntegrationException("Failed to validate user: " + e.getStatus().getDescription(), e);
+                }
+            }));
+
         try {
-            ValidateUserRequest request = ValidateUserRequest.newBuilder()
-                    .setUserId(userId)
-                    .build();
-            return blockingStub.validateUser(request);
+            return supplier.get();
         } catch (Exception e) {
-            log.error("Lỗi khi validate user qua gRPC", e);
-            return null;
+            log.error("Circuit breaker/retry failed for validateUser: {}", e.getMessage());
+            throw new GrpcIntegrationException("Failed to validate user after retry: " + e.getMessage(), e);
         }
     }
 
     public GetUserRoleResponse getUserRole(String userId) {
+        Supplier<GetUserRoleResponse> supplier = CircuitBreaker.decorateSupplier(circuitBreaker,
+            Retry.decorateSupplier(retry, () -> {
+                try {
+                    GetUserRoleRequest request = GetUserRoleRequest.newBuilder()
+                            .setUserId(userId)
+                            .build();
+                    return blockingStub.getUserRole(request);
+                } catch (io.grpc.StatusRuntimeException e) {
+                    log.error("gRPC getUserRole failed for userId {}: {} - {}", userId, e.getStatus().getCode(), e.getStatus().getDescription());
+                    throw new GrpcIntegrationException("Failed to get user role: " + e.getStatus().getDescription(), e);
+                }
+            }));
+
         try {
-            GetUserRoleRequest request = GetUserRoleRequest.newBuilder()
-                    .setUserId(userId)
-                    .build();
-            return blockingStub.getUserRole(request);
+            return supplier.get();
         } catch (Exception e) {
-            log.error("Lỗi khi lấy user role qua gRPC", e);
-            return null;
+            log.error("Circuit breaker/retry failed for getUserRole: {}", e.getMessage());
+            throw new GrpcIntegrationException("Failed to get user role after retry: " + e.getMessage(), e);
         }
     }
 
     public IsUserActiveResponse isUserActive(String userId) {
+        Supplier<IsUserActiveResponse> supplier = CircuitBreaker.decorateSupplier(circuitBreaker,
+            Retry.decorateSupplier(retry, () -> {
+                try {
+                    IsUserActiveRequest request = IsUserActiveRequest.newBuilder()
+                            .setUserId(userId)
+                            .build();
+                    return blockingStub.isUserActive(request);
+                } catch (io.grpc.StatusRuntimeException e) {
+                    log.error("gRPC isUserActive failed for userId {}: {} - {}", userId, e.getStatus().getCode(), e.getStatus().getDescription());
+                    throw new GrpcIntegrationException("Failed to check user active status: " + e.getStatus().getDescription(), e);
+                }
+            }));
+
         try {
-            IsUserActiveRequest request = IsUserActiveRequest.newBuilder()
-                    .setUserId(userId)
-                    .build();
-            return blockingStub.isUserActive(request);
+            return supplier.get();
         } catch (Exception e) {
-            log.error("Lỗi khi kiểm tra user active qua gRPC", e);
-            return null;
+            log.error("Circuit breaker/retry failed for isUserActive: {}", e.getMessage());
+            throw new GrpcIntegrationException("Failed to check user active status after retry: " + e.getMessage(), e);
         }
     }
 
