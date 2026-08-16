@@ -58,6 +58,9 @@ public interface FacebookConnectionRepository extends JpaRepository<FacebookConn
     Optional<FacebookConnection> findByPageIdAndIsActiveTrue(@Param("pageId") String pageId);
 
     // Token expiry related queries
+    @Query("SELECT fc FROM FacebookConnection fc WHERE fc.isActive = true")
+    List<FacebookConnection> findByIsActiveTrue();
+
     @Query("SELECT fc FROM FacebookConnection fc WHERE fc.tokenExpiresAt <= :expiry AND fc.isActive = true")
     List<FacebookConnection> findTokensExpiringBefore(@Param("expiry") LocalDateTime expiry);
     

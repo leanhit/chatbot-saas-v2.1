@@ -116,14 +116,34 @@ public class FacebookApiGraphService {
 
     /**
      * Đăng ký page vào webhook
+     * Uses Facebook Graph API to subscribe page to webhook for messaging events
      */
     public boolean subscribePageToWebhook(String pageId, String pageAccessToken) {
         try {
-            // TODO: Implement webhook subscription logic
             log.info("Đăng ký webhook cho page: {}", pageId);
-            return true;
+            
+            // Subscribe to messaging events
+            Map<String, Object> response = webClient.post()
+                    .uri(uriBuilder -> uriBuilder
+                            .path("/{pageId}/subscribed_apps")
+                            .queryParam("access_token", pageAccessToken)
+                            .build(pageId))
+                    .retrieve()
+                    .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
+                    .block();
+
+            if (response != null && Boolean.TRUE.equals(response.get("success"))) {
+                log.info("✅ Đăng ký webhook thành công cho page: {}", pageId);
+                return true;
+            } else {
+                log.warn("⚠️ Đăng ký webhook thất bại cho page {}: {}", pageId, response);
+                return false;
+            }
+        } catch (WebClientResponseException e) {
+            logFacebookApiError("Failed to subscribe page to webhook", e);
+            return false;
         } catch (Exception e) {
-            log.error("Lỗi khi đăng ký webhook: {}", e.getMessage());
+            log.error("Lỗi khi đăng ký webhook cho page {}: {}", pageId, e.getMessage(), e);
             return false;
         }
     }

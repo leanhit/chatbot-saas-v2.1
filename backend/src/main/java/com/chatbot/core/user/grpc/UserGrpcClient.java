@@ -97,7 +97,7 @@ public class UserGrpcClient {
         try {
             // Use a lightweight RPC call to test connection
             ValidateUserRequest request = ValidateUserRequest.newBuilder()
-                    .setUserId("health-check")
+                    .setUserId("999")
                     .build();
 
             ValidateUserResponse response = blockingStub.withDeadlineAfter(5, TimeUnit.SECONDS)

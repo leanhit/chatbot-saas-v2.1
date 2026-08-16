@@ -1,5 +1,3 @@
-// src/main/java/com/chatbot/connection/service/FacebookConnectionService.java
-
 package com.chatbot.spokes.facebook.connection.service;
 
 import com.chatbot.spokes.facebook.api.service.FacebookApiService;
@@ -19,11 +17,14 @@ import com.chatbot.core.tenant.membership.model.TenantMember;
 import com.chatbot.core.tenant.membership.model.TenantRole;
 import com.chatbot.core.tenant.membership.model.MembershipStatus;
 import com.chatbot.core.tenant.membership.repository.TenantMemberRepository;
+import com.chatbot.spokes.facebook.handler.FacebookErrorHandler;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -32,6 +33,8 @@ import java.util.UUID;
 import java.util.HashMap;
 import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.core.ParameterizedTypeReference;
 import lombok.extern.slf4j.Slf4j;
 
 @Service
@@ -43,17 +46,23 @@ public class FacebookConnectionService {
     private final UserRepository userRepository;
     private final TenantMemberRepository tenantMemberRepository;
     private final FacebookApiService facebookApiService;
+    private final WebClient webClient;
+    private final FacebookErrorHandler facebookErrorHandler;
 
     public FacebookConnectionService(FacebookConnectionRepository connectionRepository, 
                                 PennyBotManager pennyBotManager,
                                 UserRepository userRepository,
                                 TenantMemberRepository tenantMemberRepository,
-                                FacebookApiService facebookApiService) {
+                                FacebookApiService facebookApiService,
+                                WebClient webClient,
+                                FacebookErrorHandler facebookErrorHandler) {
         this.connectionRepository = connectionRepository;
         this.pennyBotManager = pennyBotManager;
         this.userRepository = userRepository;
         this.tenantMemberRepository = tenantMemberRepository;
         this.facebookApiService = facebookApiService;
+        this.webClient = webClient;
+        this.facebookErrorHandler = facebookErrorHandler;
     }
 
     public String createConnection(String ownerId, CreateFacebookConnectionRequest request) {
@@ -331,11 +340,13 @@ public class FacebookConnectionService {
         map.put("pageId", connection.getPageId());
         map.put("fanpageUrl", connection.getFanpageUrl());
         map.put("isActive", connection.isActive());
-        map.put("isHealthy", connection.isActive() && connection.isEnabled()); // Mock health status
+        map.put("isHealthy", connection.getIsHealthy() != null ? connection.getIsHealthy() : (connection.isActive() && connection.isEnabled()));
         map.put("isEnabled", connection.isEnabled());
         map.put("createdAt", connection.getCreatedAt().toString());
         map.put("updatedAt", connection.getUpdatedAt().toString());
-        map.put("lastUsedAt", null); // Mock - not tracked in current model
+        map.put("lastUsedAt", connection.getLastUsedAt() != null ? connection.getLastUsedAt().toString() : null);
+        map.put("lastHealthCheckAt", connection.getLastHealthCheckAt() != null ? connection.getLastHealthCheckAt().toString() : null);
+        map.put("healthCheckFailures", connection.getHealthCheckFailures() != null ? connection.getHealthCheckFailures() : 0);
         map.put("description", "Facebook connection for page: " + connection.getPageId());
         return map;
     }
@@ -505,6 +516,161 @@ public class FacebookConnectionService {
         } catch (Exception e) {
             log.error("Error checking update permissions for user: {}", userId, e);
             return false;
+        }
+    }
+    
+    /**
+     * Perform health check for a Facebook connection using Facebook Graph API ping test
+     * Updates isHealthy, lastHealthCheckAt, and healthCheckFailures fields
+     */
+    @Transactional
+    public boolean performHealthCheck(UUID connectionId) {
+        try {
+            FacebookConnection connection = connectionRepository.findById(connectionId)
+                    .orElseThrow(() -> new RuntimeException("Connection not found: " + connectionId));
+            
+            return performHealthCheckForConnection(connection);
+        } catch (Exception e) {
+            log.error("Error performing health check for connection {}: {}", connectionId, e.getMessage(), e);
+            return false;
+        }
+    }
+    
+    /**
+     * Perform health check for a specific connection
+     */
+    private boolean performHealthCheckForConnection(FacebookConnection connection) {
+        String pageId = connection.getPageId();
+        String pageAccessToken = connection.getPageAccessToken();
+        
+        try {
+            log.debug("🔍 Performing health check for page: {}", pageId);
+            
+            // Test the page access token by making a simple Graph API call
+            Map<String, Object> response = webClient.get()
+                    .uri(uriBuilder -> uriBuilder
+                            .path("/" + pageId)
+                            .queryParam("fields", "id,name")
+                            .queryParam("access_token", pageAccessToken)
+                            .build())
+                    .retrieve()
+                    .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
+                    .block();
+            
+            boolean isHealthy = response != null && response.containsKey("id");
+            
+            // Update connection health status
+            connection.setIsHealthy(isHealthy);
+            connection.setLastHealthCheckAt(LocalDateTime.now());
+            connection.setLastUsedAt(LocalDateTime.now()); // Update last used time on successful health check
+            
+            if (isHealthy) {
+                connection.setHealthCheckFailures(0); // Reset failure count on success
+                log.debug("✅ Health check passed for page: {}", pageId);
+            } else {
+                int failures = (connection.getHealthCheckFailures() != null ? connection.getHealthCheckFailures() : 0) + 1;
+                connection.setHealthCheckFailures(failures);
+                log.warn("⚠️ Health check failed for page: {} (failure count: {})", pageId, failures);
+            }
+            
+            connectionRepository.save(connection);
+            return isHealthy;
+            
+        } catch (WebClientResponseException e) {
+            boolean isTokenError = facebookErrorHandler.isTokenError(e.getResponseBodyAsString());
+            
+            connection.setIsHealthy(false);
+            connection.setLastHealthCheckAt(LocalDateTime.now());
+            int failures = (connection.getHealthCheckFailures() != null ? connection.getHealthCheckFailures() : 0) + 1;
+            connection.setHealthCheckFailures(failures);
+            connectionRepository.save(connection);
+            
+            if (isTokenError) {
+                log.warn("🔑 Token error during health check for page {}: {}", pageId, 
+                        facebookErrorHandler.extractErrorMessage(e.getResponseBodyAsString()));
+            } else {
+                log.error("❌ Facebook API error during health check for page {}: {}", pageId, e.getResponseBodyAsString());
+            }
+            return false;
+            
+        } catch (Exception e) {
+            connection.setIsHealthy(false);
+            connection.setLastHealthCheckAt(LocalDateTime.now());
+            int failures = (connection.getHealthCheckFailures() != null ? connection.getHealthCheckFailures() : 0) + 1;
+            connection.setHealthCheckFailures(failures);
+            connectionRepository.save(connection);
+            
+            log.error("❌ Error during health check for page {}: {}", pageId, e.getMessage(), e);
+            return false;
+        }
+    }
+    
+    /**
+     * Scheduled health check for all active connections
+     * Runs every 30 minutes
+     */
+    @org.springframework.scheduling.annotation.Scheduled(fixedRate = 30 * 60 * 1000) // Every 30 minutes
+    @Transactional
+    public void performScheduledHealthChecks() {
+        log.info("🔍 Starting scheduled health checks for Facebook connections");
+        
+        try {
+            Long tenantId = TenantContext.getTenantId();
+            // For scheduled job, we need to check all tenants, not just current context
+            // So we'll get all active connections
+            List<FacebookConnection> allActiveConnections = connectionRepository.findByIsActiveTrue();
+            
+            if (allActiveConnections.isEmpty()) {
+                log.info("✅ No active connections to check");
+                return;
+            }
+            
+            log.info("📊 Checking {} active connections", allActiveConnections.size());
+            
+            int healthyCount = 0;
+            int unhealthyCount = 0;
+            
+            for (FacebookConnection connection : allActiveConnections) {
+                try {
+                    // Set tenant context for each connection
+                    TenantContext.setTenantId(connection.getTenantId());
+                    
+                    if (performHealthCheckForConnection(connection)) {
+                        healthyCount++;
+                    } else {
+                        unhealthyCount++;
+                    }
+                } catch (Exception e) {
+                    unhealthyCount++;
+                    log.error("❌ Health check failed for connection {}: {}", connection.getId(), e.getMessage());
+                } finally {
+                    TenantContext.clear();
+                }
+            }
+            
+            log.info("🏁 Scheduled health checks completed. Healthy: {}, Unhealthy: {}", healthyCount, unhealthyCount);
+            
+        } catch (Exception e) {
+            log.error("❌ Error during scheduled health checks", e);
+        }
+    }
+    
+    /**
+     * Update last used time for a connection (called when connection is used for messaging)
+     */
+    @Transactional
+    public void updateLastUsedTime(UUID connectionId) {
+        try {
+            FacebookConnection connection = connectionRepository.findById(connectionId)
+                    .orElse(null);
+            
+            if (connection != null) {
+                connection.setLastUsedAt(LocalDateTime.now());
+                connectionRepository.save(connection);
+                log.debug("🕐 Updated last used time for connection: {}", connectionId);
+            }
+        } catch (Exception e) {
+            log.error("Error updating last used time for connection {}: {}", connectionId, e.getMessage());
         }
     }
     

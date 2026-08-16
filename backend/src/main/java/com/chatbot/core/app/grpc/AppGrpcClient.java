@@ -16,7 +16,10 @@ import javax.annotation.PreDestroy;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
+import org.springframework.context.annotation.DependsOn;
+
 @Service
+@DependsOn("appGrpcServer")
 @Slf4j
 public class AppGrpcClient {
     

@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Unified Facebook Token Refresh Service
@@ -49,6 +50,14 @@ public class FacebookTokenRefreshService {
     // Cache to prevent multiple refresh attempts for same page
     private final Map<String, LocalDateTime> refreshInProgress = new ConcurrentHashMap<>();
     private static final long REFRESH_COOLDOWN_MINUTES = 5;
+    
+    // Retry configuration
+    private static final int MAX_RETRY_ATTEMPTS = 3;
+    private static final long RETRY_DELAY_MS = 1000; // 1 second initial delay
+    
+    // Token revocation tracking
+    private final Map<String, AtomicInteger> refreshFailureCounts = new ConcurrentHashMap<>();
+    private static final int MAX_REFRESH_FAILURES = 5; // After this many failures, mark as potentially revoked
     
     /**
      * Scheduled proactive refresh - runs daily at 2 AM
@@ -136,51 +145,92 @@ public class FacebookTokenRefreshService {
     }
     
     /**
-     * Core refresh logic - refreshes a single connection's token
+     * Core refresh logic - refreshes a single connection's token with retry mechanism
      */
     @Transactional
     public boolean refreshToken(FacebookConnection connection) {
         String pageId = connection.getPageId();
         
-        try {
-            log.debug("🔄 Refreshing token for page: {}", pageId);
-            
-            // First, try to validate current token
-            if (validateCurrentToken(connection.getPageAccessToken())) {
-                // Token is still valid, just update timestamps
-                connection.setTokenUpdatedAt(LocalDateTime.now());
-                connection.setTokenExpiresAt(LocalDateTime.now().plusDays(60));
-                connectionRepository.save(connection);
-                
-                log.debug("✅ Token validation successful for page: {}", pageId);
-                return true;
-            }
-            
-            // Token is invalid, try to get fresh token from stored user token
-            String freshPageToken = getFreshPageToken(connection);
-            if (freshPageToken != null) {
-                // Update connection with fresh token
-                connection.setPageAccessToken(freshPageToken);
-                connection.setTokenUpdatedAt(LocalDateTime.now());
-                connection.setTokenExpiresAt(LocalDateTime.now().plusDays(60));
-                connectionRepository.save(connection);
-                
-                log.info("✅ Successfully refreshed token for page: {}", pageId);
-                return true;
-            }
-            
-            // Cannot refresh automatically, mark as needing user intervention
-            connection.setTokenUpdatedAt(LocalDateTime.now());
-            connection.setTokenExpiresAt(LocalDateTime.now()); // Expired
-            connectionRepository.save(connection);
-            
-            log.warn("⚠️ Token requires user intervention for page: {}", pageId);
-            return false;
-            
-        } catch (Exception e) {
-            log.error("❌ Error refreshing token for page {}: {}", pageId, e.getMessage(), e);
+        // Check if token might be revoked (too many consecutive failures)
+        if (isTokenPotentiallyRevoked(pageId)) {
+            log.error("❌ Token for page {} potentially revoked due to excessive refresh failures", pageId);
+            markTokenAsRevoked(connection);
             return false;
         }
+        
+        // Retry logic with exponential backoff
+        int attempt = 0;
+        long delay = RETRY_DELAY_MS;
+        
+        while (attempt < MAX_RETRY_ATTEMPTS) {
+            attempt++;
+            try {
+                log.debug("🔄 Refreshing token for page: {} (attempt {}/{})", pageId, attempt, MAX_RETRY_ATTEMPTS);
+                
+                // First, try to validate current token
+                if (validateCurrentToken(connection.getPageAccessToken())) {
+                    // Token is still valid, just update timestamps
+                    connection.setTokenUpdatedAt(LocalDateTime.now());
+                    connection.setTokenExpiresAt(LocalDateTime.now().plusDays(60));
+                    connectionRepository.save(connection);
+                    
+                    // Reset failure count on success
+                    resetRefreshFailureCount(pageId);
+                    
+                    log.debug("✅ Token validation successful for page: {}", pageId);
+                    return true;
+                }
+                
+                // Token is invalid, try to get fresh token from stored user token
+                String freshPageToken = getFreshPageToken(connection);
+                if (freshPageToken != null) {
+                    // Update connection with fresh token
+                    connection.setPageAccessToken(freshPageToken);
+                    connection.setTokenUpdatedAt(LocalDateTime.now());
+                    connection.setTokenExpiresAt(LocalDateTime.now().plusDays(60));
+                    connectionRepository.save(connection);
+                    
+                    // Reset failure count on success
+                    resetRefreshFailureCount(pageId);
+                    
+                    log.info("✅ Successfully refreshed token for page: {}", pageId);
+                    return true;
+                }
+                
+                // Cannot refresh automatically, mark as needing user intervention
+                connection.setTokenUpdatedAt(LocalDateTime.now());
+                connection.setTokenExpiresAt(LocalDateTime.now()); // Expired
+                connectionRepository.save(connection);
+                
+                // Increment failure count
+                incrementRefreshFailureCount(pageId);
+                
+                log.warn("⚠️ Token requires user intervention for page: {}", pageId);
+                return false;
+                
+            } catch (Exception e) {
+                log.error("❌ Error refreshing token for page {} (attempt {}): {}", pageId, attempt, e.getMessage());
+                
+                // Increment failure count
+                incrementRefreshFailureCount(pageId);
+                
+                // If not last attempt, wait before retry
+                if (attempt < MAX_RETRY_ATTEMPTS) {
+                    try {
+                        Thread.sleep(delay);
+                        delay *= 2; // Exponential backoff
+                    } catch (InterruptedException ie) {
+                        Thread.currentThread().interrupt();
+                        break;
+                    }
+                }
+            }
+        }
+        
+        // All retry attempts failed
+        log.error("❌ All retry attempts failed for page {}", pageId);
+        markTokenAsRevoked(connection);
+        return false;
     }
     
     /**
@@ -404,5 +454,68 @@ public class FacebookTokenRefreshService {
         public double getHealthPercentage() {
             return totalTokens > 0 ? (double) getHealthyTokens() / totalTokens * 100 : 100;
         }
+    }
+    
+    /**
+     * Check if token is potentially revoked due to excessive refresh failures
+     */
+    private boolean isTokenPotentiallyRevoked(String pageId) {
+        AtomicInteger failureCount = refreshFailureCounts.get(pageId);
+        return failureCount != null && failureCount.get() >= MAX_REFRESH_FAILURES;
+    }
+    
+    /**
+     * Mark token as revoked and log warning for manual intervention
+     */
+    private void markTokenAsRevoked(FacebookConnection connection) {
+        connection.setTokenUpdatedAt(LocalDateTime.now());
+        connection.setTokenExpiresAt(LocalDateTime.now()); // Mark as expired
+        connectionRepository.save(connection);
+        
+        log.warn("🚨 TOKEN REVOCATION WARNING: Page {} token marked as revoked. Manual re-authentication required.", 
+                connection.getPageId());
+        
+        // Additional alert could be sent here (email, Slack, etc.)
+        // For now, just log the warning
+    }
+    
+    /**
+     * Increment refresh failure count for a page
+     */
+    private void incrementRefreshFailureCount(String pageId) {
+        refreshFailureCounts.computeIfAbsent(pageId, k -> new AtomicInteger(0)).incrementAndGet();
+        int currentCount = refreshFailureCounts.get(pageId).get();
+        
+        if (currentCount >= MAX_REFRESH_FAILURES) {
+            log.error("🚨 CRITICAL: Page {} has reached {} consecutive refresh failures - token likely revoked", 
+                    pageId, currentCount);
+        } else if (currentCount >= MAX_REFRESH_FAILURES - 2) {
+            log.warn("⚠️ WARNING: Page {} has {} consecutive refresh failures - approaching revocation threshold", 
+                    pageId, currentCount);
+        }
+    }
+    
+    /**
+     * Reset refresh failure count for a page (called on successful refresh)
+     */
+    private void resetRefreshFailureCount(String pageId) {
+        AtomicInteger failureCount = refreshFailureCounts.get(pageId);
+        if (failureCount != null && failureCount.get() > 0) {
+            log.debug("🔄 Resetting refresh failure count for page {} (was: {})", pageId, failureCount.get());
+            failureCount.set(0);
+        }
+    }
+    
+    /**
+     * Get refresh failure statistics for monitoring
+     */
+    public Map<String, Integer> getRefreshFailureStats() {
+        Map<String, Integer> stats = new java.util.HashMap<>();
+        refreshFailureCounts.forEach((pageId, count) -> {
+            if (count.get() > 0) {
+                stats.put(pageId, count.get());
+            }
+        });
+        return stats;
     }
 }

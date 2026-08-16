@@ -30,7 +30,21 @@ public class UserServiceGrpcImpl extends UserServiceGrpc.UserServiceImplBase {
         try {
             log.info("gRPC: Validating user với ID: {}", request.getUserId());
             
-            Long userId = Long.parseLong(request.getUserId());
+            Long userId;
+            try {
+                userId = Long.parseLong(request.getUserId());
+            } catch (NumberFormatException e) {
+                ValidateUserResponse response = ValidateUserResponse.newBuilder()
+                        .setValid(false)
+                        .setUserId(request.getUserId())
+                        .setIsActive(false)
+                        .setMessage("Invalid user ID format")
+                        .build();
+                responseObserver.onNext(response);
+                responseObserver.onCompleted();
+                return;
+            }
+
             Optional<User> userOpt = userRepository.findById(userId);
             
             boolean valid = userOpt.map(User::getIsActive).orElse(false);

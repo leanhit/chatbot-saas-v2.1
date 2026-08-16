@@ -81,6 +81,10 @@ class AppServiceGrpcImpl extends AppServiceGrpc.AppServiceImplBase {
             responseObserver.onError(io.grpc.Status.INVALID_ARGUMENT
                 .withDescription(e.getMessage())
                 .asRuntimeException());
+        } catch (com.chatbot.shared.exceptions.ResourceNotFoundException e) {
+            responseObserver.onError(io.grpc.Status.NOT_FOUND
+                .withDescription(e.getMessage())
+                .asRuntimeException());
         } catch (Exception e) {
             responseObserver.onError(io.grpc.Status.INTERNAL
                 .withDescription(e.getMessage())
@@ -147,6 +151,10 @@ class AppServiceGrpcImpl extends AppServiceGrpc.AppServiceImplBase {
             responseObserver.onError(io.grpc.Status.INVALID_ARGUMENT
                 .withDescription(e.getMessage())
                 .asRuntimeException());
+        } catch (com.chatbot.shared.exceptions.ResourceNotFoundException e) {
+            responseObserver.onError(io.grpc.Status.NOT_FOUND
+                .withDescription(e.getMessage())
+                .asRuntimeException());
         } catch (Exception e) {
             responseObserver.onError(io.grpc.Status.INTERNAL
                 .withDescription(e.getMessage())
@@ -168,6 +176,10 @@ class AppServiceGrpcImpl extends AppServiceGrpc.AppServiceImplBase {
             responseObserver.onCompleted();
         } catch (IllegalArgumentException e) {
             responseObserver.onError(io.grpc.Status.INVALID_ARGUMENT
+                .withDescription(e.getMessage())
+                .asRuntimeException());
+        } catch (com.chatbot.shared.exceptions.ResourceNotFoundException e) {
+            responseObserver.onError(io.grpc.Status.NOT_FOUND
                 .withDescription(e.getMessage())
                 .asRuntimeException());
         } catch (Exception e) {
