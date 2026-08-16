@@ -333,9 +333,32 @@ public class JwtService {
     // Verify license was signed by cloud (prevent client self-signing)
     public boolean verifyLicenseSignedByCloud(String token) {
         try {
+            // First, verify the cryptographic signature using getClaims()
+            // This will throw an exception if the signature is invalid
             Claims claims = getClaims(token);
+            
+            // Then, verify the "signed_by" claim to ensure it's from cloud
+            // This prevents a valid signature from being used if it wasn't signed by cloud
             String signedBy = claims.get("signed_by", String.class);
-            return "cloud".equals(signedBy);
+            boolean isCloudSigned = "cloud".equals(signedBy);
+            
+            if (!isCloudSigned) {
+                log.warn("License token is cryptographically valid but not signed by cloud");
+                return false;
+            }
+            
+            // Additional verification: check issuer if present
+            String issuer = claims.getIssuer();
+            if (issuer != null && !issuer.contains("cloud")) {
+                log.warn("License token issuer is not cloud: {}", issuer);
+                return false;
+            }
+            
+            log.debug("License token verified as cloud-signed");
+            return true;
+        } catch (SignatureException e) {
+            log.error("License signature verification failed - invalid cryptographic signature: {}", e.getMessage());
+            return false;
         } catch (Exception e) {
             log.error("License signature verification failed: {}", e.getMessage());
             return false;

@@ -14,6 +14,7 @@ import com.chatbot.core.tenant.membership.repository.TenantMemberRepository;
 import com.chatbot.core.tenant.profile.repository.TenantProfileRepository;
 import com.chatbot.core.tenant.professional.repository.TenantProfessionalRepository;
 import com.chatbot.core.tenant.repository.TenantAuditLogRepository;
+import com.chatbot.core.tenant.repository.TenantRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -21,6 +22,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * Service for cleaning up tenant-related data after soft delete
@@ -37,6 +39,7 @@ public class TenantCleanupService {
     private final TenantInvitationRepository tenantInvitationRepository;
     private final TenantJoinRequestRepository tenantJoinRequestRepository;
     private final TenantAuditLogRepository tenantAuditLogRepository;
+    private final TenantRepository tenantRepository;
     private final ConversationRepository conversationRepository;
     private final MessageRepository messageRepository;
     private final AgentRepository agentRepository;
@@ -88,9 +91,49 @@ public class TenantCleanupService {
         log.info("[TenantCleanupService] Starting scheduled cleanup for old deleted tenants");
         LocalDateTime cutoffDate = LocalDateTime.now().minusDays(30);
         
-        // Note: This would require adding a method to find deleted tenants by date
-        // For now, this is a placeholder for the scheduled cleanup logic
-        log.info("[TenantCleanupService] Scheduled cleanup completed");
+        try {
+            // Find all tenants deleted more than 30 days ago
+            List<com.chatbot.core.tenant.model.Tenant> deletedTenants = 
+                tenantRepository.findDeletedTenantsOlderThan(cutoffDate);
+            
+            if (deletedTenants.isEmpty()) {
+                log.info("[TenantCleanupService] No tenants found for cleanup (deleted > 30 days ago)");
+                return;
+            }
+            
+            log.info("[TenantCleanupService] Found {} tenants for cleanup", deletedTenants.size());
+            
+            int successCount = 0;
+            int failureCount = 0;
+            
+            for (com.chatbot.core.tenant.model.Tenant tenant : deletedTenants) {
+                try {
+                    log.info("[TenantCleanupService] Cleaning up tenant: {} (deleted at: {})", 
+                            tenant.getId(), tenant.getUpdatedAt());
+                    
+                    // Perform full cleanup for this tenant
+                    cleanupTenantData(tenant.getId());
+                    
+                    // Optionally, hard delete the tenant record itself
+                    // tenantRepository.delete(tenant);
+                    
+                    successCount++;
+                    log.info("[TenantCleanupService] Successfully cleaned up tenant: {}", tenant.getId());
+                    
+                } catch (Exception e) {
+                    failureCount++;
+                    log.error("[TenantCleanupService] Failed to cleanup tenant: {}", tenant.getId(), e);
+                    // Continue with next tenant even if one fails
+                }
+            }
+            
+            log.info("[TenantCleanupService] Scheduled cleanup completed - Success: {}, Failed: {}", 
+                    successCount, failureCount);
+                    
+        } catch (Exception e) {
+            log.error("[TenantCleanupService] Error during scheduled cleanup", e);
+            throw e;
+        }
     }
 
     private void cleanupMessages(Long tenantId) {

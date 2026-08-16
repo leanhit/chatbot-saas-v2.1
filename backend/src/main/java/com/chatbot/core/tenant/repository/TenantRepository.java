@@ -98,4 +98,8 @@ public interface TenantRepository extends JpaRepository<Tenant, Long> {
     // Tìm các tenant có gói đã hết hạn
     @Query("SELECT t FROM Tenant t WHERE t.expiresAt IS NOT NULL AND t.expiresAt <= :now")
     List<Tenant> findExpiredTenants(@Param("now") LocalDateTime now);
+
+    // Tìm các tenant đã soft-delete trước cutoff date (cho scheduled cleanup)
+    @Query("SELECT t FROM Tenant t WHERE t.status = 'DELETED' AND t.updatedAt <= :cutoffDate")
+    List<Tenant> findDeletedTenantsOlderThan(@Param("cutoffDate") LocalDateTime cutoffDate);
 }
