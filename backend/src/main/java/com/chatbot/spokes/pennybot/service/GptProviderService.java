@@ -13,6 +13,8 @@ import com.openai.models.chat.completions.ChatCompletionCreateParams;
 import com.openai.models.chat.completions.ChatCompletionMessageParam;
 import com.openai.models.chat.completions.ChatCompletionSystemMessageParam;
 import com.openai.models.chat.completions.ChatCompletionUserMessageParam;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.retry.annotation.Retry;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -79,6 +81,8 @@ public class GptProviderService implements ChatbotProviderService {
     }
 
     @Override
+    @CircuitBreaker(name = "gptProvider", fallbackMethod = "sendMessageFallback")
+    @Retry(name = "gptProvider", fallbackMethod = "sendMessageFallback")
     public Map<String, Object> sendMessage(String botId, String senderId, String messageText) {
         log.info("🤖 [GPT] Processing message from {} via bot {}: {}",
             senderId, botId, messageText.length() > 50 ? messageText.substring(0, 50) + "..." : messageText);
@@ -203,6 +207,25 @@ public class GptProviderService implements ChatbotProviderService {
             log.warn("⚠️ [GPT] Invalid botId UUID: {}, using zero UUID", botId);
             return new UUID(0, 0);
         }
+    }
+
+    /**
+     * Fallback method for Circuit Breaker and Retry
+     */
+    public Map<String, Object> sendMessageFallback(String botId, String senderId, String messageText, Exception e) {
+        log.warn("⚠️ [GPT] Circuit breaker opened or retry exhausted for bot: {}, error: {}", botId, e.getMessage());
+        return buildCircuitBreakerFallbackResponse(botId, senderId, e.getMessage());
+    }
+
+    private Map<String, Object> buildCircuitBreakerFallbackResponse(String botId, String senderId, String error) {
+        Map<String, Object> r = new HashMap<>();
+        r.put("status", "circuit_breaker");
+        r.put("response", "Xin chào! Hiện tại dịch vụ AI đang bận hoặc gặp sự cố kỹ thuật. Vui lòng thử lại sau vài phút hoặc liên hệ hỗ trợ nếu vấn đề kéo dài.");
+        r.put("botId", botId);
+        r.put("senderId", senderId);
+        r.put("error", error);
+        r.put("timestamp", System.currentTimeMillis());
+        return r;
     }
 
     private Map<String, Object> buildFallbackResponse(String botId, String senderId, String reason) {

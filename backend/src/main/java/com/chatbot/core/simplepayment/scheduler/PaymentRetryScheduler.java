@@ -5,6 +5,7 @@ import com.chatbot.core.simplepayment.repository.SimplePaymentRepository;
 import com.chatbot.core.simplepayment.service.RetryablePaymentService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -23,6 +24,7 @@ public class PaymentRetryScheduler {
      * Retry failed payments every 5 minutes
      */
     @Scheduled(fixedRate = 300000) // Every 5 minutes
+    @SchedulerLock(name = "PaymentRetryScheduler_retryFailedPayments", lockAtMostFor = "6m", lockAtLeastFor = "4m")
     public void retryFailedPayments() {
         log.info("🔄 Starting retry of failed payments");
         
@@ -69,6 +71,7 @@ public class PaymentRetryScheduler {
      * Check stuck pending payments every 10 minutes
      */
     @Scheduled(fixedRate = 600000) // Every 10 minutes
+    @SchedulerLock(name = "PaymentRetryScheduler_checkStuckPendingPayments", lockAtMostFor = "11m", lockAtLeastFor = "9m")
     public void checkStuckPendingPayments() {
         log.info("🔍 Checking for stuck pending payments");
         

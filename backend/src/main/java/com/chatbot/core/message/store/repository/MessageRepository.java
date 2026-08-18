@@ -43,18 +43,16 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
         @Param("tenantId") Long tenantId
     );
     
-    // Tìm tin nhắn theo ID, tenantId và kiểm tra owner thông qua conversation
-    @Query("SELECT m FROM Message m WHERE m.id = :messageId AND m.tenantId = :tenantId AND EXISTS " +
-           "(SELECT 1 FROM Conversation c WHERE c.id = m.conversationId AND c.tenantId = :tenantId AND c.ownerId = :ownerId)")
+    // Tìm tin nhắn theo ID, tenantId và kiểm tra owner thông qua conversation - OPTIMIZED WITH JOIN
+    @Query("SELECT m FROM Message m JOIN Conversation c ON m.conversationId = c.id WHERE m.id = :messageId AND m.tenantId = :tenantId AND c.ownerId = :ownerId")
     Optional<Message> findByIdAndTenantIdAndOwnerId(
         @Param("messageId") Long messageId, 
         @Param("tenantId") Long tenantId, 
         @Param("ownerId") String ownerId
     );
     
-    // Tìm nhiều tin nhắn theo danh sách ID, tenantId và kiểm tra owner
-    @Query("SELECT m FROM Message m WHERE m.id IN :messageIds AND m.tenantId = :tenantId AND EXISTS " +
-           "(SELECT 1 FROM Conversation c WHERE c.id = m.conversationId AND c.tenantId = :tenantId AND c.ownerId = :ownerId)")
+    // Tìm nhiều tin nhắn theo danh sách ID, tenantId và kiểm tra owner - OPTIMIZED WITH JOIN
+    @Query("SELECT m FROM Message m JOIN Conversation c ON m.conversationId = c.id WHERE m.id IN :messageIds AND m.tenantId = :tenantId AND c.ownerId = :ownerId")
     List<Message> findAllByIdsAndTenantIdAndOwnerId(
         @Param("messageIds") List<Long> messageIds, 
         @Param("tenantId") Long tenantId, 

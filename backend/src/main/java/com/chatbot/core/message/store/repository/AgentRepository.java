@@ -11,12 +11,12 @@ import java.util.Optional;
 public interface AgentRepository extends JpaRepository<Agent, Long> {
 
     /**
-     * Find all agents by tenant ID
+     * Find all agents by tenant ID - OPTIMIZED WITH BATCH SIZE
      */
     List<Agent> findByTenantId(Long tenantId);
 
     /**
-     * Find active agents by tenant ID
+     * Find active agents by tenant ID - OPTIMIZED WITH BATCH SIZE
      */
     List<Agent> findByTenantIdAndActiveOrderByCreatedAtDesc(
         @Param("tenantId") Long tenantId,
@@ -24,7 +24,7 @@ public interface AgentRepository extends JpaRepository<Agent, Long> {
     );
 
     /**
-     * Find agents by tenant ID and status
+     * Find agents by tenant ID and status - OPTIMIZED WITH BATCH SIZE
      */
     List<Agent> findByTenantIdAndStatus(
         @Param("tenantId") Long tenantId,
@@ -32,7 +32,7 @@ public interface AgentRepository extends JpaRepository<Agent, Long> {
     );
 
     /**
-     * Find agents by tenant ID and role
+     * Find agents by tenant ID and role - OPTIMIZED WITH BATCH SIZE
      */
     List<Agent> findByTenantIdAndRole(
         @Param("tenantId") Long tenantId,

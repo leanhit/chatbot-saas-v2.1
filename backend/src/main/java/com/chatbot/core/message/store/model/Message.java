@@ -16,12 +16,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Builder
 @Entity
-@Table(name = "messages",
-    indexes = {
-        @Index(name = "idx_message_tenant", columnList = "tenant_id"),
-        @Index(name = "idx_message_tenant_conversation", columnList = "tenant_id, conversation_id")
-    }
-)
+@Table(name = "messages")
 @EqualsAndHashCode(callSuper = true)
 public class Message extends BaseTenantEntity {
 

@@ -3,6 +3,7 @@ package com.chatbot.core.simplepayment.scheduler;
 import com.chatbot.core.simplepayment.service.SimplePaymentService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -19,6 +20,7 @@ public class PaymentCheckScheduler {
      * Runs every 30 seconds to check pending payments
      */
     @Scheduled(fixedDelay = 30000) // ENABLED - Check every 30 seconds
+    @SchedulerLock(name = "PaymentCheckScheduler_checkPendingPayments", lockAtMostFor = "35s", lockAtLeastFor = "25s")
     public void checkPendingPayments() {
         String lockKey = "lock:scheduler:checkPendingPayments";
         Boolean acquired = redisTemplate.opsForValue().setIfAbsent(lockKey, "locked", java.time.Duration.ofSeconds(25));
@@ -45,6 +47,7 @@ public class PaymentCheckScheduler {
      * Health check every minute
      */
     @Scheduled(fixedDelay = 60000) // 1 minute
+    @SchedulerLock(name = "PaymentCheckScheduler_healthCheck", lockAtMostFor = "65s", lockAtLeastFor = "55s")
     public void healthCheck() {
         log.debug("💓 Simple Payment Scheduler heartbeat");
     }

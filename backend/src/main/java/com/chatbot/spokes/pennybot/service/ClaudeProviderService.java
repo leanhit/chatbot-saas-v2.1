@@ -2,6 +2,8 @@ package com.chatbot.spokes.pennybot.service;
 
 import com.chatbot.shared.penny.providers.PromptTemplateService;
 import com.chatbot.spokes.facebook.webhook.service.ChatbotProviderService;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.retry.annotation.Retry;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -60,6 +62,8 @@ public class ClaudeProviderService implements ChatbotProviderService {
     }
 
     @Override
+    @CircuitBreaker(name = "claudeProvider", fallbackMethod = "sendMessageFallback")
+    @Retry(name = "claudeProvider", fallbackMethod = "sendMessageFallback")
     public Map<String, Object> sendMessage(String botId, String senderId, String messageText) {
         log.info("🤖 [Claude] Processing message from {} via bot {}", senderId, botId);
 
@@ -177,6 +181,25 @@ public class ClaudeProviderService implements ChatbotProviderService {
         } catch (IllegalArgumentException e) {
             return new UUID(0, 0);
         }
+    }
+
+    /**
+     * Fallback method for Circuit Breaker and Retry
+     */
+    public Map<String, Object> sendMessageFallback(String botId, String senderId, String messageText, Exception e) {
+        log.warn("⚠️ [Claude] Circuit breaker opened or retry exhausted for bot: {}, error: {}", botId, e.getMessage());
+        return buildCircuitBreakerFallbackResponse(botId, senderId, e.getMessage());
+    }
+
+    private Map<String, Object> buildCircuitBreakerFallbackResponse(String botId, String senderId, String error) {
+        return Map.of(
+            "status", "circuit_breaker",
+            "response", "Xin chào! Hiện tại dịch vụ AI đang bận hoặc gặp sự cố kỹ thuật. Vui lòng thử lại sau vài phút hoặc liên hệ hỗ trợ nếu vấn đề kéo dài.",
+            "botId", botId,
+            "senderId", senderId,
+            "error", error,
+            "timestamp", System.currentTimeMillis()
+        );
     }
 
     private Map<String, Object> buildFallbackResponse(String botId, String senderId) {

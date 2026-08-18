@@ -370,8 +370,38 @@ public class TakeoverWebSocketHandler extends TextWebSocketHandler {
     /**
      * Gửi tin nhắn đến tất cả các Agent đang xem cuộc hội thoại cụ thể này.
      * Đây là hàm sẽ được gọi từ các service khác (như FacebookMessengerService, FacebookWebhookService).
+     * Uses Redis Pub/Sub for cluster-wide broadcast.
      */
     public void sendToConversation(String conversationId, TakeoverMessage message) {
+        // Publish to Redis for cluster-wide broadcast
+        try {
+            Map<String, Object> messageWithConversation = Map.of(
+                "type", "CONVERSATION_MESSAGE",
+                "conversationId", conversationId,
+                "data", Map.of(
+                    "id", message.getId(),
+                    "conversationId", conversationId,
+                    "sender", message.getSender(),
+                    "message", message.getContent(),
+                    "timestamp", message.getTimestamp()
+                )
+            );
+            String messageJson = objectMapper.writeValueAsString(messageWithConversation);
+            redisTemplate.convertAndSend(RedisPubSubConfig.WEBSOCKET_TAKEOVER_TOPIC, messageJson);
+            log.debug("📡 [Redis Pub/Sub] Published conversation message for {}", conversationId);
+        } catch (Exception e) {
+            log.error("❌ [Redis Pub/Sub] Failed to publish conversation message: {}", e.getMessage());
+        }
+
+        // Also send to local sessions
+        sendToConversationLocal(conversationId, message);
+    }
+
+    /**
+     * Send message to local sessions only (no Redis pub/sub)
+     * Used by RedisTakeoverMessageListener to avoid infinite loop
+     */
+    public void sendToConversationLocal(String conversationId, TakeoverMessage message) {
         // Broadcast new message notification to the entire tenant via Notification WebSocket
         try {
             Long conversationIdLong = Long.parseLong(conversationId);

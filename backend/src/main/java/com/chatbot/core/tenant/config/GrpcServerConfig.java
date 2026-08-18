@@ -34,8 +34,6 @@ class GrpcServerConfig {
     private String privateKeyPath;
 
     private final TenantServiceGrpcImpl tenantServiceGrpcImpl;
-
-
     private final GrpcAuthInterceptor grpcAuthInterceptor;
 
     private Server grpcServer;

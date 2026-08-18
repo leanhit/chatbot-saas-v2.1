@@ -18,7 +18,6 @@ import com.chatbot.core.message.store.service.ErrorWorkflow;
 import com.chatbot.core.message.store.service.ConversationEndWorkflow;
 import com.chatbot.core.message.decision.service.TakeoverService;
 import com.chatbot.core.message.decision.model.TakeoverMessage;
-import com.chatbot.spokes.odoo.service.CustomerDataService;
 import com.chatbot.core.tenant.infra.TenantContext;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
@@ -50,7 +49,6 @@ public class FacebookEventConsumer {
     private final ConversationService conversationService;
     private final MessageService messageService;
     private final TakeoverService takeoverService;
-    private final CustomerDataService customerDataService;
     private final AIEscalationService aiEscalationService;
     private final ErrorWorkflow errorWorkflow;
     private final ConversationEndWorkflow conversationEndWorkflow;
@@ -191,12 +189,6 @@ public class FacebookEventConsumer {
                     "Failed to save user message: " + e.getMessage(), "medium");
         }
 
-        try {
-            customerDataService.processAndAccumulate(connection.getPageId(), senderId, text);
-        } catch (Exception e) {
-            log.error("❌ Customer data sync failed: {}", e.getMessage());
-        }
-
         routeToPennyBot(connection, senderId, text, "text", conversation, savedMessage);
     }
 
@@ -262,12 +254,6 @@ public class FacebookEventConsumer {
             log.error("❌ Failed to save QuickReply to DB: " + e.getMessage());
         }
 
-        try {
-            customerDataService.processAndAccumulate(connection.getPageId(), senderId, messageContent);
-        } catch (Exception e) {
-            log.error("❌ Customer data sync failed: {}", e.getMessage());
-        }
-
         routeToPennyBot(connection, senderId, "[QuickReply] " + payload, "quick_reply", conversation, savedMessage);
     }
 
@@ -292,12 +278,6 @@ public class FacebookEventConsumer {
             log.info("✅ Saved Postback to DB. Message ID: " + savedMessage.getId());
         } catch (Exception e) {
             log.error("❌ Failed to save Postback to DB: " + e.getMessage());
-        }
-
-        try {
-            customerDataService.processAndAccumulate(connection.getPageId(), senderId, text);
-        } catch (Exception e) {
-            log.error("❌ Customer data sync failed: {}", e.getMessage());
         }
 
         routeToPennyBot(connection, senderId, "[Postback] " + payload, "postback", conversation, savedMessage);

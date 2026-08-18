@@ -5,6 +5,7 @@ import com.chatbot.core.tenant.repository.TenantRepository;
 import com.chatbot.core.tenant.service.TenantPackageService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -28,6 +29,7 @@ public class TenantSubscriptionScheduler {
      * Note: Transaction scope is limited to individual tenant downgrades to prevent batch rollback
      */
     @Scheduled(cron = "0 0 * * * *")
+    @SchedulerLock(name = "TenantSubscriptionScheduler_downgradeExpiredTenants", lockAtMostFor = "65m", lockAtLeastFor = "55m")
     public void downgradeExpiredTenants() {
         log.info("⏰ [TenantSubscriptionScheduler] Checking for expired tenant subscriptions...");
         try {

@@ -6,6 +6,7 @@ import com.chatbot.spokes.facebook.exception.FacebookTokenException;
 import com.chatbot.spokes.facebook.handler.FacebookErrorHandler;
 import com.chatbot.core.tenant.infra.TenantContext;
 import lombok.extern.slf4j.Slf4j;
+import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -64,6 +65,7 @@ public class FacebookTokenRefreshService {
      * Refresh tokens that will expire in next 7 days
      */
     @Scheduled(cron = "0 0 2 * * ?")
+    @SchedulerLock(name = "FacebookTokenRefreshService_refreshExpiringTokensProactively", lockAtMostFor = "2h", lockAtLeastFor = "1h")
     @Transactional
     public void refreshExpiringTokensProactively() {
         log.info("🔄 Starting proactive Facebook token refresh check");

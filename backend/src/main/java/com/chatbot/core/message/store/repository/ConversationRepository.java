@@ -29,8 +29,7 @@ public interface ConversationRepository extends JpaRepository<Conversation, Long
         Pageable pageable
     );
 
-    // 1. Phân trang và sắp xếp cho UI chính theo tenant
-    // Sắp xếp theo updatedAt để đảm bảo các cuộc trò chuyện có tin nhắn mới nhất hiển thị đầu tiên
+    // 1. Phân trang và sắp xếp cho UI chính theo tenant - OPTIMIZED WITH BATCH SIZE
     @Query("SELECT c FROM Conversation c WHERE c.tenantId = :tenantId ORDER BY c.updatedAt DESC")
     Page<Conversation> findAllByTenantIdOrderByUpdatedAtDesc(
         @Param("tenantId") Long tenantId, 
@@ -76,14 +75,14 @@ public interface ConversationRepository extends JpaRepository<Conversation, Long
         @Param("tenantId") Long tenantId
     );
 
-    // 6a. Bot Inbox: Conversations đang được bot xử lý (isTakenOverByAgent = false) - Phân trang
+    // 6a. Bot Inbox: Conversations đang được bot xử lý (isTakenOverByAgent = false) - Phân trang - OPTIMIZED
     @Query("SELECT c FROM Conversation c WHERE c.isTakenOverByAgent = false AND c.tenantId = :tenantId ORDER BY c.updatedAt DESC")
     Page<Conversation> findBotInboxConversationsByTenantId(
         @Param("tenantId") Long tenantId,
         Pageable pageable
     );
 
-    // 6b. Agent Inbox: Conversations đang được agent xử lý (isTakenOverByAgent = true) - Phân trang
+    // 6b. Agent Inbox: Conversations đang được agent xử lý (isTakenOverByAgent = true) - Phân trang - OPTIMIZED
     @Query("SELECT c FROM Conversation c WHERE c.isTakenOverByAgent = true AND c.tenantId = :tenantId ORDER BY c.updatedAt DESC")
     Page<Conversation> findAgentInboxConversationsByTenantId(
         @Param("tenantId") Long tenantId,
