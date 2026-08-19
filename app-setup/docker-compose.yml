@@ -143,6 +143,70 @@ services:
       timeout: 5s
       retries: 10
 
+  # ----------------------------------------
+  # PgBouncer Connection Pooler
+  # ----------------------------------------
+  pgbouncer:
+    image: edoburu/pgbouncer:latest
+    container_name: chatbot_saas_pgbouncer
+    restart: always
+    environment:
+      POSTGRES_HOST: db-identity
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: chatbot_user
+      POSTGRES_PASSWORD: chatbot_Admin_2025
+      POSTGRES_DB: chatbot_identity_db
+      POOL_MODE: transaction
+      DATABASES_HOST: db-identity
+      DATABASES_PORT: 5432
+      DATABASES_USER: chatbot_user
+      DATABASES_PASSWORD: chatbot_Admin_2025
+      DATABASES_DB: chatbot_identity_db
+      DATABASES_NAME: chatbot_identity_db
+      DATABASES_HOST_USER: db-user
+      DATABASES_HOST_TENANT: db-tenant
+      DATABASES_HOST_APP: db-app
+      DATABASES_HOST_CONFIG: db-config
+      DATABASES_HOST_MESSAGE: db-message
+      DATABASES_PORT_USER: 5432
+      DATABASES_PORT_TENANT: 5432
+      DATABASES_PORT_APP: 5432
+      DATABASES_PORT_CONFIG: 5432
+      DATABASES_PORT_MESSAGE: 5432
+      DATABASES_DB_USER: chatbot_user_db
+      DATABASES_DB_TENANT: chatbot_tenant_db
+      DATABASES_DB_APP: chatbot_app_db
+      DATABASES_DB_CONFIG: chatbot_config_db
+      DATABASES_DB_MESSAGE: chatbot_message_db
+      MAX_CLIENT_CONN: 1000
+      DEFAULT_POOL_SIZE: 25
+      MIN_POOL_SIZE: 5
+      RESERVE_POOL_SIZE: 10
+      RESERVE_POOL_TIMEOUT: 3
+      SERVER_LIFETIME: 3600
+      SERVER_IDLE_TIMEOUT: 600
+      SERVER_CONNECT_TIMEOUT: 15
+      QUERY_TIMEOUT: 300
+    ports:
+      - "6432:6432"
+    networks:
+      - internal
+    depends_on:
+      - db-identity
+      - db-user
+      - db-tenant
+      - db-app
+      - db-config
+      - db-message
+    volumes:
+      - ./pgbouncer.ini:/etc/pgbouncer/pgbouncer.ini:ro
+      - ./pgbouncer-userlist.txt:/etc/pgbouncer/userlist.txt:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h localhost -p 6432 -U chatbot_user"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
   
   # ----------------------------------------
   # MinIO

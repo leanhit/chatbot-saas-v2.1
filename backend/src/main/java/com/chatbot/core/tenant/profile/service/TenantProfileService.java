@@ -8,7 +8,9 @@ import com.chatbot.core.tenant.profile.repository.TenantProfileRepository;
 import com.chatbot.shared.storage.StorageService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.util.stream.Collectors;
@@ -37,6 +39,7 @@ public class TenantProfileService {
         return SecurityContextHolder.getContext().getAuthentication().getName();
     }
 
+    @Cacheable(value = "tenant-profiles", key = "#tenantId", unless = "#result == null")
     @Transactional(readOnly = true, transactionManager = "tenantTransactionManager")
     public TenantProfileResponse getProfile(Long tenantId) {
         // Check if tenant exists
@@ -56,6 +59,10 @@ public class TenantProfileService {
             ));
     }
 
+    @Caching(evict = {
+        @CacheEvict(value = "tenant-profiles", key = "#tenantId"),
+        @CacheEvict(value = "tenant-profiles-batch", allEntries = true)
+    })
     @Transactional(transactionManager = "tenantTransactionManager")
     public TenantProfileResponse upsertProfile(
             Long tenantId,
@@ -128,6 +135,10 @@ public class TenantProfileService {
         return response;
     }
 
+    @Caching(evict = {
+        @CacheEvict(value = "tenant-profiles", key = "#tenantId"),
+        @CacheEvict(value = "tenant-profiles-batch", allEntries = true)
+    })
     @Transactional(rollbackFor = Exception.class)
     public TenantProfileResponse updateLogo(Long tenantId, MultipartFile file) {
         try {
@@ -180,6 +191,7 @@ public class TenantProfileService {
                 .build();
     }
 
+    @Cacheable(value = "tenant-profiles-batch", key = "#tenantIds.hashCode()", unless = "#result == null || #result.isEmpty()")
     public Map<Long, TenantProfileResponse> getProfilesByTenantIds(List<Long> tenantIds) {
         if (tenantIds == null || tenantIds.isEmpty()) return Collections.emptyMap();
         

@@ -1,0 +1,2 @@
+"chatbot_user" "md527b21e320b5f04dc7fce06e456c1bb42"
+"postgres" "md580d833d2897d9d4716fa0871b662663a"

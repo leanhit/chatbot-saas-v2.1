@@ -1,28 +1,93 @@
 # Production Configuration for Chatbot SaaS v2.1
 spring:
-    
-  # Database Configuration - Single Database Approach
-  datasource:
-    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/traloitudong_db}
-    username: ${DATABASE_USER:traloitudong_user}
-    password: ${DATABASE_PASSWORD}
-    driver-class-name: org.postgresql.Driver
-    hikari:
-      maximum-pool-size: 15
-      minimum-idle: 3
-      idle-timeout: 300000
-      max-lifetime: 1200000
-      connection-timeout: 20000
-      pool-name: ProductionHikariCP
 
-# PgBouncer Configuration (Optional - for production deployments)
-# Enable PgBouncer by setting PGBOUNCER_ENABLED=true and updating DATABASE_URL
+# PgBouncer Configuration - Enabled for production
+# All database connections go through PgBouncer connection pooler
 pgbouncer:
-  enabled: ${PGBOUNCER_ENABLED:false}
-  host: ${PGBOUNCER_HOST:localhost}
+  enabled: ${PGBOUNCER_ENABLED:true}
+  host: ${PGBOUNCER_HOST:pgbouncer}
   port: ${PGBOUNCER_PORT:6432}
-  # When PgBouncer is enabled, DATABASE_URL should point to PgBouncer instead of PostgreSQL
-  # Example: jdbc:postgresql://pgbouncer-host:6432/traloitudong_db
+
+# Hub & Spoke Database Configuration via PgBouncer
+app:
+  datasource:
+    identity:
+      jdbc-url: ${IDENTITY_DB_URL:jdbc:postgresql://pgbouncer:6432/chatbot_identity_db}
+      username: ${IDENTITY_DB_USER:chatbot_user}
+      password: ${IDENTITY_DB_PASSWORD}
+      driver-class-name: org.postgresql.Driver
+      hikari:
+        maximum-pool-size: 5
+        minimum-idle: 1
+        idle-timeout: 300000
+        max-lifetime: 1200000
+        connection-timeout: 20000
+        pool-name: IdentityHikariCP
+
+    user:
+      jdbc-url: ${USER_DB_URL:jdbc:postgresql://pgbouncer:6432/chatbot_user_db}
+      username: ${USER_DB_USER:chatbot_user}
+      password: ${USER_DB_PASSWORD}
+      driver-class-name: org.postgresql.Driver
+      hikari:
+        maximum-pool-size: 20
+        minimum-idle: 5
+        idle-timeout: 300000
+        max-lifetime: 1200000
+        connection-timeout: 20000
+        pool-name: UserHikariCP
+
+    tenant:
+      jdbc-url: ${TENANT_DB_URL:jdbc:postgresql://pgbouncer:6432/chatbot_tenant_db}
+      username: ${TENANT_DB_USER:chatbot_user}
+      password: ${TENANT_DB_PASSWORD}
+      driver-class-name: org.postgresql.Driver
+      hikari:
+        maximum-pool-size: 10
+        minimum-idle: 2
+        idle-timeout: 300000
+        max-lifetime: 1200000
+        connection-timeout: 20000
+        pool-name: TenantHikariCP
+
+    app:
+      jdbc-url: ${APP_DB_URL:jdbc:postgresql://pgbouncer:6432/chatbot_app_db}
+      username: ${APP_DB_USER:chatbot_user}
+      password: ${APP_DB_PASSWORD}
+      driver-class-name: org.postgresql.Driver
+      hikari:
+        maximum-pool-size: 5
+        minimum-idle: 1
+        idle-timeout: 300000
+        max-lifetime: 1200000
+        connection-timeout: 20000
+        pool-name: AppHikariCP
+
+    config:
+      jdbc-url: ${CONFIG_DB_URL:jdbc:postgresql://pgbouncer:6432/chatbot_config_db}
+      username: ${CONFIG_DB_USER:chatbot_user}
+      password: ${CONFIG_DB_PASSWORD}
+      driver-class-name: org.postgresql.Driver
+      hikari:
+        maximum-pool-size: 3
+        minimum-idle: 1
+        idle-timeout: 300000
+        max-lifetime: 1200000
+        connection-timeout: 20000
+        pool-name: ConfigHikariCP
+
+    message:
+      jdbc-url: ${MESSAGE_DB_URL:jdbc:postgresql://pgbouncer:6432/chatbot_message_db}
+      username: ${MESSAGE_DB_USER:chatbot_user}
+      password: ${MESSAGE_DB_PASSWORD}
+      driver-class-name: org.postgresql.Driver
+      hikari:
+        maximum-pool-size: 15
+        minimum-idle: 5
+        idle-timeout: 300000
+        max-lifetime: 1200000
+        connection-timeout: 20000
+        pool-name: MessageHikariCP
       
   # JPA Configuration
   jpa:

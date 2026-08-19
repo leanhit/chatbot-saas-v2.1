@@ -93,6 +93,7 @@ public class UserService {
     /**
      * Update user active status
      */
+    @CacheEvict(value = "users", key = "#userId")
     @Transactional(value = "userTransactionManager", rollbackFor = Exception.class)
     public void updateUserStatus(Long userId, boolean isActive) {
         User user = userRepository.findById(userId)
@@ -124,6 +125,7 @@ public class UserService {
     /**
      * Update user profile
      */
+    @CacheEvict(value = "users", key = "#userId")
     @Transactional(transactionManager = "userTransactionManager", rollbackFor = Exception.class)
     public UserProfileResponse updateProfile(Long userId, UserRequest request) {
         // Auto-create UserProfile if not exists (migration compatibility)
@@ -168,6 +170,7 @@ public class UserService {
     /**
      * Update user avatar
      */
+    @CacheEvict(value = "users", key = "#userId")
     @Transactional(transactionManager = "userTransactionManager", rollbackFor = Exception.class)
     public UserProfileResponse updateAvatar(Long userId, MultipartFile file) {
         try {
@@ -367,6 +370,7 @@ public class UserService {
     /**
      * Update basic user information only
      */
+    @CacheEvict(value = "users", key = "#userId")
     @Transactional(transactionManager = "userTransactionManager", rollbackFor = Exception.class)
     public UserProfileResponse updateBasicInfo(Long userId, UserRequest request) {
         try {
@@ -406,6 +410,7 @@ public class UserService {
     /**
      * Update professional user information only
      */
+    @CacheEvict(value = "users", key = "#userId")
     @Transactional(transactionManager = "userTransactionManager", rollbackFor = Exception.class)
     public UserProfileResponse updateProfessionalInfo(Long userId, UserRequest request) {
         // Auto-create UserProfile if not exists (same as updateProfile)

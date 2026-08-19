@@ -16,6 +16,8 @@ import com.chatbot.core.tenant.exception.TenantNotFoundException;
 import com.chatbot.shared.exceptions.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -65,6 +67,10 @@ public class TenantMemberService {
 
     /* ================= UPDATE ================= */
 
+    @Caching(evict = {
+        @CacheEvict(value = "tenant-roles", key = "#tenantId + ':' + #targetUserId + ':owner'"),
+        @CacheEvict(value = "tenant-roles", key = "#tenantId + ':' + #targetUserId + ':active'")
+    })
     @Transactional(transactionManager = "tenantTransactionManager")
     public void updateRole(Long tenantId, Long targetUserId, TenantRole newRole) {
         // Lấy actor (người thực hiện request) từ SecurityContext
@@ -95,6 +101,9 @@ public class TenantMemberService {
     /**
      * Transfer ownership from current owner to another member
      */
+    @Caching(evict = {
+        @CacheEvict(value = "tenant-roles", allEntries = true)
+    })
     @Transactional(transactionManager = "tenantTransactionManager")
     public void transferOwnership(Long tenantId, Long newOwnerId) {
         String actorEmail = getCurrentUserEmail();
@@ -134,6 +143,10 @@ public class TenantMemberService {
 
     /* ================= DELETE ================= */
 
+    @Caching(evict = {
+        @CacheEvict(value = "tenant-roles", key = "#tenantId + ':' + #targetUserId + ':owner'"),
+        @CacheEvict(value = "tenant-roles", key = "#tenantId + ':' + #targetUserId + ':active'")
+    })
     @Transactional(transactionManager = "tenantTransactionManager")
     public void removeMember(Long tenantId, Long targetUserId) {
         String actorEmail = getCurrentUserEmail();

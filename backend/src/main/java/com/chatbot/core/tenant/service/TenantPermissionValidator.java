@@ -10,6 +10,7 @@ import com.chatbot.core.tenant.membership.repository.TenantMemberRepository;
 import com.chatbot.core.tenant.exception.InsufficientPermissionException;
 import com.chatbot.shared.exceptions.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
@@ -50,6 +51,7 @@ public class TenantPermissionValidator {
     /**
      * Kiểm tra user có phải SYSTEM ADMIN không (dựa vào SystemRole trong DB).
      */
+    @Cacheable(value = "user-roles", key = "'admin:' + #userEmail", unless = "#result == false")
     public boolean isAdmin(String userEmail) {
         return userRepository.findByEmail(userEmail)
                 .map(User::getSystemRole)
@@ -60,6 +62,7 @@ public class TenantPermissionValidator {
     /**
      * Kiểm tra user có phải OWNER của tenant không.
      */
+    @Cacheable(value = "tenant-roles", key = "#tenantId + ':' + #userEmail + ':owner'", unless = "#result == false")
     public boolean isOwner(Long tenantId, String userEmail) {
         Long userId = authRepository.findByEmail(userEmail)
                 .map(User::getId)
@@ -96,6 +99,7 @@ public class TenantPermissionValidator {
     /**
      * Kiểm tra user có phải ACTIVE member của tenant không.
      */
+    @Cacheable(value = "tenant-roles", key = "#tenantId + ':' + #userEmail + ':active'", unless = "#result == false")
     public boolean isActiveMember(Long tenantId, String userEmail) {
         Long userId = authRepository.findByEmail(userEmail)
                 .map(User::getId)

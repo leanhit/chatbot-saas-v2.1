@@ -154,6 +154,7 @@ dependencies {
     // Distributed Tracing (Micrometer & Zipkin)
     // -------------------------------
     implementation 'io.micrometer:micrometer-tracing-bridge-brave'
+    implementation 'io.micrometer:micrometer-tracing'
     implementation 'io.zipkin.reporter2:zipkin-reporter-brave'
 
     // -------------------------------

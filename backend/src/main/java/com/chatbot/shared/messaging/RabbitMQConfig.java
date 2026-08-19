@@ -46,6 +46,21 @@ public class RabbitMQConfig {
     @Value("${rabbitmq.queue.cleanup:chatbot.queue.cleanup}")
     private String cleanupQueue;
 
+    @Value("${rabbitmq.dlx.name:chatbot.dlx}")
+    private String deadLetterExchange;
+
+    @Value("${rabbitmq.retry.max-attempts:3}")
+    private int maxRetryAttempts;
+
+    @Value("${rabbitmq.retry.initial-interval:1000}")
+    private long retryInitialInterval;
+
+    @Value("${rabbitmq.retry.multiplier:2.0}")
+    private double retryMultiplier;
+
+    @Value("${rabbitmq.retry.max-interval:10000}")
+    private long retryMaxInterval;
+
     @Bean
     public MessageConverter messageConverter() {
         return new Jackson2JsonMessageConverter();
@@ -80,6 +95,17 @@ public class RabbitMQConfig {
         factory.setMaxConcurrentConsumers(10);
         factory.setPrefetchCount(1);
         factory.setDefaultRequeueRejected(false);
+        
+        // Configure retry advice with exponential backoff
+        factory.setAdviceChain(
+            org.springframework.amqp.rabbit.config.RetryInterceptorBuilder
+                .stateless()
+                .maxAttempts(maxRetryAttempts)
+                .backOffOptions(retryInitialInterval, retryMultiplier, retryMaxInterval)
+                .recoverer(new org.springframework.amqp.rabbit.retry.RejectAndDontRequeueRecoverer())
+                .build()
+        );
+        
         return factory;
     }
 
@@ -91,10 +117,19 @@ public class RabbitMQConfig {
     }
 
     @Bean
+    public DirectExchange deadLetterExchange() {
+        return ExchangeBuilder.directExchange(deadLetterExchange)
+                .durable(true)
+                .build();
+    }
+
+    @Bean
     public Queue defaultQueue() {
         return QueueBuilder.durable(defaultQueue)
                 .withArgument("x-max-length", 10000)
                 .withArgument("x-message-ttl", 3600000) // 1 hour
+                .withArgument("x-dead-letter-exchange", deadLetterExchange)
+                .withArgument("x-dead-letter-routing-key", defaultQueue + ".dlq")
                 .build();
     }
 
@@ -104,6 +139,8 @@ public class RabbitMQConfig {
                 .withArgument("x-max-priority", 10)
                 .withArgument("x-max-length", 1000)
                 .withArgument("x-message-ttl", 1800000) // 30 minutes
+                .withArgument("x-dead-letter-exchange", deadLetterExchange)
+                .withArgument("x-dead-letter-routing-key", highPriorityQueue + ".dlq")
                 .build();
     }
 
@@ -113,6 +150,8 @@ public class RabbitMQConfig {
                 .withArgument("x-max-priority", 1)
                 .withArgument("x-max-length", 5000)
                 .withArgument("x-message-ttl", 7200000) // 2 hours
+                .withArgument("x-dead-letter-exchange", deadLetterExchange)
+                .withArgument("x-dead-letter-routing-key", lowPriorityQueue + ".dlq")
                 .build();
     }
 
@@ -121,6 +160,8 @@ public class RabbitMQConfig {
         return QueueBuilder.durable(emailQueue)
                 .withArgument("x-max-length", 5000)
                 .withArgument("x-message-ttl", 3600000) // 1 hour
+                .withArgument("x-dead-letter-exchange", deadLetterExchange)
+                .withArgument("x-dead-letter-routing-key", emailQueue + ".dlq")
                 .build();
     }
 
@@ -129,6 +170,8 @@ public class RabbitMQConfig {
         return QueueBuilder.durable(smsQueue)
                 .withArgument("x-max-length", 2000)
                 .withArgument("x-message-ttl", 1800000) // 30 minutes
+                .withArgument("x-dead-letter-exchange", deadLetterExchange)
+                .withArgument("x-dead-letter-routing-key", smsQueue + ".dlq")
                 .build();
     }
 
@@ -137,6 +180,8 @@ public class RabbitMQConfig {
         return QueueBuilder.durable(notificationQueue)
                 .withArgument("x-max-length", 10000)
                 .withArgument("x-message-ttl", 3600000) // 1 hour
+                .withArgument("x-dead-letter-exchange", deadLetterExchange)
+                .withArgument("x-dead-letter-routing-key", notificationQueue + ".dlq")
                 .build();
     }
 
@@ -145,6 +190,8 @@ public class RabbitMQConfig {
         return QueueBuilder.durable(reportQueue)
                 .withArgument("x-max-length", 100)
                 .withArgument("x-message-ttl", 86400000) // 24 hours
+                .withArgument("x-dead-letter-exchange", deadLetterExchange)
+                .withArgument("x-dead-letter-routing-key", reportQueue + ".dlq")
                 .build();
     }
 
@@ -153,6 +200,8 @@ public class RabbitMQConfig {
         return QueueBuilder.durable(cleanupQueue)
                 .withArgument("x-max-length", 50)
                 .withArgument("x-message-ttl", 86400000) // 24 hours
+                .withArgument("x-dead-letter-exchange", deadLetterExchange)
+                .withArgument("x-dead-letter-routing-key", cleanupQueue + ".dlq")
                 .build();
     }
 
@@ -213,7 +262,7 @@ public class RabbitMQConfig {
                 .with("chatbot.cleanup.*");
     }
 
-    // Dead Letter Queues
+    // Dead Letter Queues - Complete set for all queues
     @Bean
     public Queue defaultDLQ() {
         return QueueBuilder.durable(defaultQueue + ".dlq")
@@ -236,23 +285,94 @@ public class RabbitMQConfig {
     }
 
     @Bean
+    public Queue emailDLQ() {
+        return QueueBuilder.durable(emailQueue + ".dlq")
+                .withArgument("x-message-ttl", 604800000) // 7 days
+                .build();
+    }
+
+    @Bean
+    public Queue smsDLQ() {
+        return QueueBuilder.durable(smsQueue + ".dlq")
+                .withArgument("x-message-ttl", 604800000) // 7 days
+                .build();
+    }
+
+    @Bean
+    public Queue notificationDLQ() {
+        return QueueBuilder.durable(notificationQueue + ".dlq")
+                .withArgument("x-message-ttl", 604800000) // 7 days
+                .build();
+    }
+
+    @Bean
+    public Queue reportDLQ() {
+        return QueueBuilder.durable(reportQueue + ".dlq")
+                .withArgument("x-message-ttl", 604800000) // 7 days
+                .build();
+    }
+
+    @Bean
+    public Queue cleanupDLQ() {
+        return QueueBuilder.durable(cleanupQueue + ".dlq")
+                .withArgument("x-message-ttl", 604800000) // 7 days
+                .build();
+    }
+
+    // DLQ Bindings to Dead Letter Exchange
+    @Bean
     public Binding defaultDLQBinding() {
         return BindingBuilder.bind(defaultDLQ())
-                .to(exchange())
-                .with("chatbot.default.dlq");
+                .to(deadLetterExchange())
+                .with(defaultQueue + ".dlq");
     }
 
     @Bean
     public Binding highPriorityDLQBinding() {
         return BindingBuilder.bind(highPriorityDLQ())
-                .to(exchange())
-                .with("chatbot.high-priority.dlq");
+                .to(deadLetterExchange())
+                .with(highPriorityQueue + ".dlq");
     }
 
     @Bean
     public Binding lowPriorityDLQBinding() {
         return BindingBuilder.bind(lowPriorityDLQ())
-                .to(exchange())
-                .with("chatbot.low-priority.dlq");
+                .to(deadLetterExchange())
+                .with(lowPriorityQueue + ".dlq");
+    }
+
+    @Bean
+    public Binding emailDLQBinding() {
+        return BindingBuilder.bind(emailDLQ())
+                .to(deadLetterExchange())
+                .with(emailQueue + ".dlq");
+    }
+
+    @Bean
+    public Binding smsDLQBinding() {
+        return BindingBuilder.bind(smsDLQ())
+                .to(deadLetterExchange())
+                .with(smsQueue + ".dlq");
+    }
+
+    @Bean
+    public Binding notificationDLQBinding() {
+        return BindingBuilder.bind(notificationDLQ())
+                .to(deadLetterExchange())
+                .with(notificationQueue + ".dlq");
+    }
+
+    @Bean
+    public Binding reportDLQBinding() {
+        return BindingBuilder.bind(reportDLQ())
+                .to(deadLetterExchange())
+                .with(reportQueue + ".dlq");
+    }
+
+    @Bean
+    public Binding cleanupDLQBinding() {
+        return BindingBuilder.bind(cleanupDLQ())
+                .to(deadLetterExchange())
+                .with(cleanupQueue + ".dlq");
     }
 }
