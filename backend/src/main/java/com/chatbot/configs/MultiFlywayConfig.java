@@ -21,6 +21,7 @@ public class MultiFlywayConfig {
                 .dataSource(identityDataSource)
                 .locations("classpath:db/migration/identity")
                 .baselineOnMigrate(true)
+                .baselineVersion("0")
                 .outOfOrder(true)
                 .table("flyway_identity_schema_history")
                 .load();
@@ -32,6 +33,7 @@ public class MultiFlywayConfig {
                 .dataSource(userDataSource)
                 .locations("classpath:db/migration/user")
                 .baselineOnMigrate(true)
+                .baselineVersion("0")
                 .outOfOrder(true)
                 .table("flyway_user_schema_history")
                 .load();
@@ -43,6 +45,7 @@ public class MultiFlywayConfig {
                 .dataSource(tenantDataSource)
                 .locations("classpath:db/migration/tenant")
                 .baselineOnMigrate(true)
+                .baselineVersion("0")
                 .outOfOrder(true)
                 .table("flyway_tenant_schema_history")
                 .load();
@@ -54,6 +57,7 @@ public class MultiFlywayConfig {
                 .dataSource(appDataSource)
                 .locations("classpath:db/migration/app")
                 .baselineOnMigrate(true)
+                .baselineVersion("0")
                 .outOfOrder(true)
                 .table("flyway_app_schema_history")
                 .load();
@@ -65,6 +69,7 @@ public class MultiFlywayConfig {
                 .dataSource(configDataSource)
                 .locations("classpath:db/migration/config")
                 .baselineOnMigrate(true)
+                .baselineVersion("0")
                 .outOfOrder(true)
                 .table("flyway_config_schema_history")
                 .load();
@@ -76,6 +81,7 @@ public class MultiFlywayConfig {
                 .dataSource(messageDataSource)
                 .locations("classpath:db/migration/message")
                 .baselineOnMigrate(true)
+                .baselineVersion("0")
                 .outOfOrder(true)
                 .table("flyway_message_schema_history")
                 .load();
@@ -87,6 +93,7 @@ public class MultiFlywayConfig {
                 .dataSource(sharedDataSource)
                 .locations("classpath:db/migration/shared")
                 .baselineOnMigrate(true)
+                .baselineVersion("0")
                 .outOfOrder(true)
                 .validateOnMigrate(false)
                 .table("flyway_shared_schema_history")
@@ -99,6 +106,7 @@ public class MultiFlywayConfig {
                 .dataSource(spokesDataSource)
                 .locations("classpath:db/migration/spokes")
                 .baselineOnMigrate(true)
+                .baselineVersion("0")
                 .outOfOrder(true)
                 .table("flyway_spokes_schema_history")
                 .load();

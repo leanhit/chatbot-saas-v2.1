@@ -12,6 +12,7 @@ import com.chatbot.core.tenant.model.TenantStatus;
 import com.chatbot.core.tenant.repository.TenantRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -44,6 +45,7 @@ public class EscalationService {
      * Loops through all active tenants to check for escalations
      */
     @Scheduled(fixedRate = 60000) // Every minute
+    @SchedulerLock(name = "EscalationService_checkEscalations", lockAtMostFor = "2m", lockAtLeastFor = "1m")
     public void checkEscalations() {
         try {
             // Get all active tenants

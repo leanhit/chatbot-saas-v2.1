@@ -38,13 +38,20 @@ public class UserGrpcServerConfig {
             serverBuilder.useTransportSecurity(new java.io.File(certChainPath), new java.io.File(privateKeyPath));
         }
                 
-        Server server = serverBuilder.build().start();
+        Server server;
+        try {
+            server = serverBuilder.build().start();
+            log.info("User gRPC server started on port {}", port);
+        } catch (IOException e) {
+            log.warn("Failed to start User gRPC server on port {}: {}. Falling back to dynamic port...", port, e.getMessage());
+            server = ServerBuilder.forPort(0).addService(userService).build().start();
+            log.info("User gRPC server started on dynamic port {}", server.getPort());
+        }
         
-        log.info("User gRPC server started on port {}", port);
-        
+        final Server finalServer = server;
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             log.info("Shutting down User gRPC server...");
-            server.shutdown();
+            finalServer.shutdown();
         }));
         
         return server;

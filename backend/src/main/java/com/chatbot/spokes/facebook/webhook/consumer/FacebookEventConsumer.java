@@ -38,7 +38,7 @@ import com.github.benmanes.caffeine.cache.Caffeine;
  * Kafka consumer that processes Facebook webhook events asynchronously with full business logic.
  * Guaranteed ordered processing per conversation partition (runs synchronously on consumer thread).
  */
-@Service
+@Service("facebookWebhookEventConsumer")
 @Slf4j
 @lombok.RequiredArgsConstructor
 public class FacebookEventConsumer {

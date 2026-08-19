@@ -6,8 +6,9 @@ import com.chatbot.core.simplepayment.service.BankApiService;
 import com.chatbot.core.simplepayment.service.QRCodeService;
 import com.chatbot.core.simplepayment.service.SimplePaymentService;
 import com.chatbot.core.simplepayment.validation.PaymentValidationService;
-import com.chatbot.core.tenant.membership.model.TenantJoinRequest;
-import com.chatbot.core.tenant.membership.repository.TenantJoinRequestRepository;
+import com.chatbot.core.tenant.membership.model.TenantMember;
+import com.chatbot.core.tenant.membership.repository.TenantMemberRepository;
+import com.chatbot.core.simplepayment.service.PaymentNotificationService;
 import com.chatbot.core.tenant.service.TenantPackageService;
 import com.chatbot.core.user.model.User;
 import com.chatbot.core.user.repository.UserRepository;
@@ -52,9 +53,11 @@ class PublicSimplePaymentControllerTest {
     @Mock
     private TenantPackageService tenantPackageService;
     @Mock
-    private TenantJoinRequestRepository tenantJoinRequestRepository;
+    private TenantMemberRepository tenantMemberRepository;
     @Mock
     private PaymentValidationService paymentValidationService;
+    @Mock
+    private PaymentNotificationService paymentNotificationService;
 
     @InjectMocks
     private PublicSimplePaymentController controller;
@@ -72,10 +75,10 @@ class PublicSimplePaymentControllerTest {
         com.chatbot.core.tenant.model.Tenant mockTenant = new com.chatbot.core.tenant.model.Tenant();
         mockTenant.setId(3003L);
         
-        TenantJoinRequest mockMembership = new TenantJoinRequest();
+        TenantMember mockMembership = new TenantMember();
         mockMembership.setTenant(mockTenant);
         
-        Mockito.when(tenantJoinRequestRepository.findByUserIdAndStatus(eq(1001L), any()))
+        Mockito.when(tenantMemberRepository.findActiveTenantsOfUser(1001L))
                .thenReturn(Collections.singletonList(mockMembership));
 
         // Setup mock payment response

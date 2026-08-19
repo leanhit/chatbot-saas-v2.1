@@ -10,6 +10,7 @@ import com.chatbot.core.tenant.repository.TenantRepository;
 import com.chatbot.shared.messenger.ChannelMessengerService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -45,6 +46,7 @@ public class TimeoutWorkflow {
      * Loops through all active tenants to check for inactive conversations
      */
     @Scheduled(fixedRate = 300000) // Every 5 minutes
+    @SchedulerLock(name = "TimeoutWorkflow_checkInactiveConversations", lockAtMostFor = "6m", lockAtLeastFor = "5m")
     public void checkInactiveConversations() {
         try {
             // Get all active tenants
@@ -150,6 +152,7 @@ public class TimeoutWorkflow {
      * Loops through all active tenants to check for unresponded conversations
      */
     @Scheduled(fixedRate = 600000) // Every 10 minutes
+    @SchedulerLock(name = "TimeoutWorkflow_checkUnrespondedConversations", lockAtMostFor = "11m", lockAtLeastFor = "10m")
     public void checkUnrespondedConversations() {
         try {
             // Get all active tenants

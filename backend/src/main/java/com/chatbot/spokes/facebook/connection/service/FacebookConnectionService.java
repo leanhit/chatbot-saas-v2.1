@@ -7,6 +7,9 @@ import com.chatbot.spokes.facebook.connection.dto.UpdateFacebookConnectionReques
 import com.chatbot.core.tenant.infra.TenantContext;
 import com.chatbot.spokes.facebook.connection.model.FacebookConnection;
 import com.chatbot.spokes.facebook.connection.repository.FacebookConnectionRepository;
+import com.chatbot.spokes.facebook.events.FacebookConnectionCreatedEvent;
+import com.chatbot.spokes.facebook.events.FacebookConnectionUpdatedEvent;
+import com.chatbot.spokes.facebook.events.FacebookEventProducer;
 import com.chatbot.shared.penny.service.PennyBotManager;
 import com.chatbot.shared.penny.model.PennyBot;
 import com.chatbot.spokes.facebook.connection.exception.*;
@@ -35,9 +38,11 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.core.ParameterizedTypeReference;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Service
+@RequiredArgsConstructor
 @Slf4j
 public class FacebookConnectionService {
 
@@ -48,22 +53,7 @@ public class FacebookConnectionService {
     private final FacebookApiService facebookApiService;
     private final WebClient webClient;
     private final FacebookErrorHandler facebookErrorHandler;
-
-    public FacebookConnectionService(FacebookConnectionRepository connectionRepository, 
-                                PennyBotManager pennyBotManager,
-                                UserRepository userRepository,
-                                TenantMemberRepository tenantMemberRepository,
-                                FacebookApiService facebookApiService,
-                                WebClient webClient,
-                                FacebookErrorHandler facebookErrorHandler) {
-        this.connectionRepository = connectionRepository;
-        this.pennyBotManager = pennyBotManager;
-        this.userRepository = userRepository;
-        this.tenantMemberRepository = tenantMemberRepository;
-        this.facebookApiService = facebookApiService;
-        this.webClient = webClient;
-        this.facebookErrorHandler = facebookErrorHandler;
-    }
+    private final FacebookEventProducer facebookEventProducer;
 
     public String createConnection(String ownerId, CreateFacebookConnectionRequest request) {
         // Check create permissions
@@ -160,9 +150,21 @@ public class FacebookConnectionService {
         // Set the page access token (either from request or from token exchange)
         newConnection.setPageAccessToken(pageAccessToken);
 
-        connectionRepository.save(newConnection);
+        FacebookConnection savedConnection = connectionRepository.save(newConnection);
         
-        return newConnection.getId().toString();
+        // Publish event for other spokes - DECOUPLED ARCHITECTURE
+        FacebookConnectionCreatedEvent event = FacebookConnectionCreatedEvent.builder()
+                .connectionId(savedConnection.getId())
+                .tenantId(savedConnection.getTenantId())
+                .botId(savedConnection.getBotId())
+                .botName(savedConnection.getBotName())
+                .pageId(savedConnection.getPageId())
+                .ownerId(savedConnection.getOwnerId())
+                .createdAt(savedConnection.getCreatedAt())
+                .build();
+        facebookEventProducer.publishConnectionCreated(event);
+        
+        return savedConnection.getId().toString();
     }
 
     /**
@@ -381,7 +383,19 @@ public class FacebookConnectionService {
             connection.setActive(request.getIsActive());
         }
         connection.setUpdatedAt(LocalDateTime.now());
-        connectionRepository.save(connection);
+        FacebookConnection updatedConnection = connectionRepository.save(connection);
+        
+        // Publish event for other spokes - DECOUPLED ARCHITECTURE
+        FacebookConnectionUpdatedEvent event = FacebookConnectionUpdatedEvent.builder()
+                .connectionId(updatedConnection.getId())
+                .tenantId(updatedConnection.getTenantId())
+                .botId(updatedConnection.getBotId())
+                .pageId(updatedConnection.getPageId())
+                .isActive(updatedConnection.isActive())
+                .isEnabled(updatedConnection.isEnabled())
+                .updatedAt(updatedConnection.getUpdatedAt())
+                .build();
+        facebookEventProducer.publishConnectionUpdated(event);
     }
 
     public void deleteConnection(String id, String ownerId) {
@@ -523,7 +537,7 @@ public class FacebookConnectionService {
      * Perform health check for a Facebook connection using Facebook Graph API ping test
      * Updates isHealthy, lastHealthCheckAt, and healthCheckFailures fields
      */
-    @Transactional
+    @Transactional("facebookTransactionManager")
     public boolean performHealthCheck(UUID connectionId) {
         try {
             FacebookConnection connection = connectionRepository.findById(connectionId)
@@ -610,7 +624,12 @@ public class FacebookConnectionService {
      * Runs every 30 minutes
      */
     @org.springframework.scheduling.annotation.Scheduled(fixedRate = 30 * 60 * 1000) // Every 30 minutes
-    @Transactional
+    @net.javacrumbs.shedlock.spring.annotation.SchedulerLock(
+        name = "FacebookConnectionService_performScheduledHealthChecks",
+        lockAtMostFor = "25m",
+        lockAtLeastFor = "1m"
+    )
+    @Transactional("facebookTransactionManager")
     public void performScheduledHealthChecks() {
         log.info("🔍 Starting scheduled health checks for Facebook connections");
         
@@ -658,7 +677,7 @@ public class FacebookConnectionService {
     /**
      * Update last used time for a connection (called when connection is used for messaging)
      */
-    @Transactional
+    @Transactional("facebookTransactionManager")
     public void updateLastUsedTime(UUID connectionId) {
         try {
             FacebookConnection connection = connectionRepository.findById(connectionId)

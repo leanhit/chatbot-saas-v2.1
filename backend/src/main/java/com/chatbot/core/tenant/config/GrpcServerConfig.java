@@ -52,9 +52,18 @@ class GrpcServerConfig {
             log.info("Tenant gRPC server TLS enabled");
         }
                 
-        grpcServer = serverBuilder.build().start();
-        
-        log.info("gRPC server started successfully on port: {} with authentication enabled", grpcPort);
+        try {
+            grpcServer = serverBuilder.build().start();
+            log.info("gRPC server started successfully on port: {} with authentication enabled", grpcPort);
+        } catch (IOException e) {
+            log.warn("Failed to start Tenant gRPC server on port {}: {}. Falling back to dynamic port...", grpcPort, e.getMessage());
+            io.grpc.ServerBuilder<?> fallbackBuilder = ServerBuilder.forPort(0)
+                    .addService(ServerInterceptors.intercept(tenantServiceGrpcImpl, grpcAuthInterceptor))
+                    .maxInboundMessageSize(10 * 1024 * 1024)
+                    .maxInboundMetadataSize(10 * 1024 * 1024);
+            grpcServer = fallbackBuilder.build().start();
+            log.info("Tenant gRPC server started successfully on dynamic port: {}", grpcServer.getPort());
+        }
         
         // Add shutdown hook
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {

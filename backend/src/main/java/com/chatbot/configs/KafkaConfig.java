@@ -26,6 +26,8 @@ import java.util.Map;
 public class KafkaConfig {
 
     public static final String FACEBOOK_EVENT_TOPIC = "facebook-events";
+    public static final String MINIO_EVENT_TOPIC = "minio-events";
+    public static final String SPOKES_EVENT_TOPIC = "spokes-events";
 
     @Value("${spring.kafka.bootstrap-servers:localhost:9092}")
     private String bootstrapServers;
@@ -75,5 +77,15 @@ public class KafkaConfig {
     @Bean
     public NewTopic facebookEventTopic() {
         return new NewTopic(FACEBOOK_EVENT_TOPIC, 3, (short) 1);
+    }
+    
+    @Bean
+    public NewTopic minioEventTopic() {
+        return new NewTopic(MINIO_EVENT_TOPIC, 3, (short) 1);
+    }
+    
+    @Bean
+    public NewTopic spokesEventTopic() {
+        return new NewTopic(SPOKES_EVENT_TOPIC, 3, (short) 1);
     }
 }

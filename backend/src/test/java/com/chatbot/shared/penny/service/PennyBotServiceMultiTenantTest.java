@@ -54,7 +54,7 @@ class PennyBotServiceMultiTenantTest {
                 .tenantId(tenant1Id)
                 .ownerId("owner1@test.com")
                 .botName("Bot Tenant 1")
-                .botType(PennyBotType.CUSTOMER_SERVICE)
+                .botType(PennyBotType.SUPPORT)
                 .pennyBotId("penny-cs-001")
                 .isActive(true)
                 .isEnabled(true)

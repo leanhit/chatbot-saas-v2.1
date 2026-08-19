@@ -5,7 +5,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.jdbc.DataSourceBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.DependsOn;
+import org.springframework.context.annotation.Primary;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.orm.jpa.JpaTransactionManager;
 import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
@@ -17,32 +17,40 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 
+/**
+ * Separate database configuration for Facebook spoke
+ * This allows Facebook spoke to have its own EntityManagerFactory and transaction management
+ * enabling better decoupling from other spokes
+ */
 @Configuration
 @EnableJpaRepositories(
     basePackages = {
-        "com.chatbot.spokes.odoo.repository"
+        "com.chatbot.spokes.facebook.repository",
+        "com.chatbot.spokes.facebook.connection.repository",
+        "com.chatbot.spokes.facebook.user.repository"
     },
-    entityManagerFactoryRef = "spokesEntityManagerFactory",
-    transactionManagerRef = "spokesTransactionManager"
+    entityManagerFactoryRef = "facebookEntityManagerFactory",
+    transactionManagerRef = "facebookTransactionManager"
 )
-public class SpokesDatabaseConfig {
+public class FacebookDatabaseConfig {
 
     @Value("${app.hibernate.ddl-auto:none}")
     private String ddlAuto;
 
     @Bean
     @ConfigurationProperties(prefix = "app.datasource.user")
-    public DataSource spokesDataSource() {
+    public DataSource facebookDataSource() {
         return DataSourceBuilder.create().build();
     }
 
     @Bean
-    @DependsOn("userFlyway")
-    public LocalContainerEntityManagerFactoryBean spokesEntityManagerFactory() {
+    public LocalContainerEntityManagerFactoryBean facebookEntityManagerFactory() {
         LocalContainerEntityManagerFactoryBean em = new LocalContainerEntityManagerFactoryBean();
-        em.setDataSource(spokesDataSource());
+        em.setDataSource(facebookDataSource());
         em.setPackagesToScan(
-            "com.chatbot.spokes.odoo.model"
+            "com.chatbot.spokes.facebook.model",
+            "com.chatbot.spokes.facebook.connection.model",
+            "com.chatbot.spokes.facebook.user.model"
         );
 
         HibernateJpaVendorAdapter vendorAdapter = new HibernateJpaVendorAdapter();
@@ -63,9 +71,9 @@ public class SpokesDatabaseConfig {
     }
 
     @Bean
-    public PlatformTransactionManager spokesTransactionManager() {
+    public PlatformTransactionManager facebookTransactionManager() {
         JpaTransactionManager transactionManager = new JpaTransactionManager();
-        transactionManager.setEntityManagerFactory(spokesEntityManagerFactory().getObject());
+        transactionManager.setEntityManagerFactory(facebookEntityManagerFactory().getObject());
         return transactionManager;
     }
 }

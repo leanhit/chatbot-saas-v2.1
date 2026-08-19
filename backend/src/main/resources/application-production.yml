@@ -8,11 +8,21 @@ spring:
     password: ${DATABASE_PASSWORD}
     driver-class-name: org.postgresql.Driver
     hikari:
-      maximum-pool-size: 20
-      minimum-idle: 5
+      maximum-pool-size: 15
+      minimum-idle: 3
       idle-timeout: 300000
       max-lifetime: 1200000
       connection-timeout: 20000
+      pool-name: ProductionHikariCP
+
+# PgBouncer Configuration (Optional - for production deployments)
+# Enable PgBouncer by setting PGBOUNCER_ENABLED=true and updating DATABASE_URL
+pgbouncer:
+  enabled: ${PGBOUNCER_ENABLED:false}
+  host: ${PGBOUNCER_HOST:localhost}
+  port: ${PGBOUNCER_PORT:6432}
+  # When PgBouncer is enabled, DATABASE_URL should point to PgBouncer instead of PostgreSQL
+  # Example: jdbc:postgresql://pgbouncer-host:6432/traloitudong_db
       
   # JPA Configuration
   jpa:

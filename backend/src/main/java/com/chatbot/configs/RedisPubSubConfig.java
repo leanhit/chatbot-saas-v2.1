@@ -22,6 +22,7 @@ public class RedisPubSubConfig {
 
     public static final String WEBSOCKET_TAKEOVER_TOPIC = "websocket:takeover";
     public static final String WEBSOCKET_NOTIFICATION_TOPIC = "websocket:notification";
+    public static final String WEBSOCKET_PRESENCE_TOPIC = "websocket:presence";
 
     @Bean
     public ChannelTopic paymentStatusTopic() {
@@ -37,6 +38,7 @@ public class RedisPubSubConfig {
     RedisMessageListenerContainer redisMessageListenerContainer(RedisConnectionFactory connectionFactory,
                                                                 MessageListenerAdapter takeoverListener,
                                                                 MessageListenerAdapter notificationListener,
+                                                                MessageListenerAdapter presenceListener,
                                                                 PaymentEventListener paymentEventListener) {
         RedisMessageListenerContainer container = new RedisMessageListenerContainer();
         container.setConnectionFactory(connectionFactory);
@@ -47,14 +49,17 @@ public class RedisPubSubConfig {
         // Subscribe to notification events
         container.addMessageListener(notificationListener, new PatternTopic(WEBSOCKET_NOTIFICATION_TOPIC));
 
+        // Subscribe to presence events
+        container.addMessageListener(presenceListener, new PatternTopic(WEBSOCKET_PRESENCE_TOPIC));
+
         // Subscribe to payment status channel
         container.addMessageListener(paymentEventListener, paymentStatusTopic());
 
         // Subscribe to payment simulated channel
         container.addMessageListener(paymentEventListener, paymentSimulatedTopic());
 
-        log.info("✅ Redis Pub/Sub container configured for topics: {}, {}, {}, {}",
-                 WEBSOCKET_TAKEOVER_TOPIC, WEBSOCKET_NOTIFICATION_TOPIC,
+        log.info("✅ Redis Pub/Sub container configured for topics: {}, {}, {}, {}, {}",
+                 WEBSOCKET_TAKEOVER_TOPIC, WEBSOCKET_NOTIFICATION_TOPIC, WEBSOCKET_PRESENCE_TOPIC,
                  "payment:status", "payment:simulated");
 
         return container;
@@ -67,6 +72,11 @@ public class RedisPubSubConfig {
 
     @Bean
     MessageListenerAdapter notificationListener(RedisNotificationMessageListener listener) {
+        return new MessageListenerAdapter(listener, "handleMessage");
+    }
+
+    @Bean
+    MessageListenerAdapter presenceListener(RedisPresenceMessageListener listener) {
         return new MessageListenerAdapter(listener, "handleMessage");
     }
 }

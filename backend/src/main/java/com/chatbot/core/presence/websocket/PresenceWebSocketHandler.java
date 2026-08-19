@@ -1,9 +1,11 @@
 package com.chatbot.core.presence.websocket;
 
+import com.chatbot.configs.RedisPubSubConfig;
 import com.chatbot.core.presence.service.PresenceService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.TextMessage;
@@ -22,6 +24,7 @@ public class PresenceWebSocketHandler extends TextWebSocketHandler {
 
     private final PresenceService presenceService;
     private final ObjectMapper objectMapper;
+    private final StringRedisTemplate redisTemplate;
 
     // Track sessions by tenantId for broadcasting
     private final Map<Long, Set<WebSocketSession>> tenantSessions = new ConcurrentHashMap<>();
@@ -50,7 +53,7 @@ public class PresenceWebSocketHandler extends TextWebSocketHandler {
         // Broadcast MEMBER_ONLINE to all sessions in the same tenant
         String onlineMessage = presenceService.createMemberOnlineMessage(tenantId, userId, email, fullName != null ? fullName : email);
         if (onlineMessage != null) {
-            broadcastToTenant(tenantId, onlineMessage, null); // Broadcast to all sessions
+            broadcastToTenantWithRedis(tenantId, onlineMessage); // Broadcast to all sessions with Redis publish
         }
 
         log.info("✅ [Presence] User {} (ID: {}) connected for tenant {}. Total sessions: {}", 
@@ -80,7 +83,7 @@ public class PresenceWebSocketHandler extends TextWebSocketHandler {
                 // Broadcast MEMBER_OFFLINE to all remaining sessions in the same tenant
                 String offlineMessage = presenceService.createMemberOfflineMessage(tenantId, userId);
                 if (offlineMessage != null) {
-                    broadcastToTenant(tenantId, offlineMessage, null); // Broadcast to all
+                    broadcastToTenantWithRedis(tenantId, offlineMessage); // Broadcast to all with Redis publish
                 }
             }
 
@@ -103,12 +106,23 @@ public class PresenceWebSocketHandler extends TextWebSocketHandler {
     }
 
     /**
-     * Broadcast message to all sessions in a tenant
+     * Broadcast message to all sessions in a tenant (local only)
      * @param tenantId Tenant ID
      * @param message JSON message to broadcast
      * @param excludeSession Session to exclude (optional, e.g., the sender)
      */
     private void broadcastToTenant(Long tenantId, String message, WebSocketSession excludeSession) {
+        broadcastToTenantLocal(tenantId, message, excludeSession);
+    }
+
+    /**
+     * Broadcast message to all local sessions in a tenant (no Redis publish)
+     * Used by Redis message listener to avoid re-publishing
+     * @param tenantId Tenant ID
+     * @param message JSON message to broadcast
+     * @param excludeSession Session to exclude (optional, e.g., the sender)
+     */
+    public void broadcastToTenantLocal(Long tenantId, String message, WebSocketSession excludeSession) {
         Set<WebSocketSession> sessions = tenantSessions.get(tenantId);
         if (sessions == null || sessions.isEmpty()) {
             return;
@@ -124,6 +138,39 @@ public class PresenceWebSocketHandler extends TextWebSocketHandler {
                 }
             }
         }
+    }
+
+    /**
+     * Broadcast message to all local sessions in a tenant (no Redis publish)
+     * Used by Redis message listener to avoid re-publishing
+     * @param tenantId Tenant ID
+     * @param messageMap Message as Map to broadcast
+     */
+    public void broadcastToTenantLocal(Long tenantId, Map<String, Object> messageMap) {
+        try {
+            String message = objectMapper.writeValueAsString(messageMap);
+            broadcastToTenantLocal(tenantId, message, null);
+        } catch (Exception e) {
+            log.error("❌ [Presence] Error serializing message for local broadcast: {}", e.getMessage());
+        }
+    }
+
+    /**
+     * Broadcast message to all sessions in a tenant with Redis publish for cluster-wide sync
+     * @param tenantId Tenant ID
+     * @param message JSON message to broadcast
+     */
+    private void broadcastToTenantWithRedis(Long tenantId, String message) {
+        // Publish to Redis for cluster-wide broadcast
+        try {
+            redisTemplate.convertAndSend(RedisPubSubConfig.WEBSOCKET_PRESENCE_TOPIC, message);
+            log.debug("📡 [Redis Pub/Sub] Published presence event for tenant {}", tenantId);
+        } catch (Exception e) {
+            log.error("❌ [Redis Pub/Sub] Failed to publish presence event: {}", e.getMessage());
+        }
+        
+        // Also broadcast locally
+        broadcastToTenantLocal(tenantId, message, null);
     }
 
     /**

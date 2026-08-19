@@ -17,6 +17,7 @@ import com.chatbot.core.tenant.repository.TenantAuditLogRepository;
 import com.chatbot.core.tenant.repository.TenantRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -86,6 +87,7 @@ public class TenantCleanupService {
      * Runs daily at 2 AM
      */
     @Scheduled(cron = "0 0 2 * * ?")
+    @SchedulerLock(name = "TenantCleanupService_scheduledCleanup", lockAtMostFor = "1h", lockAtLeastFor = "50m")
     @Transactional(value = "tenantTransactionManager", rollbackFor = Exception.class)
     public void scheduledCleanup() {
         log.info("[TenantCleanupService] Starting scheduled cleanup for old deleted tenants");

@@ -11,7 +11,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.test.context.ActiveProfiles;
 
@@ -21,7 +21,7 @@ import static org.mockito.Mockito.when;
 
 /**
  * Integration test for EmbeddingService
- * This test verifies service initialization and configuration in a Spring context
+ * Uses Spring Boot 3.4+ @MockitoBean annotation.
  */
 @SpringBootTest(classes = {EmbeddingService.class})
 @EnableConfigurationProperties(PennyProperties.class)
@@ -31,22 +31,22 @@ class EmbeddingServiceIntegrationTest {
     @Autowired
     private EmbeddingService embeddingService;
 
-    @MockBean
+    @MockitoBean
     private ApiKeyManager apiKeyManager;
 
-    @MockBean
+    @MockitoBean
     private RedisTemplate<String, Object> redisTemplate;
 
-    @MockBean
+    @MockitoBean
     private CircuitBreakerRegistry circuitBreakerRegistry;
 
-    @MockBean
+    @MockitoBean
     private RetryRegistry retryRegistry;
 
-    @MockBean
+    @MockitoBean
     private CircuitBreaker circuitBreaker;
 
-    @MockBean
+    @MockitoBean
     private Retry retry;
 
     @BeforeEach

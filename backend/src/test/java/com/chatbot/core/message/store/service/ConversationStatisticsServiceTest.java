@@ -4,7 +4,7 @@ import com.chatbot.core.message.store.model.Conversation;
 import com.chatbot.core.message.store.dto.ConversationStatisticsDTO;
 import com.chatbot.core.message.store.repository.ConversationRepository;
 import com.chatbot.core.message.store.repository.MessageRepository;
-import com.chatbot.spokes.facebook.connection.repository.FacebookConnectionRepository;
+import com.chatbot.shared.messenger.ChannelMessengerService;
 import com.chatbot.core.tenant.infra.TenantContext;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -31,7 +31,7 @@ public class ConversationStatisticsServiceTest {
     private MessageRepository messageRepo;
     
     @Mock
-    private FacebookConnectionRepository facebookConnectionRepo;
+    private ChannelMessengerService channelMessengerService;
 
     @InjectMocks
     private ConversationStatisticsService statisticsService;
@@ -58,7 +58,7 @@ public class ConversationStatisticsServiceTest {
         when(messageRepo.countByConversationTenantId(tenantId)).thenReturn(1000L);
         when(messageRepo.countByConversationTenantIdAndCreatedAtAfter(eq(tenantId), any(LocalDateTime.class))).thenReturn(50L);
         when(messageRepo.countBySenderAndTenantId("bot", tenantId)).thenReturn(800L);
-        when(facebookConnectionRepo.countByTenantIdAndIsActiveTrue(tenantId)).thenReturn(3L);
+        when(channelMessengerService.countActiveConnections(tenantId)).thenReturn(3L);
 
         ConversationStatisticsDTO stats = statisticsService.getConversationStatistics(ownerId);
 
