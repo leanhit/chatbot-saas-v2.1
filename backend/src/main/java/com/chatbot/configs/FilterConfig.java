@@ -3,20 +3,20 @@ package com.chatbot.configs;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-// import com.chatbot.core.tenant.infra.TenantResolverFilter;
 
-// @Configuration
-// public class FilterConfig {
-//
-//    @Bean
-//    public FilterRegistrationBean<TenantResolverFilter> tenantFilter(
-//            TenantResolverFilter filter
-//    ) {
-//        FilterRegistrationBean<TenantResolverFilter> bean =
-//                new FilterRegistrationBean<>();
-//
-//        bean.setFilter(filter);
-//        bean.setOrder(2); // JWT = 1, Tenant = 2
-//        return bean;
-//    }
-// }
+@Configuration
+public class FilterConfig {
+
+    @Bean
+    public FilterRegistrationBean<CorrelationIdFilter> correlationIdFilterRegistration(
+            CorrelationIdFilter filter
+    ) {
+        FilterRegistrationBean<CorrelationIdFilter> bean =
+                new FilterRegistrationBean<>();
+
+        bean.setFilter(filter);
+        bean.setOrder(1); // Highest priority - should run first
+        bean.addUrlPatterns("/*");
+        return bean;
+    }
+}

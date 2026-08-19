@@ -8,6 +8,7 @@ import com.chatbot.core.tenant.profile.service.TenantProfileService;
 import com.chatbot.core.tenant.repository.TenantRepository;
 import com.chatbot.core.tenant.model.Tenant;
 import com.chatbot.core.tenant.membership.service.TenantMembershipFacade;
+import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -52,6 +53,7 @@ public class TenantController {
      * Lấy danh sách tenant đầy đủ thông tin để hiển thị lựa chọn (Profile, Address)
      */
     @GetMapping("/me")
+    @RateLimiter(name = "readRateLimit", fallbackMethod = "readRateLimitFallback")
     @Operation(
         summary = "Get user tenants",
         description = "Retrieve all tenants associated with the authenticated user, including profile and address information.",
@@ -68,6 +70,7 @@ public class TenantController {
      * Tạo tenant mới.
      */
     @PostMapping
+    @RateLimiter(name = "writeRateLimit", fallbackMethod = "writeRateLimitFallback")
     @Operation(
         summary = "Create new tenant",
         description = "Create a new tenant with the specified details. The user creating the tenant becomes the owner.",
@@ -501,5 +504,23 @@ public class TenantController {
         }
         tenantService.deleteTenant(id);
         return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * Fallback method for read operations rate limiting
+     * Called when rate limit is exceeded for read endpoints
+     */
+    public List<TenantDetailResponse> readRateLimitFallback(Exception exception) {
+        log.warn("Read rate limit exceeded for tenant endpoint");
+        throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS, "Too many requests. Please try again later.");
+    }
+
+    /**
+     * Fallback method for write operations rate limiting
+     * Called when rate limit is exceeded for write endpoints
+     */
+    public ResponseEntity<TenantResponse> writeRateLimitFallback(@Valid CreateTenantRequest request, Exception exception) {
+        log.warn("Write rate limit exceeded for tenant endpoint");
+        return ResponseEntity.status(429).build();
     }
 }

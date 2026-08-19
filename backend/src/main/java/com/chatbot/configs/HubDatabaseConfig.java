@@ -36,10 +36,10 @@ public class HubDatabaseConfig {
     private String ddlAuto;
 
     // ========================================
-    // Shared Database Configuration
+    // Shared Database Configuration (Consolidated with User Hub)
     // ========================================
     @Bean
-    @ConfigurationProperties(prefix = "app.datasource.shared")
+    @ConfigurationProperties(prefix = "app.datasource.user")
     public DataSource sharedDataSource() {
         return DataSourceBuilder.create().build();
     }
@@ -51,7 +51,7 @@ public class HubDatabaseConfig {
     }
 
     @Bean
-    @DependsOn("sharedFlyway")
+    @DependsOn("userFlyway")
     public LocalContainerEntityManagerFactoryBean sharedEntityManagerFactory() {
         LocalContainerEntityManagerFactoryBean em = new LocalContainerEntityManagerFactoryBean();
         em.setDataSource(sharedDataSource());
@@ -71,6 +71,7 @@ public class HubDatabaseConfig {
         properties.put("hibernate.show_sql", "false");
         properties.put("hibernate.format_sql", "false");
         properties.put("hibernate.jdbc.lob.non_contextual_creation", "true");
+        properties.put("hibernate.jdbc.time_out", "30");
         
         Properties jpaProperties = new Properties();
         jpaProperties.putAll(properties);

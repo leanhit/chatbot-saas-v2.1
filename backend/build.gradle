@@ -148,12 +148,18 @@ dependencies {
     // Resilience4j (Circuit Breaker)
     // -------------------------------
     implementation 'io.github.resilience4j:resilience4j-spring-boot3:2.2.0'
+    implementation 'io.github.resilience4j:resilience4j-annotations:2.2.0'
 
     // -------------------------------
     // Distributed Tracing (Micrometer & Zipkin)
     // -------------------------------
     implementation 'io.micrometer:micrometer-tracing-bridge-brave'
     implementation 'io.zipkin.reporter2:zipkin-reporter-brave'
+
+    // -------------------------------
+    // Structured Logging Logstash Encoder
+    // -------------------------------
+    implementation 'net.logstash.logback:logstash-logback-encoder:7.4'
 
     // -------------------------------
     // Penny Bot — AI / LLM

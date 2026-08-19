@@ -37,13 +37,13 @@ public class SpokesDatabaseConfig {
     private String ddlAuto;
 
     @Bean
-    @ConfigurationProperties(prefix = "app.datasource.spokes")
+    @ConfigurationProperties(prefix = "app.datasource.user")
     public DataSource spokesDataSource() {
         return DataSourceBuilder.create().build();
     }
 
     @Bean
-    @DependsOn("spokesFlyway")
+    @DependsOn("userFlyway")
     public LocalContainerEntityManagerFactoryBean spokesEntityManagerFactory() {
         LocalContainerEntityManagerFactoryBean em = new LocalContainerEntityManagerFactoryBean();
         em.setDataSource(spokesDataSource());
@@ -66,6 +66,7 @@ public class SpokesDatabaseConfig {
         properties.put("hibernate.show_sql", "false");
         properties.put("hibernate.format_sql", "false");
         properties.put("hibernate.jdbc.lob.non_contextual_creation", "true");
+        properties.put("hibernate.jdbc.time_out", "30");
         
         Properties jpaProperties = new Properties();
         jpaProperties.putAll(properties);

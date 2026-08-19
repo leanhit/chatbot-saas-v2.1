@@ -32,4 +32,11 @@ public class TenantContextFilter extends OncePerRequestFilter {
             TenantContext.clear();
         }
     }
+
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        String path = request.getRequestURI();
+        // Skip actuator endpoints to avoid interference with health checks
+        return path.startsWith("/actuator") || path.startsWith("/api/actuator");
+    }
 }

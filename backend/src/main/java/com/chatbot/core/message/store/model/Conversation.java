@@ -23,7 +23,8 @@ import java.util.UUID;
     indexes = {
         @Index(name = "idx_conversation_tenant", columnList = "tenant_id"),
         @Index(name = "idx_conversation_tenant_connection", columnList = "tenant_id, connection_id"),
-        @Index(name = "idx_conversation_tenant_external_user", columnList = "tenant_id, external_user_id")
+        @Index(name = "idx_conversation_tenant_external_user", columnList = "tenant_id, external_user_id"),
+        @Index(name = "idx_conversation_external_user", columnList = "external_user_id")
     }
 )
 @EqualsAndHashCode(callSuper = true)

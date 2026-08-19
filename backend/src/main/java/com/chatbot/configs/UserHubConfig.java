@@ -56,6 +56,7 @@ public class UserHubConfig {
         properties.put("hibernate.show_sql", "false");
         properties.put("hibernate.format_sql", "false");
         properties.put("hibernate.jdbc.lob.non_contextual_creation", "true");
+        properties.put("hibernate.jdbc.time_out", "30");
         
         Properties jpaProperties = new Properties();
         jpaProperties.putAll(properties);

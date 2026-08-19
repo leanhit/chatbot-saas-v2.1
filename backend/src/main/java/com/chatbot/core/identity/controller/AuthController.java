@@ -1,11 +1,11 @@
 package com.chatbot.core.identity.controller;
 
+import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import com.chatbot.core.identity.dto.*;
@@ -34,6 +34,7 @@ public class AuthController {
     private final JwtService jwtService;
 
     @PostMapping("/register")
+    @RateLimiter(name = "authRateLimit", fallbackMethod = "authRateLimitFallback")
     @Operation(
         summary = "Register new user",
         description = "Register a new user with email and password. Returns user information and JWT token.",
@@ -52,6 +53,7 @@ public class AuthController {
     }
 
     @PostMapping("/login")
+    @RateLimiter(name = "authRateLimit", fallbackMethod = "authRateLimitFallback")
     @Operation(
         summary = "User login",
         description = "Authenticate user with email and password. Returns user information and JWT token.",
@@ -160,5 +162,23 @@ public class AuthController {
         String token = request.get("token");
         authService.logoutByToken(token);
         return ResponseEntity.ok(ApiResponse.success("Token revoked successfully"));
+    }
+
+    /**
+     * Fallback method for authentication rate limiting
+     * Called when rate limit is exceeded for auth endpoints
+     */
+    public ResponseEntity<ApiResponse<UserResponse>> authRateLimitFallback(RegisterRequest request, Exception exception) {
+        log.warn("Authentication rate limit exceeded for endpoint");
+        return ResponseEntity.status(429).body(
+            ApiResponse.error("Too many authentication attempts. Please try again later.")
+        );
+    }
+
+    public ResponseEntity<ApiResponse<UserResponse>> authRateLimitFallback(LoginRequest request, Exception exception) {
+        log.warn("Authentication rate limit exceeded for endpoint");
+        return ResponseEntity.status(429).body(
+            ApiResponse.error("Too many authentication attempts. Please try again later.")
+        );
     }
 }
