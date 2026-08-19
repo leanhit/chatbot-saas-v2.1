@@ -38,13 +38,17 @@ public class Conversation extends BaseTenantEntity {
     @Column(name = "connection_id")
     private UUID connectionId;
 
+    @Column(name = "owner_id")
     private String ownerId;
 
     @Column(name = "external_user_id")
     private String externalUserId;
 
     // Thông tin người dùng
+    @Column(name = "user_name")
     private String userName;
+
+    @Column(name = "user_avatar")
     private String userAvatar;
 
     private String status; // open | closed
@@ -53,11 +57,13 @@ public class Conversation extends BaseTenantEntity {
     @Enumerated(EnumType.STRING) 
     private Channel channel;    
 
+    @Column(name = "last_message_id")
     private Long lastMessageId; // Có thể null khi mới tạo
 
+    @Column(name = "agent_assigned_id")
     private Long agentAssignedId; // Có thể null khi chưa phân công
 
-    @Column(nullable = false)
+    @Column(name = "is_closed_by_agent", nullable = false)
     @Builder.Default
     private Boolean isClosedByAgent = false; // Mặc định là false
 
@@ -65,7 +71,7 @@ public class Conversation extends BaseTenantEntity {
      * True nếu Agent đã tiếp quản conversation và Botpress nên im lặng (Bot Flow bị ngắt).
      * False nếu Conversation đang được Botpress xử lý (Bot Flow đang hoạt động).
      */
-    @Column(nullable = false)
+    @Column(name = "is_taken_over_by_agent", nullable = false)
     @Builder.Default
     private Boolean isTakenOverByAgent = false; // Mặc định là Botpress đang hoạt động
 
@@ -73,30 +79,40 @@ public class Conversation extends BaseTenantEntity {
     private String tags; // Có thể null
 
     // Attribute-based routing fields
+    @Column(name = "customer_tier")
     private String customerTier; // VIP, Enterprise, Standard
     private String language; // en, vi, etc.
 
     @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "custom_attributes")
     private String customAttributes; // JSON string for custom attributes
 
     // Queue routing fields
+    @Column(name = "queue_name")
     private String queueName; // Name of the queue when conversation is routed to queue
 
     // Custom action fields
+    @Column(name = "custom_action")
     private String customAction; // Custom action name from routing rules
+
     @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "custom_action_data")
     private String customActionData; // JSON data for custom action
 
     // SLA Monitoring fields
     @JsonFormat(pattern = DateUtils.STANDARD_JSON_FORMAT, timezone = DateUtils.STANDARD_TIMEZONE)
+    @Column(name = "first_agent_response_time")
     private LocalDateTime firstAgentResponseTime;
 
     @JsonFormat(pattern = DateUtils.STANDARD_JSON_FORMAT, timezone = DateUtils.STANDARD_TIMEZONE)
+    @Column(name = "first_bot_response_time")
     private LocalDateTime firstBotResponseTime;
 
     @Builder.Default
+    @Column(name = "sla_breach_count")
     private Integer slaBreachCount = 0;
 
+    @Column(name = "expected_response_time")
     private Long expectedResponseTime; // in seconds
 
     // Skills-based routing fields (Phase 3.2)

@@ -34,19 +34,21 @@ public class Message extends BaseTenantEntity {
     private String content;
 
     @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "raw_payload")
     private String rawPayload;
 
     // Các trường mới được thêm
 
-    @Column(nullable = false)
+    @Column(name = "message_type", nullable = false)
     private String messageType; // text | image | video | postback
 
     @Column(name = "external_message_id")
     private String externalMessageId; // Có thể null
 
-    @Column(nullable = false)
+    @Column(name = "is_read", nullable = false)
     private Boolean isRead; // Mặc định là false (chưa đọc)
 
+    @Column(name = "sent_time")
     private LocalDateTime sentTime; // Thời gian gốc trên nền tảng, có thể null
 
     // Timestamp

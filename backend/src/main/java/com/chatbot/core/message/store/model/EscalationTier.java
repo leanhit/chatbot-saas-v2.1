@@ -68,6 +68,7 @@ public class EscalationTier extends BaseTenantEntity {
     /**
      * Required role for agents at this tier
      */
+    @Column(name = "required_role")
     private String requiredRole;
 
     @Column(name = "tenant_id")

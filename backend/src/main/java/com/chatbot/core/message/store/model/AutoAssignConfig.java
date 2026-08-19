@@ -40,14 +40,14 @@ public class AutoAssignConfig extends BaseTenantEntity {
     /**
      * Auto-assignment interval in seconds
      */
-    @Column(nullable = false)
+    @Column(name = "interval_seconds", nullable = false)
     @Builder.Default
     private Integer intervalSeconds = 30;
 
     /**
      * Maximum concurrent conversations per agent
      */
-    @Column(nullable = false)
+    @Column(name = "max_concurrent_per_agent", nullable = false)
     @Builder.Default
     private Integer maxConcurrentPerAgent = 5;
 

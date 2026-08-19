@@ -72,14 +72,14 @@ public class Agent extends BaseTenantEntity {
     /**
      * Current load (number of active conversations)
      */
-    @Column(nullable = false)
+    @Column(name = "current_load", nullable = false)
     @Builder.Default
     private Integer currentLoad = 0;
 
     /**
      * Maximum concurrent conversations allowed
      */
-    @Column(nullable = false)
+    @Column(name = "max_concurrent_conversations", nullable = false)
     @Builder.Default
     private Integer maxConcurrentConversations = 10;
 
@@ -95,6 +95,7 @@ public class Agent extends BaseTenantEntity {
      * e.g., {"preferredChannels": ["FACEBOOK", "ZALO"], "preferredLanguages": ["vi"]}
      */
     @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "assignment_preferences")
     private String assignmentPreferences;
 
     /**
@@ -113,11 +114,13 @@ public class Agent extends BaseTenantEntity {
     /**
      * Phone number
      */
+    @Column(name = "phone_number")
     private String phoneNumber;
 
     /**
      * Avatar URL
      */
+    @Column(name = "avatar_url")
     private String avatarUrl;
 
     // Timestamp
@@ -135,6 +138,7 @@ public class Agent extends BaseTenantEntity {
      * Last activity timestamp
      */
     @JsonFormat(pattern = DateUtils.STANDARD_JSON_FORMAT, timezone = DateUtils.STANDARD_TIMEZONE)
+    @Column(name = "last_activity_at")
     private LocalDateTime lastActivityAt;
 
     @Column(name = "tenant_id")

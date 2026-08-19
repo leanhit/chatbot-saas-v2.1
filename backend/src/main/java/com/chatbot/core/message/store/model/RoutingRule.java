@@ -85,7 +85,7 @@ public class RoutingRule extends BaseTenantEntity {
      * Rule type (AUTO_ASSIGN, ROUTE_TO_QUEUE, ESCALATE, BLOCK)
      */
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(name = "rule_type", nullable = false)
     @NotNull(message = "Rule type is required")
     private RoutingRuleType ruleType;
 
