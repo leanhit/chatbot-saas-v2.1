@@ -1,0 +1,27 @@
+services:
+  chatbot-app:
+    build:
+      context: ..
+      dockerfile: app-deploy/Dockerfile
+    image: ${DOCKER_IMAGE:-chatbot-saas-app:latest}
+    container_name: chatbot_saas_app
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - DB_USER=${DB_USER:-chatbot_user}
+      - DB_PASSWORD=${DB_PASSWORD:-chatbot_Admin_2025}
+      - JWT_SECRET=${JWT_SECRET:-ChangeMeSuperSecretKeyForChatbotSaaS2026!}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-http://localhost,https://yourdomain.com}
+    volumes:
+      - ./config/application-docker.yml:/app/config/application-docker.yml
+      - ./logs:/app/logs
+    networks:
+      - internal
+
+networks:
+  internal:
+    external: true
+    name: chatbot_saas_internal

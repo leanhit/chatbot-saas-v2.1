@@ -1,0 +1,73 @@
+name: Build & Deploy Chatbot SaaS App
+
+on:
+  push:
+    branches:
+      - main
+      - master
+
+jobs:
+  build-and-deploy:
+    name: Build Docker Image and Deploy to Server
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Log in to GitHub Container Registry (GHCR)
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract Metadata / Lowercase Repository Name
+        id: meta
+        run: |
+          REPO_LOWER=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
+          echo "IMAGE_NAME=ghcr.io/${REPO_LOWER}-app" >> $GITHUB_ENV
+
+      - name: Build and Push Docker Image
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: ./app-deploy/Dockerfile
+          push: true
+          tags: |
+            ${{ env.IMAGE_NAME }}:latest
+            ${{ env.IMAGE_NAME }}:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Deploy to Remote Server via SSH
+        uses: appleboy/ssh-action@v1.0.0
+        if: ${{ secrets.SERVER_HOST != '' }}
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          port: ${{ secrets.SERVER_PORT || 22 }}
+          script: |
+            APP_PATH="${SERVER_APP_PATH:-/home/ubuntu/ltanh/chatbot-saas-v2.1/app-deploy}"
+            echo "Navigating to app deployment path: $APP_PATH"
+            cd "$APP_PATH"
+            
+            echo "Logging into GHCR on server..."
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin || true
+            
+            echo "Pulling latest image..."
+            docker compose pull || true
+            
+            echo "Restarting application container..."
+            docker compose up -d
+            
+            echo "Cleaning up dangling images..."
+            docker image prune -f
+            echo "Deployment completed successfully!"

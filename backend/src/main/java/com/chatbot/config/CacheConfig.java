@@ -67,6 +67,10 @@ public class CacheConfig {
         cacheConfigurations.put("staticContent",       defaultConfig.entryTtl(Duration.ofDays(1)));
         cacheConfigurations.put("rateLimiting",        defaultConfig.entryTtl(Duration.ofHours(1)));
         cacheConfigurations.put("tenants",             defaultConfig.entryTtl(Duration.ofMinutes(15)));
+        cacheConfigurations.put("tenant-profiles",      defaultConfig.entryTtl(Duration.ofMinutes(30)));
+        cacheConfigurations.put("tenant-profiles-batch", defaultConfig.entryTtl(Duration.ofMinutes(30)));
+        cacheConfigurations.put("user-roles",          defaultConfig.entryTtl(Duration.ofMinutes(30)));
+        cacheConfigurations.put("tenant-roles",        defaultConfig.entryTtl(Duration.ofMinutes(15)));
         cacheConfigurations.put("chatbots",            defaultConfig.entryTtl(Duration.ofMinutes(10)));
         cacheConfigurations.put("messageStats",        defaultConfig.entryTtl(Duration.ofMinutes(5)));
         cacheConfigurations.put("payments",            defaultConfig.entryTtl(Duration.ofMinutes(2)));
@@ -77,6 +81,8 @@ public class CacheConfig {
 
         // --- Package caches (merged from PackageCacheConfig) ---
         cacheConfigurations.put("packages",            defaultConfig.entryTtl(Duration.ofMinutes(30)));
+        cacheConfigurations.put("packages-active",     defaultConfig.entryTtl(Duration.ofHours(1)));
+        cacheConfigurations.put("packages-all",        defaultConfig.entryTtl(Duration.ofHours(1)));
         cacheConfigurations.put("activePackages",      defaultConfig.entryTtl(Duration.ofMinutes(30)));
         cacheConfigurations.put("packageValidation",   defaultConfig.entryTtl(Duration.ofMinutes(30)));
         cacheConfigurations.put("packageUsage",        defaultConfig.entryTtl(Duration.ofMinutes(30)));
