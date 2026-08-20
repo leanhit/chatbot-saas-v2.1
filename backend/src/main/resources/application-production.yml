@@ -181,6 +181,11 @@ management:
       prometheus:
         enabled: true
         
+jwt:
+  rotation:
+    enabled: ${JWT_ROTATION_ENABLED:true}
+    interval-days: ${JWT_ROTATION_INTERVAL_DAYS:90}
+
 # Application Configuration
 app:
   jwt:

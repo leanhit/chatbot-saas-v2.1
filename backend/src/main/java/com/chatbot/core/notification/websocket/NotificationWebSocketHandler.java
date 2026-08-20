@@ -1,6 +1,6 @@
 package com.chatbot.core.notification.websocket;
 
-import com.chatbot.configs.RedisPubSubConfig;
+import com.chatbot.config.RedisPubSubConfig;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

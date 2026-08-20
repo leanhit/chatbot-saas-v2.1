@@ -1,6 +1,6 @@
 package com.chatbot.core.presence.websocket;
 
-import com.chatbot.configs.RedisPubSubConfig;
+import com.chatbot.config.RedisPubSubConfig;
 import com.chatbot.core.presence.service.PresenceService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;

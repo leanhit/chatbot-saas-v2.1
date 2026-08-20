@@ -25,7 +25,7 @@ import org.springframework.boot.autoconfigure.domain.EntityScan;
     "com.chatbot.core",
     "com.chatbot.modules",
     "com.chatbot.shared",
-    "com.chatbot.configs",
+    "com.chatbot.config",
     "com.chatbot.spokes"
 })
 public class ChatbotApplication {
