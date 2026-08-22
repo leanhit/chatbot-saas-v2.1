@@ -13,6 +13,7 @@ FROM eclipse-temurin:21-jdk AS backend-build
 WORKDIR /build/backend
 COPY backend/build.gradle backend/settings.gradle backend/gradlew ./
 COPY backend/gradle ./gradle
+RUN ./gradlew dependencies --no-daemon || true
 COPY backend/src ./src
 RUN ./gradlew bootJar -x test --no-daemon
 
