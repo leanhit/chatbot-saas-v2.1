@@ -9,15 +9,15 @@ COPY frontend/ ./
 RUN npm run build
 
 # Stage 2: Build Backend (Spring Boot 3)
-FROM openjdk:21-jdk-slim AS backend-build
+FROM eclipse-temurin:21-jdk AS backend-build
 WORKDIR /build/backend
 COPY backend/build.gradle backend/settings.gradle backend/gradlew ./
 COPY backend/gradle ./gradle
 COPY backend/src ./src
-RUN ./gradlew build -x test --no-daemon
+RUN ./gradlew bootJar -x test --no-daemon
 
 # Stage 3: Final Runtime Image
-FROM openjdk:21-jdk-slim
+FROM eclipse-temurin:21-jdk
 
 # Install Nginx, Supervisord and utilities
 RUN apt-get update && apt-get install -y \
@@ -35,7 +35,7 @@ RUN mkdir -p /app/config /app/logs /app/uploads /var/log/supervisor
 COPY --from=frontend-build /build/frontend/dist /usr/share/nginx/html
 
 # Copy Backend JAR
-COPY --from=backend-build /build/backend/build/libs/*.jar /app/app.jar
+COPY --from=backend-build /build/backend/build/libs/*-0.0.1-SNAPSHOT.jar /app/app.jar
 
 # Copy Configuration files
 COPY app-deploy/nginx/nginx.conf /etc/nginx/conf.d/default.conf
