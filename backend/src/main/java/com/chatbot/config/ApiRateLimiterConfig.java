@@ -37,11 +37,11 @@ public class ApiRateLimiterConfig {
         
         // Create specific rate limiters for different endpoint categories
         
-        // Strict rate limiter for authentication endpoints (10 req/sec)
+        // Strict rate limiter for authentication endpoints (100 req/sec, 5s timeout for BCrypt)
         RateLimiterConfig authConfig = RateLimiterConfig.custom()
-            .limitForPeriod(10)
+            .limitForPeriod(100)
             .limitRefreshPeriod(Duration.ofSeconds(1))
-            .timeoutDuration(Duration.ofMillis(100))
+            .timeoutDuration(Duration.ofSeconds(5))
             .build();
         registry.rateLimiter("authRateLimit", authConfig);
         

@@ -168,15 +168,15 @@ public class AuthController {
      * Fallback method for authentication rate limiting
      * Called when rate limit is exceeded for auth endpoints
      */
-    public ResponseEntity<ApiResponse<UserResponse>> authRateLimitFallback(RegisterRequest request, Exception exception) {
-        log.warn("Authentication rate limit exceeded for endpoint");
+    public ResponseEntity<ApiResponse<UserResponse>> authRateLimitFallback(RegisterRequest request, io.github.resilience4j.ratelimiter.RequestNotPermitted exception) {
+        log.warn("Authentication rate limit fallback triggered: {}", exception.getMessage());
         return ResponseEntity.status(429).body(
             ApiResponse.error("Too many authentication attempts. Please try again later.")
         );
     }
 
-    public ResponseEntity<ApiResponse<UserResponse>> authRateLimitFallback(LoginRequest request, Exception exception) {
-        log.warn("Authentication rate limit exceeded for endpoint");
+    public ResponseEntity<ApiResponse<UserResponse>> authRateLimitFallback(LoginRequest request, io.github.resilience4j.ratelimiter.RequestNotPermitted exception) {
+        log.warn("Authentication rate limit fallback triggered: {}", exception.getMessage());
         return ResponseEntity.status(429).body(
             ApiResponse.error("Too many authentication attempts. Please try again later.")
         );

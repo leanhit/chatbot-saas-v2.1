@@ -25,7 +25,8 @@ RUN apt-get update && apt-get install -y \
     nginx \
     supervisor \
     curl \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* \
+    && rm -f /etc/nginx/sites-enabled/default
 
 WORKDIR /app
 

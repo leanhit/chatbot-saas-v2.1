@@ -98,7 +98,7 @@ const routes = [
   
   {
     path: "/dashboard",
-    name: "dasboard",
+    name: "dashboard",
     component: Dashboard,
     meta: { requiresAuth: true, title: "Dashboard" + appname },
   },
@@ -308,7 +308,7 @@ router.beforeEach(async (to, from, next) => {
   
   // 4. Role-based access control
   if (to.meta.requiresOwner && tenantStore.currentTenant?.role !== 'OWNER') {
-    return next({ name: 'dasboard' }); // redirect to dashboard if not owner
+    return next({ name: 'dashboard' }); // redirect to dashboard if not owner
   }
   
   next();
