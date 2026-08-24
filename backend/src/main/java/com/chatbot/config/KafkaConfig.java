@@ -29,7 +29,7 @@ public class KafkaConfig {
     public static final String MINIO_EVENT_TOPIC = "minio-events";
     public static final String SPOKES_EVENT_TOPIC = "spokes-events";
 
-    @Value("${spring.kafka.bootstrap-servers:localhost:9092}")
+    @Value("${KAFKA_BOOTSTRAP_SERVERS:${SPRING_KAFKA_BOOTSTRAP_SERVERS:${spring.kafka.bootstrap-servers:localhost:9092}}}")
     private String bootstrapServers;
 
     // ---------- Producer ----------
