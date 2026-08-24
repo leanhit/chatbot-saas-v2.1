@@ -62,8 +62,9 @@ class TakeoverWebSocketService {
     this.notificationStore = useNotificationStore()
 
     try {
-      let wsUrl = process.env.VUE_APP_WS_URL
-      if (!wsUrl) {
+      let wsUrl = process.env.VUE_APP_WS_URL || process.env.VITE_WS_URL
+      const isBrowserNonLocalhost = typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1'
+      if (!wsUrl || (wsUrl.includes('localhost') && isBrowserNonLocalhost)) {
         const protocol = typeof window !== 'undefined' && window.location.protocol === 'https:' ? 'wss:' : 'ws:'
         const host = typeof window !== 'undefined' ? window.location.host : 'localhost:8080'
         wsUrl = `${protocol}//${host}/ws/takeover`

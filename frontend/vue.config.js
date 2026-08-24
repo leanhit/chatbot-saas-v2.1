@@ -56,10 +56,13 @@ module.exports = defineConfig({
       }
       
       // Fix double slash issue - remove trailing slash from API URL
-      const apiUrl = process.env.VITE_API_URL || process.env.VUE_APP_API_URL || 'https://truyenthongviet.vn/api'
+      const apiUrl = process.env.VITE_API_URL || process.env.VUE_APP_API_URL || ''
+      definitions['process.env'].VUE_APP_API_URL = JSON.stringify(apiUrl.replace(/\/$/, ''))
       definitions['process.env'].VITE_API_URL = JSON.stringify(apiUrl.replace(/\/$/, ''))
       
-      definitions['process.env'].VITE_WS_URL = JSON.stringify(process.env.VITE_WS_URL || process.env.VUE_APP_WS_URL || 'wss://truyenthongviet.vn/ws/takeover')
+      const wsUrl = process.env.VITE_WS_URL || process.env.VUE_APP_WS_URL || ''
+      definitions['process.env'].VUE_APP_WS_URL = JSON.stringify(wsUrl)
+      definitions['process.env'].VITE_WS_URL = JSON.stringify(wsUrl)
       definitions['process.env'].FACEBOOK_APP_ID = JSON.stringify(process.env.FACEBOOK_APP_ID || '')
       definitions['process.env'].FACEBOOK_APP_SECRET = JSON.stringify(process.env.FACEBOOK_APP_SECRET || '')
       definitions['process.env'].FACEBOOK_CONFIG_ID = JSON.stringify(process.env.FACEBOOK_CONFIG_ID || '')
