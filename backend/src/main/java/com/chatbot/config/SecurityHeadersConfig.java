@@ -44,7 +44,7 @@ public class SecurityHeadersConfig implements WebMvcConfigurer {
                     "style-src 'self' 'unsafe-inline' https:; " +
                     "img-src 'self' data: https: blob: https://*.facebook.com https://*.fbcdn.net; " +
                     "font-src 'self' data: https:; " +
-                    "connect-src 'self' https://*.facebook.com https://*.facebook.net https://graph.facebook.com https://truyenthongviet.vn https://api.yourdomain.com; " +
+                    "connect-src 'self' https://*.facebook.com https://*.facebook.net https://graph.facebook.com https://truyenthongviet.vn https://*.truyenthongviet.vn wss://truyenthongviet.vn wss://*.truyenthongviet.vn; " +
                     "frame-src 'self' https://*.facebook.com https://*.facebook.net https://staticxx.facebook.com;");
                 response.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
                 response.setHeader("Permissions-Policy", 

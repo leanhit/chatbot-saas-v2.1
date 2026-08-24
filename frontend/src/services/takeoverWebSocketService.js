@@ -62,8 +62,12 @@ class TakeoverWebSocketService {
     this.notificationStore = useNotificationStore()
 
     try {
-      // VITE_WS_URL should already include the full WebSocket endpoint
-      const wsUrl = process.env.VUE_APP_WS_URL || 'ws://localhost:8080/ws/takeover'
+      let wsUrl = process.env.VUE_APP_WS_URL
+      if (!wsUrl) {
+        const protocol = typeof window !== 'undefined' && window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+        const host = typeof window !== 'undefined' ? window.location.host : 'localhost:8080'
+        wsUrl = `${protocol}//${host}/ws/takeover`
+      }
       
       // Validate and clean URL
       if (!wsUrl || typeof wsUrl !== 'string') {

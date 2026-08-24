@@ -5,7 +5,7 @@ import { ACTIVE_TENANT_ID } from '@/utils/constant';
 import { extractErrorCode, getErrorFromResponse, isAuthError } from '@/utils/errorHandler';
 
 const instance = axios.create({
-    baseURL: process.env.VUE_APP_API_URL,
+    baseURL: process.env.VUE_APP_API_URL || '/api',
     headers: {
         Accept: 'application/json',
         'Content-Type': 'application/json',

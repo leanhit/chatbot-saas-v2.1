@@ -56,7 +56,9 @@ class PresenceWebSocketService {
           const index = baseWsUrl.lastIndexOf('/ws/')
           wsUrl = baseWsUrl.substring(0, index) + '/ws/presence'
         } else {
-          wsUrl = 'ws://localhost:8080/ws/presence'
+          const protocol = typeof window !== 'undefined' && window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+          const host = typeof window !== 'undefined' ? window.location.host : 'localhost:8080'
+          wsUrl = `${protocol}//${host}/ws/presence`
         }
       }
       
