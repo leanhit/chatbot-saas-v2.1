@@ -11,7 +11,11 @@ jobs:
     name: Build Docker Image and Deploy to Server
     runs-on: ubuntu-latest
     env:
-      SERVER_HOST: ${{ secrets.SERVER_HOST }}
+      SERVER_HOST: ${{ secrets.SERVER_HOST || vars.SERVER_HOST }}
+      SERVER_USER: ${{ secrets.SERVER_USER || vars.SERVER_USER || 'root' }}
+      SERVER_SSH_KEY: ${{ secrets.SERVER_SSH_KEY || vars.SERVER_SSH_KEY || secrets.PRIVATE_SCERET_KEY_CONNECT_TO_UBUNTU_SERVER }}
+      SERVER_PORT: ${{ secrets.SERVER_PORT || vars.SERVER_PORT || '22' }}
+      SERVER_PATH: ${{ vars.SERVER_PATH || secrets.SERVER_PATH || '/root/chatbot-saas-v2.1/app-deploy' }}
     permissions:
       contents: read
       packages: write
@@ -50,14 +54,14 @@ jobs:
 
       - name: Deploy to Remote Server via SSH
         uses: appleboy/ssh-action@v1.0.0
-        if: ${{ secrets.SERVER_HOST != '' || vars.SERVER_HOST != '' }}
+        if: ${{ env.SERVER_HOST != '' }}
         with:
-          host: ${{ secrets.SERVER_HOST || vars.SERVER_HOST }}
-          username: ${{ secrets.SERVER_USER || vars.SERVER_USER || 'root' }}
-          key: ${{ secrets.SERVER_SSH_KEY || vars.SERVER_SSH_KEY || secrets.PRIVATE_SCERET_KEY_CONNECT_TO_UBUNTU_SERVER }}
-          port: ${{ secrets.SERVER_PORT || vars.SERVER_PORT || '22' }}
+          host: ${{ env.SERVER_HOST }}
+          username: ${{ env.SERVER_USER }}
+          key: ${{ env.SERVER_SSH_KEY }}
+          port: ${{ env.SERVER_PORT }}
           script: |
-            APP_PATH="${{ vars.SERVER_PATH || '/root/chatbot-saas-v2.1/app-deploy' }}"
+            APP_PATH="${{ env.SERVER_PATH }}"
             echo "Navigating to app deployment path: $APP_PATH"
             cd "$APP_PATH"
             
