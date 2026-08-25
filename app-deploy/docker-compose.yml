@@ -15,6 +15,10 @@ services:
       - DB_USER=${DB_USER:-chatbot_user}
       - DB_PASSWORD=${DB_PASSWORD:-chatbot_Admin_2025}
       - JWT_SECRET=${JWT_SECRET:-ChangeMeSuperSecretKeyForChatbotSaaS2026!}
+      - MINIO_ENDPOINT=${MINIO_ENDPOINT:-http://minio:9000}
+      - MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY:-minioadmin}
+      - MINIO_SECRET_KEY=${MINIO_SECRET_KEY:-minioadmin}
+      - MINIO_BUCKET=${MINIO_BUCKET:-chatbot-files}
       - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-http://localhost,https://truyenthongviet.vn,https://chat.truyenthongviet.vn,https://www.truyenthongviet.vn}
     volumes:
       - ./config/application-docker.yml:/app/config/application-docker.yml
