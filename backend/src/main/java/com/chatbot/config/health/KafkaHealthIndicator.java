@@ -22,7 +22,7 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 public class KafkaHealthIndicator implements HealthIndicator {
 
-    @Value("${KAFKA_BOOTSTRAP_SERVERS:${SPRING_KAFKA_BOOTSTRAP_SERVERS:${spring.kafka.bootstrap-servers:localhost:9092}}}")
+    @Value("${KAFKA_BOOTSTRAP_SERVERS:${SPRING_KAFKA_BOOTSTRAP_SERVERS:chatbot_saas_kafka:9092}}")
     private String bootstrapServers;
 
     @Override

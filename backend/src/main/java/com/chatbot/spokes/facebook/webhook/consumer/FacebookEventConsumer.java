@@ -75,7 +75,7 @@ public class FacebookEventConsumer {
         }
     }
 
-    @KafkaListener(topics = KafkaConfig.FACEBOOK_EVENT_TOPIC, groupId = "facebook-consumer-group")
+    @KafkaListener(topics = KafkaConfig.FACEBOOK_EVENT_TOPIC, groupId = "facebook-consumer-group", containerFactory = "kafkaListenerContainerFactory")
     public void consume(String messageJson) {
         FacebookKafkaEvent event;
         try {

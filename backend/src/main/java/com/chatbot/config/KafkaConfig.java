@@ -29,7 +29,7 @@ public class KafkaConfig {
     public static final String MINIO_EVENT_TOPIC = "minio-events";
     public static final String SPOKES_EVENT_TOPIC = "spokes-events";
 
-    @Value("${KAFKA_BOOTSTRAP_SERVERS:${SPRING_KAFKA_BOOTSTRAP_SERVERS:${spring.kafka.bootstrap-servers:localhost:9092}}}")
+    @Value("${KAFKA_BOOTSTRAP_SERVERS:${SPRING_KAFKA_BOOTSTRAP_SERVERS:chatbot_saas_kafka:9092}}")
     private String bootstrapServers;
 
     // ---------- Producer ----------
@@ -74,6 +74,13 @@ public class KafkaConfig {
     }
 
     // ---------- Topic Creation ----------
+    @Bean
+    public org.springframework.kafka.core.KafkaAdmin kafkaAdmin() {
+        Map<String, Object> configs = new HashMap<>();
+        configs.put(org.apache.kafka.clients.admin.AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
+        return new org.springframework.kafka.core.KafkaAdmin(configs);
+    }
+
     @Bean
     public NewTopic facebookEventTopic() {
         return new NewTopic(FACEBOOK_EVENT_TOPIC, 3, (short) 1);
