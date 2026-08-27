@@ -19,7 +19,7 @@ services:
       - MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY:-minioadmin}
       - MINIO_SECRET_KEY=${MINIO_SECRET_KEY:-minioadmin}
       - MINIO_BUCKET=${MINIO_BUCKET:-chatbot-files}
-      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-http://localhost,https://truyenthongviet.vn,https://chat.truyenthongviet.vn,https://www.truyenthongviet.vn}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-http://localhost,http://localhost:8080,https://truyenthongviet.vn,https://chat.truyenthongviet.vn,https://www.truyenthongviet.vn,http://103.149.99.7,http://103.149.99.7:8080,https://103.149.99.7}
     volumes:
       - ./config/application-docker.yml:/app/config/application-docker.yml
       - ./logs:/app/logs

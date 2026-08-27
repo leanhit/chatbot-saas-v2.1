@@ -29,6 +29,9 @@ import java.util.List;
 @EnableWebMvc
 public class SecurityConfig {
 
+    @org.springframework.beans.factory.annotation.Value("${ALLOWED_ORIGINS:http://localhost,http://localhost:8080,https://*.truyenthongviet.vn,https://truyenthongviet.vn,http://103.149.99.7,http://103.149.99.7:8080,https://103.149.99.7}")
+    private String rawAllowedOrigins;
+
     // ===================== PASSWORD =====================
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -51,14 +54,18 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
 
-        // ✅ Restrict to specific domains for production
-        config.setAllowedOriginPatterns(List.of(
-            "http://localhost:*",
-            "https://*.truyenthongviet.vn",
-            "https://truyenthongviet.vn",
-            "https://*.yourdomain.com",
-            "https://yourdomain.com"
-        ));
+        List<String> origins = java.util.Arrays.stream(rawAllowedOrigins.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .collect(java.util.stream.Collectors.toList());
+
+        // Always ensure localhost, server IP and domain patterns are allowed
+        if (!origins.contains("http://localhost:*")) origins.add("http://localhost:*");
+        if (!origins.contains("http://103.149.99.7:*")) origins.add("http://103.149.99.7:*");
+        if (!origins.contains("https://103.149.99.7:*")) origins.add("https://103.149.99.7:*");
+        if (!origins.contains("https://*.truyenthongviet.vn")) origins.add("https://*.truyenthongviet.vn");
+
+        config.setAllowedOriginPatterns(origins);
         config.setAllowedMethods(List.of(
                 "GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"
         ));
@@ -111,14 +118,14 @@ public class SecurityConfig {
                 // ================= PUBLIC APIs =================
                 // Most specific paths first
                 .requestMatchers("/auth/**", "/api/auth/**", "/api/api/auth/**", "/error").permitAll()
-                .requestMatchers("/actuator/**", "/api/actuator/**").permitAll()
+                .requestMatchers("/actuator/**", "/api/actuator/**", "/health").permitAll()
                 .requestMatchers("/penny/bots/*/chat/public").permitAll()
                 .requestMatchers("/webhooks/**", "/api/webhooks/**").permitAll()
                 .requestMatchers("/webhooks/facebook/botpress/**").permitAll()
                 .requestMatchers("/webhooks/facebook/pennybot/**").permitAll()
                 .requestMatchers("/api/v1/facebook/webhook/**").permitAll()
                 .requestMatchers("/images/public/**", "/api/images/public/**").permitAll()
-                .requestMatchers("/ws/takeover/**", "/ws/presence/**", "/ws/notifications/**").permitAll()
+                .requestMatchers("/ws/**", "/ws/takeover/**", "/ws/presence/**", "/ws/notifications/**").permitAll()
                 .requestMatchers("/api/takeover/**").authenticated()
                 
                 // ================= LOCATION APIs (PUBLIC) =================

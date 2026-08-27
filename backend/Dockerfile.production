@@ -2,7 +2,7 @@
 # Multi-stage build for optimized production image
 
 # Stage 1: Build
-FROM openjdk:21-jdk-slim as build
+FROM eclipse-temurin:21-jdk AS build
 
 # Install build dependencies
 RUN apt-get update && apt-get install -y \
@@ -14,14 +14,15 @@ RUN apt-get update && apt-get install -y \
 WORKDIR /build
 
 # Copy gradle files
-COPY build.gradle settings.gradle gradle/ ./
+COPY build.gradle settings.gradle gradlew ./
+COPY gradle ./gradle
 COPY src ./src
 
 # Build the application
 RUN ./gradlew build -x test --no-daemon
 
 # Stage 2: Runtime
-FROM openjdk:21-jre-slim
+FROM eclipse-temurin:21-jre
 
 # Install runtime dependencies
 RUN apt-get update && apt-get install -y \
