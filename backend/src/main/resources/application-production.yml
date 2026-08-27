@@ -94,6 +94,8 @@ spring:
   threads:
     virtual:
       enabled: true
+  flyway:
+    validate-on-migrate: true
   jpa:
     hibernate:
       ddl-auto: validate

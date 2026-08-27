@@ -2,6 +2,7 @@ package com.chatbot.config;
 
 import org.flywaydb.core.Flyway;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -15,6 +16,9 @@ import javax.sql.DataSource;
 @Configuration
 public class MultiFlywayConfig {
 
+    @Value("${spring.flyway.validate-on-migrate:true}")
+    private boolean validateOnMigrate;
+
     @Bean(initMethod = "migrate")
     public Flyway identityFlyway(@Qualifier("identityDataSource") DataSource identityDataSource) {
         return Flyway.configure()
@@ -23,7 +27,7 @@ public class MultiFlywayConfig {
                 .baselineOnMigrate(true)
                 .baselineVersion("0")
                 .outOfOrder(true)
-                .validateOnMigrate(false)
+                .validateOnMigrate(validateOnMigrate)
                 .table("flyway_identity_schema_history")
                 .load();
     }
@@ -36,7 +40,7 @@ public class MultiFlywayConfig {
                 .baselineOnMigrate(true)
                 .baselineVersion("0")
                 .outOfOrder(true)
-                .validateOnMigrate(false)
+                .validateOnMigrate(validateOnMigrate)
                 .table("flyway_user_schema_history")
                 .load();
     }
@@ -49,7 +53,7 @@ public class MultiFlywayConfig {
                 .baselineOnMigrate(true)
                 .baselineVersion("0")
                 .outOfOrder(true)
-                .validateOnMigrate(false)
+                .validateOnMigrate(validateOnMigrate)
                 .table("flyway_tenant_schema_history")
                 .load();
     }
@@ -62,7 +66,7 @@ public class MultiFlywayConfig {
                 .baselineOnMigrate(true)
                 .baselineVersion("0")
                 .outOfOrder(true)
-                .validateOnMigrate(false)
+                .validateOnMigrate(validateOnMigrate)
                 .table("flyway_app_schema_history")
                 .load();
     }
@@ -75,7 +79,7 @@ public class MultiFlywayConfig {
                 .baselineOnMigrate(true)
                 .baselineVersion("0")
                 .outOfOrder(true)
-                .validateOnMigrate(false)
+                .validateOnMigrate(validateOnMigrate)
                 .table("flyway_config_schema_history")
                 .load();
     }
@@ -88,7 +92,7 @@ public class MultiFlywayConfig {
                 .baselineOnMigrate(true)
                 .baselineVersion("0")
                 .outOfOrder(true)
-                .validateOnMigrate(false)
+                .validateOnMigrate(validateOnMigrate)
                 .table("flyway_message_schema_history")
                 .load();
     }
@@ -101,7 +105,7 @@ public class MultiFlywayConfig {
                 .baselineOnMigrate(true)
                 .baselineVersion("0")
                 .outOfOrder(true)
-                .validateOnMigrate(false)
+                .validateOnMigrate(validateOnMigrate)
                 .table("flyway_shared_schema_history")
                 .load();
     }
@@ -114,7 +118,7 @@ public class MultiFlywayConfig {
                 .baselineOnMigrate(true)
                 .baselineVersion("0")
                 .outOfOrder(true)
-                .validateOnMigrate(false)
+                .validateOnMigrate(validateOnMigrate)
                 .table("flyway_spokes_schema_history")
                 .load();
     }

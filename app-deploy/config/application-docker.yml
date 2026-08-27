@@ -5,6 +5,8 @@ spring:
   threads:
     virtual:
       enabled: true
+  flyway:
+    validate-on-migrate: true
   data:
     redis:
       host: ${REDIS_HOST:chatbot_saas_redis}

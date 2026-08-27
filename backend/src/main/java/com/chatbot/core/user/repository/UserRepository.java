@@ -37,4 +37,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT u FROM User u WHERE u.id = :userId")
     Optional<User> findByIdWithLock(@Param("userId") Long userId);
+
+    @Query("SELECT u FROM User u WHERE u.isActive = false AND u.updatedAt < :cutoffDate")
+    java.util.List<User> findInactiveUsersOlderThan(@Param("cutoffDate") java.time.LocalDateTime cutoffDate);
 }
