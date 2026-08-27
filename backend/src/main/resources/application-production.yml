@@ -91,6 +91,9 @@ app:
       
 # Spring Configuration
 spring:
+  threads:
+    virtual:
+      enabled: true
   jpa:
     hibernate:
       ddl-auto: validate

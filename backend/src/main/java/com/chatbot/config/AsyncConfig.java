@@ -8,6 +8,9 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 
+import org.slf4j.MDC;
+
+import java.util.Map;
 import java.util.concurrent.Executor;
 
 /**
@@ -30,15 +33,18 @@ public class AsyncConfig {
             Long tenantId = TenantContext.getTenantId();
             String tenantKey = TenantContext.getCurrentTenant();
             SecurityContext securityContext = SecurityContextHolder.getContext();
+            Map<String, String> mdcContext = MDC.getCopyOfContextMap();
             return () -> {
                 try {
                     if (tenantId != null) TenantContext.setTenantId(tenantId);
                     if (tenantKey != null) TenantContext.setCurrentTenant(tenantKey);
                     if (securityContext != null) SecurityContextHolder.setContext(securityContext);
+                    if (mdcContext != null) MDC.setContextMap(mdcContext);
                     runnable.run();
                 } finally {
                     TenantContext.clear();
                     SecurityContextHolder.clearContext();
+                    MDC.clear();
                 }
             };
         });
