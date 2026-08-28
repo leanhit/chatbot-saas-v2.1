@@ -26,13 +26,13 @@ brew install redis
 
 **Configuration:**
 
-The backend is configured to connect to Redis at `localhost:6380` (see `application.properties`).
+The backend is configured to connect to Redis at `localhost:6379` (see `application.properties`).
 
 **Start Redis:**
 
 ```bash
-# Start Redis on port 6380
-redis-server --port 6380
+# Start Redis on port 6379 (default)
+redis-server --port 6379
 
 # Or use systemd (if configured)
 sudo systemctl start redis
@@ -41,7 +41,7 @@ sudo systemctl start redis
 **Verify Redis is running:**
 
 ```bash
-redis-cli -p 6380 ping
+redis-cli -p 6379 ping
 # Should return: PONG
 ```
 
