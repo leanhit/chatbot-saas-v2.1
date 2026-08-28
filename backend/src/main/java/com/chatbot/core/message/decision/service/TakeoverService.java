@@ -12,8 +12,6 @@ import org.springframework.data.redis.core.ListOperations;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import com.chatbot.core.message.store.repository.ConversationRepository;
 import com.chatbot.core.message.store.model.Conversation;
-import com.chatbot.core.message.store.repository.ConversationRepository;
-import com.chatbot.core.message.store.model.Conversation;
 import com.chatbot.shared.messenger.ChannelMessengerService;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
