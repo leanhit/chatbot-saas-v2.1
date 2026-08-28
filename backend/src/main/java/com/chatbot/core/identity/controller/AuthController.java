@@ -24,7 +24,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import java.util.Map;
 
 @RestController
-@RequestMapping({"/api/auth", "/api/api/auth"})
+@RequestMapping("/api/auth")
 @RequiredArgsConstructor
 @Slf4j
 @Tag(name = "Authentication", description = "Identity and authentication management APIs")

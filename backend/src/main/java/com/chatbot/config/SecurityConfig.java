@@ -117,7 +117,7 @@ public class SecurityConfig {
 
                 // ================= PUBLIC APIs =================
                 // Most specific paths first
-                .requestMatchers("/auth/**", "/api/auth/**", "/api/api/auth/**", "/error").permitAll()
+                .requestMatchers("/auth/**", "/api/auth/**", "/error").permitAll()
                 .requestMatchers("/actuator/**", "/api/actuator/**", "/health").permitAll()
                 .requestMatchers("/penny/bots/*/chat/public").permitAll()
                 .requestMatchers("/webhooks/**", "/api/webhooks/**").permitAll()
