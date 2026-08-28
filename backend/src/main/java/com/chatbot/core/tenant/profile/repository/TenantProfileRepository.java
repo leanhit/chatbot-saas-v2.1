@@ -18,12 +18,10 @@ public interface TenantProfileRepository
     List<TenantProfile> findByTenantIdIn(List<Long> tenantIds);
 
     @Modifying
-    @Transactional(value = "tenantTransactionManager", rollbackFor = Exception.class)
     @Query(value = "INSERT INTO tenant_profiles (tenant_id) VALUES (:tenantId)", nativeQuery = true)
     void insertProfile(Long tenantId);
 
     @Modifying
-    @Transactional(value = "tenantTransactionManager", rollbackFor = Exception.class)
     @Query("DELETE FROM TenantProfile p WHERE p.tenant.id = :tenantId")
     void deleteByTenantId(@org.springframework.data.repository.query.Param("tenantId") Long tenantId);
 }
