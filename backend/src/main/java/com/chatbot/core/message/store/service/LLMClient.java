@@ -7,7 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.reactive.function.client.WebClient;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.retry.annotation.Retry;
 
@@ -26,7 +26,7 @@ import java.util.Map;
 @Retry(name = "llmApi")
 public class LLMClient {
 
-    private final RestTemplate restTemplate;
+    private final WebClient webClient;
     private final ObjectMapper objectMapper;
 
     @Value("${llm.provider:openai}")
@@ -56,23 +56,21 @@ public class LLMClient {
         try {
             Map<String, Object> requestBody = buildRequestBody(systemPrompt, userPrompt);
             
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_JSON);
-            headers.setBearerAuth(apiKey);
+            String responseBody = webClient.post()
+                .uri(apiUrl)
+                .headers(h -> {
+                    h.setContentType(MediaType.APPLICATION_JSON);
+                    h.setBearerAuth(apiKey);
+                })
+                .bodyValue(requestBody)
+                .retrieve()
+                .bodyToMono(String.class)
+                .block();
 
-            HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
-            
-            ResponseEntity<String> response = restTemplate.exchange(
-                apiUrl,
-                HttpMethod.POST,
-                entity,
-                String.class
-            );
-
-            if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
-                return extractContentFromResponse(response.getBody());
+            if (responseBody != null) {
+                return extractContentFromResponse(responseBody);
             } else {
-                log.error("LLM API returned error: {}", response.getStatusCode());
+                log.error("LLM API returned empty response");
                 return null;
             }
         } catch (Exception e) {

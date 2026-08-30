@@ -7,7 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.reactive.function.client.WebClient;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 
 import java.util.HashMap;
@@ -27,7 +27,7 @@ import java.util.Map;
 @Slf4j
 public class SlackNotificationService {
 
-    private final RestTemplate restTemplate;
+    private final WebClient webClient;
     private final ObjectMapper objectMapper;
 
     @Value("${notification.slack.enabled:false}")
@@ -176,20 +176,15 @@ public class SlackNotificationService {
 
             String jsonPayload = objectMapper.writeValueAsString(payload);
 
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_JSON);
+            String response = webClient.post()
+                .uri(webhookUrl)
+                .headers(h -> h.setContentType(MediaType.APPLICATION_JSON))
+                .bodyValue(jsonPayload)
+                .retrieve()
+                .bodyToMono(String.class)
+                .block();
 
-            HttpEntity<String> entity = new HttpEntity<>(jsonPayload, headers);
-            ResponseEntity<String> response = restTemplate.exchange(
-                webhookUrl, HttpMethod.POST, entity, String.class
-            );
-
-            if (response.getStatusCode().is2xxSuccessful()) {
-                log.info("Sent Slack notification successfully");
-            } else {
-                log.warn("Slack API returned non-2xx status: {}", response.getStatusCode());
-                throw new RuntimeException("Slack API error: " + response.getStatusCode());
-            }
+            log.info("Sent Slack notification successfully");
         } catch (Exception e) {
             log.warn("Failed to send Slack notification: {}", e.getMessage());
             throw new RuntimeException("Failed to send Slack notification", e);

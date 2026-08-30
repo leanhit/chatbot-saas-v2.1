@@ -46,7 +46,21 @@ public class Webhook {
     
     @Column(nullable = false)
     @Builder.Default
+    private Integer currentRetryAttempt = 0;
+    
+    @Column(nullable = false)
+    @Builder.Default
     private Integer timeoutSeconds = 10;
+    
+    @Column(name = "next_retry_at")
+    private LocalDateTime nextRetryAt;
+    
+    @Column(name = "last_error")
+    private String lastError;
+    
+    @Column(name = "status")
+    @Builder.Default
+    private String status = "ACTIVE"; // ACTIVE, FAILED, DISABLED
     
     @Column(name = "last_triggered_at")
     private LocalDateTime lastTriggeredAt;
@@ -96,10 +110,39 @@ public class Webhook {
     public void recordSuccess() {
         this.successCount++;
         this.lastTriggeredAt = LocalDateTime.now();
+        this.currentRetryAttempt = 0;
+        this.nextRetryAt = null;
+        this.lastError = null;
+        this.status = "ACTIVE";
     }
     
-    public void recordFailure() {
+    public void recordFailure(String errorMessage) {
         this.failureCount++;
         this.lastTriggeredAt = LocalDateTime.now();
+        this.currentRetryAttempt++;
+        this.lastError = errorMessage;
+        
+        if (this.currentRetryAttempt >= this.retryCount) {
+            this.status = "FAILED";
+        } else {
+            calculateNextRetryAt();
+        }
+    }
+    
+    public void calculateNextRetryAt() {
+        // Exponential backoff: 2^attempt * initial_delay (1 second)
+        long delayMs = (long) Math.pow(2, this.currentRetryAttempt) * 1000;
+        long maxDelayMs = 60000; // Max 60 seconds
+        delayMs = Math.min(delayMs, maxDelayMs);
+        
+        this.nextRetryAt = LocalDateTime.now().plus(java.time.Duration.ofMillis(delayMs));
+    }
+    
+    public boolean canRetry() {
+        return this.currentRetryAttempt < this.retryCount && !"DISABLED".equals(this.status);
+    }
+    
+    public boolean isRetryDue() {
+        return this.nextRetryAt != null && LocalDateTime.now().isAfter(this.nextRetryAt);
     }
 }

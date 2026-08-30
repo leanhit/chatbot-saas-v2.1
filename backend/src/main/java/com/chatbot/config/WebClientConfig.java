@@ -1,19 +1,20 @@
-package com.chatbot.spokes.facebook.config;
+package com.chatbot.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.reactive.function.client.WebClient;
 
-/**
- * Facebook WebClient Configuration
- * Following traloitudongV2 pattern
- */
 @Configuration
-public class FacebookWebClientConfig {
+public class WebClientConfig {
 
     @Bean
     public WebClient.Builder webClientBuilder() {
         return WebClient.builder()
-                .codecs(configurer -> configurer.defaultCodecs().maxInMemorySize(1024 * 1024)); // 1MB max
+                .codecs(configurer -> configurer.defaultCodecs().maxInMemorySize(1024 * 1024));
+    }
+
+    @Bean
+    public WebClient webClient(WebClient.Builder builder) {
+        return builder.build();
     }
 }

@@ -13,7 +13,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.reactive.function.client.WebClient;
 
 import java.util.List;
 import java.util.Map;
@@ -29,17 +29,17 @@ public class BotRuleManager {
     private final BotRuleRepository botRuleRepository;
     private final ResponseTemplateRepository responseTemplateRepository;
     private final ObjectMapper objectMapper;
-    private final RestTemplate restTemplate;
+    private final WebClient webClient;
     private final ExpressionParser spelParser = new SpelExpressionParser();
 
     public BotRuleManager(BotRuleRepository botRuleRepository,
                          ResponseTemplateRepository responseTemplateRepository,
                          ObjectMapper objectMapper,
-                         RestTemplate restTemplate) {
+                         WebClient webClient) {
         this.botRuleRepository = botRuleRepository;
         this.responseTemplateRepository = responseTemplateRepository;
         this.objectMapper = objectMapper;
-        this.restTemplate = restTemplate;
+        this.webClient = webClient;
     }
 
     /**
@@ -275,20 +275,24 @@ public class BotRuleManager {
                 payload.put("extra", extraData);
             }
 
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_JSON);
-            // Optional: bearer token from action config
-            String bearerToken = (String) actionData.get("bearerToken");
-            if (bearerToken != null && !bearerToken.isBlank()) {
-                headers.setBearerAuth(bearerToken);
-            }
-
-            HttpEntity<Map<String, Object>> requestEntity = new HttpEntity<>(payload, headers);
-
             log.info("🌐 Calling webhook: {} for rule: {}", webhookUrl, rule.getId());
+            
+            // Extract optional bearer token
+            String bearerToken = (String) actionData.get("bearerToken");
+            
             @SuppressWarnings("unchecked")
-            Map<String, Object> webhookResponse = restTemplate.postForObject(
-                webhookUrl, requestEntity, Map.class);
+            Map<String, Object> webhookResponse = webClient.post()
+                .uri(webhookUrl)
+                .headers(h -> {
+                    h.setContentType(MediaType.APPLICATION_JSON);
+                    if (bearerToken != null && !bearerToken.isBlank()) {
+                        h.setBearerAuth(bearerToken);
+                    }
+                })
+                .bodyValue(payload)
+                .retrieve()
+                .bodyToMono(Map.class)
+                .block();
 
             // Extract response text from webhook response
             if (webhookResponse != null) {

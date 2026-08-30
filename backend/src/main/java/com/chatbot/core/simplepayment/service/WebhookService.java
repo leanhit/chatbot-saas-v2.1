@@ -2,20 +2,19 @@ package com.chatbot.core.simplepayment.service;
 
 import com.chatbot.core.simplepayment.model.SimplePayment;
 import com.chatbot.core.simplepayment.model.Webhook;
+import com.chatbot.core.simplepayment.model.WebhookDeadLetter;
 import com.chatbot.core.simplepayment.repository.WebhookRepository;
+import com.chatbot.core.simplepayment.repository.WebhookDeadLetterRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.*;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.reactive.function.client.WebClient;
 
-import java.security.MessageDigest;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.chatbot.shared.exceptions.ResourceNotFoundException;
-import javax.crypto.Mac;
-import javax.crypto.spec.SecretKeySpec;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
@@ -28,8 +27,10 @@ import java.util.UUID;
 public class WebhookService {
 
     private final WebhookRepository webhookRepository;
+    private final WebhookDeadLetterRepository webhookDeadLetterRepository;
+    private final WebhookSignatureService webhookSignatureService;
     private final ObjectMapper objectMapper;
-    private final RestTemplate restTemplate = new RestTemplate();
+    private final WebClient webClient;
 
     /**
      * Create new webhook
@@ -54,7 +55,7 @@ public class WebhookService {
     }
 
     /**
-     * Trigger webhook for payment event
+     * Trigger webhook for payment event with exponential backoff retry
      */
     @Async
     @Transactional(transactionManager = "sharedTransactionManager")
@@ -70,37 +71,74 @@ public class WebhookService {
                 webhookRepository.save(webhook);
                 log.info("✅ Webhook triggered successfully: {}", webhook.getName());
             } catch (Exception e) {
-                webhook.recordFailure();
+                String errorMessage = e.getMessage();
+                webhook.recordFailure(errorMessage);
                 webhookRepository.save(webhook);
-                log.error("❌ Webhook trigger failed: {} - {}", webhook.getName(), e.getMessage());
+                log.error("❌ Webhook trigger failed: {} - Attempt: {}/{} - Error: {}", 
+                    webhook.getName(), webhook.getCurrentRetryAttempt(), webhook.getRetryCount(), errorMessage);
+                
+                // Schedule retry if still within retry limit
+                if (webhook.canRetry()) {
+                    scheduleWebhookRetry(webhook, eventType, payment);
+                } else {
+                    log.error("🚨 Webhook failed after max retries: {}, moving to dead letter queue", webhook.getName());
+                    moveToDeadLetterQueue(webhook, eventType, payment, errorMessage);
+                }
             }
         }
     }
 
     /**
-     * Send webhook payload
+     * Schedule webhook retry with exponential backoff
+     */
+    @Async
+    public void scheduleWebhookRetry(Webhook webhook, Webhook.WebhookEventType eventType, SimplePayment payment) {
+        log.info("⏰ Scheduling webhook retry: {}, attempt: {}, next retry at: {}", 
+            webhook.getName(), webhook.getCurrentRetryAttempt(), webhook.getNextRetryAt());
+        
+        // In production, use a proper scheduler like Quartz or Spring @Scheduled
+        // For now, we'll use a simple delay
+        try {
+            long delayMs = java.time.Duration.between(
+                LocalDateTime.now(), 
+                webhook.getNextRetryAt()
+            ).toMillis();
+            
+            if (delayMs > 0) {
+                Thread.sleep(delayMs);
+            }
+            
+            // Retry the webhook
+            triggerWebhook(eventType, payment);
+            
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            log.error("Webhook retry interrupted: {}", webhook.getName(), e);
+        }
+    }
+
+    /**
+     * Send webhook payload with signature validation
      */
     private void sendWebhook(Webhook webhook, Webhook.WebhookEventType eventType, SimplePayment payment) {
         String payload = buildPayload(eventType, payment);
-        String signature = generateSignature(payload, webhook.getSecret());
+        String signature = webhookSignatureService.generateSignature(payload);
 
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.set("X-Webhook-Signature", signature);
-        headers.set("X-Webhook-Event", eventType.name());
-        headers.set("X-Webhook-ID", UUID.randomUUID().toString());
-
-        HttpEntity<String> request = new HttpEntity<>(payload, headers);
-
-        ResponseEntity<String> response = restTemplate.exchange(
-            webhook.getUrl(),
-            HttpMethod.POST,
-            request,
-            String.class
-        );
-
-        if (!response.getStatusCode().is2xxSuccessful()) {
-            throw new RuntimeException("Webhook returned status: " + response.getStatusCode());
+        try {
+            String response = webClient.post()
+                .uri(webhook.getUrl())
+                .headers(h -> {
+                    h.setContentType(MediaType.APPLICATION_JSON);
+                    h.set("X-Webhook-Signature", signature);
+                    h.set("X-Webhook-Event", eventType.name());
+                    h.set("X-Webhook-ID", UUID.randomUUID().toString());
+                })
+                .bodyValue(payload)
+                .retrieve()
+                .bodyToMono(String.class)
+                .block();
+        } catch (Exception e) {
+            throw new RuntimeException("Webhook request failed: " + e.getMessage(), e);
         }
     }
 
@@ -135,27 +173,6 @@ public class WebhookService {
         data.put("createdAt", payment.getCreatedAt().toString());
         data.put("completedAt", payment.getCompletedAt() != null ? payment.getCompletedAt().toString() : null);
         return data;
-    }
-
-    /**
-     * Generate webhook signature
-     */
-    private String generateSignature(String payload, String secret) {
-        try {
-            Mac mac = Mac.getInstance("HmacSHA256");
-            SecretKeySpec secretKeySpec = new SecretKeySpec(secret.getBytes("UTF-8"), "HmacSHA256");
-            mac.init(secretKeySpec);
-            byte[] hash = mac.doFinal(payload.getBytes("UTF-8"));
-            StringBuilder hexString = new StringBuilder();
-            for (byte b : hash) {
-                String hex = Integer.toHexString(0xff & b);
-                if (hex.length() == 1) hexString.append('0');
-                hexString.append(hex);
-            }
-            return hexString.toString();
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to generate signature", e);
-        }
     }
 
     /**
@@ -238,6 +255,34 @@ public class WebhookService {
         } catch (Exception e) {
             log.error("❌ Webhook test failed: {} - {}", webhook.getName(), e.getMessage());
             throw new RuntimeException("Webhook test failed: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Move failed webhook to dead letter queue
+     */
+    @Transactional("sharedTransactionManager")
+    private void moveToDeadLetterQueue(Webhook webhook, Webhook.WebhookEventType eventType, SimplePayment payment, String errorMessage) {
+        try {
+            String payload = buildPayload(eventType, payment);
+            
+            WebhookDeadLetter deadLetter = WebhookDeadLetter.builder()
+                .webhookId(webhook.getId())
+                .webhookName(webhook.getName())
+                .webhookUrl(webhook.getUrl())
+                .eventType(eventType.name())
+                .paymentReferenceCode(payment.getReferenceCode())
+                .retryAttempts(webhook.getCurrentRetryAttempt())
+                .payload(payload)
+                .lastError(errorMessage)
+                .status("PENDING")
+                .build();
+            
+            webhookDeadLetterRepository.save(deadLetter);
+            log.info("📦 Webhook moved to dead letter queue: {}, payment: {}", webhook.getName(), payment.getReferenceCode());
+            
+        } catch (Exception e) {
+            log.error("Failed to move webhook to dead letter queue: {}", webhook.getName(), e);
         }
     }
 }

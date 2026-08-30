@@ -1,5 +1,6 @@
 package com.chatbot.shared.penny.context.storage;
 
+import com.chatbot.config.StructuredLogging;
 import com.chatbot.shared.penny.context.ConversationContext;
 import com.chatbot.shared.penny.dto.request.MiddlewareRequest;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -40,7 +41,7 @@ public class RedisContextStorage {
             Object contextObj = redisTemplate.opsForValue().get(redisKey);
             
             if (contextObj == null) {
-                log.debug("🔍 Context not found in Redis: {}", contextKey);
+                StructuredLogging.debugConditional("Context not found in Redis", "contextKey", contextKey);
                 return null;
             }
             
@@ -51,8 +52,7 @@ public class RedisContextStorage {
                 context = objectMapper.convertValue(contextObj, ConversationContext.class);
             }
             
-            log.debug("✅ Context loaded from Redis: {} (age: {} min)", 
-                contextKey, context.getAgeInMinutes());
+            StructuredLogging.debugConditional("Context loaded from Redis", "contextKey", contextKey, "ageMinutes", context.getAgeInMinutes());
             
             return context;
             
@@ -75,8 +75,7 @@ public class RedisContextStorage {
             // Also save metadata for quick access
             saveContextMetadata(contextKey, context);
             
-            log.debug("💾 Context saved to Redis: {} (TTL: {} min)", 
-                contextKey, ttl.toMinutes());
+            StructuredLogging.debugConditional("Context saved to Redis", "contextKey", contextKey, "ttlMinutes", ttl.toMinutes());
             
         } catch (Exception e) {
             log.error("❌ Error saving context to Redis {}: {}", contextKey, e.getMessage(), e);
@@ -96,7 +95,7 @@ public class RedisContextStorage {
             // Update metadata
             saveContextMetadata(contextKey, context);
             
-            log.debug("🔄 Context updated in Redis: {}", contextKey);
+            StructuredLogging.debugConditional("Context updated in Redis", "contextKey", contextKey);
             
         } catch (Exception e) {
             log.error("❌ Error updating context in Redis {}: {}", contextKey, e.getMessage(), e);
@@ -114,7 +113,7 @@ public class RedisContextStorage {
             redisTemplate.delete(redisKey);
             redisTemplate.delete(metadataKey);
             
-            log.debug("🗑️ Context cleared from Redis: {}", contextKey);
+            StructuredLogging.debugConditional("Context cleared from Redis", "contextKey", contextKey);
             
         } catch (Exception e) {
             log.error("❌ Error clearing context from Redis {}: {}", contextKey, e.getMessage(), e);
@@ -156,8 +155,7 @@ public class RedisContextStorage {
             String redisKey = buildRedisKey(contextKey);
             redisTemplate.expire(redisKey, additionalTTL);
             
-            log.debug("⏰ Context TTL extended: {} (+{} min)", 
-                contextKey, additionalTTL.toMinutes());
+            StructuredLogging.debugConditional("Context TTL extended", "contextKey", contextKey, "additionalTTLMinutes", additionalTTL.toMinutes());
             
         } catch (Exception e) {
             log.error("❌ Error extending context TTL in Redis {}: {}", contextKey, e.getMessage(), e);
@@ -203,7 +201,7 @@ public class RedisContextStorage {
         try {
             // Redis automatically handles expired keys
             // This method can be used for additional cleanup if needed
-            log.debug("🧹 Redis cleanup completed (expired keys auto-removed by Redis)");
+            StructuredLogging.debug("Redis cleanup completed", "note", "expired keys auto-removed by Redis");
         } catch (Exception e) {
             log.error("❌ Error during Redis cleanup: {}", e.getMessage(), e);
         }
@@ -219,7 +217,7 @@ public class RedisContextStorage {
             
             redisTemplate.opsForValue().set(statsKey, statsJson, Duration.ofMinutes(5));
             
-            log.debug("📊 Statistics saved to Redis: {}", tenantId);
+            StructuredLogging.debugConditional("Statistics saved to Redis", "tenantId", tenantId);
             
         } catch (Exception e) {
             log.error("❌ Error saving statistics to Redis for tenant {}: {}", tenantId, e.getMessage(), e);
@@ -336,7 +334,7 @@ public class RedisContextStorage {
      */
     public void deleteContextByBotId(String botId) {
         try {
-            log.debug("🗑️ Deleting Redis context by bot ID: {}", botId);
+            StructuredLogging.debugConditional("Deleting Redis context by bot ID", "botId", botId);
             // In real implementation, this would delete from Redis
             redisTemplate.delete(CONTEXT_KEY_PREFIX + botId);
         } catch (Exception e) {

@@ -1,6 +1,7 @@
 package com.chatbot.config;
 
 import com.chatbot.core.tenant.infra.TenantContext;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.EnableAsync;
@@ -20,10 +21,12 @@ import java.util.concurrent.Executor;
  */
 @Configuration
 @EnableAsync
-public class AsyncConfig {
+@Slf4j
+public class AsyncConfig implements org.springframework.scheduling.annotation.AsyncConfigurer {
 
+    @Override
     @Bean(name = "taskExecutor")
-    public Executor taskExecutor() {
+    public Executor getAsyncExecutor() {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
         executor.setCorePoolSize(8);
         executor.setMaxPoolSize(20);
@@ -50,5 +53,12 @@ public class AsyncConfig {
         });
         executor.initialize();
         return executor;
+    }
+
+    @Override
+    public org.springframework.aop.interceptor.AsyncUncaughtExceptionHandler getAsyncUncaughtExceptionHandler() {
+        return (throwable, method, obj) -> {
+            log.error("❌ Uncaught exception in async method: {}() - Error: {}", method.getName(), throwable.getMessage(), throwable);
+        };
     }
 }

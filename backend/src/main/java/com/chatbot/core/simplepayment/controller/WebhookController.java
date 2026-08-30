@@ -12,6 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import java.util.List;
 import java.util.Set;
@@ -24,6 +25,7 @@ import java.util.Set;
 public class WebhookController {
 
     private final WebhookService webhookService;
+    private final com.chatbot.core.simplepayment.service.WebhookSignatureService webhookSignatureService;
 
     /**
      * Create new webhook (admin only)
@@ -99,6 +101,35 @@ public class WebhookController {
             webhookService.testWebhook(id);
             return ResponseEntity.ok(ApiResponse.success("Webhook test successful", "Test completed"));
         } catch (Exception e) {
+            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
+        }
+    }
+
+    /**
+     * Receive webhook with signature validation
+     */
+    @PostMapping("/receive")
+    @Operation(summary = "Receive webhook", description = "Receive webhook with signature validation")
+    public ResponseEntity<ApiResponse<String>> receiveWebhook(
+            @RequestBody String body,
+            HttpServletRequest request) {
+        log.info("📥 Received webhook request");
+        
+        try {
+            // Validate signature
+            boolean isValid = webhookSignatureService.verifySignature(request, body);
+            
+            if (!isValid) {
+                log.warn("❌ Webhook signature validation failed");
+                return ResponseEntity.status(401).body(ApiResponse.error("Invalid webhook signature"));
+            }
+            
+            log.info("✅ Webhook signature validated successfully");
+            // Process webhook payload here
+            return ResponseEntity.ok(ApiResponse.success("Webhook received", "Signature validated"));
+            
+        } catch (Exception e) {
+            log.error("Error processing webhook", e);
             return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         }
     }

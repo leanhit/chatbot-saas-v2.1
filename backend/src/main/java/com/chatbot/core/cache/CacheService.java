@@ -1,5 +1,6 @@
 package com.chatbot.core.cache;
 
+import com.chatbot.config.StructuredLogging;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -44,9 +45,9 @@ public class CacheService {
     public void set(String key, Object value) {
         try {
             redisTemplate.opsForValue().set(key, value);
-            log.debug("Cache SET: key={}, value={}", key, value);
+            StructuredLogging.debugConditional("Cache SET", "key", key, "value", value);
         } catch (DataAccessException | IllegalArgumentException e) {
-            log.error("Error setting cache key: {}", key, e);
+            StructuredLogging.error("Error setting cache key", e, "key", key);
         }
     }
 
@@ -56,9 +57,9 @@ public class CacheService {
     public void set(String key, Object value, Duration ttl) {
         try {
             redisTemplate.opsForValue().set(key, value, ttl);
-            log.debug("Cache SET: key={}, value={}, ttl={}", key, value, ttl);
+            StructuredLogging.debugConditional("Cache SET with TTL", "key", key, "ttl", ttl.toString());
         } catch (DataAccessException | IllegalArgumentException e) {
-            log.error("Error setting cache key with TTL: {}", key, e);
+            StructuredLogging.error("Error setting cache key with TTL", e, "key", key, "ttl", ttl.toString());
         }
     }
 
@@ -68,10 +69,10 @@ public class CacheService {
     public Object get(String key) {
         try {
             Object value = redisTemplate.opsForValue().get(key);
-            log.debug("Cache GET: key={}, value={}", key, value);
+            StructuredLogging.debugConditional("Cache GET", "key", key, "hit", value != null);
             return value;
         } catch (DataAccessException | IllegalArgumentException e) {
-            log.error("Error getting cache key: {}", key, e);
+            StructuredLogging.error("Error getting cache key", e, "key", key);
             return null;
         }
     }
@@ -99,9 +100,9 @@ public class CacheService {
     public void delete(String key) {
         try {
             Boolean deleted = redisTemplate.delete(key);
-            log.debug("Cache DELETE: key={}, deleted={}", key, deleted);
+            StructuredLogging.debugConditional("Cache DELETE", "key", key, "deleted", deleted);
         } catch (DataAccessException | IllegalArgumentException e) {
-            log.error("Error deleting cache key: {}", key, e);
+            StructuredLogging.error("Error deleting cache key", e, "key", key);
         }
     }
 
@@ -111,9 +112,9 @@ public class CacheService {
     public void delete(Collection<String> keys) {
         try {
             Long deleted = redisTemplate.delete(keys);
-            log.debug("Cache DELETE: keys={}, deleted={}", keys, deleted);
+            StructuredLogging.debugConditional("Cache DELETE batch", "count", keys.size(), "deleted", deleted);
         } catch (DataAccessException | IllegalArgumentException e) {
-            log.error("Error deleting cache keys: {}", keys, e);
+            StructuredLogging.error("Error deleting cache keys", e, "count", keys.size());
         }
     }
 
@@ -136,9 +137,9 @@ public class CacheService {
     public void expire(String key, Duration ttl) {
         try {
             Boolean expired = redisTemplate.expire(key, ttl);
-            log.debug("Cache EXPIRE: key={}, ttl={}, expired={}", key, ttl, expired);
+            StructuredLogging.debugConditional("Cache EXPIRE", "key", key, "ttl", ttl.toString(), "expired", expired);
         } catch (DataAccessException | IllegalArgumentException e) {
-            log.error("Error setting cache TTL: {}", key, e);
+            StructuredLogging.error("Error setting cache TTL", e, "key", key, "ttl", ttl.toString());
         }
     }
 
@@ -165,9 +166,9 @@ public class CacheService {
     public void hashSet(String hashKey, String field, Object value) {
         try {
             redisTemplate.opsForHash().put(hashKey, field, value);
-            log.debug("Cache HSET: hashKey={}, field={}, value={}", hashKey, field, value);
+            StructuredLogging.debugConditional("Cache HSET", "hashKey", hashKey, "field", field);
         } catch (DataAccessException | IllegalArgumentException e) {
-            log.error("Error setting hash field: {} {}", hashKey, field, e);
+            StructuredLogging.error("Error setting hash field", e, "hashKey", hashKey, "field", field);
         }
     }
 
@@ -177,10 +178,10 @@ public class CacheService {
     public Object hashGet(String hashKey, String field) {
         try {
             Object value = redisTemplate.opsForHash().get(hashKey, field);
-            log.debug("Cache HGET: hashKey={}, field={}, value={}", hashKey, field, value);
+            StructuredLogging.debugConditional("Cache HGET", "hashKey", hashKey, "field", field, "hit", value != null);
             return value;
         } catch (DataAccessException | IllegalArgumentException e) {
-            log.error("Error getting hash field: {} {}", hashKey, field, e);
+            StructuredLogging.error("Error getting hash field", e, "hashKey", hashKey, "field", field);
             return null;
         }
     }
@@ -203,9 +204,9 @@ public class CacheService {
     public void hashDelete(String hashKey, String field) {
         try {
             Long deleted = redisTemplate.opsForHash().delete(hashKey, field);
-            log.debug("Cache HDEL: hashKey={}, field={}, deleted={}", hashKey, field, deleted);
+            StructuredLogging.debugConditional("Cache HDEL", "hashKey", hashKey, "field", field, "deleted", deleted);
         } catch (DataAccessException | IllegalArgumentException e) {
-            log.error("Error deleting hash field: {} {}", hashKey, field, e);
+            StructuredLogging.error("Error deleting hash field", e, "hashKey", hashKey, "field", field);
         }
     }
 
@@ -219,9 +220,9 @@ public class CacheService {
     public void setAdd(String key, Object value) {
         try {
             Long added = redisTemplate.opsForSet().add(key, value);
-            log.debug("Cache SADD: key={}, value={}, added={}", key, value, added);
+            StructuredLogging.debugConditional("Cache SADD", "key", key, "added", added);
         } catch (DataAccessException | IllegalArgumentException e) {
-            log.error("Error adding to set: {} {}", key, value, e);
+            StructuredLogging.error("Error adding to set", e, "key", key);
         }
     }
 
@@ -260,9 +261,9 @@ public class CacheService {
     public void listRightPush(String key, Object value) {
         try {
             Long pushed = redisTemplate.opsForList().rightPush(key, value);
-            log.debug("Cache RPUSH: key={}, value={}, pushed={}", key, value, pushed);
+            StructuredLogging.debugConditional("Cache RPUSH", "key", key, "pushed", pushed);
         } catch (DataAccessException | IllegalArgumentException e) {
-            log.error("Error pushing to list: {} {}", key, value, e);
+            StructuredLogging.error("Error pushing to list", e, "key", key);
         }
     }
 
@@ -353,7 +354,7 @@ public class CacheService {
                     try {
                         usedMemory = Long.parseLong(usedStr);
                     } catch (NumberFormatException e) {
-                        log.debug("Failed to parse used_memory: {}", usedStr);
+                        StructuredLogging.debug("Failed to parse used_memory", "value", usedStr);
                     }
                 }
                 String maxStr = memoryInfo.getProperty("maxmemory");
@@ -361,7 +362,7 @@ public class CacheService {
                     try {
                         maxMemory = Long.parseLong(maxStr);
                     } catch (NumberFormatException e) {
-                        log.debug("Failed to parse maxmemory: {}", maxStr);
+                        StructuredLogging.debug("Failed to parse maxmemory", "value", maxStr);
                     }
                 }
             }

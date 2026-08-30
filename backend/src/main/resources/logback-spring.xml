@@ -42,12 +42,12 @@
         </encoder>
     </appender>
 
-    <!-- Correlation ID Filter - adds correlation ID to MDC -->
-    <filter class="ch.qos.logback.core.filter.EvaluatorFilter">
-        <evaluator class="ch.qos.logback.classic.boolex.JaninoEventEvaluator">
-            <expression>mdc.get("correlationId") == null</expression>
-        </evaluator>
-        <onMatch>DENY</onMatch>
+    <!-- MDC Filter to ensure correlation ID and tracing context are always available -->
+    <filter class="ch.qos.logback.classic.turbo.MDCFilter">
+        <MDCKey>correlationId</MDCKey>
+        <Value>.*</Value>
+        <OnMatch>NEUTRAL</OnMatch>
+        <OnMismatch>NEUTRAL</OnMismatch>
     </filter>
 
     <!-- Async Appender for better performance -->

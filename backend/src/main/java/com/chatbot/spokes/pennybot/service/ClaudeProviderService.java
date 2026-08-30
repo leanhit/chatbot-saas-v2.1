@@ -12,7 +12,7 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.reactive.function.client.WebClient;
 
 import java.util.*;
 
@@ -41,14 +41,14 @@ public class ClaudeProviderService implements ChatbotProviderService {
     private int maxTokens;
 
     private final PromptTemplateService promptTemplateService;
-    private final RestTemplate restTemplate;
+    private final WebClient webClient;
 
     private boolean clientReady = false;
 
     public ClaudeProviderService(PromptTemplateService promptTemplateService,
-                                  RestTemplate restTemplate) {
+                                  WebClient webClient) {
         this.promptTemplateService = promptTemplateService;
-        this.restTemplate = restTemplate;
+        this.webClient = webClient;
     }
 
     @PostConstruct
@@ -84,16 +84,18 @@ public class ClaudeProviderService implements ChatbotProviderService {
                 Map.of("role", "user", "content", messageText)
             ));
 
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_JSON);
-            headers.set("x-api-key", apiKey);
-            headers.set("anthropic-version", ANTHROPIC_VERSION);
-
-            HttpEntity<Map<String, Object>> request = new HttpEntity<>(requestBody, headers);
-
             @SuppressWarnings("unchecked")
-            Map<String, Object> apiResponse = restTemplate.postForObject(
-                ANTHROPIC_API_URL, request, Map.class);
+            Map<String, Object> apiResponse = webClient.post()
+                .uri(ANTHROPIC_API_URL)
+                .headers(h -> {
+                    h.setContentType(MediaType.APPLICATION_JSON);
+                    h.set("x-api-key", apiKey);
+                    h.set("anthropic-version", ANTHROPIC_VERSION);
+                })
+                .bodyValue(requestBody)
+                .retrieve()
+                .bodyToMono(Map.class)
+                .block();
 
             String responseText = extractClaudeText(apiResponse);
 
@@ -140,8 +142,16 @@ public class ClaudeProviderService implements ChatbotProviderService {
                 "max_tokens", 1,
                 "messages", List.of(Map.of("role", "user", "content", "ping"))
             );
-            restTemplate.postForObject(ANTHROPIC_API_URL,
-                new HttpEntity<>(pingBody, headers), Map.class);
+            webClient.post()
+                .uri(ANTHROPIC_API_URL)
+                .headers(h -> {
+                    h.set("x-api-key", apiKey);
+                    h.set("anthropic-version", ANTHROPIC_VERSION);
+                })
+                .bodyValue(pingBody)
+                .retrieve()
+                .bodyToMono(Map.class)
+                .block();
             log.debug("✅ [Claude] Health check passed");
             return true;
         } catch (Exception e) {

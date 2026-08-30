@@ -1,5 +1,6 @@
 package com.chatbot.shared.penny.context.storage;
 
+import com.chatbot.config.StructuredLogging;
 import com.chatbot.core.message.store.model.Conversation;
 import com.chatbot.core.message.store.repository.ConversationRepository;
 import com.chatbot.core.tenant.infra.TenantContext;
@@ -31,8 +32,7 @@ public class DatabaseContextStorage {
      */
     public ConversationContext loadContext(MiddlewareRequest request) {
         try {
-            log.debug("🔍 Loading context from database for user: {} on {}", 
-                request.getUserId(), request.getPlatform());
+            StructuredLogging.debugConditional("Loading context from database", "userId", request.getUserId(), "platform", request.getPlatform());
             
             Long tenantId = TenantContext.getTenantId();
             if (tenantId == null) {
@@ -52,7 +52,7 @@ public class DatabaseContextStorage {
                 .collect(Collectors.toList());
             
             if (userConversations.isEmpty()) {
-                log.debug("No existing conversation found for user: {}", request.getUserId());
+                StructuredLogging.debugConditional("No existing conversation found for user", "userId", request.getUserId());
                 return null;
             }
             
@@ -79,7 +79,7 @@ public class DatabaseContextStorage {
      */
     public void saveContext(ConversationContext context) {
         try {
-            log.debug("💾 Saving new context to database: {}", context.getContextId());
+            StructuredLogging.debugConditional("Saving new context to database", "contextId", context.getContextId());
             
             // In real implementation, this would:
             // 1. Create new Conversation entity
@@ -96,7 +96,7 @@ public class DatabaseContextStorage {
      */
     public void updateContext(ConversationContext context) {
         try {
-            log.debug("🔄 Updating context in database: {}", context.getContextId());
+            StructuredLogging.debugConditional("Updating context in database", "contextId", context.getContextId());
             
             // In real implementation, this would:
             // 1. Update existing Conversation entity
@@ -113,7 +113,7 @@ public class DatabaseContextStorage {
      */
     public void clearContext(String contextKey) {
         try {
-            log.debug("🗑️ Clearing context from database: {}", contextKey);
+            StructuredLogging.debugConditional("Clearing context from database", "contextKey", contextKey);
             
             // In real implementation, this would:
             // 1. Delete or archive conversation
@@ -129,7 +129,7 @@ public class DatabaseContextStorage {
      */
     public List<ConversationContext> getActiveContexts(String tenantId) {
         try {
-            log.debug("📋 Getting active contexts for tenant: {}", tenantId);
+            StructuredLogging.debugConditional("Getting active contexts for tenant", "tenantId", tenantId);
             
             Long tenantIdLong = Long.parseLong(tenantId);
             List<Conversation> activeConversations = conversationRepository.findByTenantIdAndStatus(tenantIdLong, "open");
@@ -149,7 +149,7 @@ public class DatabaseContextStorage {
      */
     public int cleanupExpiredContexts() {
         try {
-            log.debug("🧹 Cleaning up expired contexts in database");
+            StructuredLogging.debug("Cleaning up expired contexts in database");
             
             // In real implementation, this would:
             // 1. Find expired conversations
@@ -169,7 +169,7 @@ public class DatabaseContextStorage {
      */
     public ContextStatistics getStatistics(String tenantId) {
         try {
-            log.debug("📊 Getting context statistics for tenant: {}", tenantId);
+            StructuredLogging.debugConditional("Getting context statistics for tenant", "tenantId", tenantId);
             
             // In real implementation, this would:
             // 1. Query conversation table for metrics
@@ -189,7 +189,7 @@ public class DatabaseContextStorage {
      */
     public ConversationContext findByUserAndPlatform(String userId, String platform, Long tenantId) {
         try {
-            log.debug("🔍 Finding context for user: {} on platform: {}", userId, platform);
+            StructuredLogging.debugConditional("Finding context for user and platform", "userId", userId, "platform", platform);
             
             List<Conversation> conversations = conversationRepository.findByTenantId(tenantId);
             
@@ -221,7 +221,7 @@ public class DatabaseContextStorage {
      */
     public List<ConversationContext> getContextsByStatus(String status, Long tenantId) {
         try {
-            log.debug("📋 Getting contexts by status: {} for tenant: {}", status, tenantId);
+            StructuredLogging.debugConditional("Getting contexts by status", "status", status, "tenantId", tenantId);
             
             List<Conversation> conversations = conversationRepository.findByTenantIdAndStatus(tenantId, status);
             
@@ -241,7 +241,7 @@ public class DatabaseContextStorage {
      */
     public void updateContextStatus(String contextId, String status) {
         try {
-            log.debug("🔄 Updating context status: {} -> {}", contextId, status);
+            StructuredLogging.debugConditional("Updating context status", "contextId", contextId, "status", status);
             
             Long conversationId = Long.parseLong(contextId);
             Long tenantId = TenantContext.getTenantId();
@@ -258,7 +258,7 @@ public class DatabaseContextStorage {
                 conversation.setStatus(status);
                 conversation.setUpdatedAt(LocalDateTime.now());
                 conversationRepository.save(conversation);
-                log.debug("✅ Updated context status: {} -> {}", contextId, status);
+                StructuredLogging.debugConditional("Updated context status", "contextId", contextId, "status", status);
             }
             
         } catch (Exception e) {
@@ -271,7 +271,7 @@ public class DatabaseContextStorage {
      */
     public ConversationContext getContextById(String contextId) {
         try {
-            log.debug("🔍 Getting context by ID: {}", contextId);
+            StructuredLogging.debugConditional("Getting context by ID", "contextId", contextId);
             
             Long conversationId = Long.parseLong(contextId);
             Long tenantId = TenantContext.getTenantId();
@@ -297,7 +297,7 @@ public class DatabaseContextStorage {
      */
     public void batchUpdateContexts(List<ConversationContext> contexts) {
         try {
-            log.debug("🔄 Batch updating {} contexts", contexts.size());
+            StructuredLogging.debugConditional("Batch updating contexts", "count", contexts.size());
             
             // In real implementation, this would use batch update
             
@@ -352,7 +352,7 @@ public class DatabaseContextStorage {
      */
     public ConversationContext loadContextByBotId(UUID botId) {
         try {
-            log.debug("🔍 Loading context by bot ID: {}", botId);
+            StructuredLogging.debugConditional("Loading context by bot ID", "botId", botId.toString());
             
             Long tenantId = TenantContext.getTenantId();
             if (tenantId == null) {
@@ -389,7 +389,7 @@ public class DatabaseContextStorage {
      */
     public void deleteContextByBotId(UUID botId) {
         try {
-            log.debug("🗑️ Deleting context by bot ID: {}", botId);
+            StructuredLogging.debugConditional("Deleting context by bot ID", "botId", botId.toString());
             
             Long tenantId = TenantContext.getTenantId();
             if (tenantId == null) {

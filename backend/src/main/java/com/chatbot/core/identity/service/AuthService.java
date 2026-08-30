@@ -91,6 +91,7 @@ public class AuthService implements UserDetailsService {
             addressService.getOrCreateUserAddress(com.chatbot.shared.address.model.OwnerType.USER, savedUser.getId());
         } catch (Exception e) {
             log.error("Không thể tạo địa chỉ trống cho user {}: {}", savedUser.getId(), e.getMessage());
+            throw new IdentityException(com.chatbot.shared.exceptions.ErrorCode.INTERNAL_ERROR, "Failed to create default address for user", e);
         }
 
         String token = jwtService.generateToken(savedUser.getEmail());

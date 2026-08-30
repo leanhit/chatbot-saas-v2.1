@@ -1,0 +1,41 @@
+# Prometheus Configuration for Chatbot SaaS v2.1
+# This file configures Prometheus to scrape metrics from the application
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    monitor: 'chatbot-saas-monitor'
+
+# Alertmanager configuration for alerting
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          # - alertmanager:9093
+
+# Load rules once and periodically evaluate them
+rule_files:
+  # - "alert_rules.yml"
+
+# Scrape configurations
+scrape_configs:
+  # Application metrics
+  - job_name: 'chatbot-saas'
+    metrics_path: '/actuator/prometheus'
+    scrape_interval: 15s
+    static_configs:
+      - targets: ['localhost:8080']
+        labels:
+          application: 'chatbot-saas-v2.1'
+          environment: 'development'
+
+  # Spring Boot Actuator health checks
+  - job_name: 'chatbot-health'
+    metrics_path: '/actuator/health'
+    scrape_interval: 30s
+    static_configs:
+      - targets: ['localhost:8080']
+        labels:
+          application: 'chatbot-saas-v2.1'
+          type: 'health'

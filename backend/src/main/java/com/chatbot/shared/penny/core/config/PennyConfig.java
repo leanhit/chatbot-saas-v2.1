@@ -143,10 +143,10 @@ public class PennyConfig {
     public BotRuleManager botRuleManager(BotRuleRepository botRuleRepository,
                                         ResponseTemplateRepository responseTemplateRepository,
                                         com.fasterxml.jackson.databind.ObjectMapper objectMapper,
-                                        org.springframework.web.client.RestTemplate restTemplate) {
+                                        org.springframework.web.reactive.function.client.WebClient webClient) {
         log.info("📐 Initializing Bot Rule Manager...");
         
-        BotRuleManager botRuleManager = new BotRuleManager(botRuleRepository, responseTemplateRepository, objectMapper, restTemplate);
+        BotRuleManager botRuleManager = new BotRuleManager(botRuleRepository, responseTemplateRepository, objectMapper, webClient);
         
         log.info("✅ Bot Rule Manager initialized successfully");
         return botRuleManager;

@@ -102,11 +102,6 @@ public class TakeoverService {
             
             // 1. Lưu message từ agent vào database (lưu dài hạn)
             try {
-                log.debug("=== SAVING AGENT MESSAGE TO DATABASE ===");
-                log.debug("Message ID: {}", message.getId());
-                log.debug("Conversation ID: {}", conversationIdLong);
-                log.debug("Content: {}", message.getContent());
-                log.debug("AgentId: {}", agentId);
                 
                 messageService.saveMessage(
                     conversationIdLong, 
