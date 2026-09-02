@@ -8,12 +8,15 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+
 /**
  * REST Controller for Dead Letter Queue management
  * Provides endpoints for monitoring, inspecting, and replaying failed messages
  */
 @RestController
 @RequestMapping("/api/admin/dlq")
+@ConditionalOnBean(DLQManagementService.class)
 @RequiredArgsConstructor
 @Slf4j
 @PreAuthorize("hasRole('ADMIN')")

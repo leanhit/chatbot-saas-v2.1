@@ -85,10 +85,10 @@ public class JwtFilter extends OncePerRequestFilter {
                     );
                     
                     SecurityContextHolder.getContext().setAuthentication(authenticationToken);
-                    
-                    // Log thông tin xác thực
-                    log.info("Đã xác thực user: " + email + 
-                             ", roles: " + userDetails.getAuthorities().toString() + 
+
+                    // Log thông tin xác thực (debug level to reduce log noise)
+                    log.debug("Đã xác thực user: " + email +
+                             ", roles: " + userDetails.getAuthorities().toString() +
                              ", IP: " + getClientIpAddress(request));
                 }
             } catch (ClassCastException e) {

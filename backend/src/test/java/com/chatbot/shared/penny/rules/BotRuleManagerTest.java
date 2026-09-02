@@ -11,7 +11,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpEntity;
 import org.springframework.web.client.RestClientException;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.reactive.function.client.WebClient;
 
 import java.util.*;
 
@@ -33,7 +33,7 @@ class BotRuleManagerTest {
     private ResponseTemplateRepository responseTemplateRepository;
 
     @Mock
-    private RestTemplate restTemplate;
+    private WebClient webClient;
 
     private ObjectMapper objectMapper;
     private BotRuleManager botRuleManager;
@@ -44,7 +44,7 @@ class BotRuleManagerTest {
     void setUp() {
         objectMapper = new ObjectMapper();
         botRuleManager = new BotRuleManager(
-            botRuleRepository, responseTemplateRepository, objectMapper, restTemplate);
+            botRuleRepository, responseTemplateRepository, objectMapper, webClient);
 
         context = ConversationContext.builder()
             .contextId("ctx-1")
@@ -236,11 +236,21 @@ class BotRuleManagerTest {
             when(botRuleRepository.findByBotIdAndIsActiveTrueOrderByPriorityDesc(botId))
                 .thenReturn(List.of(rule));
 
-            // Mock webhook response
+            // Mock WebClient chain
+            WebClient.RequestBodyUriSpec bodyUriSpec = mock(WebClient.RequestBodyUriSpec.class);
+            WebClient.RequestBodySpec bodySpec = mock(WebClient.RequestBodySpec.class);
+            WebClient.RequestHeadersSpec headersSpec = mock(WebClient.RequestHeadersSpec.class);
+            WebClient.ResponseSpec responseSpec = mock(WebClient.ResponseSpec.class);
+
             Map<String, Object> webhookResponse = new HashMap<>();
             webhookResponse.put("message", "Đơn hàng #123 đang vận chuyển");
-            when(restTemplate.postForObject(eq(webhookUrl), any(HttpEntity.class), eq(Map.class)))
-                .thenReturn(webhookResponse);
+
+            when(webClient.post()).thenReturn(bodyUriSpec);
+            when(bodyUriSpec.uri(webhookUrl)).thenReturn(bodySpec);
+            doReturn(bodySpec).when(bodySpec).headers(any());
+            doReturn(headersSpec).when(bodySpec).bodyValue(any());
+            when(headersSpec.retrieve()).thenReturn(responseSpec);
+            when(responseSpec.bodyToMono(Map.class)).thenReturn(reactor.core.publisher.Mono.just(webhookResponse));
 
             // When
             BotRuleManager.RuleEvaluationResult result = botRuleManager.evaluateRules(
@@ -250,7 +260,6 @@ class BotRuleManagerTest {
             assertNotNull(result);
             assertTrue(result.isMatched());
             assertEquals("Đơn hàng #123 đang vận chuyển", result.getResponse());
-            verify(restTemplate).postForObject(eq(webhookUrl), any(HttpEntity.class), eq(Map.class));
         }
 
         @Test
@@ -276,8 +285,16 @@ class BotRuleManagerTest {
 
             when(botRuleRepository.findByBotIdAndIsActiveTrueOrderByPriorityDesc(botId))
                 .thenReturn(List.of(rule));
-            when(restTemplate.postForObject(eq(webhookUrl), any(HttpEntity.class), eq(Map.class)))
-                .thenThrow(new RestClientException("Connection refused"));
+
+            WebClient.RequestBodyUriSpec bodyUriSpec = mock(WebClient.RequestBodyUriSpec.class);
+            WebClient.RequestBodySpec bodySpec = mock(WebClient.RequestBodySpec.class);
+            WebClient.RequestHeadersSpec headersSpec = mock(WebClient.RequestHeadersSpec.class);
+
+            when(webClient.post()).thenReturn(bodyUriSpec);
+            when(bodyUriSpec.uri(webhookUrl)).thenReturn(bodySpec);
+            doReturn(bodySpec).when(bodySpec).headers(any());
+            doReturn(headersSpec).when(bodySpec).bodyValue(any());
+            when(headersSpec.retrieve()).thenThrow(new RuntimeException("Connection refused"));
 
             // When
             BotRuleManager.RuleEvaluationResult result = botRuleManager.evaluateRules(

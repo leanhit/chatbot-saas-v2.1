@@ -2,7 +2,7 @@
 # Multi-stage build with security and performance optimizations
 
 # Stage 1: Build
-FROM openjdk:21-jdk-slim as build
+FROM eclipse-temurin:21-jdk AS build
 
 # Install build dependencies
 RUN apt-get update && apt-get install -y \
@@ -15,14 +15,16 @@ RUN apt-get update && apt-get install -y \
 WORKDIR /build
 
 # Copy gradle files
-COPY build.gradle settings.gradle gradle/ ./
+COPY build.gradle settings.gradle gradlew ./
+COPY gradle ./gradle
 COPY src ./src
 
 # Build the application
+RUN chmod +x ./gradlew
 RUN ./gradlew build -x test --no-daemon --max-workers=4 --parallel
 
 # Stage 2: Runtime
-FROM openjdk:21-jre-slim as runtime
+FROM eclipse-temurin:21-jre AS runtime
 
 # Install runtime dependencies
 RUN apt-get update && apt-get install -y \

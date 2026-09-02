@@ -2,23 +2,26 @@ package com.chatbot.core.tenant.membership.service;
 
 import com.chatbot.core.tenant.membership.exception.NotificationException;
 import com.chatbot.shared.messaging.MessagePublisher;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.UUID;
+import java.util.Optional;
 
 /**
  * Service for sending tenant-related notifications
  */
 @Service
-@RequiredArgsConstructor
 @Slf4j
 public class TenantNotificationService {
 
-    private final MessagePublisher messagePublisher;
+    private final Optional<MessagePublisher> messagePublisher;
+
+    public TenantNotificationService(Optional<MessagePublisher> messagePublisher) {
+        this.messagePublisher = messagePublisher;
+    }
 
     /**
      * Send invitation notification
@@ -39,8 +42,12 @@ public class TenantNotificationService {
         );
 
         try {
-            messagePublisher.publishNotification(notification);
-            log.info("Invitation notification sent for tenant {} to {}", tenantName, recipientEmail);
+            if (messagePublisher.isPresent()) {
+                messagePublisher.get().publishNotification(notification);
+                log.info("Invitation notification sent for tenant {} to {}", tenantName, recipientEmail);
+            } else {
+                log.warn("MessagePublisher not available (RabbitMQ disabled). Invitation notification skipped for tenant {} to {}", tenantName, recipientEmail);
+            }
         } catch (Exception e) {
             log.error("Failed to send invitation notification", e);
             throw new com.chatbot.shared.exceptions.BaseException(com.chatbot.shared.exceptions.ErrorCode.NOTIFICATION_ERROR, "Notification system is experiencing issues, please try again later", e);
@@ -63,8 +70,12 @@ public class TenantNotificationService {
         );
 
         try {
-            messagePublisher.publishNotification(notification);
-            log.info("Join request notification sent for tenant {} by {}", tenantName, requesterEmail);
+            if (messagePublisher.isPresent()) {
+                messagePublisher.get().publishNotification(notification);
+                log.info("Join request notification sent for tenant {} by {}", tenantName, requesterEmail);
+            } else {
+                log.warn("MessagePublisher not available (RabbitMQ disabled). Join request notification skipped for tenant {} by {}", tenantName, requesterEmail);
+            }
         } catch (Exception e) {
             log.error("Failed to send join request notification", e);
             throw new NotificationException("Hệ thống gửi thông báo đang gặp sự cố, vui lòng thử lại sau.", e);
@@ -87,8 +98,12 @@ public class TenantNotificationService {
         );
 
         try {
-            messagePublisher.publishNotification(notification);
-            log.info("Invitation accepted notification sent for tenant {} by {}", tenantName, memberEmail);
+            if (messagePublisher.isPresent()) {
+                messagePublisher.get().publishNotification(notification);
+                log.info("Invitation accepted notification sent for tenant {} by {}", tenantName, memberEmail);
+            } else {
+                log.warn("MessagePublisher not available (RabbitMQ disabled). Invitation accepted notification skipped for tenant {} by {}", tenantName, memberEmail);
+            }
         } catch (Exception e) {
             log.error("Failed to send invitation accepted notification", e);
             throw new RuntimeException("Hệ thống gửi thông báo đang gặp sự cố, vui lòng thử lại sau.", e);
@@ -109,8 +124,12 @@ public class TenantNotificationService {
         );
 
         try {
-            messagePublisher.publishNotification(notification);
-            log.info("Join request approved notification sent for tenant {} to {}", tenantName, memberEmail);
+            if (messagePublisher.isPresent()) {
+                messagePublisher.get().publishNotification(notification);
+                log.info("Join request approved notification sent for tenant {} to {}", tenantName, memberEmail);
+            } else {
+                log.warn("MessagePublisher not available (RabbitMQ disabled). Join request approved notification skipped for tenant {} to {}", tenantName, memberEmail);
+            }
         } catch (Exception e) {
             log.error("Failed to send join request approved notification", e);
             throw new NotificationException("Hệ thống gửi thông báo đang gặp sự cố, vui lòng thử lại sau.", e);

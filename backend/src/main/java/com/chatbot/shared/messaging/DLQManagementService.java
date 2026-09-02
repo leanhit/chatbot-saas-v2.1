@@ -8,6 +8,7 @@ import org.springframework.amqp.core.Message;
 import org.springframework.amqp.core.MessageBuilder;
 import org.springframework.amqp.core.QueueInformation;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
@@ -18,6 +19,7 @@ import java.util.Map;
  * Provides monitoring, inspection, and replay capabilities for failed messages
  */
 @Service
+@ConditionalOnBean(RabbitTemplate.class)
 @RequiredArgsConstructor
 @Slf4j
 public class DLQManagementService {

@@ -74,6 +74,9 @@ public class TenantService {
     // CREATE
     // =========================================================================
 
+    @Caching(evict = {
+        @CacheEvict(value = "tenant-key-info", allEntries = true)
+    })
     @Transactional(transactionManager = "tenantTransactionManager", rollbackFor = Exception.class)
     public TenantResponse createTenant(CreateTenantRequest request) {
         log.info("[TenantService] Starting tenant creation");
@@ -163,6 +166,23 @@ public class TenantService {
                 .map(Tenant::getId)
                 .orElse(null);
     }
+
+    /**
+     * Get tenant ID and status by tenant key (cached).
+     * Used by TenantContextInterceptor to avoid bypassing cache.
+     */
+    @Cacheable(value = "tenant-key-info", key = "#tenantKey", unless = "#result == null")
+    @Transactional(readOnly = true, transactionManager = "tenantTransactionManager")
+    public TenantKeyInfo getTenantInfoByKey(String tenantKey) {
+        return tenantRepository.findByTenantKey(tenantKey)
+                .map(tenant -> new TenantKeyInfo(tenant.getId(), tenant.getStatus()))
+                .orElse(null);
+    }
+
+    /**
+     * DTO for tenant key resolution (ID + status).
+     */
+    public record TenantKeyInfo(Long id, TenantStatus status) {}
 
     @Transactional(readOnly = true, transactionManager = "tenantTransactionManager")
     public TenantResponse getTenantForCurrentUser(Long tenantId) {
@@ -344,7 +364,10 @@ public class TenantService {
     // STATUS TRANSITIONS
     // =========================================================================
 
-    @CacheEvict(value = "tenants", key = "#tenantId")
+    @Caching(evict = {
+        @CacheEvict(value = "tenants", key = "#tenantId"),
+        @CacheEvict(value = "tenant-key-info", allEntries = true)
+    })
     @Transactional(transactionManager = "tenantTransactionManager")
     public void suspendTenant(Long tenantId) {
         Tenant tenant = getTenant(tenantId);
@@ -363,7 +386,10 @@ public class TenantService {
         log.info("[TenantService] Tenant {} suspended by {}", tenantId, currentUserEmail);
     }
 
-    @CacheEvict(value = "tenants", key = "#tenantId")
+    @Caching(evict = {
+        @CacheEvict(value = "tenants", key = "#tenantId"),
+        @CacheEvict(value = "tenant-key-info", allEntries = true)
+    })
     @Transactional(transactionManager = "tenantTransactionManager")
     public void activateTenant(Long tenantId) {
         Tenant tenant = getTenant(tenantId);
@@ -382,7 +408,10 @@ public class TenantService {
         log.info("[TenantService] Tenant {} activated by {}", tenantId, currentUserEmail);
     }
 
-    @CacheEvict(value = "tenants", key = "#tenantId")
+    @Caching(evict = {
+        @CacheEvict(value = "tenants", key = "#tenantId"),
+        @CacheEvict(value = "tenant-key-info", allEntries = true)
+    })
     @Transactional(transactionManager = "tenantTransactionManager")
     public void deactivateTenant(Long tenantId) {
         Tenant tenant = getTenant(tenantId);
@@ -404,7 +433,10 @@ public class TenantService {
     /**
      * Soft-delete tenant — chỉ ADMIN hoặc OWNER.
      */
-    @CacheEvict(value = "tenants", key = "#tenantId")
+    @Caching(evict = {
+        @CacheEvict(value = "tenants", key = "#tenantId"),
+        @CacheEvict(value = "tenant-key-info", allEntries = true)
+    })
     @Transactional(value = "tenantTransactionManager", rollbackFor = Exception.class)
     public void deleteTenant(Long tenantId) {
         Tenant tenant = tenantRepository.findById(tenantId)
@@ -456,7 +488,8 @@ public class TenantService {
 
     @Caching(evict = {
         @CacheEvict(value = "tenants", key = "#result.id", condition = "#result != null"),
-        @CacheEvict(value = "tenant-key-to-id", key = "#tenantKey")
+        @CacheEvict(value = "tenant-key-to-id", key = "#tenantKey"),
+        @CacheEvict(value = "tenant-key-info", key = "#tenantKey")
     })
     @Transactional(rollbackFor = Exception.class, transactionManager = "tenantTransactionManager")
     public TenantResponse updateBasicInfo(String tenantKey, TenantBasicInfoRequest req) {
@@ -497,7 +530,8 @@ public class TenantService {
      */
     @Caching(evict = {
         @CacheEvict(value = "tenants", key = "#result.id", condition = "#result != null"),
-        @CacheEvict(value = "tenant-key-to-id", key = "#tenantKey")
+        @CacheEvict(value = "tenant-key-to-id", key = "#tenantKey"),
+        @CacheEvict(value = "tenant-key-info", key = "#tenantKey")
     })
     @Transactional(rollbackFor = Exception.class, transactionManager = "tenantTransactionManager")
     public TenantResponse updateContactInfo(String tenantKey, TenantContactInfoRequest req) {

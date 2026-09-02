@@ -12,6 +12,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.chatbot.core.simplepayment.repository.WebhookDeadLetterRepository;
+import org.springframework.web.reactive.function.client.WebClient;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Collections;
@@ -33,7 +36,16 @@ class SimplePaymentWebhookIntegrationTest {
     private WebhookRepository webhookRepository;
 
     @Mock
+    private WebhookDeadLetterRepository webhookDeadLetterRepository;
+
+    @Mock
+    private WebhookSignatureService webhookSignatureService;
+
+    @Mock
     private ObjectMapper objectMapper;
+
+    @Mock
+    private WebClient webClient;
 
     private WebhookService webhookService;
 
@@ -44,7 +56,10 @@ class SimplePaymentWebhookIntegrationTest {
     void setUp() {
         webhookService = new WebhookService(
                 webhookRepository,
-                objectMapper
+                webhookDeadLetterRepository,
+                webhookSignatureService,
+                objectMapper,
+                webClient
         );
 
         testWebhook = Webhook.builder()

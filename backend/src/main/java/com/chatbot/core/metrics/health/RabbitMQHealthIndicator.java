@@ -4,6 +4,7 @@ import org.springframework.amqp.rabbit.connection.Connection;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.boot.actuate.health.Health;
 import org.springframework.boot.actuate.health.HealthIndicator;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.stereotype.Component;
 
 /**
@@ -11,6 +12,7 @@ import org.springframework.stereotype.Component;
  * Checks if RabbitMQ is responsive and can establish connections.
  */
 @Component
+@ConditionalOnBean(ConnectionFactory.class)
 public class RabbitMQHealthIndicator implements HealthIndicator {
 
     private final ConnectionFactory connectionFactory;

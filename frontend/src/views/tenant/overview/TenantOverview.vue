@@ -152,7 +152,7 @@
       :isVisible="showImageCropper"
       :title="$t('tenant.overview.cropLogo')"
       :imageUrl="previewImageUrl"
-      :outputSize="1200"
+      :outputSize="800"
       @cancel="handleImageCropperCancel"
       @crop="handleLogoCrop"
     />
@@ -345,10 +345,10 @@ export default {
           reduction: Math.round((1 - croppedFile.size / selectedImageFile.value.size) * 100) + '%'
         })
         
-        // Validate file size (max 5MB)
-        if (croppedFile.size > 5 * 1024 * 1024) {
+        // Validate file size (max 10MB)
+        if (croppedFile.size > 10 * 1024 * 1024) {
           console.error('❌ [FRONTEND LOGO] Cropped file too large:', croppedFile.size, croppedFile.name)
-          toast?.error('Image size should be less than 5MB')
+          toast?.error('Image size should be less than 10MB')
           return
         }
         

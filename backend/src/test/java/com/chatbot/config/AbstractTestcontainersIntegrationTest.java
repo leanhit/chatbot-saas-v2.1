@@ -27,7 +27,7 @@ public abstract class AbstractTestcontainersIntegrationTest {
     protected static final GenericContainer<?> REDIS;
 
     static {
-        System.setProperty("api.version", "1.40");
+        System.setProperty("api.version", "1.44");
 
         POSTGRES = new PostgreSQLContainer<>(
                 DockerImageName.parse("ankane/pgvector:latest").asCompatibleSubstituteFor("postgres")

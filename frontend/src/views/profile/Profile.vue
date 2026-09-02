@@ -577,35 +577,17 @@ export default {
         return
       }
       
-      // TEMP: Bypass ImageCropper for testing 413 error
-      selectedImageFile.value = file
-      
-      // Validate file size directly (max 5MB)
-      if (file.size > 5 * 1024 * 1024) {
+      // Validate file size (max 10MB)
+      if (file.size > 10 * 1024 * 1024) {
         console.error('File too large:', file.size)
-        toast?.error('File size should be less than 5MB')
+        toast?.error('File size should be less than 10MB')
         return
       }
-      
-      // Upload directly without cropping
-      avatarUploading.value = true
-      try {
-        const formData = new FormData()
-        formData.append('avatar', file)
-        
-        const response = await usersApi.updateAvatar(formData)
-        toast?.success('Avatar updated successfully!')
-      } catch (error) {
-        console.error('Direct upload error:', error)
-        // Handle error as before...
-      } finally {
-        avatarUploading.value = false
-        event.target.value = ''
-      }
-      
-      // Comment out cropper for now
-      // previewImageUrl.value = URL.createObjectURL(file)
-      // showImageCropper.value = true
+
+      selectedImageFile.value = file
+      previewImageUrl.value = URL.createObjectURL(file)
+      showImageCropper.value = true
+      event.target.value = ''
     }
     const handleImageCrop = async (croppedFile) => {
       // Validate file size (max 5MB)

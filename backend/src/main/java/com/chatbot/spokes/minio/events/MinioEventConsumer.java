@@ -1,6 +1,7 @@
 package com.chatbot.spokes.minio.events;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.support.KafkaHeaders;
 import org.springframework.messaging.handler.annotation.Header;
@@ -12,6 +13,7 @@ import org.springframework.stereotype.Service;
  * Other spokes can publish events that MinIO spoke needs to consume
  */
 @Service
+@ConditionalOnProperty(name = "kafka.enabled", havingValue = "true", matchIfMissing = false)
 @Slf4j
 public class MinioEventConsumer {
     

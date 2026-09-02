@@ -22,6 +22,7 @@ import com.chatbot.core.tenant.infra.TenantContext;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -39,6 +40,7 @@ import com.github.benmanes.caffeine.cache.Caffeine;
  * Guaranteed ordered processing per conversation partition (runs synchronously on consumer thread).
  */
 @Service("facebookWebhookEventConsumer")
+@ConditionalOnProperty(name = "kafka.enabled", havingValue = "true", matchIfMissing = false)
 @Slf4j
 @lombok.RequiredArgsConstructor
 public class FacebookEventConsumer {

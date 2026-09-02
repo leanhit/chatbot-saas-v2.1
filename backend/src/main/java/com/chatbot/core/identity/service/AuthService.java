@@ -23,6 +23,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.security.access.prepost.PreAuthorize;
 
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.CacheEvict;
 
 import java.util.List;
 import java.util.Optional;
@@ -144,6 +145,8 @@ public class AuthService implements UserDetailsService {
         return new UserResponse(token, refreshToken.getToken(), userDto);
     }
 
+    @CacheEvict(value = "userSessions", key = "#email")
+    @Transactional(value = "userTransactionManager", rollbackFor = Exception.class)
     public UserResponse changePassword(String email, ChangePasswordRequest request) {
         if (!request.getNewPassword().equals(request.getConfirmPassword())) {
             throw new ValidationException(IdentityConstants.PASSWORD_MISMATCH);
@@ -173,7 +176,9 @@ public class AuthService implements UserDetailsService {
         return new UserResponse(newToken, userDto);
     }
 
+    @CacheEvict(value = "userSessions", key = "#result.email")
     @PreAuthorize("hasRole('ADMIN')")
+    @Transactional(value = "userTransactionManager", rollbackFor = Exception.class)
     public UserDto changeRole(Long userId, SystemRole newRole) {
         // 1. Tìm người dùng cần đổi role
         User user = authRepository.findById(userId)

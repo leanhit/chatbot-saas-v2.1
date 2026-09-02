@@ -351,17 +351,52 @@ export default {
           props.outputSize
         )
         
-        // Convert to blob
+        // Check if canvas has transparency
+        let hasTransparency = false
+        try {
+          const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height).data
+          for (let i = 3; i < imageData.length; i += 4) {
+            if (imageData[i] < 255) {
+              hasTransparency = true
+              break
+            }
+          }
+        } catch (e) {
+          // If cross-origin or security error occurs, fallback
+        }
+
+        const mimeType = hasTransparency ? 'image/png' : 'image/jpeg'
+        const fileExt = hasTransparency ? 'png' : 'jpg'
+        const quality = 0.85
+
+        // Convert to blob with optimized format and compression
         canvas.toBlob((blob) => {
           if (blob) {
-            // Create file from blob
-            const fileName = `cropped_${Date.now()}.png`
-            const file = new File([blob], fileName, { type: 'image/png' })
+            // If PNG is still over 2MB, fallback to compressed JPEG with white background
+            if (hasTransparency && blob.size > 2 * 1024 * 1024) {
+              const jpegCanvas = document.createElement('canvas')
+              jpegCanvas.width = props.outputSize
+              jpegCanvas.height = props.outputSize
+              const jpegCtx = jpegCanvas.getContext('2d')
+              jpegCtx.fillStyle = '#FFFFFF'
+              jpegCtx.fillRect(0, 0, props.outputSize, props.outputSize)
+              jpegCtx.drawImage(canvas, 0, 0)
+
+              jpegCanvas.toBlob((jpegBlob) => {
+                const fileName = `cropped_${Date.now()}.jpg`
+                const file = new File([jpegBlob || blob], fileName, { type: 'image/jpeg' })
+                emit('crop', file)
+              }, 'image/jpeg', 0.85)
+              return
+            }
+
+            const fileName = `cropped_${Date.now()}.${fileExt}`
+            const file = new File([blob], fileName, { type: mimeType })
             
-            // Emit crop event with file
+            // Emit crop event with compressed file
             emit('crop', file)
           }
-        }, 'image/png', 0.9)
+        }, mimeType, quality)
         
       } catch (error) {
         console.error('Error cropping image:', error)
