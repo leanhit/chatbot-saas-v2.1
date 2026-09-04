@@ -7,6 +7,7 @@ import com.chatbot.core.message.store.repository.MessageRepository;
 import com.chatbot.core.notification.websocket.NotificationWebSocketHandler;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,8 +33,9 @@ public class AIEscalationService {
     private final AgentAssignmentService agentAssignmentService;
 
     /**
-     * Analyze conversation and determine if AI escalation is needed
+     * Analyze conversation and determine if AI escalation is needed (Asynchronously)
      */
+    @Async("taskExecutor")
     @Transactional
     public void analyzeAndEscalateIfNeeded(Long conversationId) {
         if (!llmClient.isEnabled()) {
