@@ -291,7 +291,7 @@
             {{ $t('penny.config.ragTitle') }}
           </h2>
           <router-link 
-            :to="`/penny/bots/${botId}/knowledge-base`" 
+            :to="`/penny/bots/${activeBotId}/knowledge-base`" 
             class="inline-flex items-center text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:underline"
           >
             <Icon icon="mdi:open-in-new" class="mr-1" /> Quản lý bài viết tri thức
@@ -434,7 +434,7 @@ export default {
   props: {
     botId: {
       type: String,
-      required: true
+      required: false
     }
   },
   data() {
@@ -470,14 +470,23 @@ export default {
       loading: false
     };
   },
+  computed: {
+    activeBotId() {
+      return this.botId || this.$route?.params?.botId;
+    }
+  },
   mounted() {
     this.loadConfig();
   },
   methods: {
     async loadConfig() {
+      if (!this.activeBotId) {
+        console.warn('No activeBotId available');
+        return;
+      }
       this.loading = true;
       try {
-        const response = await pennyApi.getPennyBotById(this.botId);
+        const response = await pennyApi.getPennyBotById(this.activeBotId);
         const bot = response.data;
         
         this.config = {
@@ -516,6 +525,10 @@ export default {
     },
     
     async saveConfig() {
+      if (!this.activeBotId) {
+        if (this.$toast) this.$toast.error('Bot ID not found');
+        return;
+      }
       this.loading = true;
       try {
         const updateData = {
@@ -540,7 +553,7 @@ export default {
           rateLimitEnabled: this.config.rateLimitEnabled
         };
         
-        await pennyApi.updatePennyBot(this.botId, updateData);
+        await pennyApi.updatePennyBot(this.activeBotId, updateData);
         if (this.$toast) {
           this.$toast.success('Configuration saved successfully');
         }
@@ -556,11 +569,15 @@ export default {
 
     async handleTestOrderLookup() {
       if (!this.testOrderCode) return;
+      if (!this.activeBotId) {
+        this.testOrderResult = '[Lỗi]: Không tìm thấy Bot ID';
+        return;
+      }
       this.testingOrder = true;
       this.testOrderResult = null;
       try {
         // Send a test chat message containing the order code
-        const res = await pennyApi.chatWithPennyBot(this.botId, `Kiểm tra đơn hàng ${this.testOrderCode}`, true);
+        const res = await pennyApi.chatWithPennyBot(this.activeBotId, `Kiểm tra đơn hàng ${this.testOrderCode}`, true);
         const replyText = res.data?.response || res.data?.message || JSON.stringify(res.data, null, 2);
         this.testOrderResult = replyText;
       } catch (err) {

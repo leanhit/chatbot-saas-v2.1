@@ -173,6 +173,7 @@ const routes = [
     path: "/penny/bots/:botId/config",
     name: "penny-bot-config",
     component: PennyBotConfig,
+    props: true,
     meta: { requiresAuth: true, title: "Bot Configuration" + appname },
   },
   {
