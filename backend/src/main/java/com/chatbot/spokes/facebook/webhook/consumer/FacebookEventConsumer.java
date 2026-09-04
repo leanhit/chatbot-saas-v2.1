@@ -77,9 +77,37 @@ public class FacebookEventConsumer {
         }
     }
 
+    private void removeDedup(String mid) {
+        if (mid == null) return;
+        try {
+            String key = "facebook:dedup:mid:" + mid;
+            redisTemplate.delete(key);
+            dedupCache.invalidate(mid);
+            log.info("🔄 Cleared deduplication key for mid={} to allow Kafka retry", mid);
+        } catch (Exception e) {
+            log.error("❌ Failed to remove deduplication key: {}", e.getMessage());
+            try {
+                dedupCache.invalidate(mid);
+            } catch (Exception ex) {
+                // ignore
+            }
+        }
+    }
+
+    private String extractMid(WebhookRequest.Messaging messaging) {
+        if (messaging == null) return null;
+        if (messaging.getMessage() != null && messaging.getMessage().getMid() != null) {
+            return messaging.getMessage().getMid();
+        }
+        if (messaging.getReaction() != null && messaging.getReaction().getMid() != null) {
+            return messaging.getReaction().getMid();
+        }
+        return null;
+    }
+
     @KafkaListener(topics = KafkaConfig.FACEBOOK_EVENT_TOPIC, groupId = "facebook-consumer-group", containerFactory = "kafkaListenerContainerFactory")
     public void consume(String messageJson) {
-        FacebookKafkaEvent event;
+        FacebookKafkaEvent event = null;
         try {
             event = objectMapper.readValue(messageJson, FacebookKafkaEvent.class);
         } catch (Exception e) {
@@ -143,9 +171,13 @@ public class FacebookEventConsumer {
         } catch (Exception e) {
             log.error("❌ [Kafka Consumer] Processing exception: {}", e.getMessage(), e);
 
-            // Do NOT remove dedup key - let it expire naturally after 15 minutes
-            // This preserves dedup protection when message goes to DLQ after retries
-            // Kafka's retry mechanism will handle retries without needing to remove the key
+            // Clear dedup key on exception so Kafka retry can re-attempt processing
+            if (event != null && event.getMessaging() != null) {
+                String mid = extractMid(event.getMessaging());
+                if (mid != null) {
+                    removeDedup(mid);
+                }
+            }
 
             throw new RuntimeException("Error processing Kafka event", e);
         } finally {
@@ -237,6 +269,11 @@ public class FacebookEventConsumer {
         String text = messaging.getMessage().getText();
         String messageContent = text != null && !text.isEmpty() ? text : payload;
         String mid = messaging.getMessage().getMid();
+
+        if (mid != null && !tryDedup(mid)) {
+            log.info("⚠️ Skipping duplicate QuickReply mid=" + mid);
+            return;
+        }
 
         UUID connectionId = connection.getId();
         Channel channel = Channel.FACEBOOK;
