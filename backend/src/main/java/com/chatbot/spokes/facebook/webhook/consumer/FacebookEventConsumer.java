@@ -99,6 +99,12 @@ public class FacebookEventConsumer {
         if (messaging.getMessage() != null && messaging.getMessage().getMid() != null) {
             return messaging.getMessage().getMid();
         }
+        if (messaging.getPostback() != null) {
+            String senderId = messaging.getSender() != null ? messaging.getSender().getId() : "unknown";
+            String payload = messaging.getPostback().getPayload() != null ? messaging.getPostback().getPayload() : "";
+            Long timestamp = messaging.getTimestamp();
+            return "postback:" + senderId + ":" + payload + (timestamp != null ? ":" + timestamp : "");
+        }
         if (messaging.getReaction() != null && messaging.getReaction().getMid() != null) {
             return messaging.getReaction().getMid();
         }
@@ -300,6 +306,13 @@ public class FacebookEventConsumer {
         String payload = messaging.getPostback().getPayload();
         String title = messaging.getPostback().getTitle();
         String text = title != null ? title : "[Postback]";
+        Long timestamp = messaging.getTimestamp();
+        String postbackDedupKey = "postback:" + senderId + ":" + payload + (timestamp != null ? ":" + timestamp : "");
+
+        if (!tryDedup(postbackDedupKey)) {
+            log.info("⚠️ Skipping duplicate Postback key=" + postbackDedupKey);
+            return;
+        }
 
         UUID connectionId = connection.getId();
         Channel channel = Channel.FACEBOOK;
