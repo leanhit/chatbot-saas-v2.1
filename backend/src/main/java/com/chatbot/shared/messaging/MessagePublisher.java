@@ -1,22 +1,25 @@
 package com.chatbot.shared.messaging;
 
-import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 @Component
-@ConditionalOnBean(RabbitTemplate.class)
-public @RequiredArgsConstructor
-class MessagePublisher {
+@ConditionalOnClass(RabbitTemplate.class)
+@Slf4j
+public class MessagePublisher {
 
+    private final Optional<RabbitTemplate> rabbitTemplate;
 
-    private final RabbitTemplate rabbitTemplate;
+    public MessagePublisher(Optional<RabbitTemplate> rabbitTemplate) {
+        this.rabbitTemplate = rabbitTemplate;
+    }
 
     @Value("${rabbitmq.exchange.name:chatbot.exchange}")
     private String exchangeName;
@@ -26,8 +29,13 @@ class MessagePublisher {
     }
 
     public void publish(String routingKey, Object message, Map<String, Object> headers) {
+        if (rabbitTemplate.isEmpty()) {
+            log.warn("RabbitTemplate not available (RabbitMQ disabled). Skipping message to routing key: {}", routingKey);
+            return;
+        }
         try {
-            org.springframework.amqp.core.Message amqpMessage = rabbitTemplate.getMessageConverter().toMessage(message, null);
+            RabbitTemplate template = rabbitTemplate.get();
+            org.springframework.amqp.core.Message amqpMessage = template.getMessageConverter().toMessage(message, null);
             
             if (headers != null) {
                 headers.forEach((key, value) -> amqpMessage.getMessageProperties().setHeader(key, value));
@@ -38,7 +46,7 @@ class MessagePublisher {
             amqpMessage.getMessageProperties().setTimestamp(new java.util.Date());
             amqpMessage.getMessageProperties().setContentType("application/json");
             
-            rabbitTemplate.send(exchangeName, routingKey, amqpMessage);
+            template.send(exchangeName, routingKey, amqpMessage);
         } catch (Exception e) {
             throw new RuntimeException("Failed to publish message to routing key: " + routingKey, e);
         }
@@ -53,46 +61,59 @@ class MessagePublisher {
     }
 
     public void publishWithPriority(String routingKey, Object message, int priority) {
+        if (rabbitTemplate.isEmpty()) {
+            log.warn("RabbitTemplate not available (RabbitMQ disabled). Skipping priority message to routing key: {}", routingKey);
+            return;
+        }
         try {
-            org.springframework.amqp.core.Message amqpMessage = rabbitTemplate.getMessageConverter().toMessage(message, null);
+            RabbitTemplate template = rabbitTemplate.get();
+            org.springframework.amqp.core.Message amqpMessage = template.getMessageConverter().toMessage(message, null);
             
             amqpMessage.getMessageProperties().setMessageId(UUID.randomUUID().toString());
             amqpMessage.getMessageProperties().setTimestamp(new java.util.Date());
             amqpMessage.getMessageProperties().setContentType("application/json");
             amqpMessage.getMessageProperties().setPriority(priority);
             
-            rabbitTemplate.send(exchangeName, routingKey, amqpMessage);
+            template.send(exchangeName, routingKey, amqpMessage);
         } catch (Exception e) {
             throw new RuntimeException("Failed to publish message with priority to routing key: " + routingKey, e);
         }
     }
 
     public void publishWithDelay(String routingKey, Object message, long delayMillis) {
+        if (rabbitTemplate.isEmpty()) {
+            log.warn("RabbitTemplate not available (RabbitMQ disabled). Skipping delayed message to routing key: {}", routingKey);
+            return;
+        }
         try {
-            org.springframework.amqp.core.Message amqpMessage = rabbitTemplate.getMessageConverter().toMessage(message, null);
+            RabbitTemplate template = rabbitTemplate.get();
+            org.springframework.amqp.core.Message amqpMessage = template.getMessageConverter().toMessage(message, null);
             
             amqpMessage.getMessageProperties().setMessageId(UUID.randomUUID().toString());
             amqpMessage.getMessageProperties().setTimestamp(new java.util.Date());
             amqpMessage.getMessageProperties().setContentType("application/json");
-            // Note: setDelay method not available in current Spring AMQP version
-            // amqpMessage.getMessageProperties().setDelay((int) delayMillis);
             
-            rabbitTemplate.send(exchangeName, routingKey, amqpMessage);
+            template.send(exchangeName, routingKey, amqpMessage);
         } catch (Exception e) {
             throw new RuntimeException("Failed to publish delayed message to routing key: " + routingKey, e);
         }
     }
 
     public void publishWithTTL(String routingKey, Object message, long ttlMillis) {
+        if (rabbitTemplate.isEmpty()) {
+            log.warn("RabbitTemplate not available (RabbitMQ disabled). Skipping TTL message to routing key: {}", routingKey);
+            return;
+        }
         try {
-            org.springframework.amqp.core.Message amqpMessage = rabbitTemplate.getMessageConverter().toMessage(message, null);
+            RabbitTemplate template = rabbitTemplate.get();
+            org.springframework.amqp.core.Message amqpMessage = template.getMessageConverter().toMessage(message, null);
             
             amqpMessage.getMessageProperties().setMessageId(UUID.randomUUID().toString());
             amqpMessage.getMessageProperties().setTimestamp(new java.util.Date());
             amqpMessage.getMessageProperties().setContentType("application/json");
             amqpMessage.getMessageProperties().setExpiration(String.valueOf(ttlMillis));
             
-            rabbitTemplate.send(exchangeName, routingKey, amqpMessage);
+            template.send(exchangeName, routingKey, amqpMessage);
         } catch (Exception e) {
             throw new RuntimeException("Failed to publish message with TTL to routing key: " + routingKey, e);
         }

@@ -5,8 +5,23 @@ spring:
   threads:
     virtual:
       enabled: true
+  kafka:
+    enabled: ${KAFKA_ENABLED:true}
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:chatbot_saas_kafka:9092}
+    admin:
+      bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:chatbot_saas_kafka:9092}
+    consumer:
+      bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:chatbot_saas_kafka:9092}
+    producer:
+      bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:chatbot_saas_kafka:9092}
+    properties:
+      bootstrap.servers: ${KAFKA_BOOTSTRAP_SERVERS:chatbot_saas_kafka:9092}
+  # Override Kafka auto-configuration exclusion from base application.properties
+  autoconfigure:
+    exclude: org.springframework.boot.autoconfigure.amqp.RabbitAutoConfiguration
   flyway:
     validate-on-migrate: true
+
   data:
     redis:
       host: ${REDIS_HOST:chatbot_saas_redis}
@@ -17,16 +32,10 @@ spring:
     port: ${RABBITMQ_PORT:5672}
     username: ${RABBITMQ_USER:admin}
     password: ${RABBITMQ_PASSWORD:admin123}
-  kafka:
-    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:chatbot_saas_kafka:9092}
-    admin:
-      bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:chatbot_saas_kafka:9092}
-    consumer:
-      bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:chatbot_saas_kafka:9092}
-    producer:
-      bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:chatbot_saas_kafka:9092}
-    properties:
-      bootstrap.servers: ${KAFKA_BOOTSTRAP_SERVERS:chatbot_saas_kafka:9092}
+
+# Top-level kafka.enabled property for @ConditionalOnProperty annotation
+kafka:
+  enabled: ${KAFKA_ENABLED:true}
 
 # PgBouncer & 6 Hub Database Configurations
 pgbouncer:
@@ -89,13 +98,13 @@ app:
   integrations:
     minio:
       enabled: true
-      endpoint: ${MINIO_ENDPOINT:http://minio:9000}
+      endpoint: ${MINIO_ENDPOINT:http://chatbot_saas_minio:9000}
       access-key: ${MINIO_ACCESS_KEY:minioadmin}
       secret-key: ${MINIO_SECRET_KEY:minioadmin}
       bucket: ${MINIO_BUCKET:chatbot-files}
 
 minio:
-  endpoint: ${MINIO_ENDPOINT:http://minio:9000}
+  endpoint: ${MINIO_ENDPOINT:http://chatbot_saas_minio:9000}
   access-key: ${MINIO_ACCESS_KEY:minioadmin}
   secret-key: ${MINIO_SECRET_KEY:minioadmin}
   accessKey: ${MINIO_ACCESS_KEY:minioadmin}
@@ -122,6 +131,8 @@ management:
     mail:
       enabled: false
     kafka:
+      enabled: false
+    botpress:
       enabled: false
 
 server:

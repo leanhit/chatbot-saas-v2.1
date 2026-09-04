@@ -8,31 +8,40 @@ import org.springframework.amqp.core.Message;
 import org.springframework.amqp.core.MessageBuilder;
 import org.springframework.amqp.core.QueueInformation;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * Service for managing Dead Letter Queues (DLQ)
  * Provides monitoring, inspection, and replay capabilities for failed messages
  */
 @Service
-@ConditionalOnBean(RabbitTemplate.class)
-@RequiredArgsConstructor
+@ConditionalOnClass(RabbitTemplate.class)
 @Slf4j
 public class DLQManagementService {
 
-    private final RabbitTemplate rabbitTemplate;
-    private final AmqpAdmin amqpAdmin;
+    private final Optional<RabbitTemplate> rabbitTemplate;
+    private final Optional<AmqpAdmin> amqpAdmin;
     private final ObjectMapper objectMapper;
+
+    public DLQManagementService(Optional<RabbitTemplate> rabbitTemplate, Optional<AmqpAdmin> amqpAdmin, ObjectMapper objectMapper) {
+        this.rabbitTemplate = rabbitTemplate;
+        this.amqpAdmin = amqpAdmin;
+        this.objectMapper = objectMapper;
+    }
 
     /**
      * Get DLQ statistics for all queues
      */
     public Map<String, Object> getDLQStatistics() {
         Map<String, Object> stats = new HashMap<>();
+        if (amqpAdmin.isEmpty()) {
+            return Map.of("error", "AmqpAdmin is unavailable (RabbitMQ disabled)");
+        }
         
         String[] queueNames = {
             "chatbot.queue.default.dlq",
@@ -47,7 +56,7 @@ public class DLQManagementService {
 
         for (String queueName : queueNames) {
             try {
-                QueueInformation queueInfo = amqpAdmin.getQueueInfo(queueName);
+                QueueInformation queueInfo = amqpAdmin.get().getQueueInfo(queueName);
                 if (queueInfo != null) {
                     Map<String, Object> queueStats = new HashMap<>();
                     queueStats.put("messageCount", queueInfo.getMessageCount());
@@ -68,14 +77,19 @@ public class DLQManagementService {
      */
     public Map<String, Object> inspectDLQ(String queueName, int maxMessages) {
         Map<String, Object> result = new HashMap<>();
+        if (rabbitTemplate.isEmpty()) {
+            result.put("error", "RabbitTemplate is unavailable (RabbitMQ disabled)");
+            return result;
+        }
         
         try {
+            RabbitTemplate template = rabbitTemplate.get();
             // Receive messages without auto-ack for inspection
             Message[] messages = new Message[maxMessages];
             int count = 0;
             
             for (int i = 0; i < maxMessages; i++) {
-                Message message = rabbitTemplate.receive(queueName);
+                Message message = template.receive(queueName);
                 if (message == null) break;
                 
                 messages[count] = message;
@@ -84,7 +98,7 @@ public class DLQManagementService {
             
             // Re-queue messages for later processing
             for (int i = 0; i < count; i++) {
-                rabbitTemplate.send(queueName, messages[i]);
+                template.send(queueName, messages[i]);
             }
             
             result.put("queueName", queueName);
@@ -103,6 +117,10 @@ public class DLQManagementService {
      * Replay a specific message from DLQ to the original queue
      */
     public boolean replayMessage(String dlqName, String originalQueue, String messageId) {
+        if (rabbitTemplate.isEmpty()) {
+            log.warn("RabbitTemplate unavailable. Cannot replay message {}", messageId);
+            return false;
+        }
         try {
             log.info("Replaying message {} from {} to {}", messageId, dlqName, originalQueue);
             
@@ -118,7 +136,7 @@ public class DLQManagementService {
             builder.removeHeader("x-death");
             
             // Send to original queue
-            rabbitTemplate.send(originalQueue, builder.build());
+            rabbitTemplate.get().send(originalQueue, builder.build());
             
             log.info("Successfully replayed message {} to {}", messageId, originalQueue);
             return true;
@@ -134,28 +152,34 @@ public class DLQManagementService {
      */
     public Map<String, Object> replayAllMessages(String dlqName, String originalQueue) {
         Map<String, Object> result = new HashMap<>();
+        if (rabbitTemplate.isEmpty()) {
+            result.put("error", "RabbitTemplate is unavailable (RabbitMQ disabled)");
+            result.put("status", "failed");
+            return result;
+        }
         int successCount = 0;
         int failCount = 0;
         
         try {
             log.info("Replaying all messages from {} to {}", dlqName, originalQueue);
+            RabbitTemplate template = rabbitTemplate.get();
             
             Message message;
-            while ((message = rabbitTemplate.receive(dlqName)) != null) {
+            while ((message = template.receive(dlqName)) != null) {
                 try {
                     // Remove DLQ headers
                     MessageBuilder builder = MessageBuilder.fromMessage(message);
                     builder.removeHeader("x-death");
                     
                     // Send to original queue
-                    rabbitTemplate.send(originalQueue, builder.build());
+                    template.send(originalQueue, builder.build());
                     successCount++;
                     
                 } catch (Exception e) {
                     log.error("Failed to replay message: {}", e.getMessage());
                     failCount++;
                     // Re-queue failed message back to DLQ
-                    rabbitTemplate.send(dlqName, message);
+                    template.send(dlqName, message);
                 }
             }
             
@@ -197,11 +221,15 @@ public class DLQManagementService {
      * Clear all messages from a DLQ
      */
     public boolean clearDLQ(String dlqName) {
+        if (rabbitTemplate.isEmpty()) {
+            return false;
+        }
         try {
             log.info("Clearing all messages from {}", dlqName);
+            RabbitTemplate template = rabbitTemplate.get();
 
             int count = 0;
-            while (rabbitTemplate.receive(dlqName) != null) {
+            while (template.receive(dlqName) != null) {
                 count++;
             }
 
@@ -218,18 +246,19 @@ public class DLQManagementService {
      * Helper method to find and remove a specific message by ID
      */
     private Message findAndRemoveMessage(String queueName, String messageId) {
-        // In a real implementation, you might need to scan through messages
-        // For now, this is a simplified version that removes the first message
-        // A production implementation would use message headers or a correlation ID
+        if (rabbitTemplate.isEmpty()) {
+            return null;
+        }
+        RabbitTemplate template = rabbitTemplate.get();
 
-        Message message = rabbitTemplate.receive(queueName);
+        Message message = template.receive(queueName);
         if (message != null) {
             String msgId = message.getMessageProperties().getMessageId();
             if (msgId != null && msgId.equals(messageId)) {
                 return message;
             } else {
                 // Not the message we're looking for, put it back
-                rabbitTemplate.send(queueName, message);
+                template.send(queueName, message);
                 return null;
             }
         }

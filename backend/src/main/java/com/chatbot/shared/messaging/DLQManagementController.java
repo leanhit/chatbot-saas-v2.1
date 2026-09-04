@@ -8,7 +8,8 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.http.HttpStatus;
+import java.util.Optional;
 
 /**
  * REST Controller for Dead Letter Queue management
@@ -16,13 +17,15 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
  */
 @RestController
 @RequestMapping("/api/admin/dlq")
-@ConditionalOnBean(DLQManagementService.class)
-@RequiredArgsConstructor
 @Slf4j
 @PreAuthorize("hasRole('ADMIN')")
 public class DLQManagementController {
 
-    private final DLQManagementService dlqManagementService;
+    private final Optional<DLQManagementService> dlqManagementService;
+
+    public DLQManagementController(Optional<DLQManagementService> dlqManagementService) {
+        this.dlqManagementService = dlqManagementService;
+    }
 
     /**
      * Get statistics for all Dead Letter Queues
@@ -30,7 +33,11 @@ public class DLQManagementController {
     @GetMapping("/statistics")
     public ResponseEntity<Map<String, Object>> getDLQStatistics() {
         log.info("GET /api/admin/dlq/statistics - Getting DLQ statistics");
-        Map<String, Object> stats = dlqManagementService.getDLQStatistics();
+        if (dlqManagementService.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                    .body(Map.of("error", "DLQ Service unavailable"));
+        }
+        Map<String, Object> stats = dlqManagementService.get().getDLQStatistics();
         return ResponseEntity.ok(stats);
     }
 
@@ -51,7 +58,11 @@ public class DLQManagementController {
             ));
         }
         
-        Map<String, Object> result = dlqManagementService.inspectDLQ(queueName, maxMessages);
+        if (dlqManagementService.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                    .body(Map.of("error", "DLQ Service unavailable"));
+        }
+        Map<String, Object> result = dlqManagementService.get().inspectDLQ(queueName, maxMessages);
         return ResponseEntity.ok(result);
     }
 
@@ -65,7 +76,11 @@ public class DLQManagementController {
             @PathVariable String messageId) {
         log.info("POST /api/admin/dlq/replay/{}/{} - Replaying message: {}", dlqName, originalQueue, messageId);
         
-        boolean success = dlqManagementService.replayMessage(dlqName, originalQueue, messageId);
+        if (dlqManagementService.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                    .body(Map.of("error", "DLQ Service unavailable"));
+        }
+        boolean success = dlqManagementService.get().replayMessage(dlqName, originalQueue, messageId);
         
         if (success) {
             return ResponseEntity.ok(Map.of(
@@ -93,7 +108,11 @@ public class DLQManagementController {
             @PathVariable String originalQueue) {
         log.info("POST /api/admin/dlq/replay-all/{}/{} - Replaying all messages", dlqName, originalQueue);
         
-        Map<String, Object> result = dlqManagementService.replayAllMessages(dlqName, originalQueue);
+        if (dlqManagementService.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                    .body(Map.of("error", "DLQ Service unavailable"));
+        }
+        Map<String, Object> result = dlqManagementService.get().replayAllMessages(dlqName, originalQueue);
         return ResponseEntity.ok(result);
     }
 
@@ -106,7 +125,11 @@ public class DLQManagementController {
             @PathVariable String messageId) {
         log.info("DELETE /api/admin/dlq/delete/{}/{} - Deleting message", dlqName, messageId);
         
-        boolean success = dlqManagementService.deleteMessage(dlqName, messageId);
+        if (dlqManagementService.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                    .body(Map.of("error", "DLQ Service unavailable"));
+        }
+        boolean success = dlqManagementService.get().deleteMessage(dlqName, messageId);
         
         if (success) {
             return ResponseEntity.ok(Map.of(
@@ -138,7 +161,11 @@ public class DLQManagementController {
             ));
         }
         
-        boolean success = dlqManagementService.clearDLQ(dlqName);
+        if (dlqManagementService.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                    .body(Map.of("error", "DLQ Service unavailable"));
+        }
+        boolean success = dlqManagementService.get().clearDLQ(dlqName);
         
         if (success) {
             return ResponseEntity.ok(Map.of(

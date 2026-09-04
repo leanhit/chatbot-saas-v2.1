@@ -14,7 +14,7 @@ import org.springframework.context.annotation.Configuration;
 import lombok.extern.slf4j.Slf4j;
 
 @Configuration
-@ConditionalOnProperty(name = "rabbitmq.enabled", havingValue = "true", matchIfMissing = false)
+@ConditionalOnProperty(name = "rabbitmq.enabled", havingValue = "true", matchIfMissing = true)
 @Slf4j
 public class RabbitMQConfig {
 
