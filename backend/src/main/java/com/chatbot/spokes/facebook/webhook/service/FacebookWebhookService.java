@@ -26,16 +26,79 @@ public class FacebookWebhookService {
     @Value("${facebook.webhook.verify-token:your_facebook_verify_token}")
     private String verifyToken;
 
+    @Value("${facebook.app.secret:${FACEBOOK_APP_SECRET:51c0c2a53c21e6c09662ace9fa79a5ff}}")
+    private String appSecret;
+
+    @Value("${facebook.webhook.signature-check.enabled:true}")
+    private boolean signatureCheckEnabled;
+
     public FacebookWebhookService(FacebookKafkaProducer kafkaProducer, 
                                   FacebookConnectionRepository connectionRepository) {
         this.kafkaProducer = kafkaProducer;
         this.connectionRepository = connectionRepository;
     }
 
-    /** Verify webhook request from Facebook */
+    /** Verify webhook request from Facebook (GET verification) */
     public boolean verifyWebhook(String mode, String challenge, String verifyToken) {
         log.info("Verifying webhook - mode: {}, challenge: {}, token: {}", mode, challenge, verifyToken);
         return "subscribe".equals(mode) && this.verifyToken.equals(verifyToken);
+    }
+
+    /** Verify X-Hub-Signature-256 / X-Hub-Signature HMAC-SHA256 from Facebook */
+    public boolean verifySignature(String rawPayload, String signatureHeader) {
+        if (!signatureCheckEnabled) {
+            log.debug("Webhook signature verification disabled.");
+            return true;
+        }
+
+        if (appSecret == null || appSecret.isBlank() || appSecret.startsWith("your-")) {
+            log.warn("⚠️ Facebook App Secret is not configured or uses placeholder. Skipping signature verification.");
+            return true;
+        }
+
+        if (signatureHeader == null || signatureHeader.isBlank()) {
+            log.warn("⚠️ Missing X-Hub-Signature / X-Hub-Signature-256 header in webhook request.");
+            return false;
+        }
+
+        try {
+            String algo = "HmacSHA256";
+            String prefix = "sha256=";
+            if (signatureHeader.startsWith("sha1=")) {
+                algo = "HmacSHA1";
+                prefix = "sha1=";
+            }
+
+            String providedHash = signatureHeader.startsWith(prefix)
+                    ? signatureHeader.substring(prefix.length())
+                    : signatureHeader;
+
+            javax.crypto.Mac mac = javax.crypto.Mac.getInstance(algo);
+            javax.crypto.spec.SecretKeySpec secretKeySpec = new javax.crypto.spec.SecretKeySpec(
+                    appSecret.getBytes(java.nio.charset.StandardCharsets.UTF_8), algo);
+            mac.init(secretKeySpec);
+
+            byte[] calculatedHashBytes = mac.doFinal(rawPayload.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            StringBuilder hexString = new StringBuilder();
+            for (byte b : calculatedHashBytes) {
+                String hex = Integer.toHexString(0xff & b);
+                if (hex.length() == 1) hexString.append('0');
+                hexString.append(hex);
+            }
+
+            boolean isValid = java.security.MessageDigest.isEqual(
+                    providedHash.toLowerCase().getBytes(java.nio.charset.StandardCharsets.UTF_8),
+                    hexString.toString().toLowerCase().getBytes(java.nio.charset.StandardCharsets.UTF_8)
+            );
+
+            if (!isValid) {
+                log.warn("❌ Webhook signature verification failed! Signature header: {}", signatureHeader);
+            }
+            return isValid;
+        } catch (Exception e) {
+            log.error("❌ Error calculating webhook HMAC signature: {}", e.getMessage(), e);
+            return false;
+        }
     }
 
     /** Forward incoming webhook payload to Kafka for async processing */
