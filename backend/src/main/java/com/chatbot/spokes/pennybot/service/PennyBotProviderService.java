@@ -7,6 +7,7 @@ import com.chatbot.core.message.store.model.Conversation;
 import com.chatbot.core.message.store.repository.ConversationRepository;
 import com.chatbot.spokes.facebook.dto.FacebookConnectionDTO;
 import com.chatbot.spokes.facebook.service.FacebookConnectionQueryService;
+import com.chatbot.shared.penny.kb.KnowledgeBaseSearchService;
 import com.chatbot.core.message.store.repository.MessageRepository;
 import com.chatbot.core.tenant.infra.TenantContext;
 import com.chatbot.core.message.store.service.LLMClient;
@@ -17,6 +18,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * PennyBot Provider Service Implementation for Facebook integration
@@ -49,13 +51,19 @@ public class PennyBotProviderService implements ChatbotProviderService {
     // LLM Client for Smart AI Fallback
     private final LLMClient llmClient;
 
+    // RAG Knowledge Base Search Service
+    private final KnowledgeBaseSearchService knowledgeBaseSearchService;
+
+    // Tool Calling / Function Calling Order Lookup Service
+    private final OrderLookupService orderLookupService;
+
     @Override
     public Map<String, Object> sendMessage(String botId, String senderId, String messageText) {
         log.info("Sending message to PennyBot - Bot: {}, Sender: {}, Message: {}", botId, senderId, messageText);
         
         try {
-            // Generate bot response with conversation history context
-            String responseMessage = generateDefaultResponse(senderId, messageText);
+            // Generate bot response with conversation history context + RAG + Tool Calling
+            String responseMessage = generateDefaultResponse(senderId, messageText, botId);
             
             // NOTE: Do NOT save to database or send to Facebook here
             // FacebookEventConsumer handles database saving and Facebook sending
@@ -105,13 +113,17 @@ public class PennyBotProviderService implements ChatbotProviderService {
      * Generate appropriate default response
      */
     private String generateDefaultResponse(String messageText) {
-        return generateDefaultResponse(null, messageText);
+        return generateDefaultResponse(null, messageText, null);
+    }
+
+    private String generateDefaultResponse(String senderId, String messageText) {
+        return generateDefaultResponse(senderId, messageText, null);
     }
 
     /**
-     * Generate appropriate default response (with optional LLM fallback & history context)
+     * Generate appropriate default response (with optional LLM fallback, History context, RAG & Tool Calling)
      */
-    private String generateDefaultResponse(String senderId, String messageText) {
+    private String generateDefaultResponse(String senderId, String messageText, String botIdStr) {
         String lowerMessage = messageText.toLowerCase().trim();
         String language = detectLanguage(messageText);
         
@@ -153,19 +165,56 @@ public class PennyBotProviderService implements ChatbotProviderService {
             return "Tôi rất tiếc khi bạn gặp sự cố. Vui lòng cung cấp thông tin chi tiết:\n• 🐛 Loại lỗi: [mô tả lỗi]\n• 📱 Thiết bị: [browser/device]\n• ⏰ Thời gian xảy ra: [thời gian]\n\nTôi sẽ chuyển đến đội ngũ kỹ thuật để xử lý sớm nhất!";
         }
         
-        // Smart LLM Fallback with Conversation History Context
+        // Smart LLM Fallback with RAG, Tool Calling & Conversation History Context
         if (llmClient != null && llmClient.isEnabled()) {
             try {
-                String systemPrompt = "Bạn là Penny, trợ lý tư vấn bán hàng chuyên nghiệp. Hãy trả lời người dùng một cách thân thiện, ngắn gọn (tối đa 3-4 câu), lịch sự bằng tiếng Việt. Sử dụng bối cảnh hội thoại trước đó để hiểu đúng câu hỏi của người dùng.";
+                Long tenantId = TenantContext.getTenantId();
+                
+                // 1. Tool Calling: Order Lookup
+                String toolContext = null;
+                if (orderLookupService != null) {
+                    toolContext = orderLookupService.searchOrderContextIfRequested(messageText, tenantId);
+                }
+
+                // 2. RAG Knowledge Search
+                String ragContext = null;
+                if (knowledgeBaseSearchService != null && botIdStr != null && !botIdStr.isBlank()) {
+                    try {
+                        UUID botUuid = UUID.fromString(botIdStr);
+                        ragContext = knowledgeBaseSearchService.searchAndFormatContext(botUuid, tenantId, messageText);
+                    } catch (Exception ex) {
+                        log.debug("Could not parse botId UUID for RAG search: {}", botIdStr);
+                    }
+                }
+
+                // 3. Construct System Prompt with injected RAG & Tool context
+                StringBuilder systemPrompt = new StringBuilder();
+                systemPrompt.append("Bạn là Penny, trợ lý tư vấn bán hàng chuyên nghiệp. Trả lời người dùng một cách thân thiện, ngắn gọn (tối đa 3-4 câu), lịch sự bằng tiếng Việt.\n");
+
+                if (ragContext != null && !ragContext.isBlank()) {
+                    systemPrompt.append("\n--- TÀI LIỆU TRI THỨC CỬA HÀNG (RAG DỮ LIỆU THỰC TẾ) ---\n")
+                                .append(ragContext)
+                                .append("\n------------------------------------------------------\n");
+                }
+
+                if (toolContext != null && !toolContext.isBlank()) {
+                    systemPrompt.append("\n--- KẾT QUẢ TRA CỨU ĐƠN HÀNG (FUNCTION CALLING) ---\n")
+                                .append(toolContext)
+                                .append("\n-----------------------------------------------------\n");
+                }
+
+                systemPrompt.append("\nYÊU CẦU: Ưu tiên sử dụng Tài liệu tri thức và Kết quả tra cứu đơn hàng ở trên để trả lời chính xác, tuyệt đối không bịa đặt thông tin.");
+
                 java.util.List<Map<String, String>> history = getRecentConversationHistory(senderId);
                 
-                String aiResponse = llmClient.sendPromptWithHistory(systemPrompt, history, messageText);
+                String aiResponse = llmClient.sendPromptWithHistory(systemPrompt.toString(), history, messageText);
                 if (aiResponse != null && !aiResponse.trim().isEmpty()) {
-                    log.info("🤖 [LLM Smart Fallback with History] Generated AI response for sender {}. History size: {}", senderId, history.size());
+                    log.info("🤖 [LLM RAG & Tool Calling] Generated response for sender {}. RAG: {}, Tools: {}, History: {}",
+                        senderId, ragContext != null, toolContext != null, history.size());
                     return aiResponse.trim();
                 }
             } catch (Exception e) {
-                log.error("❌ [LLM Smart Fallback with History] Error generating response from LLM API: {}", e.getMessage());
+                log.error("❌ [LLM RAG & Tool Calling] Error generating response from LLM API: {}", e.getMessage());
             }
         }
         
