@@ -94,8 +94,10 @@ app:
         maximum-pool-size: 15
         minimum-idle: 5
 
-  # MinIO Object Storage
+  # Integrations
   integrations:
+    botpress:
+      enabled: false
     minio:
       enabled: true
       endpoint: ${MINIO_ENDPOINT:http://chatbot_saas_minio:9000}

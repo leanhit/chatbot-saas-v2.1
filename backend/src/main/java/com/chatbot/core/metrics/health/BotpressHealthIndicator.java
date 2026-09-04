@@ -3,6 +3,7 @@ package com.chatbot.core.metrics.health;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.actuate.health.Health;
 import org.springframework.boot.actuate.health.HealthIndicator;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 
@@ -11,6 +12,7 @@ import org.springframework.web.reactive.function.client.WebClient;
  * Checks if Botpress API is responsive and can handle requests.
  */
 @Component
+@ConditionalOnProperty(name = "app.integrations.botpress.enabled", havingValue = "true", matchIfMissing = false)
 public class BotpressHealthIndicator implements HealthIndicator {
 
     private final WebClient webClient;
