@@ -874,7 +874,25 @@
         "enableRateLimiting": "Enable Rate Limiting",
         "rateLimitingHelp": "Protect the bot from abuse by limiting message rates.",
         "userMessagesPerMinute": "User Messages per Minute",
-        "tenantMessagesPerMinute": "Tenant Messages per Minute"
+        "tenantMessagesPerMinute": "Tenant Messages per Minute",
+        "toolCallingTitle": "Tool Calling & Real-Time Order Lookup",
+        "enableOrderLookup": "Enable Automatic Order Lookup",
+        "orderLookupHelp": "Allow PennyBot to automatically detect order tracking codes (GH12345, DH99812...) in customer messages and query real-time status.",
+        "orderLookupPattern": "Order Code Detection Pattern (Regex)",
+        "testOrderCode": "Test Order Code",
+        "testOrderCodePlaceholder": "Enter test order code (e.g. GH12345)...",
+        "testOrderButton": "Test Lookup",
+        "contextWindowTitle": "Context Memory & Conversation History",
+        "historyWindowSize": "History Context Window Size",
+        "historyWindowSizeHelp": "Number of recent messages passed to AI to maintain conversation memory.",
+        "routingStrategyTitle": "Smart Fallback & Routing Strategy",
+        "routingStrategy": "Routing Strategy",
+        "strategyHybrid": "Hybrid (Rule-based 0.01s + LLM Fallback)",
+        "strategyHybridDesc": "Instant responses for rule matched queries, automatic AI fallback for complex queries.",
+        "strategyLlmOnly": "AI Primary (LLM + RAG + Tool Calling)",
+        "strategyLlmOnlyDesc": "Pass all incoming messages to LLM AI with Knowledge Base context and Order Lookup.",
+        "strategyRuleOnly": "Rule-based Only",
+        "strategyRuleOnlyDesc": "Respond strictly using configured rules without invoking AI."
       },
       "escalation": {
         "title": "Escalation Tickets",
@@ -1233,8 +1251,20 @@
           "answer": "Click on your profile in the header and select \"Tenant Gateway\" to switch workspaces."
         },
         "pennyBots": {
-          "question": "What are Penny Bots?",
-          "answer": "Penny Bots are AI-powered chatbots that can handle customer interactions automatically."
+          "question": "What smart capabilities are included in Penny Bots v2.1?",
+          "answer": "Penny Bots v2.1 includes Smart Fallback (Hybrid 0.01s), Knowledge Base Vector RAG Search, and Real-time Order Lookup Tool Calling."
+        },
+        "pennyOrderLookup": {
+          "question": "How does automatic Order Lookup work in PennyBot?",
+          "answer": "Go to 'Bot Configuration' -> Enable 'Automatic Order Lookup'. When a customer message contains an order tracking code (e.g., GH12345, DH99812), PennyBot automatically queries system APIs to return live delivery and payment status."
+        },
+        "pennyRag": {
+          "question": "How do I upload knowledge data (RAG) to PennyBot?",
+          "answer": "Navigate to 'Bot Configuration' -> 'Manage Knowledge Articles'. You can add FAQs, return policies, price lists, etc. The bot automatically vectorizes articles to retrieve accurate answers."
+        },
+        "pennyFallback": {
+          "question": "How does the Smart Fallback (Hybrid) strategy operate?",
+          "answer": "PennyBot responds instantly (0.01s) via pre-built rules for simple intents. For complex queries unhandled by rules, it invokes the LLM AI with RAG context and order data for intelligent answers."
         },
         "messageHistory": {
           "question": "How can I view message history?",

@@ -654,8 +654,8 @@ export default {
           {
             element: '#btn-tour-guide',
             popover: {
-              title: 'Chào mừng đến với Penny Bot! 👋',
-              description: 'Penny Bot là giải pháp chatbot AI tiên tiến cho doanh nghiệp của bạn, hỗ trợ RAG (Knowledge Base), Rules động và Chuyển giao hỗ trợ (Escalation).',
+              title: 'Chào mừng đến với Penny Bot v2.1! 🚀',
+              description: 'Penny Bot v2.1 là giải pháp Trợ lý AI thế hệ mới với Smart Fallback (Hybrid 0.01s), RAG Tra cứu Tri thức, Tool Calling Tra cứu Đơn hàng Real-time & Trí nhớ bối cảnh.',
               side: 'bottom',
               align: 'end'
             }
@@ -664,7 +664,7 @@ export default {
             element: '#btn-create-bot',
             popover: {
               title: 'Tạo Bot Mới 🤖',
-              description: 'Click vào đây để bắt đầu tạo chú bot AI đầu tiên của bạn chỉ trong vài bước.',
+              description: 'Click vào đây để bắt đầu tạo chú bot AI thông minh của bạn chỉ trong vài bước.',
               side: 'bottom',
               align: 'end'
             }
@@ -672,8 +672,8 @@ export default {
           {
             element: '#penny-stats-container',
             popover: {
-              title: 'Thống kê Bot 📊',
-              description: 'Nơi hiển thị tổng số bot của bạn, bao gồm số bot đang hoạt động và số bot tạm dừng.',
+              title: 'Thống kê Trạng thái Bot 📊',
+              description: 'Nơi hiển thị tổng số bot của bạn, bao gồm số bot đang hoạt động (Active) và số bot tạm dừng.',
               side: 'bottom',
               align: 'center'
             }
@@ -691,8 +691,8 @@ export default {
             {
               element: '#first-bot-card .tour-btn-kb',
               popover: {
-                title: 'Cơ sở Tri thức (RAG) 📚',
-                description: 'Nạp tri thức cho bot bằng cách tải lên tài liệu FAQ hoặc tài liệu nghiệp vụ. AI sẽ đọc và trả lời khách hàng dựa trên dữ liệu này.',
+                title: 'Cơ sở Tri thức (RAG Vector Search) 📚',
+                description: 'Nạp tri thức doanh nghiệp (bảng giá, chính sách đổi trả, quy định...). AI sẽ đọc, vector hóa và tra cứu chính xác khi khách hỏi.',
                 side: 'top',
                 align: 'center'
               }
@@ -700,8 +700,8 @@ export default {
             {
               element: '#first-bot-card .tour-btn-rules',
               popover: {
-                title: 'Quản lý Quy tắc (Rules) ⚙️',
-                description: 'Định nghĩa các từ khóa hoặc kịch bản trả lời tĩnh (ví dụ: khách hỏi "STK" -> gửi thông tin ngân hàng) để phản hồi lập tức và tiết kiệm chi phí LLM.',
+                title: 'Quản lý Quy tắc (Rule Engine 0.01s) ⚡',
+                description: 'Định nghĩa phản hồi siêu tốc 0.01s cho các từ khóa hoặc kịch bản cố định (ví dụ: "STK", "Địa chỉ"), tự động nhường cho LLM AI khi gặp câu phức tạp.',
                 side: 'top',
                 align: 'center'
               }
@@ -710,7 +710,7 @@ export default {
               element: '#first-bot-card .tour-btn-connections',
               popover: {
                 title: 'Kết nối Kênh 🔗',
-                description: 'Cấu hình kết nối bot của bạn với Facebook Fanpage hoặc các kênh chat khác để tự động chăm sóc khách hàng.',
+                description: 'Cấu hình kết nối bot của bạn với Facebook Fanpage hoặc các kênh chat khác để tự động chăm sóc khách hàng 24/7.',
                 side: 'top',
                 align: 'center'
               }
@@ -719,7 +719,7 @@ export default {
               element: '#first-bot-card .tour-btn-escalation',
               popover: {
                 title: 'Chuyển giao cho Người thật (Escalation) 🚨',
-                description: 'Quản lý các yêu cầu hỗ trợ khi AI không tự tin trả lời hoặc khách hàng yêu cầu gặp tư vấn viên.',
+                description: 'Quản lý các ticket hỗ trợ khi AI gặp câu hỏi quá ngưỡng hoặc khi khách hàng chủ động yêu cầu gặp tư vấn viên.',
                 side: 'top',
                 align: 'center'
               }
@@ -727,8 +727,8 @@ export default {
             {
               element: '#first-bot-card .tour-btn-config',
               popover: {
-                title: 'Cấu hình AI 🛠️',
-                description: 'Thiết lập Prompt hệ thống (System Prompt) và Ngưỡng độ tin cậy tối thiểu trước khi chuyển cho người thật.',
+                title: 'Cấu hình AI & Tool Calling 🛠️',
+                description: 'Tùy chỉnh mô hình LLM (GPT-4o Mini), chiến lược Phân luồng Smart Fallback (Hybrid), bật Tra cứu Đơn hàng Real-time và Trí nhớ bối cảnh.',
                 side: 'top',
                 align: 'center'
               }
@@ -736,8 +736,8 @@ export default {
             {
               element: '#first-bot-card .tour-btn-chat',
               popover: {
-                title: 'Chat Thử nghiệm 💬',
-                description: 'Kiểm tra độ thông minh của bot bằng cách trò chuyện trực tiếp trước khi kết nối chính thức ra fanpage.',
+                title: 'Chat & Test Real-time 💬',
+                description: 'Trò chuyện trực tiếp để thử nghiệm độ thông minh của AI và khả năng tự động tra cứu mã đơn hàng (ví dụ: GH12345) trước khi kết nối Fanpage.',
                 side: 'top',
                 align: 'center'
               }
@@ -747,7 +747,7 @@ export default {
               element: '#penny-stats-container',
               popover: {
                 title: 'Thiết lập Bot Đầu Tiên 🎉',
-                description: 'Sau khi bạn tạo thành công bot đầu tiên, các nút chức năng RAG, Rules, Connections, Escalation và Chat thử nghiệm sẽ xuất hiện trên thẻ của Bot.',
+                description: 'Sau khi bạn tạo thành công bot đầu tiên, các nút chức năng RAG, Rules, Connections, Escalation, Cấu hình AI và Chat thử nghiệm sẽ xuất hiện trên thẻ Bot.',
                 side: 'bottom',
                 align: 'center'
               }

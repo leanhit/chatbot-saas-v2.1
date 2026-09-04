@@ -875,7 +875,25 @@
         "enableRateLimiting": "Kích hoạt Giới hạn tần suất",
         "rateLimitingHelp": "Bảo vệ bot khỏi spam bằng cách giới hạn tần suất gửi tin nhắn.",
         "userMessagesPerMinute": "Số tin nhắn của người dùng / phút",
-        "tenantMessagesPerMinute": "Số tin nhắn của hệ thống / phút"
+        "tenantMessagesPerMinute": "Số tin nhắn của hệ thống / phút",
+        "toolCallingTitle": "Tool Calling & Tra cứu Đơn hàng Real-time",
+        "enableOrderLookup": "Kích hoạt Tra cứu Đơn hàng Tự động",
+        "orderLookupHelp": "Cho phép PennyBot tự động nhận diện mã đơn hàng (GH12345, DH99812...) trong tin nhắn để truy vấn trạng thái giao hàng & thanh toán thực tế.",
+        "orderLookupPattern": "Mẫu nhận diện mã đơn hàng (Regex)",
+        "testOrderCode": "Kiểm tra Mã Đơn hàng",
+        "testOrderCodePlaceholder": "Nhập mã đơn hàng thử nghiệm (ví dụ: GH12345)...",
+        "testOrderButton": "Tra cứu Thử",
+        "contextWindowTitle": "Bộ nhớ Bối cảnh & Lịch sử Trò chuyện",
+        "historyWindowSize": "Số tin nhắn bối cảnh (Context Window)",
+        "historyWindowSizeHelp": "Số lượng tin nhắn gần nhất được gửi kèm cho AI để duy trì trí nhớ cuộc hội thoại.",
+        "routingStrategyTitle": "Luồng Phản Hồi Phối Hợp (Smart Fallback)",
+        "routingStrategy": "Chiến lược Phân luồng",
+        "strategyHybrid": "Hybrid (Rule-based 0.01s + LLM Fallback)",
+        "strategyHybridDesc": "Trả lời siêu tốc bằng kịch bản sẵn cho câu hỏi đơn giản, tự động dùng AI cho câu hỏi phức tạp.",
+        "strategyLlmOnly": "Ưu tiên AI (LLM + RAG + Tool Calling)",
+        "strategyLlmOnlyDesc": "Chuyển toàn bộ tin nhắn cho AI kết hợp tra cứu tri thức và tra cứu đơn hàng thực tế.",
+        "strategyRuleOnly": "Kịch bản Cố định (Rule-based Only)",
+        "strategyRuleOnlyDesc": "Chỉ phản hồi theo quy tắc kịch bản sẵn, không sử dụng AI."
       },
       "escalation": {
         "title": "Yêu cầu Hỗ trợ",
@@ -1106,8 +1124,20 @@
           "answer": "Nhấp vào hồ sơ của bạn trong header và chọn \"Tenant Gateway\" để chuyển đổi không gian làm việc."
         },
         "pennyBots": {
-          "question": "Penny Bots là gì?",
-          "answer": "Penny Bots là các chatbot được hỗ trợ bởi AI có thể xử lý tương tác với khách hàng tự động."
+          "question": "Penny Bots v2.1 có những tính năng thông minh gì?",
+          "answer": "Penny Bots v2.1 tích hợp Smart Fallback (Hybrid 0.01s), RAG Tìm kiếm Tri thức Doanh nghiệp và Tool Calling Tra cứu Đơn hàng Real-time tự động."
+        },
+        "pennyOrderLookup": {
+          "question": "Làm thế nào để PennyBot tự động tra cứu đơn hàng cho khách?",
+          "answer": "Vào 'Cấu hình Bot' -> Bật 'Tra cứu Đơn hàng Tự động'. Khi tin nhắn khách hàng chứa mã đơn (như GH12345, DH99812), PennyBot sẽ tự động gọi API tra cứu trạng thái giao hàng và thanh toán realtime."
+        },
+        "pennyRag": {
+          "question": "Làm thế nào để nạp dữ liệu tri thức cho PennyBot (RAG)?",
+          "answer": "Vào 'Cấu hình Bot' -> chọn 'Quản lý Bài viết Tri thức'. Bạn có thể thêm bảng giá, chính sách đổi trả, quy định... Bot sẽ tự động chuyển đổi thành Vector Database để tra cứu chính xác khi khách hỏi."
+        },
+        "pennyFallback": {
+          "question": "Chế độ Phân luồng Phản hồi Smart Fallback (Hybrid) hoạt động ra sao?",
+          "answer": "Bot phản hồi tức thì (0.01s) bằng kịch bản cho các câu đơn giản. Khi gặp câu phức tạp hoặc không có trong quy tắc, bot tự động gọi AI (LLM) kết hợp tri thức RAG và tra cứu đơn hàng để tư vấn thông minh."
         },
         "messageHistory": {
           "question": "Làm thế nào để xem lịch sử tin nhắn?",

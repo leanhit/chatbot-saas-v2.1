@@ -86,7 +86,7 @@
               {{ $t('help.faq.questions.switchTenant.answer') }}
             </p>
           </div>
-          <div class="border-b pb-4">
+          <div class="border-b dark:border-gray-700 pb-4">
             <h3 class="font-medium text-gray-900 dark:text-white mb-2">
               {{ $t('help.faq.questions.pennyBots.question') }}
             </h3>
@@ -94,7 +94,31 @@
               {{ $t('help.faq.questions.pennyBots.answer') }}
             </p>
           </div>
-          <div class="border-b pb-4">
+          <div class="border-b dark:border-gray-700 pb-4">
+            <h3 class="font-medium text-gray-900 dark:text-white mb-2">
+              {{ $t('help.faq.questions.pennyOrderLookup.question') }}
+            </h3>
+            <p class="text-sm text-gray-600 dark:text-gray-400">
+              {{ $t('help.faq.questions.pennyOrderLookup.answer') }}
+            </p>
+          </div>
+          <div class="border-b dark:border-gray-700 pb-4">
+            <h3 class="font-medium text-gray-900 dark:text-white mb-2">
+              {{ $t('help.faq.questions.pennyRag.question') }}
+            </h3>
+            <p class="text-sm text-gray-600 dark:text-gray-400">
+              {{ $t('help.faq.questions.pennyRag.answer') }}
+            </p>
+          </div>
+          <div class="border-b dark:border-gray-700 pb-4">
+            <h3 class="font-medium text-gray-900 dark:text-white mb-2">
+              {{ $t('help.faq.questions.pennyFallback.question') }}
+            </h3>
+            <p class="text-sm text-gray-600 dark:text-gray-400">
+              {{ $t('help.faq.questions.pennyFallback.answer') }}
+            </p>
+          </div>
+          <div class="border-b dark:border-gray-700 pb-4">
             <h3 class="font-medium text-gray-900 dark:text-white mb-2">
               {{ $t('help.faq.questions.messageHistory.question') }}
             </h3>
