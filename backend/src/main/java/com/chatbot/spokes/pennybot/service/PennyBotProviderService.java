@@ -7,6 +7,8 @@ import com.chatbot.core.message.store.model.Conversation;
 import com.chatbot.core.message.store.repository.ConversationRepository;
 import com.chatbot.spokes.facebook.dto.FacebookConnectionDTO;
 import com.chatbot.spokes.facebook.service.FacebookConnectionQueryService;
+import com.chatbot.core.message.store.repository.MessageRepository;
+import com.chatbot.core.tenant.infra.TenantContext;
 import com.chatbot.core.message.store.service.LLMClient;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -39,6 +41,7 @@ public class PennyBotProviderService implements ChatbotProviderService {
     private final DefaultMessageConfig messageConfig;
     
     private final ConversationRepository conversationRepository;
+    private final MessageRepository messageRepository;
     
     // DECOUPLED: Using DTO-based query service instead of direct repository access
     private final FacebookConnectionQueryService facebookConnectionQueryService;
@@ -51,8 +54,8 @@ public class PennyBotProviderService implements ChatbotProviderService {
         log.info("Sending message to PennyBot - Bot: {}, Sender: {}, Message: {}", botId, senderId, messageText);
         
         try {
-            // Generate bot response
-            String responseMessage = generateDefaultResponse(messageText);
+            // Generate bot response with conversation history context
+            String responseMessage = generateDefaultResponse(senderId, messageText);
             
             // NOTE: Do NOT save to database or send to Facebook here
             // FacebookEventConsumer handles database saving and Facebook sending
@@ -102,6 +105,13 @@ public class PennyBotProviderService implements ChatbotProviderService {
      * Generate appropriate default response
      */
     private String generateDefaultResponse(String messageText) {
+        return generateDefaultResponse(null, messageText);
+    }
+
+    /**
+     * Generate appropriate default response (with optional LLM fallback & history context)
+     */
+    private String generateDefaultResponse(String senderId, String messageText) {
         String lowerMessage = messageText.toLowerCase().trim();
         String language = detectLanguage(messageText);
         
@@ -143,22 +153,66 @@ public class PennyBotProviderService implements ChatbotProviderService {
             return "Tôi rất tiếc khi bạn gặp sự cố. Vui lòng cung cấp thông tin chi tiết:\n• 🐛 Loại lỗi: [mô tả lỗi]\n• 📱 Thiết bị: [browser/device]\n• ⏰ Thời gian xảy ra: [thời gian]\n\nTôi sẽ chuyển đến đội ngũ kỹ thuật để xử lý sớm nhất!";
         }
         
-        // Smart LLM Fallback when message doesn't match predefined basic rules
+        // Smart LLM Fallback with Conversation History Context
         if (llmClient != null && llmClient.isEnabled()) {
             try {
-                String systemPrompt = "Bạn là Penny, trợ lý tư vấn bán hàng chuyên nghiệp. Trả lời người dùng một cách thân thiện, ngắn gọn (tối đa 3-4 câu), lịch sự bằng tiếng Việt. Tránh đưa ra thông tin không chính xác.";
-                String aiResponse = llmClient.sendPrompt(systemPrompt, messageText);
+                String systemPrompt = "Bạn là Penny, trợ lý tư vấn bán hàng chuyên nghiệp. Hãy trả lời người dùng một cách thân thiện, ngắn gọn (tối đa 3-4 câu), lịch sự bằng tiếng Việt. Sử dụng bối cảnh hội thoại trước đó để hiểu đúng câu hỏi của người dùng.";
+                java.util.List<Map<String, String>> history = getRecentConversationHistory(senderId);
+                
+                String aiResponse = llmClient.sendPromptWithHistory(systemPrompt, history, messageText);
                 if (aiResponse != null && !aiResponse.trim().isEmpty()) {
-                    log.info("🤖 [LLM Smart Fallback] Generated AI response for message: '{}'", messageText);
+                    log.info("🤖 [LLM Smart Fallback with History] Generated AI response for sender {}. History size: {}", senderId, history.size());
                     return aiResponse.trim();
                 }
             } catch (Exception e) {
-                log.error("❌ [LLM Smart Fallback] Error generating response from LLM API: {}", e.getMessage());
+                log.error("❌ [LLM Smart Fallback with History] Error generating response from LLM API: {}", e.getMessage());
             }
         }
         
         // Default fallback if LLM is disabled, unavailable, or failed
         return messageConfig.getMessage("fallback", language);
+    }
+    
+    /**
+     * Retrieve up to 5 recent messages from conversation history to supply as LLM context window
+     */
+    private java.util.List<Map<String, String>> getRecentConversationHistory(String senderId) {
+        java.util.List<Map<String, String>> history = new java.util.ArrayList<>();
+        if (senderId == null || senderId.isBlank()) return history;
+
+        try {
+            Long tenantId = TenantContext.getTenantId();
+            java.util.List<Conversation> conversations = conversationRepository.findByExternalUserId(senderId);
+            if (conversations.isEmpty()) return history;
+
+            Conversation conversation = conversations.get(0);
+            org.springframework.data.domain.Pageable pageable = 
+                org.springframework.data.domain.PageRequest.of(0, 5, org.springframework.data.domain.Sort.by("createdAt").descending());
+
+            org.springframework.data.domain.Page<com.chatbot.core.message.store.model.Message> page;
+            if (tenantId != null) {
+                page = messageRepository.findByConversationIdAndTenantIdOrderByCreatedAtDesc(conversation.getId(), tenantId, pageable);
+            } else {
+                page = messageRepository.findByConversationIdAndTenantIdOrderByCreatedAtDesc(conversation.getId(), conversation.getTenantId(), pageable);
+            }
+
+            java.util.List<com.chatbot.core.message.store.model.Message> messages = new java.util.ArrayList<>(page.getContent());
+            java.util.Collections.reverse(messages); // Sort chronologically ascending
+
+            for (com.chatbot.core.message.store.model.Message msg : messages) {
+                if (msg.getContent() != null && !msg.getContent().trim().isEmpty()) {
+                    Map<String, String> item = new HashMap<>();
+                    String role = "user".equalsIgnoreCase(msg.getSender()) ? "user" : "assistant";
+                    item.put("role", role);
+                    item.put("content", msg.getContent());
+                    history.add(item);
+                }
+            }
+        } catch (Exception e) {
+            log.warn("⚠️ Error fetching conversation history for LLM prompt context: {}", e.getMessage());
+        }
+
+        return history;
     }
     
     /**

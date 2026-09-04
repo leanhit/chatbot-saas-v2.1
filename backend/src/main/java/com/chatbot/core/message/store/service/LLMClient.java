@@ -80,6 +80,64 @@ public class LLMClient {
     }
 
     /**
+     * Send prompt with conversation history to LLM API
+     */
+    public String sendPromptWithHistory(String systemPrompt, List<Map<String, String>> history, String currentUserPrompt) {
+        if (!enabled || apiKey == null || apiKey.isEmpty()) {
+            log.warn("LLM client is disabled or API key not configured");
+            return null;
+        }
+
+        try {
+            List<Map<String, String>> messages = new java.util.ArrayList<>();
+
+            // 1. System Prompt
+            Map<String, String> systemMessage = new HashMap<>();
+            systemMessage.put("role", "system");
+            systemMessage.put("content", systemPrompt);
+            messages.add(systemMessage);
+
+            // 2. Conversation History
+            if (history != null && !history.isEmpty()) {
+                messages.addAll(history);
+            }
+
+            // 3. Current User Message
+            Map<String, String> userMessage = new HashMap<>();
+            userMessage.put("role", "user");
+            userMessage.put("content", currentUserPrompt);
+            messages.add(userMessage);
+
+            Map<String, Object> requestBody = new HashMap<>();
+            requestBody.put("model", model);
+            requestBody.put("temperature", 0.3);
+            requestBody.put("max_tokens", 500);
+            requestBody.put("messages", messages);
+
+            String responseBody = webClient.post()
+                .uri(apiUrl)
+                .headers(h -> {
+                    h.setContentType(MediaType.APPLICATION_JSON);
+                    h.setBearerAuth(apiKey);
+                })
+                .bodyValue(requestBody)
+                .retrieve()
+                .bodyToMono(String.class)
+                .block();
+
+            if (responseBody != null) {
+                return extractContentFromResponse(responseBody);
+            } else {
+                log.error("LLM API returned empty response");
+                return null;
+            }
+        } catch (Exception e) {
+            log.error("Error calling LLM API with conversation history", e);
+            return null;
+        }
+    }
+
+    /**
      * Build request body for LLM API
      */
     private Map<String, Object> buildRequestBody(String systemPrompt, String userPrompt) {
