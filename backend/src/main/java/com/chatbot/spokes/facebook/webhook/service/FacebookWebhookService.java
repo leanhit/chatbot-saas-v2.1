@@ -22,6 +22,7 @@ public class FacebookWebhookService {
 
     private final FacebookKafkaProducer kafkaProducer;
     private final FacebookConnectionRepository connectionRepository;
+    private final com.chatbot.spokes.facebook.webhook.consumer.FacebookEventConsumer eventConsumer;
 
     @Value("${facebook.webhook.verify-token:your_facebook_verify_token}")
     private String verifyToken;
@@ -33,9 +34,11 @@ public class FacebookWebhookService {
     private boolean signatureCheckEnabled;
 
     public FacebookWebhookService(FacebookKafkaProducer kafkaProducer, 
-                                  FacebookConnectionRepository connectionRepository) {
+                                  FacebookConnectionRepository connectionRepository,
+                                  @org.springframework.context.annotation.Lazy com.chatbot.spokes.facebook.webhook.consumer.FacebookEventConsumer eventConsumer) {
         this.kafkaProducer = kafkaProducer;
         this.connectionRepository = connectionRepository;
+        this.eventConsumer = eventConsumer;
     }
 
     /** Verify webhook request from Facebook (GET verification) */
@@ -140,8 +143,18 @@ public class FacebookWebhookService {
                         .build();
 
                 // Publish to Kafka using user senderId as partition key
-                kafkaProducer.send(senderId, event);
-                log.info("✅ [Kafka Producer] Webhook event published. Page: {}, User (Key): {}", actualPageId, senderId);
+                try {
+                    kafkaProducer.send(senderId, event);
+                    log.info("✅ [Kafka Producer] Webhook event published. Page: {}, User (Key): {}", actualPageId, senderId);
+                } catch (Exception e) {
+                    log.warn("⚠️ [Kafka Fallback] Kafka is unavailable or failed: {}. Falling back to synchronous event processing.", e.getMessage());
+                    try {
+                        eventConsumer.processEvent(event);
+                        log.info("✅ [Synchronous Fallback] Processed webhook event synchronously for user: {}", senderId);
+                    } catch (Exception syncEx) {
+                        log.error("❌ [Synchronous Fallback] Error processing event synchronously: {}", syncEx.getMessage(), syncEx);
+                    }
+                }
             }
         }
     }

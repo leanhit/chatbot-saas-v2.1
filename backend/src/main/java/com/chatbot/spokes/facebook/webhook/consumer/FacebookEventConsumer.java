@@ -121,14 +121,25 @@ public class FacebookEventConsumer {
             return;
         }
 
+        try {
+            processEvent(event);
+        } catch (Exception e) {
+            // Already handled and logged in processEvent
+        }
+    }
+
+    /**
+     * Process Facebook event directly (used by Kafka Consumer & Synchronous Fallback)
+     */
+    public void processEvent(FacebookKafkaEvent event) {
         if (event == null || event.getMessaging() == null) {
-            log.warn("⚠️ [Kafka Consumer] Received empty or invalid event.");
+            log.warn("⚠️ Received empty or invalid event.");
             return;
         }
 
         // Set tenant context for thread-safety and partition routing
         TenantContext.setTenantId(event.getTenantId());
-        log.info("📥 [Kafka Consumer] Processing event. Tenant: {}, User: {}", event.getTenantId(), event.getSenderId());
+        log.info("📥 Processing event. Tenant: {}, User: {}", event.getTenantId(), event.getSenderId());
 
         try {
             // Get connection with tenantId and pageId
@@ -175,16 +186,13 @@ public class FacebookEventConsumer {
                     log.info("⚠️ Unknown message type, skipping.");
             }
         } catch (Exception e) {
-            log.error("❌ [Kafka Consumer] Processing exception: {}", e.getMessage(), e);
+            log.error("❌ Message processing exception: {}", e.getMessage(), e);
 
             // Clear dedup key on exception so Kafka retry can re-attempt processing
-            if (event != null && event.getMessaging() != null) {
-                String mid = extractMid(event.getMessaging());
-                if (mid != null) {
-                    removeDedup(mid);
-                }
+            String mid = extractMid(event.getMessaging());
+            if (mid != null) {
+                removeDedup(mid);
             }
-
             throw new RuntimeException("Error processing Kafka event", e);
         } finally {
             // Guarantee TenantContext clean-up to prevent context leaking
