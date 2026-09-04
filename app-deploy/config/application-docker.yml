@@ -155,3 +155,11 @@ resilience4j:
         limitRefreshPeriod: 1s
         timeoutDuration: 2000ms
 
+llm:
+  enabled: ${LLM_ENABLED:false}
+  provider: ${LLM_PROVIDER:openai}
+  api:
+    key: ${LLM_API_KEY:${OPENAI_API_KEY:}}
+    url: ${LLM_API_URL:https://api.openai.com/v1/chat/completions}
+  model: ${LLM_MODEL:gpt-3.5-turbo}
+

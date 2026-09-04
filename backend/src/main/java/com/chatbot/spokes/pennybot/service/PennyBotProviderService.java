@@ -7,6 +7,7 @@ import com.chatbot.core.message.store.model.Conversation;
 import com.chatbot.core.message.store.repository.ConversationRepository;
 import com.chatbot.spokes.facebook.dto.FacebookConnectionDTO;
 import com.chatbot.spokes.facebook.service.FacebookConnectionQueryService;
+import com.chatbot.core.message.store.service.LLMClient;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Primary;
@@ -41,6 +42,9 @@ public class PennyBotProviderService implements ChatbotProviderService {
     
     // DECOUPLED: Using DTO-based query service instead of direct repository access
     private final FacebookConnectionQueryService facebookConnectionQueryService;
+
+    // LLM Client for Smart AI Fallback
+    private final LLMClient llmClient;
 
     @Override
     public Map<String, Object> sendMessage(String botId, String senderId, String messageText) {
@@ -139,7 +143,21 @@ public class PennyBotProviderService implements ChatbotProviderService {
             return "Tôi rất tiếc khi bạn gặp sự cố. Vui lòng cung cấp thông tin chi tiết:\n• 🐛 Loại lỗi: [mô tả lỗi]\n• 📱 Thiết bị: [browser/device]\n• ⏰ Thời gian xảy ra: [thời gian]\n\nTôi sẽ chuyển đến đội ngũ kỹ thuật để xử lý sớm nhất!";
         }
         
-        // Default fallback
+        // Smart LLM Fallback when message doesn't match predefined basic rules
+        if (llmClient != null && llmClient.isEnabled()) {
+            try {
+                String systemPrompt = "Bạn là Penny, trợ lý tư vấn bán hàng chuyên nghiệp. Trả lời người dùng một cách thân thiện, ngắn gọn (tối đa 3-4 câu), lịch sự bằng tiếng Việt. Tránh đưa ra thông tin không chính xác.";
+                String aiResponse = llmClient.sendPrompt(systemPrompt, messageText);
+                if (aiResponse != null && !aiResponse.trim().isEmpty()) {
+                    log.info("🤖 [LLM Smart Fallback] Generated AI response for message: '{}'", messageText);
+                    return aiResponse.trim();
+                }
+            } catch (Exception e) {
+                log.error("❌ [LLM Smart Fallback] Error generating response from LLM API: {}", e.getMessage());
+            }
+        }
+        
+        // Default fallback if LLM is disabled, unavailable, or failed
         return messageConfig.getMessage("fallback", language);
     }
     
