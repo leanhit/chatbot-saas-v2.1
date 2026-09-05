@@ -67,6 +67,7 @@ public class CacheConfig {
         cacheConfigurations.put("staticContent",       defaultConfig.entryTtl(Duration.ofDays(1)));
         cacheConfigurations.put("rateLimiting",        defaultConfig.entryTtl(Duration.ofHours(1)));
         cacheConfigurations.put("tenants",             defaultConfig.entryTtl(Duration.ofMinutes(15)));
+        cacheConfigurations.put("tenant-key-info",     defaultConfig.entryTtl(Duration.ofMinutes(15)));
         cacheConfigurations.put("tenant-profiles",      defaultConfig.entryTtl(Duration.ofMinutes(30)));
         cacheConfigurations.put("tenant-profiles-batch", defaultConfig.entryTtl(Duration.ofMinutes(30)));
         cacheConfigurations.put("user-roles",          defaultConfig.entryTtl(Duration.ofMinutes(30)));

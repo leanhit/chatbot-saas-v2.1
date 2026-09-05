@@ -10,27 +10,16 @@
 export function secureImageUrl(url) {
   if (!url) return undefined;
   
-  // Handle localhost:9000 - convert to backend proxy
-  if (url.includes('localhost:9000')) {
+  // Handle localhost:9000 or direct chatbot-files URLs - convert to backend proxy
+  if (url.includes('localhost:9000') || url.includes('chatbot-files/')) {
     try {
       const urlObj = new URL(url);
       // Extract filename from path (remove /chatbot-files/ prefix)
       const filename = urlObj.pathname.replace('/chatbot-files/', '');
+      const apiUrl = process.env.VUE_APP_API_URL || '/api';
+      const baseUrl = apiUrl.endsWith('/') ? apiUrl.slice(0, -1) : apiUrl;
       // Convert to backend proxy URL
-      return `https://chat.truyenthongviet.vn/api/images/public/filename/${filename}/content`;
-    } catch (e) {
-      return url;
-    }
-  }
-  
-  // Handle direct chatbot-files URLs - convert to backend proxy
-  if (url.includes('chatbot-files/')) {
-    try {
-      const urlObj = new URL(url);
-      // Extract filename from path (remove /chatbot-files/ prefix)
-      const filename = urlObj.pathname.replace('/chatbot-files/', '');
-      // Convert to backend proxy URL
-      return `https://chat.truyenthongviet.vn/api/images/public/filename/${filename}/content`;
+      return `${baseUrl}/images/public/filename/${filename}/content`;
     } catch (e) {
       return url;
     }

@@ -48,13 +48,18 @@ class PresenceWebSocketService {
 
     try {
       let wsUrl = process.env.VUE_APP_PRESENCE_WS_URL
-      if (!wsUrl) {
-        const baseWsUrl = process.env.VUE_APP_WS_URL || 'ws://localhost:8080/ws/presence'
-        if (baseWsUrl.includes('/ws/takeover')) {
-          wsUrl = baseWsUrl.replace('/ws/takeover', '/ws/presence')
-        } else if (baseWsUrl.includes('/ws/')) {
-          const index = baseWsUrl.lastIndexOf('/ws/')
-          wsUrl = baseWsUrl.substring(0, index) + '/ws/presence'
+      const isBrowserNonLocalhost = typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1'
+      if (!wsUrl || (wsUrl.includes('localhost') && isBrowserNonLocalhost)) {
+        const baseWsUrl = process.env.VUE_APP_WS_URL
+        if (baseWsUrl && !baseWsUrl.includes('localhost')) {
+          if (baseWsUrl.includes('/ws/takeover')) {
+            wsUrl = baseWsUrl.replace('/ws/takeover', '/ws/presence')
+          } else if (baseWsUrl.includes('/ws/')) {
+            const index = baseWsUrl.lastIndexOf('/ws/')
+            wsUrl = baseWsUrl.substring(0, index) + '/ws/presence'
+          } else {
+            wsUrl = `${baseWsUrl}/ws/presence`
+          }
         } else {
           const protocol = typeof window !== 'undefined' && window.location.protocol === 'https:' ? 'wss:' : 'ws:'
           const host = typeof window !== 'undefined' ? window.location.host : 'localhost:8080'

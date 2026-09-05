@@ -367,7 +367,7 @@
             return `${securedUrl}?t=${this.avatarTimestamp}`;
           }
           // If avatar is a file ID, use public backend content endpoint with cache busting
-          const apiUrl = process.env.VUE_APP_API_URL || 'http://localhost:8080/api';
+          const apiUrl = process.env.VUE_APP_API_URL || '/api';
           const baseUrl = apiUrl.endsWith('/') ? apiUrl.slice(0, -1) : apiUrl;
           return `${baseUrl}/images/public/${avatar}/content?t=${this.avatarTimestamp}`;
         }

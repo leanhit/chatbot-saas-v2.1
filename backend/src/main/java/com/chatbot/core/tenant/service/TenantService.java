@@ -182,7 +182,17 @@ public class TenantService {
     /**
      * DTO for tenant key resolution (ID + status).
      */
-    public record TenantKeyInfo(Long id, TenantStatus status) {}
+    @lombok.Data
+    @lombok.NoArgsConstructor
+    @lombok.AllArgsConstructor
+    public static class TenantKeyInfo implements java.io.Serializable {
+        private static final long serialVersionUID = 1L;
+        private Long id;
+        private TenantStatus status;
+
+        public Long id() { return id; }
+        public TenantStatus status() { return status; }
+    }
 
     @Transactional(readOnly = true, transactionManager = "tenantTransactionManager")
     public TenantResponse getTenantForCurrentUser(Long tenantId) {
