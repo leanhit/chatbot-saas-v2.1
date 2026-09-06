@@ -265,7 +265,20 @@
         </div>
       </div>
 
-      <!-- 4. System Prompt & Personality -->
+      <!-- 4. AI Provider & Model Configuration -->
+      <div class="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+        <h2 class="font-semibold text-lg text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+          <Icon icon="mdi:robot" class="text-purple-500 text-xl" />
+          {{ $t('penny.aiConfig.title') }}
+        </h2>
+        <AiBotConfig 
+          :bot-id="activeBotId" 
+          :initial-config="aiConfig"
+          @saved="handleAiConfigSaved"
+        />
+      </div>
+
+      <!-- 5. System Prompt & Personality -->
       <div class="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
         <h2 class="font-semibold text-lg text-gray-900 dark:text-white mb-4 flex items-center gap-2">
           <Icon icon="mdi:card-text-outline" class="text-indigo-500 text-xl" />
@@ -425,11 +438,13 @@
 <script>
 import { pennyApi } from '@/api/pennyApi';
 import { Icon } from '@iconify/vue';
+import AiBotConfig from '../bots/components/AiBotConfig.vue';
 
 export default {
   name: 'PennyBotConfig',
   components: {
-    Icon
+    Icon,
+    AiBotConfig
   },
   props: {
     botId: {
@@ -439,6 +454,15 @@ export default {
   },
   data() {
     return {
+      aiConfig: {
+        providerType: 'OPENAI',
+        modelName: 'gpt-4o-mini',
+        temperature: 0.7,
+        personaStyle: 'PROFESSIONAL',
+        customInstructions: '',
+        greetingMessage: '',
+        fallbackMessage: ''
+      },
       config: {
         botName: '',
         businessName: '',
@@ -514,6 +538,17 @@ export default {
           userMessagesPerMinute: bot.userMessagesPerMinute || 60,
           tenantMessagesPerMinute: bot.tenantMessagesPerMinute || 1000
         };
+        
+        // Load AI config
+        this.aiConfig = {
+          providerType: bot.providerType || 'OPENAI',
+          modelName: bot.modelName || 'gpt-4o-mini',
+          temperature: bot.temperature || 0.7,
+          personaStyle: bot.personaStyle || 'PROFESSIONAL',
+          customInstructions: bot.customInstructions || '',
+          greetingMessage: bot.greetingMessage || '',
+          fallbackMessage: bot.fallbackMessage || ''
+        };
       } catch (error) {
         console.error('Error loading config:', error);
         if (this.$toast) {
@@ -522,6 +557,10 @@ export default {
       } finally {
         this.loading = false;
       }
+    },
+    
+    handleAiConfigSaved(config) {
+      this.aiConfig = { ...this.aiConfig, ...config };
     },
     
     async saveConfig() {

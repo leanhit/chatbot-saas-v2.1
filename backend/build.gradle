@@ -172,6 +172,17 @@ dependencies {
     // pgvector — Vector similarity search trong PostgreSQL
     implementation 'com.pgvector:pgvector:0.1.6'
 
+    // Apache Tika — Document parsing (PDF, DOCX, XLSX)
+    implementation 'org.apache.tika:tika-core:2.9.1'
+    implementation 'org.apache.tika:tika-parsers-standard:2.9.1'
+
+    // Apache PDFBox — PDF parsing
+    implementation 'org.apache.pdfbox:pdfbox:2.0.29'
+
+    // Apache POI — DOCX/XLSX parsing
+    implementation 'org.apache.poi:poi:5.2.5'
+    implementation 'org.apache.poi:poi-ooxml:5.2.5'
+
     // Bucket4j — Rate limiting (Redis-backed)
     implementation 'com.bucket4j:bucket4j-core:8.10.1'
     implementation 'com.bucket4j:bucket4j-redis:8.10.1'

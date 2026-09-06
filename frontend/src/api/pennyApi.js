@@ -413,5 +413,76 @@ export const pennyApi = {
         return axios.get(`/penny/admin/analytics/summary`, {
             params: { botId, timeRange }
         }).catch(handleApiError);
+    },
+
+    // ========================================
+    // Knowledge Document API (New for Penny AI Engine 2.0)
+    // ========================================
+
+    /**
+     * Upload a knowledge document
+     */
+    uploadKnowledgeDocument(file, botId, tenantId, documentName, uploadedBy) {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('botId', botId);
+        formData.append('tenantId', tenantId);
+        formData.append('documentName', documentName);
+        if (uploadedBy) {
+            formData.append('uploadedBy', uploadedBy);
+        }
+
+        return axios.post('/penny/knowledge-base/upload', formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data'
+            }
+        }).catch(handleApiError);
+    },
+
+    /**
+     * Get all documents for a bot
+     */
+    getKnowledgeDocuments(botId, tenantId) {
+        return axios.get('/penny/knowledge-base/documents', {
+            params: { botId, tenantId }
+        }).catch(handleApiError);
+    },
+
+    /**
+     * Get a specific document by ID
+     */
+    getKnowledgeDocument(documentId) {
+        return axios.get(`/penny/knowledge-base/documents/${documentId}`)
+            .catch(handleApiError);
+    },
+
+    /**
+     * Delete a document
+     */
+    deleteKnowledgeDocument(documentId) {
+        return axios.delete(`/penny/knowledge-base/documents/${documentId}`)
+            .catch(handleApiError);
+    },
+
+    /**
+     * Delete all documents for a bot
+     */
+    deleteKnowledgeDocumentsByBot(botId) {
+        return axios.delete(`/penny/knowledge-base/documents/bot/${botId}`)
+            .catch(handleApiError);
+    },
+
+    /**
+     * Re-process a document
+     */
+    reprocessKnowledgeDocument(documentId, file) {
+        const formData = new FormData();
+        formData.append('file', file);
+
+        return axios.post(`/penny/knowledge-base/documents/${documentId}/reprocess`, formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data'
+            }
+        }).catch(handleApiError);
     }
 };

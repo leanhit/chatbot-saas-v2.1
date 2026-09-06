@@ -36,6 +36,9 @@ public class ApiKeyManager {
     @Value("${penny.api-key.encryption.enabled:true}")
     private boolean encryptionEnabled;
 
+    @Value("${penny.gemini.api-key:}")
+    private String geminiApiKey;
+
     /**
      * Get OpenAI API key
      */
@@ -56,6 +59,24 @@ public class ApiKeyManager {
             return null;
         }
         return encryptionEnabled ? decrypt(anthropicApiKey) : anthropicApiKey;
+    }
+
+    /**
+     * Alias for getAnthropicApiKey
+     */
+    public String getClaudeApiKey() {
+        return getAnthropicApiKey();
+    }
+
+    /**
+     * Get Gemini API key
+     */
+    public String getGeminiApiKey() {
+        if (!StringUtils.hasText(geminiApiKey)) {
+            log.warn("Gemini API key not configured");
+            return null;
+        }
+        return encryptionEnabled ? decrypt(geminiApiKey) : geminiApiKey;
     }
 
     /**

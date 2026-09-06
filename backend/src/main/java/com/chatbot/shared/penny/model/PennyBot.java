@@ -85,6 +85,35 @@ public class PennyBot {
     @Builder.Default
     private Float confidenceThreshold = 0.6f; // Dưới ngưỡng → escalate to human
 
+    // ─── AI Configuration v2.0 fields ───────────────────────────────────────
+
+    @Column(name = "provider_type")
+    @Enumerated(EnumType.STRING)
+    @Builder.Default
+    private LlmProviderType providerType = LlmProviderType.OPENAI;
+
+    @Column(name = "model_name")
+    @Builder.Default
+    private String modelName = "gpt-4o-mini";
+
+    @Column(name = "temperature")
+    @Builder.Default
+    private Float temperature = 0.7f;
+
+    @Column(name = "persona_style")
+    @Enumerated(EnumType.STRING)
+    @Builder.Default
+    private BotPersonaStyle personaStyle = BotPersonaStyle.PROFESSIONAL;
+
+    @Column(name = "custom_instructions", columnDefinition = "TEXT")
+    private String customInstructions;
+
+    @Column(name = "greeting_message", columnDefinition = "TEXT")
+    private String greetingMessage;
+
+    @Column(name = "fallback_message", columnDefinition = "TEXT")
+    private String fallbackMessage;
+
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();

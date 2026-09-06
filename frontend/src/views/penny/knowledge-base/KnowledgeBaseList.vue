@@ -10,7 +10,7 @@
           {{ $t('penny.knowledgeBase.subtitle') }}
         </p>
       </div>
-      <div>
+      <div v-if="activeTab === 'articles'">
         <button
           @click="showCreateModal = true"
           class="inline-flex items-center px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/80 transition-colors text-sm font-medium"
@@ -20,6 +20,39 @@
         </button>
       </div>
     </div>
+
+    <!-- Tabs -->
+    <div class="border-b border-gray-200 dark:border-gray-700 mb-6">
+      <nav class="flex space-x-8">
+        <button
+          @click="activeTab = 'articles'"
+          :class="[
+            'py-2 px-1 border-b-2 text-sm font-medium transition-colors',
+            activeTab === 'articles'
+              ? 'border-primary text-primary'
+              : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+          ]"
+        >
+          <Icon icon="mdi:file-document" class="mr-2" />
+          {{ $t('penny.knowledgeBase.title') }}
+        </button>
+        <button
+          @click="activeTab = 'documents'"
+          :class="[
+            'py-2 px-1 border-b-2 text-sm font-medium transition-colors',
+            activeTab === 'documents'
+              ? 'border-primary text-primary'
+              : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+          ]"
+        >
+          <Icon icon="mdi:cloud-upload" class="mr-2" />
+          {{ $t('penny.documentUpload.title') }}
+        </button>
+      </nav>
+    </div>
+
+    <!-- Articles Tab -->
+    <div v-if="activeTab === 'articles'">
 
     <!-- Stats Cards -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
@@ -370,26 +403,39 @@
         </div>
       </div>
     </div>
+    </div>
+
+    <!-- Documents Tab -->
+    <div v-if="activeTab === 'documents'">
+      <DocumentUpload :bot-id="botId" :tenant-id="tenantId" />
+    </div>
   </div>
 </template>
 
 <script>
 import { Icon } from '@iconify/vue';
 import { pennyApi } from '@/api/pennyApi';
+import DocumentUpload from './DocumentUpload.vue';
 
 export default {
   name: 'KnowledgeBaseList',
   components: {
-    Icon
+    Icon,
+    DocumentUpload
   },
   props: {
     botId: {
       type: String,
       required: true
+    },
+    tenantId: {
+      type: Number,
+      required: true
     }
   },
   data() {
     return {
+      activeTab: 'articles',
       articles: [],
       stats: {},
       loading: false,
