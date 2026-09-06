@@ -1,6 +1,6 @@
 package com.chatbot.config;
 
-import com.chatbot.core.simplepayment.listener.PaymentEventListener;
+import com.chatbot.core.payment.transaction.listener.PaymentEventListener;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;

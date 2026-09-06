@@ -3,6 +3,7 @@ package com.chatbot.spokes.facebook.webhook.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.producer.ProducerRecord;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
@@ -20,7 +21,7 @@ public class FacebookKafkaProducer {
     private final KafkaTemplate<String, String> kafkaTemplate;
     private final ObjectMapper objectMapper;
 
-    public FacebookKafkaProducer(KafkaTemplate<String, String> kafkaTemplate) {
+    public FacebookKafkaProducer(@Autowired(required = false) KafkaTemplate<String, String> kafkaTemplate) {
         this.kafkaTemplate = kafkaTemplate;
         this.objectMapper = new ObjectMapper();
         this.objectMapper.registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule());
@@ -34,6 +35,10 @@ public class FacebookKafkaProducer {
      * @param payload the object to be sent; it will be converted to a JSON string
      */
     public void send(String key, Object payload) {
+        if (kafkaTemplate == null) {
+            log.debug("[Kafka] Kafka disabled, skipping send for key: {}", key);
+            return;
+        }
         try {
             String json = objectMapper.writeValueAsString(payload);
             kafkaTemplate.send(new ProducerRecord<>(KafkaConfig.FACEBOOK_EVENT_TOPIC, key, json));

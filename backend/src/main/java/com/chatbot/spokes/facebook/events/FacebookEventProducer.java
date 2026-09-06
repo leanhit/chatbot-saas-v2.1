@@ -1,8 +1,8 @@
 package com.chatbot.spokes.facebook.events;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
@@ -11,7 +11,6 @@ import org.springframework.stereotype.Service;
  * Publishes events for other spokes to consume
  */
 @Service
-@RequiredArgsConstructor
 @Slf4j
 public class FacebookEventProducer {
     
@@ -19,11 +18,22 @@ public class FacebookEventProducer {
     private final ObjectMapper objectMapper;
     
     private static final String FACEBOOK_EVENTS_TOPIC = "facebook-events";
+
+    public FacebookEventProducer(
+            @Autowired(required = false) KafkaTemplate<String, String> kafkaTemplate,
+            ObjectMapper objectMapper) {
+        this.kafkaTemplate = kafkaTemplate;
+        this.objectMapper = objectMapper;
+    }
     
     /**
      * Publish Facebook connection created event
      */
     public void publishConnectionCreated(FacebookConnectionCreatedEvent event) {
+        if (kafkaTemplate == null) {
+            log.debug("Kafka disabled, skipping publishConnectionCreated");
+            return;
+        }
         try {
             String json = objectMapper.writeValueAsString(event);
             kafkaTemplate.send(FACEBOOK_EVENTS_TOPIC, event.getConnectionId().toString(), json);
@@ -37,6 +47,10 @@ public class FacebookEventProducer {
      * Publish Facebook connection updated event
      */
     public void publishConnectionUpdated(FacebookConnectionUpdatedEvent event) {
+        if (kafkaTemplate == null) {
+            log.debug("Kafka disabled, skipping publishConnectionUpdated");
+            return;
+        }
         try {
             String json = objectMapper.writeValueAsString(event);
             kafkaTemplate.send(FACEBOOK_EVENTS_TOPIC, event.getConnectionId().toString(), json);
@@ -50,6 +64,10 @@ public class FacebookEventProducer {
      * Publish Facebook message received event
      */
     public void publishMessageReceived(FacebookMessageReceivedEvent event) {
+        if (kafkaTemplate == null) {
+            log.debug("Kafka disabled, skipping publishMessageReceived");
+            return;
+        }
         try {
             String json = objectMapper.writeValueAsString(event);
             kafkaTemplate.send(FACEBOOK_EVENTS_TOPIC, event.getMessageId(), json);

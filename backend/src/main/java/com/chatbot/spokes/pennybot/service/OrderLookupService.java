@@ -1,8 +1,8 @@
 package com.chatbot.spokes.pennybot.service;
 
-import com.chatbot.core.simplepayment.model.PaymentStatus;
-import com.chatbot.core.simplepayment.model.SimplePayment;
-import com.chatbot.core.simplepayment.repository.SimplePaymentRepository;
+import com.chatbot.core.payment.transaction.model.PaymentStatus;
+import com.chatbot.core.payment.transaction.model.SimplePayment;
+import com.chatbot.core.payment.transaction.repository.SimplePaymentRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

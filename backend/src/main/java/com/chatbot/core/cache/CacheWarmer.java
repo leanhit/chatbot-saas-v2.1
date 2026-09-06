@@ -4,7 +4,7 @@ import com.chatbot.core.tenant.repository.TenantRepository;
 import com.chatbot.core.tenant.service.TenantService;
 import com.chatbot.shared.penny.repository.PennyBotRepository;
 import com.chatbot.shared.penny.service.PennyBotService;
-import com.chatbot.core.simplepayment.service.CachedPackageService;
+import com.chatbot.core.payment.plan.service.CachedPackageService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;

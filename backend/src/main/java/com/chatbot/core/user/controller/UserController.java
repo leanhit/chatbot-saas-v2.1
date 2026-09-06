@@ -6,7 +6,7 @@ import com.chatbot.core.user.model.User;
 import com.chatbot.core.identity.security.CustomUserDetails;
 import com.chatbot.core.tenant.infra.TenantContext;
 import com.chatbot.core.tenant.service.TenantPackageService;
-import com.chatbot.core.simplepayment.model.Package;
+import com.chatbot.core.payment.plan.model.Package;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;

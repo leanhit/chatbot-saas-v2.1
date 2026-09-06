@@ -131,11 +131,14 @@ public class SecurityConfig {
                 // ================= LOCATION APIs (PUBLIC) =================
                 .requestMatchers("/api/locations/**").permitAll()
                 
-                // ================= SIMPLE PAYMENT APIs (PUBLIC) =================
+                // ================= SIMPLE PAYMENT & MERCHANT APIs (PUBLIC) =================
+                .requestMatchers("/api/public/payment/**").permitAll()
                 .requestMatchers("/api/public/simple-payment/**").permitAll()
                 .requestMatchers("/api/simple-payment/public/**").permitAll()
                 .requestMatchers("/api/simple-payment/bank-info").permitAll()
                 .requestMatchers("/api/simple-payment/health").permitAll()
+                .requestMatchers("/api/v1/merchant/payments/**").permitAll()
+                .requestMatchers("/api/merchant/payment/**").permitAll()
                 // Allow deposit endpoint without authentication for external clients
                 .requestMatchers(HttpMethod.POST, "/api/simple-payment/deposit").permitAll()
                 

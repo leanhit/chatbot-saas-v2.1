@@ -1,6 +1,6 @@
 package com.chatbot.core.tenant.dto;
 
-import com.chatbot.core.simplepayment.model.Package;
+import com.chatbot.core.payment.plan.model.Package;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

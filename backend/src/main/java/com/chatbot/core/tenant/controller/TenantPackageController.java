@@ -1,8 +1,8 @@
 package com.chatbot.core.tenant.controller;
 
 import com.chatbot.core.tenant.service.TenantPackageService;
-import com.chatbot.core.simplepayment.model.Package;
-import com.chatbot.core.simplepayment.dto.PackageResponse;
+import com.chatbot.core.payment.plan.model.Package;
+import com.chatbot.core.payment.plan.dto.PackageResponse;
 import com.chatbot.core.tenant.dto.TenantPackageInfo;
 import com.chatbot.core.tenant.dto.TenantPackageDetailResponse;
 import com.chatbot.core.tenant.infra.TenantContext;
@@ -89,7 +89,7 @@ public class TenantPackageController {
                 return ResponseEntity.ok(ApiResponse.success(null, "No package assigned"));
             }
             
-            PackageResponse packageResponse = PackageResponse.fromEntity(currentPackage);
+            PackageResponse packageResponse = PackageResponse.from(currentPackage);
             return ResponseEntity.ok(ApiResponse.success(packageResponse, "Current package retrieved successfully"));
         } catch (Exception e) {
             log.error("❌ Error getting current package: {}", e.getMessage(), e);
@@ -111,7 +111,7 @@ public class TenantPackageController {
                 return ResponseEntity.ok(ApiResponse.success(null, "No package assigned"));
             }
             
-            PackageResponse packageResponse = PackageResponse.fromEntity(currentPackage);
+            PackageResponse packageResponse = PackageResponse.from(currentPackage);
             return ResponseEntity.ok(ApiResponse.success(packageResponse, "Current package retrieved successfully"));
         } catch (Exception e) {
             log.error("❌ Error getting current package for tenant {}: {}", tenantKey, e.getMessage(), e);

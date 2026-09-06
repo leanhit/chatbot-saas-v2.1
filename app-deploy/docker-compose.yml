@@ -12,7 +12,7 @@ services:
       - SPRING_PROFILES_ACTIVE=docker
       - KAFKA_BOOTSTRAP_SERVERS=chatbot_saas_kafka:9092
       - SPRING_KAFKA_BOOTSTRAP_SERVERS=chatbot_saas_kafka:9092
-      - KAFKA_ENABLED=true
+      - KAFKA_ENABLED=false
       - DB_USER=${DB_USER:-chatbot_user}
       - DB_PASSWORD=${DB_PASSWORD:-chatbot_Admin_2025}
       - JWT_SECRET=${JWT_SECRET:-ChangeMeSuperSecretKeyForChatbotSaaS2026!}

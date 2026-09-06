@@ -8,7 +8,9 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
 
 @EnableScheduling
-@SpringBootApplication
+@SpringBootApplication(exclude = {
+    org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration.class
+})
 @EnableAsync
 @EntityScan(basePackages = {
     "com.chatbot.core.license.model",
@@ -19,7 +21,13 @@ import org.springframework.boot.autoconfigure.domain.EntityScan;
     "com.chatbot.shared.penny.model",
     "com.chatbot.shared.penny.kb",
     "com.chatbot.shared.penny.escalation",
-    "com.chatbot.shared.penny.analytics"
+    "com.chatbot.shared.penny.analytics",
+    "com.chatbot.core.payment.transaction.model",
+    "com.chatbot.core.payment.plan.model",
+    "com.chatbot.core.payment.gateway.model",
+    "com.chatbot.core.payment.invoice.model",
+    "com.chatbot.core.payment.merchant.model",
+    "com.chatbot.core.payment.common.audit"
 })
 @ComponentScan(basePackages = {
     "com.chatbot.core",
