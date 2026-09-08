@@ -29,7 +29,7 @@ public class MerchantPaymentService {
     /**
      * Create a new merchant payment session
      */
-    @Transactional(transactionManager = "sharedTransactionManager")
+    @Transactional(transactionManager = "paymentTransactionManager")
     public MerchantPaymentResponse createPaymentSession(MerchantPaymentRequest request, Long merchantId) {
         log.info("🏪 Creating merchant payment session for merchant: {}, order: {}", merchantId, request.getMerchantOrderId());
 
@@ -70,7 +70,7 @@ public class MerchantPaymentService {
     /**
      * Get payment session status
      */
-    @Transactional(readOnly = true, transactionManager = "sharedTransactionManager")
+    @Transactional(readOnly = true, transactionManager = "paymentTransactionManager")
     public MerchantPaymentSession getSessionStatus(String sessionId) {
         log.info("🏪 Getting payment session status: {}", sessionId);
 
@@ -89,7 +89,7 @@ public class MerchantPaymentService {
     /**
      * Cancel payment session
      */
-    @Transactional(transactionManager = "sharedTransactionManager")
+    @Transactional(transactionManager = "paymentTransactionManager")
     public MerchantPaymentSession cancelSession(String sessionId) {
         log.info("🏪 Cancelling payment session: {}", sessionId);
 
@@ -109,7 +109,7 @@ public class MerchantPaymentService {
     /**
      * Complete merchant payment session (called after internal payment is completed)
      */
-    @Transactional(transactionManager = "sharedTransactionManager")
+    @Transactional(transactionManager = "paymentTransactionManager")
     public void completeMerchantPayment(String sessionId, String paymentReferenceCode, String bankTransactionId) {
         log.info("🏪 Completing merchant payment session: {}", sessionId);
 
@@ -155,7 +155,7 @@ public class MerchantPaymentService {
     /**
      * Get sessions for merchant
      */
-    @Transactional(readOnly = true, transactionManager = "sharedTransactionManager")
+    @Transactional(readOnly = true, transactionManager = "paymentTransactionManager")
     public java.util.List<MerchantPaymentSession> getMerchantSessions(Long merchantId) {
         return sessionRepository.findByMerchantIdOrderByCreatedAtDesc(merchantId);
     }

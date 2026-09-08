@@ -25,7 +25,7 @@ public class PaymentCancellationService {
     private final PaymentMetricsService paymentMetricsService;
     private final ApplicationEventPublisher eventPublisher;
 
-    @Transactional("sharedTransactionManager")
+    @Transactional("paymentTransactionManager")
     public SimplePayment cancelPayment(String referenceCode, String reason) {
         log.info("🚫 Cancelling payment: {}", referenceCode);
 

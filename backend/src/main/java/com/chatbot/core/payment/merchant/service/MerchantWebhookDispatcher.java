@@ -37,7 +37,7 @@ public class MerchantWebhookDispatcher {
      */
     @Async
     @EventListener
-    @Transactional(propagation = Propagation.REQUIRES_NEW, transactionManager = "sharedTransactionManager")
+    @Transactional(propagation = Propagation.REQUIRES_NEW, transactionManager = "paymentTransactionManager")
     public void handleMerchantPaymentCompletedEvent(MerchantPaymentCompletedEvent event) {
         log.info("🔔 [EVENT] Dispatching webhook for merchant payment: {}", event.getPaymentCode());
 
@@ -63,7 +63,7 @@ public class MerchantWebhookDispatcher {
     /**
      * Dispatch webhook to merchant with retry logic
      */
-    @Transactional(transactionManager = "sharedTransactionManager")
+    @Transactional(transactionManager = "paymentTransactionManager")
     public void dispatchWebhook(MerchantPaymentSession session, MerchantApiKey merchantKey) {
         log.info("🔔 Dispatching webhook to: {}", merchantKey.getWebhookUrl());
 
@@ -132,7 +132,7 @@ public class MerchantWebhookDispatcher {
      * Runs every minute
      */
     @Scheduled(cron = "0 * * * * ?")
-    @Transactional(transactionManager = "sharedTransactionManager")
+    @Transactional(transactionManager = "paymentTransactionManager")
     public void retryFailedWebhooks() {
         log.info("🔄 Retrying failed merchant webhooks...");
 

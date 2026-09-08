@@ -22,7 +22,7 @@ public class PaymentRefundService {
     private final PaymentAuditService paymentAuditService;
     private final PaymentMetricsService paymentMetricsService;
 
-    @Transactional("sharedTransactionManager")
+    @Transactional("paymentTransactionManager")
     public SimplePayment refundPayment(String referenceCode, String reason, Long adminUserId) {
         log.info("💰 Refunding payment: {} by admin: {}", referenceCode, adminUserId);
 

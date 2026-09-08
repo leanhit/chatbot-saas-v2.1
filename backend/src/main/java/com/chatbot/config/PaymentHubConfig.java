@@ -70,9 +70,10 @@ public class PaymentHubConfig {
     }
 
     @Bean
-    public PlatformTransactionManager paymentTransactionManager() {
+    public PlatformTransactionManager paymentTransactionManager(
+            @org.springframework.beans.factory.annotation.Qualifier("paymentEntityManagerFactory") LocalContainerEntityManagerFactoryBean paymentEntityManagerFactory) {
         JpaTransactionManager transactionManager = new JpaTransactionManager();
-        transactionManager.setEntityManagerFactory(paymentEntityManagerFactory(null).getObject());
+        transactionManager.setEntityManagerFactory(paymentEntityManagerFactory.getObject());
         return transactionManager;
     }
 }

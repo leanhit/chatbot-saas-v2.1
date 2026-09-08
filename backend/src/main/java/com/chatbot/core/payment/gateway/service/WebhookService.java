@@ -45,7 +45,7 @@ public class WebhookService {
      */
     @Async
     @EventListener
-    @Transactional(propagation = Propagation.REQUIRES_NEW, transactionManager = "sharedTransactionManager")
+    @Transactional(propagation = Propagation.REQUIRES_NEW, transactionManager = "paymentTransactionManager")
     public void handlePaymentCompletedEvent(PaymentCompletedEvent event) {
         log.info("🔔 [EVENT] Handling PaymentCompletedEvent for reference: {}", event.getReferenceCode());
 
@@ -66,7 +66,7 @@ public class WebhookService {
      */
     @Async
     @EventListener
-    @Transactional(propagation = Propagation.REQUIRES_NEW, transactionManager = "sharedTransactionManager")
+    @Transactional(propagation = Propagation.REQUIRES_NEW, transactionManager = "paymentTransactionManager")
     public void handlePaymentFailedEvent(PaymentFailedEvent event) {
         log.info("🔔 [EVENT] Handling PaymentFailedEvent for reference: {}", event.getReferenceCode());
 
@@ -84,7 +84,7 @@ public class WebhookService {
     /**
      * Trigger webhook with retry logic
      */
-    @Transactional(transactionManager = "sharedTransactionManager")
+    @Transactional(transactionManager = "paymentTransactionManager")
     public void triggerWebhook(Webhook webhook, WebhookEventType eventType, Map<String, Object> payload) {
         log.info("🔔 Triggering webhook: {} for event: {}", webhook.getName(), eventType);
 
@@ -145,7 +145,7 @@ public class WebhookService {
     /**
      * Move failed webhook to dead letter queue
      */
-    @Transactional(transactionManager = "sharedTransactionManager")
+    @Transactional(transactionManager = "paymentTransactionManager")
     public void moveToDeadLetter(Webhook webhook, WebhookEventType eventType, Map<String, Object> payload, String error) {
         log.warn("⚠️ Moving webhook to dead letter: {}", webhook.getName());
 
@@ -177,7 +177,7 @@ public class WebhookService {
      * Runs every minute
      */
     @Scheduled(cron = "0 * * * * ?")
-    @Transactional(transactionManager = "sharedTransactionManager")
+    @Transactional(transactionManager = "paymentTransactionManager")
     public void retryFailedWebhooks() {
         log.info("🔄 Retrying failed webhooks...");
 
@@ -242,7 +242,7 @@ public class WebhookService {
     /**
      * Create new webhook
      */
-    @Transactional(transactionManager = "sharedTransactionManager")
+    @Transactional(transactionManager = "paymentTransactionManager")
     public Webhook createWebhook(Webhook webhook) {
         log.info("🔔 Creating new webhook: {}", webhook.getName());
 
@@ -256,7 +256,7 @@ public class WebhookService {
     /**
      * Get all active webhooks
      */
-    @Transactional(readOnly = true, transactionManager = "sharedTransactionManager")
+    @Transactional(readOnly = true, transactionManager = "paymentTransactionManager")
     public List<Webhook> getActiveWebhooks() {
         return webhookRepository.findByIsActiveTrue();
     }
@@ -264,7 +264,7 @@ public class WebhookService {
     /**
      * Delete webhook
      */
-    @Transactional(transactionManager = "sharedTransactionManager")
+    @Transactional(transactionManager = "paymentTransactionManager")
     public void deleteWebhook(String url) {
         log.info("🗑️ Deleting webhook: {}", url);
         webhookRepository.deleteByUrl(url);

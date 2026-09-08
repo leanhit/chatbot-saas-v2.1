@@ -24,7 +24,7 @@ public class PaymentRetryService {
     private final PaymentMetricsService paymentMetricsService;
     private final SimplePaymentService simplePaymentService;
 
-    @Transactional("sharedTransactionManager")
+    @Transactional("paymentTransactionManager")
     public DepositResponse retryPayment(String referenceCode, Long userId, Long tenantId) {
         log.info("🔄 Retrying payment: {}", referenceCode);
 

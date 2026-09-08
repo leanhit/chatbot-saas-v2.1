@@ -27,6 +27,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.chatbot.core.payment.transaction.service.PaymentSseService;
+import org.springframework.http.MediaType;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
+
 @RestController
 @RequestMapping({"/api/payment", "/api/simple-payment"})
 @RequiredArgsConstructor
@@ -35,6 +39,7 @@ import java.util.Map;
 public class SimplePaymentController {
 
     private final SimplePaymentService simplePaymentService;
+    private final PaymentSseService paymentSseService;
     private final PaymentContextService paymentContextService;
     private final PaymentCancellationService paymentCancellationService;
     private final PaymentRefundService paymentRefundService;
@@ -347,6 +352,60 @@ public class SimplePaymentController {
             error.put("message", e.getMessage());
             error.put("timestamp", java.time.LocalDateTime.now());
             
+            return ResponseEntity.badRequest().body(error);
+        }
+    }
+
+    /**
+     * Subscribe to SSE payment status updates for reference code
+     */
+    @GetMapping(value = "/events/{referenceCode}", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    @Operation(
+        summary = "SSE Payment Status Stream",
+        description = "Subscribe to live payment status updates using Server-Sent Events (SSE)"
+    )
+    public SseEmitter subscribePaymentEvents(@PathVariable String referenceCode) {
+        log.info("📶 SSE subscription for payment: {}", referenceCode);
+        return paymentSseService.subscribe(referenceCode);
+    }
+
+    /**
+     * Simulate bank payment for testing purposes.
+     */
+    @PostMapping({"/test/simulate-payment", "/simulate-payment"})
+    @Operation(
+        summary = "Simulate bank payment",
+        description = "Simulate bank transfer payment completion for testing purposes"
+    )
+    public ResponseEntity<Object> simulatePayment(@RequestBody Map<String, Object> request) {
+        log.info("🧪 Simulating bank payment for request: {}", request);
+        try {
+            String referenceCode = (String) request.get("referenceCode");
+            if (referenceCode == null || referenceCode.trim().isEmpty()) {
+                Map<String, String> error = new HashMap<>();
+                error.put("error", "referenceCode is required");
+                return ResponseEntity.badRequest().body(error);
+            }
+
+            String bankTxId = "SIM" + System.currentTimeMillis();
+            simplePaymentService.completePayment(referenceCode, bankTxId);
+
+            PaymentStatusResponse response = simplePaymentService.checkPaymentStatus(referenceCode);
+            response.withFormattedDates();
+
+            log.info("✅ Bank payment simulated successfully for: {}", referenceCode);
+            return ResponseEntity.ok(Map.of(
+                "status", "success",
+                "message", "Payment simulated successfully",
+                "referenceCode", referenceCode,
+                "bankTransactionId", bankTxId,
+                "payment", response
+            ));
+
+        } catch (Exception e) {
+            log.error("❌ Failed to simulate payment: {}", e.getMessage(), e);
+            Map<String, String> error = new HashMap<>();
+            error.put("error", "Simulation failed: " + e.getMessage());
             return ResponseEntity.badRequest().body(error);
         }
     }

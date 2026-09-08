@@ -31,7 +31,10 @@ const EXCLUDED_PATHS = [
     '/tenants/members/join-requests', // Join requests - user doesn't have active tenant yet
     '/users/join-requests', // Cancel join requests
     '/images', // Image API không cần tenant ID
-    '/api/customers/statuses' // Only statuses endpoint doesn't need tenant context
+    '/api/customers/statuses', // Only statuses endpoint doesn't need tenant context
+    '/v1/packages/active', // Package list - global, không cần tenant context
+    '/v1/packages', // Package endpoints - global, không cần tenant context
+    '/simple-payment/bank-info' // Bank info - global, không cần tenant context
 ];
 
 let isRefreshing = false;

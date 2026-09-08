@@ -56,15 +56,11 @@ public class JwtFilter extends OncePerRequestFilter {
             try {
                 email = jwtService.extractEmail(token);
             } catch (ExpiredJwtException e) {
-                sendErrorResponse(response, IdentityConstants.TOKEN_EXPIRED);
-                return;
+                log.warn("⚠️ Token expired for request to {}: {}", request.getRequestURI(), e.getMessage());
             } catch (SignatureException | MalformedJwtException | InvalidTokenException e) {
-                sendErrorResponse(response, IdentityConstants.TOKEN_INVALID);
-                return;
+                log.warn("⚠️ Invalid token signature/format for request to {}: {}", request.getRequestURI(), e.getMessage());
             } catch (Exception e) {
-                logger.error("Unexpected error processing token", e);
-                sendErrorResponse(response, "Lỗi khi xử lý token");
-                return;
+                log.error("❌ Unexpected error processing token for request to {}: {}", request.getRequestURI(), e.getMessage());
             }
         }
 

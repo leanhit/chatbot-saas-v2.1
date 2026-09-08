@@ -32,7 +32,7 @@ public class InvoiceService {
      */
     @Async
     @EventListener
-    @Transactional(propagation = Propagation.REQUIRES_NEW, transactionManager = "sharedTransactionManager")
+    @Transactional(propagation = Propagation.REQUIRES_NEW, transactionManager = "paymentTransactionManager")
     public void handlePaymentCompletedEvent(PaymentCompletedEvent event) {
         log.info("📄 [EVENT] Generating invoice for payment: {}", event.getReferenceCode());
 
@@ -70,7 +70,7 @@ public class InvoiceService {
     /**
      * Generate invoice for payment
      */
-    @Transactional(transactionManager = "sharedTransactionManager")
+    @Transactional(transactionManager = "paymentTransactionManager")
     public Invoice generateInvoice(String referenceCode, Long userId, Long tenantId,
                                    BigDecimal amount, String currency, String packageId,
                                    LocalDateTime paymentDate) {
@@ -111,7 +111,7 @@ public class InvoiceService {
     /**
      * Get invoice by invoice number
      */
-    @Transactional(readOnly = true, transactionManager = "sharedTransactionManager")
+    @Transactional(readOnly = true, transactionManager = "paymentTransactionManager")
     public Invoice getInvoiceByNumber(String invoiceNumber) {
         return invoiceRepository.findByInvoiceNumber(invoiceNumber)
                 .orElseThrow(() -> new RuntimeException("Invoice not found: " + invoiceNumber));
@@ -120,7 +120,7 @@ public class InvoiceService {
     /**
      * Get invoices for user
      */
-    @Transactional(readOnly = true, transactionManager = "sharedTransactionManager")
+    @Transactional(readOnly = true, transactionManager = "paymentTransactionManager")
     public java.util.List<Invoice> getUserInvoices(Long userId) {
         return invoiceRepository.findByUserIdOrderByCreatedAtDesc(userId);
     }
@@ -128,7 +128,7 @@ public class InvoiceService {
     /**
      * Get invoices for tenant
      */
-    @Transactional(readOnly = true, transactionManager = "sharedTransactionManager")
+    @Transactional(readOnly = true, transactionManager = "paymentTransactionManager")
     public java.util.List<Invoice> getTenantInvoices(Long tenantId) {
         return invoiceRepository.findByTenantIdOrderByCreatedAtDesc(tenantId);
     }
@@ -150,7 +150,7 @@ public class InvoiceService {
     /**
      * Update invoice status
      */
-    @Transactional(transactionManager = "sharedTransactionManager")
+    @Transactional(transactionManager = "paymentTransactionManager")
     public Invoice updateInvoiceStatus(String invoiceNumber, InvoiceStatus status) {
         log.info("📄 Updating invoice status: {} -> {}", invoiceNumber, status);
 
@@ -167,7 +167,7 @@ public class InvoiceService {
     /**
      * Delete invoice
      */
-    @Transactional(transactionManager = "sharedTransactionManager")
+    @Transactional(transactionManager = "paymentTransactionManager")
     public void deleteInvoice(String invoiceNumber) {
         log.info("🗑️ Deleting invoice: {}", invoiceNumber);
         invoiceRepository.deleteByInvoiceNumber(invoiceNumber);

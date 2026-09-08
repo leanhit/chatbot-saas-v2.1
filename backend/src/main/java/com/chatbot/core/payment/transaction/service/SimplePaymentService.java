@@ -46,7 +46,7 @@ public class SimplePaymentService {
      * Tạo yêu cầu nạp tiền mới
      * NOTE: This is a simplified version for migration. Full implementation will be added after gateway migration.
      */
-    @Transactional("sharedTransactionManager")
+    @Transactional("paymentTransactionManager")
     public DepositResponse createDeposit(DepositRequest request, Long userId, Long tenantId) {
         log.info("📱 Creating deposit request for user: {}, amount: {}, targetPackage: {}", 
                 userId, request.getAmount(), request.getTargetPackageId());
@@ -103,7 +103,7 @@ public class SimplePaymentService {
     /**
      * Kiểm tra trạng thái thanh toán
      */
-    @Transactional(readOnly = true, transactionManager = "sharedTransactionManager")
+    @Transactional(readOnly = true, transactionManager = "paymentTransactionManager")
     public PaymentStatusResponse checkPaymentStatus(String referenceCode) {
         log.info("🔍 Checking payment status: {}", referenceCode);
 
@@ -128,7 +128,7 @@ public class SimplePaymentService {
     /**
      * Get payment by reference code
      */
-    @Transactional(readOnly = true, transactionManager = "sharedTransactionManager")
+    @Transactional(readOnly = true, transactionManager = "paymentTransactionManager")
     public SimplePayment getPaymentByReference(String referenceCode) {
         return paymentRepository.findByReferenceCode(referenceCode)
                 .orElseThrow(() -> new PaymentNotFoundException("Payment not found: " + referenceCode));
@@ -139,7 +139,7 @@ public class SimplePaymentService {
      * This method only updates the payment status and fires events
      * Downstream processing (package upgrade, balance credit, notifications) is handled by event listeners
      */
-    @Transactional(propagation = org.springframework.transaction.annotation.Propagation.REQUIRES_NEW, transactionManager = "sharedTransactionManager")
+    @Transactional(propagation = org.springframework.transaction.annotation.Propagation.REQUIRES_NEW, transactionManager = "paymentTransactionManager")
     public void completePayment(String referenceCode, String bankTransactionId) {
         log.info("✅ Completing payment: {}", referenceCode);
 
@@ -193,7 +193,7 @@ public class SimplePaymentService {
     /**
      * Lấy danh sách thanh toán của user
      */
-    @Transactional(readOnly = true, transactionManager = "sharedTransactionManager")
+    @Transactional(readOnly = true, transactionManager = "paymentTransactionManager")
     public List<PaymentStatusResponse> getUserPayments(Long userId, Long tenantId) {
         List<SimplePayment> payments = paymentRepository.findByUserIdAndTenantIdOrderByCreatedAtDesc(userId, tenantId);
         
@@ -219,7 +219,7 @@ public class SimplePaymentService {
     /**
      * Job để check các pending payments
      */
-    @Transactional("sharedTransactionManager")
+    @Transactional("paymentTransactionManager")
     public void checkPendingPayments() {
         log.info("🏦 Checking pending payments...");
 
@@ -243,7 +243,7 @@ public class SimplePaymentService {
     /**
      * Get current deposit limits for user/tenant
      */
-    @Transactional(readOnly = true, transactionManager = "sharedTransactionManager")
+    @Transactional(readOnly = true, transactionManager = "paymentTransactionManager")
     public Map<String, Object> getCurrentDepositLimits(Long userId, Long tenantId) {
         // Package validation will be added after plan migration
         return Map.of(

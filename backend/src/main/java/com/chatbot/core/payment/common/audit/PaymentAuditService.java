@@ -23,7 +23,7 @@ public class PaymentAuditService {
     private final ObjectMapper objectMapper;
 
     @Async
-    @Transactional(propagation = Propagation.REQUIRES_NEW, transactionManager = "sharedTransactionManager")
+    @Transactional(propagation = Propagation.REQUIRES_NEW, transactionManager = "paymentTransactionManager")
     public void logPaymentAction(
             String paymentReferenceCode,
             Long userId,
@@ -60,7 +60,7 @@ public class PaymentAuditService {
     }
 
     @Async
-    @Transactional(propagation = Propagation.REQUIRES_NEW, transactionManager = "sharedTransactionManager")
+    @Transactional(propagation = Propagation.REQUIRES_NEW, transactionManager = "paymentTransactionManager")
     public void logPaymentActionWithMetadata(
             String paymentReferenceCode,
             Long userId,
@@ -123,7 +123,7 @@ public class PaymentAuditService {
     }
 
     @Async
-    @Transactional(propagation = Propagation.REQUIRES_NEW, transactionManager = "sharedTransactionManager")
+    @Transactional(propagation = Propagation.REQUIRES_NEW, transactionManager = "paymentTransactionManager")
     public void logConfigChange(String configKey, String oldValue, String newValue, String updatedBy) {
         try {
             String description = String.format("Config changed: %s", configKey);

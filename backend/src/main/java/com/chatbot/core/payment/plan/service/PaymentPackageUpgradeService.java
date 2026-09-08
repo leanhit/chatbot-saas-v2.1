@@ -10,6 +10,7 @@ import com.chatbot.core.payment.plan.repository.PackageUpgradeAuditRepository;
 import com.chatbot.core.payment.plan.repository.PackageRepository;
 import com.chatbot.core.payment.transaction.model.SimplePayment;
 import com.chatbot.core.payment.transaction.service.BalanceService;
+import com.chatbot.core.tenant.service.TenantPackageService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.EventListener;
@@ -30,9 +31,7 @@ public class PaymentPackageUpgradeService {
     private final PackageService packageService;
     private final BalanceService balanceService;
     private final PaymentAuditService paymentAuditService;
-
-    // External dependencies - will be injected after tenant service integration
-    // private final TenantPackageService tenantPackageService;
+    private final TenantPackageService tenantPackageService;
 
     /**
      * Event listener for PaymentCompletedEvent
@@ -40,7 +39,7 @@ public class PaymentPackageUpgradeService {
      */
     @Async
     @EventListener
-    @Transactional(propagation = Propagation.REQUIRES_NEW, transactionManager = "sharedTransactionManager")
+    @Transactional(propagation = Propagation.REQUIRES_NEW, transactionManager = "paymentTransactionManager")
     public void handlePaymentCompletedEvent(PaymentCompletedEvent event) {
         log.info("📦 [EVENT] Handling PaymentCompletedEvent for reference: {}", event.getReferenceCode());
 
@@ -65,7 +64,7 @@ public class PaymentPackageUpgradeService {
      * Process package upgrade after payment completion
      * This is the main business logic for package upgrade
      */
-    @Transactional("sharedTransactionManager")
+    @Transactional("paymentTransactionManager")
     public boolean processPackageUpgrade(SimplePayment payment) {
         log.info("📝 [DEBUG] processPackageUpgrade called - referenceCode: {}, targetPackageId: {}, tenantId: {}",
                 payment.getReferenceCode(), payment.getTargetPackageId(), payment.getTenantId());
@@ -114,9 +113,10 @@ public class PaymentPackageUpgradeService {
             balanceService.creditUserBalance(payment.getUserId(), targetPackage.getPrice());
 
             // Upgrade tenant package
-            // This will be implemented after tenant service integration
-            // tenantPackageService.upgradeTenantPackage(payment.getTenantId(), targetPackageId);
-            log.info("📦 Tenant package upgrade will be implemented after tenant service integration");
+            if (payment.getTenantId() != null) {
+                tenantPackageService.upgradeTenantPackage(payment.getTenantId(), targetPackageId);
+                log.info("📦 Tenant {} package successfully upgraded to: {}", payment.getTenantId(), targetPackageId);
+            }
 
             // Update audit as success
             audit.setUpgradeStatus(UpgradeStatus.SUCCESS);
@@ -177,8 +177,9 @@ public class PaymentPackageUpgradeService {
         balanceService.deductUserBalance(userId, targetPackage.getPrice());
 
         // Upgrade tenant package
-        // This will be implemented after tenant service integration
-        // tenantPackageService.upgradeTenantPackage(tenantId, targetPackageId);
+        if (tenantId != null) {
+            tenantPackageService.upgradeTenantPackage(tenantId, targetPackageId);
+        }
 
         log.info("✅ Upgrade with balance completed");
         return true;
@@ -209,9 +210,12 @@ public class PaymentPackageUpgradeService {
     }
 
     private String getCurrentPackageId(Long tenantId) {
-        // This will be implemented after tenant service integration
-        // return tenantPackageService.getCurrentPackageId(tenantId);
-        log.debug("📦 Getting current package ID will be implemented after tenant service integration");
-        return "free"; // Placeholder
+        if (tenantId == null) return "free";
+        try {
+            return tenantPackageService.getCurrentTenantPackage(tenantId).getPackageId();
+        } catch (Exception e) {
+            log.warn("Failed to get current package ID for tenant {}: {}", tenantId, e.getMessage());
+            return "free";
+        }
     }
 }

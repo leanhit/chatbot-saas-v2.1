@@ -313,7 +313,7 @@ export const usePaymentStore = defineStore('payment', {
      * Chọn gói dịch vụ để thanh toán
      */
     selectPackage(packageId) {
-      const selectedPkg = this.packages.find(pkg => pkg.packageId === packageId)
+      const selectedPkg = this.packages.find(pkg => pkg.packageId === packageId || pkg.id === packageId || String(pkg.id) === String(packageId))
       if (selectedPkg) {
         this.selectedPackage = {
           id: selectedPkg.packageId,
@@ -323,7 +323,7 @@ export const usePaymentStore = defineStore('payment', {
           features: this.getPackageFeatures(selectedPkg),
           badge: selectedPkg.badge
         }
-        } else {
+      } else {
         console.error('❌ Package not found:', packageId)
       }
     },

@@ -22,7 +22,7 @@ public class PackageService {
     /**
      * Get all active packages
      */
-    @Transactional(readOnly = true, transactionManager = "sharedTransactionManager")
+    @Transactional(readOnly = true, transactionManager = "paymentTransactionManager")
     @Cacheable(value = "packages", key = "'all-active'")
     public List<Package> getActivePackages() {
         log.info("📦 Fetching all active packages");
@@ -32,7 +32,7 @@ public class PackageService {
     /**
      * Get package by packageId
      */
-    @Transactional(readOnly = true, transactionManager = "sharedTransactionManager")
+    @Transactional(readOnly = true, transactionManager = "paymentTransactionManager")
     @Cacheable(value = "packages", key = "#packageId")
     public Optional<Package> getPackageByPackageId(String packageId) {
         log.debug("📦 Fetching package: {}", packageId);
@@ -42,7 +42,7 @@ public class PackageService {
     /**
      * Get all packages (including inactive)
      */
-    @Transactional(readOnly = true, transactionManager = "sharedTransactionManager")
+    @Transactional(readOnly = true, transactionManager = "paymentTransactionManager")
     public List<Package> getAllPackages() {
         return packageRepository.findAllByOrderBySortOrderAsc();
     }
@@ -50,7 +50,7 @@ public class PackageService {
     /**
      * Create new package
      */
-    @Transactional(transactionManager = "sharedTransactionManager")
+    @Transactional(transactionManager = "paymentTransactionManager")
     @CacheEvict(value = "packages", allEntries = true)
     public Package createPackage(Package packageEntity) {
         log.info("📦 Creating new package: {}", packageEntity.getPackageId());
@@ -65,7 +65,7 @@ public class PackageService {
     /**
      * Update package
      */
-    @Transactional(transactionManager = "sharedTransactionManager")
+    @Transactional(transactionManager = "paymentTransactionManager")
     @CacheEvict(value = "packages", allEntries = true)
     public Package updatePackage(String packageId, Package packageEntity) {
         log.info("📦 Updating package: {}", packageId);
@@ -98,7 +98,7 @@ public class PackageService {
     /**
      * Delete package
      */
-    @Transactional(transactionManager = "sharedTransactionManager")
+    @Transactional(transactionManager = "paymentTransactionManager")
     @CacheEvict(value = "packages", allEntries = true)
     public void deletePackage(String packageId) {
         log.info("🗑️ Deleting package: {}", packageId);

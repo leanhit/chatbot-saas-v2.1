@@ -135,6 +135,8 @@ public class SecurityConfig {
                 .requestMatchers("/api/public/payment/**").permitAll()
                 .requestMatchers("/api/public/simple-payment/**").permitAll()
                 .requestMatchers("/api/simple-payment/public/**").permitAll()
+                .requestMatchers("/api/simple-payment/events/**", "/api/payment/events/**").permitAll()
+                .requestMatchers("/api/simple-payment/test/**", "/api/payment/test/**", "/api/simple-payment/simulate-payment", "/api/payment/simulate-payment").permitAll()
                 .requestMatchers("/api/simple-payment/bank-info").permitAll()
                 .requestMatchers("/api/simple-payment/health").permitAll()
                 .requestMatchers("/api/v1/merchant/payments/**").permitAll()
@@ -143,9 +145,9 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.POST, "/api/simple-payment/deposit").permitAll()
                 
                 // ================= PACKAGES APIs (PUBLIC) =================
-                .requestMatchers("/api/v1/packages/active").permitAll()
-                .requestMatchers("/api/v1/packages/by-package-id/**").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/v1/packages/**").permitAll()
+                .requestMatchers("/api/v1/packages/active", "/api/payment/packages/active").permitAll()
+                .requestMatchers("/api/v1/packages/by-package-id/**", "/api/payment/packages/by-package-id/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/v1/packages/**", "/api/payment/packages/**").permitAll()
                 
                 // ================= SWAGGER UI =================
                 .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()

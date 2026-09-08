@@ -497,12 +497,16 @@ export default {
       const cleanBaseUrl = apiBaseUrl ? apiBaseUrl.replace(/\/api$/, '') : ''
       eventSource = new EventSource(`${cleanBaseUrl}/api/public/simple-payment/events/${referenceCode}`)
       
-      eventSource.addEventListener('payment_completed', (event) => {
+      eventSource.addEventListener('payment_completed', async (event) => {
         try {
           const paymentData = JSON.parse(event.data)
           console.log('✅ SSE payment completed event received:', paymentData)
           paymentStore.currentPayment = paymentData
           stopSseConnection()
+          
+          // Refresh tenant data and update current package badge in UI
+          await paymentStore.refreshGatewayTenant()
+          await paymentStore.loadCurrentPackage()
         } catch (e) {
           console.error('❌ SSE event parsing error:', e)
         }

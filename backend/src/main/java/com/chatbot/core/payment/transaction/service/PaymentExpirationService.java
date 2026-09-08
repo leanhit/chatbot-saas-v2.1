@@ -32,7 +32,7 @@ public class PaymentExpirationService {
      * Runs every hour
      */
     @Scheduled(cron = "0 0 * * * ?")
-    @Transactional("sharedTransactionManager")
+    @Transactional("paymentTransactionManager")
     public void expirePendingPayments() {
         log.info("⏰ Checking for expired payments...");
 
@@ -52,7 +52,7 @@ public class PaymentExpirationService {
         log.info("✅ Expired {} payments", expiredPayments.size());
     }
 
-    @Transactional("sharedTransactionManager")
+    @Transactional("paymentTransactionManager")
     public void expirePayment(SimplePayment payment) {
         log.info("⏰ Expiring payment: {}", payment.getReferenceCode());
 
