@@ -145,6 +145,7 @@ public class SecurityConfig {
                 // ================= PACKAGES APIs (PUBLIC) =================
                 .requestMatchers("/api/v1/packages/active").permitAll()
                 .requestMatchers("/api/v1/packages/by-package-id/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/v1/packages/**").permitAll()
                 
                 // ================= SWAGGER UI =================
                 .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()

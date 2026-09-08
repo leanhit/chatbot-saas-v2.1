@@ -29,6 +29,13 @@ public class FacebookKafkaProducer {
     }
 
     /**
+     * Check if Kafka producer is enabled and configured.
+     */
+    public boolean isEnabled() {
+        return kafkaTemplate != null;
+    }
+
+    /**
      * Sends a payload to Kafka with a partition key.
      *
      * @param key     the partition key (e.g. senderId) to guarantee ordering
@@ -36,8 +43,8 @@ public class FacebookKafkaProducer {
      */
     public void send(String key, Object payload) {
         if (kafkaTemplate == null) {
-            log.debug("[Kafka] Kafka disabled, skipping send for key: {}", key);
-            return;
+            log.warn("[Kafka] Kafka disabled, cannot send message for key: {}", key);
+            throw new IllegalStateException("Kafka producer is disabled (kafkaTemplate is null)");
         }
         try {
             String json = objectMapper.writeValueAsString(payload);
@@ -49,3 +56,4 @@ public class FacebookKafkaProducer {
         }
     }
 }
+

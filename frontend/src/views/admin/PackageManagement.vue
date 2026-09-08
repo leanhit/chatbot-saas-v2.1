@@ -403,7 +403,7 @@ export default {
       loading.value = true
       try {
         const response = await packageApi.getAllPackages()
-        packages.value = response.data || []
+        packages.value = Array.isArray(response) ? response : (response?.data || [])
       } catch (error) {
         console.error('Error loading packages:', error)
         setMessage(t('admin.package.loadingData') + ': ' + (error.message || 'Unknown error'), 'error')

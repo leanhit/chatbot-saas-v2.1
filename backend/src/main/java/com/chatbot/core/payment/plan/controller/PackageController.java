@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/payment/packages")
+@RequestMapping({"/api/payment/packages", "/api/v1/packages"})
 @RequiredArgsConstructor
 @Slf4j
 @Tag(name = "Package Management", description = "Package management endpoints")

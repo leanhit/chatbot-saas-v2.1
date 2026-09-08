@@ -11,7 +11,7 @@ const packageApi = {
 
   // Get all packages (admin only)
   getAllPackages: async () => {
-    const response = await axios.get('/v1/packages')
+    const response = await axios.get('/v1/packages/all')
     return response.data
   },
 
@@ -23,7 +23,7 @@ const packageApi = {
 
   // Get package by package ID
   getPackageByPackageId: async (packageId) => {
-    const response = await axios.get(`/v1/packages/by-package-id/${packageId}`)
+    const response = await axios.get(`/v1/packages/${packageId}`)
     return response.data
   },
 

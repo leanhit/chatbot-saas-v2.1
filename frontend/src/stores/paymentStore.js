@@ -175,8 +175,8 @@ export const usePaymentStore = defineStore('payment', {
       try {
         this.packagesLoading = true
         const response = await packageApi.getActivePackages()
-        this.packages = response.data || []
-        } catch (error) {
+        this.packages = Array.isArray(response) ? response : (response?.data || [])
+      } catch (error) {
         console.error('❌ Error loading packages:', error)
         this.setMessage('Error loading packages: ' + (error.message || 'Unknown error'), 'error')
         // Fallback to empty packages

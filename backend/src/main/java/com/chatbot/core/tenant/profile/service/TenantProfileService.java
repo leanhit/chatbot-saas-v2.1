@@ -139,7 +139,7 @@ public class TenantProfileService {
         @CacheEvict(value = "tenant-profiles", key = "#tenantId"),
         @CacheEvict(value = "tenant-profiles-batch", allEntries = true)
     })
-    @Transactional(rollbackFor = Exception.class)
+    @Transactional(transactionManager = "tenantTransactionManager", rollbackFor = Exception.class)
     public TenantProfileResponse updateLogo(Long tenantId, MultipartFile file) {
         try {
             log.info("🔄 [LOGO START] Starting logo update for tenantId: {}, fileName: {}, fileSize: {}", 

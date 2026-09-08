@@ -5,6 +5,7 @@ import com.chatbot.spokes.facebook.connection.repository.FacebookConnectionRepos
 import com.chatbot.spokes.facebook.webhook.dto.WebhookRequest;
 import com.chatbot.spokes.facebook.webhook.dto.FacebookKafkaEvent;
 import com.chatbot.spokes.facebook.webhook.model.FacebookMessageType;
+import com.chatbot.spokes.facebook.webhook.processor.FacebookEventProcessor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -14,7 +15,7 @@ import java.util.List;
 /**
  * Webhook service that receives incoming Facebook webhook payloads,
  * resolves tenant context, filters echos, and publishes individual events
- * to Kafka for asynchronous processing.
+ * to Kafka for asynchronous processing (or processes synchronously as fallback).
  */
 @Service
 @Slf4j
@@ -22,7 +23,7 @@ public class FacebookWebhookService {
 
     private final FacebookKafkaProducer kafkaProducer;
     private final FacebookConnectionRepository connectionRepository;
-    private final com.chatbot.spokes.facebook.webhook.consumer.FacebookEventConsumer eventConsumer;
+    private final FacebookEventProcessor eventProcessor;
 
     @Value("${facebook.webhook.verify-token:your_facebook_verify_token}")
     private String verifyToken;
@@ -35,10 +36,10 @@ public class FacebookWebhookService {
 
     public FacebookWebhookService(FacebookKafkaProducer kafkaProducer, 
                                   FacebookConnectionRepository connectionRepository,
-                                  @org.springframework.context.annotation.Lazy com.chatbot.spokes.facebook.webhook.consumer.FacebookEventConsumer eventConsumer) {
+                                  FacebookEventProcessor eventProcessor) {
         this.kafkaProducer = kafkaProducer;
         this.connectionRepository = connectionRepository;
-        this.eventConsumer = eventConsumer;
+        this.eventProcessor = eventProcessor;
     }
 
     /** Verify webhook request from Facebook (GET verification) */
@@ -104,7 +105,7 @@ public class FacebookWebhookService {
         }
     }
 
-    /** Forward incoming webhook payload to Kafka for async processing */
+    /** Forward incoming webhook payload to Kafka for async processing or process synchronously */
     public void handleWebhookEvent(WebhookRequest request) {
         if (!"page".equals(request.getObject())) return;
 
@@ -142,22 +143,32 @@ public class FacebookWebhookService {
                         .messaging(messaging)
                         .build();
 
-                // Publish to Kafka using user senderId as partition key
-                try {
-                    kafkaProducer.send(senderId, event);
-                    log.info("✅ [Kafka Producer] Webhook event published. Page: {}, User (Key): {}", actualPageId, senderId);
-                } catch (Exception e) {
-                    log.warn("⚠️ [Kafka Fallback] Kafka is unavailable or failed: {}. Falling back to synchronous event processing.", e.getMessage());
+                if (kafkaProducer.isEnabled()) {
                     try {
-                        eventConsumer.processEvent(event);
-                        log.info("✅ [Synchronous Fallback] Processed webhook event synchronously for user: {}", senderId);
+                        kafkaProducer.send(senderId, event);
+                        log.info("✅ [Kafka Producer] Webhook event published. Page: {}, User (Key): {}", actualPageId, senderId);
+                    } catch (Exception e) {
+                        log.warn("⚠️ [Kafka Fallback] Kafka is unavailable or failed: {}. Falling back to synchronous event processing.", e.getMessage());
+                        try {
+                            eventProcessor.processEvent(event);
+                            log.info("✅ [Synchronous Fallback] Processed webhook event synchronously for user: {}", senderId);
+                        } catch (Exception syncEx) {
+                            log.error("❌ [Synchronous Fallback] Error processing event synchronously: {}", syncEx.getMessage(), syncEx);
+                        }
+                    }
+                } else {
+                    log.info("ℹ️ [Synchronous Processing] Kafka is disabled. Processing webhook event synchronously.");
+                    try {
+                        eventProcessor.processEvent(event);
+                        log.info("✅ [Synchronous Processing] Processed webhook event synchronously for user: {}", senderId);
                     } catch (Exception syncEx) {
-                        log.error("❌ [Synchronous Fallback] Error processing event synchronously: {}", syncEx.getMessage(), syncEx);
+                        log.error("❌ [Synchronous Processing] Error processing event synchronously: {}", syncEx.getMessage(), syncEx);
                     }
                 }
             }
         }
     }
+
 
     /**
      * Classify message type

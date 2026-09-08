@@ -10,13 +10,14 @@ services:
       - "8080:80"
     environment:
       - SPRING_PROFILES_ACTIVE=docker
+      - HIBERNATE_DDL_AUTO=none
       - KAFKA_BOOTSTRAP_SERVERS=chatbot_saas_kafka:9092
       - SPRING_KAFKA_BOOTSTRAP_SERVERS=chatbot_saas_kafka:9092
-      - KAFKA_ENABLED=false
+      - KAFKA_ENABLED=true
       - DB_USER=${DB_USER:-chatbot_user}
       - DB_PASSWORD=${DB_PASSWORD:-chatbot_Admin_2025}
       - JWT_SECRET=${JWT_SECRET:-ChangeMeSuperSecretKeyForChatbotSaaS2026!}
-      - MINIO_ENDPOINT=${MINIO_ENDPOINT:-http://chatbot_saas_minio:9000}
+      - MINIO_ENDPOINT=${MINIO_ENDPOINT:-http://minio:9000}
       - MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY:-minioadmin}
       - MINIO_SECRET_KEY=${MINIO_SECRET_KEY:-minioadmin}
       - MINIO_BUCKET=${MINIO_BUCKET:-chatbot-files}

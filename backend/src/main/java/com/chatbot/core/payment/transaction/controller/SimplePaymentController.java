@@ -28,7 +28,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/payment")
+@RequestMapping({"/api/payment", "/api/simple-payment"})
 @RequiredArgsConstructor
 @Slf4j
 @Tag(name = "Payment Transaction", description = "Payment transaction management")
@@ -150,6 +150,27 @@ public class SimplePaymentController {
         );
 
         return ResponseEntity.ok(health);
+    }
+
+    /**
+     * Get bank information for deposit
+     */
+    @GetMapping("/bank-info")
+    @Operation(
+        summary = "Get bank information",
+        description = "Get bank account information for deposit"
+    )
+    public ResponseEntity<Map<String, String>> getBankInfo() {
+        log.info("🏦 Fetching bank information");
+        
+        Map<String, String> bankInfo = Map.of(
+            "bankName", "Vietcombank",
+            "accountNumber", "1234567890",
+            "accountName", "CHATBOT SaaS",
+            "branch", "Ho Chi Minh City"
+        );
+        
+        return ResponseEntity.ok(bankInfo);
     }
 
     /**
