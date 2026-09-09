@@ -17,6 +17,7 @@ import org.springframework.boot.autoconfigure.domain.EntityScan;
     "com.chatbot.core.user.model",
     "com.chatbot.core.identity.model",
     "com.chatbot.core.tenant.model",
+    "com.chatbot.core.membership.model",
     "com.chatbot.core.message.store.model",
     "com.chatbot.core.penny.model",
     "com.chatbot.core.penny.kb",

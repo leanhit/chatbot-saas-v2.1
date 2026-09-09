@@ -1,0 +1,23 @@
+package com.chatbot.core.membership.dto;
+
+import com.chatbot.core.tenant.model.TenantStatus;
+import com.chatbot.core.tenant.model.TenantVisibility;
+
+import lombok.Builder;
+import lombok.Data;
+
+import java.time.LocalDateTime;
+
+@Data
+@Builder
+public class TenantPendingResponse {
+    private Long id; // This is the Join Request ID
+    private String tenantKey; // Obfuscated unique key for tenant
+    private String name;    
+    private TenantStatus status;
+    private TenantVisibility visibility;
+    private LocalDateTime requestedAt;
+    
+    // Avatar information from tenant profile
+    private String logoUrl;
+}

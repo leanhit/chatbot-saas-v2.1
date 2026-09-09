@@ -9,14 +9,14 @@ import java.util.stream.Collectors;
 
 import com.chatbot.core.user.model.User;
 import com.chatbot.core.user.repository.UserRepository;
-import com.chatbot.core.tenant.membership.model.MembershipStatus;
+import com.chatbot.core.membership.model.MembershipStatus;
 import com.chatbot.core.tenant.dto.*;
 import com.chatbot.core.tenant.mapper.TenantMapper;
 import com.chatbot.core.tenant.model.*;
 import com.chatbot.core.tenant.repository.TenantRepository;
-import com.chatbot.core.tenant.membership.model.TenantRole;
-import com.chatbot.core.tenant.membership.repository.TenantMemberRepository;
-import com.chatbot.core.tenant.membership.model.TenantMember;
+import com.chatbot.core.membership.model.TenantRole;
+import com.chatbot.core.membership.repository.TenantMemberRepository;
+import com.chatbot.core.membership.model.TenantMember;
 import com.chatbot.core.tenant.profile.model.TenantProfile;
 import com.chatbot.core.tenant.profile.dto.TenantProfileResponse;
 import com.chatbot.core.tenant.profile.repository.TenantProfileRepository;

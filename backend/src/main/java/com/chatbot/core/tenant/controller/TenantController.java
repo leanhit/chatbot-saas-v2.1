@@ -7,7 +7,7 @@ import com.chatbot.core.tenant.service.TenantService;
 import com.chatbot.core.tenant.profile.service.TenantProfileService;
 import com.chatbot.core.tenant.repository.TenantRepository;
 import com.chatbot.core.tenant.model.Tenant;
-import com.chatbot.core.tenant.membership.service.TenantMembershipFacade;
+import com.chatbot.core.membership.service.TenantMembershipFacade;
 import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -46,7 +46,7 @@ public class TenantController {
     private final TenantRepository tenantRepository;
     private final TenantMembershipFacade tenantMembershipFacade;
     private final TenantPermissionValidator permissionValidator;
-    private final com.chatbot.core.tenant.membership.service.TenantMemberService tenantMemberService;
+    private final com.chatbot.core.membership.service.TenantMemberService tenantMemberService;
 
 
     /**
@@ -330,7 +330,7 @@ public class TenantController {
      * Get tenant members
      */
     @GetMapping("/key/{tenantKey}/members")
-    public org.springframework.data.domain.Page<com.chatbot.core.tenant.membership.dto.MemberResponse> getTenantMembers(@PathVariable String tenantKey, Pageable pageable) {
+    public org.springframework.data.domain.Page<com.chatbot.core.membership.dto.MemberResponse> getTenantMembers(@PathVariable String tenantKey, Pageable pageable) {
         Long tenantId = tenantMembershipFacade.getTenantIdByKey(tenantKey);
         return tenantMembershipFacade.listMembers(tenantId, pageable);
     }
@@ -339,7 +339,7 @@ public class TenantController {
      * Get tenant join requests
      */
     @GetMapping("/key/{tenantKey}/members/join-requests")
-    public java.util.List<com.chatbot.core.tenant.membership.dto.MemberResponse> getJoinRequests(@PathVariable String tenantKey) {
+    public java.util.List<com.chatbot.core.membership.dto.MemberResponse> getJoinRequests(@PathVariable String tenantKey) {
         Long tenantId = tenantMembershipFacade.getTenantIdByKey(tenantKey);
         return tenantMembershipFacade.pending(tenantId);
     }
@@ -362,7 +362,7 @@ public class TenantController {
     @PostMapping("/key/{tenantKey}/invitations")
     public void createInvitation(
             @PathVariable String tenantKey,
-            @Valid @RequestBody com.chatbot.core.tenant.membership.dto.InviteMemberRequest inviteData
+            @Valid @RequestBody com.chatbot.core.membership.dto.InviteMemberRequest inviteData
     ) {
         Long tenantId = tenantMembershipFacade.getTenantIdByKey(tenantKey);
         User user = permissionValidator.getCurrentUser();
@@ -373,7 +373,7 @@ public class TenantController {
      * Get tenant invitations
      */
     @GetMapping("/key/{tenantKey}/invitations")
-    public java.util.List<com.chatbot.core.tenant.membership.dto.InvitationResponse> getInvitations(@PathVariable String tenantKey) {
+    public java.util.List<com.chatbot.core.membership.dto.InvitationResponse> getInvitations(@PathVariable String tenantKey) {
         Long tenantId = tenantMembershipFacade.getTenantIdByKey(tenantKey);
         return tenantMembershipFacade.getInvitations(tenantId);
     }
@@ -382,7 +382,7 @@ public class TenantController {
      * Get member by ID
      */
     @GetMapping("/key/{tenantKey}/members/{userId}")
-    public com.chatbot.core.tenant.membership.dto.MemberResponse getMember(@PathVariable String tenantKey, @PathVariable Long userId) {
+    public com.chatbot.core.membership.dto.MemberResponse getMember(@PathVariable String tenantKey, @PathVariable Long userId) {
         Long tenantId = tenantMembershipFacade.getTenantIdByKey(tenantKey);
         return tenantMembershipFacade.getMember(tenantId, userId);
     }
@@ -391,7 +391,7 @@ public class TenantController {
      * Get current member info
      */
     @GetMapping("/key/{tenantKey}/members/me")
-    public com.chatbot.core.tenant.membership.dto.MemberResponse getMyMember(@PathVariable String tenantKey) {
+    public com.chatbot.core.membership.dto.MemberResponse getMyMember(@PathVariable String tenantKey) {
         Long tenantId = tenantMembershipFacade.getTenantIdByKey(tenantKey);
         return tenantMembershipFacade.myMember(tenantId);
     }
@@ -422,7 +422,7 @@ public class TenantController {
     public void updateMemberRole(
             @PathVariable String tenantKey,
             @PathVariable Long userId,
-            @Valid @RequestBody com.chatbot.core.tenant.membership.dto.UpdateMemberRoleRequest request) {
+            @Valid @RequestBody com.chatbot.core.membership.dto.UpdateMemberRoleRequest request) {
         Long tenantId = tenantMembershipFacade.getTenantIdByKey(tenantKey);
         tenantMembershipFacade.updateRole(tenantId, userId, request.getRole());
     }
@@ -443,7 +443,7 @@ public class TenantController {
     public void updateJoinRequest(
             @PathVariable String tenantKey,
             @PathVariable Long requestId,
-            @Valid @RequestBody com.chatbot.core.tenant.membership.dto.UpdateJoinRequest request) {
+            @Valid @RequestBody com.chatbot.core.membership.dto.UpdateJoinRequest request) {
         Long tenantId = tenantMembershipFacade.getTenantIdByKey(tenantKey);
         tenantMembershipFacade.updateJoinRequest(tenantId, requestId, request.getStatus());
     }

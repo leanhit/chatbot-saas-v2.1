@@ -16,10 +16,10 @@ import com.chatbot.spokes.facebook.connection.exception.*;
 
 import com.chatbot.core.user.model.User;
 import com.chatbot.core.user.repository.UserRepository;
-import com.chatbot.core.tenant.membership.model.TenantMember;
-import com.chatbot.core.tenant.membership.model.TenantRole;
-import com.chatbot.core.tenant.membership.model.MembershipStatus;
-import com.chatbot.core.tenant.membership.repository.TenantMemberRepository;
+import com.chatbot.core.membership.model.TenantMember;
+import com.chatbot.core.membership.model.TenantRole;
+import com.chatbot.core.membership.model.MembershipStatus;
+import com.chatbot.core.membership.repository.TenantMemberRepository;
 import com.chatbot.spokes.facebook.handler.FacebookErrorHandler;
 
 import org.springframework.data.domain.Page;

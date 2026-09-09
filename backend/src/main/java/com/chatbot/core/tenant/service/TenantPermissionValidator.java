@@ -1,12 +1,12 @@
 package com.chatbot.core.tenant.service;
 
 import com.chatbot.core.identity.model.SystemRole;
-import com.chatbot.core.tenant.membership.model.MembershipStatus;
-import com.chatbot.core.tenant.membership.model.TenantRole;
+import com.chatbot.core.membership.model.MembershipStatus;
+import com.chatbot.core.membership.model.TenantRole;
 import com.chatbot.core.user.model.User;
 import com.chatbot.core.user.repository.UserRepository;
 import com.chatbot.core.user.repository.AuthRepository;
-import com.chatbot.core.tenant.membership.repository.TenantMemberRepository;
+import com.chatbot.core.membership.repository.TenantMemberRepository;
 import com.chatbot.core.tenant.exception.InsufficientPermissionException;
 import com.chatbot.shared.exceptions.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -124,7 +124,7 @@ public class TenantPermissionValidator {
 
         TenantRole actorRole = tenantMemberRepository
                 .findByTenantIdAndUserIdAndStatus(tenantId, userId, MembershipStatus.ACTIVE)
-                .map(com.chatbot.core.tenant.membership.model.TenantMember::getRole)
+                .map(com.chatbot.core.membership.model.TenantMember::getRole)
                 .orElse(null);
 
         if (actorRole == null) return false;

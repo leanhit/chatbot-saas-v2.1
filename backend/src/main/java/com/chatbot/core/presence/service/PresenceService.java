@@ -1,8 +1,8 @@
 package com.chatbot.core.presence.service;
 
-import com.chatbot.core.tenant.membership.model.TenantMember;
-import com.chatbot.core.tenant.membership.model.TenantRole;
-import com.chatbot.core.tenant.membership.repository.TenantMemberRepository;
+import com.chatbot.core.membership.model.TenantMember;
+import com.chatbot.core.membership.model.TenantRole;
+import com.chatbot.core.membership.repository.TenantMemberRepository;
 import com.chatbot.core.user.model.User;
 import com.chatbot.core.user.repository.UserRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -107,7 +107,7 @@ public class PresenceService {
                     User user = userOpt.get();
                     Optional<TenantMember> memberOpt = tenantMemberRepository
                         .findByTenantIdAndUserIdAndStatus(tenantId, userId,
-                            com.chatbot.core.tenant.membership.model.MembershipStatus.ACTIVE);
+                            com.chatbot.core.membership.model.MembershipStatus.ACTIVE);
 
                     String role = memberOpt.map(m -> m.getRole() != null ? m.getRole().name() : "MEMBER")
                                           .orElse("MEMBER");

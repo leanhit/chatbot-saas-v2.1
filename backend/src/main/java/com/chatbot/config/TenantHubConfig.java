@@ -21,7 +21,7 @@ import java.util.Properties;
 @EnableJpaRepositories(
     basePackages = {
         "com.chatbot.core.tenant.repository",
-        "com.chatbot.core.tenant.membership.repository",
+        "com.chatbot.core.membership.repository",
         "com.chatbot.core.tenant.profile.repository",
         "com.chatbot.core.tenant.professional.repository"
     },
@@ -46,7 +46,7 @@ public class TenantHubConfig {
         em.setDataSource(tenantDataSource());
         em.setPackagesToScan(
             "com.chatbot.core.tenant.model",
-            "com.chatbot.core.tenant.membership.model",
+            "com.chatbot.core.membership.model",
             "com.chatbot.core.tenant.profile.model",
             "com.chatbot.core.tenant.professional.model"
         );

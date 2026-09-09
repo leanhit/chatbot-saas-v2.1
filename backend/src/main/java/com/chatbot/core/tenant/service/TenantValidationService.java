@@ -2,8 +2,8 @@ package com.chatbot.core.tenant.service;
 
 import com.chatbot.core.tenant.exception.InsufficientPermissionException;
 import com.chatbot.core.tenant.exception.TenantStatusTransitionException;
-import com.chatbot.core.tenant.membership.model.MembershipStatus;
-import com.chatbot.core.tenant.membership.repository.TenantMemberRepository;
+import com.chatbot.core.membership.model.MembershipStatus;
+import com.chatbot.core.membership.repository.TenantMemberRepository;
 import com.chatbot.core.tenant.model.Tenant;
 import com.chatbot.core.tenant.model.TenantStatus;
 import com.chatbot.core.tenant.model.TenantVisibility;

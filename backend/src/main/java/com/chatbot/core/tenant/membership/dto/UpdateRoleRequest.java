@@ -1,9 +1,0 @@
-package com.chatbot.core.tenant.membership.dto;
-
-import com.chatbot.core.tenant.membership.model.TenantRole;
-import lombok.Getter;
-
-@Getter
-public class UpdateRoleRequest {
-    private TenantRole role;
-}
