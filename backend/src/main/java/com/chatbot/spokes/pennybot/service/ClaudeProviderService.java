@@ -1,6 +1,6 @@
 package com.chatbot.spokes.pennybot.service;
 
-import com.chatbot.shared.penny.providers.PromptTemplateService;
+import com.chatbot.core.penny.providers.PromptTemplateService;
 import com.chatbot.spokes.facebook.webhook.service.ChatbotProviderService;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.retry.annotation.Retry;

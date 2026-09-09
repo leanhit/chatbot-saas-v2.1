@@ -10,8 +10,8 @@ import com.chatbot.spokes.facebook.connection.repository.FacebookConnectionRepos
 import com.chatbot.spokes.facebook.events.FacebookConnectionCreatedEvent;
 import com.chatbot.spokes.facebook.events.FacebookConnectionUpdatedEvent;
 import com.chatbot.spokes.facebook.events.FacebookEventProducer;
-import com.chatbot.shared.penny.service.PennyBotManager;
-import com.chatbot.shared.penny.model.PennyBot;
+import com.chatbot.core.penny.service.PennyBotManager;
+import com.chatbot.core.penny.model.PennyBot;
 import com.chatbot.spokes.facebook.connection.exception.*;
 
 import com.chatbot.core.user.model.User;

@@ -22,10 +22,10 @@ import java.util.Properties;
     basePackages = {
         "com.chatbot.core.message.repository",
         "com.chatbot.core.message.store.repository",
-        "com.chatbot.shared.penny.repository",
-        "com.chatbot.shared.penny.kb",
-        "com.chatbot.shared.penny.escalation",
-        "com.chatbot.shared.penny.analytics"
+        "com.chatbot.core.penny.repository",
+        "com.chatbot.core.penny.kb",
+        "com.chatbot.core.penny.escalation",
+        "com.chatbot.core.penny.analytics"
     },
     entityManagerFactoryRef = "messageEntityManagerFactory",
     transactionManagerRef = "messageTransactionManager"
@@ -49,10 +49,10 @@ public class MessageHubConfig {
         em.setPackagesToScan(
             "com.chatbot.core.message.model",
             "com.chatbot.core.message.store.model",
-            "com.chatbot.shared.penny.model",
-            "com.chatbot.shared.penny.kb",
-            "com.chatbot.shared.penny.escalation",
-            "com.chatbot.shared.penny.analytics"
+            "com.chatbot.core.penny.model",
+            "com.chatbot.core.penny.kb",
+            "com.chatbot.core.penny.escalation",
+            "com.chatbot.core.penny.analytics"
         );
 
         HibernateJpaVendorAdapter vendorAdapter = new HibernateJpaVendorAdapter();

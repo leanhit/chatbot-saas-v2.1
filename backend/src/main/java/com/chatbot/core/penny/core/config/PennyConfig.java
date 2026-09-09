@@ -1,0 +1,245 @@
+package com.chatbot.core.penny.core.config;
+
+import com.chatbot.spokes.facebook.webhook.service.ChatbotProviderService;
+import com.chatbot.core.penny.analytics.AnalyticsCollector;
+import com.chatbot.core.penny.context.ContextManager;
+import com.chatbot.core.penny.context.storage.DatabaseContextStorage;
+import com.chatbot.core.penny.context.storage.RedisContextStorage;
+import com.chatbot.core.penny.core.PennyMiddlewareEngine;
+import com.chatbot.core.penny.error.ErrorHandler;
+import com.chatbot.core.penny.rules.BotRuleManager;
+import com.chatbot.core.penny.rules.BotRuleRepository;
+import com.chatbot.core.penny.rules.CustomLogicEngine;
+import com.chatbot.core.penny.rules.ResponseTemplateManager;
+import com.chatbot.core.penny.rules.ResponseTemplateRepository;
+import com.chatbot.core.penny.service.IntentAnalyzer;
+import com.chatbot.core.penny.routing.ProviderSelector;
+import io.micrometer.core.instrument.MeterRegistry;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.scheduling.annotation.EnableScheduling;
+
+
+import java.util.List;
+
+/**
+ * Penny Middleware Configuration - Spring Boot auto-configuration
+ */
+@Configuration
+@EnableConfigurationProperties(PennyProperties.class)
+@EnableScheduling
+@Slf4j
+public class PennyConfig {
+    
+    /**
+     * Penny Middleware Engine
+     */
+    @Bean
+    @ConditionalOnMissingBean
+    public PennyMiddlewareEngine pennyMiddlewareEngine(
+            ContextManager contextManager,
+            IntentAnalyzer intentAnalyzer,
+            ProviderSelector providerSelector,
+            ErrorHandler errorHandler,
+            AnalyticsCollector analyticsCollector,
+            CustomLogicEngine customLogicEngine,
+            MeterRegistry meterRegistry) {
+        
+        log.info("🚀 Initializing Penny Middleware Engine...");
+        
+        PennyMiddlewareEngine engine = new PennyMiddlewareEngine(
+            contextManager,
+            intentAnalyzer,
+            providerSelector,
+            errorHandler,
+            analyticsCollector,
+            customLogicEngine,
+            meterRegistry
+        );
+        
+        log.info("✅ Penny Middleware Engine initialized successfully");
+        return engine;
+    }
+    
+    /**
+     * Context Manager
+     */
+    @Bean
+    @ConditionalOnMissingBean
+    public ContextManager contextManager(PennyProperties properties,
+                                        RedisTemplate<String, Object> redisTemplate,
+                                        DatabaseContextStorage databaseStorage) {
+        log.info("🔄 Initializing Context Manager...");
+        
+        RedisContextStorage redisStorage = new RedisContextStorage(
+            redisTemplate, 
+            new com.fasterxml.jackson.databind.ObjectMapper()
+        );
+        
+        ContextManager contextManager = new ContextManager(redisStorage, databaseStorage);
+        
+        log.info("✅ Context Manager initialized with storage: {}", properties.getContext().getStorageType());
+        return contextManager;
+    }
+    
+    /**
+     * Intent Analyzer
+     */
+    @Bean
+    @ConditionalOnMissingBean
+    public IntentAnalyzer intentAnalyzer(PennyProperties properties) {
+        log.info("🧠 Initializing Intent Analyzer...");
+        
+        IntentAnalyzer intentAnalyzer = new IntentAnalyzer();
+        
+        log.info("✅ Intent Analyzer initialized (Vietnamese enabled: {})", 
+            properties.getIntent().isVietnameseEnabled());
+        return intentAnalyzer;
+    }
+    
+    /**
+     * Provider Selector
+     */
+    @Bean
+    @ConditionalOnMissingBean
+    public ProviderSelector providerSelector(PennyProperties properties,
+                                             List<com.chatbot.spokes.facebook.webhook.service.ChatbotProviderService> chatbotProviders) {
+        log.info("🎯 Initializing Provider Selector with {} providers...", chatbotProviders.size());
+
+        ProviderSelector providerSelector = new ProviderSelector(chatbotProviders);
+
+        log.info("✅ Provider Selector initialized with strategy: {}",
+            properties.getProvider().getSelectionStrategy());
+        return providerSelector;
+    }
+    
+    /**
+     * Error Handler
+     */
+    @Bean
+    @ConditionalOnMissingBean
+    public ErrorHandler errorHandler(PennyProperties properties, RedisTemplate<String, Object> redisTemplate) {
+        log.info("⚠️ Initializing Error Handler...");
+        
+        ErrorHandler errorHandler = new ErrorHandler(properties, redisTemplate);
+        
+        log.info("✅ Error Handler initialized (Circuit breaker: {}, Fallback: {})", 
+            properties.getError().isCircuitbreakerEnabled(),
+            properties.getError().isFallbackEnabled());
+        return errorHandler;
+    }
+    
+    /**
+     * Bot Rule Manager
+     */
+    @Bean
+    @ConditionalOnMissingBean
+    public BotRuleManager botRuleManager(BotRuleRepository botRuleRepository,
+                                        ResponseTemplateRepository responseTemplateRepository,
+                                        com.fasterxml.jackson.databind.ObjectMapper objectMapper,
+                                        org.springframework.web.reactive.function.client.WebClient webClient) {
+        log.info("📐 Initializing Bot Rule Manager...");
+        
+        BotRuleManager botRuleManager = new BotRuleManager(botRuleRepository, responseTemplateRepository, objectMapper, webClient);
+        
+        log.info("✅ Bot Rule Manager initialized successfully");
+        return botRuleManager;
+    }
+    
+    /**
+     * Response Template Manager
+     */
+    @Bean
+    @ConditionalOnMissingBean
+    public ResponseTemplateManager responseTemplateManager(ResponseTemplateRepository responseTemplateRepository,
+                                                        com.fasterxml.jackson.databind.ObjectMapper objectMapper) {
+        log.info("📋 Initializing Response Template Manager...");
+        
+        ResponseTemplateManager responseTemplateManager = new ResponseTemplateManager(responseTemplateRepository, objectMapper);
+        
+        log.info("✅ Response Template Manager initialized successfully");
+        return responseTemplateManager;
+    }
+    
+    /**
+     * Custom Logic Engine
+     */
+    @Bean
+    @ConditionalOnMissingBean
+    public CustomLogicEngine customLogicEngine(BotRuleManager botRuleManager,
+                                              ResponseTemplateManager responseTemplateManager) {
+        log.info("🧠 Initializing Custom Logic Engine...");
+        
+        CustomLogicEngine customLogicEngine = new CustomLogicEngine(botRuleManager, responseTemplateManager);
+        
+        log.info("✅ Custom Logic Engine initialized successfully");
+        return customLogicEngine;
+    }
+    
+    /**
+     * Penny Properties
+     */
+    @Bean
+    @ConditionalOnMissingBean
+    @Primary
+    public PennyProperties pennyProperties() {
+        return new PennyProperties();
+    }
+    
+    /**
+     * Provider Health Monitor (optional)
+     */
+    @Bean
+    @ConditionalOnProperty(prefix = "penny.provider", name = "health.monitor.enabled", havingValue = "true")
+    public ProviderHealthMonitor providerHealthMonitor(List<ChatbotProviderService> providers,
+                                                     ProviderSelector providerSelector) {
+        log.info("🏥 Initializing Provider Health Monitor...");
+        
+        ProviderHealthMonitor monitor = new ProviderHealthMonitor(providers, providerSelector);
+        
+        log.info("✅ Provider Health Monitor initialized for {} providers", providers.size());
+        return monitor;
+    }
+    
+        
+    /**
+     * Provider Health Monitor Service
+     */
+    public static class ProviderHealthMonitor {
+        private final List<ChatbotProviderService> providers;
+        private final ProviderSelector providerSelector;
+        
+        public ProviderHealthMonitor(List<ChatbotProviderService> providers,
+                                   ProviderSelector providerSelector) {
+            this.providers = providers;
+            this.providerSelector = providerSelector;
+        }
+        
+        /**
+         * Check health of all providers
+         */
+        public void checkAllProviders() {
+            for (ChatbotProviderService provider : providers) {
+                try {
+                    boolean isHealthy = provider.healthCheck("test-bot-id");
+                    String providerType = provider.getProviderType();
+                    
+                    providerSelector.updateProviderHealth(
+                        ProviderSelector.ProviderType.valueOf(providerType),
+                        isHealthy,
+                        isHealthy ? "Health check passed" : "Health check failed"
+                    );
+                    
+                } catch (Exception e) {
+                    log.error("❌ Health check failed for provider: {}", e.getMessage(), e);
+                }
+            }
+        }
+    }
+}

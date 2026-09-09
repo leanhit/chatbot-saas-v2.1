@@ -2,7 +2,7 @@ package com.chatbot.core.tenant.service;
 
 import com.chatbot.core.payment.plan.model.Package;
 import com.chatbot.core.payment.plan.service.PackageService;
-import com.chatbot.shared.penny.repository.PennyBotRepository;
+import com.chatbot.core.penny.repository.PennyBotRepository;
 import com.chatbot.core.tenant.exception.BusinessLogicException;
 import com.chatbot.core.tenant.repository.TenantRepository;
 import lombok.RequiredArgsConstructor;

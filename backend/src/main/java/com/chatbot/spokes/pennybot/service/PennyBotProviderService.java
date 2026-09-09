@@ -7,7 +7,7 @@ import com.chatbot.core.message.store.model.Conversation;
 import com.chatbot.core.message.store.repository.ConversationRepository;
 import com.chatbot.spokes.facebook.dto.FacebookConnectionDTO;
 import com.chatbot.spokes.facebook.service.FacebookConnectionQueryService;
-import com.chatbot.shared.penny.kb.KnowledgeBaseSearchService;
+import com.chatbot.core.penny.kb.KnowledgeBaseSearchService;
 import com.chatbot.core.message.store.repository.MessageRepository;
 import com.chatbot.core.tenant.infra.TenantContext;
 import com.chatbot.core.message.store.service.LLMClient;

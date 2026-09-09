@@ -9,7 +9,7 @@ import com.chatbot.spokes.facebook.messenger.service.FacebookMessengerService;
 import com.chatbot.spokes.facebook.webhook.dto.WebhookRequest;
 import com.chatbot.spokes.facebook.webhook.dto.FacebookKafkaEvent;
 import com.chatbot.spokes.facebook.webhook.model.FacebookMessageType;
-import com.chatbot.shared.penny.service.PennyBotManager;
+import com.chatbot.core.penny.service.PennyBotManager;
 import com.chatbot.core.message.store.service.ConversationService;
 import com.chatbot.core.message.store.service.MessageService;
 import com.chatbot.core.message.store.service.AIEscalationService;

@@ -2,8 +2,8 @@ package com.chatbot.core.cache;
 
 import com.chatbot.core.tenant.repository.TenantRepository;
 import com.chatbot.core.tenant.service.TenantService;
-import com.chatbot.shared.penny.repository.PennyBotRepository;
-import com.chatbot.shared.penny.service.PennyBotService;
+import com.chatbot.core.penny.repository.PennyBotRepository;
+import com.chatbot.core.penny.service.PennyBotService;
 import com.chatbot.core.payment.plan.service.CachedPackageService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -106,9 +106,9 @@ public class CacheWarmer {
     private void warmUpChatbots() {
         log.debug("Warming up chatbots cache");
         try {
-            List<com.chatbot.shared.penny.model.PennyBot> activeBots = pennyBotRepository.findAll();
+            List<com.chatbot.core.penny.model.PennyBot> activeBots = pennyBotRepository.findAll();
             int count = 0;
-            for (com.chatbot.shared.penny.model.PennyBot bot : activeBots) {
+            for (com.chatbot.core.penny.model.PennyBot bot : activeBots) {
                 if (bot.isActive() && bot.isEnabled()) {
                     pennyBotService.getBotById(bot.getId());
                     count++;
