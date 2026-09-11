@@ -23,27 +23,27 @@ public class RateLimitingFilter extends OncePerRequestFilter {
     private final RedisTemplate<String, String> redisTemplate;
 
     // Public API rate limits (stricter for public endpoints)
-    @Value("${rate.limit.public.requests:50}")
+    @Value("${rate.limit.public.requests:1000}")
     private int publicRequestLimit;
 
     @Value("${rate.limit.public.window:60}")
     private int publicWindowSeconds;
 
     // Webhook rate limits (higher for legitimate webhook traffic)
-    @Value("${rate.limit.webhook.requests:200}")
+    @Value("${rate.limit.webhook.requests:5000}")
     private int webhookRequestLimit;
 
     @Value("${rate.limit.webhook.window:60}")
     private int webhookWindowSeconds;
 
     // Default rate limits for other endpoints
-    @Value("${rate.limit.default.requests:100}")
+    @Value("${rate.limit.default.requests:2000}")
     private int defaultRequestLimit;
 
     @Value("${rate.limit.default.window:60}")
     private int defaultWindowSeconds;
 
-    @Value("${rate.limit.trust-proxy-headers:false}")
+    @Value("${rate.limit.trust-proxy-headers:true}")
     private boolean trustProxyHeaders;
 
     @Override
@@ -103,16 +103,14 @@ public class RateLimitingFilter extends OncePerRequestFilter {
     }
 
     private String getClientId(HttpServletRequest request) {
-        if (trustProxyHeaders) {
-            String xForwardedFor = request.getHeader("X-Forwarded-For");
-            if (xForwardedFor != null && !xForwardedFor.isEmpty()) {
-                return xForwardedFor.split(",")[0].trim();
-            }
-            
-            String xRealIp = request.getHeader("X-Real-IP");
-            if (xRealIp != null && !xRealIp.isEmpty()) {
-                return xRealIp;
-            }
+        String xForwardedFor = request.getHeader("X-Forwarded-For");
+        if (xForwardedFor != null && !xForwardedFor.trim().isEmpty()) {
+            return xForwardedFor.split(",")[0].trim();
+        }
+        
+        String xRealIp = request.getHeader("X-Real-IP");
+        if (xRealIp != null && !xRealIp.trim().isEmpty()) {
+            return xRealIp;
         }
         
         return request.getRemoteAddr();

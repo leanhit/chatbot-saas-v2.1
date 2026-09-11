@@ -2,9 +2,9 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { pennyApi } from '@/api/pennyApi'
 import {
-  PennyBotDto,
-  PennyBotRequest,
-  PennyBotResponse
+    PennyBotDto,
+    PennyBotRequest,
+    PennyBotResponse
 } from '@/types/penny'
 
 export const usePennyBotStore = defineStore('penny-bot', () => {
@@ -21,19 +21,19 @@ export const usePennyBotStore = defineStore('penny-bot', () => {
     const healthLoading = ref(false)
 
     // Getters
-    const activeBots = computed(() => 
+    const activeBots = computed(() =>
         pennyBots.value.filter(bot => bot.isActive && bot.isEnabled)
     )
-    
-    const inactiveBots = computed(() => 
+
+    const inactiveBots = computed(() =>
         pennyBots.value.filter(bot => !bot.isActive || !bot.isEnabled)
     )
-    
+
     const currentBot = computed(() => {
         if (!currentBotId.value) return null
         return pennyBots.value.find(bot => bot.id === currentBotId.value)
     })
-    
+
     const botsByType = computed(() => {
         const grouped = {}
         pennyBots.value.forEach(bot => {
@@ -52,6 +52,17 @@ export const usePennyBotStore = defineStore('penny-bot', () => {
             const { data } = await pennyApi.getMyPennyBots()
             // Convert API responses to DTOs
             pennyBots.value = data.map(bot => new PennyBotDto(bot))
+
+            if (pennyBots.value.length > 0) {
+                const isValidCurrent = currentBotId.value && pennyBots.value.some(b => (b.id || b.botId) === currentBotId.value)
+                if (!isValidCurrent) {
+                    const firstBotId = pennyBots.value[0].id || pennyBots.value[0].botId
+                    if (firstBotId) {
+                        currentBotId.value = firstBotId
+                        currentPennyBot.value = pennyBots.value[0]
+                    }
+                }
+            }
         } catch (error) {
             console.error('Failed to fetch Penny bots:', error)
             throw error
@@ -204,9 +215,11 @@ export const usePennyBotStore = defineStore('penny-bot', () => {
     }
 
     const setCurrentBotId = (botId) => {
-        currentBotId.value = botId
+        if (!botId || botId === 'undefined' || botId === 'null' || String(botId).trim() === '') return
+        const strId = String(botId).trim()
+        currentBotId.value = strId
         // Also set currentPennyBot if bot exists
-        const bot = pennyBots.value.find(b => b.id === botId)
+        const bot = pennyBots.value.find(b => b.id === strId)
         if (bot) {
             currentPennyBot.value = bot
         }

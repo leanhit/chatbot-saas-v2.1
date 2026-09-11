@@ -1,14 +1,21 @@
 <template>
   <div class="penny-bot-management">
     <!-- Header -->
-    <div class="flex justify-between items-center mb-6">
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 pb-4 border-b border-gray-200 dark:border-gray-700">
       <div>
-        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
-          {{ $t('penny.title') }}
-        </h1>
-        <p class="text-gray-600 dark:text-gray-400 mt-1">
-          {{ $t('penny.subtitle') }}
-        </p>
+        <div class="flex items-center gap-3">
+          <div class="p-2.5 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl text-white shadow-md">
+            <Icon icon="mdi:robot-outline" class="text-2xl" />
+          </div>
+          <div>
+            <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
+              {{ $t('penny.title') }}
+            </h1>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+              {{ $t('penny.subtitle') }}
+            </p>
+          </div>
+        </div>
       </div>
       <div class="flex items-center space-x-2">
         <button
@@ -439,6 +446,8 @@ export default {
         await pennyBotStore.togglePennyBotStatus(bot.id, !bot.isEnabled)
       } catch (error) {
         console.error('Failed to toggle bot status:', error)
+        const errorMessage = error.localizedMessage || error.response?.data?.message || error.message || 'Failed to update bot status'
+        alert(`❌ ${errorMessage}`)
       }
     }
 
@@ -452,6 +461,8 @@ export default {
           await pennyBotStore.deletePennyBot(bot.id)
         } catch (error) {
           console.error('Failed to delete bot:', error)
+          const errorMessage = error.localizedMessage || error.response?.data?.message || error.message || 'Failed to delete bot'
+          alert(`❌ ${errorMessage}`)
         }
       }
     }
@@ -486,52 +497,51 @@ export default {
       }
 
     const goToConnections = (bot) => {
-      if (!bot || !bot.id) {
+      const botId = typeof bot === 'object' ? (bot?.id || bot?.botId) : bot
+      if (!botId || botId === 'undefined' || botId === 'null') {
         console.warn('Invalid bot for connections:', bot)
         return
       }
       // Set current bot in store
-      pennyBotStore.setCurrentBotId(bot.id)
+      pennyBotStore.setCurrentBotId(botId)
       // Redirect without botId parameter
       router.push({ name: 'penny-connections' })
     }
 
     const goToRules = (bot) => {
-      if (!bot || !bot.id) {
+      const botId = typeof bot === 'object' ? (bot?.id || bot?.botId) : bot
+      if (!botId || botId === 'undefined' || botId === 'null') {
         console.warn('Invalid bot for rules:', bot)
         return
       }
       // Set current bot in store
-      pennyBotStore.setCurrentBotId(bot.id)
+      pennyBotStore.setCurrentBotId(botId)
       // Redirect without botId parameter
       router.push({ name: 'penny-rules' })
     }
 
     const goToKnowledgeBase = (bot) => {
-      if (!bot || !bot.id) {
-        console.warn('Invalid bot for knowledge base:', bot)
-        return
+      const botId = typeof bot === 'object' ? (bot?.id || bot?.botId) : bot
+      if (botId && botId !== 'undefined' && botId !== 'null') {
+        pennyBotStore.setCurrentBotId(botId)
       }
-      // Navigate with botId parameter
-      router.push({ name: 'penny-knowledge-base', params: { botId: bot.id } })
+      router.push({ name: 'penny-knowledge-base' })
     }
 
     const goToEscalationTickets = (bot) => {
-      if (!bot || !bot.id) {
-        console.warn('Invalid bot for escalation tickets:', bot)
-        return
+      const botId = typeof bot === 'object' ? (bot?.id || bot?.botId) : bot
+      if (botId && botId !== 'undefined' && botId !== 'null') {
+        pennyBotStore.setCurrentBotId(botId)
       }
-      // Navigate with botId parameter
-      router.push({ name: 'penny-escalation', params: { botId: bot.id } })
+      router.push({ name: 'penny-escalation' })
     }
 
     const goToBotConfig = (bot) => {
-      if (!bot || !bot.id) {
-        console.warn('Invalid bot for configuration:', bot)
-        return
+      const botId = typeof bot === 'object' ? (bot?.id || bot?.botId) : bot
+      if (botId && botId !== 'undefined' && botId !== 'null') {
+        pennyBotStore.setCurrentBotId(botId)
       }
-      // Navigate with botId parameter
-      router.push({ name: 'penny-bot-config', params: { botId: bot.id } })
+      router.push({ name: 'penny-bot-config' })
     }
 
     const createConnection = (bot) => {

@@ -1,9 +1,10 @@
 package com.chatbot.core.penny.rules;
 
 import com.chatbot.core.tenant.infra.TenantContext;
+import com.chatbot.core.tenant.service.TenantPermissionValidator;
+import com.chatbot.core.tenant.exception.InsufficientPermissionException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
@@ -21,30 +22,40 @@ import java.util.stream.Collectors;
 public class BotRuleController {
 
     private final BotRuleManager botRuleManager;
+    private final TenantPermissionValidator tenantPermissionValidator;
 
-    public BotRuleController(BotRuleManager botRuleManager) {
+    public BotRuleController(BotRuleManager botRuleManager, TenantPermissionValidator tenantPermissionValidator) {
         this.botRuleManager = botRuleManager;
+        this.tenantPermissionValidator = tenantPermissionValidator;
+    }
+
+    private Long getValidatedTenantId() {
+        Long tenantId = TenantContext.getTenantId();
+        if (tenantId == null) {
+            throw new IllegalStateException("Tenant context not found. Please provide X-Tenant-Key header");
+        }
+        return tenantId;
+    }
+
+    private void validateOwnerOrEditor(Long tenantId, String userEmail, String action) {
+        if (!tenantPermissionValidator.isOwnerOrEditor(tenantId, userEmail)) {
+            throw new InsufficientPermissionException("Only OWNER or EDITOR can " + action);
+        }
     }
 
     /**
      * Create new rule
      */
     @PostMapping
-    @PreAuthorize("hasAnyRole('OWNER', 'EDITOR')")
     public ResponseEntity<Map<String, Object>> createRule(
             @PathVariable String botId,
             @RequestBody Map<String, Object> request,
             Principal principal) {
         
-        // Validate tenant context
-        Long tenantId = TenantContext.getTenantId();
-        if (tenantId == null) {
-            return ResponseEntity.badRequest().body(Map.of(
-                "error", "Tenant context not found. Please provide X-Tenant-Key header"
-            ));
-        }
-        
+        Long tenantId = getValidatedTenantId();
         String createdBy = principal.getName();
+        validateOwnerOrEditor(tenantId, createdBy, "create rules");
+        
         UUID botUuid = UUID.fromString(botId);
         
         try {
@@ -95,14 +106,16 @@ public class BotRuleController {
      * Update existing rule
      */
     @PutMapping("/{ruleId}")
-    @PreAuthorize("hasAnyRole('OWNER', 'EDITOR')")
     public ResponseEntity<Map<String, Object>> updateRule(
             @PathVariable String botId,
             @PathVariable String ruleId,
             @RequestBody Map<String, Object> request,
             Principal principal) {
         
+        Long tenantId = getValidatedTenantId();
         String updatedBy = principal.getName();
+        validateOwnerOrEditor(tenantId, updatedBy, "update rules");
+
         UUID ruleUuid = UUID.fromString(ruleId);
         
         try {
@@ -206,13 +219,15 @@ public class BotRuleController {
      * Delete rule
      */
     @DeleteMapping("/{ruleId}")
-    @PreAuthorize("hasAnyRole('OWNER', 'EDITOR')")
     public ResponseEntity<Map<String, String>> deleteRule(
             @PathVariable String botId,
             @PathVariable String ruleId,
             Principal principal) {
         
+        Long tenantId = getValidatedTenantId();
         String deletedBy = principal.getName();
+        validateOwnerOrEditor(tenantId, deletedBy, "delete rules");
+
         UUID ruleUuid = UUID.fromString(ruleId);
         
         boolean success = botRuleManager.deleteRule(ruleUuid, deletedBy);

@@ -298,7 +298,10 @@ export default {
 
     const selectBot = (bot) => {
       selectedBot.value = bot
-      fetchConnections()
+      if (bot) {
+        pennyBotStore.setCurrentBotId(bot.id || bot.botId)
+        fetchConnections()
+      }
     }
 
     const toggleConnectionStatus = async (connection) => {
@@ -383,22 +386,20 @@ export default {
     }
 
     // Lifecycle
-    onMounted(() => {
-      // Load available bots first
+    onMounted(async () => {
       if (!availableBots.value || availableBots.value.length === 0) {
-        pennyBotStore.fetchPennyBots().then(() => {
-          // Auto-select current bot if available
-          if (currentBot.value) {
-            selectedBot.value = currentBot.value
-            fetchConnections()
-          }
-        })
-      } else {
-        // Auto-select current bot if available
-        if (currentBot.value) {
-          selectedBot.value = currentBot.value
-          fetchConnections()
+        try {
+          await pennyBotStore.fetchPennyBots()
+        } catch (err) {
+          console.error('Failed to fetch Penny bots:', err)
         }
+      }
+
+      const targetBot = currentBot.value || (availableBots.value && availableBots.value.length > 0 ? availableBots.value[0] : null)
+      if (targetBot) {
+        selectedBot.value = targetBot
+        pennyBotStore.setCurrentBotId(targetBot.id || targetBot.botId)
+        fetchConnections()
       }
     })
 

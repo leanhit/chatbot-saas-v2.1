@@ -111,31 +111,75 @@
                 <router-link
                   to="/penny-bots"
                   @click.stop
-                  class="w-full text-left block rounded-md p-3 hover:bg-gray-200 dark:hover:bg-gray-700"
+                  class="w-full text-left block rounded-md p-2.5 px-3 text-sm hover:bg-gray-200 dark:hover:bg-gray-700 flex items-center gap-2.5 transition-colors"
                 >
-                  {{ $t('sidebar.bots') }}
+                  <Icon icon="mdi:robot-outline" class="text-base flex-shrink-0" />
+                  <span>{{ $t('sidebar.bots') }}</span>
                 </router-link>
                 <router-link
                   to="/penny-connections"
                   @click.stop
-                  class="w-full text-left block rounded-md p-3 hover:bg-gray-200 dark:hover:bg-gray-700"
+                  class="w-full text-left block rounded-md p-2.5 px-3 text-sm hover:bg-gray-200 dark:hover:bg-gray-700 flex items-center gap-2.5 transition-colors"
                 >
-                  {{ $t('sidebar.connections') }}
+                  <Icon icon="mdi:link-variant" class="text-base flex-shrink-0" />
+                  <span>{{ $t('sidebar.connections') }}</span>
                 </router-link>
                 <router-link
                   to="/penny-rules"
                   @click.stop
-                  class="w-full text-left block rounded-md p-3 hover:bg-gray-200 dark:hover:bg-gray-700"
+                  class="w-full text-left block rounded-md p-2.5 px-3 text-sm hover:bg-gray-200 dark:hover:bg-gray-700 flex items-center gap-2.5 transition-colors"
                 >
-                  {{ $t('sidebar.rules') }}
+                  <Icon icon="mdi:format-list-checks" class="text-base flex-shrink-0" />
+                  <span>{{ $t('sidebar.rules') }}</span>
                 </router-link>
-                <hr class="my-1 border-gray-200 dark:border-gray-700" />
+                <router-link
+                  to="/penny-knowledge-base"
+                  @click.stop
+                  class="w-full text-left block rounded-md p-2.5 px-3 text-sm hover:bg-gray-200 dark:hover:bg-gray-700 flex items-center gap-2.5 transition-colors"
+                >
+                  <Icon icon="mdi:database-search-outline" class="text-base flex-shrink-0" />
+                  <span>{{ $t('sidebar.knowledgeBase') }}</span>
+                </router-link>
+                <router-link
+                  to="/penny-escalation"
+                  @click.stop
+                  class="w-full text-left block rounded-md p-2.5 px-3 text-sm hover:bg-gray-200 dark:hover:bg-gray-700 flex items-center gap-2.5 transition-colors"
+                >
+                  <Icon icon="mdi:ticket-account" class="text-base flex-shrink-0" />
+                  <span>{{ $t('sidebar.escalation') }}</span>
+                </router-link>
+                <router-link
+                  to="/penny-bot-config"
+                  @click.stop
+                  class="w-full text-left block rounded-md p-2.5 px-3 text-sm hover:bg-gray-200 dark:hover:bg-gray-700 flex items-center gap-2.5 transition-colors"
+                >
+                  <Icon icon="mdi:cog-outline" class="text-base flex-shrink-0" />
+                  <span>{{ $t('sidebar.botConfig') }}</span>
+                </router-link>
+                <hr class="my-1.5 border-gray-200 dark:border-gray-700" />
                 <router-link
                   to="/penny/metrics"
                   @click.stop
-                  class="w-full text-left block rounded-md p-3 hover:bg-gray-200 dark:hover:bg-gray-700"
+                  class="w-full text-left block rounded-md p-2.5 px-3 text-sm hover:bg-gray-200 dark:hover:bg-gray-700 flex items-center gap-2.5 transition-colors"
                 >
-                  Metrics
+                  <Icon icon="mdi:chart-line" class="text-base flex-shrink-0" />
+                  <span>{{ $t('sidebar.metrics') }}</span>
+                </router-link>
+                <router-link
+                  to="/penny/monitoring"
+                  @click.stop
+                  class="w-full text-left block rounded-md p-2.5 px-3 text-sm hover:bg-gray-200 dark:hover:bg-gray-700 flex items-center gap-2.5 transition-colors"
+                >
+                  <Icon icon="mdi:monitor-dashboard" class="text-base flex-shrink-0" />
+                  <span>{{ $t('sidebar.monitoring') }}</span>
+                </router-link>
+                <router-link
+                  to="/penny/analytics"
+                  @click.stop
+                  class="w-full text-left block rounded-md p-2.5 px-3 text-sm hover:bg-gray-200 dark:hover:bg-gray-700 flex items-center gap-2.5 transition-colors"
+                >
+                  <Icon icon="mdi:google-analytics" class="text-base flex-shrink-0" />
+                  <span>{{ $t('sidebar.pennyAnalytics') }}</span>
                 </router-link>
               </template>
             </menu-accordion>

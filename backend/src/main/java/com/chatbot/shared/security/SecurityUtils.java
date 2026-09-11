@@ -71,6 +71,12 @@ public class SecurityUtils {
      * Returns Optional<Long> to handle cases where tenant ID is not available
      */
     public static Optional<Long> getCurrentTenantId() {
+        // First check TenantContext (set by TenantContextInterceptor via X-Tenant-Key header)
+        Long tenantIdFromContext = com.chatbot.core.tenant.infra.TenantContext.getTenantId();
+        if (tenantIdFromContext != null) {
+            return Optional.of(tenantIdFromContext);
+        }
+
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !authentication.isAuthenticated()) {
             return Optional.empty();

@@ -9,14 +9,22 @@ const handleApiError = (error) => {
   throw error
 }
 
+const isValidBotId = (botId) => {
+  if (!botId) return false;
+  if (typeof botId === 'string' && (botId === 'undefined' || botId === 'null' || botId.trim() === '')) return false;
+  return true;
+};
+
 export const pennyConnectionApi = {
   // Get all connections for a bot
   getConnections(botId) {
+    if (!isValidBotId(botId)) return Promise.reject(new Error(`Invalid botId: ${botId}`));
     return axios.get(`/connection/facebook/bot/${botId}/list`).catch(handleApiError)
   },
 
   // Get connections by type
   getConnectionsByType(botId, connectionType) {
+    if (!isValidBotId(botId)) return Promise.reject(new Error(`Invalid botId: ${botId}`));
     if (connectionType === 'facebook') {
       return axios.get(`/connection/facebook/bot/${botId}/list`).catch(handleApiError)
     }
@@ -25,6 +33,7 @@ export const pennyConnectionApi = {
 
   // Create new connection (Facebook style - matches backend DTO)
   createConnection(botId, connectionData) {
+    if (!isValidBotId(botId)) return Promise.reject(new Error(`Invalid botId: ${botId}`));
     // For Facebook connections, use the existing Facebook connection API
     if (connectionData.connectionType === 'FACEBOOK') {
       const fbData = {
@@ -53,6 +62,7 @@ export const pennyConnectionApi = {
 
   // Update existing connection
   updateConnection(botId, connectionId, connectionData) {
+    if (!isValidBotId(botId)) return Promise.reject(new Error(`Invalid botId: ${botId}`));
     // For Facebook connections, use the existing Facebook connection API
     if (connectionData.connectionType === 'FACEBOOK') {
       const fbData = {
@@ -86,21 +96,25 @@ export const pennyConnectionApi = {
 
   // Test connection
   testConnection(botId, connectionId, testData) {
+    if (!isValidBotId(botId)) return Promise.reject(new Error(`Invalid botId: ${botId}`));
     return axios.post(`/penny/bots/${botId}/connections/${connectionId}/test`, testData).catch(handleApiError)
   },
 
   // Get connection statistics
   getConnectionStatistics(botId) {
+    if (!isValidBotId(botId)) return Promise.reject(new Error(`Invalid botId: ${botId}`));
     return axios.get(`/penny/bots/${botId}/connections/statistics`).catch(handleApiError)
   },
 
   // Toggle connection status
   toggleConnectionStatus(botId, connectionId) {
+    if (!isValidBotId(botId)) return Promise.reject(new Error(`Invalid botId: ${botId}`));
     return axios.post(`/penny/bots/${botId}/connections/${connectionId}/toggle`).catch(handleApiError)
   },
 
   // Get connection health status
   getConnectionHealth(botId, connectionId) {
+    if (!isValidBotId(botId)) return Promise.reject(new Error(`Invalid botId: ${botId}`));
     return axios.get(`/penny/bots/${botId}/connections/${connectionId}/health`).catch(handleApiError)
   },
 

@@ -1,19 +1,43 @@
 <template>
   <div class="penny-escalation">
     <!-- Header -->
-    <div class="flex justify-between items-center mb-6">
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 pb-4 border-b border-gray-200 dark:border-gray-700">
       <div>
-        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
-          {{ $t('penny.escalation.title') }}
-        </h1>
-        <p class="text-gray-600 dark:text-gray-400 mt-1">
-          {{ $t('penny.escalation.subtitle') }}
-        </p>
+        <div class="flex items-center gap-3">
+          <div class="p-2.5 bg-gradient-to-br from-amber-500 to-orange-600 rounded-xl text-white shadow-md">
+            <Icon icon="mdi:ticket-account" class="text-2xl" />
+          </div>
+          <div>
+            <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
+              {{ $t('penny.escalation.title') }}
+            </h1>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+              {{ $t('penny.escalation.subtitle') }}
+            </p>
+          </div>
+        </div>
       </div>
-      <div>
+      <div class="flex items-center space-x-3">
+        <!-- Bot Selector Dropdown -->
+        <div v-if="availableBots.length > 0" class="flex items-center space-x-2">
+          <select
+            v-model="selectedBotId"
+            @change="handleBotChange(selectedBotId)"
+            class="px-3.5 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm font-medium focus:ring-2 focus:ring-primary focus:outline-none shadow-sm"
+          >
+            <option value="" disabled>-- Chọn Penny Bot --</option>
+            <option
+              v-for="bot in availableBots"
+              :key="bot.id || bot.botId"
+              :value="bot.id || bot.botId"
+            >
+              {{ bot.botName }} - {{ getBotTypeDisplayName(bot.botType) }}
+            </option>
+          </select>
+        </div>
         <button
           @click="refreshTickets"
-          :disabled="loading"
+          :disabled="loading || !effectiveBotId"
           class="inline-flex items-center px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/80 transition-colors disabled:opacity-50 text-sm font-medium"
         >
           <Icon icon="mdi:refresh" :class="{'animate-spin': loading}" class="mr-2" />
@@ -233,6 +257,7 @@
 <script>
 import { Icon } from '@iconify/vue';
 import { pennyApi } from '@/api/pennyApi';
+import { usePennyBotStore } from '@/stores/pennyBotStore';
 
 export default {
   name: 'EscalationTickets',
@@ -242,11 +267,12 @@ export default {
   props: {
     botId: {
       type: String,
-      required: true
+      required: false
     }
   },
   data() {
     return {
+      selectedBotId: null,
       tickets: [],
       loading: false,
       currentFilter: 'ALL',
@@ -272,7 +298,7 @@ export default {
         notes: ''
       },
       
-      // Mock agents - replace with actual agent list from backend
+      // Mock agents
       availableAgents: [
         { id: 'agent1', name: 'Agent 1' },
         { id: 'agent2', name: 'Agent 2' },
@@ -281,6 +307,24 @@ export default {
     };
   },
   computed: {
+    pennyBotStore() {
+      return usePennyBotStore();
+    },
+    availableBots() {
+      return this.pennyBotStore.pennyBots || [];
+    },
+    effectiveBotId() {
+      const clean = (val) => {
+        if (!val) return null;
+        const s = typeof val === 'object' ? (val.id || val.botId || '') : String(val);
+        const trimmed = String(s).trim();
+        if (!trimmed || trimmed === 'undefined' || trimmed === 'null') return null;
+        const uuidRegex = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
+        return uuidRegex.test(trimmed) ? trimmed : null;
+      };
+
+      return clean(this.botId) || clean(this.$route?.params?.botId) || clean(this.selectedBotId) || clean(this.pennyBotStore.currentBotId);
+    },
     filteredTickets() {
       if (this.currentFilter === 'ALL') {
         return this.tickets;
@@ -288,14 +332,75 @@ export default {
       return this.tickets.filter(ticket => ticket.status === this.currentFilter);
     }
   },
-  mounted() {
-    this.loadTickets();
+  watch: {
+    availableBots: {
+      immediate: true,
+      handler(bots) {
+        if (bots && bots.length > 0) {
+          const currentTarget = this.effectiveBotId;
+          if (currentTarget && bots.some(b => (b.id || b.botId) === currentTarget)) {
+            this.selectedBotId = currentTarget;
+          } else if (!this.selectedBotId) {
+            const firstValidBot = bots.find(b => (b.id || b.botId));
+            if (firstValidBot) {
+              const firstId = firstValidBot.id || firstValidBot.botId;
+              this.selectedBotId = firstId;
+              this.pennyBotStore.setCurrentBotId(firstId);
+            }
+          }
+        }
+      }
+    },
+    effectiveBotId: {
+      immediate: true,
+      handler(newBotId) {
+        if (newBotId) {
+          if (this.selectedBotId !== newBotId) {
+            this.selectedBotId = newBotId;
+          }
+          this.pennyBotStore.setCurrentBotId(newBotId);
+          this.loadTickets();
+        }
+      }
+    }
+  },
+  async mounted() {
+    if (this.availableBots.length === 0) {
+      try {
+        await this.pennyBotStore.fetchPennyBots();
+      } catch (err) {
+        console.error('Failed to fetch Penny bots:', err);
+      }
+    }
+    if (this.effectiveBotId) {
+      this.loadTickets();
+    }
   },
   methods: {
+    getBotTypeDisplayName(botType) {
+      const names = {
+        'GENERAL': 'General Purpose',
+        'SUPPORT': 'Customer Support',
+        'BUSINESS': 'Business & Sales',
+        'BOTPRESS': 'Botpress Integration'
+      };
+      return names[botType] || botType || 'General';
+    },
+    handleBotChange(newBotId) {
+      this.selectedBotId = newBotId;
+      if (newBotId) {
+        this.pennyBotStore.setCurrentBotId(newBotId);
+      }
+      this.loadTickets();
+    },
     async loadTickets() {
+      if (!this.effectiveBotId) {
+        console.warn('Cannot load tickets: effectiveBotId is missing or invalid');
+        return;
+      }
       this.loading = true;
       try {
-        const response = await pennyApi.getEscalationTickets(this.botId);
+        const response = await pennyApi.getEscalationTickets(this.effectiveBotId);
         this.tickets = response.data.content || response.data;
       } catch (error) {
         console.error('Error loading tickets:', error);

@@ -16,9 +16,15 @@ public class CustomUserDetails implements UserDetails {
     private static final long serialVersionUID = 1L;
     
     private User user;
+    private Long tenantId;
 
     public CustomUserDetails(User user) {
         this.user = user;
+    }
+
+    public CustomUserDetails(User user, Long tenantId) {
+        this.user = user;
+        this.tenantId = tenantId;
     }
 
     public User getUser() {

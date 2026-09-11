@@ -285,10 +285,13 @@ export default {
 
     const deleteRule = async (rule) => {
       try {
-        await pennyRuleStore.deleteRule(props.bot.id, rule.id)
-        } catch (error) {
+        const targetRuleId = rule.ruleId || rule.id
+        await pennyRuleStore.deleteRule(props.bot.id, targetRuleId)
+        await fetchRules()
+      } catch (error) {
         console.error('Failed to delete rule:', error)
-        alert('Failed to delete rule: ' + error.message)
+        const errorMessage = error.localizedMessage || error.response?.data?.message || error.message || 'Failed to delete rule'
+        alert(`❌ ${errorMessage}`)
       }
     }
 

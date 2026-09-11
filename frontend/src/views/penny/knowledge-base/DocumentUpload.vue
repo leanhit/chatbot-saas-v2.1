@@ -133,11 +133,11 @@ export default {
   props: {
     botId: {
       type: String,
-      required: true
+      required: false
     },
     tenantId: {
-      type: Number,
-      required: true
+      type: [Number, String],
+      required: false
     }
   },
   data() {
@@ -206,7 +206,8 @@ export default {
       this.$refs.fileInput.value = '';
     },
     async uploadDocument() {
-      if (!this.selectedFile || !this.documentName) return;
+      const uuidRegex = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
+      if (!this.selectedFile || !this.documentName || !this.botId || !uuidRegex.test(String(this.botId).trim())) return;
 
       this.uploading = true;
       this.uploadProgress = 0;
@@ -218,7 +219,7 @@ export default {
           this.botId,
           this.tenantId,
           this.documentName,
-          this.$store.state.user?.username
+          this.$store?.state?.user?.username
         );
 
         this.uploadProgress = 100;
@@ -237,6 +238,8 @@ export default {
       this.removeFile();
     },
     async loadDocuments() {
+      const uuidRegex = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
+      if (!this.botId || !uuidRegex.test(String(this.botId).trim())) return;
       try {
         const response = await pennyApi.getKnowledgeDocuments(this.botId, this.tenantId);
         this.documents = response.data || [];

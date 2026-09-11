@@ -131,6 +131,35 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
     }
 
+    @ExceptionHandler({
+        org.springframework.web.method.annotation.MethodArgumentTypeMismatchException.class,
+        org.springframework.beans.TypeMismatchException.class,
+        org.springframework.core.convert.ConversionFailedException.class,
+        org.springframework.web.method.annotation.HandlerMethodValidationException.class
+    })
+    public ResponseEntity<ErrorResponse> handleMethodArgumentTypeMismatchException(
+            Exception ex, WebRequest request) {
+        
+        String path = getCleanPath(request);
+        String message = "Invalid parameter format or type mismatch in request URL";
+        if (ex instanceof org.springframework.web.method.annotation.MethodArgumentTypeMismatchException mismatchEx) {
+            message = String.format("Invalid parameter format for '%s': '%s'", mismatchEx.getName(), mismatchEx.getValue());
+        } else if (ex.getCause() != null && ex.getCause().getMessage() != null) {
+            message = ex.getCause().getMessage();
+        } else if (ex.getMessage() != null) {
+            message = ex.getMessage();
+        }
+        
+        ErrorResponse errorResponse = new ErrorResponse(ErrorCode.BAD_REQUEST.getCode(), message)
+                .withPath(path)
+                .withTimestamp(java.time.LocalDateTime.now());
+        
+        addContextToErrorResponse(errorResponse, request);
+        log.warn("TypeMismatchException: {} at path: {}", message, path);
+        
+        return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+    }
+
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ErrorResponse> handleIllegalArgumentException(
             IllegalArgumentException ex, WebRequest request) {

@@ -140,9 +140,16 @@ const routes = [
     meta: { requiresAuth: true, title: "Penny Rules" + appname },
   },
   {
-    path: "/penny/bots/:botId/knowledge-base",
+    path: "/penny-knowledge-base",
     name: "penny-knowledge-base",
     component: KnowledgeBaseList,
+    meta: { requiresAuth: true, title: "Knowledge Base" + appname },
+  },
+  {
+    path: "/penny/bots/:botId/knowledge-base",
+    name: "penny-knowledge-base-legacy",
+    component: KnowledgeBaseList,
+    props: true,
     meta: { requiresAuth: true, title: "Knowledge Base" + appname },
   },
   {
@@ -164,14 +171,27 @@ const routes = [
     meta: { requiresAuth: true, title: "Penny Analytics Dashboard" + appname },
   },
   {
-    path: "/penny/bots/:botId/escalation",
+    path: "/penny-escalation",
     name: "penny-escalation",
     component: EscalationTickets,
     meta: { requiresAuth: true, title: "Escalation Tickets" + appname },
   },
   {
-    path: "/penny/bots/:botId/config",
+    path: "/penny/bots/:botId/escalation",
+    name: "penny-escalation-legacy",
+    component: EscalationTickets,
+    props: true,
+    meta: { requiresAuth: true, title: "Escalation Tickets" + appname },
+  },
+  {
+    path: "/penny-bot-config",
     name: "penny-bot-config",
+    component: PennyBotConfig,
+    meta: { requiresAuth: true, title: "Bot Configuration" + appname },
+  },
+  {
+    path: "/penny/bots/:botId/config",
+    name: "penny-bot-config-legacy",
     component: PennyBotConfig,
     props: true,
     meta: { requiresAuth: true, title: "Bot Configuration" + appname },

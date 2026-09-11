@@ -17,6 +17,16 @@ const handleApiError = (error) => {
     throw error;
 };
 
+// Helper kiem tra botId hop le
+const isValidBotId = (botId) => {
+    if (!botId) return false;
+    const idStr = typeof botId === 'object' ? (botId.id || botId.botId || '') : String(botId);
+    if (!idStr || idStr === 'undefined' || idStr === 'null' || idStr.trim() === '') return false;
+    // Validate standard UUID format (8-4-4-4-12 hex chars)
+    const uuidRegex = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
+    return uuidRegex.test(idStr.trim());
+};
+
 export const pennyApi = {
     /**
      * Lấy danh sách tất cả các Penny bots của người dùng hiện tại
@@ -35,6 +45,10 @@ export const pennyApi = {
      * Lấy thông tin chi tiết của một Penny bot theo ID
      */
     getPennyBotById(botId) {
+        if (!isValidBotId(botId)) {
+            console.warn('pennyApi.getPennyBotById called with invalid botId:', botId);
+            return Promise.reject(new Error(`Invalid botId: ${botId}`));
+        }
         return axios.get(`/penny/bots/${botId}`)
             .then(response => {
                 // Convert API response to DTO
@@ -63,6 +77,7 @@ export const pennyApi = {
      * Cập nhật thông tin Penny bot
      */
     updatePennyBot(botId, botData) {
+        if (!isValidBotId(botId)) return Promise.reject(new Error(`Invalid botId: ${botId}`));
         // Backend expects Map<String, String>, not PennyBotRequest
         return axios.put(`/penny/bots/${botId}`, botData)
             .then(response => {
@@ -77,6 +92,7 @@ export const pennyApi = {
      * Xóa một Penny bot
      */
     deletePennyBot(botId) {
+        if (!isValidBotId(botId)) return Promise.reject(new Error(`Invalid botId: ${botId}`));
         return axios.delete(`/penny/bots/${botId}`)
             .catch(handleApiError);
     },
@@ -85,6 +101,7 @@ export const pennyApi = {
      * Toggle trạng thái Penny bot (active/inactive)
      */
     togglePennyBotStatus(botId, enabled) {
+        if (!isValidBotId(botId)) return Promise.reject(new Error(`Invalid botId: ${botId}`));
         return axios.put(`/penny/bots/${botId}/toggle`, null, {
             params: { enabled }
         })
@@ -100,6 +117,7 @@ export const pennyApi = {
      * Lấy health status của Penny bot
      */
     getPennyBotHealth(botId) {
+        if (!isValidBotId(botId)) return Promise.reject(new Error(`Invalid botId: ${botId}`));
         return axios.get(`/penny/bots/${botId}/health`)
             .catch(handleApiError);
     },
@@ -108,6 +126,7 @@ export const pennyApi = {
      * Lấy analytics của Penny bot
      */
     getPennyBotAnalytics(botId, timeRange = '7days') {
+        if (!isValidBotId(botId)) return Promise.reject(new Error(`Invalid botId: ${botId}`));
         return axios.get(`/penny/bots/${botId}/analytics`, {
             params: { timeRange }
         })
@@ -118,6 +137,7 @@ export const pennyApi = {
      * Chat với Penny bot (cần authentication)
      */
     chatWithPennyBot(botId, message, isTestMode = false) {
+        if (!isValidBotId(botId)) return Promise.reject(new Error(`Invalid botId: ${botId}`));
         // Backend expects simple Map<String, String> with message and testMode
         const request = {
             message: message,
@@ -136,6 +156,7 @@ export const pennyApi = {
      * Chat với Penny bot (public, không cần authentication)
      */
     chatWithPennyBotPublic(botId, message, apiKey) {
+        if (!isValidBotId(botId)) return Promise.reject(new Error(`Invalid botId: ${botId}`));
         // Create middleware request
         const middlewareRequest = new MiddlewareRequest({
             userId: 'public-user',
@@ -178,6 +199,10 @@ export const pennyApi = {
      * Get all knowledge articles for a bot (paginated)
      */
     getKnowledgeArticles(botId, page = 0, size = 20, sortBy = 'updatedAt', sortDir = 'desc') {
+        if (!isValidBotId(botId)) {
+            console.warn('pennyApi.getKnowledgeArticles called with invalid botId:', botId);
+            return Promise.reject(new Error(`Invalid botId: ${botId}`));
+        }
         return axios.get(`/penny/bots/${botId}/kb/articles`, {
             params: { page, size, sortBy, sortDir }
         }).catch(handleApiError);
@@ -187,6 +212,9 @@ export const pennyApi = {
      * Get a specific knowledge article
      */
     getKnowledgeArticle(botId, articleId) {
+        if (!isValidBotId(botId)) {
+            return Promise.reject(new Error(`Invalid botId: ${botId}`));
+        }
         return axios.get(`/penny/bots/${botId}/kb/articles/${articleId}`)
             .catch(handleApiError);
     },
@@ -195,6 +223,9 @@ export const pennyApi = {
      * Create a new knowledge article
      */
     createKnowledgeArticle(botId, articleData) {
+        if (!isValidBotId(botId)) {
+            return Promise.reject(new Error(`Invalid botId: ${botId}`));
+        }
         return axios.post(`/penny/bots/${botId}/kb/articles`, articleData)
             .catch(handleApiError);
     },
@@ -203,6 +234,9 @@ export const pennyApi = {
      * Update a knowledge article
      */
     updateKnowledgeArticle(botId, articleId, articleData) {
+        if (!isValidBotId(botId)) {
+            return Promise.reject(new Error(`Invalid botId: ${botId}`));
+        }
         return axios.put(`/penny/bots/${botId}/kb/articles/${articleId}`, articleData)
             .catch(handleApiError);
     },
@@ -211,6 +245,9 @@ export const pennyApi = {
      * Delete a knowledge article
      */
     deleteKnowledgeArticle(botId, articleId) {
+        if (!isValidBotId(botId)) {
+            return Promise.reject(new Error(`Invalid botId: ${botId}`));
+        }
         return axios.delete(`/penny/bots/${botId}/kb/articles/${articleId}`)
             .catch(handleApiError);
     },
@@ -219,6 +256,9 @@ export const pennyApi = {
      * Import multiple knowledge articles in bulk
      */
     importKnowledgeArticles(botId, articles) {
+        if (!isValidBotId(botId)) {
+            return Promise.reject(new Error(`Invalid botId: ${botId}`));
+        }
         return axios.post(`/penny/bots/${botId}/kb/import`, articles)
             .catch(handleApiError);
     },
@@ -227,6 +267,9 @@ export const pennyApi = {
      * Re-generate embedding for an article
      */
     reembedKnowledgeArticle(botId, articleId) {
+        if (!isValidBotId(botId)) {
+            return Promise.reject(new Error(`Invalid botId: ${botId}`));
+        }
         return axios.post(`/penny/bots/${botId}/kb/articles/${articleId}/reembed`)
             .catch(handleApiError);
     },
@@ -235,6 +278,9 @@ export const pennyApi = {
      * Test knowledge base search
      */
     testKnowledgeBaseSearch(botId, query) {
+        if (!isValidBotId(botId)) {
+            return Promise.reject(new Error(`Invalid botId: ${botId}`));
+        }
         return axios.get(`/penny/bots/${botId}/kb/search`, {
             params: { q: query }
         }).catch(handleApiError);
@@ -244,6 +290,10 @@ export const pennyApi = {
      * Get knowledge base statistics
      */
     getKnowledgeBaseStats(botId) {
+        if (!isValidBotId(botId)) {
+            console.warn('pennyApi.getKnowledgeBaseStats called with invalid botId:', botId);
+            return Promise.reject(new Error(`Invalid botId: ${botId}`));
+        }
         return axios.get(`/penny/bots/${botId}/kb/stats`)
             .catch(handleApiError);
     },
@@ -264,6 +314,7 @@ export const pennyApi = {
      * Get metrics for a specific bot
      */
     getBotMetrics(botId) {
+        if (!isValidBotId(botId)) return Promise.reject(new Error(`Invalid botId: ${botId}`));
         return axios.get(`/penny/admin/metrics/bot/${botId}`)
             .catch(handleApiError);
     },
@@ -292,6 +343,7 @@ export const pennyApi = {
      * Get all escalation tickets for a bot (paginated)
      */
     getEscalationTickets(botId, page = 0, size = 20, sortBy = 'createdAt', sortDir = 'desc') {
+        if (!isValidBotId(botId)) return Promise.reject(new Error(`Invalid botId: ${botId}`));
         return axios.get(`/penny/bots/${botId}/escalation/tickets`, {
             params: { page, size, sortBy, sortDir }
         }).catch(handleApiError);
@@ -301,6 +353,7 @@ export const pennyApi = {
      * Get tickets by status for a bot
      */
     getEscalationTicketsByStatus(botId, status) {
+        if (!isValidBotId(botId)) return Promise.reject(new Error(`Invalid botId: ${botId}`));
         return axios.get(`/penny/bots/${botId}/escalation/tickets/status/${status}`)
             .catch(handleApiError);
     },
@@ -309,6 +362,7 @@ export const pennyApi = {
      * Get a specific escalation ticket
      */
     getEscalationTicket(botId, ticketId) {
+        if (!isValidBotId(botId)) return Promise.reject(new Error(`Invalid botId: ${botId}`));
         return axios.get(`/penny/bots/${botId}/escalation/tickets/${ticketId}`)
             .catch(handleApiError);
     },
@@ -317,6 +371,7 @@ export const pennyApi = {
      * Create a new escalation ticket
      */
     createEscalationTicket(botId, ticketData) {
+        if (!isValidBotId(botId)) return Promise.reject(new Error(`Invalid botId: ${botId}`));
         return axios.post(`/penny/bots/${botId}/escalation/tickets`, ticketData)
             .catch(handleApiError);
     },
@@ -325,6 +380,7 @@ export const pennyApi = {
      * Update an escalation ticket
      */
     updateEscalationTicket(botId, ticketId, ticketData) {
+        if (!isValidBotId(botId)) return Promise.reject(new Error(`Invalid botId: ${botId}`));
         return axios.put(`/penny/bots/${botId}/escalation/tickets/${ticketId}`, ticketData)
             .catch(handleApiError);
     },
@@ -333,6 +389,7 @@ export const pennyApi = {
      * Delete an escalation ticket
      */
     deleteEscalationTicket(botId, ticketId) {
+        if (!isValidBotId(botId)) return Promise.reject(new Error(`Invalid botId: ${botId}`));
         return axios.delete(`/penny/bots/${botId}/escalation/tickets/${ticketId}`)
             .catch(handleApiError);
     },
@@ -341,6 +398,7 @@ export const pennyApi = {
      * Assign ticket to an agent
      */
     assignEscalationTicket(botId, ticketId, agentId) {
+        if (!isValidBotId(botId)) return Promise.reject(new Error(`Invalid botId: ${botId}`));
         return axios.post(`/penny/bots/${botId}/escalation/tickets/${ticketId}/assign`, { agentId })
             .catch(handleApiError);
     },
@@ -349,6 +407,7 @@ export const pennyApi = {
      * Resolve a ticket
      */
     resolveEscalationTicket(botId, ticketId, notes) {
+        if (!isValidBotId(botId)) return Promise.reject(new Error(`Invalid botId: ${botId}`));
         return axios.post(`/penny/bots/${botId}/escalation/tickets/${ticketId}/resolve`, { notes })
             .catch(handleApiError);
     },
@@ -357,6 +416,7 @@ export const pennyApi = {
      * Cancel a ticket
      */
     cancelEscalationTicket(botId, ticketId) {
+        if (!isValidBotId(botId)) return Promise.reject(new Error(`Invalid botId: ${botId}`));
         return axios.post(`/penny/bots/${botId}/escalation/tickets/${ticketId}/cancel`)
             .catch(handleApiError);
     },
@@ -365,6 +425,7 @@ export const pennyApi = {
      * Get pending tickets for a bot
      */
     getPendingEscalationTickets(botId) {
+        if (!isValidBotId(botId)) return Promise.reject(new Error(`Invalid botId: ${botId}`));
         return axios.get(`/penny/bots/${botId}/escalation/tickets/pending`)
             .catch(handleApiError);
     },
@@ -373,6 +434,7 @@ export const pennyApi = {
      * Get escalation ticket statistics
      */
     getEscalationStats(botId) {
+        if (!isValidBotId(botId)) return Promise.reject(new Error(`Invalid botId: ${botId}`));
         return axios.get(`/penny/bots/${botId}/escalation/stats`)
             .catch(handleApiError);
     },
@@ -401,6 +463,7 @@ export const pennyApi = {
      * Get analytics events for a bot
      */
     getAnalyticsEvents(botId, timeRange = '7days', page = 0, size = 50) {
+        if (!isValidBotId(botId)) return Promise.reject(new Error(`Invalid botId: ${botId}`));
         return axios.get(`/penny/admin/analytics/events`, {
             params: { botId, timeRange, page, size }
         }).catch(handleApiError);
@@ -410,6 +473,7 @@ export const pennyApi = {
      * Get analytics summary for a bot
      */
     getAnalyticsSummary(botId, timeRange = '7days') {
+        if (!isValidBotId(botId)) return Promise.reject(new Error(`Invalid botId: ${botId}`));
         return axios.get(`/penny/admin/analytics/summary`, {
             params: { botId, timeRange }
         }).catch(handleApiError);
@@ -423,6 +487,7 @@ export const pennyApi = {
      * Upload a knowledge document
      */
     uploadKnowledgeDocument(file, botId, tenantId, documentName, uploadedBy) {
+        if (!isValidBotId(botId)) return Promise.reject(new Error(`Invalid botId: ${botId}`));
         const formData = new FormData();
         formData.append('file', file);
         formData.append('botId', botId);
@@ -443,6 +508,7 @@ export const pennyApi = {
      * Get all documents for a bot
      */
     getKnowledgeDocuments(botId, tenantId) {
+        if (!isValidBotId(botId)) return Promise.reject(new Error(`Invalid botId: ${botId}`));
         return axios.get('/penny/knowledge-base/documents', {
             params: { botId, tenantId }
         }).catch(handleApiError);
@@ -468,6 +534,7 @@ export const pennyApi = {
      * Delete all documents for a bot
      */
     deleteKnowledgeDocumentsByBot(botId) {
+        if (!isValidBotId(botId)) return Promise.reject(new Error(`Invalid botId: ${botId}`));
         return axios.delete(`/penny/knowledge-base/documents/bot/${botId}`)
             .catch(handleApiError);
     },

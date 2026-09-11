@@ -33,7 +33,9 @@ export const PennyBotTypeBotpressId = {
  */
 export class PennyBotDto {
   constructor(data = {}) {
-    this.id = data.id || data.botId; // Handle both 'id' and 'botId' from API
+    const validId = data.id || data.botId;
+    this.id = validId;
+    this.botId = validId;
     this.botName = data.botName;
     this.botType = data.botType;
     this.tenantKey = data.tenantKey;
@@ -138,7 +140,9 @@ export class PennyBotRequest {
  */
 export class PennyBotResponse {
   constructor(data = {}) {
-    this.id = data.id || data.botId; // Handle both 'id' and 'botId' from API
+    const validId = data.id || data.botId;
+    this.id = validId;
+    this.botId = validId;
     this.botName = data.botName;
     this.botType = data.botType;
     this.tenantKey = data.tenantKey;

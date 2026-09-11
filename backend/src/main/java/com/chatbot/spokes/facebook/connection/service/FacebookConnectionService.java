@@ -13,6 +13,7 @@ import com.chatbot.spokes.facebook.events.FacebookEventProducer;
 import com.chatbot.core.penny.service.PennyBotManager;
 import com.chatbot.core.penny.model.PennyBot;
 import com.chatbot.spokes.facebook.connection.exception.*;
+import com.chatbot.shared.exceptions.ResourceNotFoundException;
 
 import com.chatbot.core.user.model.User;
 import com.chatbot.core.user.repository.UserRepository;
@@ -401,17 +402,17 @@ public class FacebookConnectionService {
     public void deleteConnection(String id, String ownerId) {
         // Check admin permissions (System ADMIN or Tenant ADMIN/OWNER)
         if (!hasAdminPrivileges(ownerId)) {
-            throw new RuntimeException("Admin privileges required to delete connections.");
+            throw new com.chatbot.core.tenant.exception.InsufficientPermissionException("Admin privileges required to delete connections.");
         }
         
         UUID connectionId = UUID.fromString(id);
         
         // Verify ownership before deletion
         FacebookConnection connection = connectionRepository.findById(connectionId)
-                .orElseThrow(() -> new RuntimeException("Connection not found."));
+                .orElseThrow(() -> new ResourceNotFoundException("Connection not found: " + id));
         
         if (!connection.getOwnerId().equals(ownerId)) {
-            throw new RuntimeException("Access denied: You can only delete your own connections.");
+            throw new org.springframework.security.access.AccessDeniedException("Access denied: You can only delete your own connections.");
         }
         
         log.info("🗑️ Admin user {} deleting Facebook connection: {}", ownerId, connectionId);

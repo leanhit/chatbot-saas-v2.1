@@ -174,9 +174,23 @@ public class TenantService {
     @Cacheable(value = "tenant-key-info", key = "#tenantKey", unless = "#result == null")
     @Transactional(readOnly = true, transactionManager = "tenantTransactionManager")
     public TenantKeyInfo getTenantInfoByKey(String tenantKey) {
-        return tenantRepository.findByTenantKey(tenantKey)
-                .map(tenant -> new TenantKeyInfo(tenant.getId(), tenant.getStatus()))
-                .orElse(null);
+        if (tenantKey == null || tenantKey.isBlank()) {
+            return null;
+        }
+        var found = tenantRepository.findByTenantKey(tenantKey);
+        if (found.isPresent()) {
+            Tenant tenant = found.get();
+            return new TenantKeyInfo(tenant.getId(), tenant.getStatus());
+        }
+        // Fallback: Check if tenantKey is a numeric string (tenant ID)
+        try {
+            Long tenantId = Long.parseLong(tenantKey.trim());
+            return tenantRepository.findById(tenantId)
+                    .map(tenant -> new TenantKeyInfo(tenant.getId(), tenant.getStatus()))
+                    .orElse(null);
+        } catch (NumberFormatException ignored) {
+            return null;
+        }
     }
 
     /**

@@ -4,6 +4,8 @@ import com.chatbot.core.penny.kb.EmbeddingService;
 import com.chatbot.core.penny.kb.KnowledgeArticle;
 import com.chatbot.core.penny.kb.KnowledgeArticleRepository;
 import com.chatbot.core.penny.kb.KnowledgeBaseSearchService;
+import com.chatbot.core.penny.repository.PennyBotRepository;
+import com.chatbot.core.penny.model.PennyBot;
 import com.chatbot.shared.security.SecurityUtils;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -36,8 +38,21 @@ import java.util.UUID;
 public class KnowledgeBaseController {
 
     private final KnowledgeArticleRepository knowledgeArticleRepository;
+    private final PennyBotRepository pennyBotRepository;
     private final EmbeddingService embeddingService;
     private final KnowledgeBaseSearchService knowledgeBaseSearchService;
+
+    private Long resolveTenantId(UUID botId) {
+        return SecurityUtils.getCurrentTenantId()
+            .orElseGet(() -> {
+                if (botId != null && pennyBotRepository != null) {
+                    return pennyBotRepository.findById(botId)
+                        .map(PennyBot::getTenantId)
+                        .orElseThrow(() -> new IllegalStateException("Tenant ID not found in security context or bot ID"));
+                }
+                throw new IllegalStateException("Tenant ID not found in security context");
+            });
+    }
 
     /**
      * Create a new knowledge article
@@ -50,7 +65,9 @@ public class KnowledgeBaseController {
         
         log.info("📝 Creating knowledge article for bot: {}", botId);
         
+        Long tenantId = resolveTenantId(botId);
         article.setBotId(botId);
+        article.setTenantId(tenantId);
         article.setId(UUID.randomUUID()); // Generate new ID
         
         // Generate embedding if service is enabled
@@ -93,9 +110,8 @@ public class KnowledgeBaseController {
             : Sort.by(sortBy).descending();
         Pageable pageable = PageRequest.of(page, size, sort);
 
-        // Get tenant ID from security context
-        Long tenantId = SecurityUtils.getCurrentTenantId()
-            .orElseThrow(() -> new IllegalStateException("Tenant ID not found in security context"));
+        // Get tenant ID from security context or bot fallback
+        Long tenantId = resolveTenantId(botId);
         
         Page<KnowledgeArticle> articles = knowledgeArticleRepository
             .findByBotIdAndTenantIdAndIsActiveTrue(botId, tenantId, pageable);
@@ -198,8 +214,7 @@ public class KnowledgeBaseController {
         
         log.info("📥 Importing {} knowledge articles for bot: {}", articles.size(), botId);
 
-        Long tenantId = SecurityUtils.getCurrentTenantId()
-            .orElseThrow(() -> new IllegalStateException("Tenant ID not found in security context"));
+        Long tenantId = resolveTenantId(botId);
         int successCount = 0;
         int failureCount = 0;
         
@@ -290,8 +305,7 @@ public class KnowledgeBaseController {
             return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(result);
         }
 
-        Long tenantId = SecurityUtils.getCurrentTenantId()
-            .orElseThrow(() -> new IllegalStateException("Tenant ID not found in security context"));
+        Long tenantId = resolveTenantId(botId);
         List<KnowledgeArticle> articles = knowledgeBaseSearchService.search(botId, tenantId, q);
         
         Map<String, Object> result = new HashMap<>();
@@ -312,8 +326,7 @@ public class KnowledgeBaseController {
         
         log.debug("📊 Fetching KB stats for bot: {}", botId);
 
-        Long tenantId = SecurityUtils.getCurrentTenantId()
-            .orElseThrow(() -> new IllegalStateException("Tenant ID not found in security context"));
+        Long tenantId = resolveTenantId(botId);
         long totalArticles = knowledgeArticleRepository.countByBotIdAndTenantIdAndIsActiveTrue(botId, tenantId);
         
         Map<String, Object> stats = new HashMap<>();

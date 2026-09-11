@@ -69,6 +69,27 @@ public class TenantContextInterceptor implements HandlerInterceptor {
             log.debug("[TenantContext] No X-Tenant-Key header found for path: {}", path);
         }
 
+        // Fallback: If TenantContext is not set, resolve from authenticated user
+        if (TenantContext.getTenantId() == null) {
+            org.springframework.security.core.Authentication auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+            if (auth != null && auth.isAuthenticated() && auth.getPrincipal() instanceof com.chatbot.core.identity.security.CustomUserDetails userDetails) {
+                if (userDetails.getUser() != null && userDetails.getUser().getId() != null) {
+                    Long userId = userDetails.getUser().getId();
+                    tenantRepository.findByUserId(userId).ifPresent(tenant -> {
+                        if (tenant.getStatus() == TenantStatus.ACTIVE) {
+                            TenantContext.setCurrentTenant(tenant.getTenantKey());
+                            TenantContext.setTenantId(tenant.getId());
+                            if (userDetails.getTenantId() == null) {
+                                userDetails.setTenantId(tenant.getId());
+                            }
+                            log.debug("[TenantContext] Resolved fallback tenant for user {}: {} (ID: {})",
+                                    userId, tenant.getTenantKey(), tenant.getId());
+                        }
+                    });
+                }
+            }
+        }
+
         return true;
     }
 

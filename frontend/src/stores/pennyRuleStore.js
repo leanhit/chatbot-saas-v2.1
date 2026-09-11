@@ -93,7 +93,9 @@ export const usePennyRuleStore = defineStore('penny-rule', () => {
     try {
       const response = await pennyRuleApi.deleteRule(botId, ruleId)
       // Remove from local state
-      rules.value = rules.value.filter(rule => rule.id !== ruleId)
+      rules.value = rules.value.filter(rule => (rule.ruleId || rule.id) !== ruleId)
+      // Refresh rules list from backend
+      await fetchRules(botId)
       return response.data
     } catch (error) {
       console.error('Failed to delete rule:', error)

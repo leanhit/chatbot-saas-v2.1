@@ -340,7 +340,10 @@ export default {
 
     const selectBot = (bot) => {
       selectedBot.value = bot
-      fetchRules()
+      if (bot) {
+        pennyBotStore.setCurrentBotId(bot.id || bot.botId)
+        fetchRules()
+      }
     }
 
     const toggleRuleStatus = async (rule) => {
@@ -377,7 +380,8 @@ export default {
         return
       }
       
-      if (!rule.ruleId) {
+      const targetRuleId = rule.ruleId || rule.id
+      if (!targetRuleId) {
         console.error('❌ Rule ID is undefined')
         alert('Invalid rule: missing rule ID')
         return
@@ -385,10 +389,12 @@ export default {
       
       if (confirm(`Are you sure you want to delete "${rule.name}"?`)) {
         try {
-          await pennyRuleStore.deleteRule(selectedBot.value.id, rule.ruleId)
-          } catch (error) {
+          await pennyRuleStore.deleteRule(selectedBot.value.id, targetRuleId)
+          await fetchRules()
+        } catch (error) {
           console.error('Failed to delete rule:', error)
-          alert('Failed to delete rule: ' + error.message)
+          const errorMessage = error.localizedMessage || error.response?.data?.message || error.message || 'Failed to delete rule'
+          alert(`❌ ${errorMessage}`)
         }
       }
     }
@@ -510,24 +516,20 @@ export default {
     }
 
     // Lifecycle
-    onMounted(() => {
-      // Load available bots first
-      if (availableBots.value.length === 0) {
-        pennyBotStore.fetchPennyBots().then(() => {
-          // Auto-select current bot if available
-          if (currentBot.value) {
-            selectedBot.value = currentBot.value
-            fetchRules()
-          } else {
-            }
-        })
-      } else {
-        // Auto-select current bot if available
-        if (currentBot.value) {
-          selectedBot.value = currentBot.value
-          fetchRules()
-        } else {
-          }
+    onMounted(async () => {
+      if (!availableBots.value || availableBots.value.length === 0) {
+        try {
+          await pennyBotStore.fetchPennyBots()
+        } catch (err) {
+          console.error('Failed to fetch Penny bots:', err)
+        }
+      }
+
+      const targetBot = currentBot.value || (availableBots.value && availableBots.value.length > 0 ? availableBots.value[0] : null)
+      if (targetBot) {
+        selectedBot.value = targetBot
+        pennyBotStore.setCurrentBotId(targetBot.id || targetBot.botId)
+        fetchRules()
       }
     })
 

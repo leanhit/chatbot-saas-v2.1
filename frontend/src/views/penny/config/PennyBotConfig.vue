@@ -21,9 +21,26 @@
         </div>
       </div>
       <div class="flex items-center space-x-3">
+        <!-- Bot Selector Dropdown -->
+        <div v-if="availableBots.length > 0" class="flex items-center space-x-2">
+          <select
+            v-model="selectedBotId"
+            @change="handleBotChange(selectedBotId)"
+            class="px-3.5 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm font-medium focus:ring-2 focus:ring-primary focus:outline-none shadow-sm"
+          >
+            <option value="" disabled>-- Chọn Penny Bot --</option>
+            <option
+              v-for="bot in availableBots"
+              :key="bot.id || bot.botId"
+              :value="bot.id || bot.botId"
+            >
+              {{ bot.botName }} - {{ getBotTypeDisplayName(bot.botType) }}
+            </option>
+          </select>
+        </div>
         <button
           @click="loadConfig"
-          :disabled="loading"
+          :disabled="loading || !activeBotId"
           class="inline-flex items-center px-3.5 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-lg transition-colors text-sm font-medium"
         >
           <Icon icon="mdi:refresh" class="mr-1.5 text-lg" :class="{ 'animate-spin': loading }" />
@@ -31,7 +48,7 @@
         </button>
         <button
           @click="saveConfig"
-          :disabled="loading"
+          :disabled="loading || !activeBotId"
           class="inline-flex items-center px-5 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg hover:from-indigo-700 hover:to-purple-700 shadow-md transition-all disabled:opacity-50 text-sm font-medium"
         >
           <Icon v-if="loading" icon="mdi:loading" class="animate-spin mr-2 text-lg" />
@@ -304,6 +321,7 @@
             {{ $t('penny.config.ragTitle') }}
           </h2>
           <router-link 
+            v-if="activeBotId"
             :to="`/penny/bots/${activeBotId}/knowledge-base`" 
             class="inline-flex items-center text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:underline"
           >
@@ -439,6 +457,7 @@
 import { pennyApi } from '@/api/pennyApi';
 import { Icon } from '@iconify/vue';
 import AiBotConfig from '../bots/components/AiBotConfig.vue';
+import { usePennyBotStore } from '@/stores/pennyBotStore';
 
 export default {
   name: 'PennyBotConfig',
@@ -454,6 +473,7 @@ export default {
   },
   data() {
     return {
+      selectedBotId: null,
       aiConfig: {
         providerType: 'OPENAI',
         modelName: 'gpt-4o-mini',
@@ -495,14 +515,89 @@ export default {
     };
   },
   computed: {
+    pennyBotStore() {
+      return usePennyBotStore();
+    },
+    availableBots() {
+      return this.pennyBotStore.pennyBots || [];
+    },
+    effectiveBotId() {
+      const clean = (val) => {
+        if (!val) return null;
+        const s = typeof val === 'object' ? (val.id || val.botId || '') : String(val);
+        const trimmed = String(s).trim();
+        if (!trimmed || trimmed === 'undefined' || trimmed === 'null') return null;
+        const uuidRegex = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
+        return uuidRegex.test(trimmed) ? trimmed : null;
+      };
+
+      return clean(this.botId) || clean(this.$route?.params?.botId) || clean(this.selectedBotId) || clean(this.pennyBotStore.currentBotId);
+    },
     activeBotId() {
-      return this.botId || this.$route?.params?.botId;
+      return this.effectiveBotId;
     }
   },
-  mounted() {
-    this.loadConfig();
+  watch: {
+    availableBots: {
+      immediate: true,
+      handler(bots) {
+        if (bots && bots.length > 0) {
+          const currentTarget = this.effectiveBotId;
+          if (currentTarget && bots.some(b => (b.id || b.botId) === currentTarget)) {
+            this.selectedBotId = currentTarget;
+          } else if (!this.selectedBotId) {
+            const firstValidBot = bots.find(b => (b.id || b.botId));
+            if (firstValidBot) {
+              const firstId = firstValidBot.id || firstValidBot.botId;
+              this.selectedBotId = firstId;
+              this.pennyBotStore.setCurrentBotId(firstId);
+            }
+          }
+        }
+      }
+    },
+    effectiveBotId: {
+      immediate: true,
+      handler(newBotId) {
+        if (newBotId) {
+          if (this.selectedBotId !== newBotId) {
+            this.selectedBotId = newBotId;
+          }
+          this.pennyBotStore.setCurrentBotId(newBotId);
+          this.loadConfig();
+        }
+      }
+    }
+  },
+  async mounted() {
+    if (this.availableBots.length === 0) {
+      try {
+        await this.pennyBotStore.fetchPennyBots();
+      } catch (err) {
+        console.error('Failed to fetch Penny bots:', err);
+      }
+    }
+    if (this.activeBotId) {
+      this.loadConfig();
+    }
   },
   methods: {
+    getBotTypeDisplayName(botType) {
+      const names = {
+        'GENERAL': 'General Purpose',
+        'SUPPORT': 'Customer Support',
+        'BUSINESS': 'Business & Sales',
+        'BOTPRESS': 'Botpress Integration'
+      };
+      return names[botType] || botType || 'General';
+    },
+    handleBotChange(newBotId) {
+      this.selectedBotId = newBotId;
+      if (newBotId) {
+        this.pennyBotStore.setCurrentBotId(newBotId);
+      }
+      this.loadConfig();
+    },
     async loadConfig() {
       if (!this.activeBotId) {
         console.warn('No activeBotId available');

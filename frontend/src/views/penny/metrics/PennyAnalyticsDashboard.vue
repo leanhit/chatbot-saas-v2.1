@@ -17,8 +17,8 @@
           class="bg-white dark:bg-gray-800 hover:border-gray-300 dark:hover:border-gray-600 dark:text-white dark:border-gray-700 border border-gray-200 rounded-md py-2 px-3 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
         >
           <option value="">{{ $t('penny.analyticsDashboard.allBots') }}</option>
-          <option v-for="bot in availableBots" :key="bot.id" :value="bot.id">
-            {{ bot.botName }}
+          <option v-for="bot in availableBots" :key="bot.id || bot.botId" :value="bot.id || bot.botId">
+            {{ bot.botName }} - {{ getBotTypeDisplayName(bot.botType) }}
           </option>
         </select>
         <select
@@ -290,6 +290,15 @@ export default {
     this.loadAnalytics();
   },
   methods: {
+    getBotTypeDisplayName(botType) {
+      const names = {
+        'GENERAL': 'General Purpose',
+        'SUPPORT': 'Customer Support',
+        'BUSINESS': 'Business & Sales',
+        'BOTPRESS': 'Botpress Integration'
+      };
+      return names[botType] || botType || 'General';
+    },
     async loadAvailableBots() {
       try {
         const response = await pennyApi.getMyPennyBots();
