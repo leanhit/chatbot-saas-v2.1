@@ -20,7 +20,7 @@ import java.util.UUID;
  * for RAG (Retrieval Augmented Generation).
  */
 @RestController
-@RequestMapping("/api/v1/penny/knowledge-base")
+@RequestMapping({"/api/penny/knowledge-base", "/api/v1/penny/knowledge-base"})
 @RequiredArgsConstructor
 @Slf4j
 public class KnowledgeDocumentController {
