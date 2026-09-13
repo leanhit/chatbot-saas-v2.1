@@ -455,6 +455,11 @@
     "title": "Quản lý Bot Penny",
     "subtitle": "Quản lý trợ lý AI và tự động hóa cuộc trò chuyện",
     "guide": "Hướng dẫn",
+    "selectPennyBotPlaceholder": "-- Chọn Penny Bot --",
+    "noBotSelected": "Chưa chọn Bot",
+    "noBotSelectedDesc": "Vui lòng chọn một Penny Bot từ danh sách quản lý Bot để xem và quản lý bài viết tri thức.",
+    "goToBotManagement": "Đi đến danh sách Bot",
+    "refresh": "Làm mới",
     "next": "Tiếp theo",
     "prev": "Quay lại",
     "createBot": "Tạo Bot",
@@ -842,8 +847,14 @@
       },
       "config": {
         "title": "Cấu hình Penny Bot",
+        "subtitle": "Cấu hình mô hình AI, RAG Knowledge Base, Tool Calling & Chiến lược Smart Fallback",
         "saveChanges": "Lưu thay đổi",
         "saving": "Đang lưu...",
+        "personalityNotice": "Định hình cá tính & chỉ thị cốt lõi cho AI",
+        "quickPromptTemplates": "Nạp Mẫu Prompt Nhanh Theo Ngành Nghề",
+        "appliedPromptNotice": "Đã áp dụng mẫu prompt",
+        "customizableNotice": "Bạn có thể tự do tùy chỉnh thêm bên dưới!",
+        "manageKnowledgeArticles": "Quản lý bài viết tri thức",
         "basicInfo": "Thông tin cơ bản",
         "botName": "Tên Bot",
         "businessName": "Tên Doanh nghiệp",
@@ -1007,6 +1018,14 @@
           "deleteError": "Lỗi khi xóa tài liệu",
           "invalidFileType": "Loại tệp không hợp lệ. Chỉ chấp nhận PDF, DOCX, XLSX",
           "fileTooLarge": "Tệp quá lớn. Kích thước tối đa là 50MB"
+        },
+        "categories": {
+          "faq": "Hỏi đáp (FAQ)",
+          "product": "Sản phẩm",
+          "policy": "Chính sách",
+          "shipping": "Vận chuyển",
+          "price": "Bảng giá",
+          "inactive": "Không hoạt động"
         },
         "aiConfig": {
           "title": "Cấu hình AI Bot",

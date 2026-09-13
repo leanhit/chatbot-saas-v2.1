@@ -15,7 +15,7 @@
               </span>
             </h1>
             <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-              Cấu hình mô hình AI, RAG Knowledge Base, Tool Calling & Chiến lược Smart Fallback
+              {{ $t('penny.config.subtitle') }}
             </p>
           </div>
         </div>
@@ -24,11 +24,12 @@
         <!-- Bot Selector Dropdown -->
         <div v-if="availableBots.length > 0" class="flex items-center space-x-2">
           <select
+            id="bot-selector-config"
             v-model="selectedBotId"
             @change="handleBotChange(selectedBotId)"
             class="px-3.5 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm font-medium focus:ring-2 focus:ring-primary focus:outline-none shadow-sm"
           >
-            <option value="" disabled>-- Chọn Penny Bot --</option>
+            <option value="" disabled>{{ $t('penny.selectPennyBotPlaceholder') || '-- Chọn Penny Bot --' }}</option>
             <option
               v-for="bot in availableBots"
               :key="bot.id || bot.botId"
@@ -39,12 +40,20 @@
           </select>
         </div>
         <button
+          id="btn-tour-guide-config"
+          @click="startTour"
+          class="inline-flex items-center px-3.5 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors shadow-sm text-sm font-medium"
+        >
+          <Icon icon="mdi:help-circle-outline" class="mr-1.5 text-indigo-500 text-lg" />
+          {{ $t('penny.guide') || 'Hướng dẫn' }}
+        </button>
+        <button
           @click="loadConfig"
           :disabled="loading || !activeBotId"
           class="inline-flex items-center px-3.5 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-lg transition-colors text-sm font-medium"
         >
           <Icon icon="mdi:refresh" class="mr-1.5 text-lg" :class="{ 'animate-spin': loading }" />
-          Làm mới
+          {{ $t('penny.config.refresh') || 'Làm mới' }}
         </button>
         <button
           @click="saveConfig"
@@ -283,7 +292,7 @@
       </div>
 
       <!-- 4. AI Provider & Model Configuration -->
-      <div class="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+      <div id="ai-model-strategy-box" class="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
         <h2 class="font-semibold text-lg text-gray-900 dark:text-white mb-4 flex items-center gap-2">
           <Icon icon="mdi:robot" class="text-purple-500 text-xl" />
           {{ $t('penny.aiConfig.title') }}
@@ -296,17 +305,48 @@
       </div>
 
       <!-- 5. System Prompt & Personality -->
-      <div class="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
-        <h2 class="font-semibold text-lg text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-          <Icon icon="mdi:card-text-outline" class="text-indigo-500 text-xl" />
-          {{ $t('penny.config.aiConfig') }}
-        </h2>
+      <div id="system-prompt-box" class="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="font-semibold text-lg text-gray-900 dark:text-white flex items-center gap-2">
+            <Icon icon="mdi:card-text-outline" class="text-indigo-500 text-xl" />
+            {{ $t('penny.config.aiConfig') }}
+          </h2>
+          <span class="text-xs text-gray-500 dark:text-gray-400">
+            {{ $t('penny.config.personalityNotice') || 'Định hình cá tính & chỉ thị cốt lõi cho AI' }}
+          </span>
+        </div>
+
+        <!-- Quick Prompt Templates Selection -->
+        <div id="prompt-templates-container" class="mb-5 p-4 bg-gray-50 dark:bg-gray-900/50 rounded-xl border border-gray-200 dark:border-gray-700">
+          <label class="text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-400 mb-2.5 flex items-center gap-1.5">
+            <Icon icon="mdi:lightning-bolt" class="text-amber-500" />
+            ⚡ {{ $t('penny.config.quickPromptTemplates') || 'Nạp Mẫu Prompt Nhanh Theo Ngành Nghề:' }}:
+          </label>
+          <div class="flex flex-wrap gap-2">
+            <button
+              v-for="tpl in promptTemplates"
+              :key="tpl.id"
+              type="button"
+              @click="applyPromptTemplate(tpl)"
+              class="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 hover:border-indigo-300 dark:hover:border-indigo-600 text-gray-700 dark:text-gray-200 transition-all shadow-sm group"
+            >
+              <span class="p-1 rounded-md bg-gradient-to-r text-white mr-2" :class="tpl.color">
+                <Icon :icon="tpl.icon" class="text-xs" />
+              </span>
+              {{ tpl.name }}
+            </button>
+          </div>
+          <div v-if="appliedTemplateNotice" class="mt-3 text-xs font-medium text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+            <Icon icon="mdi:check-circle" /> {{ $t('penny.config.appliedPromptNotice') || 'Đã áp dụng mẫu prompt' }}: <strong>{{ appliedTemplateNotice }}</strong>. {{ $t('penny.config.customizableNotice') || 'Bạn có thể tự do tùy chỉnh thêm bên dưới!' }}
+          </div>
+        </div>
+
         <div>
           <label class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 block">{{ $t('penny.config.systemPrompt') }}</label>
           <textarea 
             v-model="config.systemPrompt" 
             class="w-full px-4 py-3 border border-gray-300 dark:border-gray-700 rounded-xl dark:bg-gray-900 dark:text-white font-sans text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none leading-relaxed" 
-            rows="5" 
+            rows="6" 
             :placeholder="$t('penny.config.systemPromptPlaceholder')"
           ></textarea>
           <small class="text-xs text-gray-500 dark:text-gray-400 mt-1.5 block">{{ $t('penny.config.systemPromptHelp') }}</small>
@@ -325,7 +365,7 @@
             :to="`/penny/bots/${activeBotId}/knowledge-base`" 
             class="inline-flex items-center text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:underline"
           >
-            <Icon icon="mdi:open-in-new" class="mr-1" /> Quản lý bài viết tri thức
+            <Icon icon="mdi:open-in-new" class="mr-1" /> {{ $t('penny.config.manageKnowledgeArticles') || 'Quản lý bài viết tri thức' }}
           </router-link>
         </div>
 
@@ -456,6 +496,8 @@
 <script>
 import { pennyApi } from '@/api/pennyApi';
 import { Icon } from '@iconify/vue';
+import { driver } from 'driver.js';
+import 'driver.js/dist/driver.css';
 import AiBotConfig from '../bots/components/AiBotConfig.vue';
 import { usePennyBotStore } from '@/stores/pennyBotStore';
 
@@ -511,7 +553,62 @@ export default {
       testOrderCode: 'GH12345',
       testOrderResult: null,
       testingOrder: false,
-      loading: false
+      loading: false,
+      appliedTemplateNotice: null,
+      promptTemplates: [
+        {
+          id: 'fashion',
+          name: 'Shop Thời trang & Bán lẻ',
+          icon: 'mdi:tshirt-crew-outline',
+          color: 'from-pink-500 to-rose-500',
+          prompt: `Bạn là trợ lý tư vấn bán hàng chuyên nghiệp của cửa hàng thời trang. Nhiệm vụ của bạn là:
+1. Tư vấn size, chất liệu, màu sắc và phong cách phù hợp với nhu cầu của khách hàng.
+2. Thân thiện, xưng hô 'em - anh/chị', trả lời ngắn gọn, lịch sự và hào hứng.
+3. Khuyến khích khách hàng chốt đơn hoặc để lại SĐT/Địa chỉ để nhân viên chốt mẫu.
+4. Nếu khách hỏi mã đơn hàng hoặc giá sản phẩm, hãy tra cứu thông tin chính xác từ hệ thống.`
+        },
+        {
+          id: 'realestate',
+          name: 'Bất động sản & Dự án',
+          icon: 'mdi:home-city-outline',
+          color: 'from-amber-500 to-orange-500',
+          prompt: `Bạn là chuyên viên tư vấn đầu tư bất động sản cao cấp. Nhiệm vụ của bạn là:
+1. Lịch sự, chuyên nghiệp, tạo niềm tin cao cho khách hàng.
+2. Giới thiệu tổng quan vị trí, tiện ích, pháp lý và chính sách ưu đãi của dự án.
+3. Khéo léo xin số điện thoại/Zalo của khách hàng để gửi file Brochure, bảng giá và sơ đồ căn hộ chi tiết.
+4. Không tự ý báo giá sai ngoài bảng giá niêm yết.`
+        },
+        {
+          id: 'software',
+          name: 'Hỗ trợ Kỹ thuật & SaaS',
+          icon: 'mdi:laptop',
+          color: 'from-blue-500 to-indigo-500',
+          prompt: `Bạn là kỹ sư hỗ trợ kỹ thuật và CSKH cho phần mềm. Nhiệm vụ của bạn là:
+1. Hướng dẫn khách hàng từng bước cách khắc phục sự cố, cài đặt hoặc cấu hình tài khoản.
+2. Trả lời rõ ràng, dễ hiểu, đánh số thứ tự từng bước (1, 2, 3...).
+3. Nếu vấn đề vượt quá khả năng xử lý hoặc cần kiểm tra hệ thống sâu, hãy hướng dẫn khách gửi yêu cầu Hỗ trợ (Escalation) cho nhân viên kỹ thuật.`
+        },
+        {
+          id: 'restaurant',
+          name: 'Nhà hàng & Đặt bàn',
+          icon: 'mdi:silverware-fork-knife',
+          color: 'from-emerald-500 to-teal-500',
+          prompt: `Bạn là lễ tân thông minh của nhà hàng. Nhiệm vụ của bạn là:
+1. Chào đón khách hàng nồng nhiệt, tư vấn menu món ăn, combo ưu đãi và không gian tiệc.
+2. Hướng dẫn khách hàng đặt bàn: Hỏi rõ Số lượng khách, Ngày/Giờ đến, và Số điện thoại liên hệ.
+3. Ghi nhận các yêu cầu đặc biệt (bàn ngoài trời, trang trí sinh nhật, ăn chay...).`
+        },
+        {
+          id: 'spa',
+          name: 'Spa, Thẩm mỹ & Y tế',
+          icon: 'mdi:spa-outline',
+          color: 'from-purple-500 to-violet-500',
+          prompt: `Bạn là tư vấn viên chăm sóc khách hàng tại Spa & Thẩm mỹ viện. Nhiệm vụ của bạn là:
+1. Nhã nhặn, thấu hiểu, tư vấn các liệu trình chăm sóc da và thư giãn phù hợp.
+2. Khuyên khách hàng đặt lịch hẹn khám/tư vấn trực tiếp để được chuyên gia soi da/thám khám.
+3. Thu thập tên, SĐT và khung giờ rảnh của khách để xếp lịch hẹn.`
+        }
+      ]
     };
   },
   computed: {
@@ -719,6 +816,74 @@ export default {
       } finally {
         this.testingOrder = false;
       }
+    },
+
+    applyPromptTemplate(tpl) {
+      this.config.systemPrompt = tpl.prompt;
+      this.appliedTemplateNotice = tpl.name;
+      setTimeout(() => {
+        this.appliedTemplateNotice = null;
+      }, 4000);
+    },
+
+    startTour() {
+      const tourDriver = driver({
+        showProgress: true,
+        animate: true,
+        allowClose: true,
+        overlayColor: 'rgba(0, 0, 0, 0.75)',
+        nextBtnText: 'Tiếp theo',
+        prevBtnText: 'Quay lại',
+        doneBtnText: 'Xong',
+        steps: [
+          {
+            element: '#btn-tour-guide-config',
+            popover: {
+              title: 'Cấu hình Mô hình & AI Persona ⚙️',
+              description: 'Nơi thiết lập trí tuệ nhân tạo, quy tắc ứng xử, RAG Tri thức & Tool Calling cho Penny Bot.',
+              side: 'bottom',
+              align: 'end'
+            }
+          },
+          {
+            element: '#bot-selector-config',
+            popover: {
+              title: 'Chọn Penny Bot 🤖',
+              description: 'Chuyển đổi linh hoạt giữa các Bot để xem và điều chỉnh cấu hình tương ứng.',
+              side: 'bottom',
+              align: 'start'
+            }
+          },
+          {
+            element: '#prompt-templates-container',
+            popover: {
+              title: 'Gợi ý Mẫu Prompt Ngành Nghề 💡',
+              description: 'Click nạp nhanh mẫu câu System Prompt được thiết kế chuẩn cho Shop Thời trang, Bất động sản, SaaS, Nhà hàng, Spa.',
+              side: 'bottom',
+              align: 'center'
+            }
+          },
+          {
+            element: '#system-prompt-box',
+            popover: {
+              title: 'System Prompt (Khung Persona) ✍️',
+              description: 'Nơi quy định tính cách, vai trò, phạm vi trả lời và ngôn phong giao tiếp của Bot.',
+              side: 'top',
+              align: 'center'
+            }
+          },
+          {
+            element: '#ai-model-strategy-box',
+            popover: {
+              title: 'Chiến lược Mô hình & Provider 🧠',
+              description: 'Lựa chọn giữa GPT-4o, Claude 3.5 Sonnet hoặc Gemini Pro kèm nhiệt độ sáng tạo (Temperature).',
+              side: 'top',
+              align: 'center'
+            }
+          }
+        ]
+      });
+      tourDriver.drive();
     }
   }
 };

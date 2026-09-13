@@ -78,43 +78,102 @@
       </button>
     </div>
 
-    <!-- Upload Progress -->
-    <div v-if="uploading" class="upload-progress">
-      <div class="progress-bar">
-        <div class="progress-fill" :style="{ width: uploadProgress + '%' }"></div>
+    <!-- RAG Processing Progress Bar & Status -->
+    <div v-if="uploading" class="upload-progress p-5 bg-indigo-50/70 dark:bg-indigo-950/40 rounded-xl border border-indigo-200 dark:border-indigo-800/60 shadow-sm space-y-3">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center space-x-2">
+          <Icon icon="mdi:database-sync" class="text-indigo-600 dark:text-indigo-400 text-xl animate-spin" />
+          <span class="text-sm font-semibold text-gray-900 dark:text-white">
+            {{ currentStageText || 'Đang xử lý tài liệu RAG...' }}
+          </span>
+        </div>
+        <span class="text-sm font-bold text-indigo-600 dark:text-indigo-400 font-mono">
+          {{ uploadProgress }}%
+        </span>
       </div>
-      <p class="progress-text">{{ uploadProgress }}%</p>
+
+      <!-- Animated Progress Fill -->
+      <div class="progress-bar h-3 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden relative">
+        <div 
+          class="progress-fill h-full bg-gradient-to-r from-indigo-500 via-purple-500 to-emerald-500 rounded-full transition-all duration-300 relative"
+          :style="{ width: uploadProgress + '%' }"
+        >
+          <div class="absolute inset-0 bg-white/20 animate-pulse"></div>
+        </div>
+      </div>
+
+      <!-- Stats Bar -->
+      <div class="flex items-center justify-between text-xs text-gray-600 dark:text-gray-400 pt-1">
+        <span class="flex items-center gap-1">
+          <Icon icon="mdi:vector-square" class="text-purple-500" />
+          Số Chunks Vector: <strong class="text-gray-900 dark:text-white">{{ processedChunkCount }} / {{ estimatedTotalChunks }}</strong>
+        </span>
+        <span class="flex items-center gap-1">
+          <Icon icon="mdi:shield-check" class="text-emerald-500" />
+          RAG Vector Database: Active
+        </span>
+      </div>
     </div>
 
-    <!-- Upload Status -->
+    <!-- Upload Status Notification -->
     <div v-if="uploadStatus" class="upload-status" :class="uploadStatus.type">
       <Icon :icon="uploadStatus.icon" class="status-icon" />
       <p>{{ uploadStatus.message }}</p>
     </div>
 
-    <!-- Document List -->
-    <div v-if="documents.length > 0" class="document-list">
-      <h3 class="list-title">{{ $t('penny.documentUpload.uploadedDocuments') }}</h3>
-      <div class="document-items">
-        <div v-for="doc in documents" :key="doc.id" class="document-item">
-          <div class="document-info">
-            <Icon :icon="getFileIcon(doc.fileType)" class="document-icon" />
-            <div class="document-details">
-              <p class="document-name">{{ doc.documentName }}</p>
-              <p class="document-meta">
-                {{ doc.fileName }} • {{ formatFileSize(doc.fileSize) }} • 
-                {{ doc.totalChunks }} {{ $t('penny.documentUpload.chunks') }}
+    <!-- Document List Summary & Items -->
+    <div v-if="documents.length > 0" class="document-list mt-6">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="list-title text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+          <Icon icon="mdi:file-document-multiple-outline" class="text-indigo-500" />
+          {{ $t('penny.documentUpload.uploadedDocuments') }}
+        </h3>
+        <div class="flex items-center gap-3 text-xs">
+          <span class="px-2.5 py-1 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 rounded-lg font-medium border border-indigo-200 dark:border-indigo-800">
+            📑 {{ documents.length }} Tài liệu
+          </span>
+          <span class="px-2.5 py-1 bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-lg font-medium border border-purple-200 dark:border-purple-800">
+            ⚡ {{ totalVectorChunks }} Vector Chunks
+          </span>
+        </div>
+      </div>
+
+      <div class="document-items space-y-2">
+        <div v-for="doc in documents" :key="doc.id" class="document-item p-4 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow flex items-center justify-between">
+          <div class="document-info flex items-center space-x-3 flex-1 min-w-0">
+            <Icon :icon="getFileIcon(doc.fileType)" class="document-icon text-3xl text-indigo-500" />
+            <div class="document-details min-w-0 flex-1">
+              <p class="document-name font-semibold text-gray-900 dark:text-white truncate">
+                {{ doc.documentName }}
               </p>
+              <div class="document-meta flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 mt-1">
+                <span>{{ doc.fileName }}</span>
+                <span>•</span>
+                <span>{{ formatFileSize(doc.fileSize) }}</span>
+                <span>•</span>
+                <span class="font-medium text-purple-600 dark:text-purple-400 flex items-center gap-1">
+                  <Icon icon="mdi:lightning-bolt" class="text-amber-500" />
+                  {{ doc.totalChunks || 0 }} Chunks Vector
+                </span>
+              </div>
             </div>
           </div>
-          <div class="document-status">
-            <span :class="['status-badge', doc.status.toLowerCase()]">
+          <div class="document-status mx-4">
+            <span v-if="doc.status === 'PROCESSING'" class="status-badge flex items-center gap-1 bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 px-3 py-1 rounded-full text-xs font-semibold animate-pulse border border-amber-300 dark:border-amber-700">
+              <Icon icon="mdi:loading" class="animate-spin" />
+              Đang phân tích RAG...
+            </span>
+            <span v-else-if="doc.status === 'COMPLETED'" class="status-badge flex items-center gap-1 bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 px-3 py-1 rounded-full text-xs font-semibold border border-emerald-300 dark:border-emerald-700">
+              <Icon icon="mdi:check-circle" />
+              Hoàn tất RAG
+            </span>
+            <span v-else class="status-badge bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 px-3 py-1 rounded-full text-xs font-semibold">
               {{ doc.status }}
             </span>
           </div>
           <div class="document-actions">
-            <button @click="deleteDocument(doc.id)" class="action-button delete">
-              <Icon icon="mdi:delete" />
+            <button @click="deleteDocument(doc.id)" class="action-button delete p-2 text-gray-400 hover:text-red-500 transition-colors" title="Xóa tài liệu">
+              <Icon icon="mdi:delete-outline" class="text-xl" />
             </button>
           </div>
         </div>
@@ -146,10 +205,18 @@ export default {
       documentName: '',
       uploading: false,
       uploadProgress: 0,
+      currentStageText: '',
+      processedChunkCount: 0,
+      estimatedTotalChunks: 0,
       uploadStatus: null,
       isDragOver: false,
       documents: []
     };
+  },
+  computed: {
+    totalVectorChunks() {
+      return this.documents.reduce((acc, doc) => acc + (doc.totalChunks || 0), 0);
+    }
   },
   mounted() {
     this.loadDocuments();
@@ -210,8 +277,30 @@ export default {
       if (!this.selectedFile || !this.documentName || !this.botId || !uuidRegex.test(String(this.botId).trim())) return;
 
       this.uploading = true;
-      this.uploadProgress = 0;
+      this.uploadProgress = 10;
+      this.currentStageText = 'Tải tệp lên server...';
+      this.processedChunkCount = 0;
+      this.estimatedTotalChunks = Math.max(1, Math.ceil((this.selectedFile.size || 50000) / 3500));
       this.uploadStatus = null;
+
+      // Realistic stage timer simulation during RAG extraction & chunking
+      const progressTimer = setInterval(() => {
+        if (this.uploadProgress < 30) {
+          this.uploadProgress += 5;
+          this.currentStageText = 'Đang tải tệp lên máy chủ...';
+        } else if (this.uploadProgress < 60) {
+          this.uploadProgress += 4;
+          this.currentStageText = 'Đang trích xuất nội dung văn bản (OCR & Parser)...';
+        } else if (this.uploadProgress < 85) {
+          this.uploadProgress += 3;
+          this.currentStageText = 'Đang chia nhỏ văn bản thành các Chunks (Text Chunking)...';
+          this.processedChunkCount = Math.min(this.estimatedTotalChunks, Math.floor((this.uploadProgress / 100) * this.estimatedTotalChunks));
+        } else if (this.uploadProgress < 95) {
+          this.uploadProgress += 1;
+          this.currentStageText = 'Đang tạo Vector Embeddings & lưu Database...';
+          this.processedChunkCount = this.estimatedTotalChunks;
+        }
+      }, 300);
 
       try {
         const response = await pennyApi.uploadKnowledgeDocument(
@@ -221,13 +310,21 @@ export default {
           this.documentName,
           this.$store?.state?.user?.username
         );
+        clearInterval(progressTimer);
 
         this.uploadProgress = 100;
-        this.showStatus('success', 'mdi:check-circle', this.$t('penny.documentUpload.uploadSuccess'));
+        this.currentStageText = 'Hoàn tất phân tích RAG!';
+        const createdDoc = response.data || {};
+        this.processedChunkCount = createdDoc.totalChunks || this.estimatedTotalChunks;
         
-        this.removeFile();
-        this.loadDocuments();
+        this.showStatus('success', 'mdi:check-circle', `Tải lên thành công! Đã tạo ${this.processedChunkCount} vector chunks.`);
+        
+        setTimeout(() => {
+          this.removeFile();
+          this.loadDocuments();
+        }, 1500);
       } catch (error) {
+        clearInterval(progressTimer);
         this.showStatus('error', 'mdi:alert-circle', this.$t('penny.documentUpload.uploadError'));
         console.error('Upload error:', error);
       } finally {

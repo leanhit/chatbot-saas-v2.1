@@ -12,6 +12,14 @@
       </div>
       <div class="flex items-center space-x-4">
         <button
+          id="btn-tour-guide-metrics-page"
+          @click="startTour"
+          class="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors shadow-sm text-sm font-medium"
+        >
+          <Icon icon="mdi:help-circle-outline" class="mr-1.5 text-blue-500 text-lg" />
+          {{ $t('penny.guide') || 'Hướng dẫn' }}
+        </button>
+        <button
           @click="refreshMetrics"
           :disabled="loading"
           class="inline-flex items-center px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/80 transition-colors disabled:opacity-50"
@@ -23,7 +31,7 @@
     </div>
 
     <!-- Statistics Cards -->
-    <div class="wrapper-card grid lg:grid-cols-4 grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+    <div id="metrics-stats-cards" class="wrapper-card grid lg:grid-cols-4 grid-cols-1 md:grid-cols-2 gap-4 mt-6">
       <!-- Total Bots -->
       <div class="card bg-white dark:bg-gray-800 w-full rounded-md p-5 border border-gray-200 dark:border-gray-700 flex">
         <div class="p-2 max-w-sm">
@@ -110,7 +118,7 @@
     </div>
 
     <!-- Provider Health -->
-    <div class="mt-6 bg-white dark:bg-gray-800 p-6 rounded-md border border-gray-200 dark:border-gray-700">
+    <div id="provider-health-section" class="mt-6 bg-white dark:bg-gray-800 p-6 rounded-md border border-gray-200 dark:border-gray-700">
       <h2 class="font-medium text-sm text-gray-800 dark:text-gray-200 mb-4">{{ $t('penny.metrics.providerHealth') }}</h2>
       <div v-if="loading" class="text-center py-4">
         <Icon icon="mdi:loading" class="text-6xl text-gray-300 animate-spin mx-auto" />
@@ -209,6 +217,8 @@
 <script>
 import { Icon } from '@iconify/vue';
 import { pennyApi } from '@/api/pennyApi';
+import { driver } from 'driver.js';
+import 'driver.js/dist/driver.css';
 
 export default {
   name: 'PennyMetrics',
@@ -288,6 +298,48 @@ export default {
         cohere: 'simple-icons:cohere'
       };
       return providers[name.toLowerCase()] || 'mdi:server';
+    },
+
+    startTour() {
+      const tourDriver = driver({
+        showProgress: true,
+        animate: true,
+        allowClose: true,
+        overlayColor: 'rgba(0, 0, 0, 0.75)',
+        nextBtnText: 'Tiếp theo',
+        prevBtnText: 'Quay lại',
+        doneBtnText: 'Xong',
+        steps: [
+          {
+            element: '#btn-tour-guide-metrics-page',
+            popover: {
+              title: 'Thống kê Hệ thống Penny Bot 📊',
+              description: 'Nơi xem bức tranh toàn cảnh về tổng số Bot, trạng thái RAG và sức khỏe các mô hình LLM.',
+              side: 'bottom',
+              align: 'end'
+            }
+          },
+          {
+            element: '#metrics-stats-cards',
+            popover: {
+              title: 'Thẻ Chỉ số Hoạt động 📈',
+              description: 'Theo dõi nhanh số lượng Bot đã tạo, số Bot đang chạy, tổng số bài viết Tri thức & trạng thái RAG.',
+              side: 'bottom',
+              align: 'center'
+            }
+          },
+          {
+            element: '#provider-health-section',
+            popover: {
+              title: 'Sức khỏe AI Provider 🩺',
+              description: 'Kiểm tra trạng thái phản hồi và số lần lỗi liên tiếp của OpenAI, Anthropic, Gemini, Cohere.',
+              side: 'top',
+              align: 'center'
+            }
+          }
+        ]
+      });
+      tourDriver.drive();
     }
   }
 };

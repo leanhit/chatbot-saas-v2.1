@@ -12,6 +12,7 @@
       </div>
       <div class="flex flex-wrap items-center gap-3 w-full md:w-auto">
         <select
+          id="analytics-bot-selector"
           v-model="selectedBotId"
           @change="loadAnalytics"
           class="bg-white dark:bg-gray-800 hover:border-gray-300 dark:hover:border-gray-600 dark:text-white dark:border-gray-700 border border-gray-200 rounded-md py-2 px-3 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
@@ -32,6 +33,14 @@
           <option value="90days">{{ $t('penny.analyticsDashboard.last90Days') }}</option>
         </select>
         <button
+          id="btn-tour-guide-analytics"
+          @click="startTour"
+          class="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors shadow-sm text-sm font-medium"
+        >
+          <Icon icon="mdi:help-circle-outline" class="mr-1.5 text-indigo-500 text-lg" />
+          {{ $t('penny.guide') || 'Hướng dẫn' }}
+        </button>
+        <button
           @click="loadAnalytics"
           :disabled="loading"
           class="inline-flex items-center px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/80 transition-colors disabled:opacity-50 text-sm font-medium"
@@ -43,7 +52,7 @@
     </div>
 
     <!-- Analytics Summary Cards -->
-    <div class="wrapper-card grid lg:grid-cols-4 grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+    <div id="analytics-summary-cards" class="wrapper-card grid lg:grid-cols-4 grid-cols-1 md:grid-cols-2 gap-4 mt-6">
       <div class="card bg-white dark:bg-gray-800 w-full rounded-md p-5 border border-gray-200 dark:border-gray-700 flex">
         <div class="p-2 max-w-sm">
           <div class="bg-blue-200 rounded-full w-14 h-14 text-lg p-3 text-blue-600 mx-auto flex items-center justify-center">
@@ -126,7 +135,7 @@
     </div>
 
     <!-- Analytics Events Table -->
-    <div class="mt-6 bg-white dark:bg-gray-800 p-6 rounded-md border border-gray-200 dark:border-gray-700">
+    <div id="analytics-events-table" class="mt-6 bg-white dark:bg-gray-800 p-6 rounded-md border border-gray-200 dark:border-gray-700">
       <div class="flex justify-between items-center mb-4">
         <h2 class="font-medium text-sm text-gray-800 dark:text-gray-200">{{ $t('penny.analyticsDashboard.recentEvents') }}</h2>
       </div>
@@ -256,6 +265,8 @@
 <script>
 import { Icon } from '@iconify/vue';
 import { pennyApi } from '@/api/pennyApi';
+import { driver } from 'driver.js';
+import 'driver.js/dist/driver.css';
 
 export default {
   name: 'PennyAnalyticsDashboard',
@@ -359,6 +370,57 @@ export default {
       const total = Object.values(this.intentDistribution).reduce((a, b) => a + b, 0);
       if (total === 0) return 0;
       return (count / total) * 100;
+    },
+
+    startTour() {
+      const tourDriver = driver({
+        showProgress: true,
+        animate: true,
+        allowClose: true,
+        overlayColor: 'rgba(0, 0, 0, 0.75)',
+        nextBtnText: 'Tiếp theo',
+        prevBtnText: 'Quay lại',
+        doneBtnText: 'Xong',
+        steps: [
+          {
+            element: '#btn-tour-guide-analytics',
+            popover: {
+              title: 'Phân tích & Báo cáo Penny Analytics 📊',
+              description: 'Nơi xem thông số lịch sử tin nhắn, đo lường tỷ lệ lỗi và thống kê các Intent phổ biến.',
+              side: 'bottom',
+              align: 'end'
+            }
+          },
+          {
+            element: '#analytics-bot-selector',
+            popover: {
+              title: 'Lọc Theo Bot & Thời Gian 🗓️',
+              description: 'Cho phép lọc dữ liệu phân tích theo từng Bot và các mốc thời gian 24h, 7 ngày, 30 ngày.',
+              side: 'bottom',
+              align: 'start'
+            }
+          },
+          {
+            element: '#analytics-summary-cards',
+            popover: {
+              title: 'Tổng quan Hoạt động 📈',
+              description: 'Thống kê tổng số tin nhắn, số lỗi phát sinh, thời gian phản hồi trung bình và Provider dùng nhiều nhất.',
+              side: 'bottom',
+              align: 'center'
+            }
+          },
+          {
+            element: '#analytics-events-table',
+            popover: {
+              title: 'Nhật ký Sự kiện Real-time 📝',
+              description: 'Danh sách chi tiết các sự kiện xử lý tin nhắn kèm phân loại Intent và thời gian phản hồi.',
+              side: 'top',
+              align: 'center'
+            }
+          }
+        ]
+      });
+      tourDriver.drive();
     }
   }
 };

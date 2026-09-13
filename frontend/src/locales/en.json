@@ -456,6 +456,11 @@
     "title": "Penny Bot Management",
     "subtitle": "Manage your AI assistants and automate conversations",
     "guide": "Guide",
+    "selectPennyBotPlaceholder": "-- Select Penny Bot --",
+    "noBotSelected": "No Bot Selected",
+    "noBotSelectedDesc": "Please select a Penny Bot from the bot list to view and manage knowledge base articles.",
+    "goToBotManagement": "Go to Bot List",
+    "refresh": "Refresh",
     "createBot": "Create Bot",
     "activeBots": "Active Bots",
     "inactiveBots": "Inactive Bots",
@@ -841,8 +846,14 @@
       },
       "config": {
         "title": "Penny Bot Configuration",
+        "subtitle": "Configure AI Model, RAG Knowledge Base, Tool Calling & Smart Fallback Strategy",
         "saveChanges": "Save Changes",
         "saving": "Saving...",
+        "personalityNotice": "Shape AI personality & core directives",
+        "quickPromptTemplates": "Quick Prompt Templates by Industry",
+        "appliedPromptNotice": "Applied prompt template",
+        "customizableNotice": "You can freely customize further below!",
+        "manageKnowledgeArticles": "Manage Knowledge Base Articles",
         "basicInfo": "Basic Information",
         "botName": "Bot Name",
         "businessName": "Business Name",
@@ -993,7 +1004,8 @@
           "product": "Product",
           "policy": "Policy",
           "shipping": "Shipping",
-          "price": "Price"
+          "price": "Pricing",
+          "inactive": "Inactive"
         }
       }
     },

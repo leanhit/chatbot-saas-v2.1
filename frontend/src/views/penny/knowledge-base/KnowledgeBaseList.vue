@@ -24,11 +24,12 @@
         <!-- Bot Selector Dropdown -->
         <div v-if="availableBots.length > 0" class="flex items-center space-x-2">
           <select
+            id="kb-bot-selector"
             v-model="selectedBotId"
             @change="handleBotChange(selectedBotId)"
             class="px-3.5 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm font-medium focus:ring-2 focus:ring-primary focus:outline-none shadow-sm"
           >
-            <option value="" disabled>-- Chọn Penny Bot --</option>
+            <option value="" disabled>{{ $t('penny.selectPennyBotPlaceholder') || '-- Chọn Penny Bot --' }}</option>
             <option
               v-for="bot in availableBots"
               :key="bot.id || bot.botId"
@@ -38,6 +39,14 @@
             </option>
           </select>
         </div>
+        <button
+          id="btn-tour-guide-kb"
+          @click="startTour"
+          class="inline-flex items-center px-3.5 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors shadow-sm text-sm font-medium"
+        >
+          <Icon icon="mdi:help-circle-outline" class="mr-1.5 text-purple-500 text-lg" />
+          {{ $t('penny.guide') || 'Hướng dẫn' }}
+        </button>
         <div v-if="activeTab === 'articles'">
           <button
             @click="showCreateModal = true"
@@ -52,7 +61,7 @@
     </div>
 
     <!-- Tabs -->
-    <div class="border-b border-gray-200 dark:border-gray-700 mb-6">
+    <div id="kb-tabs-container" class="border-b border-gray-200 dark:border-gray-700 mb-6">
       <nav class="flex space-x-8">
         <button
           @click="activeTab = 'articles'"
@@ -88,12 +97,12 @@
         <div class="flex items-center">
           <Icon icon="mdi:alert-circle-outline" class="text-2xl mr-3 text-amber-600 dark:text-amber-400 flex-shrink-0" />
           <div>
-            <h4 class="font-medium text-amber-900 dark:text-amber-100">Chưa chọn Bot</h4>
-            <p class="text-sm">Vui lòng chọn một Penny Bot từ danh sách quản lý Bot để xem và quản lý Knowledge Base.</p>
+            <h4 class="font-medium text-amber-900 dark:text-amber-100">{{ $t('penny.noBotSelected') || 'Chưa chọn Bot' }}</h4>
+            <p class="text-sm">{{ $t('penny.noBotSelectedDesc') || 'Vui lòng chọn một Penny Bot từ danh sách quản lý Bot để xem và quản lý Knowledge Base.' }}</p>
           </div>
         </div>
         <router-link to="/penny/bots" class="ml-4 px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-sm font-medium rounded-md transition-colors whitespace-nowrap">
-          Đi đến danh sách Bot
+          {{ $t('penny.goToBotManagement') || 'Đi đến danh sách Bot' }}
         </router-link>
       </div>
 
@@ -459,6 +468,8 @@
 import { Icon } from '@iconify/vue';
 import { pennyApi } from '@/api/pennyApi';
 import { usePennyBotStore } from '@/stores/pennyBotStore';
+import { driver } from 'driver.js';
+import 'driver.js/dist/driver.css';
 import DocumentUpload from './DocumentUpload.vue';
 
 export default {
@@ -730,6 +741,48 @@ export default {
     formatDate(date) {
       if (!date) return '-';
       return new Date(date).toLocaleDateString();
+    },
+
+    startTour() {
+      const tourDriver = driver({
+        showProgress: true,
+        animate: true,
+        allowClose: true,
+        overlayColor: 'rgba(0, 0, 0, 0.75)',
+        nextBtnText: 'Tiếp theo',
+        prevBtnText: 'Quay lại',
+        doneBtnText: 'Xong',
+        steps: [
+          {
+            element: '#btn-tour-guide-kb',
+            popover: {
+              title: 'Cơ sở Tri thức RAG 📚',
+              description: 'Nơi lưu trữ, phân tích và vector hóa tài liệu để Penny Bot tra cứu câu trả lời chuẩn xác.',
+              side: 'bottom',
+              align: 'end'
+            }
+          },
+          {
+            element: '#kb-bot-selector',
+            popover: {
+              title: 'Chọn Bot Tri Thức 🤖',
+              description: 'Chọn Bot để quản lý kho tri thức dành riêng cho bot đó.',
+              side: 'bottom',
+              align: 'start'
+            }
+          },
+          {
+            element: '#kb-tabs-container',
+            popover: {
+              title: 'Chuyển đổi Tab Bài viết & File Upload 📑',
+              description: 'Tab Bài viết dùng cho FAQ/Văn bản ngắn. Tab Upload Tài liệu dùng để phân tích PDF, DOCX, XLSX thành Vector Chunks.',
+              side: 'bottom',
+              align: 'center'
+            }
+          }
+        ]
+      });
+      tourDriver.drive();
     }
   }
 };

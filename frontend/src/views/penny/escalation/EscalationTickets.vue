@@ -21,6 +21,7 @@
         <!-- Bot Selector Dropdown -->
         <div v-if="availableBots.length > 0" class="flex items-center space-x-2">
           <select
+            id="escalation-bot-selector"
             v-model="selectedBotId"
             @change="handleBotChange(selectedBotId)"
             class="px-3.5 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm font-medium focus:ring-2 focus:ring-primary focus:outline-none shadow-sm"
@@ -36,6 +37,14 @@
           </select>
         </div>
         <button
+          id="btn-tour-guide-escalation"
+          @click="startTour"
+          class="inline-flex items-center px-3.5 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors shadow-sm text-sm font-medium"
+        >
+          <Icon icon="mdi:help-circle-outline" class="mr-1.5 text-amber-500 text-lg" />
+          {{ $t('penny.guide') || 'Hướng dẫn' }}
+        </button>
+        <button
           @click="refreshTickets"
           :disabled="loading || !effectiveBotId"
           class="inline-flex items-center px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/80 transition-colors disabled:opacity-50 text-sm font-medium"
@@ -47,7 +56,7 @@
     </div>
 
     <!-- Filter Tabs -->
-    <div class="flex flex-wrap gap-2 mb-6">
+    <div id="escalation-filter-tabs" class="flex flex-wrap gap-2 mb-6">
       <button
         v-for="status in statusFilters"
         :key="status.value"
@@ -64,7 +73,7 @@
     </div>
 
     <!-- Tickets Table -->
-    <div class="bg-white dark:bg-gray-800 rounded-md border border-gray-200 dark:border-gray-700 overflow-hidden">
+    <div id="escalation-table-container" class="bg-white dark:bg-gray-800 rounded-md border border-gray-200 dark:border-gray-700 overflow-hidden">
       <div class="overflow-x-auto">
         <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
           <thead class="bg-gray-50 dark:bg-gray-700">
@@ -258,6 +267,8 @@
 import { Icon } from '@iconify/vue';
 import { pennyApi } from '@/api/pennyApi';
 import { usePennyBotStore } from '@/stores/pennyBotStore';
+import { driver } from 'driver.js';
+import 'driver.js/dist/driver.css';
 
 export default {
   name: 'EscalationTickets',
@@ -512,6 +523,57 @@ export default {
     formatDate(date) {
       if (!date) return '-';
       return new Date(date).toLocaleString();
+    },
+
+    startTour() {
+      const tourDriver = driver({
+        showProgress: true,
+        animate: true,
+        allowClose: true,
+        overlayColor: 'rgba(0, 0, 0, 0.75)',
+        nextBtnText: 'Tiếp theo',
+        prevBtnText: 'Quay lại',
+        doneBtnText: 'Xong',
+        steps: [
+          {
+            element: '#btn-tour-guide-escalation',
+            popover: {
+              title: 'Yêu cầu Hỗ trợ (Escalation) 🎫',
+              description: 'Nơi tiếp nhận và xử lý các cuộc hội thoại cần chuyển giao cho nhân viên CSKH thực tế.',
+              side: 'bottom',
+              align: 'end'
+            }
+          },
+          {
+            element: '#escalation-bot-selector',
+            popover: {
+              title: 'Chọn Penny Bot 🤖',
+              description: 'Lọc danh sách Ticket chuyển giao theo từng Bot.',
+              side: 'bottom',
+              align: 'start'
+            }
+          },
+          {
+            element: '#escalation-filter-tabs',
+            popover: {
+              title: 'Bộ lọc Trạng thái Ticket 🔍',
+              description: 'Lọc nhanh danh sách Ticket theo Chờ xử lý (Pending), Đã phân công (Assigned), Đã giải quyết (Resolved).',
+              side: 'bottom',
+              align: 'center'
+            }
+          },
+          {
+            element: '#escalation-table-container',
+            popover: {
+              title: 'Bảng Quản lý Ticket 📋',
+              description: 'Xem chi tiết lý do chuyển giao, độ ưu tiên và phân công tư vấn viên giải quyết.',
+              side: 'top',
+              align: 'center'
+            }
+          }
+        ]
+      });
+      tourDriver.drive();
     }
   }
 };

@@ -14,6 +14,7 @@
         <!-- Bot Selection -->
         <div v-if="availableBots.length > 0" class="flex items-center space-x-2">
           <select
+            id="rules-bot-selector"
             v-model="selectedBot"
             @change="selectBot(selectedBot)"
             class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
@@ -29,6 +30,15 @@
           </select>
         </div>
         <button
+          id="btn-tour-guide-rules"
+          @click="startTour"
+          class="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors shadow-sm"
+        >
+          <Icon icon="mdi:help-circle-outline" class="mr-2 text-primary" />
+          {{ $t('penny.guide') || 'Hướng dẫn' }}
+        </button>
+        <button
+          id="btn-create-rule"
           @click="showCreateModal = true"
           :disabled="!selectedBot"
           class="inline-flex items-center px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
@@ -288,6 +298,8 @@
 import { computed, ref, onMounted } from 'vue'
 import { Icon } from '@iconify/vue'
 import { useI18n } from 'vue-i18n'
+import { driver } from 'driver.js'
+import 'driver.js/dist/driver.css'
 import { formatDate, formatDateTime } from '@/utils/dateUtils'
 import { usePennyRuleStore } from '@/stores/pennyRuleStore'
 import { usePennyBotStore } from '@/stores/pennyBotStore'
@@ -515,6 +527,48 @@ export default {
       return names[botType] || botType
     }
 
+    const startTour = () => {
+      const tourDriver = driver({
+        showProgress: true,
+        animate: true,
+        allowClose: true,
+        overlayColor: 'rgba(0, 0, 0, 0.75)',
+        nextBtnText: 'Tiếp theo',
+        prevBtnText: 'Quay lại',
+        doneBtnText: 'Xong',
+        steps: [
+          {
+            element: '#btn-tour-guide-rules',
+            popover: {
+              title: 'Quản lý Quy tắc Điều hướng 📜',
+              description: 'Cho phép bạn định nghĩa các từ khóa trigger và phản hồi tự động trước khi tin nhắn tới AI.',
+              side: 'bottom',
+              align: 'end'
+            }
+          },
+          {
+            element: '#rules-bot-selector',
+            popover: {
+              title: 'Chọn Penny Bot 🤖',
+              description: 'Lựa chọn Bot mà bạn muốn xem hoặc áp dụng tập quy tắc.',
+              side: 'bottom',
+              align: 'start'
+            }
+          },
+          {
+            element: '#btn-create-rule',
+            popover: {
+              title: 'Tạo Quy tắc Mới ➕',
+              description: 'Tạo quy tắc mới với các chế độ khớp từ khóa (Exact Match, Contains, Regex) hoặc AI Intent Routing.',
+              side: 'bottom',
+              align: 'end'
+            }
+          }
+        ]
+      })
+      tourDriver.drive()
+    }
+
     // Lifecycle
     onMounted(async () => {
       if (!availableBots.value || availableBots.value.length === 0) {
@@ -562,7 +616,8 @@ export default {
       getRuleTypeDisplayName,
       formatDate,
       formatDateTime,
-      getBotTypeDisplayName
+      getBotTypeDisplayName,
+      startTour
     }
   }
 }

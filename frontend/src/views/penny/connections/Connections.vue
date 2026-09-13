@@ -22,6 +22,7 @@
                 {{ $t('penny.connections.selectBot') }}
               </label>
               <select
+                id="conn-bot-selector"
                 v-model="selectedBot"
                 @change="selectBot(selectedBot)"
                 class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
@@ -38,8 +39,18 @@
               <Icon icon="mdi:link-variant" class="h-6 w-6 text-green-600 dark:text-green-400" />
             </div>
             
+            <button
+              id="btn-tour-guide-conn"
+              @click="startTour"
+              class="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors shadow-sm text-sm font-medium"
+            >
+              <Icon icon="mdi:help-circle-outline" class="mr-2 text-green-600 dark:text-green-400" />
+              {{ $t('penny.guide') || 'Hướng dẫn' }}
+            </button>
+
             <!-- AutoConnect Button -->
             <button
+              id="btn-auto-connect-fb"
               v-if="selectedBot"
               @click="showAutoConnectModal = true"
               class="inline-flex items-center px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 transition-colors"
@@ -53,7 +64,7 @@
     </div>
 
     <!-- Stats Cards -->
-    <div v-if="selectedBot" class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+    <div id="conn-stats-cards" v-if="selectedBot" class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
       <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
         <div class="flex items-center">
           <div class="flex-shrink-0">
@@ -240,6 +251,8 @@
 import { computed, ref, onMounted } from 'vue'
 import { Icon } from '@iconify/vue'
 import { useI18n } from 'vue-i18n'
+import { driver } from 'driver.js'
+import 'driver.js/dist/driver.css'
 import { formatDate, formatDateTime } from '@/utils/dateUtils'
 import { usePennyConnectionStore } from '@/stores/pennyConnectionStore'
 import { usePennyBotStore } from '@/stores/pennyBotStore'
@@ -385,6 +398,57 @@ export default {
       return names[botType] || botType
     }
 
+    const startTour = () => {
+      const tourDriver = driver({
+        showProgress: true,
+        animate: true,
+        allowClose: true,
+        overlayColor: 'rgba(0, 0, 0, 0.75)',
+        nextBtnText: 'Tiếp theo',
+        prevBtnText: 'Quay lại',
+        doneBtnText: 'Xong',
+        steps: [
+          {
+            element: '#btn-tour-guide-conn',
+            popover: {
+              title: 'Kết nối Kênh & Social 🌐',
+              description: 'Nơi thiết lập tích hợp giữa Penny Bot với Fanpage Facebook, Webhook và các kênh chat.',
+              side: 'bottom',
+              align: 'end'
+            }
+          },
+          {
+            element: '#conn-bot-selector',
+            popover: {
+              title: 'Chọn Penny Bot 🤖',
+              description: 'Lựa chọn Bot để quản lý danh sách kênh liên kết tương ứng.',
+              side: 'bottom',
+              align: 'start'
+            }
+          },
+          {
+            element: '#btn-auto-connect-fb',
+            popover: {
+              title: 'Tự động Tích hợp Facebook 🚀',
+              description: 'Một click để quét và kết nối nhanh các Fanpage thuộc quyền sở hữu của bạn.',
+              side: 'bottom',
+              align: 'end'
+            }
+          },
+          {
+            element: '#conn-stats-cards',
+            popover: {
+              title: 'Thống kê Trạng thái Kết nối 📊',
+              description: 'Theo dõi tổng số kênh, số kênh đang chạy (Active) và chỉ số sức khỏe của kết nối.',
+              side: 'bottom',
+              align: 'center'
+            }
+          }
+        ]
+      })
+      tourDriver.drive()
+    }
+
     // Lifecycle
     onMounted(async () => {
       if (!availableBots.value || availableBots.value.length === 0) {
@@ -434,7 +498,8 @@ export default {
       getConnectionIcon,
       formatDate,
       formatDateTime,
-      getBotTypeDisplayName
+      getBotTypeDisplayName,
+      startTour
     }
   }
 }
