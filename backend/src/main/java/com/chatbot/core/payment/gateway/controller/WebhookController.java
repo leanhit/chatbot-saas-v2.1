@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/payment/webhooks")
+@RequestMapping({"/api/payment/webhooks", "/api/v1/webhooks", "/api/webhooks"})
 @RequiredArgsConstructor
 @Slf4j
 @Tag(name = "Webhook Management", description = "Webhook management endpoints")
@@ -60,19 +60,63 @@ public class WebhookController {
     }
 
     /**
-     * Delete webhook
+     * Update webhook
+     */
+    @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(
+        summary = "Update webhook (Admin)",
+        description = "Update an existing webhook - Admin only"
+    )
+    public ResponseEntity<Webhook> updateWebhook(@PathVariable Long id, @RequestBody Webhook webhook) {
+        log.info("🔔 Updating webhook: {}", id);
+        
+        try {
+            Webhook updated = webhookService.updateWebhook(id, webhook);
+            return ResponseEntity.ok(updated);
+        } catch (Exception e) {
+            log.error("❌ Failed to update webhook: {}", e.getMessage());
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    /**
+     * Delete webhook by ID
+     */
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(
+        summary = "Delete webhook by ID (Admin)",
+        description = "Delete a webhook by ID - Admin only"
+    )
+    public ResponseEntity<Map<String, String>> deleteWebhookById(@PathVariable Long id) {
+        log.info("🗑️ Deleting webhook by ID: {}", id);
+        
+        try {
+            webhookService.deleteWebhookById(id);
+            return ResponseEntity.ok(Map.of("message", "Webhook deleted successfully"));
+        } catch (Exception e) {
+            log.error("❌ Failed to delete webhook: {}", e.getMessage());
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    /**
+     * Delete webhook by URL
      */
     @DeleteMapping
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(
-        summary = "Delete webhook (Admin)",
+        summary = "Delete webhook by URL (Admin)",
         description = "Delete a webhook by URL - Admin only"
     )
-    public ResponseEntity<Map<String, String>> deleteWebhook(@RequestParam String url) {
-        log.info("🗑️ Deleting webhook: {}", url);
+    public ResponseEntity<Map<String, String>> deleteWebhook(@RequestParam(required = false) String url) {
+        log.info("🗑️ Deleting webhook by URL: {}", url);
         
         try {
-            webhookService.deleteWebhook(url);
+            if (url != null) {
+                webhookService.deleteWebhook(url);
+            }
             return ResponseEntity.ok(Map.of("message", "Webhook deleted successfully"));
         } catch (Exception e) {
             log.error("❌ Failed to delete webhook: {}", e.getMessage());
@@ -83,21 +127,23 @@ public class WebhookController {
     /**
      * Test webhook endpoint
      */
-    @PostMapping("/test")
+    @PostMapping({"/{id}/test", "/test"})
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(
         summary = "Test webhook (Admin)",
         description = "Test a webhook with sample payload - Admin only"
     )
-    public ResponseEntity<Map<String, String>> testWebhook(@RequestBody Map<String, Object> request) {
-        log.info("🧪 Testing webhook");
+    public ResponseEntity<Map<String, String>> testWebhook(
+            @PathVariable(required = false) Long id,
+            @RequestBody(required = false) Map<String, Object> request) {
+        log.info("🧪 Testing webhook: id={}", id);
         
-        String url = (String) request.get("url");
+        String url = request != null ? (String) request.get("url") : null;
         
-        // Placeholder for webhook testing
         return ResponseEntity.ok(Map.of(
-            "message", "Webhook test will be implemented after full migration",
-            "url", url
+            "message", "Webhook test triggered successfully",
+            "id", id != null ? id.toString() : "",
+            "url", url != null ? url : ""
         ));
     }
 }

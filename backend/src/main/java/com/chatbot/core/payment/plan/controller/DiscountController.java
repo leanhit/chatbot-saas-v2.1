@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/payment/discounts")
+@RequestMapping({"/api/payment/discounts", "/api/v1/discounts", "/api/discounts"})
 @RequiredArgsConstructor
 @Slf4j
 @Tag(name = "Discount Management", description = "Discount management endpoints")
@@ -45,22 +45,57 @@ public class DiscountController {
     }
 
     /**
-     * Validate discount
+     * Validate discount (GET)
+     */
+    @GetMapping("/validate")
+    @Operation(
+        summary = "Validate discount (GET)",
+        description = "Validate a discount code with query params"
+    )
+    public ResponseEntity<Object> validateDiscountGet(
+            @RequestParam String code,
+            @RequestParam(required = false) Long userId,
+            @RequestParam BigDecimal amount,
+            @RequestParam(required = false) String packageId) {
+
+        log.info("🎟️ Validating discount GET: {} for amount: {}", code, amount);
+
+        Long effectiveUserId = userId != null ? userId : 0L;
+        var result = discountService.validateDiscount(code, effectiveUserId, amount, packageId);
+
+        if (result.isValid()) {
+            return ResponseEntity.ok(Map.of(
+                "valid", true,
+                "discountAmount", result.getDiscountAmount(),
+                "finalAmount", result.getFinalAmount(),
+                "discount", DiscountResponse.from(result.getDiscount())
+            ));
+        } else {
+            return ResponseEntity.ok(Map.of(
+                "valid", false,
+                "error", result.getErrorMessage() != null ? result.getErrorMessage() : "Invalid discount"
+            ));
+        }
+    }
+
+    /**
+     * Validate discount (POST)
      */
     @PostMapping("/validate")
     @Operation(
-        summary = "Validate discount",
+        summary = "Validate discount (POST)",
         description = "Validate a discount code for a specific user and amount"
     )
     public ResponseEntity<Object> validateDiscount(
             @RequestBody Map<String, Object> request) {
         
         String code = (String) request.get("code");
-        Long userId = Long.valueOf(request.get("userId").toString());
-        BigDecimal amount = new BigDecimal(request.get("amount").toString());
+        Object userIdObj = request.get("userId");
+        Long userId = userIdObj != null ? Long.valueOf(userIdObj.toString()) : 0L;
+        BigDecimal amount = request.get("amount") != null ? new BigDecimal(request.get("amount").toString()) : BigDecimal.ZERO;
         String packageId = (String) request.get("packageId");
         
-        log.info("🎟️ Validating discount: {} for user: {}, amount: {}", code, userId, amount);
+        log.info("🎟️ Validating discount POST: {} for user: {}, amount: {}", code, userId, amount);
         
         var result = discountService.validateDiscount(code, userId, amount, packageId);
         
@@ -74,7 +109,7 @@ public class DiscountController {
         } else {
             return ResponseEntity.ok(Map.of(
                 "valid", false,
-                "error", result.getErrorMessage()
+                "error", result.getErrorMessage() != null ? result.getErrorMessage() : "Invalid discount"
             ));
         }
     }

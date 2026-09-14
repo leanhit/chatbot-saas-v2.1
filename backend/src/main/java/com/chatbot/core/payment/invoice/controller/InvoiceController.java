@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/payment/invoices")
+@RequestMapping({"/api/payment/invoices", "/api/v1/invoices", "/api/invoices"})
 @RequiredArgsConstructor
 @Slf4j
 @Tag(name = "Invoice Management", description = "Invoice management endpoints")

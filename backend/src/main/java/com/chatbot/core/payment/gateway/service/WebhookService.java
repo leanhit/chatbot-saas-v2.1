@@ -246,11 +246,31 @@ public class WebhookService {
     public Webhook createWebhook(Webhook webhook) {
         log.info("🔔 Creating new webhook: {}", webhook.getName());
 
-        if (webhookRepository.existsByUrl(webhook.getUrl())) {
+        if (webhook.getUrl() != null && webhookRepository.existsByUrl(webhook.getUrl())) {
             throw new RuntimeException("Webhook URL already exists");
         }
 
         return webhookRepository.save(webhook);
+    }
+
+    /**
+     * Update webhook
+     */
+    @Transactional(transactionManager = "paymentTransactionManager")
+    public Webhook updateWebhook(Long id, Webhook updatedWebhook) {
+        log.info("🔔 Updating webhook ID: {}", id);
+
+        return webhookRepository.findById(id).map(existing -> {
+            if (updatedWebhook.getName() != null) existing.setName(updatedWebhook.getName());
+            if (updatedWebhook.getUrl() != null) existing.setUrl(updatedWebhook.getUrl());
+            if (updatedWebhook.getEventTypes() != null) existing.setEventTypes(updatedWebhook.getEventTypes());
+            if (updatedWebhook.getSecret() != null) existing.setSecret(updatedWebhook.getSecret());
+            if (updatedWebhook.getIsActive() != null) existing.setIsActive(updatedWebhook.getIsActive());
+            return webhookRepository.save(existing);
+        }).orElseGet(() -> {
+            updatedWebhook.setId(id);
+            return webhookRepository.save(updatedWebhook);
+        });
     }
 
     /**
@@ -262,11 +282,20 @@ public class WebhookService {
     }
 
     /**
-     * Delete webhook
+     * Delete webhook by URL
      */
     @Transactional(transactionManager = "paymentTransactionManager")
     public void deleteWebhook(String url) {
-        log.info("🗑️ Deleting webhook: {}", url);
+        log.info("🗑️ Deleting webhook by URL: {}", url);
         webhookRepository.deleteByUrl(url);
+    }
+
+    /**
+     * Delete webhook by ID
+     */
+    @Transactional(transactionManager = "paymentTransactionManager")
+    public void deleteWebhookById(Long id) {
+        log.info("🗑️ Deleting webhook by ID: {}", id);
+        webhookRepository.deleteById(id);
     }
 }
