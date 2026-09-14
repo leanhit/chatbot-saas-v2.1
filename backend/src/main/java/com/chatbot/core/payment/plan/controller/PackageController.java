@@ -159,4 +159,55 @@ public class PackageController {
         packageService.clearCache();
         return ResponseEntity.ok(Map.of("message", "Cache cleared successfully"));
     }
+
+    /**
+     * Initialize default packages - Admin only
+     */
+    @PostMapping("/initialize")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(
+        summary = "Initialize default packages (Admin)",
+        description = "Initialize default package plans if table is empty"
+    )
+    public ResponseEntity<List<PackageResponse>> initializeDefaultPackages() {
+        log.info("📦 Initializing default packages");
+        List<Package> packages = packageService.initializeDefaultPackages();
+        List<PackageResponse> responses = packages.stream()
+                .map(PackageResponse::from)
+                .toList();
+        return ResponseEntity.ok(responses);
+    }
+
+    /**
+     * Check if packages are initialized
+     */
+    @GetMapping("/check-initialized")
+    @Operation(
+        summary = "Check initialized",
+        description = "Check if packages exist"
+    )
+    public ResponseEntity<Map<String, Boolean>> checkInitialized() {
+        boolean initialized = packageService.checkInitialized();
+        return ResponseEntity.ok(Map.of("initialized", initialized));
+    }
+
+    /**
+     * Permanently delete package - Admin only
+     */
+    @DeleteMapping("/{packageId}/permanent")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(
+        summary = "Permanently delete package (Admin)",
+        description = "Permanently delete a package from database - Admin only"
+    )
+    public ResponseEntity<Map<String, String>> permanentlyDeletePackage(@PathVariable String packageId) {
+        log.info("🗑️ Permanently deleting package: {}", packageId);
+        try {
+            packageService.permanentlyDeletePackage(packageId);
+            return ResponseEntity.ok(Map.of("message", "Package permanently deleted successfully"));
+        } catch (Exception e) {
+            log.error("❌ Failed to permanently delete package: {}", e.getMessage());
+            return ResponseEntity.badRequest().build();
+        }
+    }
 }

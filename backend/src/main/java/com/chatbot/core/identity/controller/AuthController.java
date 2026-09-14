@@ -91,7 +91,7 @@ public class AuthController {
         return ResponseEntity.ok(ApiResponse.success(response, "Password changed successfully"));
     }
 
-    @PutMapping("/change-role")
+    @RequestMapping(value = "/change-role", method = {RequestMethod.PUT, RequestMethod.POST})
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(
         summary = "Change user role",

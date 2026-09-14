@@ -29,16 +29,16 @@
           </tr>
         </thead>
         <tbody class="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
-          <tr v-for="discount in discounts" :key="discount.id">
+          <tr v-for="discount in discounts" :key="discount.code || discount.id">
             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">{{ discount.code }}</td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ discount.type }}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ discount.discountType || discount.type }}</td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-              {{ discount.type === 'PERCENTAGE' ? discount.value + '%' : formatCurrency(discount.value) }}
+              {{ (discount.discountType || discount.type) === 'PERCENTAGE' ? (discount.discountValue || discount.value) + '%' : formatCurrency(discount.discountValue || discount.value) }}
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-              {{ discount.usedCount }}/{{ discount.maxUses || '∞' }}
+              {{ discount.usageCount !== undefined ? discount.usageCount : (discount.usedCount || 0) }}/{{ discount.usageLimit || discount.maxUses || '∞' }}
             </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ formatDate(discount.expiresAt) }}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ formatDate(discount.validUntil || discount.expiresAt) }}</td>
             <td class="px-6 py-4 whitespace-nowrap">
               <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full" :class="getStatusClass(discount)">
                 {{ discount.isActive ? $t('common.active') : $t('common.inactive') }}
@@ -46,7 +46,7 @@
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
               <button @click="editDiscount(discount)" class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 mr-3">{{ $t('admin.discount.editBtn') }}</button>
-              <button @click="deleteDiscount(discount.id)" class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300">{{ $t('admin.discount.deleteBtn') }}</button>
+              <button @click="deleteDiscount(discount.code || discount.id)" class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300">{{ $t('admin.discount.deleteBtn') }}</button>
             </td>
           </tr>
         </tbody>
@@ -63,7 +63,7 @@
           <div class="space-y-4">
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('admin.discount.code') }}</label>
-              <input v-model="formData.code" type="text" required class="w-full px-3 py-2 border rounded-md dark:bg-gray-800 dark:text-white" />
+              <input v-model="formData.code" type="text" required :disabled="!!editingDiscount" class="w-full px-3 py-2 border rounded-md dark:bg-gray-800 dark:text-white" />
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ $t('admin.discount.type') }}</label>
@@ -132,10 +132,21 @@ export default {
 
     const saveDiscount = async () => {
       try {
+        const payload = {
+          code: formData.value.code,
+          name: formData.value.code,
+          discountType: formData.value.type,
+          discountValue: formData.value.value,
+          usageLimit: formData.value.maxUses || null,
+          validUntil: formData.value.expiresAt || null,
+          isActive: true
+        }
+
         if (editingDiscount.value) {
-          await paymentAPI.updateDiscount(editingDiscount.value.id, formData.value)
+          const code = editingDiscount.value.code || editingDiscount.value.id
+          await paymentAPI.updateDiscount(code, payload)
         } else {
-          await paymentAPI.createDiscount(formData.value)
+          await paymentAPI.createDiscount(payload)
         }
         closeModal()
         loadDiscounts()
@@ -146,14 +157,20 @@ export default {
 
     const editDiscount = (discount) => {
       editingDiscount.value = discount
-      formData.value = { ...discount }
+      formData.value = {
+        code: discount.code,
+        type: discount.discountType || discount.type || 'PERCENTAGE',
+        value: discount.discountValue || discount.value || 0,
+        maxUses: discount.usageLimit || discount.maxUses || null,
+        expiresAt: discount.validUntil ? discount.validUntil.substring(0, 16) : (discount.expiresAt || '')
+      }
       showCreateModal.value = true
     }
 
-    const deleteDiscount = async (id) => {
+    const deleteDiscount = async (code) => {
       if (confirm(t('admin.discount.deleteConfirm'))) {
         try {
-          await paymentAPI.deleteDiscount(id)
+          await paymentAPI.deleteDiscount(code)
           loadDiscounts()
         } catch (error) {
           console.error('Error deleting discount:', error)

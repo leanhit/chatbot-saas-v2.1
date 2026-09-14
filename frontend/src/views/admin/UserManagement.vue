@@ -330,7 +330,7 @@ export default {
 
       changingRole.value = true
       try {
-        const response = await axios.post('/auth/change-role', {
+        const response = await axios.put('/auth/change-role', {
           userId: selectedUser.value.id,
           newRole: newRole.value
         })

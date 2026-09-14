@@ -106,6 +106,100 @@ public class PackageService {
     }
 
     /**
+     * Permanently delete package
+     */
+    @Transactional(transactionManager = "paymentTransactionManager")
+    @CacheEvict(value = "packages", allEntries = true)
+    public void permanentlyDeletePackage(String packageId) {
+        log.info("🗑️ Permanently deleting package: {}", packageId);
+        packageRepository.deleteByPackageId(packageId);
+    }
+
+    /**
+     * Check if default packages are initialized
+     */
+    @Transactional(readOnly = true, transactionManager = "paymentTransactionManager")
+    public boolean checkInitialized() {
+        return packageRepository.count() > 0;
+    }
+
+    /**
+     * Initialize default packages if empty
+     */
+    @Transactional(transactionManager = "paymentTransactionManager")
+    @CacheEvict(value = "packages", allEntries = true)
+    public List<Package> initializeDefaultPackages() {
+        log.info("📦 Initializing default packages");
+        if (packageRepository.count() > 0) {
+            return packageRepository.findAllByOrderBySortOrderAsc();
+        }
+
+        List<Package> defaults = List.of(
+            Package.builder()
+                .packageId("free")
+                .name("Free")
+                .price(java.math.BigDecimal.ZERO)
+                .currency("VND")
+                .duration("month")
+                .description("Gói miễn phí cho người mới sử dụng")
+                .messageLimit(500)
+                .chatbotLimit(1)
+                .hasPrioritySupport(false)
+                .hasAnalytics(true)
+                .hasAdvancedAnalytics(false)
+                .hasCustomIntegrations(false)
+                .hasDedicatedSupport(false)
+                .hasCustomFeatures(false)
+                .hasSlaGuarantee(false)
+                .isActive(true)
+                .sortOrder(1)
+                .build(),
+            Package.builder()
+                .packageId("pro")
+                .name("Pro")
+                .price(new java.math.BigDecimal("290000"))
+                .currency("VND")
+                .duration("month")
+                .description("Gói chuyên nghiệp cho doanh nghiệp vừa và nhỏ")
+                .messageLimit(10000)
+                .chatbotLimit(5)
+                .hasPrioritySupport(true)
+                .hasAnalytics(true)
+                .hasAdvancedAnalytics(true)
+                .hasCustomIntegrations(false)
+                .hasDedicatedSupport(false)
+                .hasCustomFeatures(false)
+                .hasSlaGuarantee(false)
+                .isActive(true)
+                .sortOrder(2)
+                .badge("POPULAR")
+                .build(),
+            Package.builder()
+                .packageId("business")
+                .name("Business")
+                .price(new java.math.BigDecimal("790000"))
+                .currency("VND")
+                .duration("month")
+                .description("Gói doanh nghiệp đầy đủ tính năng mở rộng")
+                .messageLimit(50000)
+                .chatbotLimit(20)
+                .hasPrioritySupport(true)
+                .hasAnalytics(true)
+                .hasAdvancedAnalytics(true)
+                .hasCustomIntegrations(true)
+                .hasDedicatedSupport(true)
+                .hasCustomFeatures(false)
+                .hasSlaGuarantee(true)
+                .isActive(true)
+                .sortOrder(3)
+                .badge("RECOMMENDED")
+                .build()
+        );
+
+        return packageRepository.saveAll(defaults);
+    }
+
+    /**
      * Clear cache
      */
     @CacheEvict(value = "packages", allEntries = true)

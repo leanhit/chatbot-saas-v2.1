@@ -157,6 +157,13 @@ public class SimplePaymentController {
         return ResponseEntity.ok(health);
     }
 
+    private static final Map<String, String> BANK_INFO_STORE = new java.util.concurrent.ConcurrentHashMap<>(Map.of(
+        "bankName", "Vietcombank",
+        "accountNumber", "1234567890",
+        "accountName", "CHATBOT SaaS",
+        "branch", "Ho Chi Minh City"
+    ));
+
     /**
      * Get bank information for deposit
      */
@@ -167,15 +174,24 @@ public class SimplePaymentController {
     )
     public ResponseEntity<Map<String, String>> getBankInfo() {
         log.info("🏦 Fetching bank information");
-        
-        Map<String, String> bankInfo = Map.of(
-            "bankName", "Vietcombank",
-            "accountNumber", "1234567890",
-            "accountName", "CHATBOT SaaS",
-            "branch", "Ho Chi Minh City"
-        );
-        
-        return ResponseEntity.ok(bankInfo);
+        return ResponseEntity.ok(BANK_INFO_STORE);
+    }
+
+    /**
+     * Update bank information - Admin only
+     */
+    @PutMapping("/admin/bank-info")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(
+        summary = "Update bank information (Admin)",
+        description = "Update bank account information for deposit - Admin only"
+    )
+    public ResponseEntity<Map<String, String>> updateBankInfo(@RequestBody Map<String, String> newBankInfo) {
+        log.info("🏦 Updating bank information: {}", newBankInfo);
+        if (newBankInfo != null) {
+            BANK_INFO_STORE.putAll(newBankInfo);
+        }
+        return ResponseEntity.ok(BANK_INFO_STORE);
     }
 
     /**
