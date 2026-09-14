@@ -460,23 +460,25 @@ export const pennyApi = {
     },
 
     /**
-     * Get analytics events for a bot
+     * Get analytics events for a bot (botId optional)
      */
     getAnalyticsEvents(botId, timeRange = '7days', page = 0, size = 50) {
-        if (!isValidBotId(botId)) return Promise.reject(new Error(`Invalid botId: ${botId}`));
-        return axios.get(`/penny/admin/analytics/events`, {
-            params: { botId, timeRange, page, size }
-        }).catch(handleApiError);
+        const params = { timeRange, page, size };
+        if (botId && isValidBotId(botId)) {
+            params.botId = botId;
+        }
+        return axios.get(`/penny/admin/analytics/events`, { params }).catch(handleApiError);
     },
 
     /**
-     * Get analytics summary for a bot
+     * Get analytics summary for a bot (botId optional)
      */
     getAnalyticsSummary(botId, timeRange = '7days') {
-        if (!isValidBotId(botId)) return Promise.reject(new Error(`Invalid botId: ${botId}`));
-        return axios.get(`/penny/admin/analytics/summary`, {
-            params: { botId, timeRange }
-        }).catch(handleApiError);
+        const params = { timeRange };
+        if (botId && isValidBotId(botId)) {
+            params.botId = botId;
+        }
+        return axios.get(`/penny/admin/analytics/summary`, { params }).catch(handleApiError);
     },
 
     // ========================================

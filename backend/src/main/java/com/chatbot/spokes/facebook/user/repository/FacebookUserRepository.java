@@ -63,6 +63,13 @@ public interface FacebookUserRepository extends JpaRepository<FacebookUser, Long
 
     // ===== NEW METHODS FOR CUSTOMER DATA QUERY =====
     
+    // Lấy danh sách phân trang theo tenantId
+    Page<FacebookUser> findByTenantId(Long tenantId, Pageable pageable);
+    
+    // Tìm kiếm theo tên và tenantId có phân trang
+    @Query("SELECT fu FROM FacebookUser fu WHERE fu.tenantId = :tenantId AND LOWER(fu.name) LIKE LOWER(concat('%', :keyword, '%'))")
+    Page<FacebookUser> searchByTenantIdAndNameContaining(@Param("tenantId") Long tenantId, @Param("keyword") String keyword, Pageable pageable);
+
     // Lấy theo psid và tenantId
     Optional<FacebookUser> findByPsidAndTenantId(String psid, Long tenantId);
     

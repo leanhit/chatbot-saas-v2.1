@@ -245,8 +245,10 @@ public class PennyMetricsEndpoint {
         log.debug("📊 Fetching analytics events for bot: {}", botId);
 
         Map<String, Object> response = new HashMap<>();
+        response.put("content", Collections.emptyList());
         response.put("events", Collections.emptyList());
-        response.put("total", 0);
+        response.put("totalElements", 0);
+        response.put("totalPages", 1);
         response.put("page", page);
         response.put("size", size);
         return response;
@@ -263,10 +265,17 @@ public class PennyMetricsEndpoint {
         log.debug("📊 Fetching analytics summary for bot: {}", botId);
 
         Map<String, Object> response = new HashMap<>();
+        response.put("totalMessages", 0);
         response.put("totalRequests", 0);
         response.put("successfulRequests", 0);
+        response.put("totalErrors", 0);
         response.put("failedRequests", 0);
+        response.put("errorRate", 0.0);
+        response.put("averageProcessingTime", 0.0);
         response.put("averageLatencyMs", 0.0);
+        response.put("mostUsedProvider", "N/A");
+        response.put("mostCommonIntent", "N/A");
+        response.put("intentCounts", Collections.emptyMap());
         return response;
     }
 
