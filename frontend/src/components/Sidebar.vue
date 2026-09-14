@@ -57,7 +57,7 @@
               exact
               class="w-full flex text-left rounded-md box-border p-3 hover:bg-gray-200 dark:hover:bg-gray-700"
             >
-              <span class="mr-3 text-xl"><Icon icon="bxs:dashboard" /></span>
+              <span class="mr-3 text-xl"><Icon icon="mdi:view-dashboard" /></span>
               <span class="w-full"> {{ $t('dashboard.title') }} </span>
             </router-link>
           </div>
@@ -71,23 +71,26 @@
                 <router-link
                   to="/tenant/overview"
                   @click.stop
-                  class="w-full text-left block rounded-md p-3 hover:bg-gray-200 dark:hover:bg-gray-700"
+                  class="w-full text-left block rounded-md p-2.5 px-3 text-sm hover:bg-gray-200 dark:hover:bg-gray-700 flex items-center gap-2.5 transition-colors"
                 >
-                  {{ $t('sidebar.overview') }}
+                  <Icon icon="mdi:view-dashboard-outline" class="text-base flex-shrink-0" />
+                  <span>{{ $t('sidebar.overview') }}</span>
                 </router-link>
                 <router-link
                   to="/tenant/members"
                   @click.stop
-                  class="w-full text-left block rounded-md p-3 hover:bg-gray-200 dark:hover:bg-gray-700"
+                  class="w-full text-left block rounded-md p-2.5 px-3 text-sm hover:bg-gray-200 dark:hover:bg-gray-700 flex items-center gap-2.5 transition-colors"
                 >
-                  {{ $t('sidebar.member') }}
+                  <Icon icon="mdi:account-group-outline" class="text-base flex-shrink-0" />
+                  <span>{{ $t('sidebar.member') }}</span>
                 </router-link>
                 <router-link
                   to="/tenant-gateway"
                   @click.stop
-                  class="w-full text-left block rounded-md p-3 hover:bg-gray-200 dark:hover:bg-gray-700"
+                  class="w-full text-left block rounded-md p-2.5 px-3 text-sm hover:bg-gray-200 dark:hover:bg-gray-700 flex items-center gap-2.5 transition-colors"
                 >
-                  {{ $t('sidebar.switchTenant') }}
+                  <Icon icon="mdi:swap-horizontal" class="text-base flex-shrink-0" />
+                  <span>{{ $t('sidebar.switchTenant') }}</span>
                 </router-link>
                 <!-- Temporarily hidden
                 <router-link
@@ -194,9 +197,10 @@
                 <router-link
                   to="/messages"
                   @click.stop
-                  class="w-full text-left block rounded-md p-3 hover:bg-gray-200 dark:hover:bg-gray-700"
+                  class="w-full text-left block rounded-md p-2.5 px-3 text-sm hover:bg-gray-200 dark:hover:bg-gray-700 flex items-center gap-2.5 transition-colors"
                 >
-                  {{ $t('sidebar.conversations') }}
+                  <Icon icon="mdi:forum-outline" class="text-base flex-shrink-0" />
+                  <span>{{ $t('sidebar.conversations') }}</span>
                 </router-link>
               </template>
             </menu-accordion>
@@ -211,9 +215,10 @@
                 <router-link
                   to="/customers"
                   @click.stop
-                  class="w-full text-left block rounded-md p-3 hover:bg-gray-200 dark:hover:bg-gray-700"
+                  class="w-full text-left block rounded-md p-2.5 px-3 text-sm hover:bg-gray-200 dark:hover:bg-gray-700 flex items-center gap-2.5 transition-colors"
                 >
-                  {{ $t('customers.title') }}
+                  <Icon icon="mdi:account-box-multiple-outline" class="text-base flex-shrink-0" />
+                  <span>{{ $t('customers.title') }}</span>
                 </router-link>
               </template>
             </menu-accordion>
@@ -228,16 +233,18 @@
                 <router-link
                   to="/payment/deposit"
                   @click.stop
-                  class="w-full text-left block rounded-md p-3 hover:bg-gray-200 dark:hover:bg-gray-700"
+                  class="w-full text-left block rounded-md p-2.5 px-3 text-sm hover:bg-gray-200 dark:hover:bg-gray-700 flex items-center gap-2.5 transition-colors"
                 >
-                  {{ $t('sidebar.deposit') }}
+                  <Icon icon="mdi:cash-plus" class="text-base flex-shrink-0" />
+                  <span>{{ $t('sidebar.deposit') }}</span>
                 </router-link>
                 <router-link
                   to="/payment/history"
                   @click.stop
-                  class="w-full text-left block rounded-md p-3 hover:bg-gray-200 dark:hover:bg-gray-700"
+                  class="w-full text-left block rounded-md p-2.5 px-3 text-sm hover:bg-gray-200 dark:hover:bg-gray-700 flex items-center gap-2.5 transition-colors"
                 >
-                  {{ $t('sidebar.history') }}
+                  <Icon icon="mdi:history" class="text-base flex-shrink-0" />
+                  <span>{{ $t('sidebar.history') }}</span>
                 </router-link>
               </template>
             </menu-accordion>
@@ -252,81 +259,92 @@
                 <router-link
                   to="/admin/bank-account"
                   @click.stop
-                  class="w-full text-left block rounded-md p-3 hover:bg-gray-200 dark:hover:bg-gray-700"
+                  class="w-full text-left block rounded-md p-2.5 px-3 text-sm hover:bg-gray-200 dark:hover:bg-gray-700 flex items-center gap-2.5 transition-colors"
                 >
-                  {{ $t('sidebar.bankAccount') }}
+                  <Icon icon="mdi:bank-outline" class="text-base flex-shrink-0" />
+                  <span>{{ $t('sidebar.bankAccount') }}</span>
                 </router-link>
                 <router-link
                   to="/admin/packages"
                   @click.stop
-                  class="w-full text-left block rounded-md p-3 hover:bg-gray-200 dark:hover:bg-gray-700"
+                  class="w-full text-left block rounded-md p-2.5 px-3 text-sm hover:bg-gray-200 dark:hover:bg-gray-700 flex items-center gap-2.5 transition-colors"
                 >
-                  {{ $t('sidebar.packages') }}
+                  <Icon icon="mdi:package-variant-closed" class="text-base flex-shrink-0" />
+                  <span>{{ $t('sidebar.packages') }}</span>
                 </router-link>
                 <router-link
                   to="/admin/discounts"
                   @click.stop
-                  class="w-full text-left block rounded-md p-3 hover:bg-gray-200 dark:hover:bg-gray-700"
+                  class="w-full text-left block rounded-md p-2.5 px-3 text-sm hover:bg-gray-200 dark:hover:bg-gray-700 flex items-center gap-2.5 transition-colors"
                 >
-                  {{ $t('sidebar.discounts') }}
+                  <Icon icon="mdi:ticket-percent-outline" class="text-base flex-shrink-0" />
+                  <span>{{ $t('sidebar.discounts') }}</span>
                 </router-link>
                 <router-link
                   to="/admin/analytics"
                   @click.stop
-                  class="w-full text-left block rounded-md p-3 hover:bg-gray-200 dark:hover:bg-gray-700"
+                  class="w-full text-left block rounded-md p-2.5 px-3 text-sm hover:bg-gray-200 dark:hover:bg-gray-700 flex items-center gap-2.5 transition-colors"
                 >
-                  {{ $t('sidebar.analytics') }}
+                  <Icon icon="mdi:chart-bar" class="text-base flex-shrink-0" />
+                  <span>{{ $t('sidebar.analytics') }}</span>
                 </router-link>
                 <router-link
                   to="/admin/webhooks"
                   @click.stop
-                  class="w-full text-left block rounded-md p-3 hover:bg-gray-200 dark:hover:bg-gray-700"
+                  class="w-full text-left block rounded-md p-2.5 px-3 text-sm hover:bg-gray-200 dark:hover:bg-gray-700 flex items-center gap-2.5 transition-colors"
                 >
-                  {{ $t('sidebar.webhooks') }}
+                  <Icon icon="mdi:webhook" class="text-base flex-shrink-0" />
+                  <span>{{ $t('sidebar.webhooks') }}</span>
                 </router-link>
                 <router-link
                   to="/admin/users"
                   @click.stop
-                  class="w-full text-left block rounded-md p-3 hover:bg-gray-200 dark:hover:bg-gray-700"
+                  class="w-full text-left block rounded-md p-2.5 px-3 text-sm hover:bg-gray-200 dark:hover:bg-gray-700 flex items-center gap-2.5 transition-colors"
                 >
-                  {{ $t('sidebar.userManagement') }}
+                  <Icon icon="mdi:account-cog-outline" class="text-base flex-shrink-0" />
+                  <span>{{ $t('sidebar.userManagement') }}</span>
                 </router-link>
                 <!-- Conversation Routing & Agent Management -->
-                <hr class="my-1 border-gray-200 dark:border-gray-700" />
+                <hr class="my-1.5 border-gray-200 dark:border-gray-700" />
                 <router-link
                   to="/admin/agents"
                   @click.stop
-                  class="w-full text-left block rounded-md p-3 hover:bg-gray-200 dark:hover:bg-gray-700"
+                  class="w-full text-left block rounded-md p-2.5 px-3 text-sm hover:bg-gray-200 dark:hover:bg-gray-700 flex items-center gap-2.5 transition-colors"
                 >
-                  {{ $t('sidebar.agentManagement') }}
+                  <Icon icon="mdi:headset" class="text-base flex-shrink-0" />
+                  <span>{{ $t('sidebar.agentManagement') }}</span>
                 </router-link>
                 <router-link
                   to="/admin/skills"
                   @click.stop
-                  class="w-full text-left block rounded-md p-3 hover:bg-gray-200 dark:hover:bg-gray-700"
+                  class="w-full text-left block rounded-md p-2.5 px-3 text-sm hover:bg-gray-200 dark:hover:bg-gray-700 flex items-center gap-2.5 transition-colors"
                 >
-                  {{ $t('sidebar.skillsManagement') }}
+                  <Icon icon="mdi:puzzle-outline" class="text-base flex-shrink-0" />
+                  <span>{{ $t('sidebar.skillsManagement') }}</span>
                 </router-link>
                 <router-link
                   to="/admin/routing-rules"
                   @click.stop
-                  class="w-full text-left block rounded-md p-3 hover:bg-gray-200 dark:hover:bg-gray-700"
+                  class="w-full text-left block rounded-md p-2.5 px-3 text-sm hover:bg-gray-200 dark:hover:bg-gray-700 flex items-center gap-2.5 transition-colors"
                 >
-                  {{ $t('sidebar.routingRules') }}
+                  <Icon icon="mdi:routes" class="text-base flex-shrink-0" />
+                  <span>{{ $t('sidebar.routingRules') }}</span>
                 </router-link>
                 <router-link
                   to="/admin/sla-monitoring"
                   @click.stop
-                  class="w-full text-left block rounded-md p-3 hover:bg-gray-200 dark:hover:bg-gray-700"
+                  class="w-full text-left block rounded-md p-2.5 px-3 text-sm hover:bg-gray-200 dark:hover:bg-gray-700 flex items-center gap-2.5 transition-colors"
                 >
-                  {{ $t('sidebar.slaMonitoring') }}
+                  <Icon icon="mdi:clock-alert-outline" class="text-base flex-shrink-0" />
+                  <span>{{ $t('sidebar.slaMonitoring') }}</span>
                 </router-link>
                 <router-link
                   to="/admin/escalation-tiers"
                   @click.stop
-                  class="w-full text-left block rounded-md p-3 hover:bg-gray-200 dark:hover:bg-gray-700"
+                  class="w-full text-left block rounded-md p-2.5 px-3 text-sm hover:bg-gray-200 dark:hover:bg-gray-700 flex items-center gap-2.5 transition-colors"
                 >
-                  {{ $t('sidebar.escalationTiers') }}
+                  <Icon icon="mdi:format-list-numbered" class="text-base flex-shrink-0" />
+                  <span>{{ $t('sidebar.escalationTiers') }}</span>
                 </router-link>
               </template>
             </menu-accordion>
