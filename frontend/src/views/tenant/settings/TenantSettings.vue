@@ -178,7 +178,7 @@ import { Icon } from '@iconify/vue'
 import { useRouter } from 'vue-router'
 import { useTenantAdminContextStore } from '@/stores/tenant/admin/tenantContextStore'
 import { tenantApi } from '@/api/tenantApi'
-import { getCurrentInstance } from 'vue'
+import { useToast } from '@/composables/useToast'
 import { useI18n } from 'vue-i18n'
 
 export default {
@@ -189,8 +189,7 @@ export default {
   setup() {
     const router = useRouter()
     const tenantStore = useTenantAdminContextStore()
-    const instance = getCurrentInstance()
-    const toast = instance?.appContext.config.globalProperties.$toast
+    const toast = useToast()
     const { t } = useI18n()
     
     // Reactive state

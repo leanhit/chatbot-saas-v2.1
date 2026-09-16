@@ -34,6 +34,7 @@
       </div>
       <Footer v-if="!$route.meta.hideNav" />
     </div>
+    <NotificationToast />
   </div>
   <!-- End app -->
 </template>
@@ -42,6 +43,7 @@
   import Sidebar from "@/components/Sidebar";
   import Header from "@/components/Header";
   import Footer from "@/components/Footer";
+  import NotificationToast from "@/components/common/NotificationToast.vue";
   // npm-js
   import { useAuthStore } from '@/stores/authStore';
   import { ACTIVE_TENANT_ID } from '@/utils/constant';
@@ -56,7 +58,8 @@
     components: {
       Header,
       Footer,
-      Sidebar
+      Sidebar,
+      NotificationToast
     },
     methods: {
       open() {

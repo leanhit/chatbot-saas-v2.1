@@ -180,7 +180,7 @@ import { useTenantAdminContextStore } from '@/stores/tenant/admin/tenantContextS
 import { tenantApi } from '@/api/tenantApi'
 import { addressApi } from '@/api/addressApi'
 import { dateTimeLocalToIso } from '@/utils/dateUtils'
-import { getCurrentInstance } from 'vue'
+import { useToast } from '@/composables/useToast'
 
 export default {
   name: 'TenantOverview',
@@ -199,8 +199,7 @@ export default {
   setup() {
     const router = useRouter()
     const tenantStore = useTenantAdminContextStore()
-    const instance = getCurrentInstance()
-    const toast = instance?.appContext.config.globalProperties.$toast
+    const toast = useToast()
     
     // Reactive state
     const activeTab = ref('basic')

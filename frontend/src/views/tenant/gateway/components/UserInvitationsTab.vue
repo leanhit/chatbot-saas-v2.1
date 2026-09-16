@@ -56,7 +56,7 @@
   </div>
 </template>
 <script>
-import { ref, computed, onMounted, getCurrentInstance } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { Icon } from '@iconify/vue'
 import { useI18n } from 'vue-i18n'
 import { useGatewayUserInvitationStore } from '@/stores/tenant/gateway/userInvitationStore'
@@ -64,6 +64,7 @@ import { useGatewayTenantStore } from '@/stores/tenant/gateway/myTenantStore'
 import { formatDateTime } from '@/utils/dateUtils'
 import { secureImageUrl } from '@/utils/imageUtils'
 import { InvitationStatus, TenantRole } from '@/types/tenant'
+import { useToast } from '@/composables/useToast'
 
 export default {
   name: 'UserInvitationsTab',
@@ -73,6 +74,7 @@ export default {
   setup() {
     const { t } = useI18n()
     const invitationStore = useGatewayUserInvitationStore()
+    const toast = useToast()
     
     const invitations = computed(() => invitationStore.invitations)
     const loading = computed(() => invitationStore.loading)
@@ -86,15 +88,11 @@ export default {
         await tenantStore.fetchUserTenants()
 
         // Show success message
-        const instance = getCurrentInstance()
-        const toast = instance?.appContext.config.globalProperties.$toast
-        toast?.success('Invitation accepted successfully')
+        toast.success('Invitation accepted successfully')
       } catch (error) {
         console.error('Failed to accept invitation:', error)
         // Show error message
-        const instance = getCurrentInstance()
-        const toast = instance?.appContext.config.globalProperties.$toast
-        toast?.error('Failed to accept invitation')
+        toast.error('Failed to accept invitation')
       }
     }
     
@@ -102,15 +100,11 @@ export default {
       try {
         await invitationStore.rejectInvitation(invitationId, token)
         // Show success message
-        const instance = getCurrentInstance()
-        const toast = instance?.appContext.config.globalProperties.$toast
-        toast?.success('Invitation rejected successfully')
+        toast.success('Invitation rejected successfully')
       } catch (error) {
         console.error('Failed to reject invitation:', error)
         // Show error message
-        const instance = getCurrentInstance()
-        const toast = instance?.appContext.config.globalProperties.$toast
-        toast?.error('Failed to reject invitation')
+        toast.error('Failed to reject invitation')
       }
     }
     

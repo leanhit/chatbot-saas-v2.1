@@ -508,7 +508,7 @@ export default {
       appSecret: '',
       pageAccessToken: '',
       verifyToken: '',
-      urlCallback: 'https://chat.truyenthongviet.vn/webhooks/facebook/botpress',
+      urlCallback: (typeof window !== 'undefined' && window.location?.origin) ? `${window.location.origin}/webhooks/facebook/pennybot` : 'https://chat.truyenthongviet.vn/webhooks/facebook/pennybot',
       // Webhook fields
       webhookUrl: '',
       webhookMethod: 'POST',
@@ -649,7 +649,7 @@ export default {
           pageAccessToken: formData.value.pageAccessToken,
           appSecret: formData.value.appSecret,
           verifyToken: formData.value.verifyToken,
-          urlCallback: formData.value.urlCallback || 'https://chat.truyenthongviet.vn/webhooks/facebook/pennybot',
+          urlCallback: formData.value.urlCallback || ((typeof window !== 'undefined' && window.location?.origin) ? `${window.location.origin}/webhooks/facebook/pennybot` : 'https://chat.truyenthongviet.vn/webhooks/facebook/pennybot'),
           isEnabled: true,
           chatbotProvider: 'PENNYBOT', // Use PENNYBOT instead of BOTPRESS
           config: {

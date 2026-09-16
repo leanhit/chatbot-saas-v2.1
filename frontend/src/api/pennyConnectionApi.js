@@ -15,6 +15,13 @@ const isValidBotId = (botId) => {
   return true;
 };
 
+const getDefaultCallbackUrl = () => {
+  if (typeof window !== 'undefined' && window.location && window.location.origin) {
+    return `${window.location.origin}/webhooks/facebook/pennybot`
+  }
+  return 'https://chat.truyenthongviet.vn/webhooks/facebook/pennybot'
+}
+
 export const pennyConnectionApi = {
   // Get all connections for a bot
   getConnections(botId) {
@@ -48,7 +55,7 @@ export const pennyConnectionApi = {
         pageAccessToken: connectionData.pageAccessToken,
         appSecret: connectionData.appSecret,
         verifyToken: connectionData.verifyToken,
-        urlCallback: connectionData.urlCallback || 'https://chat.truyenthongviet.vn/webhooks/facebook/pennybot',
+        urlCallback: connectionData.urlCallback || getDefaultCallbackUrl(),
         isEnabled: true,
         chatbotProvider: 'PENNYBOT', // Use PENNYBOT instead of BOTPRESS
         config: connectionData.config || {}
@@ -77,7 +84,7 @@ export const pennyConnectionApi = {
         pageAccessToken: connectionData.pageAccessToken,
         appSecret: connectionData.appSecret,
         verifyToken: connectionData.verifyToken,
-        urlCallback: connectionData.urlCallback || 'https://chat.truyenthongviet.vn/webhooks/facebook/pennybot',
+        urlCallback: connectionData.urlCallback || getDefaultCallbackUrl(),
         isEnabled: connectionData.isEnabled !== undefined ? connectionData.isEnabled : true,
         chatbotProvider: 'PENNYBOT', // Use PENNYBOT instead of BOTPRESS
         config: connectionData.config || {}

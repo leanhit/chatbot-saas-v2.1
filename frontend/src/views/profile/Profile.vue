@@ -403,7 +403,7 @@ import { useAuthStore } from '@/stores/authStore'
 import { secureImageUrl } from '@/utils/imageUtils'
 import { usersApi } from '@/api/usersApi'
 import { addressApi } from '@/api/addressApi'
-import { getCurrentInstance } from 'vue'
+import { useToast } from '@/composables/useToast'
 import UserBasicInfoModal from './components/UserBasicInfoModalSimple.vue'
 import UserProfessionalModal from './components/UserProfessionalModalSimple.vue'
 import UserAddressModal from './components/UserAddressModalSimple.vue'
@@ -422,8 +422,7 @@ export default {
   setup(props, { emit }) {
     const { t } = useI18n()
     const authStore = useAuthStore()
-    const instance = getCurrentInstance()
-    const toast = instance?.appContext.config.globalProperties.$toast
+    const toast = useToast()
     const avatarInput = ref(null)
     const activeTab = ref('basic')
     // Modal state

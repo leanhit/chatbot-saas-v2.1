@@ -111,7 +111,7 @@ import { computed, ref, onMounted, onUnmounted } from 'vue'
 import { Icon } from '@iconify/vue'
 import { secureImageUrl } from '@/utils/imageUtils'
 import { formatDate } from '@/utils/dateUtils'
-import { getCurrentInstance } from 'vue'
+import { useToast } from '@/composables/useToast'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { useGatewayTenantStore } from '@/stores/tenant/gateway/myTenantStore'
@@ -135,6 +135,7 @@ export default {
   setup(props) {
     const { t } = useI18n()
     const router = useRouter()
+    const toast = useToast()
     const tenantStore = useGatewayTenantStore()
     const logoError = ref(false)
     const logoTimestamp = ref(Date.now())
@@ -233,8 +234,7 @@ export default {
       if (tenantKey) {
         navigator.clipboard.writeText(tenantKey)
         // Show success message
-        const toast = getCurrentInstance()?.appContext.config.globalProperties.$toast
-        toast?.success('Tenant Key đã được sao chép')
+        toast.success('Tenant Key đã được sao chép')
       }
     }
     

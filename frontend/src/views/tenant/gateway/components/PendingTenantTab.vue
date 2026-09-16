@@ -52,13 +52,15 @@
   </div>
 </template>
 <script>
-import { ref, computed, onMounted, getCurrentInstance } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { Icon } from '@iconify/vue'
 import { useI18n } from 'vue-i18n'
 import { useGatewayPendingTenantStore } from '@/stores/tenant/gateway/pendingTenantStore'
 import { formatDateTime } from '@/utils/dateUtils'
 import { secureImageUrl } from '@/utils/imageUtils'
 import { MembershipStatus } from '@/types/tenant'
+import { useToast } from '@/composables/useToast'
+
 export default {
   name: 'PendingTenantTab',
   components: {
@@ -67,6 +69,7 @@ export default {
   setup() {
     const { t } = useI18n()
     const pendingStore = useGatewayPendingTenantStore()
+    const toast = useToast()
     
     const pendingRequests = computed(() => pendingStore.pendingRequests)
     const loading = computed(() => pendingStore.loading)
@@ -77,15 +80,11 @@ export default {
         cancelling.value = requestId
         await pendingStore.rejectRequest(requestId)
         // Show success message
-        const instance = getCurrentInstance()
-        const toast = instance?.appContext.config.globalProperties.$toast
-        toast?.success('Join request cancelled successfully')
+        toast.success('Join request cancelled successfully')
       } catch (error) {
         console.error('Failed to cancel request:', error)
         // Show error message
-        const instance = getCurrentInstance()
-        const toast = instance?.appContext.config.globalProperties.$toast
-        toast?.error('Failed to cancel request')
+        toast.error('Failed to cancel request')
       } finally {
         cancelling.value = null
       }

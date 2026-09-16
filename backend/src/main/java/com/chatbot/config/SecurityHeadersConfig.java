@@ -18,7 +18,7 @@ public class SecurityHeadersConfig implements WebMvcConfigurer {
     @Override
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/**")
-                .allowedOriginPatterns("http://localhost:*", "https://*.truyenthongviet.vn", "https://truyenthongviet.vn", "https://103.149.99.7", "https://*.facebook.com")
+                .allowedOriginPatterns("http://localhost:*", "https://*.truyenthongviet.vn", "https://truyenthongviet.vn", "https://*.startai.vn", "https://startai.vn", "https://103.149.99.7", "https://*.facebook.com")
                 .allowedMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
                 .allowedHeaders("Authorization", "Content-Type", "X-Tenant-Key", "Cache-Control")
                 .exposedHeaders("X-Tenant-Key", "X-Total-Count")
@@ -44,7 +44,7 @@ public class SecurityHeadersConfig implements WebMvcConfigurer {
                     "style-src 'self' 'unsafe-inline' https:; " +
                     "img-src 'self' data: https: blob: https://*.facebook.com https://*.fbcdn.net; " +
                     "font-src 'self' data: https:; " +
-                    "connect-src 'self' https://*.facebook.com https://*.facebook.net https://graph.facebook.com https://truyenthongviet.vn https://*.truyenthongviet.vn wss://truyenthongviet.vn wss://*.truyenthongviet.vn; " +
+                    "connect-src 'self' https://*.facebook.com https://*.facebook.net https://graph.facebook.com https://truyenthongviet.vn https://*.truyenthongviet.vn wss://truyenthongviet.vn wss://*.truyenthongviet.vn https://startai.vn https://*.startai.vn wss://startai.vn wss://*.startai.vn; " +
                     "frame-src 'self' https://*.facebook.com https://*.facebook.net https://staticxx.facebook.com;");
                 response.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
                 response.setHeader("Permissions-Policy", 

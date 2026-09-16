@@ -29,7 +29,7 @@ import java.util.List;
 @EnableWebMvc
 public class SecurityConfig {
 
-    @org.springframework.beans.factory.annotation.Value("${ALLOWED_ORIGINS:http://localhost,http://localhost:8080,https://*.truyenthongviet.vn,https://truyenthongviet.vn,http://103.149.99.7,http://103.149.99.7:8080,https://103.149.99.7}")
+    @org.springframework.beans.factory.annotation.Value("${ALLOWED_ORIGINS:http://localhost,http://localhost:8080,https://*.truyenthongviet.vn,https://truyenthongviet.vn,https://*.startai.vn,https://startai.vn,http://103.149.99.7,http://103.149.99.7:8080,https://103.149.99.7}")
     private String rawAllowedOrigins;
 
     // ===================== PASSWORD =====================
@@ -64,6 +64,9 @@ public class SecurityConfig {
         if (!origins.contains("http://103.149.99.7:*")) origins.add("http://103.149.99.7:*");
         if (!origins.contains("https://103.149.99.7:*")) origins.add("https://103.149.99.7:*");
         if (!origins.contains("https://*.truyenthongviet.vn")) origins.add("https://*.truyenthongviet.vn");
+        if (!origins.contains("https://truyenthongviet.vn")) origins.add("https://truyenthongviet.vn");
+        if (!origins.contains("https://*.startai.vn")) origins.add("https://*.startai.vn");
+        if (!origins.contains("https://startai.vn")) origins.add("https://startai.vn");
 
         config.setAllowedOriginPatterns(origins);
         config.setAllowedMethods(List.of(

@@ -1,49 +1,28 @@
-import { createApp } from 'vue'
-import Toast from '@/components/Toast.vue'
-// Toast plugin for global toast notifications
+import { useToast } from '@/composables/useToast'
+
+/**
+ * Toast plugin bridging global $toast property to useToast and Pinia notificationStore
+ */
 const ToastPlugin = {
   install(app) {
-    const toastContainer = document.createElement('div')
-    toastContainer.id = 'toast-container'
-    document.body.appendChild(toastContainer)
-    const toastApp = createApp(Toast)
-    const toastInstance = toastApp.mount(toastContainer)
     app.config.globalProperties.$toast = {
-      show(message, type = 'info', duration = 3000) {
-        // Create a new toast instance for each message
-        const newToastContainer = document.createElement('div')
-        newToastContainer.id = 'toast-container-' + Date.now()
-        document.body.appendChild(newToastContainer)
-        const newToastApp = createApp(Toast, {
-          message,
-          type,
-          duration
-        })
-        const newToastInstance = newToastApp.mount(newToastContainer)
-        
-        newToastInstance.showToast()
-        
-        // Clean up after duration
-        if (duration > 0) {
-          setTimeout(() => {
-            newToastApp.unmount()
-            document.body.removeChild(newToastContainer)
-          }, duration + 500) // Add buffer time for animation
-        }
+      show(message, type = 'info', title = null, options = {}) {
+        useToast().show(message, type, title, options)
       },
-      success(message, duration = 3000) {
-        this.show(message, 'success', duration)
+      success(message, title = null, options = {}) {
+        useToast().success(message, title, options)
       },
-      error(message, duration = 3000) {
-        this.show(message, 'error', duration)
+      error(errOrMessage, fallback = null, title = null, options = {}) {
+        useToast().error(errOrMessage, fallback, title, options)
       },
-      warning(message, duration = 3000) {
-        this.show(message, 'warning', duration)
+      warning(message, title = null, options = {}) {
+        useToast().warning(message, title, options)
       },
-      info(message, duration = 3000) {
-        this.show(message, 'info', duration)
+      info(message, title = null, options = {}) {
+        useToast().info(message, title, options)
       }
     }
   }
 }
+
 export default ToastPlugin
