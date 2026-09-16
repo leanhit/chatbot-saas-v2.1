@@ -64,6 +64,25 @@ public class LicenseController {
                 }
             }
             
+            // Generate License JWT token for local app verification
+            String userEmail = currentUser.getUser().getEmail();
+            Long expiration = response.getExp() != null 
+                ? response.getExp() 
+                : (response.getExpiresAt() != null ? response.getExpiresAt().getEpochSecond() : null);
+            
+            if (expiration != null) {
+                String token = jwtService.generateLicenseToken(
+                    userEmail,
+                    userId,
+                    expiration,
+                    response.getFeatures(),
+                    response.getModules(),
+                    response.getLimits()
+                );
+                response.setToken(token);
+                log.info("Generated license JWT token for user: {}", userId);
+            }
+            
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             log.error("Failed to fetch license for user {}: {}", userId, e.getMessage(), e);
@@ -411,6 +430,26 @@ public class LicenseController {
     )
     public String activationPage() {
         return "forward:/activation-saas.html";
+    }
+
+    @GetMapping("/public-key")
+    @Operation(
+        summary = "Get public key for license verification",
+        description = "Returns the RSA public key in PEM format for local app to verify license JWT signatures"
+    )
+    public ResponseEntity<ApiResponse<String>> getPublicKey() {
+        try {
+            String publicKeyPem = jwtService.getPublicKeyPem();
+            if (publicKeyPem == null || publicKeyPem.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("Public key not configured"));
+            }
+            return ResponseEntity.ok(ApiResponse.success(publicKeyPem, "Public key retrieved successfully"));
+        } catch (Exception e) {
+            log.error("Failed to retrieve public key: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(ApiResponse.error("Failed to retrieve public key: " + e.getMessage()));
+        }
     }
 
     @PostMapping("/callback")

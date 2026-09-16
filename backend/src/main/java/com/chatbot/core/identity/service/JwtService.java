@@ -401,4 +401,25 @@ public class JwtService {
             return true; // Consider expired if we can't parse
         }
     }
+
+    /**
+     * Get public key in PEM format for local app verification
+     */
+    public String getPublicKeyPem() {
+        if ("RS256".equals(jwtAlgorithm)) {
+            if (publicKey == null) {
+                throw new IllegalStateException("RSA public key not initialized");
+            }
+            
+            // Convert to PEM format
+            byte[] encoded = publicKey.getEncoded();
+            String base64 = Base64.getEncoder().encodeToString(encoded);
+            
+            return "-----BEGIN PUBLIC KEY-----\n" +
+                   base64.replaceAll("(.{64})", "$1\n") +
+                   "\n-----END PUBLIC KEY-----";
+        } else {
+            throw new IllegalStateException("Public key only available for RS256 algorithm");
+        }
+    }
 }

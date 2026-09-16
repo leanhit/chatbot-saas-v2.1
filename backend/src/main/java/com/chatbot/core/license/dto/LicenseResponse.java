@@ -36,6 +36,9 @@ public class LicenseResponse {
     private Integer schemaVersion;
     private String licenseId;
     
+    // License JWT token for local app verification
+    private String token;
+    
     public static LicenseResponse from(com.chatbot.core.license.model.License license, String userEmail) {
         return LicenseResponse.builder()
                 .id(license.getId())
