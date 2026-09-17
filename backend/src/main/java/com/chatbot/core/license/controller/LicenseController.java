@@ -275,79 +275,88 @@ public class LicenseController {
         return ResponseEntity.ok(response);
     }
 
-    @GetMapping("/activate/{token}")
+    @GetMapping("/activate")
     @Operation(
-        summary = "Activate license with token",
-        description = "Activate license using JWT token from SaaS redirect",
-        responses = {
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "License activated successfully"),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Invalid or expired token"),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "409", description = "User already has active license")
-        }
+        summary = "Browser activation endpoint for Local app",
+        description = "Receives deviceId and state from Local, generates License JWT, and redirects back to Local callback"
     )
-    public ResponseEntity<ApiResponse<LicenseResponse>> activateLicense(
-            @Parameter(description = "JWT activation token", required = true)
-            @PathVariable String token) {
+    public ResponseEntity<Void> activateLicenseBrowser(
+            @Parameter(description = "Device ID from Local app", required = true)
+            @RequestParam String deviceId,
+            @Parameter(description = "State/nonce from Local app for CSRF protection", required = true)
+            @RequestParam String state,
+            @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails currentUser) {
         
-        log.info("Activating license with token: {}", token.substring(0, Math.min(10, token.length())));
+        log.info("Received browser activation request - deviceId: {}, state: {}", deviceId, state);
         
         try {
-            // Verify token is signed by cloud
-            if (!jwtService.verifyLicenseSignedByCloud(token)) {
-                log.warn("Invalid activation token - not signed by cloud");
-                return ResponseEntity.badRequest()
-                    .body(ApiResponse.error("Invalid activation token"));
+            // If user is not authenticated, redirect to login page with deviceId and state
+            if (currentUser == null) {
+                log.info("User not authenticated, redirecting to login with deviceId and state");
+                String loginUrl = String.format("/login?redirect=/api/license/activate?deviceId=%s&state=%s", deviceId, state);
+                return ResponseEntity.status(HttpStatus.FOUND)
+                    .header("Location", loginUrl)
+                    .build();
             }
             
-            // Check if token is expired
-            if (jwtService.isLicenseExpired(token)) {
-                log.warn("Activation token has expired");
-                return ResponseEntity.badRequest()
-                    .body(ApiResponse.error("Activation token has expired"));
-            }
+            // User is authenticated, generate License JWT
+            Long userId = currentUser.getUser().getId();
+            String userEmail = currentUser.getUser().getEmail();
             
-            // Extract user info from token
-            String userEmail = jwtService.extractEmailFromLicense(token);
-            String userIdStr = jwtService.extractUserId(token);
-            Long userId = Long.parseLong(userIdStr);
+            log.info("User authenticated: {} (ID: {}), generating License JWT", userEmail, userId);
             
-            log.info("Activating license for user: {} (ID: {})", userEmail, userId);
-            
-            // Check if user already has active license
+            // Get or create license for user
+            LicenseResponse licenseResponse;
             if (licenseService.hasActiveLicense(userId)) {
-                log.warn("User {} already has active license", userId);
-                return ResponseEntity.status(HttpStatus.CONFLICT)
-                    .body(ApiResponse.error("User already has active license"));
+                licenseResponse = licenseService.getLicenseForUser(userId);
+                log.info("User already has active license, reusing existing license");
+            } else {
+                // Create default license for user
+                CreateLicenseRequest licenseRequest = CreateLicenseRequest.builder()
+                    .userId(userId)
+                    .planName("Free Plan")
+                    .isActive(true)
+                    .expiresAt(java.time.Instant.now().plusSeconds(86400 * 30)) // 30 days
+                    .features(List.of("facebook", "zalo"))
+                    .modules(List.of("reengage", "ai-reply"))
+                    .limits(Map.of("bots", 2, "storage", 1000))
+                    .build();
+                licenseResponse = licenseService.createLicense(licenseRequest);
+                log.info("Created new license for user: {}", userEmail);
             }
             
-            // Extract license data from token
-            Long expiration = jwtService.extractExpiration(token);
-            List<String> features = jwtService.extractFeatures(token);
-            List<String> modules = jwtService.extractModules(token);
-            Map<String, Integer> limits = jwtService.extractLimits(token);
+            // Generate License JWT with deviceId claim
+            Long expiration = licenseResponse.getExp() != null 
+                ? licenseResponse.getExp() 
+                : (licenseResponse.getExpiresAt() != null ? licenseResponse.getExpiresAt().getEpochSecond() : null);
             
-            // Create license from token data
-            CreateLicenseRequest licenseRequest = CreateLicenseRequest.builder()
-                .userId(userId)
-                .planName("Activated License")
-                .isActive(true)
-                .expiresAt(expiration != null ? 
-                    java.time.Instant.ofEpochSecond(expiration) : 
-                    java.time.Instant.now().plusSeconds(86400 * 30)) // 30 days default
-                .features(features)
-                .modules(modules)
-                .limits(limits)
+            if (expiration == null) {
+                expiration = System.currentTimeMillis() / 1000 + (86400 * 30);
+            }
+            
+            String licenseJwt = jwtService.generateLicenseToken(
+                userEmail,
+                userId,
+                expiration,
+                licenseResponse.getFeatures(),
+                licenseResponse.getModules(),
+                licenseResponse.getLimits()
+            );
+            
+            // HTTP 302 Redirect to Local callback with token and state
+            String callbackUrl = String.format("http://localhost:1717/callback?token=%s&state=%s", licenseJwt, state);
+            
+            log.info("Redirecting to Local callback: {}", callbackUrl);
+            return ResponseEntity.status(HttpStatus.FOUND)
+                .header("Location", callbackUrl)
                 .build();
             
-            LicenseResponse response = licenseService.createLicense(licenseRequest);
-            
-            log.info("License activated successfully for user: {}", userEmail);
-            return ResponseEntity.ok(ApiResponse.success(response, "License activated successfully"));
-            
         } catch (Exception e) {
-            log.error("Failed to activate license: {}", e.getMessage(), e);
-            return ResponseEntity.badRequest()
-                .body(ApiResponse.error("Failed to activate license: " + e.getMessage()));
+            log.error("Failed to process browser activation: {}", e.getMessage(), e);
+            // Redirect to error page
+            return ResponseEntity.status(HttpStatus.FOUND)
+                .header("Location", "/error?message=" + e.getMessage())
+                .build();
         }
     }
 
