@@ -127,7 +127,7 @@
           <span class="text-sm text-gray-600 dark:text-gray-400">
             {{ $t('auth.login.noAccount') }}
           </span>
-          <router-link to="/register" class="ml-1 font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300">
+          <router-link :to="{ path: '/register', query: $route.query }" class="ml-1 font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300">
             {{ $t('auth.login.signUp') }}
           </router-link>
         </div>

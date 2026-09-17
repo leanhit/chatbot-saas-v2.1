@@ -53,6 +53,17 @@ public class JwtFilter extends OncePerRequestFilter {
 
         if (authHeader != null && authHeader.startsWith(IdentityConstants.BEARER_PREFIX)) {
             token = authHeader.substring(IdentityConstants.BEARER_PREFIX_LENGTH);
+        } else {
+            String paramToken = request.getParameter("authToken");
+            if (paramToken == null || paramToken.isBlank()) {
+                paramToken = request.getParameter("token");
+            }
+            if (paramToken != null && !paramToken.isBlank()) {
+                token = paramToken;
+            }
+        }
+
+        if (token != null) {
             try {
                 email = jwtService.extractEmail(token);
             } catch (ExpiredJwtException e) {

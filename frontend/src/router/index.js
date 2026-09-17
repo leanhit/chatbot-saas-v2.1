@@ -317,6 +317,15 @@ router.beforeEach(async (to, from, next) => {
   }
   // 2. If logged in and trying to access login (giống frontend)
   if (to.name === 'login') {
+    const redirectTarget = to.query.redirect;
+    if (redirectTarget && typeof redirectTarget === 'string' && redirectTarget.startsWith('/')) {
+      if (redirectTarget.startsWith('/api/')) {
+        const separator = redirectTarget.includes('?') ? '&' : '?';
+        window.location.href = `${redirectTarget}${separator}authToken=${encodeURIComponent(token)}`;
+        return;
+      }
+      return next(redirectTarget);
+    }
     return activeTenantId ? next({ name: 'dashboard' }) : next({ name: 'tenant-gateway' });
   }
   // 3. If logged in but no tenant selected (and not on tenant gateway or routes that skip tenant check) (giống frontend)

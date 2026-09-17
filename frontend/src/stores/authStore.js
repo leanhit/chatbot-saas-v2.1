@@ -122,7 +122,11 @@ export const useAuthStore = defineStore('auth', () => {
       if (targetRedirect && typeof targetRedirect === 'string' && targetRedirect.startsWith('/')) {
         console.log('🔄 Redirecting to custom target from query:', targetRedirect)
         if (targetRedirect.startsWith('/api/') || targetRedirect.includes('http')) {
-          window.location.href = targetRedirect
+          const separator = targetRedirect.includes('?') ? '&' : '?'
+          const redirectUrl = targetRedirect.startsWith('/api/')
+            ? `${targetRedirect}${separator}authToken=${encodeURIComponent(validToken)}`
+            : targetRedirect
+          window.location.href = redirectUrl
           return { success: true, data: authData }
         } else {
           await router.push(targetRedirect)
@@ -211,7 +215,12 @@ export const useAuthStore = defineStore('auth', () => {
           const targetRedirect = router.currentRoute.value?.query?.redirect
           if (targetRedirect && typeof targetRedirect === 'string' && targetRedirect.startsWith('/')) {
             if (targetRedirect.startsWith('/api/') || targetRedirect.includes('http')) {
-              window.location.href = targetRedirect
+              const separator = targetRedirect.includes('?') ? '&' : '?'
+              const redirectUrl = targetRedirect.startsWith('/api/')
+                ? `${targetRedirect}${separator}authToken=${encodeURIComponent(validToken)}`
+                : targetRedirect
+              window.location.href = redirectUrl
+              return { success: true, data: authData }
             } else {
               await router.push(targetRedirect)
             }
