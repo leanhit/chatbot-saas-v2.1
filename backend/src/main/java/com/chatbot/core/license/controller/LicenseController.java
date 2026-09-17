@@ -293,7 +293,10 @@ public class LicenseController {
             // If user is not authenticated, redirect to login page with deviceId and state
             if (currentUser == null) {
                 log.info("User not authenticated, redirecting to login with deviceId and state");
-                String loginUrl = String.format("/login?redirect=/api/license/activate?deviceId=%s&state=%s", deviceId, state);
+                String targetRedirect = String.format("/api/license/activate?deviceId=%s&state=%s",
+                    java.net.URLEncoder.encode(deviceId, java.nio.charset.StandardCharsets.UTF_8),
+                    java.net.URLEncoder.encode(state, java.nio.charset.StandardCharsets.UTF_8));
+                String loginUrl = "/login?redirect=" + java.net.URLEncoder.encode(targetRedirect, java.nio.charset.StandardCharsets.UTF_8);
                 return ResponseEntity.status(HttpStatus.FOUND)
                     .header("Location", loginUrl)
                     .build();
@@ -303,7 +306,7 @@ public class LicenseController {
             Long userId = currentUser.getUser().getId();
             String userEmail = currentUser.getUser().getEmail();
             
-            log.info("User authenticated: {} (ID: {}), generating License JWT", userEmail, userId);
+            log.info("User authenticated: {} (ID: {}), generating License JWT for deviceId: {}", userEmail, userId, deviceId);
             
             // Get or create license for user
             LicenseResponse licenseResponse;
@@ -337,6 +340,7 @@ public class LicenseController {
             String licenseJwt = jwtService.generateLicenseToken(
                 userEmail,
                 userId,
+                deviceId,
                 expiration,
                 licenseResponse.getFeatures(),
                 licenseResponse.getModules(),

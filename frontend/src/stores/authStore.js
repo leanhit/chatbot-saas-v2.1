@@ -117,8 +117,19 @@ export const useAuthStore = defineStore('auth', () => {
       }
       // 4. Lấy thông tin User Profile - CHỈ SAU KHI CÓ TENANT
       // Skip profile fetch during login as it requires tenant context
-      // Profile will be fetched when tenant is selected
-      // 5. Determine redirect based on tenant data
+      // 5. Determine redirect based on tenant data or query parameter
+      const targetRedirect = router.currentRoute.value?.query?.redirect
+      if (targetRedirect && typeof targetRedirect === 'string' && targetRedirect.startsWith('/')) {
+        console.log('🔄 Redirecting to custom target from query:', targetRedirect)
+        if (targetRedirect.startsWith('/api/') || targetRedirect.includes('http')) {
+          window.location.href = targetRedirect
+          return { success: true, data: authData }
+        } else {
+          await router.push(targetRedirect)
+          return { success: true, data: authData }
+        }
+      }
+
       const tenantStore = useGatewayTenantStore()
       
       // Always try to get stored tenant first
@@ -195,9 +206,20 @@ export const useAuthStore = defineStore('auth', () => {
         if (newTenantKey) {
           // Switch to the newly created tenant
           await tenantStore.switchTenant(newTenantKey);
-          // Redirect to dashboard
-          await router.push('/dashboard');
-          console.log('✅ Successfully switched to tenant and redirected to dashboard');
+          
+          // Check for redirect query parameter
+          const targetRedirect = router.currentRoute.value?.query?.redirect
+          if (targetRedirect && typeof targetRedirect === 'string' && targetRedirect.startsWith('/')) {
+            if (targetRedirect.startsWith('/api/') || targetRedirect.includes('http')) {
+              window.location.href = targetRedirect
+            } else {
+              await router.push(targetRedirect)
+            }
+          } else {
+            // Redirect to dashboard
+            await router.push('/dashboard');
+          }
+          console.log('✅ Successfully switched to tenant and redirected');
         } else {
           console.error('❌ No tenantKey found in response');
           // Fallback to tenant gateway if tenant creation failed

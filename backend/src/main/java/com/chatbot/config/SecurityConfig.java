@@ -157,6 +157,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/swagger-ui/**", "/api/v3/api-docs/**").permitAll()
 
                 // ================= LICENSE ENDPOINTS (SPECIFIC FIRST) =================
+                .requestMatchers(HttpMethod.GET, "/activate", "/api/license/activate", "/api/license/public-key").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/license/me").authenticated()
                 .requestMatchers(HttpMethod.GET, "/api/license/check/feature/**").authenticated()
                 .requestMatchers(HttpMethod.GET, "/api/license/check/module/**").authenticated()

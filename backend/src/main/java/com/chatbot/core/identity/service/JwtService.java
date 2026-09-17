@@ -296,33 +296,32 @@ public class JwtService {
     public String generateLicenseToken(String email, Long userId, Long expiration, 
                                      List<String> features, List<String> modules, 
                                      Map<String, Integer> limits) {
+        return generateLicenseToken(email, userId, null, expiration, features, modules, limits);
+    }
+
+    public String generateLicenseToken(String email, Long userId, String deviceId, Long expiration, 
+                                     List<String> features, List<String> modules, 
+                                     Map<String, Integer> limits) {
         try {
+            var builder = Jwts.builder()
+                    .setSubject(email)
+                    .claim("sub", userId.toString()) // User ID as string for local app
+                    .claim("email", email)
+                    .claim("exp", expiration) // Unix timestamp for local app compatibility
+                    .claim("features", features)
+                    .claim("modules", modules)
+                    .claim("limits", limits)
+                    .claim("signed_by", "cloud") // Prevent client self-signing
+                    .setIssuedAt(new Date());
+
+            if (deviceId != null && !deviceId.trim().isEmpty()) {
+                builder.claim("deviceId", deviceId);
+            }
+
             if ("RS256".equals(jwtAlgorithm)) {
-                return Jwts.builder()
-                        .setSubject(email)
-                        .claim("sub", userId.toString()) // User ID as string for local app
-                        .claim("email", email)
-                        .claim("exp", expiration) // Unix timestamp for local app compatibility
-                        .claim("features", features)
-                        .claim("modules", modules)
-                        .claim("limits", limits)
-                        .claim("signed_by", "cloud") // Prevent client self-signing
-                        .setIssuedAt(new Date())
-                        .signWith(privateKey, SignatureAlgorithm.RS256)
-                        .compact();
+                return builder.signWith(privateKey, SignatureAlgorithm.RS256).compact();
             } else {
-                return Jwts.builder()
-                        .setSubject(email)
-                        .claim("sub", userId.toString())
-                        .claim("email", email)
-                        .claim("exp", expiration)
-                        .claim("features", features)
-                        .claim("modules", modules)
-                        .claim("limits", limits)
-                        .claim("signed_by", "cloud") // Prevent client self-signing
-                        .setIssuedAt(new Date())
-                        .signWith(hmacKey, SignatureAlgorithm.HS256)
-                        .compact();
+                return builder.signWith(hmacKey, SignatureAlgorithm.HS256).compact();
             }
         } catch (Exception e) {
             log.error("License token generation failed: {}", e.getMessage(), e);
@@ -367,6 +366,10 @@ public class JwtService {
 
     public String extractUserId(String token) {
         return getClaim(token, claims -> claims.get("sub", String.class));
+    }
+
+    public String extractDeviceId(String token) {
+        return getClaim(token, claims -> claims.get("deviceId", String.class));
     }
 
     public String extractEmailFromLicense(String token) {
