@@ -216,8 +216,9 @@ export const useAuthStore = defineStore('auth', () => {
           if (targetRedirect && typeof targetRedirect === 'string' && targetRedirect.startsWith('/')) {
             if (targetRedirect.startsWith('/api/') || targetRedirect.includes('http')) {
               const separator = targetRedirect.includes('?') ? '&' : '?'
+              const authTokenValue = token.value || authData.token
               const redirectUrl = targetRedirect.startsWith('/api/')
-                ? `${targetRedirect}${separator}authToken=${encodeURIComponent(validToken)}`
+                ? `${targetRedirect}${separator}authToken=${encodeURIComponent(authTokenValue)}`
                 : targetRedirect
               window.location.href = redirectUrl
               return { success: true, data: authData }
