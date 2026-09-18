@@ -306,7 +306,8 @@ public class LicenseController {
             Long userId = currentUser.getUser().getId();
             String userEmail = currentUser.getUser().getEmail();
             
-            log.info("User authenticated: {} (ID: {}), generating License JWT for deviceId: {}", userEmail, userId, deviceId);
+            log.info("User authenticated: {} (ID: {}), binding device & generating License JWT for deviceId: {}", userEmail, userId, deviceId);
+            licenseService.bindDevice(userId, deviceId, "Local Client (" + deviceId + ")");
             
             // Get or create license for user
             LicenseResponse licenseResponse;
@@ -549,5 +550,36 @@ public class LicenseController {
             return ResponseEntity.badRequest()
                 .body(ApiResponse.<Map<String, Object>>error("Failed to activate license: " + e.getMessage()));
         }
+    }
+
+    @GetMapping("/devices")
+    @Operation(
+        summary = "Get user bound devices",
+        description = "Returns list of active device bindings for current authenticated user"
+    )
+    public ResponseEntity<ApiResponse<List<com.chatbot.core.license.dto.DeviceBindingResponse>>> getUserDevices(
+            @AuthenticationPrincipal CustomUserDetails currentUser) {
+        if (currentUser == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(ApiResponse.error("Unauthorized"));
+        }
+        List<com.chatbot.core.license.dto.DeviceBindingResponse> devices = licenseService.getUserDevices(currentUser.getUser().getId());
+        return ResponseEntity.ok(ApiResponse.success(devices, "User devices retrieved successfully"));
+    }
+
+    @DeleteMapping("/devices/{deviceId}")
+    @Operation(
+        summary = "Unbind device",
+        description = "Revokes device binding for specified deviceId"
+    )
+    public ResponseEntity<ApiResponse<String>> unbindDevice(
+            @PathVariable String deviceId,
+            @AuthenticationPrincipal CustomUserDetails currentUser) {
+        if (currentUser == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(ApiResponse.error("Unauthorized"));
+        }
+        licenseService.unbindDevice(currentUser.getUser().getId(), deviceId);
+        return ResponseEntity.ok(ApiResponse.success("Device unbound successfully", "Hủy liên kết thiết bị thành công"));
     }
 }

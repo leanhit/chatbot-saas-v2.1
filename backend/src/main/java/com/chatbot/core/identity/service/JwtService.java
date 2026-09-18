@@ -408,6 +408,7 @@ public class JwtService {
     /**
      * Get public key in PEM format for local app verification
      */
+    @org.springframework.cache.annotation.Cacheable(value = "license-public-key")
     public String getPublicKeyPem() {
         if ("RS256".equals(jwtAlgorithm)) {
             if (publicKey == null) {

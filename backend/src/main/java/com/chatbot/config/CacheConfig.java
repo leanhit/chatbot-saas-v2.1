@@ -92,6 +92,14 @@ public class CacheConfig {
         cacheConfigurations.put("tenantPackageInfo",    defaultConfig.entryTtl(Duration.ofMinutes(5)));
         cacheConfigurations.put("systemConfig",        defaultConfig.entryTtl(Duration.ofHours(2)));
 
+        // --- License & Device Caches ---
+        cacheConfigurations.put("licenses",           defaultConfig.entryTtl(Duration.ofMinutes(15)));
+        cacheConfigurations.put("license-features",   defaultConfig.entryTtl(Duration.ofMinutes(15)));
+        cacheConfigurations.put("license-modules",    defaultConfig.entryTtl(Duration.ofMinutes(15)));
+        cacheConfigurations.put("license-limits",     defaultConfig.entryTtl(Duration.ofMinutes(15)));
+        cacheConfigurations.put("license-public-key", defaultConfig.entryTtl(Duration.ofHours(24)));
+        cacheConfigurations.put("device-bindings",    defaultConfig.entryTtl(Duration.ofMinutes(15)));
+
         // --- Location caches ---
         cacheConfigurations.put("provinces",           defaultConfig.entryTtl(Duration.ofDays(1)));
         cacheConfigurations.put("districts",           defaultConfig.entryTtl(Duration.ofDays(1)));
