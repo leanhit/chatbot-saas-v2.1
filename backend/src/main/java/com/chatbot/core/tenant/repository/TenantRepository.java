@@ -72,8 +72,8 @@ public interface TenantRepository extends JpaRepository<Tenant, Long> {
     @Query("SELECT t FROM Tenant t WHERE EXISTS (" +
            "  SELECT 1 FROM TenantMember tm " +
            "  WHERE tm.tenant.id = t.id AND tm.userId = :userId" +
-           ")")
-    Optional<Tenant> findByUserId(@Param("userId") Long userId);
+           ") ORDER BY t.id ASC")
+    List<Tenant> findByUserId(@Param("userId") Long userId);
 
     // Kiêm tra user có access vào tenant không (thông qua tenant membership)
     @Query("SELECT COUNT(t) > 0 FROM Tenant t " +

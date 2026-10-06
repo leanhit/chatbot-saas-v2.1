@@ -22,14 +22,14 @@ public class AppRegistry extends BaseTenantEntity {
     @Column(nullable = false, unique = true)
     private String name;
     
-    @Column(nullable = false)
+    @Column(name = "display_name", nullable = false)
     private String displayName;
     
     @Column(nullable = false)
     private String description;
     
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(name = "app_type", nullable = false)
     private AppType appType;
     
     @Enumerated(EnumType.STRING)

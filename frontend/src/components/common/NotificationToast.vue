@@ -101,8 +101,8 @@ export default {
 <style scoped>
 .notification-container {
   position: fixed;
-  top: 20px;
-  right: 20px;
+  bottom: 20px;
+  left: 20px;
   z-index: 9999;
   max-width: 400px;
 }
@@ -121,7 +121,7 @@ export default {
 }
 
 .notification-toast:hover {
-  transform: translateX(-4px);
+  transform: translateX(4px);
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
 }
 
@@ -223,12 +223,12 @@ export default {
 
 .notification-enter-from {
   opacity: 0;
-  transform: translateX(100%);
+  transform: translateX(-100%);
 }
 
 .notification-leave-to {
   opacity: 0;
-  transform: translateX(100%);
+  transform: translateX(-100%);
 }
 
 .notification-move {

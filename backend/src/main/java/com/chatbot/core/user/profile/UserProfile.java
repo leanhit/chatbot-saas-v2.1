@@ -32,7 +32,7 @@ public class UserProfile {
     private User user;
 
     // ===== Basic Information =====
-    @Column(length = 100)
+    @Column(name = "full_name", length = 100)
     private String fullName;
 
     @Column(name = "phone_number")

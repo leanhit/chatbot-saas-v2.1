@@ -1,5 +1,7 @@
 package com.chatbot.core.tenant.infra;
 
+import com.chatbot.shared.utils.DateUtils;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -33,10 +35,12 @@ public abstract class BaseTenantEntity {
     
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
+    @JsonFormat(pattern = DateUtils.API_DATETIME_FORMAT, timezone = DateUtils.API_TIMEZONE)
     private LocalDateTime createdAt;
     
     @UpdateTimestamp
     @Column(name = "updated_at", nullable = false)
+    @JsonFormat(pattern = DateUtils.API_DATETIME_FORMAT, timezone = DateUtils.API_TIMEZONE)
     private LocalDateTime updatedAt;
     
     @Column(name = "created_by")

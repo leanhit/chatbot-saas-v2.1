@@ -37,6 +37,9 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 import com.chatbot.core.tenant.event.TenantCreatedEvent;
 
 import java.time.LocalDateTime;
@@ -62,6 +65,8 @@ public class TenantService {
     private final TenantCleanupService tenantCleanupService;
     private final TenantValidationService tenantValidationService;
     private final ApplicationEventPublisher eventPublisher;
+    @Qualifier("tenantTransactionManager")
+    private final PlatformTransactionManager tenantTransactionManager;
 
     @Value("${tenant.trial.days:30}")
     private int trialDays;
@@ -74,33 +79,44 @@ public class TenantService {
     // CREATE
     // =========================================================================
 
-    @Caching(evict = {
-        @CacheEvict(value = "tenant-key-info", allEntries = true)
-    })
-    @Transactional(transactionManager = "tenantTransactionManager", rollbackFor = Exception.class)
     public TenantResponse createTenant(CreateTenantRequest request) {
         log.info("[TenantService] Starting tenant creation");
 
         String currentUserEmail = permissionValidator.getCurrentUserEmail();
+        log.info("[TenantService] Current user email: {}", currentUserEmail);
+
+        // 1. Fetch User from User Hub DB BEFORE entering Tenant DB transaction
         User currentUser = getCurrentUser(currentUserEmail);
+        log.info("[TenantService] Found user id: {}", currentUser.getId());
 
-        Tenant savedTenant = createAndSaveTenant(request);
-        createOwnerMembership(savedTenant, currentUser.getId());
-        logAuditAction(savedTenant.getId(), currentUserEmail, savedTenant.getTenantKey());
+        // 2. Execute Tenant Hub DB creation strictly within tenantTransactionManager
+        TransactionTemplate txTemplate = new TransactionTemplate(tenantTransactionManager);
+        Tenant savedTenant = txTemplate.execute(status -> {
+            Tenant tenant = createAndSaveTenant(request);
+            createOwnerMembership(tenant, currentUser.getId());
+            logAuditAction(tenant.getId(), currentUserEmail, tenant.getTenantKey());
+            return tenant;
+        });
 
-        // Publish event for eventual consistency (address creation in Shared DB & default package assignment)
-        eventPublisher.publishEvent(TenantCreatedEvent.builder()
-                .tenantId(savedTenant.getId())
-                .tenantKey(savedTenant.getTenantKey())
-                .ownerUserId(currentUser.getId())
-                .currentUserEmail(currentUserEmail)
-                .build());
+        // 3. Publish event for eventual consistency (address creation in Shared DB & default package assignment)
+        try {
+            eventPublisher.publishEvent(TenantCreatedEvent.builder()
+                    .tenantId(savedTenant.getId())
+                    .tenantKey(savedTenant.getTenantKey())
+                    .ownerUserId(currentUser.getId())
+                    .currentUserEmail(currentUserEmail)
+                    .build());
+            log.info("[TenantService] Published TenantCreatedEvent");
+        } catch (Exception e) {
+            log.error("[TenantService] Error publishing TenantCreatedEvent: {}", e.getMessage(), e);
+        }
 
         log.info("[TenantService] Tenant creation complete: key={}", savedTenant.getTenantKey());
         return TenantMapper.toResponse(savedTenant);
     }
 
-    private User getCurrentUser(String email) {
+    @Transactional(readOnly = true, transactionManager = "userTransactionManager", propagation = org.springframework.transaction.annotation.Propagation.REQUIRES_NEW)
+    public User getCurrentUser(String email) {
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found: " + email));
     }

@@ -6,6 +6,7 @@
 CREATE TABLE IF NOT EXISTS conversations (
     id BIGSERIAL PRIMARY KEY,
     tenant_id BIGINT NOT NULL,
+    tenant_key VARCHAR(255),
     connection_id UUID,
     owner_id VARCHAR(255),
     external_user_id VARCHAR(255),
@@ -36,7 +37,10 @@ CREATE TABLE IF NOT EXISTS conversations (
     resolution_status VARCHAR(50),
     resolution_time TIMESTAMP,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_by VARCHAR(255),
+    updated_by VARCHAR(255),
+    is_deleted BOOLEAN NOT NULL DEFAULT FALSE
 );
 
 -- Create indexes for conversations
@@ -45,6 +49,24 @@ CREATE INDEX IF NOT EXISTS idx_conversation_tenant_connection ON conversations(t
 CREATE INDEX IF NOT EXISTS idx_conversation_tenant_external_user ON conversations(tenant_id, external_user_id);
 CREATE INDEX IF NOT EXISTS idx_conversation_status ON conversations(status);
 CREATE INDEX IF NOT EXISTS idx_conversation_agent ON conversations(agent_assigned_id);
+
+-- Create auto_assign_configs table
+CREATE TABLE IF NOT EXISTS auto_assign_configs (
+    id BIGSERIAL PRIMARY KEY,
+    tenant_id BIGINT NOT NULL,
+    enabled BOOLEAN NOT NULL DEFAULT TRUE,
+    interval_seconds INTEGER NOT NULL DEFAULT 30,
+    max_concurrent_per_agent INTEGER NOT NULL DEFAULT 5,
+    description TEXT,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    tenant_key VARCHAR(255),
+    created_by VARCHAR(255),
+    updated_by VARCHAR(255),
+    is_deleted BOOLEAN NOT NULL DEFAULT FALSE
+);
+
+CREATE INDEX IF NOT EXISTS idx_auto_assign_tenant ON auto_assign_configs(tenant_id);
 
 -- Create penny_bots table
 CREATE TABLE IF NOT EXISTS penny_bots (

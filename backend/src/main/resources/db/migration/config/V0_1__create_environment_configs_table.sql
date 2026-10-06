@@ -5,13 +5,16 @@
 CREATE TABLE IF NOT EXISTS environment_configs (
     id BIGSERIAL PRIMARY KEY,
     tenant_id BIGINT NOT NULL,
+    tenant_key VARCHAR(255),
     environment VARCHAR(50) NOT NULL,
     config_key VARCHAR(200) NOT NULL,
     config_value TEXT,
     is_encrypted BOOLEAN NOT NULL DEFAULT FALSE,
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
     description VARCHAR(500),
     created_by VARCHAR(255),
+    updated_by VARCHAR(255),
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );

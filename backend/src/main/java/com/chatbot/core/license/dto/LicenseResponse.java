@@ -1,5 +1,7 @@
 package com.chatbot.core.license.dto;
 
+import com.chatbot.shared.utils.DateUtils;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -20,11 +22,18 @@ public class LicenseResponse {
     private Long id;
     private String planName;
     private Boolean isActive;
+    
+    @JsonFormat(pattern = DateUtils.API_DATETIME_FORMAT, timezone = DateUtils.API_TIMEZONE)
     private Instant expiresAt;
+    
     private List<String> features;
     private List<String> modules;
     private Map<String, Integer> limits;
+    
+    @JsonFormat(pattern = DateUtils.API_DATETIME_FORMAT, timezone = DateUtils.API_TIMEZONE)
     private Instant createdAt;
+    
+    @JsonFormat(pattern = DateUtils.API_DATETIME_FORMAT, timezone = DateUtils.API_TIMEZONE)
     private Instant updatedAt;
     
     // JWT compatible fields for local app

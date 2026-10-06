@@ -7,7 +7,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "tenant_audit_log")
+@Table(name = "tenant_audit_logs")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -22,7 +22,7 @@ public class TenantAuditLog {
     @Column(name = "tenant_id", nullable = false)
     private Long tenantId;
 
-    @Column(name = "user_email", nullable = false)
+    @Column(name = "user_id", nullable = false)
     private String userEmail;
 
     @Column(name = "action", nullable = false)

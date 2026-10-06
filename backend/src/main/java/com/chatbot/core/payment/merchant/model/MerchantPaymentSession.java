@@ -23,16 +23,16 @@ public class MerchantPaymentSession {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     
-    @Column(nullable = false, unique = true, length = 100)
+    @Column(name = "session_id", nullable = false, unique = true, length = 100)
     private String sessionId; // Unique session ID for merchant payment
     
-    @Column(nullable = false)
+    @Column(name = "merchant_id", nullable = false)
     private Long merchantId; // ID from merchant_api_keys table
     
-    @Column(nullable = false)
+    @Column(name = "tenant_id", nullable = false)
     private Long tenantId;
     
-    @Column(nullable = false, length = 100)
+    @Column(name = "merchant_order_id", nullable = false, length = 100)
     private String merchantOrderId; // Merchant's internal order ID
     
     @Column(nullable = false, precision = 15, scale = 2)
@@ -45,10 +45,10 @@ public class MerchantPaymentSession {
     @Column(length = 500)
     private String description;
     
-    @Column(length = 500)
+    @Column(name = "return_url", length = 500)
     private String returnUrl; // URL to redirect after payment completion
     
-    @Column(length = 500)
+    @Column(name = "cancel_url", length = 500)
     private String cancelUrl; // URL to redirect if payment is cancelled
     
     @Column(length = 500)
@@ -58,10 +58,10 @@ public class MerchantPaymentSession {
     @Column(nullable = false, length = 50)
     private SessionStatus status;
     
-    @Column(length = 100)
+    @Column(name = "payment_reference_code", length = 100)
     private String paymentReferenceCode; // Reference code from our payment system
     
-    @Column(length = 100)
+    @Column(name = "bank_transaction_id", length = 100)
     private String bankTransactionId;
     
     @Column(name = "expires_at")
@@ -76,7 +76,7 @@ public class MerchantPaymentSession {
     @Column(name = "failed_at")
     private LocalDateTime failedAt;
     
-    @Column(length = 500)
+    @Column(name = "failure_reason", length = 500)
     private String failureReason;
     
     @Column(name = "webhook_sent_at")

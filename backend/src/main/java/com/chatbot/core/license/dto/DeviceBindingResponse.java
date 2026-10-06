@@ -1,6 +1,8 @@
 package com.chatbot.core.license.dto;
 
 import com.chatbot.core.license.model.DeviceBinding;
+import com.chatbot.shared.utils.DateUtils;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -19,7 +21,11 @@ public class DeviceBindingResponse {
     private String deviceId;
     private String deviceName;
     private String status;
+    
+    @JsonFormat(pattern = DateUtils.API_DATETIME_FORMAT, timezone = DateUtils.API_TIMEZONE)
     private Instant activatedAt;
+    
+    @JsonFormat(pattern = DateUtils.API_DATETIME_FORMAT, timezone = DateUtils.API_TIMEZONE)
     private Instant lastSeenAt;
 
     public static DeviceBindingResponse from(DeviceBinding entity) {

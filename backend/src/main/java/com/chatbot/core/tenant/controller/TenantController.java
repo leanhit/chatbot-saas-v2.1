@@ -69,8 +69,8 @@ public class TenantController {
     /**
      * Tạo tenant mới.
      */
+    @RateLimiter(name = "writeLimiter", fallbackMethod = "writeRateLimitFallback")
     @PostMapping
-    @RateLimiter(name = "writeRateLimit", fallbackMethod = "writeRateLimitFallback")
     @Operation(
         summary = "Create new tenant",
         description = "Create a new tenant with the specified details. The user creating the tenant becomes the owner.",
@@ -510,17 +510,30 @@ public class TenantController {
      * Fallback method for read operations rate limiting
      * Called when rate limit is exceeded for read endpoints
      */
-    public List<TenantDetailResponse> readRateLimitFallback(Exception exception) {
-        log.warn("Read rate limit exceeded for tenant endpoint");
-        throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS, "Too many requests. Please try again later.");
+    public List<TenantDetailResponse> readRateLimitFallback(Exception exception) throws Exception {
+        if (exception instanceof io.github.resilience4j.ratelimiter.RequestNotPermitted) {
+            log.warn("Read rate limit exceeded for tenant endpoint");
+            throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS, "Too many requests. Please try again later.");
+        }
+        if (exception instanceof RuntimeException) {
+            throw (RuntimeException) exception;
+        }
+        throw exception;
     }
 
     /**
      * Fallback method for write operations rate limiting
      * Called when rate limit is exceeded for write endpoints
      */
-    public ResponseEntity<TenantResponse> writeRateLimitFallback(@Valid CreateTenantRequest request, Exception exception) {
-        log.warn("Write rate limit exceeded for tenant endpoint");
-        return ResponseEntity.status(429).build();
+    public TenantResponse writeRateLimitFallback(CreateTenantRequest request, Exception exception) throws Exception {
+        if (exception instanceof io.github.resilience4j.ratelimiter.RequestNotPermitted) {
+            log.warn("Write rate limit exceeded for tenant endpoint: {}", exception.getMessage());
+            throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS, "Too many requests. Please try again later.");
+        }
+        log.error("Non-rate-limit exception inside writeRateLimitFallback: {}", exception.getMessage(), exception);
+        if (exception instanceof RuntimeException) {
+            throw (RuntimeException) exception;
+        }
+        throw exception;
     }
 }

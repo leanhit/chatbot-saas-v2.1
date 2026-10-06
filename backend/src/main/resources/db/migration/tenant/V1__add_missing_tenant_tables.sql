@@ -23,15 +23,23 @@ CREATE TABLE IF NOT EXISTS tenant_profiles (
 CREATE INDEX IF NOT EXISTS idx_tenant_profile_tenant ON tenant_profiles(tenant_id);
 
 CREATE TABLE IF NOT EXISTS tenant_professionals (
-    id BIGSERIAL PRIMARY KEY,
-    tenant_id BIGINT NOT NULL,
-    provider_type VARCHAR(50) NOT NULL,
-    professional_id VARCHAR(255) NOT NULL,
-    specialty VARCHAR(255),
-    status VARCHAR(50) NOT NULL DEFAULT 'ACTIVE',
+    tenant_id BIGINT PRIMARY KEY,
+    job_title VARCHAR(255),
+    department VARCHAR(255),
+    company VARCHAR(200),
+    linkedin_url VARCHAR(255),
+    website VARCHAR(255),
+    location VARCHAR(255),
+    skills TEXT,
+    experience TEXT,
+    education TEXT,
+    certifications TEXT,
+    languages VARCHAR(255),
+    availability VARCHAR(255),
+    hourly_rate VARCHAR(100),
+    portfolio_url VARCHAR(255),
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT uk_tenant_professional UNIQUE (tenant_id, provider_type, professional_id)
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE INDEX IF NOT EXISTS idx_tenant_professional_tenant ON tenant_professionals(tenant_id);

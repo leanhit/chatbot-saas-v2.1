@@ -166,7 +166,8 @@ public class TenantPackageService {
             try {
                 User user = authRepository.findByEmail(username)
                         .orElseThrow(() -> new ResourceNotFoundException("User not found: " + username));
-                return tenantRepository.findByUserId(user.getId())
+                return tenantRepository.findByUserId(user.getId()).stream()
+                        .findFirst()
                         .map(Tenant::getId)
                         .orElseThrow(() -> new TenantNotFoundException("No tenant for user: " + user.getId()));
             } catch (Exception e) {
