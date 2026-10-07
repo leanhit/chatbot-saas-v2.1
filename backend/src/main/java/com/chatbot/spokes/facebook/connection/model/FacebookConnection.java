@@ -55,10 +55,7 @@ public class FacebookConnection extends BaseTenantEntity {
     
     @Column(name = "health_check_failures")
     private Integer healthCheckFailures = 0;
-    
-    // Getters and setters for Lombok compatibility
-    public String getOwnerId() { return ownerId; }
-    public void setOwnerId(String ownerId) { this.ownerId = ownerId; }
+
     @Column(name = "fb_user_id")
     private String fbUserId;
     @Column(name = "is_enabled")

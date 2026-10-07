@@ -42,10 +42,10 @@ public class TenantInvitation {
     @Enumerated(EnumType.STRING)
     private InvitationStatus status;
     
-    @Column(nullable = false)
+    @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
     
-    @Column
+    @Column(name = "expires_at")
     private LocalDateTime expiresAt;
     
     // Application-level join: store invitedByUserId instead of @ManyToOne relationship

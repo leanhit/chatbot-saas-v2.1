@@ -379,6 +379,18 @@ public class TenantController {
     }
 
     /**
+     * Revoke invitation
+     */
+    @DeleteMapping("/key/{tenantKey}/invitations/{invitationId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void revokeInvitation(
+            @PathVariable String tenantKey,
+            @PathVariable Long invitationId) {
+        Long tenantId = tenantMembershipFacade.getTenantIdByKey(tenantKey);
+        tenantMembershipFacade.revokeInvitation(tenantId, invitationId);
+    }
+
+    /**
      * Get member by ID
      */
     @GetMapping("/key/{tenantKey}/members/{userId}")

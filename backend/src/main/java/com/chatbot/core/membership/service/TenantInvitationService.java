@@ -79,6 +79,7 @@ public class TenantInvitationService {
             throw new BusinessLogicException(com.chatbot.shared.exceptions.ErrorCode.INVITATION_ALREADY_PENDING, "There is already a pending invitation for this email");
         }
 
+        int expiryDays = request.getExpiryDays() > 0 ? request.getExpiryDays() : 7;
         TenantInvitation invitation = TenantInvitation.builder()
             .tenant(tenant)
             .email(request.getEmail().toLowerCase())
@@ -86,7 +87,7 @@ public class TenantInvitationService {
             .token(UUID.randomUUID().toString())
             .status(InvitationStatus.PENDING)
             .createdAt(LocalDateTime.now())
-            .expiresAt(LocalDateTime.now().plusDays(7))
+            .expiresAt(LocalDateTime.now().plusDays(expiryDays))
             .invitedByUserId(admin.getId()) // Application-level join: store userId instead of User object
             .build();
 
@@ -237,7 +238,7 @@ public class TenantInvitationService {
             try {
                 InviteMemberRequest request = new InviteMemberRequest();
                 request.setEmail(invite.getEmail());
-                request.setRole(com.chatbot.core.membership.model.TenantRole.valueOf(invite.getRole()));
+                request.setRole(com.chatbot.core.membership.model.TenantRole.valueOf(invite.getRole().toUpperCase()));
                 inviteMember(tenant.getId(), request, adminUser);
                 results.add(new com.chatbot.core.tenant.dto.InvitationResponse(invite.getEmail(), "SENT"));
                 auditLogService.logAction(tenant.getId(), currentUserEmail, "BULK_INVITE",
@@ -264,12 +265,18 @@ public class TenantInvitationService {
             }
         }
         
+        String tenantName = invitation.getTenant() != null ? invitation.getTenant().getName() : null;
+        String tenantKey = invitation.getTenant() != null ? invitation.getTenant().getTenantKey() : null;
+        
         return InvitationResponse.builder()
                 .id(invitation.getId())
-                .name(invitation.getTenant() != null ? invitation.getTenant().getName() : null)
+                .name(tenantName)
+                .tenantName(tenantName)
+                .tenantKey(tenantKey)
                 .email(invitation.getEmail())
                 .role(invitation.getRole())
                 .status(invitation.getStatus())
+                .createdAt(invitation.getCreatedAt())
                 .expiresAt(invitation.getExpiresAt())
                 .invitedByName(invitedByName)
                 .token(invitation.getToken())

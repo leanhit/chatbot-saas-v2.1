@@ -27,13 +27,14 @@
           <div class="flex items-center space-x-4">
             <div class="tenant-avatar-invitation">
               <div class="avatar-fallback">
-                {{ invitation.name?.charAt(0)?.toUpperCase() || '?' }}
+                {{ (invitation.tenantName || invitation.name)?.charAt(0)?.toUpperCase() || '?' }}
               </div>
             </div>
             <div>
-              <h4 class="font-medium text-gray-900 dark:text-white">{{ invitation.name }}</h4>
-              <p class="text-sm text-gray-600 dark:text-gray-400">Invited by: {{ invitation.invitedByName }}</p>
+              <h4 class="font-medium text-gray-900 dark:text-white">{{ invitation.tenantName || invitation.name }}</h4>
+              <p class="text-sm text-gray-600 dark:text-gray-400" v-if="invitation.invitedByName">Invited by: {{ invitation.invitedByName }}</p>
               <p class="text-sm text-gray-600 dark:text-gray-400">Role: {{ invitation.role }}</p>
+              <p class="text-xs text-gray-400 dark:text-gray-500 mt-1" v-if="invitation.createdAt">{{ formatDateTime(invitation.createdAt) }}</p>
             </div>
           </div>
           <div class="flex gap-2">

@@ -1,8 +1,9 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { tenantMembershipApi } from '@/api/tenantMembershipApi'
+import { tenantApi } from '@/api/tenantApi'
 import { ACTIVE_TENANT_ID } from '@/utils/constant'
 import { MembershipStatus, InvitationStatus, TenantRole } from '@/types/tenant'
+
 export const useTenantAdminMembersStore = defineStore(
   'tenantAdminMembers',
   () => {
@@ -14,21 +15,23 @@ export const useTenantAdminMembersStore = defineStore(
     const joinRequests = ref([])
     const loading = ref(false)
     const activeTenantId = localStorage.getItem(ACTIVE_TENANT_ID) || ''
+
     // ======================
     // GETTERS
     // ======================
     /** Thành viên chính thức */
     const activeMembers = computed(() =>
-      members.value.filter(m => m.status === MembershipStatus.ACTIVE)
+      members.value.filter(m => m.status === MembershipStatus.ACTIVE || !m.status)
     )
     /** Lời mời đang chờ */
     const pendingInvitations = computed(() =>
-      invitations.value.filter(i => i.status === InvitationStatus.PENDING)
+      invitations.value.filter(i => i.status === InvitationStatus.PENDING || i.status === 'PENDING')
     )
     /** User xin vào tenant */
     const pendingMembers = computed(() =>
-      joinRequests.value.filter(r => r.status === MembershipStatus.PENDING)
+      joinRequests.value.filter(r => r.status === MembershipStatus.PENDING || r.status === 'PENDING')
     )
+
     // ======================
     // ACTIONS - MEMBERS
     // ======================
@@ -36,7 +39,7 @@ export const useTenantAdminMembersStore = defineStore(
       if (!activeTenantId) return
       loading.value = true
       try {
-        const res = await tenantMembershipApi.getTenantUsers(activeTenantId)
+        const res = await tenantApi.getTenantMembers(activeTenantId)
         members.value = Array.isArray(res.data)
           ? res.data
           : (res.data)?.content || []
@@ -44,53 +47,56 @@ export const useTenantAdminMembersStore = defineStore(
         loading.value = false
       }
     }
+
     const updateRole = async (userId, role) => {
-      await tenantMembershipApi.updateUserRole(activeTenantId, userId, role)
-      const user = members.value.find(m => m.userId === userId)
+      await tenantApi.updateMemberRole(activeTenantId, userId, role)
+      const user = members.value.find(m => m.userId === userId || m.id === userId)
       if (user) user.role = role
-      // ElMessage.success('Đã cập nhật vai trò') // Comment out for Windzo
     }
+
     const removeMember = async (userId) => {
-      await tenantMembershipApi.removeUserFromTenant(activeTenantId, userId)
-      members.value = members.value.filter(m => m.userId !== userId)
-      // ElMessage.success('Đã xóa thành viên') // Comment out for Windzo
+      await tenantApi.removeMember(activeTenantId, userId)
+      members.value = members.value.filter(m => m.userId !== userId && m.id !== userId)
     }
+
     // ======================
     // ACTIONS - INVITATIONS
     // ======================
     const fetchInvitations = async () => {
       if (!activeTenantId) return
       try {
-        const res = await tenantMembershipApi.getTenantInvitations(activeTenantId)
+        const res = await tenantApi.getTenantInvitations(activeTenantId)
         invitations.value = res.data || []
       } catch (error) {
+        console.error('Failed to fetch invitations:', error)
       }
     }
+
     const inviteUser = async (payload) => {
       try {
-        await tenantMembershipApi.inviteMember(activeTenantId, payload)
-        // ElMessage.success('Đã gửi lời mời') // Comment out for Windzo
+        await tenantApi.inviteMember(activeTenantId, payload)
         await fetchInvitations()
       } catch (error) {
-        // ElMessage.error(
-        //   error.response?.data?.message || 'Không thể gửi lời mời'
-        // )
+        console.error('Failed to invite user:', error)
+        throw error
       }
     }
+
     const revokeInvitationAction = async (invitationId) => {
       try {
-        await tenantMembershipApi.revokeInvitation(
+        await tenantApi.revokeInvitation(
           activeTenantId,
           invitationId
         )
         invitations.value = invitations.value.filter(
           i => i.id !== invitationId
         )
-        // ElMessage.success('Đã thu hồi lời mời') // Comment out for Windzo
-      } catch {
-        // ElMessage.error('Không thể thu hồi lời mời') // Comment out for Windzo
+      } catch (error) {
+        console.error('Failed to revoke invitation:', error)
+        throw error
       }
     }
+
     // ======================
     // ACTIONS - JOIN REQUESTS
     // ======================
@@ -98,34 +104,36 @@ export const useTenantAdminMembersStore = defineStore(
       if (!activeTenantId) return
       loading.value = true
       try {
-        const res =
-          await tenantMembershipApi.getTenantJoinRequests(activeTenantId)
+        const res = await tenantApi.getJoinRequests(activeTenantId)
         joinRequests.value = res.data || []
       } finally {
         loading.value = false
       }
     }
+
     const approveJoin = async (requestId) => {
-      await tenantMembershipApi.approveJoinRequest(
+      await tenantApi.updateJoinRequestStatus(
         activeTenantId,
-        requestId
+        requestId,
+        'APPROVED'
       )
       joinRequests.value = joinRequests.value.filter(
         r => r.id !== requestId
       )
-      // ElMessage.success('Đã duyệt yêu cầu tham gia') // Comment out for Windzo
       await fetchMembers() // user trở thành member
     }
+
     const rejectJoin = async (requestId) => {
-      await tenantMembershipApi.rejectJoinRequest(
+      await tenantApi.updateJoinRequestStatus(
         activeTenantId,
-        requestId
+        requestId,
+        'REJECTED'
       )
       joinRequests.value = joinRequests.value.filter(
         r => r.id !== requestId
       )
-      // ElMessage.success('Đã từ chối yêu cầu') // Comment out for Windzo
     }
+
     // ======================
     // EXPORT
     // ======================

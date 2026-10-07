@@ -230,10 +230,10 @@ export const tenantApi = {
     return result;
   },
   async getPendingRequests() {
-    return axios.get('/pending-tenants');
+    return axios.get('/tenants/members/pending-tenants');
   },
   async getMyJoinRequests() {
-    return axios.get('/pending-tenants');
+    return axios.get('/tenants/members/pending-tenants');
   },
   async cancelJoinRequest(requestId) {
     return axios.delete(`/users/join-requests/${requestId}`);
