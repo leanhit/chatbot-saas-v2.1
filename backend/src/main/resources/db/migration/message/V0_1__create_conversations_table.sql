@@ -5,6 +5,7 @@
 -- Create conversations table
 CREATE TABLE IF NOT EXISTS conversations (
     id BIGSERIAL PRIMARY KEY,
+    tenant_key VARCHAR(255),
     tenant_id BIGINT NOT NULL,
     connection_id UUID,
     owner_id VARCHAR(255),
@@ -35,8 +36,11 @@ CREATE TABLE IF NOT EXISTS conversations (
     user_satisfaction_rating INTEGER,
     resolution_status VARCHAR(50),
     resolution_time TIMESTAMP,
+    created_by VARCHAR(255),
+    updated_by VARCHAR(255),
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    is_deleted BOOLEAN NOT NULL DEFAULT FALSE
 );
 
 -- Create indexes for conversations
@@ -49,6 +53,7 @@ CREATE INDEX IF NOT EXISTS idx_conversation_agent ON conversations(agent_assigne
 -- Create penny_bots table
 CREATE TABLE IF NOT EXISTS penny_bots (
     id UUID PRIMARY KEY,
+    tenant_key VARCHAR(255),
     bot_name VARCHAR(255) NOT NULL,
     bot_type VARCHAR(50) NOT NULL,
     tenant_id BIGINT NOT NULL,
@@ -57,6 +62,8 @@ CREATE TABLE IF NOT EXISTS penny_bots (
     description TEXT,
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
     is_enabled BOOLEAN NOT NULL DEFAULT TRUE,
+    created_by VARCHAR(255),
+    updated_by VARCHAR(255),
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     last_used_at TIMESTAMP,
@@ -64,7 +71,8 @@ CREATE TABLE IF NOT EXISTS penny_bots (
     system_prompt TEXT,
     business_name VARCHAR(255),
     business_description TEXT,
-    confidence_threshold FLOAT DEFAULT 0.6
+    confidence_threshold FLOAT DEFAULT 0.6,
+    is_deleted BOOLEAN NOT NULL DEFAULT FALSE
 );
 
 -- Create indexes for penny_bots

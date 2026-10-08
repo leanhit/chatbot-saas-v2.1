@@ -5,6 +5,7 @@
 -- Create app_registry table
 CREATE TABLE IF NOT EXISTS app_registry (
     id BIGSERIAL PRIMARY KEY,
+    tenant_key VARCHAR(255),
     tenant_id BIGINT NOT NULL,
     name VARCHAR(255) UNIQUE NOT NULL,
     display_name VARCHAR(255) NOT NULL,
@@ -18,8 +19,11 @@ CREATE TABLE IF NOT EXISTS app_registry (
     default_config TEXT,
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
     is_public BOOLEAN NOT NULL DEFAULT FALSE,
+    created_by VARCHAR(255),
+    updated_by VARCHAR(255),
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    is_deleted BOOLEAN NOT NULL DEFAULT FALSE
 );
 
 CREATE INDEX IF NOT EXISTS idx_app_registry_tenant ON app_registry(tenant_id);
@@ -30,6 +34,7 @@ CREATE INDEX IF NOT EXISTS idx_app_registry_active ON app_registry(is_active);
 -- Create app_configurations table
 CREATE TABLE IF NOT EXISTS app_configurations (
     id BIGSERIAL PRIMARY KEY,
+    tenant_key VARCHAR(255),
     app_id BIGINT NOT NULL,
     config_key VARCHAR(255) NOT NULL,
     config_value TEXT,
@@ -37,8 +42,11 @@ CREATE TABLE IF NOT EXISTS app_configurations (
     is_required BOOLEAN NOT NULL DEFAULT FALSE,
     is_encrypted BOOLEAN NOT NULL DEFAULT FALSE,
     description TEXT,
+    created_by VARCHAR(255),
+    updated_by VARCHAR(255),
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
     CONSTRAINT fk_app_configurations_app FOREIGN KEY (app_id) REFERENCES app_registry(id) ON DELETE CASCADE
 );
 
@@ -48,6 +56,7 @@ CREATE INDEX IF NOT EXISTS idx_app_configurations_key ON app_configurations(conf
 -- Create app_subscriptions table
 CREATE TABLE IF NOT EXISTS app_subscriptions (
     id BIGSERIAL PRIMARY KEY,
+    tenant_key VARCHAR(255),
     tenant_id BIGINT NOT NULL,
     app_id BIGINT NOT NULL,
     user_id BIGINT NOT NULL,
@@ -58,8 +67,11 @@ CREATE TABLE IF NOT EXISTS app_subscriptions (
     auto_renew BOOLEAN NOT NULL DEFAULT FALSE,
     trial_end TIMESTAMP,
     config_data TEXT,
+    created_by VARCHAR(255),
+    updated_by VARCHAR(255),
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    is_deleted BOOLEAN NOT NULL DEFAULT FALSE
 );
 
 CREATE INDEX IF NOT EXISTS idx_app_subscriptions_tenant ON app_subscriptions(tenant_id);
@@ -70,6 +82,7 @@ CREATE INDEX IF NOT EXISTS idx_app_subscriptions_status ON app_subscriptions(sub
 -- Create app_guards table
 CREATE TABLE IF NOT EXISTS app_guards (
     id BIGSERIAL PRIMARY KEY,
+    tenant_key VARCHAR(255),
     tenant_id BIGINT NOT NULL,
     app_id BIGINT NOT NULL,
     guard_name VARCHAR(255) NOT NULL,
@@ -77,8 +90,11 @@ CREATE TABLE IF NOT EXISTS app_guards (
     description TEXT,
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
     priority INTEGER NOT NULL DEFAULT 0,
+    created_by VARCHAR(255),
+    updated_by VARCHAR(255),
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    is_deleted BOOLEAN NOT NULL DEFAULT FALSE
 );
 
 CREATE INDEX IF NOT EXISTS idx_app_guards_tenant ON app_guards(tenant_id);
@@ -89,6 +105,7 @@ CREATE INDEX IF NOT EXISTS idx_app_guards_active ON app_guards(is_active);
 -- Create guard_rules table
 CREATE TABLE IF NOT EXISTS guard_rules (
     id BIGSERIAL PRIMARY KEY,
+    tenant_key VARCHAR(255),
     app_guard_id BIGINT NOT NULL,
     rule_name VARCHAR(255) NOT NULL,
     rule_condition TEXT NOT NULL,
@@ -97,8 +114,11 @@ CREATE TABLE IF NOT EXISTS guard_rules (
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
     priority INTEGER NOT NULL DEFAULT 0,
     description TEXT,
+    created_by VARCHAR(255),
+    updated_by VARCHAR(255),
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
     CONSTRAINT fk_guard_rules_app_guard FOREIGN KEY (app_guard_id) REFERENCES app_guards(id) ON DELETE CASCADE
 );
 
@@ -108,12 +128,17 @@ CREATE INDEX IF NOT EXISTS idx_guard_rules_active ON guard_rules(is_active);
 -- Create licenses table
 CREATE TABLE IF NOT EXISTS licenses (
     id BIGSERIAL PRIMARY KEY,
+    tenant_key VARCHAR(255),
+    tenant_id BIGINT NOT NULL,
     user_id BIGINT NOT NULL,
     plan_name VARCHAR(255) NOT NULL,
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
     expires_at TIMESTAMP,
+    created_by VARCHAR(255),
+    updated_by VARCHAR(255),
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    is_deleted BOOLEAN NOT NULL DEFAULT FALSE
 );
 
 CREATE INDEX IF NOT EXISTS idx_licenses_user ON licenses(user_id);
@@ -122,8 +147,15 @@ CREATE INDEX IF NOT EXISTS idx_licenses_expires ON licenses(expires_at);
 
 -- Create license_features collection table
 CREATE TABLE IF NOT EXISTS license_features (
+    id BIGSERIAL PRIMARY KEY,
+    tenant_key VARCHAR(255),
     license_id BIGINT NOT NULL,
     feature VARCHAR(255) NOT NULL,
+    created_by VARCHAR(255),
+    updated_by VARCHAR(255),
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
     CONSTRAINT fk_license_features_license FOREIGN KEY (license_id) REFERENCES licenses(id) ON DELETE CASCADE,
     CONSTRAINT uk_license_features UNIQUE (license_id, feature)
 );
@@ -132,8 +164,15 @@ CREATE INDEX IF NOT EXISTS idx_license_features_license ON license_features(lice
 
 -- Create license_modules collection table
 CREATE TABLE IF NOT EXISTS license_modules (
+    id BIGSERIAL PRIMARY KEY,
+    tenant_key VARCHAR(255),
     license_id BIGINT NOT NULL,
     module VARCHAR(255) NOT NULL,
+    created_by VARCHAR(255),
+    updated_by VARCHAR(255),
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
     CONSTRAINT fk_license_modules_license FOREIGN KEY (license_id) REFERENCES licenses(id) ON DELETE CASCADE,
     CONSTRAINT uk_license_modules UNIQUE (license_id, module)
 );
@@ -142,9 +181,16 @@ CREATE INDEX IF NOT EXISTS idx_license_modules_license ON license_modules(licens
 
 -- Create license_limits collection table
 CREATE TABLE IF NOT EXISTS license_limits (
+    id BIGSERIAL PRIMARY KEY,
+    tenant_key VARCHAR(255),
     license_id BIGINT NOT NULL,
     limit_key VARCHAR(255) NOT NULL,
     limit_value INTEGER NOT NULL,
+    created_by VARCHAR(255),
+    updated_by VARCHAR(255),
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
     CONSTRAINT fk_license_limits_license FOREIGN KEY (license_id) REFERENCES licenses(id) ON DELETE CASCADE,
     CONSTRAINT uk_license_limits UNIQUE (license_id, limit_key)
 );

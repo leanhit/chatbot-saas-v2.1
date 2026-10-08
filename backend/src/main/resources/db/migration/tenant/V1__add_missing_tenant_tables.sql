@@ -4,6 +4,7 @@
 
 CREATE TABLE IF NOT EXISTS tenant_profiles (
     tenant_id BIGINT PRIMARY KEY,
+    tenant_key VARCHAR(255),
     description VARCHAR(1000),
     industry VARCHAR(100),
     plan VARCHAR(50),
@@ -16,21 +17,28 @@ CREATE TABLE IF NOT EXISTS tenant_profiles (
     logo_url VARCHAR(255),
     favicon_url VARCHAR(255),
     primary_color VARCHAR(50),
+    created_by VARCHAR(255),
+    updated_by VARCHAR(255),
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    is_deleted BOOLEAN NOT NULL DEFAULT FALSE
 );
 
 CREATE INDEX IF NOT EXISTS idx_tenant_profile_tenant ON tenant_profiles(tenant_id);
 
 CREATE TABLE IF NOT EXISTS tenant_professionals (
     id BIGSERIAL PRIMARY KEY,
+    tenant_key VARCHAR(255),
     tenant_id BIGINT NOT NULL,
     provider_type VARCHAR(50) NOT NULL,
     professional_id VARCHAR(255) NOT NULL,
     specialty VARCHAR(255),
     status VARCHAR(50) NOT NULL DEFAULT 'ACTIVE',
+    created_by VARCHAR(255),
+    updated_by VARCHAR(255),
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
     CONSTRAINT uk_tenant_professional UNIQUE (tenant_id, provider_type, professional_id)
 );
 
@@ -38,6 +46,7 @@ CREATE INDEX IF NOT EXISTS idx_tenant_professional_tenant ON tenant_professional
 
 CREATE TABLE IF NOT EXISTS tenant_audit_logs (
     id BIGSERIAL PRIMARY KEY,
+    tenant_key VARCHAR(255),
     tenant_id BIGINT NOT NULL,
     user_id VARCHAR(255) NOT NULL,
     action VARCHAR(255) NOT NULL,

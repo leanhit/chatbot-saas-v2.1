@@ -13,6 +13,7 @@ END $$;
 -- Create simple_payments table
 CREATE TABLE IF NOT EXISTS simple_payments (
     id BIGSERIAL PRIMARY KEY,
+    tenant_key VARCHAR(255),
     user_id BIGINT NOT NULL,
     tenant_id BIGINT NOT NULL,
     amount DECIMAL(15,2) NOT NULL,
@@ -24,9 +25,12 @@ CREATE TABLE IF NOT EXISTS simple_payments (
     qr_content TEXT,
     expires_at TIMESTAMP NOT NULL,
     target_package_id VARCHAR(100),
+    created_by VARCHAR(255),
+    updated_by VARCHAR(255),
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP,
-    completed_at TIMESTAMP
+    completed_at TIMESTAMP,
+    is_deleted BOOLEAN NOT NULL DEFAULT FALSE
 );
 
 -- Create indexes for performance

@@ -10,6 +10,7 @@ BEGIN
             id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
             document_id UUID NOT NULL,
             bot_id UUID NOT NULL,
+            tenant_key VARCHAR(255),
             tenant_id BIGINT NOT NULL,
             chunk_index INTEGER NOT NULL,
             chunk_text TEXT NOT NULL,
@@ -20,7 +21,10 @@ BEGIN
             sheet_name VARCHAR(255), -- For XLSX
             row_index INTEGER, -- For XLSX
             metadata JSONB, -- Additional metadata
+            created_by VARCHAR(255),
+            updated_by VARCHAR(255),
             created_at TIMESTAMP DEFAULT NOW(),
+            is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
 
             CONSTRAINT fk_chunk_document FOREIGN KEY (document_id) REFERENCES penny_knowledge_documents(id) ON DELETE CASCADE,
             CONSTRAINT fk_chunk_bot FOREIGN KEY (bot_id) REFERENCES penny_bots(id) ON DELETE CASCADE

@@ -9,6 +9,7 @@ BEGIN
         CREATE TABLE IF NOT EXISTS penny_knowledge_documents (
             id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
             bot_id UUID NOT NULL,
+            tenant_key VARCHAR(255),
             tenant_id BIGINT NOT NULL,
             document_name VARCHAR(500) NOT NULL,
             file_name VARCHAR(500) NOT NULL,
@@ -21,9 +22,12 @@ BEGIN
             total_chunks INTEGER DEFAULT 0,
             metadata JSONB, -- Additional metadata (page_count, sheet_names, etc.)
             uploaded_by VARCHAR(255),
+            created_by VARCHAR(255),
+            updated_by VARCHAR(255),
             created_at TIMESTAMP DEFAULT NOW(),
             updated_at TIMESTAMP DEFAULT NOW(),
             processed_at TIMESTAMP,
+            is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
 
             CONSTRAINT fk_document_bot FOREIGN KEY (bot_id) REFERENCES penny_bots(id) ON DELETE CASCADE
         );

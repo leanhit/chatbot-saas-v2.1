@@ -41,6 +41,7 @@ COPY --from=backend-build /build/backend/build/libs/*-0.0.1-SNAPSHOT.jar /app/ap
 
 # Copy Configuration files
 COPY app-deploy/nginx/nginx.conf /etc/nginx/conf.d/default.conf
+COPY app-deploy/nginx/host-sites/ /etc/nginx/conf.d/host-sites/
 COPY app-deploy/supervisor/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 COPY app-deploy/config/application-docker.yml /app/config/application-docker.yml
 

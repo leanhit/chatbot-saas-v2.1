@@ -4,6 +4,7 @@
 
 CREATE TABLE IF NOT EXISTS environment_configs (
     id BIGSERIAL PRIMARY KEY,
+    tenant_key VARCHAR(255),
     tenant_id BIGINT NOT NULL,
     environment VARCHAR(50) NOT NULL,
     config_key VARCHAR(200) NOT NULL,
@@ -12,8 +13,10 @@ CREATE TABLE IF NOT EXISTS environment_configs (
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
     description VARCHAR(500),
     created_by VARCHAR(255),
+    updated_by VARCHAR(255),
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    is_deleted BOOLEAN NOT NULL DEFAULT FALSE
 );
 
 CREATE INDEX IF NOT EXISTS idx_environment_configs_tenant ON environment_configs(tenant_id);

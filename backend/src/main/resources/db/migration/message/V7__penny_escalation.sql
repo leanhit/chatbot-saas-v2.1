@@ -9,6 +9,7 @@ BEGIN
         CREATE TABLE IF NOT EXISTS penny_escalation_tickets (
             id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
             bot_id UUID,
+            tenant_key VARCHAR(255),
             tenant_id BIGINT NOT NULL,
             user_id VARCHAR(255) NOT NULL,
             conversation_id VARCHAR(255),
@@ -18,9 +19,12 @@ BEGIN
             priority VARCHAR(20) DEFAULT 'NORMAL',
             confidence_score DOUBLE PRECISION,
             metadata JSONB,
+            created_by VARCHAR(255),
+            updated_by VARCHAR(255),
             created_at TIMESTAMP DEFAULT NOW(),
             resolved_at TIMESTAMP,
             resolution_notes TEXT,
+            is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
 
             CONSTRAINT fk_escalation_bot FOREIGN KEY (bot_id) REFERENCES penny_bots(id) ON DELETE SET NULL
         );

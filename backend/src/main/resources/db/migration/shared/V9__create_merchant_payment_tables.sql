@@ -5,6 +5,7 @@
 -- Create merchant_api_keys table
 CREATE TABLE IF NOT EXISTS merchant_api_keys (
     id BIGSERIAL PRIMARY KEY,
+    tenant_key VARCHAR(255),
     merchant_id BIGINT NOT NULL,
     tenant_id BIGINT NOT NULL,
     name VARCHAR(100) NOT NULL,
@@ -17,8 +18,11 @@ CREATE TABLE IF NOT EXISTS merchant_api_keys (
     usage_count BIGINT NOT NULL DEFAULT 0,
     last_used_at TIMESTAMP,
     expires_at TIMESTAMP,
+    created_by VARCHAR(255),
+    updated_by VARCHAR(255),
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    is_deleted BOOLEAN NOT NULL DEFAULT FALSE
 );
 
 -- Create indexes for merchant_api_keys
@@ -30,6 +34,8 @@ CREATE INDEX IF NOT EXISTS idx_merchant_api_keys_is_active ON merchant_api_keys(
 -- Create merchant_payment_sessions table
 CREATE TABLE IF NOT EXISTS merchant_payment_sessions (
     id BIGSERIAL PRIMARY KEY,
+    tenant_key VARCHAR(255),
+    tenant_id BIGINT NOT NULL,
     session_id VARCHAR(100) UNIQUE NOT NULL,
     merchant_id BIGINT NOT NULL,
     merchant_order_id VARCHAR(100) NOT NULL,
@@ -38,13 +44,23 @@ CREATE TABLE IF NOT EXISTS merchant_payment_sessions (
     description TEXT,
     return_url VARCHAR(500),
     cancel_url VARCHAR(500),
+    metadata TEXT,
     status VARCHAR(50) NOT NULL DEFAULT 'PENDING',
-    payment_code VARCHAR(100),
+    payment_reference_code VARCHAR(100),
     bank_transaction_id VARCHAR(100),
+    expires_at TIMESTAMP,
     completed_at TIMESTAMP,
-    expired_at TIMESTAMP,
+    cancelled_at TIMESTAMP,
+    failed_at TIMESTAMP,
+    failure_reason VARCHAR(500),
+    webhook_sent_at TIMESTAMP,
+    webhook_status VARCHAR(50),
+    webhook_retry_count INTEGER NOT NULL DEFAULT 0,
+    created_by VARCHAR(255),
+    updated_by VARCHAR(255),
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    is_deleted BOOLEAN NOT NULL DEFAULT FALSE
 );
 
 -- Create indexes for merchant_payment_sessions
@@ -52,11 +68,12 @@ CREATE INDEX IF NOT EXISTS idx_merchant_payment_sessions_session_id ON merchant_
 CREATE INDEX IF NOT EXISTS idx_merchant_payment_sessions_merchant_id ON merchant_payment_sessions(merchant_id);
 CREATE INDEX IF NOT EXISTS idx_merchant_payment_sessions_merchant_order_id ON merchant_payment_sessions(merchant_order_id);
 CREATE INDEX IF NOT EXISTS idx_merchant_payment_sessions_status ON merchant_payment_sessions(status);
-CREATE INDEX IF NOT EXISTS idx_merchant_payment_sessions_payment_code ON merchant_payment_sessions(payment_code);
+CREATE INDEX IF NOT EXISTS idx_merchant_payment_sessions_payment_reference_code ON merchant_payment_sessions(payment_reference_code);
 
 -- Create webhook_dispatch_logs table
 CREATE TABLE IF NOT EXISTS webhook_dispatch_logs (
     id BIGSERIAL PRIMARY KEY,
+    tenant_key VARCHAR(255),
     merchant_id BIGINT NOT NULL,
     session_id VARCHAR(100) NOT NULL,
     webhook_url VARCHAR(500) NOT NULL,
@@ -67,8 +84,11 @@ CREATE TABLE IF NOT EXISTS webhook_dispatch_logs (
     error_message TEXT,
     request_payload TEXT,
     response_payload TEXT,
+    created_by VARCHAR(255),
+    updated_by VARCHAR(255),
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    is_deleted BOOLEAN NOT NULL DEFAULT FALSE
 );
 
 -- Create indexes for webhook_dispatch_logs

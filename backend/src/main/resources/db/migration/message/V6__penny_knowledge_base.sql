@@ -11,6 +11,7 @@ BEGIN
         CREATE TABLE IF NOT EXISTS penny_knowledge_articles (
             id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
             bot_id UUID NOT NULL,
+            tenant_key VARCHAR(255),
             tenant_id BIGINT NOT NULL,
             title VARCHAR(500) NOT NULL,
             content TEXT NOT NULL,
@@ -21,9 +22,11 @@ BEGIN
             source_url VARCHAR(1000),
             is_active BOOLEAN DEFAULT true,
             priority INTEGER DEFAULT 0,
+            created_by VARCHAR(255),
+            updated_by VARCHAR(255),
             created_at TIMESTAMP DEFAULT NOW(),
             updated_at TIMESTAMP DEFAULT NOW(),
-            created_by VARCHAR(255),
+            is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
 
             CONSTRAINT fk_knowledge_bot FOREIGN KEY (bot_id) REFERENCES penny_bots(id) ON DELETE CASCADE
         );

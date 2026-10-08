@@ -29,7 +29,7 @@ public class AppRegistry extends BaseTenantEntity {
     private String description;
     
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(name = "app_type", nullable = false)
     private AppType appType;
     
     @Enumerated(EnumType.STRING)

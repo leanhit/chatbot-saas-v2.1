@@ -1,6 +1,8 @@
 -- Create discounts table
 CREATE TABLE IF NOT EXISTS discounts (
     id BIGSERIAL PRIMARY KEY,
+    tenant_key VARCHAR(255),
+    tenant_id BIGINT,
     code VARCHAR(50) UNIQUE NOT NULL,
     name VARCHAR(100) NOT NULL,
     discount_type VARCHAR(20) NOT NULL,
@@ -15,8 +17,11 @@ CREATE TABLE IF NOT EXISTS discounts (
     valid_until TIMESTAMP NOT NULL,
     description TEXT,
     applicable_package_id VARCHAR(50),
+    created_by VARCHAR(255),
+    updated_by VARCHAR(255),
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    is_deleted BOOLEAN NOT NULL DEFAULT FALSE
 );
 
 -- Create discount_user_usage table for tracking which users have used each discount

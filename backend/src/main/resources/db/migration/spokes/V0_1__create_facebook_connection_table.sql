@@ -4,6 +4,7 @@
 
 CREATE TABLE IF NOT EXISTS facebook_connection (
     id UUID PRIMARY KEY,
+    tenant_key VARCHAR(255),
     bot_id VARCHAR(255),
     bot_name VARCHAR(255),
     owner_id VARCHAR(255),
@@ -17,9 +18,12 @@ CREATE TABLE IF NOT EXISTS facebook_connection (
     is_enabled BOOLEAN DEFAULT TRUE,
     is_active BOOLEAN DEFAULT TRUE,
     chatbot_provider VARCHAR(20) DEFAULT 'PENNYBOT',
+    created_by VARCHAR(255),
+    updated_by VARCHAR(255),
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     tenant_id BIGINT NOT NULL,
+    is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
     CONSTRAINT uk_facebook_connection_tenant_page UNIQUE (tenant_id, page_id)
 );
 

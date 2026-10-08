@@ -31,7 +31,7 @@ public class Webhook {
     @Column(nullable = false, length = 50)
     private String secret; // Webhook secret for signature verification
     
-    @Column(nullable = false)
+    @Column(name = "is_active", nullable = false)
     @Builder.Default
     private Boolean isActive = true;
     
@@ -40,15 +40,15 @@ public class Webhook {
     @Column(name = "event_type", length = 50)
     private java.util.Set<WebhookEventType> eventTypes;
     
-    @Column(nullable = false)
+    @Column(name = "retry_count", nullable = false)
     @Builder.Default
     private Integer retryCount = 3;
     
-    @Column(nullable = false)
+    @Column(name = "current_retry_attempt", nullable = false)
     @Builder.Default
     private Integer currentRetryAttempt = 0;
     
-    @Column(nullable = false)
+    @Column(name = "timeout_seconds", nullable = false)
     @Builder.Default
     private Integer timeoutSeconds = 10;
     

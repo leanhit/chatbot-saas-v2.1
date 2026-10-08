@@ -4,6 +4,7 @@
 
 CREATE TABLE IF NOT EXISTS payment_audit_logs (
     id BIGSERIAL PRIMARY KEY,
+    tenant_key VARCHAR(255),
     payment_reference_code VARCHAR(50) NOT NULL,
     user_id BIGINT NOT NULL,
     tenant_id BIGINT NOT NULL,
@@ -16,6 +17,7 @@ CREATE TABLE IF NOT EXISTS payment_audit_logs (
     user_agent TEXT,
     request_id VARCHAR(100),
     metadata TEXT,
+    created_by VARCHAR(255),
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 

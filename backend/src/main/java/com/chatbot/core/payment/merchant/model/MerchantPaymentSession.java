@@ -45,10 +45,10 @@ public class MerchantPaymentSession {
     @Column(length = 500)
     private String description;
     
-    @Column(length = 500)
+    @Column(name = "return_url", length = 500)
     private String returnUrl; // URL to redirect after payment completion
-    
-    @Column(length = 500)
+
+    @Column(name = "cancel_url", length = 500)
     private String cancelUrl; // URL to redirect if payment is cancelled
     
     @Column(length = 500)
@@ -61,7 +61,7 @@ public class MerchantPaymentSession {
     @Column(length = 100)
     private String paymentReferenceCode; // Reference code from our payment system
     
-    @Column(length = 100)
+    @Column(name = "bank_transaction_id", length = 100)
     private String bankTransactionId;
     
     @Column(name = "expires_at")

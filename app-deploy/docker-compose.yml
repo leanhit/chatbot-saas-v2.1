@@ -25,6 +25,7 @@ services:
     volumes:
       - ./config/application-docker.yml:/app/config/application-docker.yml
       - ./logs:/app/logs
+      - /etc/letsencrypt:/etc/letsencrypt:ro
     networks:
       - internal
 
