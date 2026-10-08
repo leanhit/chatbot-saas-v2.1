@@ -15,10 +15,13 @@ import java.time.LocalDateTime;
 @Setter
 public class InvitationResponse {
     private Long id;
-    private String name;
+    private String name; // Tenant name for backwards compatibility
+    private String tenantName;
+    private String tenantKey;
     private String email;
     private TenantRole role;
     private InvitationStatus status;
+    private LocalDateTime createdAt;
     private LocalDateTime expiresAt;
     private String invitedByName;
     private String token; // Add token for accept/reject functionality

@@ -38,12 +38,14 @@ public class ConversationDTO {
     // Satisfaction and Resolution tracking fields
     private Integer userSatisfactionRating; // 1-5 rating from user feedback
     private String resolutionStatus; // resolved, unresolved, pending
+    
+    @JsonFormat(pattern = DateUtils.API_DATETIME_FORMAT, timezone = DateUtils.API_TIMEZONE)
     private LocalDateTime resolutionTime; // When conversation was resolved
     
-    @JsonFormat(pattern = DateUtils.STANDARD_JSON_FORMAT, timezone = DateUtils.STANDARD_TIMEZONE)
+    @JsonFormat(pattern = DateUtils.API_DATETIME_FORMAT, timezone = DateUtils.API_TIMEZONE)
     private LocalDateTime updatedAt;
     
-    @JsonFormat(pattern = DateUtils.STANDARD_JSON_FORMAT, timezone = DateUtils.STANDARD_TIMEZONE)
+    @JsonFormat(pattern = DateUtils.API_DATETIME_FORMAT, timezone = DateUtils.API_TIMEZONE)
     private LocalDateTime createdAt;
     
     private Long tenantId;

@@ -75,8 +75,11 @@ public class TenantContextInterceptor implements HandlerInterceptor {
             if (auth != null && auth.isAuthenticated() && auth.getPrincipal() instanceof com.chatbot.core.identity.security.CustomUserDetails userDetails) {
                 if (userDetails.getUser() != null && userDetails.getUser().getId() != null) {
                     Long userId = userDetails.getUser().getId();
-                    tenantRepository.findByUserId(userId).ifPresent(tenant -> {
-                        if (tenant.getStatus() == TenantStatus.ACTIVE) {
+                    java.util.List<com.chatbot.core.tenant.model.Tenant> userTenants = tenantRepository.findByUserId(userId);
+                    userTenants.stream()
+                        .filter(tenant -> tenant.getStatus() == TenantStatus.ACTIVE)
+                        .findFirst()
+                        .ifPresent(tenant -> {
                             TenantContext.setCurrentTenant(tenant.getTenantKey());
                             TenantContext.setTenantId(tenant.getId());
                             if (userDetails.getTenantId() == null) {
@@ -84,8 +87,7 @@ public class TenantContextInterceptor implements HandlerInterceptor {
                             }
                             log.debug("[TenantContext] Resolved fallback tenant for user {}: {} (ID: {})",
                                     userId, tenant.getTenantKey(), tenant.getId());
-                        }
-                    });
+                        });
                 }
             }
         }

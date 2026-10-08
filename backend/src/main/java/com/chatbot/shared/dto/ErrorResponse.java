@@ -1,5 +1,7 @@
 package com.chatbot.shared.dto;
 
+import com.chatbot.shared.utils.DateUtils;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -13,6 +15,8 @@ public class ErrorResponse {
     private List<String> errors;
     private Map<String, Object> details;
     private String path;
+    
+    @JsonFormat(pattern = DateUtils.API_DATETIME_FORMAT, timezone = DateUtils.API_TIMEZONE)
     private LocalDateTime timestamp;
     private String correlationId;
     private String requestId;

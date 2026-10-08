@@ -340,13 +340,13 @@ public class UserService {
                 .orElseThrow(() -> new UserNotFoundException("User not found with ID: " + userId));
         
         // Auto-create UserProfile if not exists (migration compatibility)
-        UserProfile profile = userProfileRepository.findById(userId)
+        UserProfile profile = userProfileRepository.findByUserId(userId)
                 .orElseGet(() -> {
                     log.info("Auto-creating UserProfile for user ID: {}", userId);
                     // Insert directly using native query to avoid detached entity issues
                     userProfileRepository.insertProfile(userId);
                     // Now fetch the newly created profile
-                    return userProfileRepository.findById(userId).orElseThrow();
+                    return userProfileRepository.findByUserId(userId).orElseThrow();
                 });
         
         // Get user address (single address) - không cần tenant

@@ -13,8 +13,8 @@ public class DateUtils {
     public static final String ISO_DATETIME_WITH_MILLIS = "yyyy-MM-dd'T'HH:mm:ss.SSSXXX";
     public static final String ISO_DATETIME_WITH_NANOS = "yyyy-MM-dd'T'HH:mm:ss.SSSSSSSSSSXXX";
     public static final String DEFAULT_FORMAT = "yyyy-MM-dd HH:mm:ss";
-    public static final String STANDARD_JSON_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSS";
-    public static final String STANDARD_TIMEZONE = "Asia/Ho_Chi_Minh";
+    public static final String STANDARD_JSON_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'";
+    public static final String STANDARD_TIMEZONE = "UTC";
     
     // New standardized format for API consistency
     public static final String API_DATETIME_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'";

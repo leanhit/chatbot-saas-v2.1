@@ -19,9 +19,11 @@ public class MessageDTO {
     private String messageType;
     private String externalMessageId;
     private Boolean isRead;
+    
+    @JsonFormat(pattern = DateUtils.API_DATETIME_FORMAT, timezone = DateUtils.API_TIMEZONE)
     private LocalDateTime sentTime;
 
-    @JsonFormat(pattern = DateUtils.STANDARD_JSON_FORMAT, timezone = DateUtils.STANDARD_TIMEZONE)
+    @JsonFormat(pattern = DateUtils.API_DATETIME_FORMAT, timezone = DateUtils.API_TIMEZONE)
     private LocalDateTime createdAt;
     
     private boolean isMine; // UI logic: true nếu bot gửi

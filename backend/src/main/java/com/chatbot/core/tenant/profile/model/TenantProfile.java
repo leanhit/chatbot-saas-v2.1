@@ -43,7 +43,7 @@ public class TenantProfile {
     @Column(length = 50)
     private String plan;
 
-    @Column(length = 50)
+    @Column(name = "company_size", length = 50)
     private String companySize;
 
     // ===== Thông tin pháp lý =====
@@ -73,7 +73,10 @@ public class TenantProfile {
     private String primaryColor; // #RRGGBB
 
     // ===== audit =====
+    @Column(name = "created_at")
     private LocalDateTime createdAt;
+
+    @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
     @PrePersist

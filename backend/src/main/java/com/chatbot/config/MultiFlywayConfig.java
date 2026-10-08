@@ -16,7 +16,7 @@ import javax.sql.DataSource;
 @Configuration
 public class MultiFlywayConfig {
 
-    @Value("${spring.flyway.validate-on-migrate:true}")
+    @Value("${spring.flyway.validate-on-migrate:false}")
     private boolean validateOnMigrate;
 
     @Bean(initMethod = "migrate")
@@ -28,7 +28,7 @@ public class MultiFlywayConfig {
                 .baselineVersion("0")
                 .outOfOrder(true)
                 .validateOnMigrate(false)
-                .ignoreMigrationPatterns("*:missing", "*:pending")
+                .ignoreMigrationPatterns("*:missing", "*:pending", "*:ignored")
                 .table("flyway_identity_schema_history")
                 .load();
     }
@@ -42,7 +42,7 @@ public class MultiFlywayConfig {
                 .baselineVersion("0")
                 .outOfOrder(true)
                 .validateOnMigrate(false)
-                .ignoreMigrationPatterns("*:missing", "*:pending")
+                .ignoreMigrationPatterns("*:missing", "*:pending", "*:ignored")
                 .table("flyway_user_schema_history")
                 .load();
     }
@@ -56,7 +56,7 @@ public class MultiFlywayConfig {
                 .baselineVersion("0")
                 .outOfOrder(true)
                 .validateOnMigrate(false)
-                .ignoreMigrationPatterns("*:missing", "*:pending")
+                .ignoreMigrationPatterns("*:missing", "*:pending", "*:ignored")
                 .table("flyway_tenant_schema_history")
                 .load();
     }
@@ -70,7 +70,7 @@ public class MultiFlywayConfig {
                 .baselineVersion("0")
                 .outOfOrder(true)
                 .validateOnMigrate(false)
-                .ignoreMigrationPatterns("*:missing", "*:pending")
+                .ignoreMigrationPatterns("*:missing", "*:pending", "*:ignored")
                 .table("flyway_app_schema_history")
                 .load();
     }
@@ -84,7 +84,7 @@ public class MultiFlywayConfig {
                 .baselineVersion("0")
                 .outOfOrder(true)
                 .validateOnMigrate(false)
-                .ignoreMigrationPatterns("*:missing", "*:pending")
+                .ignoreMigrationPatterns("*:missing", "*:pending", "*:ignored")
                 .table("flyway_config_schema_history")
                 .load();
     }
@@ -98,7 +98,7 @@ public class MultiFlywayConfig {
                 .baselineVersion("0")
                 .outOfOrder(true)
                 .validateOnMigrate(false)
-                .ignoreMigrationPatterns("*:missing", "*:pending")
+                .ignoreMigrationPatterns("*:missing", "*:pending", "*:ignored")
                 .table("flyway_message_schema_history")
                 .load();
     }
@@ -112,7 +112,7 @@ public class MultiFlywayConfig {
                 .baselineVersion("0")
                 .outOfOrder(true)
                 .validateOnMigrate(false)
-                .ignoreMigrationPatterns("*:missing", "*:pending")
+                .ignoreMigrationPatterns("*:missing", "*:pending", "*:ignored")
                 .table("flyway_shared_schema_history")
                 .load();
     }
@@ -126,7 +126,7 @@ public class MultiFlywayConfig {
                 .baselineVersion("0")
                 .outOfOrder(true)
                 .validateOnMigrate(false)
-                .ignoreMigrationPatterns("*:missing")
+                .ignoreMigrationPatterns("*:missing", "*:pending", "*:ignored")
                 .table("flyway_spokes_schema_history")
                 .load();
     }

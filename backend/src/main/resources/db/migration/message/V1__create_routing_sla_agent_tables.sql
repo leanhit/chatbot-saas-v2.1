@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS agents (
     id                           BIGSERIAL PRIMARY KEY,
     tenant_key                   VARCHAR(255),
     tenant_id                    BIGINT       NOT NULL,
+    tenant_key                   VARCHAR(255),
     user_id                      BIGINT,
     name                         VARCHAR(255) NOT NULL,
     email                        VARCHAR(255) NOT NULL UNIQUE,
@@ -47,6 +48,7 @@ CREATE TABLE IF NOT EXISTS skills (
     id          BIGSERIAL PRIMARY KEY,
     tenant_key  VARCHAR(255),
     tenant_id   BIGINT       NOT NULL,
+    tenant_key  VARCHAR(255),
     name        VARCHAR(255) NOT NULL,
     category    VARCHAR(50)  NOT NULL DEFAULT 'SOFT_SKILL',
     description TEXT,
@@ -56,6 +58,11 @@ CREATE TABLE IF NOT EXISTS skills (
     updated_by  VARCHAR(255),
     created_at  TIMESTAMP    NOT NULL DEFAULT NOW(),
     updated_at  TIMESTAMP    NOT NULL DEFAULT NOW(),
+<<<<<<< HEAD
+=======
+    created_by  VARCHAR(255),
+    updated_by  VARCHAR(255),
+>>>>>>> 5612669aff9c4b8ef387fa8c9e7fbdfd9feebfc7
     is_deleted  BOOLEAN      NOT NULL DEFAULT FALSE
 );
 
@@ -70,6 +77,7 @@ CREATE TABLE IF NOT EXISTS routing_rules (
     id          BIGSERIAL PRIMARY KEY,
     tenant_key  VARCHAR(255),
     tenant_id   BIGINT       NOT NULL,
+    tenant_key  VARCHAR(255),
     name        VARCHAR(255) NOT NULL,
     description TEXT,
     priority    INTEGER      NOT NULL DEFAULT 0,
@@ -81,6 +89,11 @@ CREATE TABLE IF NOT EXISTS routing_rules (
     updated_by  VARCHAR(255),
     created_at  TIMESTAMP    NOT NULL DEFAULT NOW(),
     updated_at  TIMESTAMP    NOT NULL DEFAULT NOW(),
+<<<<<<< HEAD
+=======
+    created_by  VARCHAR(255),
+    updated_by  VARCHAR(255),
+>>>>>>> 5612669aff9c4b8ef387fa8c9e7fbdfd9feebfc7
     is_deleted  BOOLEAN      NOT NULL DEFAULT FALSE
 );
 
@@ -95,6 +108,7 @@ CREATE TABLE IF NOT EXISTS sla_configurations (
     id                     BIGSERIAL PRIMARY KEY,
     tenant_key             VARCHAR(255),
     tenant_id              BIGINT       NOT NULL,
+    tenant_key             VARCHAR(255),
     customer_tier          VARCHAR(100) NOT NULL,
     expected_response_time BIGINT       NOT NULL,  -- seconds
     max_breach_count       INTEGER      NOT NULL DEFAULT 3,
@@ -104,6 +118,11 @@ CREATE TABLE IF NOT EXISTS sla_configurations (
     updated_by             VARCHAR(255),
     created_at             TIMESTAMP    NOT NULL DEFAULT NOW(),
     updated_at             TIMESTAMP    NOT NULL DEFAULT NOW(),
+<<<<<<< HEAD
+=======
+    created_by             VARCHAR(255),
+    updated_by             VARCHAR(255),
+>>>>>>> 5612669aff9c4b8ef387fa8c9e7fbdfd9feebfc7
     is_deleted             BOOLEAN      NOT NULL DEFAULT FALSE
 );
 
@@ -118,6 +137,7 @@ CREATE TABLE IF NOT EXISTS escalation_tiers (
     id              BIGSERIAL PRIMARY KEY,
     tenant_key      VARCHAR(255),
     tenant_id       BIGINT       NOT NULL,
+    tenant_key      VARCHAR(255),
     level           INTEGER      NOT NULL,
     name            VARCHAR(255) NOT NULL,
     timeout_seconds BIGINT       NOT NULL,
@@ -128,15 +148,14 @@ CREATE TABLE IF NOT EXISTS escalation_tiers (
     updated_by      VARCHAR(255),
     created_at      TIMESTAMP    NOT NULL DEFAULT NOW(),
     updated_at      TIMESTAMP    NOT NULL DEFAULT NOW(),
+<<<<<<< HEAD
+=======
+    created_by      VARCHAR(255),
+    updated_by      VARCHAR(255),
+>>>>>>> 5612669aff9c4b8ef387fa8c9e7fbdfd9feebfc7
     is_deleted      BOOLEAN      NOT NULL DEFAULT FALSE
 );
 
 CREATE INDEX IF NOT EXISTS idx_escalation_tier_tenant ON escalation_tiers (tenant_id);
 CREATE INDEX IF NOT EXISTS idx_escalation_tier_level  ON escalation_tiers (level);
 CREATE INDEX IF NOT EXISTS idx_escalation_tier_active ON escalation_tiers (tenant_id, active);
-
--- ============================================================
--- Default data: seed default escalation tiers for all existing tenants
--- New tenants will get these via code (SLAMonitorService.createDefaultSLAConfigurations)
--- ============================================================
--- (intentionally left empty - seeding is handled in Java service layer on first use)

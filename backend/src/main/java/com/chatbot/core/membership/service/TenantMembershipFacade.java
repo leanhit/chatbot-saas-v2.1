@@ -99,6 +99,13 @@ public class TenantMembershipFacade {
     }
 
     /**
+     * Revoke invitation for tenant
+     */
+    public void revokeInvitation(Long tenantId, Long invitationId) {
+        invitationService.revokeInvitation(tenantId, invitationId);
+    }
+
+    /**
      * Create invitation for tenant
      */
     public void createInvitation(Long tenantId, String email, String role, User admin) {

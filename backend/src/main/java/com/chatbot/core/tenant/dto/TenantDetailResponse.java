@@ -4,6 +4,8 @@ import com.chatbot.shared.address.dto.AddressDetailResponseDTO;
 import com.chatbot.core.tenant.profile.dto.TenantProfileResponse;
 import com.chatbot.core.tenant.model.TenantStatus;
 import com.chatbot.core.tenant.model.TenantVisibility;
+import com.chatbot.shared.utils.DateUtils;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -26,10 +28,10 @@ public class TenantDetailResponse {
     private TenantStatus status;
     private TenantVisibility visibility;
     
-    // Instant sẽ được serialize thành ISO 8601 tự động bởi Jackson
+    @JsonFormat(pattern = DateUtils.API_DATETIME_FORMAT, timezone = DateUtils.API_TIMEZONE)
     private Instant expiresAt;
     
-    // Instant sẽ được serialize thành ISO 8601 tự động bởi Jackson
+    @JsonFormat(pattern = DateUtils.API_DATETIME_FORMAT, timezone = DateUtils.API_TIMEZONE)
     private Instant createdAt;
     
     private TenantProfileResponse profile;
@@ -38,6 +40,8 @@ public class TenantDetailResponse {
     // Package information
     private String currentPackageId;
     private String currentPackageName;
+    
+    @JsonFormat(pattern = DateUtils.API_DATETIME_FORMAT, timezone = DateUtils.API_TIMEZONE)
     private Instant packageActivatedAt;
 
     /**

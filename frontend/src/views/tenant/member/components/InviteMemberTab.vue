@@ -81,7 +81,7 @@
               </div>
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-              {{ formatDate(invitation.invitedAt) }}
+              {{ formatDate(invitation.createdAt || invitation.invitedAt) }}
             </td>
             <td class="px-6 py-4 whitespace-nowrap">
               <div class="flex items-center">
@@ -188,9 +188,9 @@ export default {
       if (props.searchQuery) {
         const query = props.searchQuery.toLowerCase()
         filtered = filtered.filter(invitation => 
-          invitation.email.toLowerCase().includes(query) ||
-          invitation.invitedBy.toLowerCase().includes(query) ||
-          invitation.message.toLowerCase().includes(query)
+          (invitation.email && invitation.email.toLowerCase().includes(query)) ||
+          (invitation.invitedByName && invitation.invitedByName.toLowerCase().includes(query)) ||
+          (invitation.message && invitation.message.toLowerCase().includes(query))
         )
       }
       if (statusFilter.value) {

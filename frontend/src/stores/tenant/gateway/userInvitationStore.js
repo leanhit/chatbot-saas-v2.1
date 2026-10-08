@@ -19,20 +19,24 @@ export const useGatewayUserInvitationStore = defineStore('gateway-user-invitatio
   }
   const acceptInvitation = async (invitationId, token) => {
     try {
-      await tenantApi.acceptInvitation(token)
+      const targetToken = token || invitationId
+      await tenantApi.acceptInvitation(targetToken)
       // Remove from local state after accepting
-      invitations.value = invitations.value.filter(inv => inv.id !== invitationId)
-    } catch (error) {
-      error.value = error.response?.data?.message || 'Không thể chấp nhận lời mời'
+      invitations.value = invitations.value.filter(inv => inv.id !== invitationId && inv.token !== targetToken)
+    } catch (err) {
+      error.value = err.response?.data?.message || 'Không thể chấp nhận lời mời'
+      throw err
     }
   }
   const rejectInvitation = async (invitationId, token) => {
     try {
-      await tenantApi.rejectInvitation(token)
+      const targetToken = token || invitationId
+      await tenantApi.rejectInvitation(targetToken)
       // Remove from local state after rejecting
-      invitations.value = invitations.value.filter(inv => inv.id !== invitationId)
-    } catch (error) {
-      error.value = error.response?.data?.message || 'Không thể từ chối lời mời'
+      invitations.value = invitations.value.filter(inv => inv.id !== invitationId && inv.token !== targetToken)
+    } catch (err) {
+      error.value = err.response?.data?.message || 'Không thể từ chối lời mời'
+      throw err
     }
   }
   return {

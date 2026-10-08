@@ -176,9 +176,9 @@ export default {
       if (props.searchQuery) {
         const query = props.searchQuery.toLowerCase()
         filtered = filtered.filter(request => 
-          request.name.toLowerCase().includes(query) ||
-          request.email.toLowerCase().includes(query) ||
-          request.message.toLowerCase().includes(query)
+          (request.name && request.name.toLowerCase().includes(query)) ||
+          (request.email && request.email.toLowerCase().includes(query)) ||
+          (request.message && request.message.toLowerCase().includes(query))
         )
       }
       if (statusFilter.value) {

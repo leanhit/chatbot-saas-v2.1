@@ -90,14 +90,13 @@ export default {
       }
     }
     
-    const formatDateArray = (dateArray) => {
-      if (!dateArray || !Array.isArray(dateArray) || dateArray.length < 7) {
-        return 'N/A'
+    const formatDateArray = (val) => {
+      if (!val) return 'N/A'
+      if (Array.isArray(val) && val.length >= 3) {
+        const [year, month, day, hour = 0, minute = 0, second = 0] = val
+        return new Date(year, month - 1, day, hour, minute, second).toLocaleString()
       }
-      // Backend returns: [year, month, day, hour, minute, second, nanos]
-      const [year, month, day, hour, minute, second] = dateArray
-      const date = new Date(year, month - 1, day, hour, minute, second)
-      return date.toLocaleString()
+      return formatDateTime(val) || 'N/A'
     }
     
     onMounted(() => {
