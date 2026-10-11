@@ -29,7 +29,7 @@ import java.util.Optional;
 public class FacebookUserService {
     private static final String USER_FIELDS = "name,profile_pic";
     
-    private final WebClient webClient;
+    private final WebClient facebookWebClient;
     private final FacebookConnectionRepository connectionRepository;
     private final FacebookUserRepository facebookUserRepository;
     private final FacebookErrorHandler facebookErrorHandler;
@@ -88,7 +88,7 @@ public class FacebookUserService {
      * Helper method to get user info with specific token
      */
     private FacebookUserInfo getUserInfoWithToken(String psid, FacebookConnection connection) {
-        Map<String, Object> response = webClient.get()
+        Map<String, Object> response = facebookWebClient.get()
             .uri(uriBuilder -> uriBuilder
                 .path("/{psid}")
                 .queryParam("fields", USER_FIELDS)

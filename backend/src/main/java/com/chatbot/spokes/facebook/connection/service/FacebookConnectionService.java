@@ -52,7 +52,7 @@ public class FacebookConnectionService {
     private final UserRepository userRepository;
     private final TenantMemberRepository tenantMemberRepository;
     private final FacebookApiService facebookApiService;
-    private final WebClient webClient;
+    private final WebClient facebookWebClient;
     private final FacebookErrorHandler facebookErrorHandler;
     private final FacebookEventProducer facebookEventProducer;
 
@@ -562,7 +562,7 @@ public class FacebookConnectionService {
             log.debug("🔍 Performing health check for page: {}", pageId);
             
             // Test the page access token by making a simple Graph API call
-            Map<String, Object> response = webClient.get()
+            Map<String, Object> response = facebookWebClient.get()
                     .uri(uriBuilder -> uriBuilder
                             .path("/" + pageId)
                             .queryParam("fields", "id,name")

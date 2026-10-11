@@ -7,6 +7,7 @@ import com.chatbot.spokes.facebook.handler.FacebookErrorHandler;
 import com.chatbot.core.tenant.infra.TenantContext;
 import lombok.extern.slf4j.Slf4j;
 import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -42,7 +43,7 @@ public class FacebookTokenRefreshService {
 
     public FacebookTokenRefreshService(FacebookConnectionRepository connectionRepository,
                                       FacebookErrorHandler facebookErrorHandler,
-                                      WebClient webClient) {
+                                      @Qualifier("facebookWebClient") WebClient webClient) {
         this.connectionRepository = connectionRepository;
         this.facebookErrorHandler = facebookErrorHandler;
         this.webClient = webClient;
