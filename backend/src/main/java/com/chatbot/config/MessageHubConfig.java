@@ -25,7 +25,8 @@ import java.util.Properties;
         "com.chatbot.core.penny.repository",
         "com.chatbot.core.penny.kb",
         "com.chatbot.core.penny.escalation",
-        "com.chatbot.core.penny.analytics"
+        "com.chatbot.core.penny.analytics",
+        "com.chatbot.core.penny.rules"
     },
     entityManagerFactoryRef = "messageEntityManagerFactory",
     transactionManagerRef = "messageTransactionManager"
@@ -52,7 +53,8 @@ public class MessageHubConfig {
             "com.chatbot.core.penny.model",
             "com.chatbot.core.penny.kb",
             "com.chatbot.core.penny.escalation",
-            "com.chatbot.core.penny.analytics"
+            "com.chatbot.core.penny.analytics",
+            "com.chatbot.core.penny.rules"
         );
 
         HibernateJpaVendorAdapter vendorAdapter = new HibernateJpaVendorAdapter();

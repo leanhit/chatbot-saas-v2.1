@@ -23,8 +23,7 @@ import java.util.Properties;
 @EnableJpaRepositories(
     basePackages = {
         "com.chatbot.shared.address.repository",
-        "com.chatbot.shared.infrastructure.repository",
-        "com.chatbot.core.penny.rules"
+        "com.chatbot.shared.infrastructure.repository"
     },
     entityManagerFactoryRef = "sharedEntityManagerFactory",
     transactionManagerRef = "sharedTransactionManager"
@@ -56,9 +55,8 @@ public class HubDatabaseConfig {
         em.setDataSource(sharedDataSource());
         em.setPackagesToScan(
             "com.chatbot.shared.address.model",
-            "com.chatbot.shared.infrastructure.model",
-            "com.chatbot.core.penny.rules"
-            );
+            "com.chatbot.shared.infrastructure.model"
+        );
 
         HibernateJpaVendorAdapter vendorAdapter = new HibernateJpaVendorAdapter();
         em.setJpaVendorAdapter(vendorAdapter);
