@@ -37,7 +37,7 @@ public class SpokesDatabaseConfig {
     }
 
     @Bean
-    @DependsOn("userFlyway")
+    @DependsOn({"userFlyway", "spokesFlyway"})
     public LocalContainerEntityManagerFactoryBean spokesEntityManagerFactory() {
         LocalContainerEntityManagerFactoryBean em = new LocalContainerEntityManagerFactoryBean();
         em.setDataSource(spokesDataSource());
