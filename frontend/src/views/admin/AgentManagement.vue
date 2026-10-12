@@ -375,7 +375,9 @@
 import { ref, computed, onMounted } from 'vue'
 import { Icon } from '@iconify/vue'
 import agentApi from '@/api/agentApi'
+import { useToast } from '@/composables/useToast'
 
+const toast = useToast()
 const loading = ref(false)
 const agents = ref([])
 const showCreateModal = ref(false)
@@ -428,18 +430,22 @@ const loadAgents = async () => {
 const setAgentOnline = async (id) => {
   try {
     await agentApi.setAgentOnline(id)
+    toast.success('Agent status set to online')
     await loadAgents()
   } catch (error) {
     console.error('Error setting agent online:', error)
+    toast.error(error, 'Error setting agent online')
   }
 }
 
 const setAgentOffline = async (id) => {
   try {
     await agentApi.setAgentOffline(id)
+    toast.success('Agent status set to offline')
     await loadAgents()
   } catch (error) {
     console.error('Error setting agent offline:', error)
+    toast.error(error, 'Error setting agent offline')
   }
 }
 
@@ -453,9 +459,11 @@ const deleteAgent = async (id) => {
   if (confirm('Are you sure you want to delete this agent?')) {
     try {
       await agentApi.deleteAgent(id)
+      toast.success('Agent deleted successfully')
       await loadAgents()
     } catch (error) {
       console.error('Error deleting agent:', error)
+      toast.error(error, 'Error deleting agent')
     }
   }
 }
@@ -466,15 +474,17 @@ const saveAgent = async () => {
     
     if (showCreateModal.value) {
       await agentApi.createAgent(currentAgent.value)
+      toast.success('Agent created successfully')
     } else {
       await agentApi.updateAgent(currentAgent.value.id, currentAgent.value)
+      toast.success('Agent updated successfully')
     }
     
     closeModal()
     await loadAgents()
   } catch (error) {
     console.error('Error saving agent:', error)
-    alert('Error saving agent. Please check your input.')
+    toast.error(error, 'Error saving agent. Please check your input.')
   }
 }
 

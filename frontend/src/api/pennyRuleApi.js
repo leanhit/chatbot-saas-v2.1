@@ -2,10 +2,6 @@ import axios from '@/plugins/axios'
 import router from '@/router'
 
 const handleApiError = (error) => {
-  if (error.response && error.response.status === 401) {
-    alert('Phiên đăng nhập của bạn đã hết hạn. Vui lòng đăng nhập lại.')
-    router.push('/login')
-  }
   throw error
 }
 

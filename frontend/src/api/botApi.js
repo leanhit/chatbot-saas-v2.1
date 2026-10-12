@@ -1,13 +1,6 @@
 import axios from '@/plugins/axios';
 import router from '@/router';
-// Hàm xử lý lỗi chung cho các request
 const handleApiError = (error) => {
-    if (error.response && error.response.status === 401) {
-        alert('Phiên đăng nhập của bạn đã hết hạn. Vui lòng đăng nhập lại.');
-        // Chuyển hướng người dùng đến trang đăng nhập
-        router.push('/login');
-    }
-    // Ném lại lỗi để các component gọi hàm này có thể xử lý
     throw error;
 };
 export const botApi = {

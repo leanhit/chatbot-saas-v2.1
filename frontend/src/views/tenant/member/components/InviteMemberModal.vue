@@ -98,6 +98,7 @@ import { Icon } from '@iconify/vue'
 import { useI18n } from 'vue-i18n'
 import { tenantApi } from '@/api/tenantApi'
 import { useGatewayTenantStore } from '@/stores/tenant/gateway/myTenantStore'
+import { useToast } from '@/composables/useToast'
 
 export default {
   name: 'InviteMemberModal',
@@ -117,6 +118,7 @@ export default {
   emits: ['close', 'invited'],
   setup(props, { emit }) {
     const { t } = useI18n()
+    const toast = useToast()
     const tenantStore = useGatewayTenantStore()
     const loading = ref(false)
     const formData = ref({
@@ -139,7 +141,7 @@ export default {
     const handleSubmit = async () => {
       if (loading.value) return; // Prevent double submission
       if (!formData.value.email) {
-        alert(t('tenant.member.enterEmail'))
+        toast.warning(t('tenant.member.enterEmail'))
         return
       }
       loading.value = true
@@ -147,7 +149,7 @@ export default {
         // Use tenantKey from currentTenant object
         const tenantKey = tenantStore.currentTenant?.tenantKey
         if (!tenantKey) {
-          alert(t('tenant.overview.unknownTenant'))
+          toast.warning(t('tenant.overview.unknownTenant'))
           return
         }
         
@@ -157,12 +159,12 @@ export default {
           role: formData.value.role
         })
         
+        toast.success(t('tenant.member.inviteSuccess', `Invitation sent to ${formData.value.email}`))
         emit('invited', formData.value)
         handleClose()
       } catch (error) {
         console.error('Failed to send invitation:', error)
-        const errorMessage = error.response?.data?.message || error.message || 'Failed to send invitation. Please try again.'
-        alert(errorMessage)
+        toast.error(error, 'Failed to send invitation. Please try again.')
       } finally {
         loading.value = false
       }

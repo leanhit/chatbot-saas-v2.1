@@ -252,6 +252,7 @@ import { Icon } from '@iconify/vue'
 import { useI18n } from 'vue-i18n'
 import { formatDateTime } from '@/utils/dateUtils'
 import { usePennyConnectionStore } from '@/stores/pennyConnectionStore'
+import { useToast } from '@/composables/useToast'
 import PennyConnectionModal from './PennyConnectionModal.vue'
 import {
   ConnectionType,
@@ -274,6 +275,7 @@ export default {
   emits: ['close', 'createConnection'],
   setup(props, { emit }) {
     const { t } = useI18n()
+    const toast = useToast()
     const pennyConnectionStore = usePennyConnectionStore()
 
     // State
@@ -325,18 +327,20 @@ export default {
     const deleteConnection = async (connection) => {
       try {
         await pennyConnectionStore.deleteConnection(props.bot.id, connection.id)
-        } catch (error) {
+        toast.success('Connection deleted successfully')
+      } catch (error) {
         console.error('Failed to delete connection:', error)
-        alert('Failed to delete connection: ' + error.message)
+        toast.error(error, 'Failed to delete connection')
       }
     }
 
     const toggleConnectionStatus = async (connection) => {
       try {
         await pennyConnectionStore.toggleConnectionStatus(props.bot.id, connection.id)
+        toast.success(connection.isEnabled ? 'Connection enabled' : 'Connection disabled')
       } catch (error) {
         console.error('Failed to toggle connection status:', error)
-        alert('Failed to update connection status: ' + error.message)
+        toast.error(error, 'Failed to update connection status')
       }
     }
 
@@ -351,13 +355,13 @@ export default {
         const result = await pennyConnectionStore.testConnection(props.bot.id, connection.id, testData)
         
         if (result.success) {
-          alert(`✅ Connection test successful!\n\nConnection: ${connection.connectionName}\nResponse: ${result.message}`)
+          toast.success(`Connection test successful! ${result.message || ''}`, 'Test Succeeded')
         } else {
-          alert(`❌ Connection test failed.\n\nError: ${result.error}`)
+          toast.error(result.error || 'Connection test failed', 'Test Failed')
         }
       } catch (error) {
         console.error('Failed to test connection:', error)
-        alert('Failed to test connection: ' + (error.response?.data?.error || error.message))
+        toast.error(error, 'Failed to test connection')
       } finally {
         testingConnection.value = false
       }
@@ -367,9 +371,10 @@ export default {
       checkingHealth.value = true
       try {
         await pennyConnectionStore.fetchConnectionHealth(props.bot.id, connection.id)
-        } catch (error) {
+        toast.success('Connection health check completed')
+      } catch (error) {
         console.error('Failed to check connection health:', error)
-        alert('Failed to check connection health: ' + error.message)
+        toast.error(error, 'Failed to check connection health')
       } finally {
         checkingHealth.value = false
       }

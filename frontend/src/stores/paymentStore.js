@@ -3,6 +3,7 @@ import { formatCurrency, formatDateTime } from '@/utils/dateUtils'
 import packageApi from '@/api/packageApi'
 import paymentAPI from '@/api/paymentApi'
 import tenantApi from '@/api/tenantApi'
+import { useNotificationStore } from '@/stores/notification/notificationStore'
 
 /**
  * Payment Store - Quản lý state cho các giao dịch thanh toán
@@ -634,13 +635,39 @@ export const usePaymentStore = defineStore('payment', {
     },
 
     /**
-     * Thiết lập message
+     * Cập nhật thông tin giao dịch trong lịch sử
      */
-    setMessage(message, type = 'success') {
+    updatePaymentInHistory(paymentData) {
+      if (!paymentData || !paymentData.referenceCode) return
+      const index = this.paymentHistory.findIndex(p => p.referenceCode === paymentData.referenceCode)
+      if (index > -1) {
+        this.paymentHistory[index] = { ...this.paymentHistory[index], ...paymentData }
+      }
+    },
+
+    /**
+     * Thiết lập message và đồng bộ hiển thị popup qua Notification Store
+     */
+    setMessage(message, type = 'success', title = null) {
       this.message = message
       this.messageType = type
-      
-      // Auto clear message after 5 seconds
+
+      try {
+        const notificationStore = useNotificationStore()
+        const defaultTitle = type === 'error' ? 'Lỗi' : (type === 'warning' ? 'Cảnh báo' : 'Thanh toán')
+        notificationStore.addNotification({
+          type: type === 'error' ? 'error' : (type === 'warning' ? 'warning' : 'success'),
+          title: title || defaultTitle,
+          message: typeof message === 'string' ? message : String(message),
+          priority: type === 'error' ? 'high' : 'medium',
+          isToast: true,
+          duration: 5000
+        })
+      } catch (err) {
+        console.warn('Could not dispatch notification from paymentStore:', err)
+      }
+
+      // Auto clear local message after 5 seconds
       setTimeout(() => {
         if (this.message === message) {
           this.message = ''

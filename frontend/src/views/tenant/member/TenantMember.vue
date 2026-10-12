@@ -161,8 +161,6 @@ export default {
       showInviteModal.value = true
     }
     const handleInviteMember = async (inviteData) => {
-      // Show success message
-      alert(`Invitation sent to ${inviteData.email}`)
       // Reset and close modal
       showInviteModal.value = false
       // Refresh data

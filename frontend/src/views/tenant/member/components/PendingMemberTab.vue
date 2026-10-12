@@ -146,6 +146,7 @@ import { useI18n } from 'vue-i18n'
 import { tenantApi } from '@/api/tenantApi'
 import { formatDate } from '@/utils/dateUtils'
 import { useGatewayTenantStore } from '@/stores/tenant/gateway/myTenantStore'
+import { useToast } from '@/composables/useToast'
 import defaultAvatar from '@/assets/img/user.jpg'
 
 export default {
@@ -162,6 +163,7 @@ export default {
   emits: ['request-approved', 'request-rejected'],
   setup(props, { emit }) {
     const { t } = useI18n()
+    const toast = useToast()
     const tenantStore = useGatewayTenantStore()
     const loading = ref(false)
     const requests = ref([])
@@ -216,7 +218,7 @@ export default {
         // Get tenantKey from current tenant
         const tenantKey = tenantStore.currentTenant?.tenantKey
         if (!tenantKey) {
-          alert(t('tenant.overview.unknownTenant'))
+          toast.warning(t('tenant.overview.unknownTenant'))
           return
         }
 
@@ -227,10 +229,10 @@ export default {
         const item = requests.value.find(r => r.id === request.id)
         if (item) item.status = 'APPROVED'
         emit('request-approved', request)
+        toast.success(t('tenant.member.approveSuccess', 'Request approved successfully'))
       } catch (error) {
         console.error('Failed to approve request:', error)
-        const errorMessage = error.response?.data?.message || error.message || 'Failed to approve request. Please try again.'
-        alert(errorMessage)
+        toast.error(error, 'Failed to approve request. Please try again.')
       }
     }
     const rejectRequest = async (request) => {
@@ -240,7 +242,7 @@ export default {
         // Get tenantKey from current tenant
         const tenantKey = tenantStore.currentTenant?.tenantKey
         if (!tenantKey) {
-          alert(t('tenant.overview.unknownTenant'))
+          toast.warning(t('tenant.overview.unknownTenant'))
           return
         }
 
@@ -251,10 +253,10 @@ export default {
         const item = requests.value.find(r => r.id === request.id)
         if (item) item.status = 'REJECTED'
         emit('request-rejected', request)
+        toast.success(t('tenant.member.rejectSuccess', 'Request rejected successfully'))
       } catch (error) {
         console.error('Failed to reject request:', error)
-        const errorMessage = error.response?.data?.message || error.message || 'Failed to reject request. Please try again.'
-        alert(errorMessage)
+        toast.error(error, 'Failed to reject request. Please try again.')
       }
     }
     const viewRequest = (request) => {

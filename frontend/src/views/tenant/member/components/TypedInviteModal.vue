@@ -87,10 +87,7 @@
           </div>
         </div>
 
-        <!-- Error Message -->
-        <div v-if="errorMessage" class="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-md dark:bg-red-900 dark:border-red-600 dark:text-red-200">
-          {{ errorMessage }}
-        </div>
+
 
         <!-- Actions -->
         <div class="flex justify-end space-x-3">
@@ -123,6 +120,7 @@ import { ref, reactive, computed } from 'vue'
 import { Icon } from '@iconify/vue'
 import { tenantApi } from '@/api/tenantApi'
 import { useGatewayTenantStore } from '@/stores/tenant/gateway/myTenantStore'
+import { useToast } from '@/composables/useToast'
 import { 
   InviteMemberRequest, 
   TenantRole,
@@ -142,9 +140,9 @@ export default {
   },
   emits: ['close', 'invited'],
   setup(props, { emit }) {
+    const toast = useToast()
     const tenantStore = useGatewayTenantStore()
     const loading = ref(false)
-    const errorMessage = ref('')
     
     // Typed form data
     const formData = reactive({
@@ -184,7 +182,6 @@ export default {
     // Reset form
     const resetForm = (): void => {
       Object.assign(formData, InviteMemberRequest)
-      errorMessage.value = ''
       Object.keys(errors).forEach(key => {
         errors[key] = ''
       })
@@ -204,12 +201,11 @@ export default {
       
       const tenantKey = currentTenant.value?.tenantKey
       if (!tenantKey) {
-        errorMessage.value = 'No tenant selected'
+        toast.error('No tenant selected')
         return
       }
       
       loading.value = true
-      errorMessage.value = ''
       
       try {
         // Create typed invite request
@@ -221,7 +217,9 @@ export default {
         }
         
         // Call API with typed response
-        const response = await tenantApi.inviteMember(tenantKey, inviteRequest)
+        await tenantApi.inviteMember(tenantKey, inviteRequest)
+        
+        toast.success('Invitation sent successfully')
         
         // Emit success event
         emit('invited', inviteRequest)
@@ -232,21 +230,19 @@ export default {
       } catch (error: any) {
         console.error('Failed to send invitation:', error)
         
-        // Handle different error types
         const serverMessage = error.response?.data?.message;
-        
         if (serverMessage) {
-          errorMessage.value = serverMessage;
+          toast.error(serverMessage);
         } else if (error.response?.status === 409) {
-          errorMessage.value = 'This user has already been invited or is already a member'
+          toast.error('This user has already been invited or is already a member')
         } else if (error.response?.status === 400) {
-          errorMessage.value = 'Invalid request data'
+          toast.error('Invalid request data')
         } else if (error.response?.status === 403) {
-          errorMessage.value = 'You do not have permission to invite members'
+          toast.error('You do not have permission to invite members')
         } else if (error.response?.status === 404) {
-          errorMessage.value = 'Tenant not found'
+          toast.error('Tenant not found')
         } else {
-          errorMessage.value = 'Failed to send invitation. Please try again.'
+          toast.error(error, 'Failed to send invitation. Please try again.')
         }
       } finally {
         loading.value = false
@@ -257,7 +253,6 @@ export default {
       loading,
       formData,
       errors,
-      errorMessage,
       currentTenant,
       closeModal,
       handleSubmit,

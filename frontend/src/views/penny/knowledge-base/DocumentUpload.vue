@@ -115,12 +115,6 @@
       </div>
     </div>
 
-    <!-- Upload Status Notification -->
-    <div v-if="uploadStatus" class="upload-status" :class="uploadStatus.type">
-      <Icon :icon="uploadStatus.icon" class="status-icon" />
-      <p>{{ uploadStatus.message }}</p>
-    </div>
-
     <!-- Document List Summary & Items -->
     <div v-if="documents.length > 0" class="document-list mt-6">
       <div class="flex items-center justify-between mb-4">
@@ -185,6 +179,7 @@
 <script>
 import { Icon } from '@iconify/vue';
 import { pennyApi } from '@/api/pennyApi';
+import { useToast } from '@/composables/useToast';
 
 export default {
   name: 'DocumentUpload',
@@ -208,7 +203,6 @@ export default {
       currentStageText: '',
       processedChunkCount: 0,
       estimatedTotalChunks: 0,
-      uploadStatus: null,
       isDragOver: false,
       documents: []
     };
@@ -245,34 +239,34 @@ export default {
       }
     },
     validateAndSelectFile(file) {
+      const toast = useToast();
       // Validate file type
       const validTypes = ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'];
       const validExtensions = ['.pdf', '.docx', '.xlsx'];
       
       const fileExtension = '.' + file.name.split('.').pop().toLowerCase();
       if (!validExtensions.includes(fileExtension)) {
-        this.showStatus('error', 'mdi:alert-circle', this.$t('penny.documentUpload.invalidFileType'));
+        toast.error(this.$t('penny.documentUpload.invalidFileType'));
         return;
       }
 
       // Validate file size (50MB)
       const maxSize = 50 * 1024 * 1024;
       if (file.size > maxSize) {
-        this.showStatus('error', 'mdi:alert-circle', this.$t('penny.documentUpload.fileTooLarge'));
+        toast.error(this.$t('penny.documentUpload.fileTooLarge'));
         return;
       }
 
       this.selectedFile = file;
       this.documentName = file.name.replace(/\.[^/.]+$/, '');
-      this.uploadStatus = null;
     },
     removeFile() {
       this.selectedFile = null;
       this.documentName = '';
-      this.uploadStatus = null;
       this.$refs.fileInput.value = '';
     },
     async uploadDocument() {
+      const toast = useToast();
       const uuidRegex = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
       if (!this.selectedFile || !this.documentName || !this.botId || !uuidRegex.test(String(this.botId).trim())) return;
 
@@ -281,7 +275,6 @@ export default {
       this.currentStageText = 'Tải tệp lên server...';
       this.processedChunkCount = 0;
       this.estimatedTotalChunks = Math.max(1, Math.ceil((this.selectedFile.size || 50000) / 3500));
-      this.uploadStatus = null;
 
       // Realistic stage timer simulation during RAG extraction & chunking
       const progressTimer = setInterval(() => {
@@ -317,7 +310,7 @@ export default {
         const createdDoc = response.data || {};
         this.processedChunkCount = createdDoc.totalChunks || this.estimatedTotalChunks;
         
-        this.showStatus('success', 'mdi:check-circle', `Tải lên thành công! Đã tạo ${this.processedChunkCount} vector chunks.`);
+        toast.success(`Tải lên thành công! Đã tạo ${this.processedChunkCount} vector chunks.`);
         
         setTimeout(() => {
           this.removeFile();
@@ -325,7 +318,7 @@ export default {
         }, 1500);
       } catch (error) {
         clearInterval(progressTimer);
-        this.showStatus('error', 'mdi:alert-circle', this.$t('penny.documentUpload.uploadError'));
+        toast.error(error, this.$t('penny.documentUpload.uploadError'));
         console.error('Upload error:', error);
       } finally {
         this.uploading = false;
@@ -347,20 +340,15 @@ export default {
     async deleteDocument(documentId) {
       if (!confirm(this.$t('penny.documentUpload.confirmDelete'))) return;
 
+      const toast = useToast();
       try {
         await pennyApi.deleteKnowledgeDocument(documentId);
         this.loadDocuments();
-        this.showStatus('success', 'mdi:check-circle', this.$t('penny.documentUpload.deleteSuccess'));
+        toast.success(this.$t('penny.documentUpload.deleteSuccess'));
       } catch (error) {
-        this.showStatus('error', 'mdi:alert-circle', this.$t('penny.documentUpload.deleteError'));
+        toast.error(error, this.$t('penny.documentUpload.deleteError'));
         console.error('Delete error:', error);
       }
-    },
-    showStatus(type, icon, message) {
-      this.uploadStatus = { type, icon, message };
-      setTimeout(() => {
-        this.uploadStatus = null;
-      }, 5000);
     },
     formatFileSize(bytes) {
       if (bytes === 0) return '0 Bytes';
@@ -493,22 +481,6 @@ export default {
 
 .progress-text {
   @apply text-sm text-gray-600 dark:text-gray-400 text-center;
-}
-
-.upload-status {
-  @apply flex items-center space-x-2 p-3 rounded-md text-sm;
-}
-
-.upload-status.success {
-  @apply bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400;
-}
-
-.upload-status.error {
-  @apply bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400;
-}
-
-.status-icon {
-  @apply text-xl;
 }
 
 .document-list {

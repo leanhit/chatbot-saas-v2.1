@@ -9,11 +9,6 @@
       </div>
     </div>
 
-    <!-- Alert Messages -->
-    <div v-if="paymentStore.message" class="mb-4 p-4 rounded-lg" :class="paymentStore.getMessageClass()">
-      {{ paymentStore.message }}
-    </div>
-
     <!-- Payment Success Screen -->
     <div v-if="paymentStore.currentPayment?.status === 'COMPLETED'" class="max-w-2xl mx-auto bg-white dark:bg-gray-900 rounded-lg shadow-md p-8 text-center my-8 border border-green-200 dark:border-green-800">
       <div class="inline-flex items-center justify-center w-20 h-20 bg-green-100 dark:bg-green-900 rounded-full mb-6">
@@ -445,6 +440,7 @@ import { usePaymentStore } from '@/stores/paymentStore'
 import QRCode from 'qrcode'
 import { useI18n } from 'vue-i18n'
 import { watch, onMounted, onBeforeUnmount } from 'vue'
+import { useToast } from '@/composables/useToast'
 
 export default {
   name: 'PaymentDeposit',
@@ -475,6 +471,7 @@ export default {
   },
   setup() {
     const paymentStore = usePaymentStore()
+    const toast = useToast()
     const { t, locale } = useI18n()
 
     // SSE connection for automatic payment detection
@@ -504,6 +501,11 @@ export default {
           paymentStore.currentPayment = paymentData
           stopSseConnection()
           
+          toast.success(
+            t('payment.deposit.success', 'Thanh toán thành công! Gói dịch vụ đã được kích hoạt.'),
+            t('payment.deposit.title', 'Thanh toán')
+          )
+
           // Refresh tenant data and update current package badge in UI
           await paymentStore.refreshGatewayTenant()
           await paymentStore.loadCurrentPackage()

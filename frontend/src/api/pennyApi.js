@@ -8,12 +8,7 @@ import {
   MiddlewareResponse
 } from '@/types/penny';
 
-// Hàm xử lý lỗi chung cho các request
 const handleApiError = (error) => {
-    if (error.response && error.response.status === 401) {
-        alert('Phiên đăng nhập của bạn đã hết hạn. Vui lòng đăng nhập lại.');
-        router.push('/login');
-    }
     throw error;
 };
 

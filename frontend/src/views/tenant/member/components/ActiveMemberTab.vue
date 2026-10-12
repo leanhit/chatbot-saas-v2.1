@@ -144,6 +144,7 @@ import { tenantApi } from '@/api/tenantApi'
 import { formatDate, getRelativeTime } from '@/utils/dateUtils'
 import { useGatewayTenantStore } from '@/stores/tenant/gateway/myTenantStore'
 import { useAuthStore } from '@/stores/authStore'
+import { useToast } from '@/composables/useToast'
 import { TenantRole, MembershipStatus } from '@/types/tenant'
 import defaultAvatar from '@/assets/img/user.jpg'
 
@@ -165,6 +166,7 @@ export default {
   emits: ['member-removed', 'member-updated'],
   setup(props, { emit }) {
     const { t } = useI18n()
+    const toast = useToast()
     const tenantStore = useGatewayTenantStore()
     const authStore = useAuthStore()
     const loading = ref(false)
@@ -245,7 +247,7 @@ export default {
         // Get tenantKey from current tenant
         const tenantKey = tenantStore.currentTenant?.tenantKey
         if (!tenantKey) {
-          alert(t('tenant.overview.unknownTenant'))
+          toast.warning(t('tenant.overview.unknownTenant'))
           return
         }
 
@@ -255,10 +257,10 @@ export default {
         // Update local member data
         member.role = newRole
         emit('member-updated', member)
+        toast.success(t('tenant.member.roleUpdated', 'Member role updated successfully'))
       } catch (error) {
         console.error('Failed to update member role:', error)
-        const errorMessage = error.response?.data?.message || error.message || 'Failed to update member role. Please try again.'
-        alert(errorMessage)
+        toast.error(error, 'Failed to update member role. Please try again.')
       }
     }
     const removeMember = async (member) => {
@@ -269,7 +271,7 @@ export default {
         // Get tenantKey from current tenant
         const tenantKey = tenantStore.currentTenant?.tenantKey
         if (!tenantKey) {
-          alert(t('tenant.overview.unknownTenant'))
+          toast.warning(t('tenant.overview.unknownTenant'))
           return
         }
 
@@ -280,10 +282,10 @@ export default {
         members.value = members.value.filter(m => m.id !== member.id)
         totalMembers.value -= 1
         emit('member-removed', member)
+        toast.success(t('tenant.member.removeSuccess', 'Member removed successfully'))
       } catch (error) {
         console.error('Failed to remove member:', error)
-        const errorMessage = error.response?.data?.message || error.message || 'Failed to remove member. Please try again.'
-        alert(errorMessage)
+        toast.error(error, 'Failed to remove member. Please try again.')
       }
     }
     const viewDetails = (member) => {
@@ -335,7 +337,7 @@ export default {
         // Get tenantKey from current tenant
         const tenantKey = tenantStore.currentTenant?.tenantKey
         if (!tenantKey) {
-          alert(t('tenant.overview.unknownTenant'))
+          toast.warning(t('tenant.overview.unknownTenant'))
           return
         }
 
@@ -356,14 +358,15 @@ export default {
         }
 
         // Show success message
-        alert(t('tenant.member.transferOwnershipSuccess'))
+        toast.success(t('tenant.member.transferOwnershipSuccess'))
 
         // Reload page to refresh user permissions
-        window.location.reload()
+        setTimeout(() => {
+          window.location.reload()
+        }, 1500)
       } catch (error) {
         console.error('Failed to transfer ownership:', error)
-        const errorMessage = error.response?.data?.message || error.message || 'Failed to transfer ownership. Please try again.'
-        alert(errorMessage)
+        toast.error(error, 'Failed to transfer ownership. Please try again.')
       }
     }
     const getStatusBadgeClass = (status) => {

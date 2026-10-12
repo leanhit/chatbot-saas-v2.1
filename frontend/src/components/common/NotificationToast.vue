@@ -52,15 +52,16 @@ export default {
     const notificationStore = useNotificationStore()
 
     const notifications = computed(() => 
-      notificationStore.notifications.slice(0, 5) // Show max 5 notifications
+      notificationStore.activePopups // Show active popups that auto-dismiss after 5s
     )
 
     const removeNotification = (id) => {
-      notificationStore.removeNotification(id)
+      notificationStore.removePopup(id)
     }
 
     const markAsRead = (id) => {
       notificationStore.markAsRead(id)
+      notificationStore.removePopup(id)
     }
 
     const handleAction = (action, notification) => {

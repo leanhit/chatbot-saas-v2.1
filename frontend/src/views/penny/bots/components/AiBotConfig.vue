@@ -117,18 +117,13 @@
         </button>
       </div>
     </div>
-
-    <!-- Status Message -->
-    <div v-if="statusMessage" class="status-message" :class="statusMessage.type">
-      <Icon :icon="statusMessage.icon" class="status-icon" />
-      <p>{{ statusMessage.message }}</p>
-    </div>
   </div>
 </template>
 
 <script>
 import { Icon } from '@iconify/vue';
 import { pennyApi } from '@/api/pennyApi';
+import { useToast } from '@/composables/useToast';
 
 export default {
   name: 'AiBotConfig',
@@ -154,8 +149,7 @@ export default {
         greetingMessage: '',
         fallbackMessage: ''
       },
-      saving: false,
-      statusMessage: null
+      saving: false
     };
   },
   computed: {
@@ -220,14 +214,14 @@ export default {
   methods: {
     async saveConfig() {
       this.saving = true;
-      this.statusMessage = null;
+      const toast = useToast();
 
       try {
         await pennyApi.updatePennyBot(this.botId, this.config);
-        this.showStatus('success', 'mdi:check-circle', this.$t('penny.aiConfig.saveSuccess'));
+        toast.success(this.$t('penny.aiConfig.saveSuccess'));
         this.$emit('saved', this.config);
       } catch (error) {
-        this.showStatus('error', 'mdi:alert-circle', this.$t('penny.aiConfig.saveError'));
+        toast.error(error, this.$t('penny.aiConfig.saveError'));
         console.error('Save error:', error);
       } finally {
         this.saving = false;
@@ -246,12 +240,6 @@ export default {
       if (this.initialConfig && Object.keys(this.initialConfig).length > 0) {
         this.config = { ...this.config, ...this.initialConfig };
       }
-    },
-    showStatus(type, icon, message) {
-      this.statusMessage = { type, icon, message };
-      setTimeout(() => {
-        this.statusMessage = null;
-      }, 5000);
     }
   }
 };
@@ -362,22 +350,5 @@ export default {
 .reset-button {
   @apply px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-sm font-medium;
 }
-
-.status-message {
-  @apply flex items-center space-x-2 p-3 rounded-md text-sm;
-}
-
-.status-message.success {
-  @apply bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400;
-}
-
-.status-message.error {
-  @apply bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400;
-}
-
-.status-icon {
-  @apply text-xl;
-}
-
 
 </style>

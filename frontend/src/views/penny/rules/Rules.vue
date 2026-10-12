@@ -303,6 +303,7 @@ import 'driver.js/dist/driver.css'
 import { formatDate, formatDateTime } from '@/utils/dateUtils'
 import { usePennyRuleStore } from '@/stores/pennyRuleStore'
 import { usePennyBotStore } from '@/stores/pennyBotStore'
+import { useToast } from '@/composables/useToast'
 import PennyRuleModal from './components/PennyRuleModal.vue'
 
 export default {
@@ -313,6 +314,7 @@ export default {
   },
   setup() {
     const { t } = useI18n()
+    const toast = useToast()
     const pennyRuleStore = usePennyRuleStore()
     const pennyBotStore = usePennyBotStore()
 
@@ -361,52 +363,53 @@ export default {
     const toggleRuleStatus = async (rule) => {
       if (!selectedBot.value) {
         console.error('❌ No bot selected for toggle rule status')
-        alert('Please select a bot first')
+        toast.warning('Please select a bot first')
         return
       }
       
       if (!rule.ruleId) {
         console.error('❌ Rule ID is undefined')
-        alert('Invalid rule: missing rule ID')
+        toast.error('Invalid rule: missing rule ID')
         return
       }
       
       try {
         const updateData = { isActive: !rule.isActive }
         await pennyRuleStore.updateRule(selectedBot.value.id, rule.ruleId, updateData)
-        } catch (error) {
+        toast.success(rule.isActive ? 'Rule disabled' : 'Rule enabled')
+      } catch (error) {
         console.error('Failed to toggle rule status:', error)
-        alert('Failed to toggle rule status: ' + error.message)
+        toast.error(error, 'Failed to toggle rule status')
       }
     }
 
     const editRule = (rule) => {
       editingRule.value = { ...rule }
       showCreateModal.value = true
-      }
+    }
 
     const deleteRule = async (rule) => {
       if (!selectedBot.value) {
         console.error('❌ No bot selected for delete rule')
-        alert('Please select a bot first')
+        toast.warning('Please select a bot first')
         return
       }
       
       const targetRuleId = rule.ruleId || rule.id
       if (!targetRuleId) {
         console.error('❌ Rule ID is undefined')
-        alert('Invalid rule: missing rule ID')
+        toast.error('Invalid rule: missing rule ID')
         return
       }
       
       if (confirm(`Are you sure you want to delete "${rule.name}"?`)) {
         try {
           await pennyRuleStore.deleteRule(selectedBot.value.id, targetRuleId)
+          toast.success(`Rule "${rule.name}" deleted successfully`)
           await fetchRules()
         } catch (error) {
           console.error('Failed to delete rule:', error)
-          const errorMessage = error.localizedMessage || error.response?.data?.message || error.message || 'Failed to delete rule'
-          alert(`❌ ${errorMessage}`)
+          toast.error(error, 'Failed to delete rule')
         }
       }
     }
@@ -414,13 +417,13 @@ export default {
     const testRule = async (rule) => {
       if (!selectedBot.value) {
         console.error('❌ No bot selected for test rule')
-        alert('Please select a bot first')
+        toast.warning('Please select a bot first')
         return
       }
       
       if (!rule.ruleId) {
         console.error('❌ Rule ID is undefined')
-        alert('Invalid rule: missing rule ID')
+        toast.error('Invalid rule: missing rule ID')
         return
       }
       
@@ -438,20 +441,20 @@ export default {
         
         const result = await pennyRuleStore.testRule(selectedBot.value.id, rule.ruleId, testData)
         if (result.matches) {
-          alert(`✅ Rule matched!\n\nRule: ${result.ruleName}\nTest data: ${JSON.stringify(testData, null, 2)}`)
+          toast.success(`Rule "${result.ruleName}" matched test data!`, 'Test Matched')
         } else {
-          alert(`❌ Rule did not match.\n\nTest data: ${JSON.stringify(testData, null, 2)}`)
+          toast.warning('Rule did not match test data.', 'No Match')
         }
       } catch (error) {
         console.error('Rule test failed:', error)
-        alert('Rule test failed: ' + (error.response?.data?.error || error.message))
+        toast.error(error, 'Rule test failed')
       }
     }
 
     const duplicateRule = async (rule) => {
       if (!selectedBot.value) {
         console.error('❌ No bot selected for duplicate rule')
-        alert('Please select a bot first')
+        toast.warning('Please select a bot first')
         return
       }
       
@@ -468,10 +471,11 @@ export default {
         delete duplicatedRule.updatedAt
         
         await pennyRuleStore.createRule(selectedBot.value.id, duplicatedRule)
+        toast.success('Rule duplicated successfully')
         fetchRules()
       } catch (error) {
         console.error('Failed to duplicate rule:', error)
-        alert('Failed to duplicate rule: ' + error.message)
+        toast.error(error, 'Failed to duplicate rule')
       }
     }
 

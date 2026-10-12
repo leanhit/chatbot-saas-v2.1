@@ -360,6 +360,7 @@ import { formatDate, formatDateTime } from '@/utils/dateUtils'
 import { usePennyBotStore } from '@/stores/pennyBotStore'
 import { usePennyRuleStore } from '@/stores/pennyRuleStore'
 import { usePennyConnectionStore } from '@/stores/pennyConnectionStore'
+import { useToast } from '@/composables/useToast'
 import {
   PennyBotDto,
   PennyBotType,
@@ -388,6 +389,7 @@ export default {
     PennyAutoConnectModal
   },
   setup() {
+    const toast = useToast()
     const router = useRouter()
     const { t } = useI18n()
     const pennyBotStore = usePennyBotStore()
@@ -444,10 +446,10 @@ export default {
     const toggleBotStatus = async (bot) => {
       try {
         await pennyBotStore.togglePennyBotStatus(bot.id, !bot.isEnabled)
+        toast.success(bot.isEnabled ? 'Bot disabled' : 'Bot enabled')
       } catch (error) {
         console.error('Failed to toggle bot status:', error)
-        const errorMessage = error.localizedMessage || error.response?.data?.message || error.message || 'Failed to update bot status'
-        alert(`❌ ${errorMessage}`)
+        toast.error(error, 'Failed to update bot status')
       }
     }
 
@@ -459,10 +461,10 @@ export default {
       if (confirm(`Are you sure you want to delete "${bot.botName}"?`)) {
         try {
           await pennyBotStore.deletePennyBot(bot.id)
+          toast.success(`Bot "${bot.botName}" deleted successfully`)
         } catch (error) {
           console.error('Failed to delete bot:', error)
-          const errorMessage = error.localizedMessage || error.response?.data?.message || error.message || 'Failed to delete bot'
-          alert(`❌ ${errorMessage}`)
+          toast.error(error, 'Failed to delete bot')
         }
       }
     }
@@ -599,9 +601,10 @@ export default {
     const deleteRule = async (rule) => {
       try {
         await pennyRuleStore.deleteRule(selectedBot.value.id, rule.id)
-        } catch (error) {
+        toast.success('Rule deleted successfully')
+      } catch (error) {
         console.error('Failed to delete rule:', error)
-        alert('Failed to delete rule: ' + error.message)
+        toast.error(error, 'Failed to delete rule')
       }
     }
 

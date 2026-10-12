@@ -110,12 +110,14 @@ import { Icon } from '@iconify/vue'
 import paymentAPI from '@/api/paymentApi'
 import { ref, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useToast } from '@/composables/useToast'
 
 export default {
   name: 'WebhookManagement',
   components: { Icon },
   setup() {
     const { t } = useI18n()
+    const toast = useToast()
     const webhooks = ref([])
     const loading = ref(false)
     const showCreateModal = ref(false)
@@ -147,10 +149,12 @@ export default {
         } else {
           await paymentAPI.createWebhook(formData.value)
         }
+        toast.success(editingWebhook.value ? 'Webhook updated successfully' : 'Webhook created successfully')
         closeModal()
         loadWebhooks()
       } catch (error) {
         console.error('Error saving webhook:', error)
+        toast.error(error, 'Error saving webhook')
       }
     }
 
@@ -164,9 +168,11 @@ export default {
       if (confirm(t('admin.webhook.deleteConfirm'))) {
         try {
           await paymentAPI.deleteWebhook(id)
+          toast.success('Webhook deleted successfully')
           loadWebhooks()
         } catch (error) {
           console.error('Error deleting webhook:', error)
+          toast.error(error, 'Error deleting webhook')
         }
       }
     }
@@ -174,10 +180,10 @@ export default {
     const testWebhook = async (id) => {
       try {
         await paymentAPI.testWebhook(id)
-        alert(t('admin.webhook.testSuccess'))
+        toast.success(t('admin.webhook.testSuccess'))
       } catch (error) {
         console.error('Error testing webhook:', error)
-        alert(t('admin.webhook.testFailed') + (error.response?.data?.message || error.message))
+        toast.error(error, t('admin.webhook.testFailed'))
       }
     }
 

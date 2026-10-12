@@ -20,10 +20,7 @@
       </div>
     </div>
 
-    <!-- Alert Messages -->
-    <div v-if="message" class="mb-4 p-4 rounded-lg" :class="getMessageClass()">
-      {{ message }}
-    </div>
+
 
     <!-- Loading State -->
     <div v-if="loading" class="text-center py-8">
@@ -215,6 +212,7 @@ import { useSearchStore } from '@/stores/searchStore'
 import { onMounted, onUnmounted, ref, computed, watch } from 'vue'
 import axios from '@/plugins/axios'
 import { useI18n } from 'vue-i18n'
+import { useToast } from '@/composables/useToast'
 
 export default {
   name: 'UserManagement',
@@ -223,11 +221,10 @@ export default {
   },
   setup() {
     const { t } = useI18n()
+    const toast = useToast()
     const searchStore = useSearchStore()
     const users = ref([])
     const loading = ref(false)
-    const message = ref('')
-    const messageType = ref('success')
     const showRoleModal = ref(false)
     const selectedUser = ref(null)
     const newRole = ref('USER')
@@ -285,7 +282,7 @@ export default {
         totalElements.value = pageData.totalElements || 0
       } catch (error) {
         console.error('Error loading users:', error)
-        setMessage(t('admin.user.loadingError') + ': ' + (error.message || 'Unknown error'), 'error')
+        toast.error(error, t('admin.user.loadingError'))
       } finally {
         loading.value = false
       }
@@ -341,11 +338,11 @@ export default {
           users.value[userIndex].systemRole = newRole.value
         }
 
-        setMessage(t('admin.user.roleUpdateSuccess'), 'success')
+        toast.success(t('admin.user.roleUpdateSuccess'))
         closeRoleModal()
       } catch (error) {
         console.error('Error changing role:', error)
-        setMessage(t('admin.user.roleUpdateError') + ': ' + (error.response?.data?.message || error.message || 'Unknown error'), 'error')
+        toast.error(error, t('admin.user.roleUpdateError'))
       } finally {
         changingRole.value = false
       }
@@ -364,10 +361,10 @@ export default {
           users.value[userIndex].isActive = newStatus
         }
 
-        setMessage(t('admin.user.statusUpdateSuccess'), 'success')
+        toast.success(t('admin.user.statusUpdateSuccess'))
       } catch (error) {
         console.error('Error toggling user status:', error)
-        setMessage(t('admin.user.statusUpdateError') + ': ' + (error.response?.data?.message || error.message || 'Unknown error'), 'error')
+        toast.error(error, t('admin.user.statusUpdateError'))
       }
     }
 
@@ -386,34 +383,10 @@ export default {
       return date.toLocaleDateString('vi-VN')
     }
 
-    const setMessage = (msg, type = 'success') => {
-      message.value = msg
-      messageType.value = type
-      
-      setTimeout(() => {
-        if (message.value === msg) {
-          message.value = ''
-        }
-      }, 5000)
-    }
-
-    const getMessageClass = () => {
-      const baseClasses = 'p-4 rounded-lg mb-4'
-      const typeClasses = {
-        success: 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200',
-        error: 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200',
-        warning: 'bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200',
-        info: 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200'
-      }
-      return `${baseClasses} ${typeClasses[messageType.value] || typeClasses.info}`
-    }
-
     return {
       t,
       users,
       loading,
-      message,
-      messageType,
       showRoleModal,
       selectedUser,
       newRole,
@@ -432,9 +405,7 @@ export default {
       changeUserRole,
       toggleUserStatus,
       getRoleClass,
-      formatDate,
-      setMessage,
-      getMessageClass
+      formatDate
     }
   }
 }

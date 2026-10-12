@@ -218,6 +218,7 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { Icon } from '@iconify/vue'
 import { useI18n } from 'vue-i18n'
 import { usePennyRuleStore } from '@/stores/pennyRuleStore'
+import { useToast } from '@/composables/useToast'
 import PennyRuleModal from './PennyRuleModal.vue'
 
 export default {
@@ -235,6 +236,7 @@ export default {
   emits: ['close'],
   setup(props, { emit }) {
     const { t } = useI18n()
+    const toast = useToast()
     const pennyRuleStore = usePennyRuleStore()
 
     // State
@@ -287,11 +289,11 @@ export default {
       try {
         const targetRuleId = rule.ruleId || rule.id
         await pennyRuleStore.deleteRule(props.bot.id, targetRuleId)
+        toast.success(`Rule "${rule.name}" deleted successfully`)
         await fetchRules()
       } catch (error) {
         console.error('Failed to delete rule:', error)
-        const errorMessage = error.localizedMessage || error.response?.data?.message || error.message || 'Failed to delete rule'
-        alert(`❌ ${errorMessage}`)
+        toast.error(error, 'Failed to delete rule')
       }
     }
 
@@ -300,11 +302,12 @@ export default {
         await pennyRuleStore.updateRule(props.bot.id, rule.id, {
           isActive: rule.isActive
         })
+        toast.success(rule.isActive ? 'Rule enabled' : 'Rule disabled')
       } catch (error) {
         console.error('Failed to toggle rule status:', error)
         // Revert the change
         rule.isActive = !rule.isActive
-        alert('Failed to update rule status: ' + error.message)
+        toast.error(error, 'Failed to update rule status')
       }
     }
 
@@ -325,13 +328,13 @@ export default {
         const result = await pennyRuleStore.testRule(props.bot.id, rule.id, testData)
         
         if (result.matches) {
-          alert(`✅ Rule matched!\n\nRule: ${result.ruleName}\nTest data: ${JSON.stringify(testData, null, 2)}`)
+          toast.success(`Rule "${result.ruleName}" matched test data!`, 'Test Matched')
         } else {
-          alert(`❌ Rule did not match.\n\nTest data: ${JSON.stringify(testData, null, 2)}`)
+          toast.warning('Rule did not match test data.', 'No Match')
         }
       } catch (error) {
         console.error('Failed to test rule:', error)
-        alert('Failed to test rule: ' + (error.response?.data?.error || error.message))
+        toast.error(error, 'Failed to test rule')
       } finally {
         testingRule.value = false
       }

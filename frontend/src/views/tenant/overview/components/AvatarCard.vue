@@ -248,11 +248,11 @@ export default {
       }
       try {
         await tenantStore.leaveTenant(tenantKey)
-        alert(t('gateway.actions.leaveSuccess'))
+        toast.success(t('gateway.actions.leaveSuccess'))
         router.push('/tenant-gateway')
       } catch (error) {
-        const errorMessage = error.response?.data?.message || error.message || 'Failed to leave tenant'
-        alert(errorMessage)
+        console.error('Failed to leave tenant:', error)
+        toast.error(error, 'Failed to leave tenant')
       }
     }
     

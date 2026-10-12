@@ -158,6 +158,7 @@ import { useI18n } from 'vue-i18n'
 import { tenantApi } from '@/api/tenantApi'
 import { formatDate, isExpiringSoon } from '@/utils/dateUtils'
 import { useGatewayTenantStore } from '@/stores/tenant/gateway/myTenantStore'
+import { useToast } from '@/composables/useToast'
 import defaultAvatar from '@/assets/img/user.jpg'
 
 export default {
@@ -174,6 +175,7 @@ export default {
   emits: ['invitation-revoked', 'invitation-sent'],
   setup(props, { emit }) {
     const { t } = useI18n()
+    const toast = useToast()
     const tenantStore = useGatewayTenantStore()
     const loading = ref(false)
     const invitations = ref([])
@@ -228,17 +230,16 @@ export default {
         // Get tenantKey from current tenant
         const tenantKey = tenantStore.currentTenant?.tenantKey
         if (!tenantKey) {
-          alert(t('tenant.overview.unknownTenant'))
+          toast.warning(t('tenant.overview.unknownTenant'))
           return
         }
 
         // Call API to resend invitation (if backend supports it)
         // For now, just show success message
-        alert('Invitation resent successfully!')
+        toast.success('Invitation resent successfully!')
       } catch (error) {
         console.error('Failed to resend invitation:', error)
-        const errorMessage = error.response?.data?.message || error.message || 'Failed to resend invitation. Please try again.'
-        alert(errorMessage)
+        toast.error(error, 'Failed to resend invitation. Please try again.')
       }
     }
     const revokeInvitation = async (invitation) => {
@@ -249,7 +250,7 @@ export default {
         // Get tenantKey from current tenant
         const tenantKey = tenantStore.currentTenant?.tenantKey
         if (!tenantKey) {
-          alert(t('tenant.overview.unknownTenant'))
+          toast.warning(t('tenant.overview.unknownTenant'))
           return
         }
 
@@ -260,10 +261,10 @@ export default {
         invitations.value = invitations.value.filter(inv => inv.id !== invitation.id)
         totalInvitations.value -= 1
         emit('invitation-revoked', invitation)
+        toast.success(t('tenant.member.revokeSuccess', 'Invitation revoked successfully'))
       } catch (error) {
         console.error('Failed to revoke invitation:', error)
-        const errorMessage = error.response?.data?.message || error.message || 'Failed to revoke invitation. Please try again.'
-        alert(errorMessage)
+        toast.error(error, 'Failed to revoke invitation. Please try again.')
       }
     }
     const viewInvitation = (invitation) => {

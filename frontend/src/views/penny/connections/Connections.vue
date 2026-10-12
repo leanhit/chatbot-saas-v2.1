@@ -256,6 +256,7 @@ import 'driver.js/dist/driver.css'
 import { formatDate, formatDateTime } from '@/utils/dateUtils'
 import { usePennyConnectionStore } from '@/stores/pennyConnectionStore'
 import { usePennyBotStore } from '@/stores/pennyBotStore'
+import { useToast } from '@/composables/useToast'
 import PennyConnectionModal from './components/PennyConnectionModal.vue'
 import PennyAutoConnectModal from './components/PennyAutoConnectModal.vue'
 
@@ -268,6 +269,7 @@ export default {
   },
   setup() {
     const { t } = useI18n()
+    const toast = useToast()
     const pennyConnectionStore = usePennyConnectionStore()
     const pennyBotStore = usePennyBotStore()
 
@@ -320,10 +322,12 @@ export default {
     const toggleConnectionStatus = async (connection) => {
       try {
         await pennyConnectionStore.toggleConnectionStatus(currentBotId.value, connection.id)
+        toast.success(connection.isActive ? 'Connection disabled' : 'Connection enabled')
         // Refresh connections to get updated status
         await fetchConnections()
       } catch (error) {
         console.error('Failed to toggle connection status:', error)
+        toast.error(error, 'Failed to toggle connection status')
       }
     }
 
@@ -335,16 +339,17 @@ export default {
       if (confirm(`Are you sure you want to delete "${connection.name || connection.connectionName}"?`)) {
         try {
           await pennyConnectionStore.deleteConnection(currentBotId.value, connection.id)
+          toast.success(`Connection "${connection.name || connection.connectionName}" deleted successfully`)
         } catch (error) {
           console.error('Failed to delete connection:', error)
           
           // Handle admin-only error
           if (error.response?.status === 403) {
-            alert('❌ Admin privileges required to delete connections. Only admin users can perform this action.')
+            toast.error('Admin privileges required to delete connections. Only admin users can perform this action.')
             return
           }
           
-          alert('Failed to delete connection: ' + (error.response?.data?.message || error.message))
+          toast.error(error, 'Failed to delete connection')
         }
       }
     }
@@ -352,10 +357,10 @@ export default {
     const testConnection = async (connection) => {
       try {
         await pennyConnectionStore.testConnection(currentBotId.value, connection.id, {})
-        alert('Connection test successful!')
+        toast.success('Connection test successful!')
       } catch (error) {
         console.error('Connection test failed:', error)
-        alert('Connection test failed: ' + error.message)
+        toast.error(error, 'Connection test failed')
       }
     }
 

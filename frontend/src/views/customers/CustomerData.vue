@@ -317,6 +317,7 @@ import { Icon } from '@iconify/vue'
 import CustomerDetailsModal from './components/CustomerDetailsModal.vue'
 import CustomerItem from './components/CustomerItem.vue'
 import { useI18n } from 'vue-i18n'
+import { useToast } from '@/composables/useToast'
 import customerApi from '@/api/customerApi'
 
 export default {
@@ -328,6 +329,7 @@ export default {
   },
   setup() {
     const { t } = useI18n()
+    const toast = useToast()
     
     // Reactive data
     const loading = ref(false)
@@ -432,13 +434,13 @@ export default {
     const processSelectedCustomers = async () => {
       // TODO: Implement bulk processing when backend endpoint is available
       // For now, just show a message
-      alert('Customer processing feature will be available soon')
+      toast.info('Customer processing feature will be available soon')
     }
 
     const processCustomer = async () => {
       // TODO: Implement customer processing when backend endpoint is available
       // For now, just show a message
-      alert('Customer processing feature will be available soon')
+      toast.info('Customer processing feature will be available soon')
     }
 
     // Pagination methods

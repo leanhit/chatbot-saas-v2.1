@@ -21,7 +21,9 @@ export function useToast() {
       title: title || defaultTitles[type] || 'Notification',
       message: typeof message === 'string' ? message : String(message),
       priority: options.priority || (type === 'error' ? 'high' : 'medium'),
-      actions: options.actions || []
+      actions: options.actions || [],
+      isToast: true,
+      duration: options.duration || 5000
     })
   }
 

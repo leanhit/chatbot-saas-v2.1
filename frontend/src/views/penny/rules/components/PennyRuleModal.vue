@@ -258,6 +258,7 @@ import { Icon } from '@iconify/vue'
 import { useI18n } from 'vue-i18n'
 import { pennyRuleApi } from '@/api/pennyRuleApi'
 import { usePennyBotStore } from '@/stores/pennyBotStore'
+import { useToast } from '@/composables/useToast'
 import {
   RuleType,
   RuleTriggerType,
@@ -283,6 +284,7 @@ export default {
   emits: ['close', 'saved'],
   setup(props, { emit }) {
     const { t } = useI18n()
+    const toast = useToast()
     const pennyBotStore = usePennyBotStore()
     const submitting = ref(false)
     const availableBots = ref([])
@@ -424,10 +426,9 @@ export default {
     }
 
     const handleSubmit = async () => {
-      // Debug: Log when button is clicked
       // Validate required fields
       if (!formData.value.botId) {
-        alert('Please select a bot for this rule')
+        toast.warning('Please select a bot for this rule')
         return
       }
 
@@ -435,23 +436,23 @@ export default {
       if (typeof formData.value.botId === 'object') {
         formData.value.botId = formData.value.botId.id || formData.value.botId.botId || ''
         if (!formData.value.botId) {
-          alert('Invalid bot ID selected')
+          toast.error('Invalid bot ID selected')
           return
         }
       }
 
       if (!formData.value.ruleName || !formData.value.ruleType || !formData.value.triggerType) {
-        alert('Please fill in all required fields')
+        toast.warning('Please fill in all required fields')
         return
       }
 
       if (formData.value.triggerType !== RuleTriggerType.ALWAYS && !formData.value.triggerValue) {
-        alert('Please provide trigger value')
+        toast.warning('Please provide trigger value')
         return
       }
 
       if (!formData.value.action) {
-        alert('Please provide rule action')
+        toast.warning('Please provide rule action')
         return
       }
 
@@ -476,21 +477,23 @@ export default {
         // Validate request
         const validation = ruleRequest.validate()
         if (!validation.isValid) {
-          alert('Validation errors: ' + validation.errors.join(', '))
+          toast.error('Validation errors: ' + validation.errors.join(', '))
           return
         }
 
         if (props.rule) {
           // Update existing rule
           await pennyRuleApi.updateRule(formData.value.botId, props.rule.id, ruleRequest.toApiRequest())
+          toast.success('Rule updated successfully')
         } else {
           // Create new rule
           await pennyRuleApi.createRule(formData.value.botId, ruleRequest.toApiRequest())
+          toast.success('Rule created successfully')
         }
         emit('saved')
       } catch (error) {
         console.error('Failed to save rule:', error)
-        alert('Failed to save rule: ' + error.message)
+        toast.error(error, 'Failed to save rule')
       } finally {
         submitting.value = false
       }
@@ -535,13 +538,13 @@ export default {
         }
 
         if (response.data.matches) {
-          alert(`✅ Rule matched!\n\nRule: ${response.data.ruleName}\nTest data: ${JSON.stringify(testData, null, 2)}`)
+          toast.success(`Rule "${response.data.ruleName}" matched test data!`, 'Test Matched')
         } else {
-          alert(`❌ Rule did not match.\n\nTest data: ${JSON.stringify(testData, null, 2)}`)
+          toast.warning('Rule did not match test data.', 'No Match')
         }
       } catch (error) {
         console.error('Failed to test rule:', error)
-        alert('Failed to test rule: ' + (error.response?.data?.error || error.message))
+        toast.error(error, 'Failed to test rule')
       }
     }
 

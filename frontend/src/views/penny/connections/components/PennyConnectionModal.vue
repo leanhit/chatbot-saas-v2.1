@@ -466,6 +466,7 @@ import { Icon } from '@iconify/vue'
 import { useI18n } from 'vue-i18n'
 import { pennyConnectionApi } from '@/api/pennyConnectionApi'
 import { usePennyBotStore } from '@/stores/pennyBotStore'
+import { useToast } from '@/composables/useToast'
 import {
   ConnectionType,
   ConnectionRequest,
@@ -490,6 +491,7 @@ export default {
   emits: ['close', 'saved'],
   setup(props, { emit }) {
     const { t } = useI18n()
+    const toast = useToast()
     const pennyBotStore = usePennyBotStore()
     const submitting = ref(false)
     const copiedKey = ref(null)
@@ -621,17 +623,17 @@ export default {
     const handleSubmit = async () => {
       // Validate required fields
       if (!formData.value.botId) {
-        alert('Please select a bot for this connection')
+        toast.warning('Please select a bot for this connection')
         return
       }
 
       if (!formData.value.connectionName || !formData.value.connectionType) {
-        alert('Please fill in all required fields')
+        toast.warning('Please fill in all required fields')
         return
       }
 
       if (!isConnectionConfigValid()) {
-        alert('Please complete the connection configuration')
+        toast.warning('Please complete the connection configuration')
         return
       }
 
@@ -671,14 +673,16 @@ export default {
         if (props.connection) {
           // Update existing connection
           await pennyConnectionApi.updateConnection(props.connection.id, connectionRequest)
+          toast.success('Connection updated successfully')
         } else {
           // Create new connection
           await pennyConnectionApi.createConnection(formData.value.botId, connectionRequest)
+          toast.success('Connection created successfully')
         }
         emit('saved')
       } catch (error) {
         console.error('Failed to save connection:', error)
-        alert('Failed to save connection: ' + error.message)
+        toast.error(error, 'Failed to save connection')
       } finally {
         submitting.value = false
       }
@@ -718,9 +722,9 @@ export default {
           }
 
           if (response.data.success) {
-            alert(`✅ Facebook connection test successful!\n\nConnection: ${formData.value.connectionName}\nPage ID: ${formData.value.pageId}\nResponse: ${response.data.message}`)
+            toast.success(`Facebook connection test successful! ${response.data.message || ''}`, 'Test Succeeded')
           } else {
-            alert(`❌ Facebook connection test failed.\n\nError: ${response.data.error}`)
+            toast.error(response.data.error || 'Facebook connection test failed', 'Test Failed')
           }
         } else {
           // For other connection types, use generic testing
@@ -747,14 +751,14 @@ export default {
           }
 
           if (response.data.success) {
-            alert(`✅ Connection test successful!\n\nConnection: ${formData.value.connectionName}\nType: ${formData.value.connectionType}\nResponse: ${response.data.message}`)
+            toast.success(`Connection test successful! ${response.data.message || ''}`, 'Test Succeeded')
           } else {
-            alert(`❌ Connection test failed.\n\nError: ${response.data.error}`)
+            toast.error(response.data.error || 'Connection test failed', 'Test Failed')
           }
         }
       } catch (error) {
         console.error('Failed to test connection:', error)
-        alert('Failed to test connection: ' + (error.response?.data?.error || error.message))
+        toast.error(error, 'Failed to test connection')
       }
     }
 

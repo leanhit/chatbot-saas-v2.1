@@ -102,6 +102,7 @@ import { Icon } from '@iconify/vue'
 import { getRelativeTime } from '@/utils/dateUtils'
 import { appApi } from '@/api/takeoverApi'
 import { useAuthStore } from '@/stores/authStore'
+import { useToast } from '@/composables/useToast'
 
 const props = defineProps({
   conversation: {
@@ -124,6 +125,7 @@ const props = defineProps({
 
 const emit = defineEmits(['select', 'toggle-select', 'assign-changed'])
 
+const toast = useToast()
 const authStore = useAuthStore()
 const isAssigning = ref(false)
 
@@ -180,6 +182,8 @@ const handleAssignAction = async () => {
     
     await appApi.assignConversation(props.conversation.id, agentId)
     
+    toast.success(agentId ? 'Đã nhận cuộc trò chuyện' : 'Đã nhả cuộc trò chuyện')
+
     // Emit event to refresh conversation list
     emit('assign-changed', {
       conversationId: props.conversation.id,
@@ -190,9 +194,9 @@ const handleAssignAction = async () => {
     console.error('Failed to assign/release conversation:', error)
     // Show error notification
     if (error.response?.status === 403) {
-      alert('Bạn không có quyền thực hiện hành động này')
+      toast.error('Bạn không có quyền thực hiện hành động này')
     } else {
-      alert('Có lỗi xảy ra, vui lòng thử lại')
+      toast.error(error, 'Có lỗi xảy ra, vui lòng thử lại')
     }
   } finally {
     isAssigning.value = false

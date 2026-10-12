@@ -167,6 +167,7 @@ import { Icon } from '@iconify/vue'
 import { tenantApi } from '@/api/tenantApi'
 import { formatDate, getRelativeTime } from '@/utils/dateUtils'
 import { useGatewayTenantStore } from '@/stores/tenant/gateway/myTenantStore'
+import { useToast } from '@/composables/useToast'
 import type { MemberResponse, TenantRole, MembershipStatus } from '@/types/tenant'
 import { 
   sanitizeMemberArray, 
@@ -195,6 +196,7 @@ export default {
   },
   emits: ['member-removed', 'member-updated'],
   setup(props, { emit }) {
+    const toast = useToast()
     const tenantStore = useGatewayTenantStore()
     const loading = ref(false)
     const members = ref([])
@@ -314,7 +316,7 @@ export default {
         // Get tenantKey from current tenant
         const tenantKey = tenantStore.currentTenant?.tenantKey
         if (!tenantKey) {
-          alert('No tenant selected')
+          toast.warning('No tenant selected')
           return
         }
 
@@ -324,11 +326,10 @@ export default {
         // Update local member data
         member.role = newRole as TenantRole
         emit('member-updated', member)
-        
-        } catch (error) {
+        toast.success('Member role updated successfully')
+      } catch (error) {
         console.error('Failed to update member role:', error)
-        const errorMessage = error.response?.data?.message || error.message || 'Failed to update member role. Please try again.'
-        alert(errorMessage)
+        toast.error(error, 'Failed to update member role. Please try again.')
       }
     }
     
@@ -342,7 +343,7 @@ export default {
         // Get tenantKey from current tenant
         const tenantKey = tenantStore.currentTenant?.tenantKey
         if (!tenantKey) {
-          alert('No tenant selected')
+          toast.warning('No tenant selected')
           return
         }
 
@@ -357,10 +358,10 @@ export default {
         }
         
         emit('member-removed', member)
-        } catch (error) {
+        toast.success('Member removed successfully')
+      } catch (error) {
         console.error('Failed to remove member:', error)
-        const errorMessage = error.response?.data?.message || error.message || 'Failed to remove member. Please try again.'
-        alert(errorMessage)
+        toast.error(error, 'Failed to remove member. Please try again.')
       }
     }
     

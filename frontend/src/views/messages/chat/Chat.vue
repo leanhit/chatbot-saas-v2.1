@@ -451,13 +451,15 @@ import { appApi as takeoverApi } from '@/api/takeoverApi'
 import { usePennyBotStore } from '@/stores/pennyBotStore'
 import { usePennyConnectionStore } from '@/stores/pennyConnectionStore'
 import { useNotificationStore } from '@/stores/notification/notificationStore'
+import { useToast } from '@/composables/useToast'
 import { getRelativeTime } from '@/utils/dateUtils'
 import takeoverWebSocketService from '@/services/takeoverWebSocketService'
 import ConversationItem from '../conversations/components/ConversationItem.vue'
 import RealTimeMessageIndicator from './components/RealTimeMessageIndicator.vue'
 import RealTimeMessageBubble from './components/RealTimeMessageBubble.vue'
 
-// Stores
+// Stores & Composables
+const toast = useToast()
 const pennyBotStore = usePennyBotStore()
 const pennyConnectionStore = usePennyConnectionStore()
 const notificationStore = useNotificationStore()
@@ -591,6 +593,7 @@ const deleteSelectedConversations = async () => {
     
     // Clear selection and reload
     selectedConversations.value.clear()
+    toast.success('Conversations deleted successfully')
     await loadConversations()
     
     // Clear selected conversation if it was deleted
@@ -601,7 +604,7 @@ const deleteSelectedConversations = async () => {
     
   } catch (error) {
     console.error('Error deleting conversations:', error)
-    alert('Failed to delete conversations. Please try again.')
+    toast.error(error, 'Failed to delete conversations. Please try again.')
   } finally {
     loading.value = false
   }
@@ -917,7 +920,7 @@ const sendMessage = async () => {
   } catch (error) {
     console.error('Error sending message:', error)
     // Show error to user
-    alert('Failed to send message: ' + (error.response?.data?.error || error.message))
+    toast.error(error, 'Failed to send message: ' + (error.response?.data?.error || error.message))
   } finally {
     sendingMessage.value = false
   }

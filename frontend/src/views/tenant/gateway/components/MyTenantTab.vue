@@ -128,6 +128,7 @@ import { Icon } from '@iconify/vue'
 import { formatDateTime } from '@/utils/dateUtils'
 import { useI18n } from 'vue-i18n'
 import { useGatewayTenantStore } from '@/stores/tenant/gateway/myTenantStore'
+import { useToast } from '@/composables/useToast'
 import { secureImageUrl } from '@/utils/imageUtils'
 import { TenantStatus } from '@/types/tenant'
 export default {
@@ -138,6 +139,7 @@ export default {
   emits: ['tenant-entered'],
   setup(props, { emit }) {
     const { t } = useI18n()
+    const toast = useToast()
     const router = useRouter()
     const tenantStore = useGatewayTenantStore()
     const tenantList = computed(() => tenantStore.userTenants)
@@ -149,8 +151,7 @@ export default {
         router.push('/dashboard')
         emit('tenant-entered')
       } catch (error) {
-        // Optionally show error message to user
-        // ElMessage.error('Failed to enter workspace. Please try again.')
+        toast.error(error, 'Failed to enter workspace. Please try again.')
       }
     }
     const suspendTenant = async (tenantKey) => {
@@ -167,10 +168,10 @@ export default {
       }
       try {
         await tenantStore.leaveTenant(tenant.tenantKey)
-        alert(t('gateway.actions.leaveSuccess'))
+        toast.success(t('gateway.actions.leaveSuccess'))
       } catch (error) {
-        const errorMessage = error.response?.data?.message || error.message || 'Failed to leave tenant'
-        alert(errorMessage)
+        console.error('Failed to leave tenant:', error)
+        toast.error(error, 'Failed to leave tenant')
       }
     }
     return {

@@ -122,6 +122,7 @@ import { ref, watch, onUnmounted, computed } from 'vue'
 import { Icon } from '@iconify/vue'
 import { useI18n } from 'vue-i18n'
 import { useGatewaySearchTenantStore } from '@/stores/tenant/gateway/searchTenantStore'
+import { useToast } from '@/composables/useToast'
 import { secureImageUrl } from '@/utils/imageUtils'
 import { TenantMembershipStatus, canJoinTenant, getJoinButtonText, getJoinButtonClass } from '@/types/tenant'
 export default {
@@ -131,6 +132,7 @@ export default {
   },
   setup() {
     const { t } = useI18n()
+    const toast = useToast()
     const searchStore = useGatewaySearchTenantStore()
     const keyword = ref('')
     let debounceTimer = null
@@ -149,14 +151,12 @@ export default {
       try {
         await searchStore.requestJoinTenant(tenantKey)
         // Show success message
-        alert('Join request sent successfully! Please wait for approval.')
+        toast.success('Join request sent successfully! Please wait for approval.')
         // Re-fetch search results to get updated status
         await executeSearch()
       } catch (error) {
         console.error('Failed to join tenant:', error)
-        // Show specific error message from backend if available
-        const errorMessage = error.response?.data?.message || error.message || $t('gateway.errors.failedJoinRequest')
-        alert(errorMessage)
+        toast.error(error, t('gateway.errors.failedJoinRequest', 'Failed to join workspace'))
       } finally {
         joinLoading.value = false
       }

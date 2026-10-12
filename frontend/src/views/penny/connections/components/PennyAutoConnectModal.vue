@@ -274,6 +274,7 @@ import { ref, computed, onMounted } from 'vue'
 import { Icon } from '@iconify/vue'
 import { useI18n } from 'vue-i18n'
 import { pennyConnectionApi } from '@/api/pennyConnectionApi'
+import { useToast } from '@/composables/useToast'
 
 export default {
   name: 'PennyAutoConnectModal',
@@ -289,6 +290,7 @@ export default {
   emits: ['close', 'connected'],
   setup(props, { emit }) {
     const { t } = useI18n()
+    const toast = useToast()
 
     // State
     const step = ref('login')
@@ -312,7 +314,7 @@ export default {
     // Methods
     const handleFacebookLogin = async () => {
       if (typeof window.FB === 'undefined') {
-        alert('Facebook SDK is not loaded. Please refresh the page and try again.')
+        toast.warning('Facebook SDK is not loaded. Please refresh the page and try again.')
         return
       }
 
@@ -334,7 +336,7 @@ export default {
               step.value = 'select'
               loadFacebookPages()
             } else {
-              alert('Facebook login failed. Please try again.')
+              toast.error('Facebook login failed. Please try again.')
             }
             loggingIn.value = false
           },
@@ -344,7 +346,7 @@ export default {
         )
       } catch (error) {
         console.error('Facebook login error:', error)
-        alert('Failed to connect to Facebook. Please try again.')
+        toast.error(error, 'Failed to connect to Facebook. Please try again.')
         loggingIn.value = false
       }
     }
@@ -369,7 +371,7 @@ export default {
         }
       } catch (error) {
         console.error('Failed to load Facebook pages:', error)
-        alert('Failed to load your Facebook pages. Please try again.')
+        toast.error(error, 'Failed to load your Facebook pages. Please try again.')
       } finally {
         loadingPages.value = false
       }

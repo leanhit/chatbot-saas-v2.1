@@ -109,6 +109,7 @@ import { useI18n } from 'vue-i18n'
 import { usePennyBotStore } from '@/stores/pennyBotStore'
 import { useAuthStore } from '@/stores/authStore'
 import { useGatewayTenantStore } from '@/stores/tenant/gateway/myTenantStore'
+import { useToast } from '@/composables/useToast'
 import {
   PennyBotType,
   PennyBotTypeDisplay,
@@ -130,6 +131,7 @@ export default {
   emits: ['close', 'saved'],
   setup(props, { emit }) {
     const { t } = useI18n()
+    const toast = useToast()
     const pennyBotStore = usePennyBotStore()
     const authStore = useAuthStore()
     const tenantStore = useGatewayTenantStore()
@@ -172,8 +174,7 @@ export default {
 
       if (!currentUser || !currentTenant) {
         console.error('User or tenant information not available')
-        // Show error message to user
-        alert('Unable to get user or tenant information. Please try again.')
+        toast.error('Unable to get user or tenant information. Please try again.')
         return
       }
 
@@ -184,33 +185,22 @@ export default {
           botName: formData.value.botName,
           botType: formData.value.botType,
           botDescription: formData.value.description || '',
-          tenantKey: currentTenant.tenantKey // Gửi tenantKey thay vì tenantId
+          tenantKey: currentTenant.tenantKey
         }
         
         if (props.bot) {
           // Update existing bot
           await pennyBotStore.updatePennyBot(props.bot.id, apiRequest)
+          toast.success('Bot updated successfully')
         } else {
           // Create new bot
           await pennyBotStore.createPennyBot(apiRequest)
+          toast.success('Bot created successfully')
         }
         emit('saved')
       } catch (error) {
         console.error('Failed to save bot:', error)
-        
-        // Extract actual error message from backend response
-        let errorMessage = 'Failed to save bot'
-        if (error.response && error.response.data) {
-          if (error.response.data.error) {
-            errorMessage = error.response.data.error
-          } else if (error.response.data.message) {
-            errorMessage = error.response.data.message
-          }
-        } else if (error.message) {
-          errorMessage = error.message
-        }
-        
-        alert(errorMessage)
+        toast.error(error, 'Failed to save bot')
       } finally {
         submitting.value = false
       }

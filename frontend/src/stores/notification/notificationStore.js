@@ -26,6 +26,7 @@ const playNotificationSound = () => {
 
 export const useNotificationStore = defineStore('notification', () => {
   const notifications = ref([])
+  const activePopups = ref([])
   const unreadCount = ref(0)
   const isConnected = ref(false)
   const soundEnabled = ref(true)
@@ -60,6 +61,14 @@ export const useNotificationStore = defineStore('notification', () => {
   // Initialize from storage
   loadFromStorage()
 
+  // Remove popup from screen
+  const removePopup = (id) => {
+    const index = activePopups.value.findIndex(p => p.id === id)
+    if (index > -1) {
+      activePopups.value.splice(index, 1)
+    }
+  }
+
   // Add a new notification
   const addNotification = (notification) => {
     const newNotification = {
@@ -76,9 +85,23 @@ export const useNotificationStore = defineStore('notification', () => {
     // Save to storage
     saveToStorage()
 
+    // Add to active floating popups (keep at most 5 on screen simultaneously)
+    activePopups.value.push(newNotification)
+    if (activePopups.value.length > 5) {
+      activePopups.value.shift()
+    }
+
+    // Auto-remove popup from screen after exactly 5 seconds
+    const popupDuration = notification.duration !== undefined ? notification.duration : 5000
+    if (popupDuration > 0) {
+      setTimeout(() => {
+        removePopup(newNotification.id)
+      }, popupDuration)
+    }
+
     // Play sound if enabled and not a toast notification
     // Play different sound/volume based on priority
-    if (soundEnabled.value && notification.type !== 'toast') {
+    if (soundEnabled.value && notification.type !== 'toast' && !notification.isToast) {
       if (newNotification.priority === 'urgent' || newNotification.priority === 'high') {
         // Play sound at higher volume for urgent/high priority
         playNotificationSoundWithVolume(0.8)
@@ -87,11 +110,11 @@ export const useNotificationStore = defineStore('notification', () => {
       }
     }
 
-    // Auto-remove after 10 seconds for toast notifications
-    if (notification.type === 'toast') {
+    // Auto-remove ephemeral toast notifications from history after 5 seconds
+    if (notification.type === 'toast' || notification.isToast) {
       setTimeout(() => {
         removeNotification(newNotification.id)
-      }, 10000)
+      }, popupDuration > 0 ? popupDuration : 5000)
     }
   }
 
@@ -114,6 +137,7 @@ export const useNotificationStore = defineStore('notification', () => {
 
   // Remove notification
   const removeNotification = (id) => {
+    removePopup(id)
     const index = notifications.value.findIndex(n => n.id === id)
     if (index > -1) {
       const notification = notifications.value[index]
@@ -176,6 +200,7 @@ export const useNotificationStore = defineStore('notification', () => {
   // Clear all notifications
   const clearAll = () => {
     notifications.value = []
+    activePopups.value = []
     unreadCount.value = 0
     saveToStorage()
   }
@@ -247,10 +272,12 @@ export const useNotificationStore = defineStore('notification', () => {
 
   return {
     notifications,
+    activePopups,
     unreadCount,
     isConnected,
     soundEnabled,
     addNotification,
+    removePopup,
     removeNotification,
     markAsRead,
     markAllAsRead,

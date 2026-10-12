@@ -27,10 +27,7 @@
       </div>
     </div>
 
-    <!-- Alert Messages -->
-    <div v-if="message" class="mb-4 p-4 rounded-lg" :class="getMessageClass()">
-      {{ message }}
-    </div>
+
 
     <!-- Loading State -->
     <div v-if="loading" class="text-center py-8">
@@ -360,6 +357,7 @@ import { Icon } from '@iconify/vue'
 import packageApi from '@/api/packageApi'
 import { ref, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useToast } from '@/composables/useToast'
 
 export default {
   name: 'PackageManagement',
@@ -368,11 +366,10 @@ export default {
   },
   setup() {
     const { t } = useI18n()
+    const toast = useToast()
     const packages = ref([])
     const loading = ref(false)
     const saving = ref(false)
-    const message = ref('')
-    const messageType = ref('success')
     const showCreateModal = ref(false)
     const showEditModal = ref(false)
     const showDeleteConfirmModal = ref(false)
@@ -406,7 +403,7 @@ export default {
         packages.value = Array.isArray(response) ? response : (response?.data || [])
       } catch (error) {
         console.error('Error loading packages:', error)
-        setMessage(t('admin.package.loadingData') + ': ' + (error.message || 'Unknown error'), 'error')
+        toast.error(error, t('admin.package.loadingData'))
       } finally {
         loading.value = false
       }
@@ -415,11 +412,11 @@ export default {
     const initializePackages = async () => {
       try {
         await packageApi.initializeDefaultPackages()
-        setMessage(t('admin.package.initSuccess'), 'success')
+        toast.success(t('admin.package.initSuccess'))
         await loadPackages()
       } catch (error) {
         console.error('Error initializing packages:', error)
-        setMessage(t('common.error') + ': ' + (error.message || 'Unknown error'), 'error')
+        toast.error(error)
       }
     }
 
@@ -449,17 +446,17 @@ export default {
 
         if (showEditModal.value) {
           await packageApi.updatePackage(editingPackage.value.id, formData.value)
-          setMessage(t('admin.package.updateSuccess'), 'success')
+          toast.success(t('admin.package.updateSuccess'))
         } else {
           await packageApi.createPackage(formData.value)
-          setMessage(t('admin.package.createSuccess'), 'success')
+          toast.success(t('admin.package.createSuccess'))
         }
         
         closeModal()
         await loadPackages()
       } catch (error) {
         console.error('Error saving package:', error)
-        setMessage(t('common.error') + ': ' + (error.response?.data?.message || error.message || 'Unknown error'), 'error')
+        toast.error(error)
       } finally {
         saving.value = false
       }
@@ -480,11 +477,11 @@ export default {
 
       try {
         await packageApi.deletePackage(packageToDelete.value.id)
-        setMessage(t('admin.package.deleteSuccess'), 'success')
+        toast.success(t('admin.package.deleteSuccess'))
         await loadPackages()
       } catch (error) {
         console.error('Error deleting package:', error)
-        setMessage(t('common.error') + ': ' + (error.message || 'Unknown error'), 'error')
+        toast.error(error)
       } finally {
         cancelDelete()
       }
@@ -516,28 +513,6 @@ export default {
       }
     }
 
-    const setMessage = (msg, type = 'success') => {
-      message.value = msg
-      messageType.value = type
-      
-      setTimeout(() => {
-        if (message.value === msg) {
-          message.value = ''
-        }
-      }, 5000)
-    }
-
-    const getMessageClass = () => {
-      const baseClasses = 'p-4 rounded-lg mb-4'
-      const typeClasses = {
-        success: 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200',
-        error: 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200',
-        warning: 'bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200',
-        info: 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200'
-      }
-      return `${baseClasses} ${typeClasses[messageType.value] || typeClasses.info}`
-    }
-
     const formatCurrency = (amount) => {
       return new Intl.NumberFormat('vi-VN', {
         style: 'currency',
@@ -554,8 +529,6 @@ export default {
       packages,
       loading,
       saving,
-      message,
-      messageType,
       showCreateModal,
       showEditModal,
       showDeleteConfirmModal,
@@ -570,7 +543,6 @@ export default {
       cancelDelete,
       confirmDelete,
       closeModal,
-      getMessageClass,
       formatCurrency
     }
   }

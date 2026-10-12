@@ -20,11 +20,6 @@
       </button>
     </div>
 
-    <!-- Alert Messages -->
-    <div v-if="paymentStore.message" class="mt-4 p-4 rounded-lg" :class="paymentStore.getMessageClass()">
-      {{ paymentStore.message }}
-    </div>
-
     <!-- Stats Cards -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
       <div class="bg-white dark:bg-gray-900 rounded-lg shadow p-4">

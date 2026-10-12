@@ -220,7 +220,9 @@
 import { ref, computed, onMounted } from 'vue'
 import { Icon } from '@iconify/vue'
 import routingRuleApi from '@/api/routingRuleApi'
+import { useToast } from '@/composables/useToast'
 
+const toast = useToast()
 const loading = ref(false)
 const rules = ref([])
 const showCreateModal = ref(false)
@@ -256,9 +258,11 @@ const loadRules = async () => {
 const createDefaultRules = async () => {
   try {
     await routingRuleApi.createDefaultRoutingRules()
+    toast.success('Default routing rules created')
     await loadRules()
   } catch (error) {
     console.error('Error creating default rules:', error)
+    toast.error(error, 'Error creating default rules')
   }
 }
 
@@ -273,9 +277,11 @@ const toggleRuleStatus = async (rule) => {
   try {
     const updatedRule = { ...rule, active: !rule.active }
     await routingRuleApi.updateRoutingRule(rule.id, updatedRule)
+    toast.success(`Rule "${rule.name}" is now ${!rule.active ? 'active' : 'inactive'}`)
     await loadRules()
   } catch (error) {
     console.error('Error toggling rule status:', error)
+    toast.error(error, 'Error toggling rule status')
   }
 }
 
@@ -283,9 +289,11 @@ const deleteRule = async (id) => {
   if (confirm('Are you sure you want to delete this rule?')) {
     try {
       await routingRuleApi.deleteRoutingRule(id)
+      toast.success('Rule deleted successfully')
       await loadRules()
     } catch (error) {
       console.error('Error deleting rule:', error)
+      toast.error(error, 'Error deleting rule')
     }
   }
 }
@@ -294,18 +302,25 @@ const saveRule = async () => {
   try {
     currentRule.value.conditions = JSON.parse(conditionsJson.value)
     currentRule.value.action = JSON.parse(actionJson.value)
-    
+  } catch (parseError) {
+    toast.error('Invalid JSON in conditions or action')
+    return
+  }
+
+  try {
     if (showCreateModal.value) {
       await routingRuleApi.createRoutingRule(currentRule.value)
+      toast.success('Routing rule created successfully')
     } else {
       await routingRuleApi.updateRoutingRule(currentRule.value.id, currentRule.value)
+      toast.success('Routing rule updated successfully')
     }
     
     closeModal()
     await loadRules()
   } catch (error) {
     console.error('Error saving rule:', error)
-    alert('Invalid JSON in conditions or action')
+    toast.error(error, 'Error saving routing rule')
   }
 }
 

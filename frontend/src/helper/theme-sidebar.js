@@ -1,14 +1,12 @@
 export const themeSidebar = (toggle) => {
   if (localStorage.getItem("sidebar-theme")) {
     if (toggle) {
-      alert("dark");
       document.querySelector(".sidebar").classList.remove("bg-white");
       document.querySelector(".w-sidebar").classList.remove("bg-white");
       document.querySelector(".sidebar").classList.add("bg-gray-800");
       document.querySelector(".w-sidebar").classList.add("bg-gray-800");
       localStorage.setItem("sidebar-theme", "dark");
     } else {
-      alert("light");
       document.querySelector(".sidebar").classList.add("bg-white");
       document.querySelector(".w-sidebar").classList.add("bg-white");
       document.querySelector(".sidebar").classList.remove("bg-gray-800");
