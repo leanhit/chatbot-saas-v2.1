@@ -1,10 +1,8 @@
 package com.chatbot.core.payment.plan.model;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -71,7 +69,10 @@ public class Discount {
     @Column(name = "applicable_package_id", length = 50)
     private String applicablePackageId; // null = applicable to all packages
     
-    @ElementCollection
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    @ElementCollection(fetch = FetchType.LAZY)
     @CollectionTable(name = "discount_user_usage", joinColumns = @JoinColumn(name = "discount_id"))
     @Column(name = "user_id")
     private List<Long> usedByUserIds; // Track which users have used this discount
