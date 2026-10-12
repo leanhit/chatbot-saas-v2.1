@@ -59,6 +59,11 @@ public class SimplePaymentController {
             @AuthenticationPrincipal UserDetails userDetails,
             HttpServletRequest httpRequest) {
 
+        if (userDetails == null) {
+            log.warn("❌ Unauthorized deposit request: missing user details");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Unauthorized: User authentication required"));
+        }
+
         log.info("📱 Creating deposit request for user: {}", userDetails.getUsername());
 
         try {
@@ -121,6 +126,10 @@ public class SimplePaymentController {
     public ResponseEntity<List<PaymentStatusResponse>> getPaymentHistory(
             @AuthenticationPrincipal UserDetails userDetails,
             HttpServletRequest httpRequest) {
+
+        if (userDetails == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
 
         try {
             Long userId = paymentContextService.extractUserId(userDetails);
@@ -208,6 +217,10 @@ public class SimplePaymentController {
         
         Map<String, Object> debug = new HashMap<>();
         
+        if (userDetails == null) {
+            return Map.of("error", "Unauthorized: User authentication required");
+        }
+
         try {
             Long userId = paymentContextService.extractUserId(userDetails);
             Long tenantId = paymentContextService.extractTenantId(httpRequest);
@@ -237,6 +250,10 @@ public class SimplePaymentController {
             @RequestBody Map<String, String> request,
             @AuthenticationPrincipal UserDetails userDetails,
             HttpServletRequest httpRequest) {
+
+        if (userDetails == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Unauthorized");
+        }
 
         log.info("🚫 User cancelling payment: {}", referenceCode);
 
@@ -312,6 +329,10 @@ public class SimplePaymentController {
             @AuthenticationPrincipal UserDetails userDetails,
             HttpServletRequest httpRequest) {
 
+        if (userDetails == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Unauthorized"));
+        }
+
         log.info("🔄 Retrying payment: {}", referenceCode);
 
         try {
@@ -347,6 +368,10 @@ public class SimplePaymentController {
     public ResponseEntity<Map<String, Object>> checkDepositLimits(
             @AuthenticationPrincipal UserDetails userDetails,
             HttpServletRequest httpRequest) {
+
+        if (userDetails == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Unauthorized"));
+        }
         
         try {
             Long userId = paymentContextService.extractUserId(userDetails);

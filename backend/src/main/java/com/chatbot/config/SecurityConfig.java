@@ -144,8 +144,6 @@ public class SecurityConfig {
                 .requestMatchers("/api/simple-payment/health").permitAll()
                 .requestMatchers("/api/v1/merchant/payments/**").permitAll()
                 .requestMatchers("/api/merchant/payment/**").permitAll()
-                // Allow deposit endpoint without authentication for external clients
-                .requestMatchers(HttpMethod.POST, "/api/simple-payment/deposit").permitAll()
                 
                 // ================= PACKAGES APIs (PUBLIC) =================
                 .requestMatchers("/api/v1/packages/active", "/api/payment/packages/active").permitAll()
