@@ -42,6 +42,10 @@ public class TenantPackageController {
     public ResponseEntity<ApiResponse<TenantPackageInfo>> getCurrentPackageInfo(
             @AuthenticationPrincipal UserDetails userDetails,
             HttpServletRequest httpRequest) {
+        if (userDetails == null) {
+            return ResponseEntity.status(org.springframework.http.HttpStatus.UNAUTHORIZED)
+                    .body(ApiResponse.error("User not authenticated"));
+        }
         try {
             Long tenantId = extractTenantId(userDetails, httpRequest);
             
@@ -80,6 +84,10 @@ public class TenantPackageController {
     public ResponseEntity<ApiResponse<PackageResponse>> getCurrentPackage(
             @AuthenticationPrincipal UserDetails userDetails,
             HttpServletRequest httpRequest) {
+        if (userDetails == null) {
+            return ResponseEntity.status(org.springframework.http.HttpStatus.UNAUTHORIZED)
+                    .body(ApiResponse.error("User not authenticated"));
+        }
         try {
             Long tenantId = extractTenantId(userDetails, httpRequest);
             
@@ -181,11 +189,15 @@ public class TenantPackageController {
             @RequestParam String packageId,
             @AuthenticationPrincipal UserDetails userDetails,
             HttpServletRequest httpRequest) {
+        if (userDetails == null) {
+            return ResponseEntity.status(org.springframework.http.HttpStatus.UNAUTHORIZED)
+                    .body(ApiResponse.error("User not authenticated"));
+        }
         try {
             Long tenantId = extractTenantId(userDetails, httpRequest);
             
             // Check if user has permission to upgrade package (must be admin or owner)
-            String currentUserEmail = userDetails != null ? userDetails.getUsername() : null;
+            String currentUserEmail = userDetails.getUsername();
             if (!permissionValidator.isAdminOrOwner(tenantId, currentUserEmail)) {
                 return ResponseEntity.status(org.springframework.http.HttpStatus.FORBIDDEN)
                     .body(ApiResponse.error("You don't have permission to upgrade the package for this tenant"));
@@ -208,6 +220,10 @@ public class TenantPackageController {
     public ResponseEntity<ApiResponse<TenantPackageDetailResponse>> getMyPackage(
             @AuthenticationPrincipal UserDetails userDetails,
             HttpServletRequest httpRequest) {
+        if (userDetails == null) {
+            return ResponseEntity.status(org.springframework.http.HttpStatus.UNAUTHORIZED)
+                    .body(ApiResponse.error("User not authenticated"));
+        }
         try {
             Long tenantId = extractTenantId(userDetails, httpRequest);
             

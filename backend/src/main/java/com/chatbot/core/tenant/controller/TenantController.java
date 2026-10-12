@@ -205,8 +205,7 @@ public class TenantController {
             @RequestParam(defaultValue = "name") String sortBy,
             @RequestParam(defaultValue = "asc") String sortDirection) {
 
-        String currentUserEmail =
-                SecurityContextHolder.getContext().getAuthentication().getName();
+        String currentUserEmail = permissionValidator.getCurrentUserEmail();
 
         TenantSearchRequest request = new TenantSearchRequest();
         request.setKeyword(keyword);
@@ -302,7 +301,7 @@ public class TenantController {
                     "Tenant not found with key: " + tenantKey));
             
             // Check authorization using centralized validator
-            String currentUserEmail = SecurityContextHolder.getContext().getAuthentication().getName();
+            String currentUserEmail = permissionValidator.getCurrentUserEmail();
             if (!permissionValidator.isAdminOrOwner(tenant.getId(), currentUserEmail)) {
                 throw new ResponseStatusException(HttpStatus.FORBIDDEN, 
                     "You do not have permission to update this tenant logo");

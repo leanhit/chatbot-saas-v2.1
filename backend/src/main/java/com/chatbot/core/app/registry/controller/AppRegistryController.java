@@ -25,6 +25,10 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+import com.chatbot.core.identity.security.CustomUserDetails;
+import com.chatbot.core.tenant.exception.InsufficientPermissionException;
+import com.chatbot.shared.exceptions.ErrorCode;
+
 import jakarta.validation.Valid;
 import java.util.List;
 
@@ -45,14 +49,12 @@ class AppRegistryController {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication != null && authentication.isAuthenticated() 
             && !"anonymousUser".equals(authentication.getPrincipal())) {
-            // Assuming the principal contains the user ID or user object
-            // This may need adjustment based on your authentication implementation
             Object principal = authentication.getPrincipal();
-            if (principal instanceof Long) {
+            if (principal instanceof CustomUserDetails) {
+                return ((CustomUserDetails) principal).getUser().getId();
+            } else if (principal instanceof Long) {
                 return (Long) principal;
             }
-            // If principal is a custom user object, extract ID from it
-            // Example: if (principal instanceof UserDetails) { return ((UserDetails) principal).getId(); }
         }
         return null;
     }
@@ -74,7 +76,7 @@ class AppRegistryController {
         
         Long currentUserId = getCurrentUserId();
         if (currentUserId == null) {
-            throw new IllegalStateException("User not authenticated");
+            throw new InsufficientPermissionException(ErrorCode.USER_NOT_AUTHENTICATED, "User not authenticated");
         }
         
         AppResponse response = appRegistryService.registerApp(request, currentUserId);
@@ -164,7 +166,7 @@ class AppRegistryController {
         
         Long currentUserId = getCurrentUserId();
         if (currentUserId == null) {
-            throw new IllegalStateException("User not authenticated");
+            throw new InsufficientPermissionException(ErrorCode.USER_NOT_AUTHENTICATED, "User not authenticated");
         }
         
         AppResponse response = appRegistryService.updateApp(id, request, currentUserId);
@@ -180,7 +182,7 @@ class AppRegistryController {
         
         Long currentUserId = getCurrentUserId();
         if (currentUserId == null) {
-            throw new IllegalStateException("User not authenticated");
+            throw new InsufficientPermissionException(ErrorCode.USER_NOT_AUTHENTICATED, "User not authenticated");
         }
         
         AppResponse response = appRegistryService.updateAppStatus(id, status, currentUserId);
@@ -196,7 +198,7 @@ class AppRegistryController {
         
         Long currentUserId = getCurrentUserId();
         if (currentUserId == null) {
-            throw new IllegalStateException("User not authenticated");
+            throw new InsufficientPermissionException(ErrorCode.USER_NOT_AUTHENTICATED, "User not authenticated");
         }
         
         AppResponse response = appRegistryService.toggleAppActivation(id, isActive, currentUserId);

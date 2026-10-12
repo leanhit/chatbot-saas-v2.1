@@ -25,31 +25,31 @@ public class WebhookDeadLetter {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     
-    @Column(nullable = false)
+    @Column(name = "webhook_id", nullable = false)
     private Long webhookId;
     
-    @Column(nullable = false, length = 100)
+    @Column(name = "webhook_name", nullable = false, length = 100)
     private String webhookName;
     
-    @Column(nullable = false, length = 500)
+    @Column(name = "webhook_url", nullable = false, length = 500)
     private String webhookUrl;
     
-    @Column(nullable = false, length = 50)
+    @Column(name = "event_type", nullable = false, length = 50)
     private String eventType;
     
-    @Column(nullable = false, length = 100)
+    @Column(name = "payment_reference_code", nullable = false, length = 100)
     private String paymentReferenceCode;
     
-    @Column(nullable = false)
+    @Column(name = "retry_attempts", nullable = false)
     private Integer retryAttempts;
     
-    @Column(nullable = false, columnDefinition = "TEXT")
+    @Column(name = "payload", nullable = false, columnDefinition = "TEXT")
     private String payload;
     
-    @Column(nullable = false, columnDefinition = "TEXT")
+    @Column(name = "last_error", nullable = false, columnDefinition = "TEXT")
     private String lastError;
     
-    @Column(nullable = false)
+    @Column(name = "status", nullable = false)
     @Builder.Default
     private String status = "PENDING"; // PENDING, PROCESSED, DISCARDED
     
@@ -59,7 +59,7 @@ public class WebhookDeadLetter {
     @Column(name = "processed_by")
     private String processedBy;
     
-    @Column(columnDefinition = "TEXT")
+    @Column(name = "processing_notes", columnDefinition = "TEXT")
     private String processingNotes;
     
     @CreationTimestamp

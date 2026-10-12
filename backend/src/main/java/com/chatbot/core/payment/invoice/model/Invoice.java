@@ -23,7 +23,7 @@ public class Invoice {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     
-    @Column(unique = true, nullable = false, length = 50)
+    @Column(name = "invoice_number", unique = true, nullable = false, length = 50)
     private String invoiceNumber; // INV-2024-000001
     
     @Column(name = "payment_id", nullable = false)
@@ -35,46 +35,47 @@ public class Invoice {
     @Column(name = "tenant_id", nullable = false)
     private Long tenantId;
     
-    @Column(nullable = false, length = 100)
+    @Column(name = "user_email", nullable = false, length = 100)
     private String userEmail;
     
-    @Column(nullable = false, length = 100)
+    @Column(name = "user_name", nullable = false, length = 100)
     private String userName;
     
-    @Column(nullable = false, precision = 15, scale = 2)
+    @Column(name = "subtotal", nullable = false, precision = 15, scale = 2)
     private BigDecimal subtotal;
     
-    @Column(nullable = false, precision = 15, scale = 2)
+    @Column(name = "discount_amount", nullable = false, precision = 15, scale = 2)
     private BigDecimal discountAmount;
     
-    @Column(nullable = false, precision = 15, scale = 2)
+    @Column(name = "tax_amount", nullable = false, precision = 15, scale = 2)
     private BigDecimal taxAmount;
     
-    @Column(nullable = false, precision = 15, scale = 2)
+    @Column(name = "total_amount", nullable = false, precision = 15, scale = 2)
     private BigDecimal totalAmount;
     
-    @Column(nullable = false, length = 10)
+    @Column(name = "currency", nullable = false, length = 10)
     private String currency;
     
-    @Column(length = 50)
+    @Column(name = "discount_code", length = 50)
     private String discountCode;
     
-    @Column(length = 50)
+    @Column(name = "package_id", length = 50)
     private String packageId;
     
-    @Column(length = 100)
+    @Column(name = "package_name", length = 100)
     private String packageName;
     
-    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false, length = 50)
     private InvoiceStatus status;
     
-    @Column(columnDefinition = "TEXT")
+    @Column(name = "notes", columnDefinition = "TEXT")
     private String notes;
     
-    @Column(length = 20)
+    @Column(name = "payment_method", length = 50)
     private String paymentMethod; // BANK_TRANSFER, QR_CODE, etc.
     
-    @Column(columnDefinition = "TEXT")
+    @Column(name = "payment_reference", columnDefinition = "TEXT")
     private String paymentReference;
     
     @CreationTimestamp

@@ -39,6 +39,7 @@ public class FileMetadata extends BaseTenantEntity {
     @Column(name = "content_type")
     private String contentType;
 
+    @Column(name = "updated_at")
     @JsonFormat(pattern = DateUtils.STANDARD_JSON_FORMAT, timezone = DateUtils.STANDARD_TIMEZONE)
     private LocalDateTime updatedAt;
 

@@ -22,28 +22,28 @@ public class MerchantApiKey {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     
-    @Column(nullable = false)
+    @Column(name = "tenant_id", nullable = false)
     private Long tenantId;
     
-    @Column(nullable = false, unique = true, length = 100)
+    @Column(name = "api_key", nullable = false, unique = true, length = 100)
     private String apiKey; // Public API key for authentication
     
-    @Column(nullable = false, length = 100)
+    @Column(name = "api_secret", nullable = false, length = 100)
     private String apiSecret; // Secret key for HMAC signature
     
-    @Column(nullable = false, length = 100)
+    @Column(name = "name", nullable = false, length = 100)
     private String name; // Merchant's name/website name
     
-    @Column(length = 500)
+    @Column(name = "description", length = 500)
     private String description;
     
-    @Column(length = 500)
+    @Column(name = "webhook_url", length = 500)
     private String webhookUrl; // Merchant's webhook URL for payment notifications
     
-    @Column(nullable = false, length = 50)
+    @Column(name = "webhook_secret", nullable = false, length = 50)
     private String webhookSecret; // Secret for webhook signature verification
     
-    @Column(nullable = false)
+    @Column(name = "is_active", nullable = false)
     @Builder.Default
     private Boolean isActive = true;
     

@@ -9,6 +9,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -37,6 +38,12 @@ public class AvatarController {
     public ResponseEntity<Map<String, String>> uploadUserAvatar(
             @AuthenticationPrincipal UserDetails userDetails,
             @Parameter(description = "Avatar image file") @RequestParam("file") MultipartFile file) {
+        
+        if (userDetails == null) {
+            Map<String, String> unauthResponse = new HashMap<>();
+            unauthResponse.put("error", "User not authenticated");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(unauthResponse);
+        }
         
         try {
             // Get user from authentication

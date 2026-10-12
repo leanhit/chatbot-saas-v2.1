@@ -3,6 +3,7 @@ package com.chatbot.core.identity.controller;
 import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -81,9 +82,13 @@ public class AuthController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "Unauthorized")
         })
     public ResponseEntity<ApiResponse<UserResponse>> changePassword(
-            @Parameter(hidden = true) @AuthenticationPrincipal(expression = "user") CustomUserDetails currentUser,
+            @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails currentUser,
             @Parameter(description = "Password change details", required = true)
             @RequestBody ChangePasswordRequest request) {
+        if (currentUser == null || currentUser.getUser() == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(ApiResponse.error("User not authenticated"));
+        }
         if (!request.getNewPassword().equals(request.getConfirmPassword())) {
             throw new RuntimeException("New password confirmation does not match");
         }
@@ -127,9 +132,10 @@ public class AuthController {
     @PostMapping("/logout")
     @Operation(summary = "Logout user", description = "Revoke refresh token and logout user")
     public ResponseEntity<ApiResponse<String>> logout(
-            @Parameter(hidden = true) @AuthenticationPrincipal(expression = "user") CustomUserDetails currentUser) {
-        if (currentUser == null) {
-            return ResponseEntity.badRequest().body(ApiResponse.error("User not authenticated"));
+            @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails currentUser) {
+        if (currentUser == null || currentUser.getUser() == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(ApiResponse.error("User not authenticated"));
         }
         authService.logout(currentUser.getUser().getEmail());
         return ResponseEntity.ok(ApiResponse.success("Logout successful"));

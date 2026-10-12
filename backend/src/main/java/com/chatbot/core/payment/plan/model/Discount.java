@@ -23,48 +23,58 @@ public class Discount {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Column(name = "tenant_key", length = 255)
+    private String tenantKey;
+
+    @Column(name = "tenant_id")
+    private Long tenantId;
     
-    @Column(unique = true, nullable = false, length = 50)
+    @Column(name = "code", unique = true, nullable = false, length = 50)
     private String code; // Discount code (e.g., "WELCOME10", "SUMMER2024")
     
-    @Column(nullable = false, length = 100)
+    @Column(name = "name", nullable = false, length = 100)
     private String name;
     
-    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
+    @Column(name = "discount_type", nullable = false, length = 20)
     private DiscountType discountType; // PERCENTAGE, FIXED_AMOUNT
     
-    @Column(nullable = false, precision = 10, scale = 2)
+    @Column(name = "discount_value", nullable = false, precision = 10, scale = 2)
     private BigDecimal discountValue; // Percentage (e.g., 10.00) or fixed amount (e.g., 50000.00)
     
-    @Column(nullable = false, precision = 10, scale = 2)
-    private BigDecimal minimumAmount; // Minimum order amount to apply discount
+    @Column(name = "minimum_amount", nullable = false, precision = 10, scale = 2)
+    @Builder.Default
+    private BigDecimal minimumAmount = BigDecimal.ZERO; // Minimum order amount to apply discount
     
-    @Column(nullable = false, precision = 10, scale = 2)
-    private BigDecimal maximumDiscount; // Maximum discount amount (for percentage discounts)
+    @Column(name = "maximum_discount", nullable = false, precision = 10, scale = 2)
+    @Builder.Default
+    private BigDecimal maximumDiscount = BigDecimal.ZERO; // Maximum discount amount (for percentage discounts)
     
-    @Column(nullable = false)
+    @Column(name = "usage_limit")
     private Integer usageLimit; // Total usage limit (null = unlimited)
     
-    @Column(nullable = false)
-    private Integer usageCount; // Current usage count
+    @Column(name = "usage_count", nullable = false)
+    @Builder.Default
+    private Integer usageCount = 0; // Current usage count
     
-    @Column(nullable = false)
+    @Column(name = "usage_limit_per_user")
     private Integer usageLimitPerUser; // Usage limit per user (null = unlimited)
     
-    @Column(nullable = false)
+    @Column(name = "is_active", nullable = false)
     @Builder.Default
     private Boolean isActive = true;
     
-    @Column(nullable = false)
+    @Column(name = "valid_from", nullable = false)
     private LocalDateTime validFrom;
     
-    @Column(nullable = false)
+    @Column(name = "valid_until", nullable = false)
     private LocalDateTime validUntil;
     
-    @Column(columnDefinition = "TEXT")
+    @Column(name = "description", columnDefinition = "TEXT")
     private String description;
     
-    @Column(length = 50)
+    @Column(name = "applicable_package_id", length = 50)
     private String applicablePackageId; // null = applicable to all packages
     
     @ElementCollection
@@ -79,6 +89,16 @@ public class Discount {
     @UpdateTimestamp
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
+
+    @Column(name = "created_by", length = 255)
+    private String createdBy;
+
+    @Column(name = "updated_by", length = 255)
+    private String updatedBy;
+
+    @Column(name = "is_deleted", nullable = false)
+    @Builder.Default
+    private Boolean isDeleted = false;
     
     @PrePersist
     protected void onCreate() {

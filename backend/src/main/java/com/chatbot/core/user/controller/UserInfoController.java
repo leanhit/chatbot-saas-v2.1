@@ -13,6 +13,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -45,7 +46,9 @@ public class UserInfoController {
     )
     public ResponseEntity<UserFullResponse> getCurrentUser(
             @AuthenticationPrincipal CustomUserDetails userDetails) {
-        
+        if (userDetails == null || userDetails.getUser() == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
         log.info("Getting current user info for user: {}", userDetails.getUsername());
         UserFullResponse userResponse = userService.getFullProfile(userDetails.getUser().getId());
         return ResponseEntity.ok(userResponse);
@@ -64,7 +67,9 @@ public class UserInfoController {
     )
     public ResponseEntity<UserFullResponse> getUserProfile(
             @AuthenticationPrincipal CustomUserDetails userDetails) {
-        
+        if (userDetails == null || userDetails.getUser() == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
         log.info("Getting user profile for user: {}", userDetails.getUsername());
         UserFullResponse userResponse = userService.getFullProfile(userDetails.getUser().getId());
         return ResponseEntity.ok(userResponse);
@@ -84,7 +89,9 @@ public class UserInfoController {
     public ResponseEntity<UserProfileResponse> updateCurrentUser(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @Valid @RequestBody UserRequest request) {
-        
+        if (userDetails == null || userDetails.getUser() == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
         log.info("Updating current user profile for user: {}", userDetails.getUsername());
         UserProfileResponse response = userService.updateProfile(userDetails.getUser().getId(), request);
         return ResponseEntity.ok(response);
@@ -105,7 +112,9 @@ public class UserInfoController {
     public ResponseEntity<UserProfileResponse> updateAvatar(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @RequestParam("avatar") MultipartFile file) {
-        
+        if (userDetails == null || userDetails.getUser() == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
         log.info("Updating avatar for user: {}", userDetails.getUsername());
         UserProfileResponse response = userService.updateAvatar(userDetails.getUser().getId(), file);
         return ResponseEntity.ok(response);
@@ -125,7 +134,9 @@ public class UserInfoController {
     public ResponseEntity<UserProfileResponse> updateBasicInfo(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @Valid @RequestBody UserRequest request) {
-        
+        if (userDetails == null || userDetails.getUser() == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
         log.info("Updating basic info for user: {}", userDetails.getUsername());
         UserProfileResponse response = userService.updateBasicInfo(userDetails.getUser().getId(), request);
         return ResponseEntity.ok(response);
@@ -145,7 +156,9 @@ public class UserInfoController {
     public ResponseEntity<UserProfileResponse> updateProfessionalInfo(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @Valid @RequestBody UserRequest request) {
-        
+        if (userDetails == null || userDetails.getUser() == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
         log.info("Updating professional info for user: {}", userDetails.getUsername());
         UserProfileResponse response = userService.updateProfessionalInfo(userDetails.getUser().getId(), request);
         return ResponseEntity.ok(response);

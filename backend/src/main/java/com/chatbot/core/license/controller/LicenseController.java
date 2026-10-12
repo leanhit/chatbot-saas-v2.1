@@ -49,7 +49,9 @@ public class LicenseController {
     public ResponseEntity<LicenseResponse> getMyLicense(
             @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails currentUser,
             @RequestHeader(value = "X-License-Token", required = false) String licenseToken) {
-        
+        if (currentUser == null || currentUser.getUser() == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
         Long userId = currentUser.getUser().getId();
         log.info("Fetching license for user: {}", userId);
         
@@ -106,6 +108,9 @@ public class LicenseController {
             @Parameter(description = "License creation details", required = true)
             @Valid @RequestBody CreateLicenseRequest request,
             @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails currentUser) {
+        if (currentUser == null || currentUser.getUser() == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
         
         // Additional validation: Only cloud service can create licenses with specific features
         if (request.getFeatures() != null && !request.getFeatures().isEmpty()) {
@@ -222,7 +227,9 @@ public class LicenseController {
             @Parameter(description = "Feature name to check", required = true)
             @PathVariable String feature,
             @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails currentUser) {
-        
+        if (currentUser == null || currentUser.getUser() == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
         Long userId = currentUser.getUser().getId();
         boolean hasFeature = licenseService.hasFeature(userId, feature);
         
@@ -244,7 +251,9 @@ public class LicenseController {
             @Parameter(description = "Module name to check", required = true)
             @PathVariable String module,
             @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails currentUser) {
-        
+        if (currentUser == null || currentUser.getUser() == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
         Long userId = currentUser.getUser().getId();
         boolean hasModule = licenseService.hasModule(userId, module);
         
@@ -266,7 +275,9 @@ public class LicenseController {
             @Parameter(description = "Limit key (e.g., 'bots', 'storage')", required = true)
             @PathVariable String limitKey,
             @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails currentUser) {
-        
+        if (currentUser == null || currentUser.getUser() == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
         Long userId = currentUser.getUser().getId();
         Integer limit = licenseService.getLimit(userId, limitKey);
         
@@ -379,7 +390,9 @@ public class LicenseController {
             @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails currentUser,
             @Parameter(description = "License configuration", required = false)
             @RequestBody(required = false) Map<String, Object> licenseConfig) {
-        
+        if (currentUser == null || currentUser.getUser() == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
         Long userId = currentUser.getUser().getId();
         String userEmail = currentUser.getUser().getEmail();
         

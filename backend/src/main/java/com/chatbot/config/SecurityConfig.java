@@ -118,9 +118,21 @@ public class SecurityConfig {
                 // =================================================
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
+                // ================= AUTH APIs =================
+                .requestMatchers("/auth/change-password", "/api/auth/change-password").authenticated()
+                .requestMatchers("/auth/logout", "/api/auth/logout").authenticated()
+                .requestMatchers("/auth/change-role", "/api/auth/change-role").hasRole("ADMIN")
+                .requestMatchers(
+                    "/auth/register", "/api/auth/register",
+                    "/auth/login", "/api/auth/login",
+                    "/auth/refresh-token", "/api/auth/refresh-token",
+                    "/auth/logout-simple", "/api/auth/logout-simple",
+                    "/auth/logout-by-token", "/api/auth/logout-by-token",
+                    "/error"
+                ).permitAll()
+
                 // ================= PUBLIC APIs =================
                 // Most specific paths first
-                .requestMatchers("/auth/**", "/api/auth/**", "/error").permitAll()
                 .requestMatchers("/actuator/**", "/api/actuator/**", "/health").permitAll()
                 .requestMatchers("/penny/bots/*/chat/public").permitAll()
                 .requestMatchers("/webhooks/**", "/api/webhooks/**").permitAll()
@@ -167,11 +179,11 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/api/tenants").authenticated()
 
                 // ================= TENANT CONTEXT REQUIRED =================
-                .requestMatchers("/tenants/create").authenticated()
-                .requestMatchers("/tenants/update").authenticated()
-                .requestMatchers("/tenants/delete").authenticated()
-                .requestMatchers("/v1/tenant/**").authenticated()
-                .requestMatchers("/v1/user-info/**").authenticated()
+                .requestMatchers("/tenants/create", "/api/tenants/create").authenticated()
+                .requestMatchers("/tenants/update", "/api/tenants/update").authenticated()
+                .requestMatchers("/tenants/delete", "/api/tenants/delete").authenticated()
+                .requestMatchers("/v1/tenant/**", "/api/v1/tenant/**").authenticated()
+                .requestMatchers("/v1/user-info/**", "/api/v1/user-info/**", "/api/users/**").authenticated()
 
                 // ================= DEFAULT =================
                 .anyRequest().authenticated()

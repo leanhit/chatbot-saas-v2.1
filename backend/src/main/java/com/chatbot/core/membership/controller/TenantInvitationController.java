@@ -5,6 +5,9 @@ import com.chatbot.core.membership.dto.InviteMemberRequest;
 import com.chatbot.core.membership.dto.InvitationResponse;
 import com.chatbot.core.user.model.User;
 
+import com.chatbot.core.tenant.exception.InsufficientPermissionException;
+import com.chatbot.shared.exceptions.ErrorCode;
+
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -27,6 +30,9 @@ public class TenantInvitationController {
             @PathVariable Long tenantId,
             @Valid @RequestBody InviteMemberRequest request,
             @AuthenticationPrincipal(expression = "user") User currentUser) {
+        if (currentUser == null) {
+            throw new InsufficientPermissionException(ErrorCode.USER_NOT_AUTHENTICATED, "User not authenticated");
+        }
         invitationService.inviteMember(tenantId, request, currentUser);
     }
     
@@ -41,6 +47,9 @@ public class TenantInvitationController {
     public void acceptInvitation(
             @PathVariable String token,
             @AuthenticationPrincipal(expression = "user") User user) {
+        if (user == null) {
+            throw new InsufficientPermissionException(ErrorCode.USER_NOT_AUTHENTICATED, "User not authenticated");
+        }
         invitationService.acceptInvitation(token, user);
     }
 
@@ -49,6 +58,9 @@ public class TenantInvitationController {
     public void rejectInvitation(
             @PathVariable String token,
             @AuthenticationPrincipal(expression = "user") User user) {
+        if (user == null) {
+            throw new InsufficientPermissionException(ErrorCode.USER_NOT_AUTHENTICATED, "User not authenticated");
+        }
         invitationService.rejectInvitation(token, user);
     }
     

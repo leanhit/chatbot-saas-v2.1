@@ -9,6 +9,7 @@ import com.chatbot.core.tenant.service.TenantPackageService;
 import com.chatbot.core.payment.plan.model.Package;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -82,9 +83,10 @@ public class UserController {
     )
     public ResponseEntity<UserFullResponse> getMyProfile(
             @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails currentUser) {
-        
+        if (currentUser == null || currentUser.getUser() == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
         User user = currentUser.getUser();
-        
         return ResponseEntity.ok(userService.getFullProfile(user.getId()));
     }
 
@@ -103,12 +105,12 @@ public class UserController {
     public ResponseEntity<UserProfileResponse> updateMyProfile(
             @AuthenticationPrincipal CustomUserDetails currentUser,
             @RequestBody UserRequest request) {
-        
+        if (currentUser == null || currentUser.getUser() == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
         User user = currentUser.getUser();
-        
         UserProfileResponse response = userService.updateProfile(user.getId(), request);
         log.info("Updated profile for user: {}", currentUser.getUsername());
-        
         return ResponseEntity.ok(response);
     }
 
@@ -119,12 +121,12 @@ public class UserController {
     public ResponseEntity<UserProfileResponse> updateAvatar(
             @AuthenticationPrincipal CustomUserDetails currentUser,
             @RequestParam("avatar") MultipartFile file) {
-        
+        if (currentUser == null || currentUser.getUser() == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
         User user = currentUser.getUser();
-        
         UserProfileResponse response = userService.updateAvatar(user.getId(), file);
         log.info("Updated avatar for user: {}", currentUser.getUsername());
-        
         return ResponseEntity.ok(response);
     }
 
@@ -153,11 +155,11 @@ public class UserController {
     @GetMapping("/v1/user-info/me")
     public ResponseEntity<UserFullResponse> getMyProfileLegacy(
             @AuthenticationPrincipal CustomUserDetails currentUser) {
-        
+        if (currentUser == null || currentUser.getUser() == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
         log.warn("Using legacy endpoint /api/v1/user-info/me - please migrate to /api/users/me");
-        
         User user = currentUser.getUser();
-        
         return ResponseEntity.ok(userService.getFullProfile(user.getId()));
     }
 
@@ -168,14 +170,13 @@ public class UserController {
     public ResponseEntity<UserProfileResponse> updateMyProfileLegacy(
             @AuthenticationPrincipal CustomUserDetails currentUser,
             @RequestBody UserRequest request) {
-        
+        if (currentUser == null || currentUser.getUser() == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
         log.warn("Using legacy endpoint /api/v1/user-info/me - please migrate to /api/users/me");
-        
         User user = currentUser.getUser();
-        
         UserProfileResponse response = userService.updateProfile(user.getId(), request);
         log.info("Updated profile for user: {}", currentUser.getUsername());
-        
         return ResponseEntity.ok(response);
     }
 
@@ -186,14 +187,13 @@ public class UserController {
     public ResponseEntity<UserProfileResponse> updateAvatarLegacy(
             @AuthenticationPrincipal CustomUserDetails currentUser,
             @RequestParam("avatar") MultipartFile file) {
-        
+        if (currentUser == null || currentUser.getUser() == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
         log.warn("Using legacy endpoint /api/v1/user-info/me/avatar - please migrate to /api/users/me/avatar");
-        
         User user = currentUser.getUser();
-        
         UserProfileResponse response = userService.updateAvatar(user.getId(), file);
         log.info("Updated avatar for user: {}", currentUser.getUsername());
-        
         return ResponseEntity.ok(response);
     }
 
@@ -206,14 +206,13 @@ public class UserController {
     public ResponseEntity<UserProfileResponse> updateBasicInfoLegacy(
             @AuthenticationPrincipal CustomUserDetails currentUser,
             @Valid @RequestBody UserRequest request) {
-        
+        if (currentUser == null || currentUser.getUser() == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
         log.warn("Using legacy endpoint /api/v1/user-info/me/basic-info - please migrate to /api/users/me/basic-info");
-        
         User user = currentUser.getUser();
-        
         UserProfileResponse response = userService.updateBasicInfo(user.getId(), request);
         log.info("Updated basic info for user: {}", currentUser.getUsername());
-        
         return ResponseEntity.ok(response);
     }
 
@@ -224,14 +223,13 @@ public class UserController {
     public ResponseEntity<UserProfileResponse> updateProfessionalInfoLegacy(
             @AuthenticationPrincipal CustomUserDetails currentUser,
             @Valid @RequestBody UserRequest request) {
-        
+        if (currentUser == null || currentUser.getUser() == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
         log.warn("Using legacy endpoint /api/v1/user-info/me/professional-info - please migrate to /api/users/me/professional-info");
-        
         User user = currentUser.getUser();
-        
         UserProfileResponse response = userService.updateProfessionalInfo(user.getId(), request);
         log.info("Updated professional info for user: {}", currentUser.getUsername());
-        
         return ResponseEntity.ok(response);
     }
 
@@ -244,12 +242,12 @@ public class UserController {
     public ResponseEntity<UserProfileResponse> updateBasicInfo(
             @AuthenticationPrincipal CustomUserDetails currentUser,
             @Valid @RequestBody UserRequest request) {
-        
+        if (currentUser == null || currentUser.getUser() == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
         User user = currentUser.getUser();
-        
         UserProfileResponse response = userService.updateBasicInfo(user.getId(), request);
         log.info("Updated basic info for user: {}", currentUser.getUsername());
-        
         return ResponseEntity.ok(response);
     }
 
@@ -261,10 +259,12 @@ public class UserController {
             @AuthenticationPrincipal CustomUserDetails currentUser,
             @PathVariable Long requestId
     ) {
+        if (currentUser == null || currentUser.getUser() == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
         User user = currentUser.getUser();
         userService.cancelJoinRequest(requestId, user);
         log.info("Cancelled join request: {} for user: {}", requestId, currentUser.getUsername());
-        
         return ResponseEntity.noContent().build();
     }
 
@@ -278,7 +278,9 @@ public class UserController {
     )
     public ResponseEntity<Map<String, Object>> getCurrentPackage(
             @AuthenticationPrincipal CustomUserDetails currentUser) {
-        
+        if (currentUser == null || currentUser.getUser() == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
         User user = currentUser.getUser();
         
         try {
