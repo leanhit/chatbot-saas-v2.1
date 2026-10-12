@@ -23,12 +23,6 @@ public class Discount {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
-    @Column(name = "tenant_key", length = 255)
-    private String tenantKey;
-
-    @Column(name = "tenant_id")
-    private Long tenantId;
     
     @Column(name = "code", unique = true, nullable = false, length = 50)
     private String code; // Discount code (e.g., "WELCOME10", "SUMMER2024")
@@ -89,16 +83,6 @@ public class Discount {
     @UpdateTimestamp
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
-
-    @Column(name = "created_by", length = 255)
-    private String createdBy;
-
-    @Column(name = "updated_by", length = 255)
-    private String updatedBy;
-
-    @Column(name = "is_deleted", nullable = false)
-    @Builder.Default
-    private Boolean isDeleted = false;
     
     @PrePersist
     protected void onCreate() {
