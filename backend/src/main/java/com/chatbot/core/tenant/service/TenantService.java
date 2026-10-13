@@ -33,14 +33,12 @@ import org.springframework.data.domain.Page;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Caching;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
-import com.chatbot.core.tenant.event.TenantCreatedEvent;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -64,7 +62,7 @@ public class TenantService {
     private final TenantPermissionValidator permissionValidator;
     private final TenantCleanupService tenantCleanupService;
     private final TenantValidationService tenantValidationService;
-    private final ApplicationEventPublisher eventPublisher;
+
     @Qualifier("tenantTransactionManager")
     private final PlatformTransactionManager tenantTransactionManager;
 
@@ -98,17 +96,23 @@ public class TenantService {
             return tenant;
         });
 
-        // 3. Publish event for eventual consistency (address creation in Shared DB & default package assignment)
+        // 3. Tạo address trực tiếp sau khi tenant transaction đã commit (giống AuthService tạo user address)
+        // NOTE: Không dùng event vì @TransactionalEventListener(AFTER_COMMIT) không trigger
+        // khi TransactionTemplate tự commit bên trong — active transaction đã kết thúc trước khi event được publish.
         try {
-            eventPublisher.publishEvent(TenantCreatedEvent.builder()
-                    .tenantId(savedTenant.getId())
-                    .tenantKey(savedTenant.getTenantKey())
-                    .ownerUserId(currentUser.getId())
-                    .currentUserEmail(currentUserEmail)
-                    .build());
-            log.info("[TenantService] Published TenantCreatedEvent");
+            addressService.getOrCreateSingleAddress(savedTenant.getId(), OwnerType.TENANT, savedTenant.getId());
+            log.info("[TenantService] Created empty address for tenant: {}", savedTenant.getId());
         } catch (Exception e) {
-            log.error("[TenantService] Error publishing TenantCreatedEvent: {}", e.getMessage(), e);
+            log.error("[TenantService] Failed to create address for tenant {}: {}", savedTenant.getId(), e.getMessage(), e);
+        }
+
+        // 4. Gán default package trực tiếp (cũng đồng bộ)
+        try {
+            tenantRepository.findById(savedTenant.getId()).ifPresent(tenant ->
+                    tenantPackageService.assignDefaultPackageToTenant(tenant));
+            log.info("[TenantService] Assigned default package to tenant: {}", savedTenant.getId());
+        } catch (Exception e) {
+            log.error("[TenantService] Failed to assign default package to tenant {}: {}", savedTenant.getId(), e.getMessage(), e);
         }
 
         log.info("[TenantService] Tenant creation complete: key={}", savedTenant.getTenantKey());
