@@ -239,7 +239,7 @@ const getAgentsBySkill = (skill) => {
 }
 
 const goToAgentManagement = () => {
-  router.push({ name: 'admin-agents' })
+  router.push({ name: 'tenant-agents' })
 }
 
 onMounted(() => {

@@ -233,6 +233,23 @@
                 You are in control
               </span>
               
+              <!-- Agent Assignment Dropdown (for Admin/Owner) -->
+              <div v-if="isAdminOrOwner" class="flex items-center gap-2">
+                <select
+                  v-model="selectedAgentId"
+                  @change="assignToAgent"
+                  :disabled="assigningAgent || loadingAgents"
+                  class="text-sm border rounded px-2 py-1 dark:bg-gray-700 dark:border-gray-600 dark:text-white disabled:opacity-50"
+                >
+                  <option value="">Assign to Agent...</option>
+                  <option v-if="loadingAgents" value="" disabled>Loading agents...</option>
+                  <option v-for="agent in agents" :key="agent.id" :value="agent.id">
+                    {{ agent.name || agent.fullName || agent.email }} 
+                    <span v-if="agent.currentLoad !== undefined">({{ agent.currentLoad }}/{{ agent.maxConcurrentConversations || 5 }})</span>
+                  </option>
+                </select>
+              </div>
+              
               <button
                 v-if="!selectedConversation.isTakenOver"
                 @click="takeOverConversation"
@@ -448,9 +465,11 @@
 import { ref, onMounted, nextTick, computed, watch, onUnmounted } from 'vue'
 import { Icon } from '@iconify/vue'
 import { appApi as takeoverApi } from '@/api/takeoverApi'
+import agentApi from '@/api/agentApi'
 import { usePennyBotStore } from '@/stores/pennyBotStore'
 import { usePennyConnectionStore } from '@/stores/pennyConnectionStore'
 import { useNotificationStore } from '@/stores/notification/notificationStore'
+import { useAuthStore } from '@/stores/authStore'
 import { useToast } from '@/composables/useToast'
 import { getRelativeTime } from '@/utils/dateUtils'
 import takeoverWebSocketService from '@/services/takeoverWebSocketService'
@@ -463,6 +482,7 @@ const toast = useToast()
 const pennyBotStore = usePennyBotStore()
 const pennyConnectionStore = usePennyConnectionStore()
 const notificationStore = useNotificationStore()
+const authStore = useAuthStore()
 
 // Real-time state
 const realTimeNotifications = ref([])
@@ -551,6 +571,13 @@ const allSelected = computed(() => {
   return conversations.value.length > 0 && selectedConversations.value.size === conversations.value.length
 })
 
+// Check if current user is Admin or Owner (can assign to others)
+const isAdminOrOwner = computed(() => {
+  const user = authStore.user
+  if (!user) return false
+  return user.systemRole === 'ADMIN' || user.tenantRole === 'OWNER'
+})
+
 // Selection methods
 const toggleSelectAll = () => {
   if (allSelected.value) {
@@ -620,6 +647,12 @@ const typingAgents = ref([])
 const newMessageCount = ref(0)
 const isTyping = ref(false)
 const typingTimeout = ref(null)
+
+// Agent assignment state
+const agents = ref([])
+const loadingAgents = ref(false)
+const selectedAgentId = ref(null)
+const assigningAgent = ref(false)
 
 // Search modal state
 const searchModal = ref({
@@ -940,6 +973,47 @@ const loadStats = async () => {
   }
 }
 
+const loadAgents = async () => {
+  try {
+    loadingAgents.value = true
+    const response = await agentApi.getAgents()
+    agents.value = response.data || []
+  } catch (error) {
+    console.error('Error loading agents:', error)
+    agents.value = []
+  } finally {
+    loadingAgents.value = false
+  }
+}
+
+const assignToAgent = async () => {
+  if (!selectedConversation.value || !selectedAgentId.value) return
+  
+  try {
+    assigningAgent.value = true
+    await takeoverApi.assignConversation(selectedConversation.value.id, selectedAgentId.value)
+    
+    // Update local state
+    selectedConversation.value.agentAssignedId = selectedAgentId.value
+    selectedConversation.value.isTakenOver = true
+    
+    // Update in conversations list
+    const index = conversations.value.findIndex(c => c.id === selectedConversation.value.id)
+    if (index !== -1) {
+      conversations.value[index].agentAssignedId = selectedAgentId.value
+      conversations.value[index].isTakenOver = true
+    }
+    
+    toast.success('Conversation assigned successfully')
+    selectedAgentId.value = null
+  } catch (error) {
+    console.error('Error assigning conversation:', error)
+    toast.error(error, 'Failed to assign conversation')
+  } finally {
+    assigningAgent.value = false
+  }
+}
+
 // Pagination methods
 const goToPage = (page) => {
   if (page >= 0 && page < totalPages.value) {
@@ -1229,6 +1303,8 @@ onMounted(async () => {
   }
   // Load conversations with initial filters
   loadConversations()
+  // Load agents for assignment dropdown
+  loadAgents()
 })
 
 onUnmounted(() => {

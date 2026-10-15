@@ -1,6 +1,8 @@
 package com.chatbot.core.presence.websocket;
 
 import com.chatbot.config.RedisPubSubConfig;
+import com.chatbot.core.message.store.model.Agent;
+import com.chatbot.core.message.store.repository.AgentRepository;
 import com.chatbot.core.presence.service.PresenceService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +27,7 @@ public class PresenceWebSocketHandler extends TextWebSocketHandler {
     private final PresenceService presenceService;
     private final ObjectMapper objectMapper;
     private final StringRedisTemplate redisTemplate;
+    private final AgentRepository agentRepository;
 
     // Track sessions by tenantId for broadcasting
     private final Map<Long, Set<WebSocketSession>> tenantSessions = new ConcurrentHashMap<>();
@@ -50,13 +53,20 @@ public class PresenceWebSocketHandler extends TextWebSocketHandler {
         // Add user to online list in Redis
         presenceService.addOnlineMember(tenantId, userId, email, fullName != null ? fullName : email);
 
+        // Sync Agent.status to ONLINE
+        agentRepository.findByUserIdAndTenantId(userId, tenantId).ifPresent(agent -> {
+            agent.setStatus(Agent.AgentStatus.ONLINE);
+            agentRepository.save(agent);
+            log.info("✅ [Presence] Agent {} (ID: {}) status set to ONLINE", agent.getName(), agent.getId());
+        });
+
         // Broadcast MEMBER_ONLINE to all sessions in the same tenant
         String onlineMessage = presenceService.createMemberOnlineMessage(tenantId, userId, email, fullName != null ? fullName : email);
         if (onlineMessage != null) {
             broadcastToTenantWithRedis(tenantId, onlineMessage); // Broadcast to all sessions with Redis publish
         }
 
-        log.info("✅ [Presence] User {} (ID: {}) connected for tenant {}. Total sessions: {}", 
+        log.info("✅ [Presence] User {} (ID: {}) connected for tenant {}. Total sessions: {}",
             email, userId, tenantId, tenantSessions.getOrDefault(tenantId, Set.of()).size());
     }
 
@@ -80,6 +90,13 @@ public class PresenceWebSocketHandler extends TextWebSocketHandler {
             if (userId != null) {
                 presenceService.removeOnlineMember(tenantId, userId);
 
+                // Sync Agent.status to OFFLINE
+                agentRepository.findByUserIdAndTenantId(userId, tenantId).ifPresent(agent -> {
+                    agent.setStatus(Agent.AgentStatus.OFFLINE);
+                    agentRepository.save(agent);
+                    log.info("❌ [Presence] Agent {} (ID: {}) status set to OFFLINE", agent.getName(), agent.getId());
+                });
+
                 // Broadcast MEMBER_OFFLINE to all remaining sessions in the same tenant
                 String offlineMessage = presenceService.createMemberOfflineMessage(tenantId, userId);
                 if (offlineMessage != null) {
@@ -87,7 +104,7 @@ public class PresenceWebSocketHandler extends TextWebSocketHandler {
                 }
             }
 
-            log.info("❌ [Presence] User {} (ID: {}) disconnected from tenant {}. Status: {}", 
+            log.info("❌ [Presence] User {} (ID: {}) disconnected from tenant {}. Status: {}",
                 email, userId, tenantId, status);
         }
     }

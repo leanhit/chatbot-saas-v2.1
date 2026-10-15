@@ -8,6 +8,7 @@ import com.chatbot.core.membership.dto.*;
 import com.chatbot.core.membership.model.*;
 import com.chatbot.core.membership.repository.TenantMemberRepository;
 import com.chatbot.core.membership.repository.TenantJoinRequestRepository;
+import com.chatbot.core.membership.event.MemberActivatedEvent;
 import com.chatbot.core.tenant.service.TenantAuditLogService;
 import com.chatbot.core.tenant.exception.BusinessLogicException;
 import com.chatbot.core.tenant.exception.TenantNotFoundException;
@@ -15,6 +16,7 @@ import com.chatbot.core.tenant.exception.InsufficientPermissionException;
 import com.chatbot.core.tenant.service.TenantPermissionValidator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,6 +36,7 @@ public class TenantJoinRequestService {
     private final TenantAuditLogService auditLogService;
     private final UserRepository userRepo; // Added for application-level join
     private final TenantPermissionValidator permissionValidator;
+    private final ApplicationEventPublisher eventPublisher;
 
     /* ================= REQUEST ================= */
 
@@ -125,6 +128,20 @@ public class TenantJoinRequestService {
 
                 auditLogService.logAction(tenantId, actorEmail, "APPROVE_JOIN_REQUEST",
                     "Approved join request from " + user.getEmail());
+
+                // Publish event to auto-provision Agent profile after transaction commits
+                String fullName = (user.getProfile() != null) ? user.getProfile().getFullName() : user.getEmail();
+                String avatar = (user.getProfile() != null) ? user.getProfile().getAvatar() : null;
+                eventPublisher.publishEvent(MemberActivatedEvent.builder()
+                    .tenantId(tenantId)
+                    .userId(user.getId())
+                    .userEmail(user.getEmail())
+                    .userName(fullName)
+                    .userAvatar(avatar)
+                    .tenantRole(TenantRole.MEMBER)
+                    .build());
+                log.info("[TenantJoinRequestService] Published MemberActivatedEvent for userId={}, tenantId={}",
+                    user.getId(), tenantId);
             }
             request.setStatus(MembershipStatus.APPROVED);
             joinRequestRepo.save(request);

@@ -22,6 +22,8 @@ import com.chatbot.core.tenant.profile.dto.TenantProfileResponse;
 import com.chatbot.core.tenant.profile.repository.TenantProfileRepository;
 import com.chatbot.core.user.repository.AuthRepository;
 import com.chatbot.core.tenant.profile.service.TenantProfileService;
+import com.chatbot.core.membership.event.MemberActivatedEvent;
+import com.chatbot.core.message.store.service.AgentProvisioningService;
 
 import com.chatbot.shared.address.dto.AddressDetailResponseDTO;
 
@@ -62,6 +64,7 @@ public class TenantService {
     private final TenantPermissionValidator permissionValidator;
     private final TenantCleanupService tenantCleanupService;
     private final TenantValidationService tenantValidationService;
+    private final AgentProvisioningService agentProvisioningService;
 
     @Qualifier("tenantTransactionManager")
     private final PlatformTransactionManager tenantTransactionManager;
@@ -106,7 +109,27 @@ public class TenantService {
             log.error("[TenantService] Failed to create address for tenant {}: {}", savedTenant.getId(), e.getMessage(), e);
         }
 
-        // 4. Gán default package trực tiếp (cũng đồng bộ)
+        // 4b. Provision Agent profile cho OWNER ngay sau khi transaction commit.
+        // Gọi trực tiếp (không qua event) vì TransactionTemplate đã commit rồi.
+        try {
+            String fullName = (currentUser.getProfile() != null) ? currentUser.getProfile().getFullName() : currentUser.getEmail();
+            String avatar  = (currentUser.getProfile() != null) ? currentUser.getProfile().getAvatar()   : null;
+            agentProvisioningService.provisionAgent(MemberActivatedEvent.builder()
+                    .tenantId(savedTenant.getId())
+                    .userId(currentUser.getId())
+                    .userEmail(currentUser.getEmail())
+                    .userName(fullName)
+                    .userAvatar(avatar)
+                    .tenantRole(com.chatbot.core.membership.model.TenantRole.OWNER)
+                    .build());
+            log.info("[TenantService] Provisioned Agent for OWNER userId={} in tenantId={}",
+                    currentUser.getId(), savedTenant.getId());
+        } catch (Exception e) {
+            log.error("[TenantService] Failed to provision Agent for OWNER userId={} in tenantId={}: {}",
+                    currentUser.getId(), savedTenant.getId(), e.getMessage(), e);
+        }
+
+        // 5. Gán default package trực tiếp (cũng đồng bộ)
         try {
             tenantRepository.findById(savedTenant.getId()).ifPresent(tenant ->
                     tenantPackageService.assignDefaultPackageToTenant(tenant));

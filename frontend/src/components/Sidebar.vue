@@ -85,6 +85,14 @@
                   <span>{{ $t('sidebar.member') }}</span>
                 </router-link>
                 <router-link
+                  to="/tenant/agents"
+                  @click.stop
+                  class="w-full text-left block rounded-md p-2.5 px-3 text-sm hover:bg-gray-200 dark:hover:bg-gray-700 flex items-center gap-2.5 transition-colors"
+                >
+                  <Icon icon="mdi:headset" class="text-base flex-shrink-0" />
+                  <span>{{ $t('sidebar.agentManagement') }}</span>
+                </router-link>
+                <router-link
                   to="/tenant-gateway"
                   @click.stop
                   class="w-full text-left block rounded-md p-2.5 px-3 text-sm hover:bg-gray-200 dark:hover:bg-gray-700 flex items-center gap-2.5 transition-colors"
@@ -306,14 +314,6 @@
                 </router-link>
                 <!-- Conversation Routing & Agent Management -->
                 <hr class="my-1.5 border-gray-200 dark:border-gray-700" />
-                <router-link
-                  to="/admin/agents"
-                  @click.stop
-                  class="w-full text-left block rounded-md p-2.5 px-3 text-sm hover:bg-gray-200 dark:hover:bg-gray-700 flex items-center gap-2.5 transition-colors"
-                >
-                  <Icon icon="mdi:headset" class="text-base flex-shrink-0" />
-                  <span>{{ $t('sidebar.agentManagement') }}</span>
-                </router-link>
                 <router-link
                   to="/admin/skills"
                   @click.stop

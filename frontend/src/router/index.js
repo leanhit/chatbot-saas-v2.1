@@ -38,7 +38,7 @@ const PaymentAnalytics = () => import("../views/admin/PaymentAnalytics.vue");
 const WebhookManagement = () => import("../views/admin/WebhookManagement.vue");
 const UserManagement = () => import("../views/admin/UserManagement.vue");
 // Conversation Routing & Agent Management Pages
-const AgentManagement = () => import("../views/admin/AgentManagement.vue");
+const AgentManagement = () => import("../views/tenant/agent/AgentManagement.vue");
 const SkillsManagement = () => import("../views/admin/SkillsManagement.vue");
 const RoutingRules = () => import("../views/admin/RoutingRules.vue");
 const SLAMonitoring = () => import("../views/admin/SLAMonitoring.vue");
@@ -260,8 +260,8 @@ const routes = [
   },
   // Conversation Routing & Agent Management Routes
   {
-    path: "/admin/agents",
-    name: "admin-agents",
+    path: "/tenant/agents",
+    name: "tenant-agents",
     component: AgentManagement,
     meta: { requiresAuth: true, title: "Agent Management" + appname },
   },

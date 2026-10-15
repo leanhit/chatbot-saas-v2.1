@@ -4,7 +4,7 @@
     <div class="mt-2 w-full">
       <div class="lg:flex grid-cols-1 lg:space-y-0 space-y-3 gap-5 justify-between">
         <div>
-          <p class="uppercase text-xs text-gray-700 dark:text-gray-400 font-semibold">Admin</p>
+          <p class="uppercase text-xs text-gray-700 dark:text-gray-400 font-semibold">Tenant</p>
           <h1 class="text-2xl text-gray-900 dark:text-gray-200 font-medium">
             Agent Management
           </h1>
@@ -18,14 +18,19 @@
             <Icon icon="mdi:refresh" :class="{'animate-spin': loading}" class="text-lg" />
             Refresh
           </button>
-          <button
-            @click="showCreateModal = true"
-            class="bg-primary border flex gap-2 text-white hover:bg-primary/80 dark:border-gray-700 rounded py-3 px-5"
-          >
-            <span class="icon text-2xl"><Icon icon="ic:twotone-plus" /></span>
-            <span class="text">Add Agent</span>
-          </button>
         </div>
+      </div>
+    </div>
+
+    <!-- Info Banner -->
+    <div class="mt-4 flex items-start gap-3 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+      <Icon icon="mdi:information-outline" class="text-blue-500 text-xl mt-0.5 flex-shrink-0" />
+      <div>
+        <p class="text-sm font-medium text-blue-800 dark:text-blue-300">Agent được tạo tự động</p>
+        <p class="text-xs text-blue-600 dark:text-blue-400 mt-0.5">
+          Agent profile sẽ được khởi tạo tự động khi một thành viên tham gia tenant (accept invitation hoặc được duyệt join request).
+          Tại đây bạn chỉ cần chỉnh sửa thông số của từng agent.
+        </p>
       </div>
     </div>
 
@@ -121,13 +126,10 @@
 
     <div v-else-if="agents.length === 0" class="p-8 text-center">
       <Icon icon="mdi:account-off" class="text-6xl text-gray-300 dark:text-gray-600 mx-auto" />
-      <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">No agents found.</p>
-      <button
-        @click="showCreateModal = true"
-        class="mt-4 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/80"
-      >
-        Add First Agent
-      </button>
+      <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">Chưa có agent nào.</p>
+      <p class="mt-1 text-xs text-gray-400 dark:text-gray-500">
+        Agent sẽ được tạo tự động khi thành viên tham gia tenant.
+      </p>
     </div>
 
     <div v-else class="space-y-4">
@@ -190,6 +192,7 @@
           </div>
           <div class="flex space-x-2 ml-4">
             <button
+              v-if="canChangeStatus(agent)"
               @click="setAgentOnline(agent.id)"
               :disabled="agent.status === 'ONLINE'"
               class="p-2 text-green-600 hover:bg-green-100 dark:hover:bg-green-900/30 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
@@ -198,6 +201,7 @@
               <Icon icon="mdi:check-circle" class="text-lg" />
             </button>
             <button
+              v-if="canChangeStatus(agent)"
               @click="setAgentOffline(agent.id)"
               :disabled="agent.status === 'OFFLINE'"
               class="p-2 text-gray-600 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
@@ -206,6 +210,7 @@
               <Icon icon="mdi:close-circle" class="text-lg" />
             </button>
             <button
+              v-if="canEditAgent(agent)"
               @click="editAgent(agent)"
               class="p-2 text-blue-600 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded-lg transition-colors"
               title="Edit"
@@ -213,6 +218,7 @@
               <Icon icon="mdi:pencil" class="text-lg" />
             </button>
             <button
+              v-if="canEditAgent(agent)"
               @click="deleteAgent(agent.id)"
               class="p-2 text-red-600 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg transition-colors"
               title="Delete"
@@ -224,14 +230,14 @@
       </div>
     </div>
 
-    <!-- Create/Edit Modal -->
+    <!-- Edit Modal -->
     <div
-      v-if="showCreateModal || showEditModal"
+      v-if="showEditModal"
       class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
     >
       <div class="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto border dark:border-gray-700">
         <h2 class="text-xl font-bold mb-4 text-gray-900 dark:text-gray-200">
-          {{ showCreateModal ? 'Create Agent' : 'Edit Agent' }}
+          Edit Agent
         </h2>
         <form @submit.prevent="saveAgent">
           <div class="space-y-4">
@@ -250,9 +256,10 @@
                 <input
                   v-model="currentAgent.email"
                   type="email"
-                  class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500"
-                  required
+                  class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 opacity-60 cursor-not-allowed"
+                  disabled
                 />
+                <p class="text-xs text-gray-400 mt-1">Email liên kết với user account, không thể thay đổi.</p>
               </div>
             </div>
             <div class="grid grid-cols-2 gap-4">
@@ -376,26 +383,36 @@ import { ref, computed, onMounted } from 'vue'
 import { Icon } from '@iconify/vue'
 import agentApi from '@/api/agentApi'
 import { useToast } from '@/composables/useToast'
+import { useAuthStore } from '@/stores/authStore'
+import { useGatewayTenantStore } from '@/stores/tenant/gateway/myTenantStore'
 
 const toast = useToast()
+const authStore = useAuthStore()
+const tenantStore = useGatewayTenantStore()
+
 const loading = ref(false)
 const agents = ref([])
-const showCreateModal = ref(false)
 const showEditModal = ref(false)
-const currentAgent = ref({
-  name: '',
-  email: '',
-  role: 'AGENT',
-  status: 'OFFLINE',
-  maxConcurrentConversations: 5,
-  currentLoad: 0,
-  skills: [],
-  bio: '',
-  phoneNumber: '',
-  avatarUrl: '',
-  active: true
-})
+const currentAgent = ref({})
 const skillsString = ref('')
+
+// Permission checks
+const isOwner = computed(() => {
+  return tenantStore.currentTenant?.role === 'OWNER'
+})
+
+const currentUserId = computed(() => {
+  return authStore.userId
+})
+
+const canEditAgent = (agent) => {
+  return isOwner.value
+}
+
+const canChangeStatus = (agent) => {
+  // OWNER or the agent themselves
+  return isOwner.value || (agent.userId && agent.userId === currentUserId.value)
+}
 
 const onlineAgentsCount = computed(() => {
   return agents.value.filter(a => a.status === 'ONLINE').length
@@ -471,15 +488,8 @@ const deleteAgent = async (id) => {
 const saveAgent = async () => {
   try {
     currentAgent.value.skills = skillsString.value.split(',').map(s => s.trim()).filter(s => s)
-    
-    if (showCreateModal.value) {
-      await agentApi.createAgent(currentAgent.value)
-      toast.success('Agent created successfully')
-    } else {
-      await agentApi.updateAgent(currentAgent.value.id, currentAgent.value)
-      toast.success('Agent updated successfully')
-    }
-    
+    await agentApi.updateAgent(currentAgent.value.id, currentAgent.value)
+    toast.success('Agent updated successfully')
     closeModal()
     await loadAgents()
   } catch (error) {
@@ -489,21 +499,8 @@ const saveAgent = async () => {
 }
 
 const closeModal = () => {
-  showCreateModal.value = false
   showEditModal.value = false
-  currentAgent.value = {
-    name: '',
-    email: '',
-    role: 'AGENT',
-    status: 'OFFLINE',
-    maxConcurrentConversations: 5,
-    currentLoad: 0,
-    skills: [],
-    bio: '',
-    phoneNumber: '',
-    avatarUrl: '',
-    active: true
-  }
+  currentAgent.value = {}
   skillsString.value = ''
 }
 

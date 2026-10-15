@@ -111,6 +111,34 @@ public class AgentService {
     }
 
     /**
+     * Update an existing agent — validates that the agent belongs to the given tenant.
+     * Use this overload from HTTP endpoints to prevent cross-tenant manipulation.
+     */
+    @Transactional
+    public Agent updateAgent(Long agentId, Agent updatedAgent, Long tenantId) {
+        validateAgent(updatedAgent);
+        Agent existing = agentRepository.findById(agentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Agent not found: " + agentId));
+        if (!existing.getTenantId().equals(tenantId)) {
+            throw new com.chatbot.shared.exceptions.ResourceNotFoundException(
+                    "Agent " + agentId + " does not belong to tenant " + tenantId);
+        }
+        existing.setName(updatedAgent.getName());
+        existing.setEmail(updatedAgent.getEmail());
+        existing.setRole(updatedAgent.getRole());
+        existing.setStatus(updatedAgent.getStatus());
+        existing.setSkills(updatedAgent.getSkills());
+        existing.setAssignmentPreferences(updatedAgent.getAssignmentPreferences());
+        existing.setActive(updatedAgent.getActive());
+        existing.setBio(updatedAgent.getBio());
+        existing.setPhoneNumber(updatedAgent.getPhoneNumber());
+        existing.setAvatarUrl(updatedAgent.getAvatarUrl());
+        existing.setMaxConcurrentConversations(updatedAgent.getMaxConcurrentConversations());
+        existing.setUpdatedAt(LocalDateTime.now());
+        return agentRepository.save(existing);
+    }
+
+    /**
      * Delete an agent
      */
     @Transactional
@@ -118,9 +146,24 @@ public class AgentService {
         if (!agentRepository.existsById(agentId)) {
             throw new ResourceNotFoundException("Agent not found: " + agentId);
         }
-        
         agentRepository.deleteById(agentId);
         log.info("Deleted agent: {}", agentId);
+    }
+
+    /**
+     * Delete an agent — validates that the agent belongs to the given tenant.
+     * Use this overload from HTTP endpoints to prevent cross-tenant manipulation.
+     */
+    @Transactional
+    public void deleteAgent(Long agentId, Long tenantId) {
+        Agent agent = agentRepository.findById(agentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Agent not found: " + agentId));
+        if (!agent.getTenantId().equals(tenantId)) {
+            throw new ResourceNotFoundException(
+                    "Agent " + agentId + " does not belong to tenant " + tenantId);
+        }
+        agentRepository.deleteById(agentId);
+        log.info("Deleted agent: {} from tenant: {}", agentId, tenantId);
     }
 
     /**

@@ -5,6 +5,7 @@ import com.chatbot.core.user.repository.UserRepository;
 import com.chatbot.core.user.repository.AuthRepository;
 import com.chatbot.core.membership.dto.*;
 import com.chatbot.core.membership.model.*;
+import com.chatbot.core.membership.event.MemberDeactivatedEvent;
 import com.chatbot.core.membership.repository.TenantMemberRepository;
 import com.chatbot.core.tenant.model.Tenant;
 import com.chatbot.core.tenant.repository.TenantRepository;
@@ -18,6 +19,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Caching;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -39,6 +41,7 @@ public class TenantMemberService {
     private final TenantPermissionValidator permissionValidator;
     private final UserRepository userRepository; // Added for application-level join
     private final AuthRepository authRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     /* ================= LIST ================= */
 
@@ -165,6 +168,14 @@ public class TenantMemberService {
 
         auditLogService.logAction(tenantId, actorEmail, "REMOVE_MEMBER",
                 "Removed userId=" + targetUserId);
+
+        // Publish event to deactivate Agent profile after transaction commits
+        eventPublisher.publishEvent(MemberDeactivatedEvent.builder()
+                .tenantId(tenantId)
+                .userId(targetUserId)
+                .build());
+        log.info("[TenantMemberService] Published MemberDeactivatedEvent for userId={}, tenantId={}",
+                targetUserId, tenantId);
     }
 
     /* ================= HELPERS ================= */

@@ -27,6 +27,11 @@ import java.util.Set;
         @Index(name = "idx_agent_tenant", columnList = "tenant_id"),
         @Index(name = "idx_agent_status", columnList = "status"),
         @Index(name = "idx_agent_user", columnList = "user_id")
+    },
+    uniqueConstraints = {
+        // Unique per tenant: same user can be an agent in multiple tenants
+        @UniqueConstraint(name = "uq_agent_email_tenant", columnNames = {"email", "tenant_id"}),
+        @UniqueConstraint(name = "uq_agent_user_tenant",  columnNames = {"user_id", "tenant_id"})
     }
 )
 @EqualsAndHashCode(callSuper = true)
@@ -49,9 +54,9 @@ public class Agent extends BaseTenantEntity {
     private String name;
 
     /**
-     * Agent email
+     * Agent email — unique per tenant (same email can exist across different tenants)
      */
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false)
     private String email;
 
     /**

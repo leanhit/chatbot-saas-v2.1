@@ -51,6 +51,16 @@ public interface AgentRepository extends JpaRepository<Agent, Long> {
     Optional<Agent> findByUserId(Long userId);
 
     /**
+     * Find agent by user ID and tenant ID
+     */
+    Optional<Agent> findByUserIdAndTenantId(Long userId, Long tenantId);
+
+    /**
+     * Check if agent exists for a user in a tenant
+     */
+    boolean existsByUserIdAndTenantId(Long userId, Long tenantId);
+
+    /**
      * Find agent by email
      */
     Optional<Agent> findByEmail(String email);

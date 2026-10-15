@@ -1,11 +1,13 @@
 package com.chatbot.core.membership.service;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.chatbot.core.tenant.dto.BulkInvitationRequest;
 import com.chatbot.core.membership.dto.InviteMemberRequest;
 import com.chatbot.core.membership.dto.InvitationResponse;
+import com.chatbot.core.membership.event.MemberActivatedEvent;
 import com.chatbot.core.tenant.model.Tenant;
 import com.chatbot.core.tenant.repository.TenantRepository;
 import com.chatbot.core.tenant.exception.TenantNotFoundException;
@@ -43,6 +45,7 @@ public class TenantInvitationService {
     private final TenantNotificationService notificationService;
     private final TenantAuditLogService auditLogService;
     private final TenantPermissionValidator permissionValidator;
+    private final ApplicationEventPublisher eventPublisher;
 
     /**
      * Admin thực hiện mời user vào tenant.
@@ -175,6 +178,20 @@ public class TenantInvitationService {
 
         auditLogService.logAction(tenantId, user.getEmail(), "ACCEPT_INVITATION",
             "Accepted invitation as " + invitation.getRole());
+
+        // Publish event to auto-provision Agent profile after transaction commits
+        String fullName = (user.getProfile() != null) ? user.getProfile().getFullName() : user.getEmail();
+        String avatar = (user.getProfile() != null) ? user.getProfile().getAvatar() : null;
+        eventPublisher.publishEvent(MemberActivatedEvent.builder()
+            .tenantId(tenantId)
+            .userId(user.getId())
+            .userEmail(user.getEmail())
+            .userName(fullName)
+            .userAvatar(avatar)
+            .tenantRole(invitation.getRole())
+            .build());
+        log.info("[TenantInvitationService] Published MemberActivatedEvent for userId={}, tenantId={}",
+            user.getId(), tenantId);
     }
 
     /**
