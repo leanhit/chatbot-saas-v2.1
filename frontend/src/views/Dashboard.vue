@@ -11,6 +11,13 @@
         </div>
         <div class="flex gap-2">
           <button
+            @click="openMemberModal"
+            class="bg-white dark:bg-gray-800 hover:border-gray-200 dark:hover:bg-gray-700 dark:text-white dark:border-gray-700 border rounded py-2 px-5 flex items-center gap-2"
+          >
+            <Icon icon="mdi:account-group" class="text-lg" />
+            {{ $t('dashboard.viewMembers') }}
+          </button>
+          <button
             @click="refreshData"
             :disabled="loading"
             class="bg-white dark:bg-gray-800 hover:border-gray-200 dark:hover:bg-gray-700 dark:text-white dark:border-gray-700 border rounded py-2 px-5 flex items-center gap-2"
@@ -247,6 +254,12 @@
         </div>
       </div>
     </div>
+
+    <!-- Member List Modal -->
+    <MemberListModal
+      :visible="showMemberModal"
+      @close="showMemberModal = false"
+    />
   </div>
 </template>
 
@@ -257,6 +270,7 @@ import { useRouter } from 'vue-router'
 import { getRelativeTime } from '@/utils/dateUtils'
 import axios from '@/plugins/axios'
 import OnlineMembers from '@/components/OnlineMembers.vue'
+import MemberListModal from '@/components/MemberListModal.vue'
 
 const router = useRouter()
 
@@ -269,6 +283,7 @@ const loading = ref(false)
 const chartData = ref([])
 const chartLoading = ref(false)
 const canvasRef = ref(null)
+const showMemberModal = ref(false)
 
 const periods = [
   { label: '7D', value: '7d' },
@@ -336,6 +351,10 @@ const refreshData = async () => {
 
 const openSettings = () => {
   router.push('/penny-rules')
+}
+
+const openMemberModal = () => {
+  showMemberModal.value = true
 }
 
 const testBot = () => {

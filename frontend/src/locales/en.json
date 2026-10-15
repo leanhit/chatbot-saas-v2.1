@@ -166,6 +166,7 @@
     "overview": "Dashboard Overview",
     "title": "Dashboard",
     "refresh": "Refresh",
+    "viewMembers": "View Members",
     "configureBot": "Configure Bot",
     "totalConversations": "Total Conversations",
     "activeUsers": "Active Users",
