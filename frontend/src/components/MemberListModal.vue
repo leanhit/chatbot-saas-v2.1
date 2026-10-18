@@ -48,12 +48,20 @@
           >
             <!-- Member Info -->
             <div class="flex items-center space-x-4">
-              <img
-                :src="member.avatar || defaultAvatar"
-                :alt="member.name"
-                class="h-12 w-12 rounded-full object-cover"
-                @error="handleAvatarError"
-              />
+              <div class="relative flex-shrink-0">
+                <img
+                  :src="member.avatar || defaultAvatar"
+                  :alt="member.name"
+                  class="h-12 w-12 rounded-full object-cover"
+                  @error="handleAvatarError"
+                />
+                <!-- Online Status Indicator -->
+                <div
+                  v-if="isMemberOnline(member.userId)"
+                  class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white dark:border-gray-800"
+                  :title="$t('tenant.member.online')"
+                />
+              </div>
               <div>
                 <h4 class="text-sm font-medium text-gray-900 dark:text-white">
                   {{ member.name || $t('tenant.overview.statusUnknown') }}
@@ -119,11 +127,13 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue'
+import { ref, watch, onMounted, onUnmounted } from 'vue'
 import { Icon } from '@iconify/vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { tenantApi } from '@/api/tenantApi'
+import { presenceApi } from '@/api/presenceApi'
+import { presenceWebSocketService } from '@/services/presenceWebSocketService'
 import { useGatewayTenantStore } from '@/stores/tenant/gateway/myTenantStore'
 import { getRelativeTime } from '@/utils/dateUtils'
 import { TenantRole, MembershipStatus } from '@/types/tenant'
@@ -144,6 +154,7 @@ const tenantStore = useGatewayTenantStore()
 
 const loading = ref(false)
 const members = ref([])
+const onlineMembers = ref([])
 
 const getRoleBadgeClass = (role) => {
   switch (role) {
@@ -195,6 +206,39 @@ const handleAvatarError = (event) => {
   }
 }
 
+const isMemberOnline = (userId) => {
+  return onlineMembers.value.some(m => m.userId === userId)
+}
+
+const loadOnlineMembers = async () => {
+  try {
+    const tenantKey = tenantStore.currentTenant?.tenantKey
+    if (!tenantKey) {
+      console.warn('No tenant selected')
+      return
+    }
+
+    const response = await presenceApi.getOnlineMembers(tenantKey)
+    onlineMembers.value = response.data || []
+  } catch (error) {
+    console.error('Failed to load online members:', error)
+    onlineMembers.value = []
+  }
+}
+
+const handleMemberOnline = (data) => {
+  const existingIndex = onlineMembers.value.findIndex(m => m.userId === data.userId)
+  if (existingIndex >= 0) {
+    onlineMembers.value[existingIndex] = { ...onlineMembers.value[existingIndex], ...data }
+  } else {
+    onlineMembers.value.push(data)
+  }
+}
+
+const handleMemberOffline = (data) => {
+  onlineMembers.value = onlineMembers.value.filter(m => m.userId !== data.userId)
+}
+
 const loadMembers = async () => {
   loading.value = true
   try {
@@ -232,6 +276,19 @@ const goToMemberPage = () => {
 watch(() => props.visible, (newVal) => {
   if (newVal) {
     loadMembers()
+    loadOnlineMembers()
+    // Connect to WebSocket for real-time online status
+    const tenantKey = tenantStore.currentTenant?.tenantKey
+    if (tenantKey) {
+      presenceWebSocketService.onMemberOnline = handleMemberOnline
+      presenceWebSocketService.onMemberOffline = handleMemberOffline
+      presenceWebSocketService.connect(tenantKey)
+    }
+  } else {
+    // Disconnect WebSocket when modal closes
+    presenceWebSocketService.onMemberOnline = null
+    presenceWebSocketService.onMemberOffline = null
+    presenceWebSocketService.disconnect()
   }
 })
 </script>
