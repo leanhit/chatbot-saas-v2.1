@@ -141,6 +141,16 @@ public class PresenceService {
      */
     public String createMemberOnlineMessage(Long tenantId, Long userId, String email, String fullName) {
         try {
+            // Fetch role and avatar from database
+            Optional<User> userOpt = userRepository.findById(userId);
+            String avatar = userOpt.map(u -> u.getProfile() != null ? u.getProfile().getAvatar() : null).orElse(null);
+
+            Optional<TenantMember> memberOpt = tenantMemberRepository
+                .findByTenantIdAndUserIdAndStatus(tenantId, userId,
+                    com.chatbot.core.membership.model.MembershipStatus.ACTIVE);
+            String role = memberOpt.map(m -> m.getRole() != null ? m.getRole().name() : "MEMBER")
+                                  .orElse("MEMBER");
+
             Map<String, Object> message = Map.of(
                 "type", "MEMBER_ONLINE",
                 "tenantId", tenantId,
@@ -148,6 +158,8 @@ public class PresenceService {
                     "userId", userId,
                     "email", email,
                     "fullName", fullName,
+                    "role", role,
+                    "avatar", avatar,
                     "timestamp", System.currentTimeMillis()
                 )
             );

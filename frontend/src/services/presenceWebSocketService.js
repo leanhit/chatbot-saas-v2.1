@@ -169,12 +169,14 @@ class PresenceWebSocketService {
    * Handle member coming online
    */
   handleMemberOnline(data) {
-    const { userId, email, fullName, timestamp } = data
+    const { userId, email, fullName, role, avatar, timestamp } = data
     
     this.onlineMembers.value.set(userId, {
       userId,
       email,
       fullName,
+      role: role || 'MEMBER',
+      avatar,
       timestamp,
       status: 'online'
     })
@@ -183,7 +185,7 @@ class PresenceWebSocketService {
       this.onMemberOnline(data)
     }
     
-    console.log('✅ Member online:', fullName)
+    console.log('✅ Member online:', fullName, 'Role:', role)
   }
 
   /**

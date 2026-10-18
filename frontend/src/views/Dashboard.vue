@@ -223,8 +223,6 @@
           </div>
         </div>
 
-        <!-- Online Members -->
-        <OnlineMembers v-if="tenantKey" :tenant-key="tenantKey" />
       </div>
     </div>
 
@@ -269,7 +267,6 @@ import { Icon } from '@iconify/vue'
 import { useRouter } from 'vue-router'
 import { getRelativeTime } from '@/utils/dateUtils'
 import axios from '@/plugins/axios'
-import OnlineMembers from '@/components/OnlineMembers.vue'
 import MemberListModal from '@/components/MemberListModal.vue'
 
 const router = useRouter()
