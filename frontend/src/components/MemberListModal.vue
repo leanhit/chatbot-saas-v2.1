@@ -154,7 +154,7 @@ const tenantStore = useGatewayTenantStore()
 
 const loading = ref(false)
 const members = ref([])
-const onlineMembers = ref([])
+const onlineMembers = ref(new Map()) // Use Map for O(1) lookup
 
 const getRoleBadgeClass = (role) => {
   switch (role) {
@@ -207,7 +207,7 @@ const handleAvatarError = (event) => {
 }
 
 const isMemberOnline = (userId) => {
-  return onlineMembers.value.some(m => m.userId === userId)
+  return onlineMembers.value.has(userId)
 }
 
 const loadOnlineMembers = async () => {
@@ -219,24 +219,22 @@ const loadOnlineMembers = async () => {
     }
 
     const response = await presenceApi.getOnlineMembers(tenantKey)
-    onlineMembers.value = response.data || []
+    const membersList = response.data || []
+    
+    // Convert array to Map for O(1) lookup
+    onlineMembers.value = new Map(membersList.map(m => [m.userId, m]))
   } catch (error) {
     console.error('Failed to load online members:', error)
-    onlineMembers.value = []
+    onlineMembers.value = new Map()
   }
 }
 
 const handleMemberOnline = (data) => {
-  const existingIndex = onlineMembers.value.findIndex(m => m.userId === data.userId)
-  if (existingIndex >= 0) {
-    onlineMembers.value[existingIndex] = { ...onlineMembers.value[existingIndex], ...data }
-  } else {
-    onlineMembers.value.push(data)
-  }
+  onlineMembers.value.set(data.userId, data)
 }
 
 const handleMemberOffline = (data) => {
-  onlineMembers.value = onlineMembers.value.filter(m => m.userId !== data.userId)
+  onlineMembers.value.delete(data.userId)
 }
 
 const loadMembers = async () => {
@@ -272,23 +270,25 @@ const goToMemberPage = () => {
   router.push('/tenant/members')
 }
 
+// Load online members on component mount (for initial data)
+onMounted(() => {
+  loadOnlineMembers()
+  // Setup WebSocket listeners
+  presenceWebSocketService.onMemberOnline = handleMemberOnline
+  presenceWebSocketService.onMemberOffline = handleMemberOffline
+})
+
+// Cleanup on unmount
+onUnmounted(() => {
+  presenceWebSocketService.onMemberOnline = null
+  presenceWebSocketService.onMemberOffline = null
+})
+
 // Load members when modal opens
 watch(() => props.visible, (newVal) => {
   if (newVal) {
     loadMembers()
     loadOnlineMembers()
-    // Connect to WebSocket for real-time online status
-    const tenantKey = tenantStore.currentTenant?.tenantKey
-    if (tenantKey) {
-      presenceWebSocketService.onMemberOnline = handleMemberOnline
-      presenceWebSocketService.onMemberOffline = handleMemberOffline
-      presenceWebSocketService.connect(tenantKey)
-    }
-  } else {
-    // Disconnect WebSocket when modal closes
-    presenceWebSocketService.onMemberOnline = null
-    presenceWebSocketService.onMemberOffline = null
-    presenceWebSocketService.disconnect()
   }
 })
 </script>

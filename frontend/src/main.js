@@ -26,6 +26,7 @@ import { useAuthStore } from './stores/authStore'
 import { useGatewayTenantStore } from './stores/tenant/gateway/myTenantStore'
 import { usePaymentStore } from './stores/paymentStore'
 import websocketService from './services/websocketService'
+import { presenceWebSocketService } from './services/presenceWebSocketService'
 const authStore = useAuthStore()
 const tenantStore = useGatewayTenantStore()
 const paymentStore = usePaymentStore()
@@ -42,9 +43,23 @@ authStore.$subscribe(async (mutation, state) => {
   if (state.token) {
     // User just logged in or is active, initialize WebSocket
     websocketService.connect(state.token)
+    
+    // Connect presence WebSocket when user is authenticated and tenant is selected
+    const tenantKey = localStorage.getItem('active_tenant_id')
+    if (tenantKey) {
+      presenceWebSocketService.connect(tenantKey)
+    }
   } else {
     // User logged out, disconnect WebSocket
     websocketService.disconnect()
+    presenceWebSocketService.disconnect()
+  }
+})
+
+// Connect presence WebSocket when tenant changes
+tenantStore.$subscribe(async (mutation, state) => {
+  if (state.currentTenant?.tenantKey && authStore.token) {
+    presenceWebSocketService.connect(state.currentTenant.tenantKey)
   }
 })
 // tenantStore doesn't have initialize method
