@@ -258,8 +258,9 @@ const loadMembers = async () => {
   }
 }
 
-const refreshData = () => {
-  loadMembers()
+const refreshData = async () => {
+  await loadMembers()
+  await loadOnlineMembers()
 }
 
 const close = () => {
