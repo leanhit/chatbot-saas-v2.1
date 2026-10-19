@@ -155,6 +155,7 @@ const tenantStore = useGatewayTenantStore()
 const loading = ref(false)
 const members = ref([])
 const onlineMembers = computed(() => presenceWebSocketService.onlineMembers)
+const isInitialized = ref(false)
 
 const getRoleBadgeClass = (role) => {
   switch (role) {
@@ -266,9 +267,14 @@ const goToMemberPage = () => {
 }
 
 // Load online members on component mount/in tenant change
-const initializeOnlineMembers = async () => {
+const initializeOnlineMembers = () => {
+  if (isInitialized.value) {
+    console.log('Online members already initialized')
+    return
+  }
+  
   console.log('Initializing online members...')
-  await loadOnlineMembers()
+  isInitialized.value = true
   
   // Setup WebSocket listeners to keep service's onlineMembers in sync
   presenceWebSocketService.onMemberOnline = (data) => {
@@ -279,8 +285,12 @@ const initializeOnlineMembers = async () => {
     console.log('Member offline event:', data)
     presenceWebSocketService.onlineMembers.value.delete(data.userId)
   }
+  
+  // Load initial online members
+  loadOnlineMembers()
 }
 
+// Initialize on mount
 onMounted(() => {
   initializeOnlineMembers()
 })
@@ -289,11 +299,13 @@ onMounted(() => {
 onUnmounted(() => {
   presenceWebSocketService.onMemberOnline = null
   presenceWebSocketService.onMemberOffline = null
+  isInitialized.value = false
 })
 
 // Load members when modal opens
 watch(() => props.visible, (newVal) => {
   if (newVal) {
+    console.log('Modal opened, loading members...')
     loadMembers()
     loadOnlineMembers()
   }
