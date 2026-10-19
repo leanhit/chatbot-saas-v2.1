@@ -224,10 +224,10 @@ const loadOnlineMembers = async () => {
     
     // Sync with presenceWebSocketService
     membersList.forEach(member => {
-      presenceWebSocketService.onlineMembers.value.set(member.userId, member)
+      if (member && member.userId) {
+        presenceWebSocketService.onlineMembers.value.set(member.userId, member)
+      }
     })
-    
-    console.log('Loaded online members:', membersList.length)
   } catch (error) {
     console.error('Failed to load online members:', error)
   }
@@ -240,6 +240,7 @@ const loadMembers = async () => {
     if (!tenantKey) {
       console.warn('No tenant selected')
       members.value = []
+      loading.value = false
       return
     }
 
@@ -266,33 +267,26 @@ const goToMemberPage = () => {
   router.push('/tenant/members')
 }
 
-// Load online members on component mount/in tenant change
-const initializeOnlineMembers = () => {
-  if (isInitialized.value) {
-    console.log('Online members already initialized')
-    return
-  }
+// Setup WebSocket listeners (only once)
+const setupWebSocketListeners = () => {
+  if (isInitialized.value) return
   
-  console.log('Initializing online members...')
   isInitialized.value = true
-  
-  // Setup WebSocket listeners to keep service's onlineMembers in sync
   presenceWebSocketService.onMemberOnline = (data) => {
-    console.log('Member online event:', data)
-    presenceWebSocketService.onlineMembers.value.set(data.userId, data)
+    if (data && data.userId) {
+      presenceWebSocketService.onlineMembers.value.set(data.userId, data)
+    }
   }
   presenceWebSocketService.onMemberOffline = (data) => {
-    console.log('Member offline event:', data)
-    presenceWebSocketService.onlineMembers.value.delete(data.userId)
+    if (data && data.userId) {
+      presenceWebSocketService.onlineMembers.value.delete(data.userId)
+    }
   }
-  
-  // Load initial online members
-  loadOnlineMembers()
 }
 
 // Initialize on mount
 onMounted(() => {
-  initializeOnlineMembers()
+  setupWebSocketListeners()
 })
 
 // Cleanup on unmount
@@ -305,7 +299,6 @@ onUnmounted(() => {
 // Load members when modal opens
 watch(() => props.visible, (newVal) => {
   if (newVal) {
-    console.log('Modal opened, loading members...')
     loadMembers()
     loadOnlineMembers()
   }
