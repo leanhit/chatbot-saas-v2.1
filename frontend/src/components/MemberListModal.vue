@@ -127,7 +127,7 @@
 </template>
 
 <script setup>
-import { ref, watch, onMounted, onUnmounted } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { Icon } from '@iconify/vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
@@ -154,7 +154,7 @@ const tenantStore = useGatewayTenantStore()
 
 const loading = ref(false)
 const members = ref([])
-const onlineMembers = ref(new Map()) // Use Map for O(1) lookup
+const onlineMembers = computed(() => presenceWebSocketService.onlineMembers)
 
 const getRoleBadgeClass = (role) => {
   switch (role) {
@@ -221,20 +221,15 @@ const loadOnlineMembers = async () => {
     const response = await presenceApi.getOnlineMembers(tenantKey)
     const membersList = response.data || []
     
-    // Convert array to Map for O(1) lookup
-    onlineMembers.value = new Map(membersList.map(m => [m.userId, m]))
+    // Sync with presenceWebSocketService
+    membersList.forEach(member => {
+      presenceWebSocketService.onlineMembers.value.set(member.userId, member)
+    })
+    
+    console.log('Loaded online members:', membersList.length)
   } catch (error) {
     console.error('Failed to load online members:', error)
-    onlineMembers.value = new Map()
   }
-}
-
-const handleMemberOnline = (data) => {
-  onlineMembers.value.set(data.userId, data)
-}
-
-const handleMemberOffline = (data) => {
-  onlineMembers.value.delete(data.userId)
 }
 
 const loadMembers = async () => {
@@ -270,12 +265,24 @@ const goToMemberPage = () => {
   router.push('/tenant/members')
 }
 
-// Load online members on component mount (for initial data)
+// Load online members on component mount/in tenant change
+const initializeOnlineMembers = async () => {
+  console.log('Initializing online members...')
+  await loadOnlineMembers()
+  
+  // Setup WebSocket listeners to keep service's onlineMembers in sync
+  presenceWebSocketService.onMemberOnline = (data) => {
+    console.log('Member online event:', data)
+    presenceWebSocketService.onlineMembers.value.set(data.userId, data)
+  }
+  presenceWebSocketService.onMemberOffline = (data) => {
+    console.log('Member offline event:', data)
+    presenceWebSocketService.onlineMembers.value.delete(data.userId)
+  }
+}
+
 onMounted(() => {
-  loadOnlineMembers()
-  // Setup WebSocket listeners
-  presenceWebSocketService.onMemberOnline = handleMemberOnline
-  presenceWebSocketService.onMemberOffline = handleMemberOffline
+  initializeOnlineMembers()
 })
 
 // Cleanup on unmount
