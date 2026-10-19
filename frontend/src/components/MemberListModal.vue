@@ -154,7 +154,7 @@ const tenantStore = useGatewayTenantStore()
 
 const loading = ref(false)
 const members = ref([])
-const onlineMembers = computed(() => presenceWebSocketService.onlineMembers)
+const onlineMembers = ref(new Map()) // Temporarily use local ref instead of computed
 const isInitialized = ref(false)
 
 const getRoleBadgeClass = (role) => {
@@ -208,6 +208,9 @@ const handleAvatarError = (event) => {
 }
 
 const isMemberOnline = (userId) => {
+  if (!onlineMembers.value || typeof onlineMembers.value.has !== 'function') {
+    return false
+  }
   return onlineMembers.value.has(userId)
 }
 
@@ -222,10 +225,11 @@ const loadOnlineMembers = async () => {
     const response = await presenceApi.getOnlineMembers(tenantKey)
     const membersList = response.data || []
     
-    // Sync with presenceWebSocketService
+    // Sync with local onlineMembers ref
+    onlineMembers.value.clear()
     membersList.forEach(member => {
       if (member && member.userId) {
-        presenceWebSocketService.onlineMembers.value.set(member.userId, member)
+        onlineMembers.value.set(member.userId, member)
       }
     })
   } catch (error) {
@@ -272,15 +276,19 @@ const setupWebSocketListeners = () => {
   if (isInitialized.value) return
   
   isInitialized.value = true
-  presenceWebSocketService.onMemberOnline = (data) => {
-    if (data && data.userId) {
-      presenceWebSocketService.onlineMembers.value.set(data.userId, data)
+  try {
+    presenceWebSocketService.onMemberOnline = (data) => {
+      if (data && data.userId) {
+        onlineMembers.value.set(data.userId, data)
+      }
     }
-  }
-  presenceWebSocketService.onMemberOffline = (data) => {
-    if (data && data.userId) {
-      presenceWebSocketService.onlineMembers.value.delete(data.userId)
+    presenceWebSocketService.onMemberOffline = (data) => {
+      if (data && data.userId) {
+        onlineMembers.value.delete(data.userId)
+      }
     }
+  } catch (error) {
+    console.error('Error setting up WebSocket listeners:', error)
   }
 }
 
@@ -291,8 +299,12 @@ onMounted(() => {
 
 // Cleanup on unmount
 onUnmounted(() => {
-  presenceWebSocketService.onMemberOnline = null
-  presenceWebSocketService.onMemberOffline = null
+  try {
+    presenceWebSocketService.onMemberOnline = null
+    presenceWebSocketService.onMemberOffline = null
+  } catch (error) {
+    console.error('Error cleaning up WebSocket listeners:', error)
+  }
   isInitialized.value = false
 })
 
