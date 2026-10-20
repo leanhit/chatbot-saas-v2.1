@@ -14,6 +14,8 @@ import com.chatbot.core.message.store.model.Channel;
 import com.chatbot.core.tenant.infra.TenantContext;
 import com.chatbot.shared.messenger.ChannelMessengerService;
 import com.chatbot.shared.messenger.ChannelUserInfo;
+import com.chatbot.core.membership.service.TenantMemberService;
+import com.chatbot.core.membership.model.TenantRole;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -38,6 +40,7 @@ public class ConversationService {
     private final MessageRepository messageRepo;
     private final RoutingRuleService routingRuleService;
     private final ConversationEndWorkflow conversationEndWorkflow;
+    private final TenantMemberService tenantMemberService;
 
     /**
      * Tìm kiếm Conversation hiện có hoặc tạo mới nếu chưa tồn tại.
@@ -120,6 +123,7 @@ public class ConversationService {
     /**
      * Lấy danh sách Conversations TỔNG THỂ (không lọc theo Owner/Connection).
      * Sắp xếp theo updatedAt để Conversation có tin nhắn mới nhất lên đầu.
+     * Thêm role-based permission check
      */
     public Page<Conversation> getConversations(int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("updatedAt").descending());
@@ -127,6 +131,17 @@ public class ConversationService {
         if (tenantId == null) {
             throw new com.chatbot.shared.exceptions.BaseException(com.chatbot.shared.exceptions.ErrorCode.TENANT_CONTEXT_MISSING, "Tenant ID not found in context");
         }
+
+        // Check user's role in the tenant
+        TenantRole userRole = tenantMemberService.getCurrentUserRole(tenantId);
+
+        // MEMBER role: Only show conversations assigned to them
+        // For now, allow MEMBER to see all conversations (will implement assignment check later)
+        // TODO: Implement assignment check for MEMBER role - only show conversations where agentAssignedId == currentUserId
+        if (userRole == TenantRole.MEMBER) {
+            log.debug("MEMBER role accessing conversations list");
+        }
+
         return conversationRepo.findAllByTenantIdOrderByUpdatedAtDesc(tenantId, pageable);
     }
 

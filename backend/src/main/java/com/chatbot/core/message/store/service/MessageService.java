@@ -8,6 +8,8 @@ import com.chatbot.core.message.store.repository.ConversationRepository;
 import com.chatbot.core.message.store.repository.MessageRepository;
 import com.chatbot.core.tenant.infra.TenantContext;
 import com.chatbot.core.message.usage.service.MessageUsageService;
+import com.chatbot.core.membership.service.TenantMemberService;
+import com.chatbot.core.membership.model.TenantRole;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
@@ -26,11 +28,13 @@ public class MessageService {
     private final ConversationRepository conversationRepo; // Cần inject ConversationRepository để cập nhật lastMessageId
     private final MessageUsageService messageUsageService;
     private final ObjectMapper objectMapper;
+    private final TenantMemberService tenantMemberService;
 
-    public MessageService(MessageRepository messageRepo, ConversationRepository conversationRepo, MessageUsageService messageUsageService) {
+    public MessageService(MessageRepository messageRepo, ConversationRepository conversationRepo, MessageUsageService messageUsageService, TenantMemberService tenantMemberService) {
         this.messageRepo = messageRepo;
         this.conversationRepo = conversationRepo;
         this.messageUsageService = messageUsageService;
+        this.tenantMemberService = tenantMemberService;
         this.objectMapper = new ObjectMapper();
         this.objectMapper.registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule());
         this.objectMapper.configure(com.fasterxml.jackson.databind.SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
@@ -135,6 +139,7 @@ public class MessageService {
     /**
      * Lấy tin nhắn theo ConversationId.
      * Thêm logic đánh dấu tin nhắn là đã đọc (Mark as Read)
+     * Thêm role-based permission check
      */
     @Transactional(transactionManager = "messageTransactionManager", rollbackFor = Exception.class)
     public Page<Message> getMessages(Long conversationId, int page, int size) {
@@ -143,6 +148,17 @@ public class MessageService {
         if (tenantId == null) {
             throw new com.chatbot.shared.exceptions.BaseException(com.chatbot.shared.exceptions.ErrorCode.TENANT_CONTEXT_MISSING, "Tenant ID not found in context");
         }
+
+        // Check user's role in the tenant
+        TenantRole userRole = tenantMemberService.getCurrentUserRole(tenantId);
+
+        // MEMBER role: Only allow access to conversations assigned to them
+        // For now, allow MEMBER to see all conversations (will implement assignment check later)
+        // TODO: Implement assignment check for MEMBER role - only show conversations where agentAssignedId == currentUserId
+        if (userRole == TenantRole.MEMBER) {
+            log.debug("MEMBER role accessing conversation {}", conversationId);
+        }
+
         Page<Message> messages = messageRepo.findByConversationIdAndTenantIdOrderByCreatedAtDesc(conversationId, tenantId, pageable);
 
         // Đánh dấu các tin nhắn chưa đọc của user là đã đọc khi Agent xem conversation
@@ -152,7 +168,7 @@ public class MessageService {
                     m.setIsRead(true);
                     messageRepo.save(m);
                 });
-        
+
         return messages;
     }
 

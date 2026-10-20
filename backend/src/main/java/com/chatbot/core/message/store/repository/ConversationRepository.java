@@ -215,4 +215,8 @@ public interface ConversationRepository extends JpaRepository<Conversation, Long
         @Param("connectionIds") List<UUID> connectionIds,
         @Param("since") java.time.LocalDateTime since
     );
+
+    // Agent Reassignment: Find conversations with assigned agents
+    @Query("SELECT c FROM Conversation c WHERE c.tenantId = :tenantId AND c.agentAssignedId IS NOT NULL")
+    List<Conversation> findByTenantIdAndAgentAssignedIdIsNotNull(@Param("tenantId") Long tenantId);
 }

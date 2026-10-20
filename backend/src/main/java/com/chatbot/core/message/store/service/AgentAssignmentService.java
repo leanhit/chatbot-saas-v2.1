@@ -43,17 +43,24 @@ public class AgentAssignmentService {
             return Optional.empty();
         }
 
+        // Filter only ONLINE agents
+        List<Agent> onlineAgents = filterOnlineAgents(availableAgents);
+        if (onlineAgents.isEmpty()) {
+            log.warn("No online agents for tenant {}. All agents are offline.", tenantId);
+            return Optional.empty();
+        }
+
         // If no specific skills required, use load balancing
         if (requiredSkills == null || requiredSkills.isEmpty()) {
-            return assignByLoadBalancing(availableAgents);
+            return assignByLoadBalancing(onlineAgents);
         }
 
         // Filter agents with required skills
-        List<Agent> skilledAgents = filterAgentsBySkills(availableAgents, requiredSkills);
+        List<Agent> skilledAgents = filterAgentsBySkills(onlineAgents, requiredSkills);
 
         if (skilledAgents.isEmpty()) {
-            log.warn("No agents with required skills: {}. Using load balancing fallback.", requiredSkills);
-            return assignByLoadBalancing(availableAgents);
+            log.warn("No online agents with required skills: {}. Using load balancing fallback.", requiredSkills);
+            return assignByLoadBalancing(onlineAgents);
         }
 
         // Assign based on skill match score and load
@@ -66,6 +73,15 @@ public class AgentAssignmentService {
     private List<Agent> filterAgentsBySkills(List<Agent> agents, List<String> requiredSkills) {
         return agents.stream()
             .filter(agent -> agent.getSkills() != null && agent.getSkills().containsAll(requiredSkills))
+            .collect(Collectors.toList());
+    }
+
+    /**
+     * Filter agents by online status
+     */
+    private List<Agent> filterOnlineAgents(List<Agent> agents) {
+        return agents.stream()
+            .filter(agent -> agent.getStatus() == Agent.AgentStatus.ONLINE)
             .collect(Collectors.toList());
     }
 
@@ -206,16 +222,23 @@ public class AgentAssignmentService {
             return Collections.emptyList();
         }
 
+        // Filter only ONLINE agents
+        List<Agent> onlineAgents = filterOnlineAgents(availableAgents);
+        if (onlineAgents.isEmpty()) {
+            log.warn("No online agents for tenant {} in getRecommendedAgents", tenantId);
+            return Collections.emptyList();
+        }
+
         // If no skills required, return by load
         if (requiredSkills == null || requiredSkills.isEmpty()) {
-            return availableAgents.stream()
+            return onlineAgents.stream()
                 .sorted(Comparator.comparingInt(Agent::getCurrentLoad))
                 .limit(limit)
                 .collect(Collectors.toList());
         }
 
         // Sort by assignment score
-        return availableAgents.stream()
+        return onlineAgents.stream()
             .sorted((a1, a2) -> {
                 double score1 = calculateAssignmentScore(a1, requiredSkills);
                 double score2 = calculateAssignmentScore(a2, requiredSkills);

@@ -232,6 +232,26 @@ public class TenantMemberService {
         return auth.getName();
     }
 
+    /**
+     * Get current user's role in the tenant
+     * @param tenantId The tenant ID
+     * @return The user's role, or NONE if not a member
+     */
+    public TenantRole getCurrentUserRole(Long tenantId) {
+        String email = getCurrentUserEmail();
+        Long userId = authRepository.findByEmail(email)
+                .map(User::getId)
+                .orElse(null);
+
+        if (userId == null) {
+            return TenantRole.NONE;
+        }
+
+        return memberRepo.findByTenantIdAndUserId(tenantId, userId)
+                .map(TenantMember::getRole)
+                .orElse(TenantRole.NONE);
+    }
+
     private MemberResponse toResponse(TenantMember m) {
         // Application-level join: fetch user by userId
         User user = userRepository.findById(m.getUserId())

@@ -179,7 +179,7 @@
                 />
                 <div class="hidden lg:block text-left">
                   <p class="text-sm font-medium text-gray-900 dark:text-white">{{ userName }}</p>
-                  <p class="text-xs text-gray-500 dark:text-gray-400">{{ userRole || 'User' }}</p>
+                  <RoleBadge :role="userRole" size="small" />
                 </div>
                 <Icon icon="mdi:chevron-down" class="h-4 w-4" />
               </div>
@@ -264,6 +264,7 @@
   import { setDarkMode, loadDarkMode } from "@/helper/theme";
   import LanguageSwitcher from "./LanguageSwitcher.vue";
   import SearchContextIndicator from "./common/SearchContextIndicator.vue";
+  import RoleBadge from "./common/RoleBadge.vue";
   import { useAuthStore } from '@/stores/authStore';
   import { useSearchStore } from '@/stores/searchStore';
   import { useNotificationStore } from '@/stores/notification/notificationStore';
@@ -289,6 +290,7 @@
       Icon,
       LanguageSwitcher,
       SearchContextIndicator,
+      RoleBadge,
     },
     setup() {
       const { t } = useI18n()

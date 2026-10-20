@@ -75,15 +75,7 @@
             <!-- Role & Status -->
             <div class="flex items-center space-x-3">
               <!-- Role Badge -->
-              <span
-                :class="[
-                  'text-xs px-3 py-1 rounded-full font-medium',
-                  getRoleBadgeClass(member.role)
-                ]"
-              >
-                <Icon v-if="member.role === TenantRole.OWNER" icon="mdi:crown" class="inline h-3 w-3 mr-1" />
-                {{ getRoleLabel(member.role) }}
-              </span>
+              <RoleBadge :role="member.role" size="small" />
 
               <!-- Status Badge -->
               <span
@@ -138,6 +130,7 @@ import { useGatewayTenantStore } from '@/stores/tenant/gateway/myTenantStore'
 import { getRelativeTime } from '@/utils/dateUtils'
 import { TenantRole, MembershipStatus } from '@/types/tenant'
 import defaultAvatar from '@/assets/img/user.jpg'
+import RoleBadge from './common/RoleBadge.vue'
 
 const props = defineProps({
   visible: {
@@ -156,31 +149,6 @@ const loading = ref(false)
 const members = ref([])
 const onlineMembers = ref(new Map()) // Temporarily use local ref instead of computed
 const isInitialized = ref(false)
-
-const getRoleBadgeClass = (role) => {
-  switch (role) {
-    case TenantRole.OWNER:
-      return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
-    case TenantRole.ADMIN:
-      return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
-    case TenantRole.EDITOR:
-      return 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200'
-    case TenantRole.MEMBER:
-      return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-    default:
-      return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
-  }
-}
-
-const getRoleLabel = (role) => {
-  switch (role) {
-    case TenantRole.OWNER: return t('tenant.member.owner')
-    case TenantRole.ADMIN: return t('tenant.member.admin')
-    case TenantRole.EDITOR: return t('tenant.member.editor')
-    case TenantRole.MEMBER: return t('tenant.member.member')
-    default: return role
-  }
-}
 
 const getStatusBadgeClass = (status) => {
   switch (status) {
