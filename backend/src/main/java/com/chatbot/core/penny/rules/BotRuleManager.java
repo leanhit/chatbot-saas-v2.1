@@ -17,6 +17,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 
 /**
@@ -219,15 +220,22 @@ public class BotRuleManager {
      * Process response action
      */
     private String processResponseAction(BotRule rule, ConversationContext context) throws JsonProcessingException {
-        Map<String, Object> actionData = objectMapper.readValue(rule.getAction(), Map.class);
-        String responseText = (String) actionData.get("text");
-        
-        if (responseText == null) {
-            responseText = "Xin lỗi, tôi không hiểu yêu cầu của bạn.";
+        try {
+            Map<String, Object> actionData = objectMapper.readValue(rule.getAction(), Map.class);
+            String responseText = (String) actionData.get("text");
+            
+            if (responseText == null) {
+                responseText = "Xin lỗi, tôi không hiểu yêu cầu của bạn.";
+            }
+            
+            // Replace variables in response
+            return replaceVariables(responseText, context);
+        } catch (JsonProcessingException e) {
+            log.error("❌ Invalid JSON in rule action for rule {}: {}", rule.getId(), rule.getAction());
+            log.error("❌ Parse error: {}", e.getMessage());
+            // Fallback: treat action as plain text if JSON parsing fails
+            return replaceVariables(rule.getAction(), context);
         }
-        
-        // Replace variables in response
-        return replaceVariables(responseText, context);
     }
 
     /**
@@ -355,16 +363,17 @@ public class BotRuleManager {
     }
 
     /**
-     * Replace variables in response text
+     * Replace variables in response text — null-safe: nếu context field là null sẽ dùng chuỗi rỗng.
      */
     private String replaceVariables(String text, ConversationContext context) {
+        if (text == null) return "";
         String result = text;
-        
-        // Replace common variables
-        result = result.replace("{{user_name}}", context.getUserId());
-        result = result.replace("{{bot_name}}", context.getBotId());
-        result = result.replace("{{platform}}", context.getPlatform());
-        
+
+        // Replace common variables — dùng Objects.toString để tránh NPE khi field null
+        result = result.replace("{{user_name}}", Objects.toString(context.getUserId(), ""));
+        result = result.replace("{{bot_name}}", Objects.toString(context.getBotId(), ""));
+        result = result.replace("{{platform}}", Objects.toString(context.getPlatform(), ""));
+
         // Replace metadata variables
         if (context.getMetadata() != null) {
             for (Map.Entry<String, Object> entry : context.getMetadata().entrySet()) {
@@ -373,7 +382,7 @@ public class BotRuleManager {
                 result = result.replace(placeholder, value);
             }
         }
-        
+
         return result;
     }
 

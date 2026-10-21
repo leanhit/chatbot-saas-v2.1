@@ -500,4 +500,212 @@ class BotRuleManagerTest {
             assertEquals("High priority response", result.getResponse());
         }
     }
+    @Nested
+    @DisplayName("Null-safe replaceVariables (bug fix)")
+    class NullSafeReplaceVariablesTests {
+
+        @Test
+        @DisplayName("should NOT throw NPE when context.userId is null")
+        void shouldHandleNullUserId() {
+            UUID botId = UUID.randomUUID();
+            ConversationContext nullUserCtx = ConversationContext.builder()
+                .contextId("ctx-null")
+                .userId(null)          // ← null
+                .botId("bot-1")
+                .platform("facebook")
+                .sessionId("session-1")
+                .messageCount(1)
+                .build();
+
+            BotRule rule = BotRule.builder()
+                .id(UUID.randomUUID()).botId(botId).name("Greeting")
+                .triggerType(BotRule.TriggerType.INTENT).triggerValue("greeting")
+                .ruleType(BotRule.RuleType.RESPONSE)
+                .action("{\"text\": \"Xin chào {{user_name}}!\"}")
+                .condition("{}").isActive(true).priority(1).executionCount(0L).createdBy("admin")
+                .build();
+
+            when(botRuleRepository.findByBotIdAndIsActiveTrueOrderByPriorityDesc(botId))
+                .thenReturn(List.of(rule));
+
+            // Must NOT throw NPE
+            assertDoesNotThrow(() -> {
+                BotRuleManager.RuleEvaluationResult result =
+                    botRuleManager.evaluateRules(botId, "greeting", "Xin chào", nullUserCtx);
+                assertTrue(result.isMatched());
+                // {{user_name}} replaced with empty string, not null
+                assertTrue(result.getResponse().contains("Xin chào"));
+                assertFalse(result.getResponse().contains("null"));
+            });
+        }
+
+        @Test
+        @DisplayName("should NOT throw NPE when context.botId is null")
+        void shouldHandleNullBotId() {
+            UUID botId = UUID.randomUUID();
+            ConversationContext nullBotCtx = ConversationContext.builder()
+                .contextId("ctx-null")
+                .userId("user-1")
+                .botId(null)           // ← null
+                .platform("facebook")
+                .sessionId("session-1")
+                .messageCount(1)
+                .build();
+
+            BotRule rule = BotRule.builder()
+                .id(UUID.randomUUID()).botId(botId).name("Bot Info")
+                .triggerType(BotRule.TriggerType.INTENT).triggerValue("greeting")
+                .ruleType(BotRule.RuleType.RESPONSE)
+                .action("{\"text\": \"Bot: {{bot_name}}\"}")
+                .condition("{}").isActive(true).priority(1).executionCount(0L).createdBy("admin")
+                .build();
+
+            when(botRuleRepository.findByBotIdAndIsActiveTrueOrderByPriorityDesc(botId))
+                .thenReturn(List.of(rule));
+
+            assertDoesNotThrow(() -> {
+                BotRuleManager.RuleEvaluationResult result =
+                    botRuleManager.evaluateRules(botId, "greeting", "Hello", nullBotCtx);
+                assertTrue(result.isMatched());
+                // {{bot_name}} → "" not "null"
+                assertFalse(result.getResponse().contains("null"));
+            });
+        }
+
+        @Test
+        @DisplayName("should NOT throw NPE when context.platform is null")
+        void shouldHandleNullPlatform() {
+            UUID botId = UUID.randomUUID();
+            ConversationContext nullPlatformCtx = ConversationContext.builder()
+                .contextId("ctx-null")
+                .userId("user-1")
+                .botId("bot-1")
+                .platform(null)        // ← null
+                .sessionId("session-1")
+                .messageCount(1)
+                .build();
+
+            BotRule rule = BotRule.builder()
+                .id(UUID.randomUUID()).botId(botId).name("Platform Info")
+                .triggerType(BotRule.TriggerType.INTENT).triggerValue("greeting")
+                .ruleType(BotRule.RuleType.RESPONSE)
+                .action("{\"text\": \"Kênh: {{platform}}\"}")
+                .condition("{}").isActive(true).priority(1).executionCount(0L).createdBy("admin")
+                .build();
+
+            when(botRuleRepository.findByBotIdAndIsActiveTrueOrderByPriorityDesc(botId))
+                .thenReturn(List.of(rule));
+
+            assertDoesNotThrow(() -> {
+                BotRuleManager.RuleEvaluationResult result =
+                    botRuleManager.evaluateRules(botId, "greeting", "Hello", nullPlatformCtx);
+                assertTrue(result.isMatched());
+                assertFalse(result.getResponse().contains("null"));
+            });
+        }
+
+        @Test
+        @DisplayName("should NOT throw NPE when ALL context fields are null")
+        void shouldHandleAllNullContext() {
+            UUID botId = UUID.randomUUID();
+            ConversationContext allNullCtx = ConversationContext.builder()
+                .contextId("ctx-all-null")
+                // userId, botId, platform, metadata all null
+                .build();
+
+            BotRule rule = BotRule.builder()
+                .id(UUID.randomUUID()).botId(botId).name("All Null Rule")
+                .triggerType(BotRule.TriggerType.INTENT).triggerValue("greeting")
+                .ruleType(BotRule.RuleType.RESPONSE)
+                .action("{\"text\": \"User: {{user_name}}, Bot: {{bot_name}}, Platform: {{platform}}\"}")
+                .condition("{}").isActive(true).priority(1).executionCount(0L).createdBy("admin")
+                .build();
+
+            when(botRuleRepository.findByBotIdAndIsActiveTrueOrderByPriorityDesc(botId))
+                .thenReturn(List.of(rule));
+
+            assertDoesNotThrow(() -> {
+                BotRuleManager.RuleEvaluationResult result =
+                    botRuleManager.evaluateRules(botId, "greeting", "Hello", allNullCtx);
+                assertTrue(result.isMatched());
+                // All variables replaced with empty string
+                assertEquals("User: , Bot: , Platform: ", result.getResponse());
+            });
+        }
+
+        @Test
+        @DisplayName("should handle plain-text action (production bug reproduce) without NPE")
+        void shouldFallbackPlainTextActionWithNullFields() {
+            // Reproduces the exact production bug:
+            // Rule stored action = "xin chào" (plain text, NOT JSON)
+            // Context has null platform/botId → previously caused NPE
+            UUID botId = UUID.randomUUID();
+            ConversationContext partialCtx = ConversationContext.builder()
+                .contextId("ctx-partial")
+                .userId("user-fb-123")
+                .botId(null)           // ← was null in production
+                .platform(null)        // ← was null in production
+                .sessionId("session-1")
+                .messageCount(1)
+                .build();
+
+            BotRule rule = BotRule.builder()
+                .id(UUID.fromString("46d85399-88d7-4ac0-9723-d36a95c2c362"))
+                .botId(botId)
+                .name("Chào hỏi khách hàng (Copy)")
+                .triggerType(BotRule.TriggerType.INTENT).triggerValue("greeting")
+                .ruleType(BotRule.RuleType.RESPONSE)
+                .action("xin chào")   // ← plain text (was stored incorrectly in DB)
+                .condition("{}").isActive(true).priority(1).executionCount(0L).createdBy("admin")
+                .build();
+
+            when(botRuleRepository.findByBotIdAndIsActiveTrueOrderByPriorityDesc(botId))
+                .thenReturn(List.of(rule));
+
+            // Should NOT throw NullPointerException after fix
+            assertDoesNotThrow(() -> {
+                BotRuleManager.RuleEvaluationResult result =
+                    botRuleManager.evaluateRules(botId, "greeting", "Xin chào", partialCtx);
+                assertTrue(result.isMatched());
+                // Fallback: plain text returned as-is
+                assertNotNull(result.getResponse());
+            });
+        }
+
+        @Test
+        @DisplayName("should replace metadata variables null-safely")
+        void shouldHandleNullMetadataValues() {
+            UUID botId = UUID.randomUUID();
+            java.util.Map<String, Object> metadata = new java.util.HashMap<>();
+            metadata.put("order_id", null); // null value in metadata
+
+            ConversationContext ctxWithNullMeta = ConversationContext.builder()
+                .contextId("ctx-meta")
+                .userId("user-1")
+                .botId("bot-1")
+                .platform("facebook")
+                .metadata(metadata)
+                .messageCount(1)
+                .build();
+
+            BotRule rule = BotRule.builder()
+                .id(UUID.randomUUID()).botId(botId).name("Order Rule")
+                .triggerType(BotRule.TriggerType.INTENT).triggerValue("order_inquiry")
+                .ruleType(BotRule.RuleType.RESPONSE)
+                .action("{\"text\": \"Đơn hàng #{{order_id}} đang xử lý\"}")
+                .condition("{}").isActive(true).priority(1).executionCount(0L).createdBy("admin")
+                .build();
+
+            when(botRuleRepository.findByBotIdAndIsActiveTrueOrderByPriorityDesc(botId))
+                .thenReturn(List.of(rule));
+
+            assertDoesNotThrow(() -> {
+                BotRuleManager.RuleEvaluationResult result =
+                    botRuleManager.evaluateRules(botId, "order_inquiry", "Đơn hàng của tôi", ctxWithNullMeta);
+                assertTrue(result.isMatched());
+                // null metadata value → replaced with ""
+                assertEquals("Đơn hàng # đang xử lý", result.getResponse());
+            });
+        }
+    }
 }
