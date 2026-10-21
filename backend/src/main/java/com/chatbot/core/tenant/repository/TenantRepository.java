@@ -102,4 +102,8 @@ public interface TenantRepository extends JpaRepository<Tenant, Long> {
     // Tìm các tenant đã soft-delete trước cutoff date (cho scheduled cleanup)
     @Query("SELECT t FROM Tenant t WHERE t.status = 'DELETED' AND t.updatedAt <= :cutoffDate")
     List<Tenant> findDeletedTenantsOlderThan(@Param("cutoffDate") LocalDateTime cutoffDate);
+
+    // Lấy danh sách tenant IDs theo status (cho scheduled tasks)
+    @Query("SELECT t.id FROM Tenant t WHERE t.status = :status")
+    List<Long> findAllIdsByStatus(@Param("status") TenantStatus status);
 }

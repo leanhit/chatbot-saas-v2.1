@@ -150,6 +150,13 @@ public class MiddlewareResponse {
     }
     
     /**
+     * Check if response should be sent to user
+     */
+    public boolean isShouldSendResponse() {
+        return Boolean.TRUE.equals(shouldSendResponse);
+    }
+    
+    /**
      * Get metadata value by key
      */
     @SuppressWarnings("unchecked")

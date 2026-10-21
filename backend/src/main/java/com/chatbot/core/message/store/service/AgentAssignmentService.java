@@ -6,6 +6,7 @@ import com.chatbot.core.message.store.model.Conversation;
 import com.chatbot.core.message.store.repository.AgentRepository;
 import com.chatbot.core.message.store.repository.ConversationRepository;
 import com.chatbot.shared.exceptions.ResourceNotFoundException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -25,6 +26,7 @@ public class AgentAssignmentService {
     private final AgentRepository agentRepository;
     private final ConversationRepository conversationRepository;
     private final AgentService agentService;
+    private final ObjectMapper objectMapper;
 
     /**
      * Assign conversation to best matching agent based on skills
@@ -156,7 +158,7 @@ public class AgentAssignmentService {
         if (conversation.getCustomAttributes() != null) {
             try {
                 @SuppressWarnings("unchecked")
-                Map<String, Object> attributes = new com.fasterxml.jackson.databind.ObjectMapper().readValue(
+                Map<String, Object> attributes = objectMapper.readValue(
                     conversation.getCustomAttributes(),
                     Map.class
                 );

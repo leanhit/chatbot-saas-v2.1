@@ -5,6 +5,8 @@ import com.chatbot.core.message.store.model.Conversation;
 import com.chatbot.core.message.store.repository.AgentRepository;
 import com.chatbot.core.message.store.repository.ConversationRepository;
 import com.chatbot.core.tenant.infra.TenantContext;
+import com.chatbot.core.tenant.model.TenantStatus;
+import com.chatbot.core.tenant.repository.TenantRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -28,29 +30,65 @@ public class AgentReassignmentService {
     private final AgentRepository agentRepository;
     private final AgentAssignmentService agentAssignmentService;
     private final AgentService agentService;
+    private final TenantRepository tenantRepository;
 
     /**
      * Scheduled task to check for conversations assigned to offline agents
      * Runs every 5 minutes
+     * 
+     * FIXED: Query all active tenant IDs from DB and loop through each tenant
+     * instead of relying on TenantContext.getTenantId() which is always null
+     * in scheduled threads (no HTTP context).
      */
     @Scheduled(fixedRate = 300000) // 5 minutes
     @Transactional(transactionManager = "messageTransactionManager", rollbackFor = Exception.class)
     public void checkAndReassignOfflineAgents() {
-        Long tenantId = TenantContext.getTenantId();
-        if (tenantId == null) {
-            log.debug("No tenant context, skipping offline agent check");
+        log.info("🔍 [Reassignment] Starting scheduled offline agent check for all tenants");
+
+        // Query all active tenant IDs from database
+        List<Long> activeTenantIds = tenantRepository.findAllIdsByStatus(TenantStatus.ACTIVE);
+        
+        if (activeTenantIds.isEmpty()) {
+            log.debug("No active tenants found, skipping offline agent check");
             return;
         }
 
+        log.info("📋 [Reassignment] Found {} active tenants to check", activeTenantIds.size());
+
+        int totalReassignments = 0;
+
+        // Loop through each tenant and check for offline agents
+        for (Long tenantId : activeTenantIds) {
+            try {
+                int reassignmentsForTenant = checkAndReassignForTenant(tenantId);
+                totalReassignments += reassignmentsForTenant;
+            } catch (Exception e) {
+                log.error("❌ [Reassignment] Error checking tenant {}: {}", tenantId, e.getMessage(), e);
+                // Continue with next tenant even if one fails
+            }
+        }
+
+        if (totalReassignments > 0) {
+            log.info("📊 [Reassignment] Total reassigned {} conversations across all tenants", totalReassignments);
+        } else {
+            log.debug("✅ [Reassignment] All assigned agents are online across all tenants");
+        }
+    }
+
+    /**
+     * Check and reassign conversations for a specific tenant
+     * Extracted from checkAndReassignOfflineAgents for reusability
+     */
+    private int checkAndReassignForTenant(Long tenantId) {
         log.info("🔍 [Reassignment] Checking for conversations assigned to offline agents for tenant {}", tenantId);
 
-        // Find all conversations with assigned agents
+        // Find all conversations with assigned agents for this tenant
         List<Conversation> assignedConversations = conversationRepository
             .findByTenantIdAndAgentAssignedIdIsNotNull(tenantId);
 
         if (assignedConversations.isEmpty()) {
             log.debug("No assigned conversations found for tenant {}", tenantId);
-            return;
+            return 0;
         }
 
         int reassignmentCount = 0;
@@ -106,6 +144,8 @@ public class AgentReassignmentService {
         } else {
             log.debug("✅ [Reassignment] All assigned agents are online for tenant {}", tenantId);
         }
+
+        return reassignmentCount;
     }
 
     /**

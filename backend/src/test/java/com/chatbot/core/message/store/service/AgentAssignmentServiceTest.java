@@ -4,6 +4,7 @@ import com.chatbot.core.message.store.model.Agent;
 import com.chatbot.core.message.store.model.Conversation;
 import com.chatbot.core.message.store.repository.AgentRepository;
 import com.chatbot.core.message.store.repository.ConversationRepository;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -33,17 +34,21 @@ class AgentAssignmentServiceTest {
     @Mock
     private AgentService agentService;
 
+    @Mock
+    private ObjectMapper objectMapper;
+
     private AgentAssignmentService agentAssignmentService;
 
     private Conversation testConversation;
-    private Long testTenantId = 1L;
+    private final Long testTenantId = 1L;
 
     @BeforeEach
     void setUp() {
         agentAssignmentService = new AgentAssignmentService(
                 agentRepository,
                 conversationRepository,
-                agentService
+                agentService,
+                objectMapper   // ← injected bean thay vì new ObjectMapper()
         );
 
         testConversation = Conversation.builder()

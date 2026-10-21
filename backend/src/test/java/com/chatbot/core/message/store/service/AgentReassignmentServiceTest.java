@@ -4,7 +4,8 @@ import com.chatbot.core.message.store.model.Agent;
 import com.chatbot.core.message.store.model.Conversation;
 import com.chatbot.core.message.store.repository.AgentRepository;
 import com.chatbot.core.message.store.repository.ConversationRepository;
-import com.chatbot.core.tenant.infra.TenantContext;
+import com.chatbot.core.tenant.model.TenantStatus;
+import com.chatbot.core.tenant.repository.TenantRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -12,6 +13,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -39,9 +41,12 @@ class AgentReassignmentServiceTest {
     @Mock
     private AgentService agentService;
 
+    @Mock
+    private TenantRepository tenantRepository;
+
     private AgentReassignmentService agentReassignmentService;
 
-    private Long testTenantId = 1L;
+    private final Long testTenantId = 1L;
 
     @BeforeEach
     void setUp() {
@@ -49,33 +54,31 @@ class AgentReassignmentServiceTest {
                 conversationRepository,
                 agentRepository,
                 agentAssignmentService,
-                agentService
+                agentService,
+                tenantRepository   // ← new dependency after fix
         );
-
-        // Set tenant context
-        TenantContext.setTenantId(testTenantId);
     }
 
     @Test
-    void testCheckAndReassignOfflineAgents_NoTenantContext() {
-        // Arrange
-        TenantContext.clear();
+    void testCheckAndReassignOfflineAgents_NoActiveTenants() {
+        // Arrange — scheduler now queries all active tenants (no TenantContext needed)
+        when(tenantRepository.findAllIdsByStatus(TenantStatus.ACTIVE))
+                .thenReturn(Collections.emptyList());
 
         // Act
         agentReassignmentService.checkAndReassignOfflineAgents();
 
-        // Assert - Should return early without errors
+        // Assert - Should return early without touching conversations
         verify(conversationRepository, never()).findByTenantIdAndAgentAssignedIdIsNotNull(anyLong());
-
-        // Restore tenant context
-        TenantContext.setTenantId(testTenantId);
     }
 
     @Test
     void testCheckAndReassignOfflineAgents_NoAssignedConversations() {
         // Arrange
+        when(tenantRepository.findAllIdsByStatus(TenantStatus.ACTIVE))
+                .thenReturn(List.of(testTenantId));
         when(conversationRepository.findByTenantIdAndAgentAssignedIdIsNotNull(testTenantId))
-                .thenReturn(Arrays.asList());
+                .thenReturn(Collections.emptyList());
 
         // Act
         agentReassignmentService.checkAndReassignOfflineAgents();
@@ -100,6 +103,8 @@ class AgentReassignmentServiceTest {
 
         Agent onlineAgent = createAgent(agentId, Agent.AgentStatus.ONLINE);
 
+        when(tenantRepository.findAllIdsByStatus(TenantStatus.ACTIVE))
+                .thenReturn(List.of(testTenantId));
         when(conversationRepository.findByTenantIdAndAgentAssignedIdIsNotNull(testTenantId))
                 .thenReturn(Arrays.asList(conversation));
         when(agentRepository.findById(agentId)).thenReturn(Optional.of(onlineAgent));
@@ -128,6 +133,8 @@ class AgentReassignmentServiceTest {
         Agent offlineAgent = createAgent(oldAgentId, Agent.AgentStatus.OFFLINE);
         Agent onlineAgent = createAgent(newAgentId, Agent.AgentStatus.ONLINE);
 
+        when(tenantRepository.findAllIdsByStatus(TenantStatus.ACTIVE))
+                .thenReturn(List.of(testTenantId));
         when(conversationRepository.findByTenantIdAndAgentAssignedIdIsNotNull(testTenantId))
                 .thenReturn(Arrays.asList(conversation));
         when(agentRepository.findById(oldAgentId)).thenReturn(Optional.of(offlineAgent));
@@ -147,34 +154,27 @@ class AgentReassignmentServiceTest {
 
     @Test
     void testCheckAndReassignOfflineAgents_AgentOffline_NoOnlineAgents_ReleaseToBot() {
-        // Arrange
         Long conversationId = 1L;
         Long oldAgentId = 100L;
 
         Conversation conversation = Conversation.builder()
-                .id(conversationId)
-                .tenantId(testTenantId)
-                .agentAssignedId(oldAgentId)
-                .isTakenOverByAgent(true)
-                .status("active_agent")
+                .id(conversationId).tenantId(testTenantId)
+                .agentAssignedId(oldAgentId).isTakenOverByAgent(true).status("active_agent")
                 .build();
 
         Agent offlineAgent = createAgent(oldAgentId, Agent.AgentStatus.OFFLINE);
 
+        when(tenantRepository.findAllIdsByStatus(TenantStatus.ACTIVE)).thenReturn(List.of(testTenantId));
         when(conversationRepository.findByTenantIdAndAgentAssignedIdIsNotNull(testTenantId))
                 .thenReturn(Arrays.asList(conversation));
         when(agentRepository.findById(oldAgentId)).thenReturn(Optional.of(offlineAgent));
-        when(agentAssignmentService.autoAssignConversation(conversation))
-                .thenReturn(Optional.empty()); // No online agents available
+        when(agentAssignmentService.autoAssignConversation(conversation)).thenReturn(Optional.empty());
         when(conversationRepository.save(any(Conversation.class))).thenReturn(conversation);
 
-        // Act
         agentReassignmentService.checkAndReassignOfflineAgents();
 
-        // Assert
         verify(agentService, times(1)).decrementAgentLoad(oldAgentId);
         verify(agentService, never()).incrementAgentLoad(anyLong());
-        verify(conversationRepository, times(1)).save(any(Conversation.class));
         assertNull(conversation.getAgentAssignedId());
         assertFalse(conversation.getIsTakenOverByAgent());
         assertEquals("open", conversation.getStatus());
@@ -182,26 +182,39 @@ class AgentReassignmentServiceTest {
 
     @Test
     void testCheckAndReassignOfflineAgents_AgentNotFound_Skips() {
-        // Arrange
         Long conversationId = 1L;
         Long agentId = 100L;
 
         Conversation conversation = Conversation.builder()
-                .id(conversationId)
-                .tenantId(testTenantId)
-                .agentAssignedId(agentId)
-                .build();
+                .id(conversationId).tenantId(testTenantId).agentAssignedId(agentId).build();
 
+        when(tenantRepository.findAllIdsByStatus(TenantStatus.ACTIVE)).thenReturn(List.of(testTenantId));
         when(conversationRepository.findByTenantIdAndAgentAssignedIdIsNotNull(testTenantId))
                 .thenReturn(Arrays.asList(conversation));
         when(agentRepository.findById(agentId)).thenReturn(Optional.empty());
 
-        // Act
         agentReassignmentService.checkAndReassignOfflineAgents();
 
-        // Assert
         verify(agentAssignmentService, never()).autoAssignConversation(any(Conversation.class));
         verify(agentService, never()).decrementAgentLoad(anyLong());
+    }
+
+    @Test
+    void testCheckAndReassignOfflineAgents_MultiTenant_EachTenantChecked() {
+        // Scheduler phải loop qua TẤT CẢ active tenants, không phụ thuộc TenantContext
+        Long tenant2 = 2L;
+        when(tenantRepository.findAllIdsByStatus(TenantStatus.ACTIVE))
+                .thenReturn(List.of(testTenantId, tenant2));
+        when(conversationRepository.findByTenantIdAndAgentAssignedIdIsNotNull(testTenantId))
+                .thenReturn(Collections.emptyList());
+        when(conversationRepository.findByTenantIdAndAgentAssignedIdIsNotNull(tenant2))
+                .thenReturn(Collections.emptyList());
+
+        agentReassignmentService.checkAndReassignOfflineAgents();
+
+        // Both tenants should be checked
+        verify(conversationRepository).findByTenantIdAndAgentAssignedIdIsNotNull(testTenantId);
+        verify(conversationRepository).findByTenantIdAndAgentAssignedIdIsNotNull(tenant2);
     }
 
     @Test

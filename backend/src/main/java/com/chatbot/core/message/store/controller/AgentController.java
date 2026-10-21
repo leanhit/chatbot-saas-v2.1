@@ -2,6 +2,8 @@ package com.chatbot.core.message.store.controller;
 
 import com.chatbot.core.membership.model.MembershipStatus;
 import com.chatbot.core.membership.repository.TenantMemberRepository;
+import com.chatbot.core.message.store.dto.AgentRequestDTO;
+import com.chatbot.core.message.store.dto.AgentResponseDTO;
 import com.chatbot.core.message.store.model.Agent;
 import com.chatbot.core.message.store.service.AgentProvisioningService;
 import com.chatbot.core.message.store.service.AgentService;
@@ -11,8 +13,13 @@ import com.chatbot.core.user.model.User;
 import com.chatbot.core.user.repository.UserRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -45,30 +52,52 @@ public class AgentController {
     /* ========== READ — active members of this tenant ========== */
 
     @GetMapping
-    @Operation(summary = "Get all agents for current tenant")
-    public ResponseEntity<List<Agent>> getAgents() {
+    @Operation(summary = "Get all agents for current tenant (paginated)")
+    public ResponseEntity<Page<AgentResponseDTO>> getAgents(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+            @RequestParam(defaultValue = "desc") String sortDir) {
         Long tenantId = requireTenantId();
         if (tenantId == null) return ResponseEntity.badRequest().build();
         requireActiveMember(tenantId);
-        return ResponseEntity.ok(agentService.getAgentsByTenant(tenantId));
+        
+        // Create pageable with sorting
+        Sort sort = sortDir.equalsIgnoreCase("asc") ? 
+                Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
+        Pageable pageable = PageRequest.of(page, size, sort);
+        
+        // Get agents and convert to DTOs
+        List<Agent> agents = agentService.getAgentsByTenant(tenantId);
+        int start = (int) pageable.getOffset();
+        int end = Math.min((start + pageable.getPageSize()), agents.size());
+        
+        List<AgentResponseDTO> dtoList = agents.subList(start, end).stream()
+                .map(AgentResponseDTO::fromEntity)
+                .toList();
+        
+        Page<AgentResponseDTO> dtoPage = new org.springframework.data.domain.PageImpl<>(
+                dtoList, pageable, agents.size());
+        
+        return ResponseEntity.ok(dtoPage);
     }
 
     @GetMapping("/active")
     @Operation(summary = "Get active agents for current tenant")
-    public ResponseEntity<List<Agent>> getActiveAgents() {
+    public ResponseEntity<List<AgentResponseDTO>> getActiveAgents() {
         Long tenantId = requireTenantId();
         if (tenantId == null) return ResponseEntity.badRequest().build();
         requireActiveMember(tenantId);
-        return ResponseEntity.ok(agentService.getActiveAgentsByTenant(tenantId));
+        return ResponseEntity.ok(agentService.getActiveAgentDTOsByTenant(tenantId));
     }
 
     @GetMapping("/available")
     @Operation(summary = "Get available agents (online and can accept more conversations)")
-    public ResponseEntity<List<Agent>> getAvailableAgents() {
+    public ResponseEntity<List<AgentResponseDTO>> getAvailableAgents() {
         Long tenantId = requireTenantId();
         if (tenantId == null) return ResponseEntity.badRequest().build();
         requireActiveMember(tenantId);
-        return ResponseEntity.ok(agentService.getAvailableAgents(tenantId));
+        return ResponseEntity.ok(agentService.getAvailableAgentDTOs(tenantId));
     }
 
     @GetMapping("/stats")
@@ -82,11 +111,11 @@ public class AgentController {
 
     @GetMapping("/{id}")
     @Operation(summary = "Get agent by ID")
-    public ResponseEntity<Agent> getAgent(@PathVariable Long id) {
+    public ResponseEntity<AgentResponseDTO> getAgent(@PathVariable Long id) {
         Long tenantId = requireTenantId();
         if (tenantId == null) return ResponseEntity.badRequest().build();
         requireActiveMember(tenantId);
-        return agentService.getAgentById(id)
+        return agentService.getAgentDTOById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
@@ -99,17 +128,23 @@ public class AgentController {
     /**
      * Update agent profile. Only OWNER of the tenant can update.
      * Agent belongs-to-tenant is validated in service layer.
+     * Uses DTO with validation to prevent invalid data injection.
      */
     @PutMapping("/{id}")
     @Operation(summary = "Update existing agent (OWNER only)")
-    public ResponseEntity<Agent> updateAgent(@PathVariable Long id, @RequestBody Agent agent) {
+    public ResponseEntity<AgentResponseDTO> updateAgent(
+            @PathVariable Long id, 
+            @Valid @RequestBody AgentRequestDTO agentRequestDTO) {
         Long tenantId = requireTenantId();
         if (tenantId == null) return ResponseEntity.badRequest().build();
         if (!isOwner(tenantId)) return forbidden("Only OWNER can update agents");
         try {
-            return ResponseEntity.ok(agentService.updateAgent(id, agent, tenantId));
+            AgentResponseDTO updated = agentService.updateAgentFromDTO(id, agentRequestDTO, tenantId);
+            return ResponseEntity.ok(updated);
         } catch (com.chatbot.shared.exceptions.ResourceNotFoundException e) {
             return ResponseEntity.notFound().build();
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
         }
     }
 

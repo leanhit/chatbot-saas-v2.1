@@ -1,5 +1,7 @@
 package com.chatbot.core.message.store.service;
 
+import com.chatbot.core.message.store.dto.AgentRequestDTO;
+import com.chatbot.core.message.store.dto.AgentResponseDTO;
 import com.chatbot.core.message.store.model.Agent;
 import com.chatbot.core.message.store.repository.AgentRepository;
 import com.chatbot.shared.exceptions.ResourceNotFoundException;
@@ -12,6 +14,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * Service for managing agents
@@ -139,6 +142,95 @@ public class AgentService {
     }
 
     /**
+     * Update agent using DTO — validates that the agent belongs to the given tenant.
+     * Converts DTO to entity, validates, and returns response DTO.
+     */
+    @Transactional
+    public AgentResponseDTO updateAgentFromDTO(Long agentId, AgentRequestDTO requestDTO, Long tenantId) {
+        // Convert DTO to entity
+        Agent updatedAgent = convertDTOToEntity(requestDTO);
+        
+        // Update using existing method with tenant validation
+        Agent updated = updateAgent(agentId, updatedAgent, tenantId);
+        
+        // Convert back to response DTO
+        return AgentResponseDTO.fromEntity(updated);
+    }
+
+    /**
+     * Convert AgentRequestDTO to Agent entity
+     */
+    private Agent convertDTOToEntity(AgentRequestDTO dto) {
+        Agent agent = new Agent();
+        agent.setName(dto.getName());
+        agent.setEmail(dto.getEmail());
+        
+        // Convert role string to enum
+        if (dto.getRole() != null) {
+            try {
+                agent.setRole(Agent.AgentRole.valueOf(dto.getRole()));
+            } catch (IllegalArgumentException e) {
+                throw new IllegalArgumentException("Invalid agent role: " + dto.getRole());
+            }
+        }
+        
+        // Convert status string to enum
+        if (dto.getStatus() != null) {
+            try {
+                agent.setStatus(Agent.AgentStatus.valueOf(dto.getStatus()));
+            } catch (IllegalArgumentException e) {
+                throw new IllegalArgumentException("Invalid agent status: " + dto.getStatus());
+            }
+        }
+        
+        agent.setCurrentLoad(dto.getCurrentLoad());
+        agent.setMaxConcurrentConversations(dto.getMaxConcurrentConversations());
+        agent.setSkills(dto.getSkills());
+        agent.setAssignmentPreferences(dto.getAssignmentPreferences());
+        agent.setActive(dto.getActive());
+        agent.setBio(dto.getBio());
+        agent.setPhoneNumber(dto.getPhoneNumber());
+        agent.setAvatarUrl(dto.getAvatarUrl());
+        
+        return agent;
+    }
+
+    /**
+     * Get all agents as response DTOs for a tenant
+     */
+    public List<AgentResponseDTO> getAgentDTOsByTenant(Long tenantId) {
+        return agentRepository.findByTenantId(tenantId).stream()
+                .map(AgentResponseDTO::fromEntity)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Get active agents as response DTOs for a tenant
+     */
+    public List<AgentResponseDTO> getActiveAgentDTOsByTenant(Long tenantId) {
+        return agentRepository.findByTenantIdAndActiveOrderByCreatedAtDesc(tenantId, true).stream()
+                .map(AgentResponseDTO::fromEntity)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Get available agents as response DTOs for a tenant
+     */
+    public List<AgentResponseDTO> getAvailableAgentDTOs(Long tenantId) {
+        return agentRepository.findAvailableAgentsByTenantId(tenantId).stream()
+                .map(AgentResponseDTO::fromEntity)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Get agent by ID as response DTO
+     */
+    public Optional<AgentResponseDTO> getAgentDTOById(Long agentId) {
+        return agentRepository.findById(agentId)
+                .map(AgentResponseDTO::fromEntity);
+    }
+
+    /**
      * Delete an agent
      */
     @Transactional
@@ -174,8 +266,18 @@ public class AgentService {
     }
 
     /**
-     * Get agent by user ID
+     * Get agent by user ID and tenant ID (tenant-scoped for security)
+     * Use this method instead of getAgentByUserId to prevent cross-tenant data leakage
      */
+    public Optional<Agent> getAgentByUserIdAndTenantId(Long userId, Long tenantId) {
+        return agentRepository.findByUserIdAndTenantId(userId, tenantId);
+    }
+
+    /**
+     * Get agent by user ID (DEPRECATED - use getAgentByUserIdAndTenantId instead)
+     * This method is not tenant-scoped and may return agents from wrong tenants
+     */
+    @Deprecated
     public Optional<Agent> getAgentByUserId(Long userId) {
         return agentRepository.findByUserId(userId);
     }
