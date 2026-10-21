@@ -2,10 +2,10 @@ import api from './api'
 
 export default {
   /**
-   * Get all agents for current tenant
+   * Get all agents for current tenant (paginated)
    */
-  getAgents() {
-    return api.get('/agents')
+  getAgents(page = 0, size = 20, sortBy = 'createdAt', sortDir = 'desc') {
+    return api.get('/agents', { params: { page, size, sortBy, sortDir } })
   },
 
   /**

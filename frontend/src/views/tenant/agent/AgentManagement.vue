@@ -45,7 +45,7 @@
         </div>
         <div class="block p-2 w-full">
           <p class="font-semibold text-gray-900 dark:text-gray-200 text-xl">
-            {{ agents.length }}
+            {{ totalElements }}
           </p>
           <h2 class="font-normal text-gray-400 text-md mt-1">Total Agents</h2>
           <div class="flex items-center mt-2">
@@ -230,6 +230,32 @@
       </div>
     </div>
 
+    <!-- Pagination -->
+    <div v-if="totalPages > 1" class="mt-6 flex justify-between items-center">
+      <div class="text-sm text-gray-600 dark:text-gray-400">
+        Showing {{ currentPage * pageSize + 1 }} to {{ Math.min((currentPage + 1) * pageSize, totalElements) }} of {{ totalElements }} agents
+      </div>
+      <div class="flex space-x-2">
+        <button
+          @click="goToPage(currentPage - 1)"
+          :disabled="currentPage === 0"
+          class="px-4 py-2 bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed text-gray-700 dark:text-gray-300"
+        >
+          Previous
+        </button>
+        <span class="px-4 py-2 text-gray-700 dark:text-gray-300">
+          Page {{ currentPage + 1 }} of {{ totalPages }}
+        </span>
+        <button
+          @click="goToPage(currentPage + 1)"
+          :disabled="currentPage >= totalPages - 1"
+          class="px-4 py-2 bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed text-gray-700 dark:text-gray-300"
+        >
+          Next
+        </button>
+      </div>
+    </div>
+
     <!-- Edit Modal -->
     <div
       v-if="showEditModal"
@@ -396,6 +422,14 @@ const showEditModal = ref(false)
 const currentAgent = ref({})
 const skillsString = ref('')
 
+// Pagination state
+const currentPage = ref(0)
+const pageSize = ref(20)
+const totalPages = ref(0)
+const totalElements = ref(0)
+const sortBy = ref('createdAt')
+const sortDir = ref('desc')
+
 // Permission checks
 const isOwner = computed(() => {
   return tenantStore.currentTenant?.role === 'OWNER'
@@ -435,10 +469,13 @@ const avgLoad = computed(() => {
 const loadAgents = async () => {
   loading.value = true
   try {
-    const response = await agentApi.getAgents()
-    agents.value = response.data || []
+    const response = await agentApi.getAgents(currentPage.value, pageSize.value, sortBy.value, sortDir.value)
+    agents.value = response.data.content || []
+    totalPages.value = response.data.totalPages || 0
+    totalElements.value = response.data.totalElements || 0
   } catch (error) {
     console.error('Error loading agents:', error)
+    toast.error(error, 'Error loading agents')
   } finally {
     loading.value = false
   }
@@ -502,6 +539,13 @@ const closeModal = () => {
   showEditModal.value = false
   currentAgent.value = {}
   skillsString.value = ''
+}
+
+const goToPage = (page) => {
+  if (page >= 0 && page < totalPages.value) {
+    currentPage.value = page
+    loadAgents()
+  }
 }
 
 const formatDate = (dateString) => {
