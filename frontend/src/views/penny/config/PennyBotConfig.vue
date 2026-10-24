@@ -20,14 +20,14 @@
           </div>
         </div>
       </div>
-      <div class="flex items-center space-x-3">
+      <div class="flex items-center space-x-2">
         <!-- Bot Selector Dropdown -->
         <div v-if="availableBots.length > 0" class="flex items-center space-x-2">
           <select
             id="bot-selector-config"
             v-model="selectedBotId"
             @change="handleBotChange(selectedBotId)"
-            class="px-3.5 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm font-medium focus:ring-2 focus:ring-primary focus:outline-none shadow-sm"
+            class="px-3.5 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm font-medium focus:ring-2 focus:ring-primary focus:outline-none shadow-sm"
           >
             <option value="" disabled>{{ $t('penny.selectPennyBotPlaceholder') }}</option>
             <option
@@ -42,34 +42,34 @@
         <button
           id="btn-tour-guide-config"
           @click="startTour"
-          class="inline-flex items-center px-3.5 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors shadow-sm text-sm font-medium"
+          class="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors shadow-sm"
         >
-          <Icon icon="mdi:help-circle-outline" class="mr-1.5 text-indigo-500 text-lg" />
+          <Icon icon="mdi:help-circle-outline" class="mr-2 text-primary" />
           {{ $t('penny.guide') }}
         </button>
         <button
           @click="loadConfig"
           :disabled="loading || !activeBotId"
-          class="inline-flex items-center px-3.5 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-lg transition-colors text-sm font-medium"
+          class="inline-flex items-center px-4 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-md transition-colors"
         >
-          <Icon icon="mdi:refresh" class="mr-1.5 text-lg" :class="{ 'animate-spin': loading }" />
+          <Icon icon="mdi:refresh" class="mr-2" :class="{ 'animate-spin': loading }" />
           {{ $t('common.refresh') }}
         </button>
         <button
           @click="showImportExportModal = true"
           :disabled="!activeBotId"
-          class="inline-flex items-center px-3.5 py-2 bg-emerald-100 dark:bg-emerald-900/30 hover:bg-emerald-200 dark:hover:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 rounded-lg transition-colors text-sm font-medium"
+          class="inline-flex items-center px-4 py-2 bg-emerald-100 dark:bg-emerald-900/30 hover:bg-emerald-200 dark:hover:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 rounded-md transition-colors"
         >
-          <Icon icon="mdi:file-import-export" class="mr-1.5 text-lg" />
+          <Icon icon="mdi:file-import-export" class="mr-2" />
           {{ $t('penny.config.importExport') }}
         </button>
         <button
           @click="saveConfig"
           :disabled="loading || !activeBotId"
-          class="inline-flex items-center px-5 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg hover:from-indigo-700 hover:to-purple-700 shadow-md transition-all disabled:opacity-50 text-sm font-medium"
+          class="inline-flex items-center px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/80 transition-colors"
         >
-          <Icon v-if="loading" icon="mdi:loading" class="animate-spin mr-2 text-lg" />
-          <Icon v-else icon="mdi:content-save-check-outline" class="mr-2 text-lg" />
+          <Icon v-if="loading" icon="mdi:loading" class="animate-spin mr-2" />
+          <Icon v-else icon="mdi:content-save-check-outline" class="mr-2" />
           {{ $t('penny.config.saveChanges') }}
         </button>
       </div>

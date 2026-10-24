@@ -595,5 +595,17 @@ export const pennyApi = {
                 'Content-Type': 'multipart/form-data'
             }
         }).catch(handleApiError);
+    },
+
+    /**
+     * Import from Botpress JSON format
+     */
+    importFromBotpress(botId, botpressData) {
+        if (!isValidBotId(botId)) {
+            console.warn('pennyApi.importFromBotpress called with invalid botId:', botId);
+            return Promise.reject(new Error(`Invalid botId: ${botId}`));
+        }
+        return axios.post(`/penny/bots/${botId}/custom-logic/import/botpress`, botpressData)
+            .catch(handleApiError);
     }
 };

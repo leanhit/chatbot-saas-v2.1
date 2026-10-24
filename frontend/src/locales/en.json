@@ -119,7 +119,8 @@
     "edit": "Edit",
     "yes": "Yes",
     "no": "No",
-    "update": "Update"
+    "update": "Update",
+    "close": "Close"
   },
   "auth": {
     "login": {
@@ -587,7 +588,12 @@
       "csvImportCompleted": "CSV import completed",
       "csvImportFailed": "CSV import failed",
       "exportSuccessful": "Export successful",
-      "exportFailed": "Export failed"
+      "exportFailed": "Export failed",
+      "importBotpressTitle": "Import from Botpress JSON",
+      "importBotpressHelp": "Import QnA from a JSON file exported from Botpress. Converts to Penny rules.",
+      "selectBotpressFile": "Select Botpress JSON File",
+      "botpressImportCompleted": "Botpress import completed",
+      "botpressImportFailed": "Botpress import failed"
     },
     "selectPennyBotPlaceholder": "-- Select Penny Bot --",
     "noBotSelected": "No Bot Selected",

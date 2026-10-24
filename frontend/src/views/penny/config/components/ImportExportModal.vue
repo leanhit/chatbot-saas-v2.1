@@ -19,6 +19,7 @@
         <button
           @click="close"
           class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors text-gray-500 dark:text-gray-400"
+          :title="$t('common.close')"
         >
           <Icon icon="mdi:close" class="text-xl" />
         </button>
@@ -117,6 +118,35 @@
               >
                 <Icon icon="mdi:download" />
                 {{ $t('penny.config.downloadTemplate') }}
+              </button>
+            </div>
+          </div>
+
+          <!-- Botpress JSON Import -->
+          <div class="p-4 border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-900/40">
+            <h3 class="font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+              <Icon icon="mdi:robot" class="text-purple-500" />
+              {{ $t('penny.config.importBotpressTitle') }}
+            </h3>
+            <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">
+              {{ $t('penny.config.importBotpressHelp') }}
+            </p>
+            <div class="flex gap-3">
+              <input
+                ref="botpressFileInput"
+                type="file"
+                accept=".json"
+                @change="handleBotpressFileSelect"
+                class="hidden"
+              />
+              <button
+                @click="$refs.botpressFileInput.click()"
+                :disabled="importing"
+                class="flex-1 px-4 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-purple-400 text-white rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
+              >
+                <Icon v-if="importing" icon="mdi:loading" class="animate-spin" />
+                <Icon v-else icon="mdi:upload" />
+                {{ importing ? $t('penny.config.importing') : $t('penny.config.selectBotpressFile') }}
               </button>
             </div>
           </div>
@@ -308,6 +338,45 @@ export default {
         this.importResult = {
           success: false,
           message: $t('penny.config.csvImportFailed'),
+          details: {
+            errors: [error.response?.data?.error || error.message]
+          }
+        };
+      } finally {
+        this.importing = false;
+        event.target.value = '';
+      }
+    },
+    
+    async handleBotpressFileSelect(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      
+      this.importing = true;
+      this.importResult = null;
+      
+      try {
+        const content = await this.readFile(file);
+        const botpressData = JSON.parse(content);
+        
+        const response = await pennyApi.importFromBotpress(this.botId, botpressData);
+        
+        this.importResult = {
+          success: true,
+          message: response.data.message || $t('penny.config.botpressImportCompleted'),
+          details: {
+            importedCount: response.data.importedRules,
+            failedCount: response.data.errorCount || 0,
+            errors: response.data.errors || []
+          }
+        };
+        
+        this.$emit('imported');
+      } catch (error) {
+        console.error('Botpress import error:', error);
+        this.importResult = {
+          success: false,
+          message: $t('penny.config.botpressImportFailed'),
           details: {
             errors: [error.response?.data?.error || error.message]
           }

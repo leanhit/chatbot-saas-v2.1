@@ -118,7 +118,8 @@
     "edit": "Chỉnh sửa",
     "yes": "Có",
     "no": "Không",
-    "update": "Cập nhật"
+    "update": "Cập nhật",
+    "close": "Đóng"
   },
   "auth": {
     "login": {
@@ -586,7 +587,12 @@
       "csvImportCompleted": "Import CSV hoàn tất",
       "csvImportFailed": "Import CSV thất bại",
       "exportSuccessful": "Export thành công",
-      "exportFailed": "Export thất bại"
+      "exportFailed": "Export thất bại",
+      "importBotpressTitle": "Import từ Botpress JSON",
+      "importBotpressHelp": "Import QnA từ file JSON export từ Botpress. Chuyển đổi sang Penny rules.",
+      "selectBotpressFile": "Chọn file Botpress JSON",
+      "botpressImportCompleted": "Import Botpress hoàn tất",
+      "botpressImportFailed": "Import Botpress thất bại"
     },
     "selectPennyBotPlaceholder": "-- Chọn Penny Bot --",
     "noBotSelected": "Chưa chọn Bot",
@@ -1134,14 +1140,7 @@
           }
         },
         "failedToReembed": "Tạo lại vector nhúng thất bại",
-        "failedToSearch": "Tìm kiếm thất bại",
-        "categories": {
-          "faq": "Hỏi đáp (FAQ)",
-          "product": "Sản phẩm",
-          "policy": "Chính sách",
-          "shipping": "Vận chuyển",
-          "price": "Giá cả"
-        }
+        "failedToSearch": "Tìm kiếm thất bại"
       }
     },
     "error": {

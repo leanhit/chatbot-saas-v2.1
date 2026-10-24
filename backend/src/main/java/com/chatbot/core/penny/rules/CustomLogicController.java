@@ -1,5 +1,6 @@
 package com.chatbot.core.penny.rules;
 
+import com.chatbot.core.penny.rules.dto.BotpressImportDto;
 import com.chatbot.core.tenant.infra.TenantContext;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -353,6 +354,96 @@ public class CustomLogicController {
             log.error("❌ Error importing custom logic: {}", e.getMessage(), e);
             return ResponseEntity.internalServerError().body(Map.of(
                 "error", "Error importing custom logic: " + e.getMessage()
+            ));
+        }
+    }
+
+    /**
+     * Import from Botpress JSON format
+     */
+    @PostMapping("/import/botpress")
+    public ResponseEntity<Map<String, Object>> importFromBotpress(
+            @PathVariable String botId,
+            @RequestBody BotpressImportDto botpressData,
+            Principal principal) {
+        
+        // Validate tenant context
+        Long tenantId = TenantContext.getTenantId();
+        if (tenantId == null) {
+            return ResponseEntity.badRequest().body(Map.of(
+                "error", "Tenant context not found. Please provide X-Tenant-Key header"
+            ));
+        }
+        
+        UUID botUuid = UUID.fromString(botId);
+        String createdBy = principal.getName();
+        
+        try {
+            int importedRules = 0;
+            int importedTemplates = 0;
+            java.util.List<String> errors = new java.util.ArrayList<>();
+            
+            // Convert Botpress QnA to Penny rules
+            if (botpressData.getQna() != null && botpressData.getQna().getItems() != null) {
+                for (BotpressImportDto.QnAItem qnaItem : botpressData.getQna().getItems()) {
+                    try {
+                        // Convert QnA to a rule
+                        if (qnaItem.getQuestions() != null && !qnaItem.getQuestions().isEmpty()) {
+                            String triggerValue = qnaItem.getQuestions().get(0); // Use first question as trigger
+                            
+                            // Build action from answers
+                            StringBuilder actionBuilder = new StringBuilder();
+                            if (qnaItem.getAnswers() != null && !qnaItem.getAnswers().isEmpty()) {
+                                for (BotpressImportDto.QnAAnswer answer : qnaItem.getAnswers()) {
+                                    if (answer.getText() != null) {
+                                        actionBuilder.append(answer.getText()).append("\n");
+                                    }
+                                }
+                            }
+                            
+                            // Create rule
+                            botRuleManager.createRule(
+                                botUuid,
+                                "Botpress QnA: " + (qnaItem.getId() != null ? qnaItem.getId() : "Imported"),
+                                "Imported from Botpress QnA",
+                                null, // condition
+                                actionBuilder.toString().trim(), // action
+                                BotRule.RuleType.RESPONSE,
+                                BotRule.TriggerType.INTENT,
+                                triggerValue,
+                                0, // priority
+                                createdBy
+                            );
+                            importedRules++;
+                        }
+                    } catch (Exception e) {
+                        String errorMsg = "Failed to import QnA item " + qnaItem.getId() + ": " + e.getMessage();
+                        log.warn("⚠️ {}", errorMsg);
+                        errors.add(errorMsg);
+                    }
+                }
+            }
+            
+            // TODO: Add conversion for Botpress flows/dialogs to Penny rules
+            // This would require parsing the Botpress flow structure and converting it to Penny's rule format
+            
+            Map<String, Object> response = new java.util.HashMap<>();
+            response.put("message", "Botpress JSON imported successfully");
+            response.put("importedRules", importedRules);
+            response.put("importedTemplates", importedTemplates);
+            response.put("botId", botId);
+            
+            if (!errors.isEmpty()) {
+                response.put("errors", errors);
+                response.put("errorCount", errors.size());
+            }
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            log.error("❌ Error importing from Botpress: {}", e.getMessage(), e);
+            return ResponseEntity.internalServerError().body(Map.of(
+                "error", "Error importing from Botpress: " + e.getMessage()
             ));
         }
     }
