@@ -29,7 +29,7 @@
             @change="handleBotChange(selectedBotId)"
             class="px-3.5 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm font-medium focus:ring-2 focus:ring-primary focus:outline-none shadow-sm"
           >
-            <option value="" disabled>{{ $t('penny.selectPennyBotPlaceholder') || '-- Chọn Penny Bot --' }}</option>
+            <option value="" disabled>{{ $t('penny.selectPennyBotPlaceholder') }}</option>
             <option
               v-for="bot in availableBots"
               :key="bot.id || bot.botId"
@@ -45,7 +45,7 @@
           class="inline-flex items-center px-3.5 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors shadow-sm text-sm font-medium"
         >
           <Icon icon="mdi:help-circle-outline" class="mr-1.5 text-indigo-500 text-lg" />
-          {{ $t('penny.guide') || 'Hướng dẫn' }}
+          {{ $t('penny.guide') }}
         </button>
         <button
           @click="loadConfig"
@@ -53,7 +53,15 @@
           class="inline-flex items-center px-3.5 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-lg transition-colors text-sm font-medium"
         >
           <Icon icon="mdi:refresh" class="mr-1.5 text-lg" :class="{ 'animate-spin': loading }" />
-          {{ $t('penny.config.refresh') || 'Làm mới' }}
+          {{ $t('common.refresh') }}
+        </button>
+        <button
+          @click="showImportExportModal = true"
+          :disabled="!activeBotId"
+          class="inline-flex items-center px-3.5 py-2 bg-emerald-100 dark:bg-emerald-900/30 hover:bg-emerald-200 dark:hover:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 rounded-lg transition-colors text-sm font-medium"
+        >
+          <Icon icon="mdi:file-import-export" class="mr-1.5 text-lg" />
+          {{ $t('penny.config.importExport') }}
         </button>
         <button
           @click="saveConfig"
@@ -490,6 +498,14 @@
         </div>
       </div>
     </div>
+
+    <!-- Import/Export Modal -->
+    <ImportExportModal
+      :show="showImportExportModal"
+      :bot-id="activeBotId"
+      @close="showImportExportModal = false"
+      @imported="handleImported"
+    />
   </div>
 </template>
 
@@ -499,13 +515,15 @@ import { Icon } from '@iconify/vue';
 import { driver } from 'driver.js';
 import 'driver.js/dist/driver.css';
 import AiBotConfig from '../bots/components/AiBotConfig.vue';
+import ImportExportModal from './components/ImportExportModal.vue';
 import { usePennyBotStore } from '@/stores/pennyBotStore';
 
 export default {
   name: 'PennyBotConfig',
   components: {
     Icon,
-    AiBotConfig
+    AiBotConfig,
+    ImportExportModal
   },
   props: {
     botId: {
@@ -555,6 +573,7 @@ export default {
       testingOrder: false,
       loading: false,
       appliedTemplateNotice: null,
+      showImportExportModal: false,
       promptTemplates: [
         {
           id: 'fashion',
@@ -824,6 +843,12 @@ export default {
       setTimeout(() => {
         this.appliedTemplateNotice = null;
       }, 4000);
+    },
+
+    handleImported() {
+      if (this.$toast) {
+        this.$toast.success('Custom logic imported successfully');
+      }
     },
 
     startTour() {

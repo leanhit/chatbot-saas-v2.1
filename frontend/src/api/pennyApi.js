@@ -548,5 +548,52 @@ export const pennyApi = {
                 'Content-Type': 'multipart/form-data'
             }
         }).catch(handleApiError);
+    },
+
+    // ========================================
+    // Custom Logic Import/Export API
+    // ========================================
+
+    /**
+     * Export custom logic configuration (rules + templates)
+     */
+    exportCustomLogic(botId) {
+        if (!isValidBotId(botId)) {
+            console.warn('pennyApi.exportCustomLogic called with invalid botId:', botId);
+            return Promise.reject(new Error(`Invalid botId: ${botId}`));
+        }
+        return axios.get(`/penny/bots/${botId}/custom-logic/export`)
+            .catch(handleApiError);
+    },
+
+    /**
+     * Import custom logic configuration (rules + templates)
+     */
+    importCustomLogic(botId, importData) {
+        if (!isValidBotId(botId)) {
+            console.warn('pennyApi.importCustomLogic called with invalid botId:', botId);
+            return Promise.reject(new Error(`Invalid botId: ${botId}`));
+        }
+        return axios.post(`/penny/bots/${botId}/custom-logic/import`, importData)
+            .catch(handleApiError);
+    },
+
+    /**
+     * Import rules from CSV file
+     */
+    importRulesFromCSV(botId, file) {
+        if (!isValidBotId(botId)) {
+            console.warn('pennyApi.importRulesFromCSV called with invalid botId:', botId);
+            return Promise.reject(new Error(`Invalid botId: ${botId}`));
+        }
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('botId', botId);
+
+        return axios.post(`/penny/bots/${botId}/rules/import/csv`, formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data'
+            }
+        }).catch(handleApiError);
     }
 };

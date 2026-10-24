@@ -331,4 +331,100 @@ public class BotRuleController {
             "rulesByTriggerType", rulesByTriggerType
         ));
     }
+
+    /**
+     * Import rules from CSV file
+     * CSV format: name,description,ruleType,triggerType,triggerValue,condition,action,priority,isActive
+     */
+    @PostMapping("/import/csv")
+    public ResponseEntity<Map<String, Object>> importRulesFromCSV(
+            @PathVariable String botId,
+            @RequestParam("file") org.springframework.web.multipart.MultipartFile file,
+            Principal principal) {
+        
+        Long tenantId = getValidatedTenantId();
+        String createdBy = principal.getName();
+        validateOwnerOrEditor(tenantId, createdBy, "import rules");
+        
+        UUID botUuid = UUID.fromString(botId);
+        
+        try {
+            if (file.isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of(
+                    "error", "File is empty"
+                ));
+            }
+            
+            String csvContent = new String(file.getBytes(), java.nio.charset.StandardCharsets.UTF_8);
+            String[] lines = csvContent.split("\n");
+            
+            int importedCount = 0;
+            int failedCount = 0;
+            java.util.List<String> errors = new java.util.ArrayList<>();
+            
+            // Skip header row (assuming first row is header)
+            for (int i = 1; i < lines.length; i++) {
+                String line = lines[i].trim();
+                if (line.isEmpty()) continue;
+                
+                String[] columns = line.split(",", -1); // -1 to keep empty trailing columns
+                
+                if (columns.length < 3) {
+                    failedCount++;
+                    errors.add("Line " + (i + 1) + ": Insufficient columns");
+                    continue;
+                }
+                
+                try {
+                    String name = columns[0].trim();
+                    String description = columns.length > 1 ? columns[1].trim() : "";
+                    String ruleTypeStr = columns.length > 2 ? columns[2].trim() : "RESPONSE";
+                    String triggerTypeStr = columns.length > 3 ? columns[3].trim() : "INTENT";
+                    String triggerValue = columns.length > 4 ? columns[4].trim() : "";
+                    String condition = columns.length > 5 ? columns[5].trim() : "";
+                    String action = columns.length > 6 ? columns[6].trim() : "";
+                    String priorityStr = columns.length > 7 ? columns[7].trim() : "0";
+                    String isActiveStr = columns.length > 8 ? columns[8].trim() : "true";
+                    
+                    BotRule.RuleType ruleType = BotRule.RuleType.valueOf(ruleTypeStr.toUpperCase());
+                    BotRule.TriggerType triggerType = BotRule.TriggerType.valueOf(triggerTypeStr.toUpperCase());
+                    Integer priority = Integer.parseInt(priorityStr);
+                    Boolean isActive = Boolean.parseBoolean(isActiveStr);
+                    
+                    botRuleManager.createRule(
+                        botUuid,
+                        name,
+                        description,
+                        condition,
+                        action,
+                        ruleType,
+                        triggerType,
+                        triggerValue,
+                        priority,
+                        createdBy
+                    );
+                    
+                    importedCount++;
+                } catch (Exception e) {
+                    failedCount++;
+                    errors.add("Line " + (i + 1) + ": " + e.getMessage());
+                    log.warn("⚠️ Failed to import rule from line {}: {}", i + 1, e.getMessage());
+                }
+            }
+            
+            return ResponseEntity.ok(Map.of(
+                "message", "CSV import completed",
+                "importedCount", importedCount,
+                "failedCount", failedCount,
+                "totalLines", lines.length - 1,
+                "errors", errors
+            ));
+            
+        } catch (Exception e) {
+            log.error("❌ Error importing rules from CSV: {}", e.getMessage(), e);
+            return ResponseEntity.internalServerError().body(Map.of(
+                "error", "Error importing CSV: " + e.getMessage()
+            ));
+        }
+    }
 }
