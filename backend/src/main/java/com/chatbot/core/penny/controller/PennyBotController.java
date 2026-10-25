@@ -6,9 +6,12 @@ import com.chatbot.core.tenant.exception.InsufficientPermissionException;
 import com.chatbot.core.penny.service.PennyBotManager;
 import com.chatbot.core.penny.model.PennyBot;
 import com.chatbot.core.penny.model.PennyBotType;
+import com.chatbot.core.penny.rules.BotRuleManager;
+import com.chatbot.core.penny.rules.ResponseTemplateManager;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
@@ -28,10 +31,17 @@ public class PennyBotController {
 
     private final PennyBotManager pennyBotManager;
     private final TenantPermissionValidator tenantPermissionValidator;
+    private final BotRuleManager botRuleManager;
+    private final ResponseTemplateManager responseTemplateManager;
 
-    public PennyBotController(PennyBotManager pennyBotManager, TenantPermissionValidator tenantPermissionValidator) {
+    public PennyBotController(PennyBotManager pennyBotManager, 
+                              TenantPermissionValidator tenantPermissionValidator,
+                              BotRuleManager botRuleManager,
+                              ResponseTemplateManager responseTemplateManager) {
         this.pennyBotManager = pennyBotManager;
         this.tenantPermissionValidator = tenantPermissionValidator;
+        this.botRuleManager = botRuleManager;
+        this.responseTemplateManager = responseTemplateManager;
     }
     
     private Long getValidatedTenantId() {
@@ -361,6 +371,277 @@ public class PennyBotController {
             ));
         } else {
             throw new IllegalStateException("Failed to delete Penny bot - unknown reason");
+        }
+    }
+
+    /**
+     * Export full bot configuration (AI settings + rules + templates)
+     * This is for PennyBotConfig page - exports complete bot configuration
+     */
+    @GetMapping("/{botId}/config/export")
+    public ResponseEntity<Map<String, Object>> exportFullBotConfig(
+            @PathVariable String botId,
+            Principal principal) {
+
+        Long tenantId = getValidatedTenantId();
+        String ownerId = principal.getName();
+
+        UUID botUuid = UUID.fromString(botId);
+        PennyBot bot = pennyBotManager.getBot(botUuid);
+
+        if (!bot.getOwnerId().equals(ownerId)) {
+            throw new AccessDeniedException("Not authorized to export this bot configuration");
+        }
+
+        log.info("📦 Exporting full bot configuration for: {}", botId);
+
+        // Export bot settings
+        Map<String, Object> botConfig = new java.util.HashMap<>();
+        botConfig.put("botId", bot.getId().toString());
+        botConfig.put("botName", bot.getBotName());
+        botConfig.put("botType", bot.getBotType().name());
+        botConfig.put("businessName", bot.getBusinessName() != null ? bot.getBusinessName() : "");
+        botConfig.put("businessDescription", bot.getBusinessDescription() != null ? bot.getBusinessDescription() : "");
+        botConfig.put("systemPrompt", bot.getSystemPrompt() != null ? bot.getSystemPrompt() : "");
+        botConfig.put("confidenceThreshold", bot.getConfidenceThreshold());
+        botConfig.put("providerType", bot.getProviderType() != null ? bot.getProviderType().name() : "OPENAI");
+        botConfig.put("modelName", bot.getModelName() != null ? bot.getModelName() : "gpt-4o-mini");
+        botConfig.put("temperature", bot.getTemperature() != null ? bot.getTemperature() : 0.7f);
+        botConfig.put("personaStyle", bot.getPersonaStyle() != null ? bot.getPersonaStyle().name() : "PROFESSIONAL");
+        botConfig.put("customInstructions", bot.getCustomInstructions() != null ? bot.getCustomInstructions() : "");
+        botConfig.put("greetingMessage", bot.getGreetingMessage() != null ? bot.getGreetingMessage() : "");
+        botConfig.put("fallbackMessage", bot.getFallbackMessage() != null ? bot.getFallbackMessage() : "");
+        botConfig.put("configuration", bot.getConfiguration() != null ? bot.getConfiguration() : "");
+
+        // Export rules
+        List<Map<String, Object>> rules = botRuleManager.getRulesForBot(botUuid).stream()
+            .map(rule -> {
+                Map<String, Object> ruleMap = new java.util.HashMap<>();
+                ruleMap.put("id", rule.getId().toString());
+                ruleMap.put("name", rule.getName());
+                ruleMap.put("description", rule.getDescription() != null ? rule.getDescription() : "");
+                ruleMap.put("ruleType", rule.getRuleType().name());
+                ruleMap.put("triggerType", rule.getTriggerType().name());
+                ruleMap.put("triggerValue", rule.getTriggerValue() != null ? rule.getTriggerValue() : "");
+                ruleMap.put("condition", rule.getCondition() != null ? rule.getCondition() : "");
+                ruleMap.put("action", rule.getAction() != null ? rule.getAction() : "");
+                ruleMap.put("priority", rule.getPriority());
+                ruleMap.put("isActive", rule.getIsActive());
+                return ruleMap;
+            })
+            .collect(Collectors.toList());
+
+        // Export templates
+        List<Map<String, Object>> templates = responseTemplateManager.getTemplatesForBot(botUuid).stream()
+            .map(template -> {
+                Map<String, Object> templateMap = new java.util.HashMap<>();
+                templateMap.put("id", template.getId().toString());
+                templateMap.put("name", template.getName());
+                templateMap.put("description", template.getDescription() != null ? template.getDescription() : "");
+                templateMap.put("intent", template.getIntent() != null ? template.getIntent() : "");
+                templateMap.put("templateText", template.getTemplateText() != null ? template.getTemplateText() : "");
+                templateMap.put("templateType", template.getTemplateType().name());
+                templateMap.put("language", template.getLanguage() != null ? template.getLanguage() : "vi");
+                templateMap.put("priority", template.getPriority());
+                templateMap.put("variables", template.getVariables() != null ? template.getVariables() : Map.of());
+                templateMap.put("quickReplies", template.getQuickReplies() != null ? template.getQuickReplies() : List.of());
+                templateMap.put("isActive", template.getIsActive());
+                return templateMap;
+            })
+            .collect(Collectors.toList());
+
+        Map<String, Object> exportData = Map.of(
+            "version", "2.1",
+            "exportedAt", java.time.LocalDateTime.now().toString(),
+            "botConfig", botConfig,
+            "rules", rules,
+            "templates", templates,
+            "rulesCount", rules.size(),
+            "templatesCount", templates.size()
+        );
+
+        return ResponseEntity.ok(exportData);
+    }
+
+    /**
+     * Import full bot configuration (AI settings + rules + templates)
+     * This is for PennyBotConfig page - imports complete bot configuration
+     */
+    @PostMapping("/{botId}/config/import")
+    @Transactional(rollbackFor = Exception.class)
+    public ResponseEntity<Map<String, Object>> importFullBotConfig(
+            @PathVariable String botId,
+            @RequestBody Map<String, Object> importData,
+            Principal principal) {
+
+        Long tenantId = getValidatedTenantId();
+        String ownerId = principal.getName();
+        validateOwnerOrEditor(tenantId, ownerId, "import bot configuration");
+
+        UUID botUuid = UUID.fromString(botId);
+        PennyBot bot = pennyBotManager.getBot(botUuid);
+
+        if (!bot.getOwnerId().equals(ownerId)) {
+            throw new AccessDeniedException("Not authorized to import this bot configuration");
+        }
+
+        log.info("📥 Importing full bot configuration for: {}", botId);
+
+        int importedRules = 0;
+        int importedTemplates = 0;
+        int errors = 0;
+
+        try {
+            // Import bot settings
+            @SuppressWarnings("unchecked")
+            Map<String, Object> botConfig = (Map<String, Object>) importData.get("botConfig");
+            if (botConfig != null) {
+                if (botConfig.containsKey("businessName")) {
+                    bot.setBusinessName((String) botConfig.get("businessName"));
+                }
+                if (botConfig.containsKey("businessDescription")) {
+                    bot.setBusinessDescription((String) botConfig.get("businessDescription"));
+                }
+                if (botConfig.containsKey("systemPrompt")) {
+                    bot.setSystemPrompt((String) botConfig.get("systemPrompt"));
+                }
+                if (botConfig.containsKey("confidenceThreshold")) {
+                    bot.setConfidenceThreshold(((Number) botConfig.get("confidenceThreshold")).floatValue());
+                }
+                if (botConfig.containsKey("providerType")) {
+                    String providerType = (String) botConfig.get("providerType");
+                    try {
+                        bot.setProviderType(com.chatbot.core.penny.model.LlmProviderType.valueOf(providerType));
+                    } catch (IllegalArgumentException e) {
+                        log.warn("Invalid provider type: {}, keeping current", providerType);
+                    }
+                }
+                if (botConfig.containsKey("modelName")) {
+                    bot.setModelName((String) botConfig.get("modelName"));
+                }
+                if (botConfig.containsKey("temperature")) {
+                    bot.setTemperature(((Number) botConfig.get("temperature")).floatValue());
+                }
+                if (botConfig.containsKey("personaStyle")) {
+                    String personaStyle = (String) botConfig.get("personaStyle");
+                    try {
+                        bot.setPersonaStyle(com.chatbot.core.penny.model.BotPersonaStyle.valueOf(personaStyle));
+                    } catch (IllegalArgumentException e) {
+                        log.warn("Invalid persona style: {}, keeping current", personaStyle);
+                    }
+                }
+                if (botConfig.containsKey("customInstructions")) {
+                    bot.setCustomInstructions((String) botConfig.get("customInstructions"));
+                }
+                if (botConfig.containsKey("greetingMessage")) {
+                    bot.setGreetingMessage((String) botConfig.get("greetingMessage"));
+                }
+                if (botConfig.containsKey("fallbackMessage")) {
+                    bot.setFallbackMessage((String) botConfig.get("fallbackMessage"));
+                }
+                if (botConfig.containsKey("configuration")) {
+                    bot.setConfiguration((String) botConfig.get("configuration"));
+                }
+
+                pennyBotManager.updateBot(botUuid, botConfig, ownerId);
+                log.info("✅ Bot settings imported successfully");
+            }
+
+            // Import rules (using CustomLogicController's import logic)
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> rules = (List<Map<String, Object>>) importData.get("rules");
+            if (rules != null) {
+                for (Map<String, Object> ruleData : rules) {
+                    try {
+                        // Create rule using BotRuleManager
+                        String name = (String) ruleData.get("name");
+                        String description = (String) ruleData.get("description");
+                        String ruleType = (String) ruleData.get("ruleType");
+                        String triggerType = (String) ruleData.get("triggerType");
+                        String triggerValue = (String) ruleData.get("triggerValue");
+                        String condition = (String) ruleData.get("condition");
+                        String action = (String) ruleData.get("action");
+                        Integer priority = ruleData.containsKey("priority") ? ((Number) ruleData.get("priority")).intValue() : 0;
+                        Boolean isActive = ruleData.containsKey("isActive") ? (Boolean) ruleData.get("isActive") : true;
+
+                        botRuleManager.createRule(
+                            botUuid,
+                            name,
+                            description,
+                            condition,
+                            action,
+                            com.chatbot.core.penny.rules.BotRule.RuleType.valueOf(ruleType),
+                            com.chatbot.core.penny.rules.BotRule.TriggerType.valueOf(triggerType),
+                            triggerValue,
+                            priority,
+                            ownerId
+                        );
+                        importedRules++;
+                    } catch (Exception e) {
+                        log.error("❌ Failed to import rule: {}", e.getMessage());
+                        errors++;
+                    }
+                }
+                log.info("✅ Imported {} rules", importedRules);
+            }
+
+            // Import templates
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> templates = (List<Map<String, Object>>) importData.get("templates");
+            if (templates != null) {
+                for (Map<String, Object> templateData : templates) {
+                    try {
+                        String name = (String) templateData.get("name");
+                        String description = (String) templateData.get("description");
+                        String intent = (String) templateData.get("intent");
+                        String templateText = (String) templateData.get("templateText");
+                        String templateType = (String) templateData.get("templateType");
+                        String language = (String) templateData.get("language");
+                        Integer priority = templateData.containsKey("priority") ? ((Number) templateData.get("priority")).intValue() : 0;
+
+                        @SuppressWarnings("unchecked")
+                        Map<String, Object> variables = templateData.containsKey("variables")
+                            ? (Map<String, Object>) templateData.get("variables")
+                            : Map.of();
+
+                        @SuppressWarnings("unchecked")
+                        List<Map<String, Object>> quickReplies = templateData.containsKey("quickReplies")
+                            ? (List<Map<String, Object>>) templateData.get("quickReplies")
+                            : List.of();
+
+                        responseTemplateManager.createTemplate(
+                            botUuid,
+                            name,
+                            description,
+                            intent,
+                            templateText,
+                            com.chatbot.core.penny.rules.ResponseTemplate.TemplateType.valueOf(templateType),
+                            language,
+                            priority,
+                            variables,
+                            quickReplies,
+                            ownerId
+                        );
+                        importedTemplates++;
+                    } catch (Exception e) {
+                        log.error("❌ Failed to import template: {}", e.getMessage());
+                        errors++;
+                    }
+                }
+                log.info("✅ Imported {} templates", importedTemplates);
+            }
+
+            return ResponseEntity.ok(Map.of(
+                "message", "Bot configuration imported successfully",
+                "importedRules", importedRules,
+                "importedTemplates", importedTemplates,
+                "errors", errors,
+                "status", errors == 0 ? "success" : "partial_success"
+            ));
+
+        } catch (Exception e) {
+            log.error("❌ Failed to import bot configuration: {}", e.getMessage(), e);
+            throw new IllegalStateException("Failed to import bot configuration: " + e.getMessage());
         }
     }
 }

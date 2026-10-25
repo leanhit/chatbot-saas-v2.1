@@ -285,14 +285,17 @@ export default {
         const content = await this.readFile(file);
         const importData = JSON.parse(content);
         
-        const response = await pennyApi.importCustomLogic(this.botId, importData);
+        // Use full bot config import API for PennyBotConfig page
+        const response = await pennyApi.importFullBotConfig(this.botId, importData);
         
         this.importResult = {
           success: true,
           message: response.data.message || $t('penny.config.importSuccessful'),
           details: {
-            importedCount: response.data.importedRules + response.data.importedTemplates,
-            failedCount: 0
+            importedCount: (response.data.importedRules || 0) + (response.data.importedTemplates || 0),
+            failedCount: response.data.errors || 0,
+            importedRules: response.data.importedRules,
+            importedTemplates: response.data.importedTemplates
           }
         };
         
@@ -392,13 +395,14 @@ export default {
       this.exportResult = null;
       
       try {
-        const response = await pennyApi.exportCustomLogic(this.botId);
+        // Use full bot config export API for PennyBotConfig page
+        const response = await pennyApi.exportFullBotConfig(this.botId);
         
         const blob = new Blob([JSON.stringify(response.data, null, 2)], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
-        link.download = `penny-custom-logic-${this.botId}-${Date.now()}.json`;
+        link.download = `penny-full-config-${this.botId}-${Date.now()}.json`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -408,8 +412,9 @@ export default {
           success: true,
           message: $t('penny.config.exportSuccessful'),
           details: {
-            rules: response.data.rules?.length || 0,
-            templates: response.data.templates?.length || 0
+            rules: response.data.rulesCount || 0,
+            templates: response.data.templatesCount || 0,
+            botConfig: true
           }
         };
       } catch (error) {

@@ -46,6 +46,12 @@ public class BotpressImportDto {
     @JsonProperty("qna")
     private QnA qna;
     
+    @JsonProperty("flows")
+    private Flows flows;
+    
+    @JsonProperty("intents")
+    private Intents intents;
+    
     @Data
     public static class BotDetails {
         @JsonProperty("website")
@@ -104,5 +110,107 @@ public class BotpressImportDto {
         
         @JsonProperty("metadata")
         private Map<String, Object> metadata;
+    }
+    
+    @Data
+    public static class Flows {
+        @JsonProperty("disabled")
+        private Boolean disabled;
+        
+        @JsonProperty("items")
+        private List<FlowItem> items;
+    }
+    
+    @Data
+    public static class FlowItem {
+        @JsonProperty("id")
+        private String id;
+        
+        @JsonProperty("name")
+        private String name;
+        
+        @JsonProperty("nodes")
+        private List<FlowNode> nodes;
+        
+        @JsonProperty("transitions")
+        private List<FlowTransition> transitions;
+    }
+    
+    @Data
+    public static class FlowNode {
+        @JsonProperty("id")
+        private String id;
+        
+        @JsonProperty("name")
+        private String name;
+        
+        @JsonProperty("type")
+        private String type;
+        
+        @JsonProperty("content")
+        private Map<String, Object> content;
+    }
+    
+    @Data
+    public static class FlowTransition {
+        @JsonProperty("id")
+        private String id;
+        
+        @JsonProperty("source")
+        private String source;
+        
+        @JsonProperty("target")
+        private String target;
+        
+        @JsonProperty("condition")
+        private String condition;
+    }
+    
+    @Data
+    public static class Intents {
+        @JsonProperty("disabled")
+        private Boolean disabled;
+        
+        @JsonProperty("items")
+        private List<IntentItem> items;
+    }
+    
+    @Data
+    public static class IntentItem {
+        @JsonProperty("id")
+        private String id;
+        
+        @JsonProperty("name")
+        private String name;
+        
+        @JsonProperty("label")
+        private String label;
+        
+        @JsonProperty("contexts")
+        private List<String> contexts;
+        
+        @JsonProperty("utterances")
+        private List<Utterance> utterances;
+    }
+    
+    @Data
+    public static class Utterance {
+        @JsonProperty("text")
+        private String text;
+        
+        @JsonProperty("entities")
+        private List<Entity> entities;
+    }
+    
+    @Data
+    public static class Entity {
+        @JsonProperty("name")
+        private String name;
+        
+        @JsonProperty("value")
+        private String value;
+        
+        @JsonProperty("meta")
+        private Map<String, Object> meta;
     }
 }

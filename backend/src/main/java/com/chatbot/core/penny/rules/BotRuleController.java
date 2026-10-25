@@ -427,4 +427,61 @@ public class BotRuleController {
             ));
         }
     }
+
+    /**
+     * Export rules to CSV file
+     * CSV format: name,description,ruleType,triggerType,triggerValue,condition,action,priority,isActive
+     */
+    @GetMapping("/export/csv")
+    public ResponseEntity<byte[]> exportRulesToCSV(@PathVariable String botId) {
+        UUID botUuid = UUID.fromString(botId);
+        
+        try {
+            List<BotRule> rules = botRuleManager.getAllRulesForBot(botUuid);
+            
+            // Build CSV content
+            StringBuilder csvBuilder = new StringBuilder();
+            
+            // Header
+            csvBuilder.append("name,description,ruleType,triggerType,triggerValue,condition,action,priority,isActive\n");
+            
+            // Data rows
+            for (BotRule rule : rules) {
+                csvBuilder.append(escapeCSV(rule.getName())).append(",");
+                csvBuilder.append(escapeCSV(rule.getDescription())).append(",");
+                csvBuilder.append(rule.getRuleType().name()).append(",");
+                csvBuilder.append(rule.getTriggerType().name()).append(",");
+                csvBuilder.append(escapeCSV(rule.getTriggerValue())).append(",");
+                csvBuilder.append(escapeCSV(rule.getCondition())).append(",");
+                csvBuilder.append(escapeCSV(rule.getAction())).append(",");
+                csvBuilder.append(rule.getPriority()).append(",");
+                csvBuilder.append(rule.getIsActive()).append("\n");
+            }
+            
+            byte[] csvBytes = csvBuilder.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8);
+            
+            return ResponseEntity.ok()
+                .header("Content-Type", "text/csv")
+                .header("Content-Disposition", "attachment; filename=\"rules_" + botId + ".csv\"")
+                .body(csvBytes);
+            
+        } catch (Exception e) {
+            log.error("❌ Error exporting rules to CSV: {}", e.getMessage(), e);
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    /**
+     * Escape CSV value (handle quotes, commas, newlines)
+     */
+    private String escapeCSV(String value) {
+        if (value == null) return "";
+        
+        // If value contains comma, quote, or newline, wrap in quotes and escape quotes
+        if (value.contains(",") || value.contains("\"") || value.contains("\n")) {
+            return "\"" + value.replace("\"", "\"\"") + "\"";
+        }
+        
+        return value;
+    }
 }

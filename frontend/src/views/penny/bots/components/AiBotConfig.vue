@@ -105,15 +105,19 @@
       <div class="form-actions">
         <button
           @click="saveConfig"
-          class="save-button"
+          class="btn btn-secondary"
           :disabled="saving"
         >
-          <Icon v-if="saving" icon="mdi:loading" class="animate-spin mr-2" />
-          <Icon v-else icon="mdi:content-save" class="mr-2" />
-          {{ saving ? $t('penny.aiConfig.saving') : $t('penny.aiConfig.save') }}
-        </button>
-        <button @click="resetConfig" class="reset-button" :disabled="saving">
           {{ $t('penny.aiConfig.reset') }}
+        </button>
+        <button
+          @click="saveConfig"
+          class="btn btn-primary"
+          :disabled="saving"
+        >
+          <Icon v-if="saving" icon="mdi:loading" class="animate-spin h-4 w-4 mr-2" />
+          <Icon v-else icon="mdi:content-save" class="h-4 w-4 mr-2" />
+          {{ saving ? $t('penny.aiConfig.saving') : $t('penny.aiConfig.save') }}
         </button>
       </div>
     </div>
@@ -337,18 +341,6 @@ export default {
 
 .form-actions {
   @apply flex space-x-3 pt-4;
-}
-
-.save-button {
-  @apply flex-1 inline-flex items-center justify-center px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/80 transition-colors text-sm font-medium;
-}
-
-.save-button:disabled {
-  @apply opacity-50 cursor-not-allowed;
-}
-
-.reset-button {
-  @apply px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-sm font-medium;
 }
 
 </style>

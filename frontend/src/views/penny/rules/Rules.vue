@@ -82,8 +82,23 @@
       </button>
     </div>
 
-    <!-- Rules List -->
-    <div v-else-if="selectedBot">
+    <!-- Tabs Navigation -->
+    <div v-else-if="selectedBot" class="tabs-container">
+      <div class="tabs-header">
+        <button
+          v-for="tab in tabs"
+          :key="tab.id"
+          @click="activeTab = tab.id"
+          :class="['tab-button', { active: activeTab === tab.id }]"
+        >
+          <Icon :icon="tab.icon" class="tab-icon" />
+          <span>{{ tab.label }}</span>
+        </button>
+      </div>
+
+      <div class="tabs-content">
+        <!-- Rules Management Tab -->
+        <div v-show="activeTab === 'rules'" class="tab-panel">
 
     <!-- Stats Cards -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
@@ -283,6 +298,23 @@
     </div>
     </div>
 
+        <!-- Import/Export Tab -->
+        <div v-show="activeTab === 'import-export'" class="tab-panel">
+          <ImportExportPanel :bot="selectedBot" />
+        </div>
+
+        <!-- Changelog Tab -->
+        <div v-show="activeTab === 'changelog'" class="tab-panel">
+          <ChangelogPanel :bot="selectedBot" />
+        </div>
+
+        <!-- Diff Tool Tab -->
+        <div v-show="activeTab === 'diff'" class="tab-panel">
+          <DiffToolPanel :bot="selectedBot" />
+        </div>
+      </div>
+    </div>
+
     <!-- Rule Modal -->
     <PennyRuleModal
       v-if="showCreateModal || editingRule"
@@ -305,18 +337,33 @@ import { usePennyRuleStore } from '@/stores/pennyRuleStore'
 import { usePennyBotStore } from '@/stores/pennyBotStore'
 import { useToast } from '@/composables/useToast'
 import PennyRuleModal from './components/PennyRuleModal.vue'
+import ImportExportPanel from './components/ImportExportPanel.vue'
+import ChangelogPanel from './components/ChangelogPanel.vue'
+import DiffToolPanel from './components/DiffToolPanel.vue'
 
 export default {
   name: 'PennyRules',
   components: {
     Icon,
-    PennyRuleModal
+    PennyRuleModal,
+    ImportExportPanel,
+    ChangelogPanel,
+    DiffToolPanel
   },
   setup() {
     const { t } = useI18n()
     const toast = useToast()
     const pennyRuleStore = usePennyRuleStore()
     const pennyBotStore = usePennyBotStore()
+
+    // Tabs configuration
+    const activeTab = ref('rules')
+    const tabs = computed(() => [
+      { id: 'rules', label: t('penny.rulesManagement'), icon: 'mdi:script-text' },
+      { id: 'import-export', label: t('penny.rules.tabs.importExport'), icon: 'mdi:import-export' },
+      { id: 'changelog', label: t('penny.rules.tabs.changelog'), icon: 'mdi:history' },
+      { id: 'diff', label: t('penny.rules.tabs.diff'), icon: 'mdi:compare' }
+    ])
 
     // Computed
     const rules = computed(() => pennyRuleStore.rules)
@@ -605,6 +652,8 @@ export default {
       availableBots,
       currentBot,
       currentBotId,
+      activeTab,
+      tabs,
 
       // Methods
       fetchRules,
@@ -770,5 +819,84 @@ export default {
 
 .loading-state {
   margin-top: 20px;
+}
+
+/* Tabs Styles */
+.tabs-container {
+  width: 100%;
+}
+
+.tabs-header {
+  display: flex;
+  gap: 4px;
+  border-bottom: 2px solid #e5e7eb;
+  margin-bottom: 24px;
+}
+
+.dark .tabs-header {
+  border-bottom-color: #374151;
+}
+
+.tab-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  font-size: 14px;
+  font-weight: 500;
+  color: #6b7280;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-bottom: -2px;
+}
+
+.dark .tab-button {
+  color: #9ca3af;
+}
+
+.tab-button:hover {
+  color: #3b82f6;
+  background: #f9fafb;
+}
+
+.dark .tab-button:hover {
+  color: #60a5fa;
+  background: #374151;
+}
+
+.tab-button.active {
+  color: #3b82f6;
+  border-bottom-color: #3b82f6;
+}
+
+.dark .tab-button.active {
+  color: #60a5fa;
+  border-bottom-color: #60a5fa;
+}
+
+.tab-icon {
+  font-size: 18px;
+}
+
+.tabs-content {
+  min-height: 400px;
+}
+
+.tab-panel {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 </style>

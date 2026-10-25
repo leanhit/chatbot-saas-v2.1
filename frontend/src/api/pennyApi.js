@@ -567,6 +567,18 @@ export const pennyApi = {
     },
 
     /**
+     * Validate import data before actual import
+     */
+    validateImport(botId, importData) {
+        if (!isValidBotId(botId)) {
+            console.warn('pennyApi.validateImport called with invalid botId:', botId);
+            return Promise.reject(new Error(`Invalid botId: ${botId}`));
+        }
+        return axios.post(`/penny/bots/${botId}/custom-logic/import/validate`, importData)
+            .catch(handleApiError);
+    },
+
+    /**
      * Import custom logic configuration (rules + templates)
      */
     importCustomLogic(botId, importData) {
@@ -575,6 +587,58 @@ export const pennyApi = {
             return Promise.reject(new Error(`Invalid botId: ${botId}`));
         }
         return axios.post(`/penny/bots/${botId}/custom-logic/import`, importData)
+            .catch(handleApiError);
+    },
+
+    /**
+     * Export rules to CSV file
+     */
+    exportRulesToCSV(botId) {
+        if (!isValidBotId(botId)) {
+            console.warn('pennyApi.exportRulesToCSV called with invalid botId:', botId);
+            return Promise.reject(new Error(`Invalid botId: ${botId}`));
+        }
+        return axios.get(`/penny/bots/${botId}/rules/export/csv`, {
+            responseType: 'blob'
+        }).catch(handleApiError);
+    },
+
+    /**
+     * Export templates to CSV file
+     */
+    exportTemplatesToCSV(botId) {
+        if (!isValidBotId(botId)) {
+            console.warn('pennyApi.exportTemplatesToCSV called with invalid botId:', botId);
+            return Promise.reject(new Error(`Invalid botId: ${botId}`));
+        }
+        return axios.get(`/penny/bots/${botId}/custom-logic/export/templates/csv`, {
+            responseType: 'blob'
+        }).catch(handleApiError);
+    },
+
+    /**
+     * Diff two export versions to see changes
+     */
+    diffExports(botId, version1, version2) {
+        if (!isValidBotId(botId)) {
+            console.warn('pennyApi.diffExports called with invalid botId:', botId);
+            return Promise.reject(new Error(`Invalid botId: ${botId}`));
+        }
+        return axios.post(`/penny/bots/${botId}/custom-logic/diff`, {
+            version1,
+            version2
+        }).catch(handleApiError);
+    },
+
+    /**
+     * Get changelog history for a bot
+     */
+    getChangelog(botId) {
+        if (!isValidBotId(botId)) {
+            console.warn('pennyApi.getChangelog called with invalid botId:', botId);
+            return Promise.reject(new Error(`Invalid botId: ${botId}`));
+        }
+        return axios.get(`/penny/bots/${botId}/custom-logic/changelog`)
             .catch(handleApiError);
     },
 
@@ -606,6 +670,36 @@ export const pennyApi = {
             return Promise.reject(new Error(`Invalid botId: ${botId}`));
         }
         return axios.post(`/penny/bots/${botId}/custom-logic/import/botpress`, botpressData)
+            .catch(handleApiError);
+    },
+
+    // ========================================
+    // Full Bot Config Import/Export API
+    // ========================================
+
+    /**
+     * Export full bot configuration (AI settings + rules + templates)
+     * This is for PennyBotConfig page
+     */
+    exportFullBotConfig(botId) {
+        if (!isValidBotId(botId)) {
+            console.warn('pennyApi.exportFullBotConfig called with invalid botId:', botId);
+            return Promise.reject(new Error(`Invalid botId: ${botId}`));
+        }
+        return axios.get(`/penny/bots/${botId}/config/export`)
+            .catch(handleApiError);
+    },
+
+    /**
+     * Import full bot configuration (AI settings + rules + templates)
+     * This is for PennyBotConfig page
+     */
+    importFullBotConfig(botId, importData) {
+        if (!isValidBotId(botId)) {
+            console.warn('pennyApi.importFullBotConfig called with invalid botId:', botId);
+            return Promise.reject(new Error(`Invalid botId: ${botId}`));
+        }
+        return axios.post(`/penny/bots/${botId}/config/import`, importData)
             .catch(handleApiError);
     }
 };
