@@ -10,13 +10,32 @@
               <p class="bot-name">{{ bot?.botName }}</p>
             </div>
           </div>
-          <button @click="$emit('close')" class="close-button">
-            <Icon icon="mdi:close" class="h-5 w-5" />
-          </button>
+          <div class="header-actions">
+            <button
+              v-if="!isEditMode"
+              @click="showTemplates = !showTemplates"
+              class="btn-template"
+              title="Use templates"
+            >
+              <Icon icon="mdi:lightning-bolt" class="h-4 w-4 mr-1" />
+              Templates
+            </button>
+            <button @click="$emit('close')" class="close-button">
+              <Icon icon="mdi:close" class="h-5 w-5" />
+            </button>
+          </div>
         </div>
       </div>
 
       <div class="modal-body">
+        <!-- Templates Panel -->
+        <div v-if="showTemplates && !isEditMode" class="templates-panel">
+          <RuleTemplates
+            :bot-id="formData.botId"
+            @apply="applyTemplate"
+          />
+        </div>
+
         <form @submit.prevent="handleSubmit" class="rule-form">
           <!-- Basic Information -->
           <div class="form-section">
@@ -132,7 +151,24 @@
                 <label for="triggerValue" class="form-label">
                   {{ $t('penny.rules.triggerValue') }} <span class="required">*</span>
                 </label>
+                <!-- Regex Tester for REGEX trigger type -->
+                <div v-if="formData.triggerType === RuleTriggerType.REGEX">
+                  <input
+                    id="triggerValue"
+                    v-model="formData.triggerValue"
+                    type="text"
+                    class="form-input"
+                    placeholder="Enter regex pattern"
+                    required
+                  />
+                  <RegexTester
+                    v-model="formData.triggerValue"
+                    style="margin-top: 12px;"
+                  />
+                </div>
+                <!-- Regular input for other types -->
                 <input
+                  v-else
                   id="triggerValue"
                   v-model="formData.triggerValue"
                   type="text"
@@ -149,15 +185,24 @@
               <label for="condition" class="form-label">
                 {{ $t('penny.rules.condition.label') }} <span class="required">*</span>
               </label>
-              <textarea
-                id="condition"
+              <!-- Visual Condition Builder -->
+              <ConditionBuilder
                 v-model="formData.condition"
-                rows="3"
-                class="form-textarea"
-                :placeholder="$t('penny.rules.condition.placeholder')"
-                required
-              ></textarea>
-              <p class="form-help">{{ $t('penny.rules.condition.help') }}</p>
+              />
+              <!-- Fallback textarea for manual editing -->
+              <details style="margin-top: 12px;">
+                <summary style="cursor: pointer; font-size: 12px; color: #3b82f6;">Edit as text</summary>
+                <textarea
+                  id="condition"
+                  v-model="formData.condition"
+                  rows="3"
+                  class="form-textarea"
+                  style="margin-top: 8px;"
+                  :placeholder="$t('penny.rules.condition.placeholder')"
+                  required
+                ></textarea>
+                <p class="form-help">{{ $t('penny.rules.condition.help') }}</p>
+              </details>
             </div>
           </div>
 
@@ -190,7 +235,17 @@
               <label for="action" class="form-label">
                 {{ getActionLabel() }} <span class="required">*</span>
               </label>
+              <!-- JSON Editor for WEBHOOK type -->
+              <JsonEditor
+                v-if="formData.ruleType === RuleType.WEBHOOK"
+                v-model="formData.action"
+                :placeholder="getActionPlaceholder()"
+                @valid="onJsonValid"
+                @invalid="onJsonInvalid"
+              />
+              <!-- Regular textarea for other types -->
               <textarea
+                v-else
                 id="action"
                 v-model="formData.action"
                 rows="4"
@@ -259,6 +314,10 @@ import { useI18n } from 'vue-i18n'
 import { pennyRuleApi } from '@/api/pennyRuleApi'
 import { usePennyBotStore } from '@/stores/pennyBotStore'
 import { useToast } from '@/composables/useToast'
+import JsonEditor from '@/components/JsonEditor.vue'
+import RegexTester from '@/components/RegexTester.vue'
+import ConditionBuilder from '@/components/ConditionBuilder.vue'
+import RuleTemplates from '@/components/RuleTemplates.vue'
 import {
   RuleType,
   RuleTriggerType,
@@ -269,7 +328,11 @@ import {
 export default {
   name: 'PennyRuleModal',
   components: {
-    Icon
+    Icon,
+    JsonEditor,
+    RegexTester,
+    ConditionBuilder,
+    RuleTemplates
   },
   props: {
     bot: {
@@ -288,6 +351,8 @@ export default {
     const pennyBotStore = usePennyBotStore()
     const submitting = ref(false)
     const availableBots = ref([])
+    const isJsonValid = ref(true)
+    const showTemplates = ref(false)
 
     const formData = ref({
       botId: props.bot?.id || '',
@@ -456,6 +521,12 @@ export default {
         return
       }
 
+      // Validate JSON for WEBHOOK type
+      if (formData.value.ruleType === RuleType.WEBHOOK && !isJsonValid.value) {
+        toast.warning('Please provide valid JSON for webhook action')
+        return
+      }
+
       submitting.value = true
       try {
         // Create rule request object
@@ -548,6 +619,20 @@ export default {
       }
     }
 
+    const onJsonValid = () => {
+      isJsonValid.value = true
+    }
+
+    const onJsonInvalid = () => {
+      isJsonValid.value = false
+    }
+
+    const applyTemplate = (templateData) => {
+      Object.assign(formData.value, templateData)
+      showTemplates.value = false
+      toast.success('Template applied successfully')
+    }
+
     const closeOnBackdrop = (event) => {
       if (event.target === event.currentTarget) {
         emit('close')
@@ -620,6 +705,11 @@ export default {
       getActionLabel,
       getActionPlaceholder,
       getActionHelp,
+      onJsonValid,
+      onJsonInvalid,
+      isJsonValid,
+      showTemplates,
+      applyTemplate,
       closeOnBackdrop
     }
   }
@@ -670,6 +760,40 @@ export default {
   align-items: center;
   justify-content: space-between;
   width: 100%;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-template {
+  padding: 8px 12px;
+  background: #f59e0b;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+}
+
+.btn-template:hover {
+  background: #d97706;
+}
+
+.templates-panel {
+  margin-bottom: 24px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.dark .templates-panel {
+  border-bottom-color: #374151;
 }
 
 .rule-info {

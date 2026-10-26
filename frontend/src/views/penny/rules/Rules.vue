@@ -151,6 +151,49 @@
       </div>
     </div>
 
+    <!-- Search and Filter -->
+    <div class="search-filter-bar mb-6">
+      <div class="search-input-wrapper">
+        <Icon icon="mdi:magnify" class="search-icon" />
+        <input
+          v-model="searchQuery"
+          type="text"
+          class="search-input"
+          placeholder="Search rules by name..."
+        />
+        <button
+          v-if="searchQuery"
+          @click="searchQuery = ''"
+          class="clear-search"
+        >
+          <Icon icon="mdi:close" class="h-4 w-4" />
+        </button>
+      </div>
+      <div class="filter-dropdowns">
+        <select
+          v-model="filterType"
+          class="filter-select"
+        >
+          <option value="">All Types</option>
+          <option value="RESPONSE">Response</option>
+          <option value="REDIRECT">Redirect</option>
+          <option value="WEBHOOK">Webhook</option>
+          <option value="SCRIPT">Script</option>
+          <option value="AI">AI</option>
+          <option value="KEYWORD">Keyword</option>
+          <option value="INTENT">Intent</option>
+        </select>
+        <select
+          v-model="filterStatus"
+          class="filter-select"
+        >
+          <option value="">All Status</option>
+          <option value="active">Active</option>
+          <option value="inactive">Inactive</option>
+        </select>
+      </div>
+    </div>
+
     <!-- Loading State -->
     <div v-if="loadingRules" class="loading-state">
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -195,7 +238,7 @@
     <!-- Rules Grid -->
     <div v-else class="rules-grid">
       <div
-        v-for="rule in rules"
+        v-for="rule in filteredRules"
         :key="rule.ruleId"
         class="bg-white dark:bg-gray-800 rounded-lg shadow-md border border-gray-200 dark:border-gray-700 hover:shadow-lg transition-shadow duration-200 p-6"
       >
@@ -384,6 +427,29 @@ export default {
     const showCreateModal = ref(false)
     const editingRule = ref(null)
     const selectedBot = ref(null)
+
+    // Search and filter states
+    const searchQuery = ref('')
+    const filterType = ref('')
+    const filterStatus = ref('')
+
+    // Filtered rules
+    const filteredRules = computed(() => {
+      return rules.value.filter(rule => {
+        // Search by name
+        const matchesSearch = !searchQuery.value || 
+          rule.name.toLowerCase().includes(searchQuery.value.toLowerCase())
+        
+        // Filter by type
+        const matchesType = !filterType.value || rule.ruleType === filterType.value
+        
+        // Filter by status
+        const matchesStatus = !filterStatus.value || 
+          (filterStatus.value === 'active' ? rule.isActive : !rule.isActive)
+        
+        return matchesSearch && matchesType && matchesStatus
+      })
+    })
 
     // Methods
     const fetchRules = async () => {
@@ -654,6 +720,10 @@ export default {
       currentBotId,
       activeTab,
       tabs,
+      searchQuery,
+      filterType,
+      filterStatus,
+      filteredRules,
 
       // Methods
       fetchRules,
@@ -687,6 +757,102 @@ export default {
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
   gap: 20px;
   margin-top: 10px;
+}
+
+.search-filter-bar {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.search-input-wrapper {
+  position: relative;
+  flex: 1;
+  min-width: 200px;
+}
+
+.search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #9ca3af;
+  pointer-events: none;
+}
+
+.search-input {
+  width: 100%;
+  padding: 10px 12px 10px 40px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 14px;
+  background: white;
+  color: #1f2937;
+  transition: all 0.2s;
+}
+
+.dark .search-input {
+  background: #374151;
+  border-color: #4b5563;
+  color: white;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.clear-search {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  padding: 4px;
+  border-radius: 4px;
+  cursor: pointer;
+  color: #9ca3af;
+  transition: all 0.2s;
+}
+
+.clear-search:hover {
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
+.dark .clear-search:hover {
+  background: #4b5563;
+  color: #d1d5db;
+}
+
+.filter-dropdowns {
+  display: flex;
+  gap: 8px;
+}
+
+.filter-select {
+  padding: 10px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 14px;
+  background: white;
+  color: #1f2937;
+  transition: all 0.2s;
+}
+
+.dark .filter-select {
+  background: #374151;
+  border-color: #4b5563;
+  color: white;
+}
+
+.filter-select:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
 .card-header {
