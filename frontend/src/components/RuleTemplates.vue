@@ -1,7 +1,7 @@
 <template>
   <div class="rule-templates-container">
     <div class="templates-header">
-      <label class="form-label">Rule Templates</label>
+      <label class="form-label">{{ t('penny.rules.templates.title') }}</label>
       <div class="template-categories">
         <button
           v-for="category in categories"
@@ -46,13 +46,14 @@
 
     <div v-if="filteredTemplates.length === 0" class="no-templates">
       <Icon icon="mdi:information" class="h-8 w-8 mr-2" />
-      No templates found for this category
+      {{ t('penny.rules.templates.noTemplates') }}
     </div>
   </div>
 </template>
 
 <script>
 import { ref, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { Icon } from '@iconify/vue'
 import { useToast } from '@/composables/useToast'
 import { RuleType, RuleTriggerType } from '@/types/penny'
@@ -70,16 +71,17 @@ export default {
   },
   emits: ['apply'],
   setup(props, { emit }) {
+    const { t } = useI18n()
     const toast = useToast()
     const selectedCategory = ref('all')
 
     const categories = [
-      { id: 'all', name: 'All', icon: 'mdi:apps' },
-      { id: 'greeting', name: 'Greetings', icon: 'mdi:hand-wave' },
-      { id: 'support', name: 'Support', icon: 'mdi:headset' },
-      { id: 'sales', name: 'Sales', icon: 'mdi:cart' },
-      { id: 'faq', name: 'FAQ', icon: 'mdi:help-circle' },
-      { id: 'advanced', name: 'Advanced', icon: 'mdi:cogs' }
+      { id: 'all', name: t('penny.rules.templates.categories.all'), icon: 'mdi:apps' },
+      { id: 'greeting', name: t('penny.rules.templates.categories.greeting'), icon: 'mdi:hand-wave' },
+      { id: 'support', name: t('penny.rules.templates.categories.support'), icon: 'mdi:headset' },
+      { id: 'sales', name: t('penny.rules.templates.categories.sales'), icon: 'mdi:cart' },
+      { id: 'faq', name: t('penny.rules.templates.categories.faq'), icon: 'mdi:help-circle' },
+      { id: 'advanced', name: t('penny.rules.templates.categories.advanced'), icon: 'mdi:cogs' }
     ]
 
     const templates = [
@@ -288,7 +290,7 @@ export default {
 
     const applyTemplate = (template) => {
       emit('apply', template.data)
-      toast.success(`Template "${template.name}" applied`)
+      toast.success(t('penny.rules.templates.applied'))
     }
 
     return {

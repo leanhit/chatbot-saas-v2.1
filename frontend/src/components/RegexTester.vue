@@ -67,6 +67,7 @@
 
 <script>
 import { ref, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { Icon } from '@iconify/vue'
 import { useToast } from '@/composables/useToast'
 
@@ -83,6 +84,7 @@ export default {
   },
   emits: ['update:modelValue'],
   setup(props, { emit }) {
+    const { t } = useI18n()
     const toast = useToast()
     const pattern = ref(props.modelValue)
     const testText = ref('hello world\nhello there\nhi there')
@@ -156,7 +158,7 @@ export default {
         matches.value = foundMatches
         regexError.value = ''
       } catch (e) {
-        regexError.value = 'Invalid regex: ' + e.message
+        regexError.value = t('penny.rules.regexTester.error') + ': ' + e.message
         matches.value = []
       }
 
@@ -170,9 +172,9 @@ export default {
 
     const copyMatch = (match) => {
       navigator.clipboard.writeText(match).then(() => {
-        toast.success('Match copied to clipboard')
+        toast.success(t('penny.rules.regexTester.copied'))
       }).catch(() => {
-        toast.error('Failed to copy')
+        toast.error(t('penny.rules.regexTester.copyFailed'))
       })
     }
 

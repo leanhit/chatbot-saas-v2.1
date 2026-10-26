@@ -1,15 +1,15 @@
 <template>
   <div class="condition-builder-container">
     <div class="condition-header">
-      <label class="form-label">Build Condition</label>
+      <label class="form-label">{{ t('penny.rules.conditionBuilder.title') }}</label>
       <div class="header-actions">
         <button @click="addCondition" class="btn-add">
           <Icon icon="mdi:plus" class="h-4 w-4 mr-1" />
-          Add Condition
+          {{ t('penny.rules.conditionBuilder.addCondition') }}
         </button>
         <button @click="addGroup" class="btn-add">
           <Icon icon="mdi:folder-plus" class="h-4 w-4 mr-1" />
-          Add Group
+          {{ t('penny.rules.conditionBuilder.addGroup') }}
         </button>
       </div>
     </div>
@@ -23,7 +23,7 @@
     </div>
 
     <div class="condition-preview">
-      <label class="form-label">Generated Expression</label>
+      <label class="form-label">{{ t('penny.rules.conditionBuilder.expressionPreview') }}</label>
       <div class="expression-output">
         <code>{{ generatedExpression }}</code>
         <button @click="copyExpression" class="copy-btn" title="Copy expression">
@@ -33,7 +33,7 @@
     </div>
 
     <div class="condition-examples">
-      <label class="form-label">Quick Templates</label>
+      <label class="form-label">{{ t('penny.rules.conditionBuilder.quickTemplates') }}</label>
       <div class="examples-grid">
         <button
           v-for="example in conditionTemplates"
@@ -51,6 +51,7 @@
 
 <script>
 import { ref, computed, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { Icon } from '@iconify/vue'
 import { useToast } from '@/composables/useToast'
 import ConditionNode from './ConditionNode.vue'
@@ -69,6 +70,7 @@ export default {
   },
   emits: ['update:modelValue'],
   setup(props, { emit }) {
+    const { t } = useI18n()
     const toast = useToast()
     const conditionData = ref({
       type: 'group',
@@ -240,9 +242,9 @@ export default {
 
     const copyExpression = () => {
       navigator.clipboard.writeText(generatedExpression.value).then(() => {
-        toast.success('Expression copied to clipboard')
+        toast.success(t('penny.rules.conditionBuilder.copied'))
       }).catch(() => {
-        toast.error('Failed to copy')
+        toast.error(t('penny.rules.conditionBuilder.copyFailed'))
       })
     }
 

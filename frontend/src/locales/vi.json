@@ -965,6 +965,132 @@
         "rulesCount": "Số quy tắc",
         "templatesCount": "Số template"
       },
+      "jsonEditor": {
+        "title": "Trình soạn thảo JSON",
+        "placeholder": "Nhập cấu hình JSON...",
+        "invalidJson": "JSON không hợp lệ",
+        "validJson": "JSON hợp lệ",
+        "format": "Định dạng",
+        "clear": "Xóa"
+      },
+      "regexTester": {
+        "title": "Trình kiểm tra Regex",
+        "pattern": "Mẫu",
+        "patternPlaceholder": "Nhập mẫu regex...",
+        "testText": "Văn bản kiểm tra",
+        "testTextPlaceholder": "Nhập văn bản để kiểm tra...",
+        "matches": "Kết quả khớp",
+        "noMatches": "Không tìm thấy kết quả khớp",
+        "error": "Mẫu regex không hợp lệ",
+        "commonPatterns": "Mẫu phổ biến",
+        "test": "Kiểm tra",
+        "copyMatch": "Sao chép kết quả",
+        "copied": "Đã sao chép kết quả",
+        "copyFailed": "Sao chép thất bại"
+      },
+      "conditionBuilder": {
+        "title": "Trình tạo điều kiện",
+        "addCondition": "Thêm điều kiện",
+        "addGroup": "Thêm nhóm",
+        "remove": "Xóa",
+        "selectField": "Chọn trường...",
+        "selectOperator": "Chọn toán tử...",
+        "value": "Giá trị",
+        "and": "VÀ",
+        "or": "HOẶC",
+        "availableVariables": "Biến có sẵn",
+        "quickTemplates": "Mẫu nhanh",
+        "expressionPreview": "Xem trước biểu thức",
+        "editAsText": "Chỉnh sửa dạng văn bản",
+        "copied": "Đã sao chép biểu thức",
+        "copyFailed": "Sao chép thất bại"
+      },
+      "templates": {
+        "title": "Mẫu quy tắc",
+        "description": "Sử dụng mẫu có sẵn để tạo quy tắc nhanh chóng",
+        "categories": {
+          "all": "Tất cả",
+          "greeting": "Lời chào",
+          "support": "Hỗ trợ",
+          "sales": "Bán hàng",
+          "faq": "Câu hỏi thường gặp",
+          "advanced": "Nâng cao"
+        },
+        "apply": "Áp dụng mẫu",
+        "applied": "Đã áp dụng mẫu thành công",
+        "noTemplates": "Không tìm thấy mẫu cho danh mục này",
+        "button": "Mẫu",
+        "buttonTitle": "Sử dụng mẫu"
+      },
+      "triggerTypes": {
+        "intent": "Dựa trên Intent",
+        "keyword": "Dựa trên Keyword",
+        "regex": "Mẫu Regex",
+        "condition": "Điều kiện tùy chỉnh",
+        "always": "Luôn kích hoạt"
+      },
+      "ruleTypes": {
+        "response": "Phản hồi trực tiếp",
+        "redirect": "Chuyển hướng đến Flow",
+        "webhook": "Gọi Webhook",
+        "script": "Thực thi Script",
+        "ai": "Quy tắc AI",
+        "keyword": "Quy tắc Keyword",
+        "intent": "Quy tắc Intent"
+      },
+      "priorityLevels": {
+        "critical": "Cao nhất (90)",
+        "high": "Cao (70)",
+        "medium": "Trung bình (50)",
+        "low": "Thấp (30)",
+        "veryLow": "Rất thấp (10)"
+      },
+      "priorityDescriptions": {
+        "critical": "Ưu tiên cao nhất, thực thi đầu tiên",
+        "high": "Quy tắc ưu tiên cao",
+        "medium": "Quy tắc ưu tiên bình thường",
+        "low": "Quy tắc ưu tiên thấp",
+        "veryLow": "Ưu tiên thấp nhất, thực thi cuối cùng"
+      },
+      "placeholders": {
+        "intent": "Nhập tên intent (ví dụ: greeting)",
+        "keyword": "Nhập keyword (ví dụ: hello)",
+        "regex": "Nhập mẫu regex (ví dụ: ^hello.*$)",
+        "condition": "Nhập biểu thức điều kiện",
+        "regexPattern": "Nhập mẫu regex"
+      },
+      "helpTexts": {
+        "intent": "Intent sẽ kích hoạt quy tắc này",
+        "keyword": "Keyword sẽ kích hoạt quy tắc này",
+        "regex": "Mẫu regex sẽ kích hoạt quy tắc này",
+        "condition": "Biểu thức điều kiện sẽ kích hoạt quy tắc này"
+      },
+      "botTypes": {
+        "GENERAL": "Mục đích chung",
+        "SUPPORT": "Hỗ trợ khách hàng",
+        "BUSINESS": "Kinh doanh & Bán hàng",
+        "BOTPRESS": "Tích hợp Botpress"
+      },
+      "toast": {
+        "templateApplied": "Đã áp dụng mẫu thành công",
+        "ruleCreated": "Đã tạo quy tắc thành công",
+        "ruleUpdated": "Đã cập nhật quy tắc thành công",
+        "invalidBotId": "ID bot không hợp lệ",
+        "validationErrors": "Lỗi xác thực",
+        "failedToSave": "Không thể lưu quy tắc",
+        "testMatched": "Quy tắc khớp với dữ liệu kiểm tra!",
+        "testNotMatched": "Quy tắc không khớp với dữ liệu kiểm tra",
+        "failedToTest": "Không thể kiểm tra quy tắc"
+      },
+      "searchFilter": {
+        "searchPlaceholder": "Tìm kiếm quy tắc theo tên...",
+        "filterType": "Lọc theo loại",
+        "filterStatus": "Lọc theo trạng thái",
+        "allTypes": "Tất cả loại",
+        "allStatus": "Tất cả trạng thái",
+        "active": "Hoạt động",
+        "inactive": "Không hoạt động"
+      },
       "tabs": {
         "importExport": "Import/Export",
         "changelog": "Lịch sử",

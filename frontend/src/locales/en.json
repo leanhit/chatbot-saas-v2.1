@@ -944,6 +944,66 @@
         "errors": "Errors",
         "performer": "Performer"
       },
+      "triggerTypes": {
+        "intent": "Intent Based",
+        "keyword": "Keyword Based",
+        "regex": "Regex Pattern",
+        "condition": "Custom Condition",
+        "always": "Always Trigger"
+      },
+      "ruleTypes": {
+        "response": "Direct Response",
+        "redirect": "Redirect to Flow",
+        "webhook": "Call Webhook",
+        "script": "Execute Script",
+        "ai": "AI Rule",
+        "keyword": "Keyword Rule",
+        "intent": "Intent Rule"
+      },
+      "priorityLevels": {
+        "critical": "Critical (90)",
+        "high": "High (70)",
+        "medium": "Medium (50)",
+        "low": "Low (30)",
+        "veryLow": "Very Low (10)"
+      },
+      "priorityDescriptions": {
+        "critical": "Highest priority, executed first",
+        "high": "High priority rules",
+        "medium": "Normal priority rules",
+        "low": "Low priority rules",
+        "veryLow": "Lowest priority, executed last"
+      },
+      "placeholders": {
+        "intent": "Enter intent name (e.g., greeting)",
+        "keyword": "Enter keyword (e.g., hello)",
+        "regex": "Enter regex pattern (e.g., ^hello.*$)",
+        "condition": "Enter condition expression",
+        "regexPattern": "Enter regex pattern"
+      },
+      "helpTexts": {
+        "intent": "The intent that will trigger this rule",
+        "keyword": "The keyword that will trigger this rule",
+        "regex": "The regex pattern that will trigger this rule",
+        "condition": "The condition expression that will trigger this rule"
+      },
+      "botTypes": {
+        "GENERAL": "General Purpose",
+        "SUPPORT": "Customer Support",
+        "BUSINESS": "Business & Sales",
+        "BOTPRESS": "Botpress Integration"
+      },
+      "toast": {
+        "templateApplied": "Template applied successfully",
+        "ruleCreated": "Rule created successfully",
+        "ruleUpdated": "Rule updated successfully",
+        "invalidBotId": "Invalid bot ID selected",
+        "validationErrors": "Validation errors",
+        "failedToSave": "Failed to save rule",
+        "testMatched": "Rule matched test data!",
+        "testNotMatched": "Rule did not match test data",
+        "failedToTest": "Failed to test rule"
+      },
       "diff": {
         "title": "Diff Tool",
         "description": "Compare two export versions to see changes",
@@ -963,6 +1023,72 @@
         "exportedAt": "Exported At",
         "rulesCount": "Rules Count",
         "templatesCount": "Templates Count"
+      },
+      "jsonEditor": {
+        "title": "JSON Editor",
+        "placeholder": "Enter JSON configuration...",
+        "invalidJson": "Invalid JSON",
+        "validJson": "Valid JSON",
+        "format": "Format",
+        "clear": "Clear"
+      },
+      "regexTester": {
+        "title": "Regex Tester",
+        "pattern": "Pattern",
+        "patternPlaceholder": "Enter regex pattern...",
+        "testText": "Test Text",
+        "testTextPlaceholder": "Enter text to test...",
+        "matches": "Matches",
+        "noMatches": "No matches found",
+        "error": "Invalid regex pattern",
+        "commonPatterns": "Common Patterns",
+        "test": "Test",
+        "copyMatch": "Copy Match",
+        "copied": "Match copied to clipboard",
+        "copyFailed": "Failed to copy"
+      },
+      "conditionBuilder": {
+        "title": "Condition Builder",
+        "addCondition": "Add Condition",
+        "addGroup": "Add Group",
+        "remove": "Remove",
+        "selectField": "Select field...",
+        "selectOperator": "Select operator...",
+        "value": "Value",
+        "and": "AND",
+        "or": "OR",
+        "availableVariables": "Available Variables",
+        "quickTemplates": "Quick Templates",
+        "expressionPreview": "Expression Preview",
+        "editAsText": "Edit as text",
+        "copied": "Expression copied to clipboard",
+        "copyFailed": "Failed to copy"
+      },
+      "templates": {
+        "title": "Rule Templates",
+        "description": "Use pre-built templates to quickly create rules",
+        "categories": {
+          "all": "All",
+          "greeting": "Greetings",
+          "support": "Support",
+          "sales": "Sales",
+          "faq": "FAQ",
+          "advanced": "Advanced"
+        },
+        "apply": "Apply Template",
+        "applied": "Template applied successfully",
+        "noTemplates": "No templates found for this category",
+        "button": "Templates",
+        "buttonTitle": "Use templates"
+      },
+      "searchFilter": {
+        "searchPlaceholder": "Search rules by name...",
+        "filterType": "Filter by Type",
+        "filterStatus": "Filter by Status",
+        "allTypes": "All Types",
+        "allStatus": "All Status",
+        "active": "Active",
+        "inactive": "Inactive"
       },
       "tabs": {
         "importExport": "Import/Export",

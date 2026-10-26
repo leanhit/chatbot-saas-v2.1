@@ -159,7 +159,7 @@
           v-model="searchQuery"
           type="text"
           class="search-input"
-          placeholder="Search rules by name..."
+          :placeholder="$t('penny.rules.searchFilter.searchPlaceholder')"
         />
         <button
           v-if="searchQuery"
@@ -174,7 +174,7 @@
           v-model="filterType"
           class="filter-select"
         >
-          <option value="">All Types</option>
+          <option value="">{{ $t('penny.rules.searchFilter.allTypes') }}</option>
           <option value="RESPONSE">Response</option>
           <option value="REDIRECT">Redirect</option>
           <option value="WEBHOOK">Webhook</option>
@@ -187,9 +187,9 @@
           v-model="filterStatus"
           class="filter-select"
         >
-          <option value="">All Status</option>
-          <option value="active">Active</option>
-          <option value="inactive">Inactive</option>
+          <option value="">{{ $t('penny.rules.searchFilter.allStatus') }}</option>
+          <option value="active">{{ $t('penny.rules.searchFilter.active') }}</option>
+          <option value="inactive">{{ $t('penny.rules.searchFilter.inactive') }}</option>
         </select>
       </div>
     </div>

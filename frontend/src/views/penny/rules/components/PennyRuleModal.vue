@@ -15,10 +15,10 @@
               v-if="!isEditMode"
               @click="showTemplates = !showTemplates"
               class="btn-template"
-              title="Use templates"
+              :title="$t('penny.rules.templates.buttonTitle')"
             >
               <Icon icon="mdi:lightning-bolt" class="h-4 w-4 mr-1" />
-              Templates
+              {{ $t('penny.rules.templates.button') }}
             </button>
             <button @click="$emit('close')" class="close-button">
               <Icon icon="mdi:close" class="h-5 w-5" />
@@ -99,7 +99,7 @@
                     :key="level.value"
                     :value="level.value"
                   >
-                    {{ level.label }}
+                    {{ $t(level.labelKey) }}
                   </option>
                 </select>
                 <p class="form-help">
@@ -143,7 +143,7 @@
                     :key="type.value"
                     :value="type.value"
                   >
-                    {{ type.label }}
+                    {{ $t(type.labelKey) }}
                   </option>
                 </select>
               </div>
@@ -158,7 +158,7 @@
                     v-model="formData.triggerValue"
                     type="text"
                     class="form-input"
-                    placeholder="Enter regex pattern"
+                    :placeholder="$t('penny.rules.placeholders.regexPattern')"
                     required
                   />
                   <RegexTester
@@ -226,7 +226,7 @@
                   :key="type.value"
                   :value="type.value"
                 >
-                  {{ type.label }}
+                  {{ $t(type.labelKey) }}
                 </option>
               </select>
             </div>
@@ -368,29 +368,29 @@ export default {
     })
 
     const triggerTypes = [
-      { value: RuleTriggerType.INTENT, label: 'Intent Based' },
-      { value: RuleTriggerType.KEYWORD, label: 'Keyword Based' },
-      { value: RuleTriggerType.REGEX, label: 'Regex Pattern' },
-      { value: RuleTriggerType.CONDITION, label: 'Custom Condition' },
-      { value: RuleTriggerType.ALWAYS, label: 'Always Trigger' }
+      { value: RuleTriggerType.INTENT, labelKey: 'penny.rules.triggerTypes.intent' },
+      { value: RuleTriggerType.KEYWORD, labelKey: 'penny.rules.triggerTypes.keyword' },
+      { value: RuleTriggerType.REGEX, labelKey: 'penny.rules.triggerTypes.regex' },
+      { value: RuleTriggerType.CONDITION, labelKey: 'penny.rules.triggerTypes.condition' },
+      { value: RuleTriggerType.ALWAYS, labelKey: 'penny.rules.triggerTypes.always' }
     ]
 
     const ruleTypes = [
-      { value: RuleType.RESPONSE, label: 'Direct Response' },
-      { value: RuleType.REDIRECT, label: 'Redirect to Flow' },
-      { value: RuleType.WEBHOOK, label: 'Call Webhook' },
-      { value: RuleType.SCRIPT, label: 'Execute Script' },
-      { value: RuleType.AI, label: 'AI Rule' },
-      { value: RuleType.KEYWORD, label: 'Keyword Rule' },
-      { value: RuleType.INTENT, label: 'Intent Rule' }
+      { value: RuleType.RESPONSE, labelKey: 'penny.rules.ruleTypes.response' },
+      { value: RuleType.REDIRECT, labelKey: 'penny.rules.ruleTypes.redirect' },
+      { value: RuleType.WEBHOOK, labelKey: 'penny.rules.ruleTypes.webhook' },
+      { value: RuleType.SCRIPT, labelKey: 'penny.rules.ruleTypes.script' },
+      { value: RuleType.AI, labelKey: 'penny.rules.ruleTypes.ai' },
+      { value: RuleType.KEYWORD, labelKey: 'penny.rules.ruleTypes.keyword' },
+      { value: RuleType.INTENT, labelKey: 'penny.rules.ruleTypes.intent' }
     ]
 
     const priorityLevels = [
-      { value: 90, label: 'Critical (90)', description: 'Highest priority, executed first' },
-      { value: 70, label: 'High (70)', description: 'High priority rules' },
-      { value: 50, label: 'Medium (50)', description: 'Normal priority rules' },
-      { value: 30, label: 'Low (30)', description: 'Low priority rules' },
-      { value: 10, label: 'Very Low (10)', description: 'Lowest priority, executed last' }
+      { value: 90, labelKey: 'penny.rules.priorityLevels.critical', descriptionKey: 'penny.rules.priorityDescriptions.critical' },
+      { value: 70, labelKey: 'penny.rules.priorityLevels.high', descriptionKey: 'penny.rules.priorityDescriptions.high' },
+      { value: 50, labelKey: 'penny.rules.priorityLevels.medium', descriptionKey: 'penny.rules.priorityDescriptions.medium' },
+      { value: 30, labelKey: 'penny.rules.priorityLevels.low', descriptionKey: 'penny.rules.priorityDescriptions.low' },
+      { value: 10, labelKey: 'penny.rules.priorityLevels.veryLow', descriptionKey: 'penny.rules.priorityDescriptions.veryLow' }
     ]
 
     const isEditMode = computed(() => !!props.rule)
@@ -418,37 +418,37 @@ export default {
 
     const getTriggerValuePlaceholder = () => {
       const placeholders = {
-        [RuleTriggerType.INTENT]: 'Enter intent name (e.g., greeting)',
-        [RuleTriggerType.KEYWORD]: 'Enter keyword (e.g., hello)',
-        [RuleTriggerType.REGEX]: 'Enter regex pattern (e.g., ^hello.*$)',
-        [RuleTriggerType.CONDITION]: 'Enter condition expression'
+        [RuleTriggerType.INTENT]: t('penny.rules.placeholders.intent'),
+        [RuleTriggerType.KEYWORD]: t('penny.rules.placeholders.keyword'),
+        [RuleTriggerType.REGEX]: t('penny.rules.placeholders.regex'),
+        [RuleTriggerType.CONDITION]: t('penny.rules.placeholders.condition')
       }
       return placeholders[formData.value.triggerType] || ''
     }
 
     const getTriggerValueHelp = () => {
       const helps = {
-        [RuleTriggerType.INTENT]: 'The intent that will trigger this rule',
-        [RuleTriggerType.KEYWORD]: 'The keyword that will trigger this rule',
-        [RuleTriggerType.REGEX]: 'The regex pattern that will trigger this rule',
-        [RuleTriggerType.CONDITION]: 'The condition expression that will trigger this rule'
+        [RuleTriggerType.INTENT]: t('penny.rules.helpTexts.intent'),
+        [RuleTriggerType.KEYWORD]: t('penny.rules.helpTexts.keyword'),
+        [RuleTriggerType.REGEX]: t('penny.rules.helpTexts.regex'),
+        [RuleTriggerType.CONDITION]: t('penny.rules.helpTexts.condition')
       }
       return helps[formData.value.triggerType] || ''
     }
 
     const getBotTypeDisplayName = (botType) => {
       const names = {
-        'GENERAL': 'General Purpose',
-        'SUPPORT': 'Customer Support',
-        'BUSINESS': 'Business & Sales',
-        'BOTPRESS': 'Botpress Integration'
+        'GENERAL': t('penny.rules.botTypes.GENERAL'),
+        'SUPPORT': t('penny.rules.botTypes.SUPPORT'),
+        'BUSINESS': t('penny.rules.botTypes.BUSINESS'),
+        'BOTPRESS': t('penny.rules.botTypes.BOTPRESS')
       }
       return names[botType] || botType
     }
 
     const getPriorityDescription = (priority) => {
       const level = priorityLevels.find(l => l.value === priority)
-      return level ? level.description : ''
+      return level ? t(level.descriptionKey) : ''
     }
 
     const loadAvailableBots = async () => {
@@ -501,7 +501,7 @@ export default {
       if (typeof formData.value.botId === 'object') {
         formData.value.botId = formData.value.botId.id || formData.value.botId.botId || ''
         if (!formData.value.botId) {
-          toast.error('Invalid bot ID selected')
+          toast.error(t('penny.rules.toast.invalidBotId'))
           return
         }
       }
@@ -548,23 +548,23 @@ export default {
         // Validate request
         const validation = ruleRequest.validate()
         if (!validation.isValid) {
-          toast.error('Validation errors: ' + validation.errors.join(', '))
+          toast.error(t('penny.rules.toast.validationErrors') + ': ' + validation.errors.join(', '))
           return
         }
 
         if (props.rule) {
           // Update existing rule
           await pennyRuleApi.updateRule(formData.value.botId, props.rule.id, ruleRequest.toApiRequest())
-          toast.success('Rule updated successfully')
+          toast.success(t('penny.rules.toast.ruleUpdated'))
         } else {
           // Create new rule
           await pennyRuleApi.createRule(formData.value.botId, ruleRequest.toApiRequest())
-          toast.success('Rule created successfully')
+          toast.success(t('penny.rules.toast.ruleCreated'))
         }
         emit('saved')
       } catch (error) {
         console.error('Failed to save rule:', error)
-        toast.error(error, 'Failed to save rule')
+        toast.error(error, t('penny.rules.toast.failedToSave'))
       } finally {
         submitting.value = false
       }
@@ -609,13 +609,13 @@ export default {
         }
 
         if (response.data.matches) {
-          toast.success(`Rule "${response.data.ruleName}" matched test data!`, 'Test Matched')
+          toast.success(`Rule "${response.data.ruleName}" ` + t('penny.rules.toast.testMatched'), 'Test Matched')
         } else {
-          toast.warning('Rule did not match test data.', 'No Match')
+          toast.warning(t('penny.rules.toast.testNotMatched'), 'No Match')
         }
       } catch (error) {
         console.error('Failed to test rule:', error)
-        toast.error(error, 'Failed to test rule')
+        toast.error(error, t('penny.rules.toast.failedToTest'))
       }
     }
 
@@ -630,7 +630,7 @@ export default {
     const applyTemplate = (templateData) => {
       Object.assign(formData.value, templateData)
       showTemplates.value = false
-      toast.success('Template applied successfully')
+      toast.success(t('penny.rules.toast.templateApplied'))
     }
 
     const closeOnBackdrop = (event) => {

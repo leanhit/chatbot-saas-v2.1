@@ -10,6 +10,7 @@
 
 <script>
 import { ref, onMounted, onBeforeUnmount, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { EditorView, basicSetup } from 'codemirror'
 import { javascript } from '@codemirror/lang-javascript'
 import { EditorState } from '@codemirror/state'
@@ -36,6 +37,7 @@ export default {
   },
   emits: ['update:modelValue', 'valid', 'invalid'],
   setup(props, { emit }) {
+    const { t } = useI18n()
     const editorContainer = ref(null)
     const editorView = ref(null)
     const error = ref('')
@@ -52,7 +54,7 @@ export default {
         emit('valid')
         return true
       } catch (e) {
-        error.value = 'Invalid JSON: ' + e.message
+        error.value = t('penny.rules.jsonEditor.invalidJson') + ': ' + e.message
         emit('invalid')
         return false
       }
