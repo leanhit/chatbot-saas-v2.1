@@ -8,14 +8,14 @@
           class="operator-select"
           @change="$emit('update:modelValue', node)"
         >
-          <option value="AND">{{ t('penny.rules.conditionBuilder.and') }}</option>
-          <option value="OR">{{ t('penny.rules.conditionBuilder.or') }}</option>
+          <option value="AND">{{ $t('penny.rules.conditionBuilder.and') }}</option>
+          <option value="OR">{{ $t('penny.rules.conditionBuilder.or') }}</option>
         </select>
         <button
           v-if="showRemove"
           @click="$emit('remove')"
           class="remove-btn"
-          :title="t('penny.rules.conditionBuilder.remove')"
+          :title="$t('penny.rules.conditionBuilder.remove')"
         >
           <Icon icon="mdi:close" class="h-4 w-4" />
         </button>
@@ -40,7 +40,7 @@
           class="field-select"
           @change="$emit('update:modelValue', node)"
         >
-          <option value="">{{ t('penny.rules.conditionBuilder.selectField') }}</option>
+          <option value="">{{ $t('penny.rules.conditionBuilder.selectField') }}</option>
           <option
             v-for="variable in availableVariables"
             :key="variable.name"
@@ -73,7 +73,7 @@
           v-model="node.value"
           type="text"
           class="value-input"
-          :placeholder="t('penny.rules.conditionBuilder.value')"
+          :placeholder="$t('penny.rules.conditionBuilder.value')"
           @input="$emit('update:modelValue', node)"
         />
 
@@ -81,7 +81,7 @@
           v-if="showRemove"
           @click="$emit('remove')"
           class="remove-btn"
-          :title="t('penny.rules.conditionBuilder.remove')"
+          :title="$t('penny.rules.conditionBuilder.remove')"
         >
           <Icon icon="mdi:close" class="h-4 w-4" />
         </button>

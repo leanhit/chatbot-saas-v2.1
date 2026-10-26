@@ -1,7 +1,7 @@
 <template>
   <div class="rule-templates-container">
     <div class="templates-header">
-      <label class="form-label">{{ t('penny.rules.templates.title') }}</label>
+      <label class="form-label">{{ $t('penny.rules.templates.title') }}</label>
       <div class="template-categories">
         <button
           v-for="category in categories"
@@ -46,7 +46,7 @@
 
     <div v-if="filteredTemplates.length === 0" class="no-templates">
       <Icon icon="mdi:information" class="h-8 w-8 mr-2" />
-      {{ t('penny.rules.templates.noTemplates') }}
+      {{ $t('penny.rules.templates.noTemplates') }}
     </div>
   </div>
 </template>
