@@ -1002,7 +1002,12 @@
         "failedToSave": "Failed to save rule",
         "testMatched": "Rule matched test data!",
         "testNotMatched": "Rule did not match test data",
-        "failedToTest": "Failed to test rule"
+        "failedToTest": "Failed to test rule",
+        "selectBot": "Please select a bot for this rule",
+        "fillRequiredFields": "Please fill in all required fields",
+        "provideTriggerValue": "Please provide trigger value",
+        "provideRuleAction": "Please provide rule action",
+        "validJsonWebhook": "Please provide valid JSON for webhook action"
       },
       "diff": {
         "title": "Diff Tool",

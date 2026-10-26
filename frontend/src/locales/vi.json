@@ -1080,7 +1080,12 @@
         "failedToSave": "Không thể lưu quy tắc",
         "testMatched": "Quy tắc khớp với dữ liệu kiểm tra!",
         "testNotMatched": "Quy tắc không khớp với dữ liệu kiểm tra",
-        "failedToTest": "Không thể kiểm tra quy tắc"
+        "failedToTest": "Không thể kiểm tra quy tắc",
+        "selectBot": "Vui lòng chọn bot cho quy tắc này",
+        "fillRequiredFields": "Vui lòng điền tất cả các trường bắt buộc",
+        "provideTriggerValue": "Vui lòng cung cấp giá trị kích hoạt",
+        "provideRuleAction": "Vui lòng cung cấp hành động quy tắc",
+        "validJsonWebhook": "Vui lòng cung cấp JSON hợp lệ cho hành động webhook"
       },
       "searchFilter": {
         "searchPlaceholder": "Tìm kiếm quy tắc theo tên...",

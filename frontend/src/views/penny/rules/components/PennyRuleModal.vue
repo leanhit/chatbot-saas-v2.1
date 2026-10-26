@@ -493,7 +493,7 @@ export default {
     const handleSubmit = async () => {
       // Validate required fields
       if (!formData.value.botId) {
-        toast.warning('Please select a bot for this rule')
+        toast.warning(t('penny.rules.toast.selectBot'))
         return
       }
 
@@ -507,23 +507,23 @@ export default {
       }
 
       if (!formData.value.ruleName || !formData.value.ruleType || !formData.value.triggerType) {
-        toast.warning('Please fill in all required fields')
+        toast.warning(t('penny.rules.toast.fillRequiredFields'))
         return
       }
 
       if (formData.value.triggerType !== RuleTriggerType.ALWAYS && !formData.value.triggerValue) {
-        toast.warning('Please provide trigger value')
+        toast.warning(t('penny.rules.toast.provideTriggerValue'))
         return
       }
 
       if (!formData.value.action) {
-        toast.warning('Please provide rule action')
+        toast.warning(t('penny.rules.toast.provideRuleAction'))
         return
       }
 
       // Validate JSON for WEBHOOK type
       if (formData.value.ruleType === RuleType.WEBHOOK && !isJsonValid.value) {
-        toast.warning('Please provide valid JSON for webhook action')
+        toast.warning(t('penny.rules.toast.validJsonWebhook'))
         return
       }
 

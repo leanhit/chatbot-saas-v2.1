@@ -10,7 +10,7 @@
           :class="['category-btn', { active: selectedCategory === category.id }]"
         >
           <Icon :icon="category.icon" class="h-4 w-4 mr-1" />
-          {{ category.name }}
+          {{ $t(category.nameKey) }}
         </button>
       </div>
     </div>
@@ -76,12 +76,12 @@ export default {
     const selectedCategory = ref('all')
 
     const categories = [
-      { id: 'all', name: t('penny.rules.templates.categories.all'), icon: 'mdi:apps' },
-      { id: 'greeting', name: t('penny.rules.templates.categories.greeting'), icon: 'mdi:hand-wave' },
-      { id: 'support', name: t('penny.rules.templates.categories.support'), icon: 'mdi:headset' },
-      { id: 'sales', name: t('penny.rules.templates.categories.sales'), icon: 'mdi:cart' },
-      { id: 'faq', name: t('penny.rules.templates.categories.faq'), icon: 'mdi:help-circle' },
-      { id: 'advanced', name: t('penny.rules.templates.categories.advanced'), icon: 'mdi:cogs' }
+      { id: 'all', nameKey: 'penny.rules.templates.categories.all', icon: 'mdi:apps' },
+      { id: 'greeting', nameKey: 'penny.rules.templates.categories.greeting', icon: 'mdi:hand-wave' },
+      { id: 'support', nameKey: 'penny.rules.templates.categories.support', icon: 'mdi:headset' },
+      { id: 'sales', nameKey: 'penny.rules.templates.categories.sales', icon: 'mdi:cart' },
+      { id: 'faq', nameKey: 'penny.rules.templates.categories.faq', icon: 'mdi:help-circle' },
+      { id: 'advanced', nameKey: 'penny.rules.templates.categories.advanced', icon: 'mdi:cogs' }
     ]
 
     const templates = [
