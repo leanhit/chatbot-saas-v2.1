@@ -173,6 +173,31 @@
         </div>
       </div>
     </div>
+
+    <!-- Delete Document Confirm Modal -->
+    <div v-if="showDeleteConfirm" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+      <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl p-6 max-w-md w-full border border-gray-200 dark:border-gray-700">
+        <div class="flex items-center mb-4">
+          <div class="p-2 bg-red-100 dark:bg-red-900 rounded-full mr-3">
+            <Icon icon="mdi:alert" class="h-6 w-6 text-red-600 dark:text-red-400" />
+          </div>
+          <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+            {{ $t('penny.documentUpload.confirmDeleteTitle') || 'Delete Document' }}
+          </h3>
+        </div>
+        <p class="text-gray-600 dark:text-gray-400 mb-6">
+          {{ $t('penny.documentUpload.confirmDelete') || 'Are you sure you want to delete this document? All vector chunks will also be removed.' }}
+        </p>
+        <div class="flex justify-end space-x-3">
+          <button @click="dismissDeleteDocConfirm" class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 transition-colors">
+            {{ $t('common.cancel') || 'Cancel' }}
+          </button>
+          <button @click="confirmDeleteDocument" class="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors">
+            {{ $t('common.delete') || 'Delete' }}
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -204,7 +229,9 @@ export default {
       processedChunkCount: 0,
       estimatedTotalChunks: 0,
       isDragOver: false,
-      documents: []
+      documents: [],
+      showDeleteConfirm: false,
+      docToDelete: null
     };
   },
   computed: {
@@ -338,17 +365,29 @@ export default {
       }
     },
     async deleteDocument(documentId) {
-      if (!confirm(this.$t('penny.documentUpload.confirmDelete'))) return;
+      this.docToDelete = documentId
+      this.showDeleteConfirm = true
+    },
 
+    async confirmDeleteDocument() {
+      if (!this.docToDelete) return
       const toast = useToast();
       try {
-        await pennyApi.deleteKnowledgeDocument(documentId);
+        await pennyApi.deleteKnowledgeDocument(this.docToDelete);
         this.loadDocuments();
         toast.success(this.$t('penny.documentUpload.deleteSuccess'));
       } catch (error) {
         toast.error(error, this.$t('penny.documentUpload.deleteError'));
         console.error('Delete error:', error);
+      } finally {
+        this.showDeleteConfirm = false
+        this.docToDelete = null
       }
+    },
+
+    dismissDeleteDocConfirm() {
+      this.showDeleteConfirm = false
+      this.docToDelete = null
     },
     formatFileSize(bytes) {
       if (bytes === 0) return '0 Bytes';

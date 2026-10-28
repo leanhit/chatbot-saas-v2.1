@@ -7,6 +7,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 import java.time.LocalDateTime;
 import java.util.Map;
@@ -15,6 +16,7 @@ import java.util.UUID;
 /**
  * Bot Rule Entity - Định nghĩa rule tùy chỉnh cho bot
  */
+@Slf4j
 @Entity
 @Table(name = "penny_bot_rules")
 @Data
@@ -90,6 +92,13 @@ public class BotRule {
     @Column(name = "metadata", columnDefinition = "TEXT")
     private String metadata; // JSON for additional data
 
+    @JsonFormat(pattern = DateUtils.STANDARD_JSON_FORMAT, timezone = DateUtils.STANDARD_TIMEZONE)
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
+
+    @Column(name = "deleted_by")
+    private String deletedBy;
+
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
@@ -132,9 +141,10 @@ public class BotRule {
      * Evaluate custom condition (simplified)
      */
     private boolean evaluateCondition(Map<String, Object> context) {
-        // This would be implemented with a proper expression evaluator
-        // For now, return true if condition exists
-        return condition != null && !condition.trim().isEmpty();
+        // CONDITION trigger type is not fully implemented yet
+        // Return false as safe default until proper expression evaluator is added
+        log.warn("⚠️ CONDITION trigger type is not fully implemented for ruleId={}. Defaulting to false.", id);
+        return false;
     }
 
     // Enums

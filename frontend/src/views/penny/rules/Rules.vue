@@ -238,7 +238,7 @@
     <!-- Rules Grid -->
     <div v-else class="rules-grid">
       <div
-        v-for="rule in filteredRules"
+        v-for="rule in paginatedRules"
         :key="rule.ruleId"
         class="bg-white dark:bg-gray-800 rounded-lg shadow-md border border-gray-200 dark:border-gray-700 hover:shadow-lg transition-shadow duration-200 p-6"
       >
@@ -339,6 +339,27 @@
         </div>
       </div>
     </div>
+
+    <!-- Pagination Controls -->
+    <div v-if="totalPages > 1" class="flex justify-center items-center space-x-4 mt-6">
+      <button
+        @click="currentPage--"
+        :disabled="currentPage === 1"
+        class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed text-gray-700 dark:text-gray-200"
+      >
+        {{ $t('common.previous') || 'Previous' }}
+      </button>
+      <span class="text-gray-700 dark:text-gray-200">
+        {{ $t('common.page') || 'Page' }} {{ currentPage }} {{ $t('common.of') || 'of' }} {{ totalPages }}
+      </span>
+      <button
+        @click="currentPage++"
+        :disabled="currentPage === totalPages"
+        class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed text-gray-700 dark:text-gray-200"
+      >
+        {{ $t('common.next') || 'Next' }}
+      </button>
+    </div>
     </div>
 
         <!-- Import/Export Tab -->
@@ -366,11 +387,37 @@
       @close="closeModal"
       @saved="onRuleSaved"
     />
+
+    <!-- Delete Confirmation Modal -->
+    <div v-if="showDeleteConfirm" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+          {{ $t('penny.rules.deleteConfirmTitle') || 'Confirm Delete' }}
+        </h3>
+        <p class="text-gray-600 dark:text-gray-400 mb-6">
+          {{ $t('penny.rules.deleteConfirmMessage', { name: ruleToDelete?.name }) || `Are you sure you want to delete "${ruleToDelete?.name}"?` }}
+        </p>
+        <div class="flex justify-end space-x-3">
+          <button
+            @click="cancelDelete"
+            class="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+          >
+            {{ $t('common.cancel') || 'Cancel' }}
+          </button>
+          <button
+            @click="confirmDelete"
+            class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
+          >
+            {{ $t('common.delete') || 'Delete' }}
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script>
-import { computed, ref, onMounted } from 'vue'
+import { computed, ref, onMounted, watch } from 'vue'
 import { Icon } from '@iconify/vue'
 import { useI18n } from 'vue-i18n'
 import { driver } from 'driver.js'
@@ -414,7 +461,9 @@ export default {
       rules.value.filter(rule => rule.isActive)
     )
     const aiRules = computed(() => 
-      rules.value.filter(rule => rule.type === 'AI')
+      // Backend RuleType enum doesn't have 'AI' type, return empty array
+      // This computed property is not functional with current backend implementation
+      []
     )
     const loadingRules = computed(() => pennyRuleStore.loadingRules)
     const updatingRule = computed(() => pennyRuleStore.updatingRule)
@@ -427,11 +476,17 @@ export default {
     const showCreateModal = ref(false)
     const editingRule = ref(null)
     const selectedBot = ref(null)
+    const showDeleteConfirm = ref(false)
+    const ruleToDelete = ref(null)
 
     // Search and filter states
     const searchQuery = ref('')
     const filterType = ref('')
     const filterStatus = ref('')
+
+    // Pagination states
+    const currentPage = ref(1)
+    const itemsPerPage = ref(12)
 
     // Filtered rules
     const filteredRules = computed(() => {
@@ -451,6 +506,14 @@ export default {
       })
     })
 
+    // Pagination
+    const totalPages = computed(() => Math.ceil(filteredRules.value.length / itemsPerPage.value))
+    const paginatedRules = computed(() => {
+      const start = (currentPage.value - 1) * itemsPerPage.value
+      const end = start + itemsPerPage.value
+      return filteredRules.value.slice(start, end)
+    })
+
     // Methods
     const fetchRules = async () => {
       if (!selectedBot.value) {
@@ -465,12 +528,10 @@ export default {
       }
     }
 
-    const selectBot = (bot) => {
+    const selectBot = async (bot) => {
       selectedBot.value = bot
-      if (bot) {
-        pennyBotStore.setCurrentBotId(bot.id || bot.botId)
-        fetchRules()
-      }
+      currentPage.value = 1 // Reset to page 1 when bot changes
+      await fetchRules()
     }
 
     const toggleRuleStatus = async (rule) => {
@@ -515,15 +576,29 @@ export default {
         return
       }
       
-      if (confirm(`Are you sure you want to delete "${rule.name}"?`)) {
-        try {
-          await pennyRuleStore.deleteRule(selectedBot.value.id, targetRuleId)
-          toast.success(`Rule "${rule.name}" deleted successfully`)
-          await fetchRules()
-        } catch (error) {
-          console.error('Failed to delete rule:', error)
-          toast.error(error, 'Failed to delete rule')
-        }
+      // Show confirmation modal instead of native confirm()
+      ruleToDelete.value = { ...rule, targetRuleId }
+      showDeleteConfirm.value = true
+    }
+
+    const cancelDelete = () => {
+      showDeleteConfirm.value = false
+      ruleToDelete.value = null
+    }
+
+    const confirmDelete = async () => {
+      if (!ruleToDelete.value) return
+      
+      try {
+        await pennyRuleStore.deleteRule(selectedBot.value.id, ruleToDelete.value.targetRuleId)
+        toast.success(`Rule "${ruleToDelete.value.name}" deleted successfully`)
+        await fetchRules()
+      } catch (error) {
+        console.error('Failed to delete rule:', error)
+        toast.error(error, 'Failed to delete rule')
+      } finally {
+        showDeleteConfirm.value = false
+        ruleToDelete.value = null
       }
     }
 
@@ -596,6 +671,13 @@ export default {
       showCreateModal.value = false
       editingRule.value = null
     }
+
+    // Watch for search/filter changes to reset pagination
+    const resetPagination = () => {
+      currentPage.value = 1
+    }
+
+    watch([searchQuery, filterType, filterStatus], resetPagination)
 
     const onRuleSaved = () => {
       closeModal()
@@ -724,6 +806,12 @@ export default {
       filterType,
       filterStatus,
       filteredRules,
+      currentPage,
+      itemsPerPage,
+      totalPages,
+      paginatedRules,
+      showDeleteConfirm,
+      ruleToDelete,
 
       // Methods
       fetchRules,
@@ -731,6 +819,8 @@ export default {
       toggleRuleStatus,
       editRule,
       deleteRule,
+      cancelDelete,
+      confirmDelete,
       testRule,
       duplicateRule,
       closeModal,

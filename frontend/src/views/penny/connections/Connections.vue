@@ -244,6 +244,31 @@
       @close="closeAutoConnectModal"
       @connected="onAutoConnectCompleted"
     />
+
+    <!-- Delete Connection Confirm Modal -->
+    <div v-if="showDeleteConnConfirm" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl p-6 max-w-md w-full mx-4">
+        <div class="flex items-center mb-4">
+          <div class="p-2 bg-red-100 dark:bg-red-900 rounded-full mr-3">
+            <Icon icon="mdi:alert" class="h-6 w-6 text-red-600 dark:text-red-400" />
+          </div>
+          <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+            {{ $t('penny.connections.deleteConnection') || 'Delete Connection' }}
+          </h3>
+        </div>
+        <p class="text-gray-600 dark:text-gray-400 mb-6">
+          {{ $t('penny.connections.deleteConfirm', { name: connToDelete?.name || connToDelete?.connectionName }) || `Are you sure you want to delete "${connToDelete?.name || connToDelete?.connectionName}"? This action cannot be undone.` }}
+        </p>
+        <div class="flex justify-end space-x-3">
+          <button @click="cancelDeleteConn" class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 transition-colors">
+            {{ $t('common.cancel') || 'Cancel' }}
+          </button>
+          <button @click="confirmDeleteConn" class="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors">
+            {{ $t('common.delete') || 'Delete' }}
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -296,6 +321,8 @@ export default {
     const showAutoConnectModal = ref(false)
     const editingConnection = ref(null)
     const selectedBot = ref(null)
+    const showDeleteConnConfirm = ref(false)
+    const connToDelete = ref(null)
 
     // Methods
     const fetchConnections = async () => {
@@ -335,22 +362,32 @@ export default {
       editingConnection.value = { ...connection }
     }
 
-    const deleteConnection = async (connection) => {
-      if (confirm(`Are you sure you want to delete "${connection.name || connection.connectionName}"?`)) {
-        try {
-          await pennyConnectionStore.deleteConnection(currentBotId.value, connection.id)
-          toast.success(`Connection "${connection.name || connection.connectionName}" deleted successfully`)
-        } catch (error) {
-          console.error('Failed to delete connection:', error)
-          
-          // Handle admin-only error
-          if (error.response?.status === 403) {
-            toast.error('Admin privileges required to delete connections. Only admin users can perform this action.')
-            return
-          }
-          
-          toast.error(error, 'Failed to delete connection')
+    const deleteConnection = (connection) => {
+      connToDelete.value = connection
+      showDeleteConnConfirm.value = true
+    }
+
+    const cancelDeleteConn = () => {
+      showDeleteConnConfirm.value = false
+      connToDelete.value = null
+    }
+
+    const confirmDeleteConn = async () => {
+      if (!connToDelete.value) return
+      const connection = connToDelete.value
+      try {
+        await pennyConnectionStore.deleteConnection(currentBotId.value, connection.id)
+        toast.success(`Connection "${connection.name || connection.connectionName}" deleted successfully`)
+      } catch (error) {
+        console.error('Failed to delete connection:', error)
+        if (error.response?.status === 403) {
+          toast.error('Admin privileges required to delete connections.')
+          return
         }
+        toast.error(error, 'Failed to delete connection')
+      } finally {
+        showDeleteConnConfirm.value = false
+        connToDelete.value = null
       }
     }
 
@@ -488,6 +525,8 @@ export default {
       showAutoConnectModal,
       editingConnection,
       selectedBot,
+      showDeleteConnConfirm,
+      connToDelete,
 
       // Methods
       fetchConnections,
@@ -495,6 +534,8 @@ export default {
       toggleConnectionStatus,
       editConnection,
       deleteConnection,
+      cancelDeleteConn,
+      confirmDeleteConn,
       testConnection,
       closeModal,
       onConnectionSaved,

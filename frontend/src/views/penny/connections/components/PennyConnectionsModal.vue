@@ -244,6 +244,31 @@
     @close="showConnectionModal = false"
     @saved="onConnectionSaved"
   />
+
+  <!-- Delete Connection Confirm Modal -->
+  <div v-if="showDeleteConfirm" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[2000]">
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl p-6 max-w-md w-full mx-4">
+      <div class="flex items-center mb-4">
+        <div class="p-2 bg-red-100 dark:bg-red-900 rounded-full mr-3">
+          <Icon icon="mdi:alert" class="h-6 w-6 text-red-600 dark:text-red-400" />
+        </div>
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+          {{ $t('penny.connections.deleteConnection') || 'Delete Connection' }}
+        </h3>
+      </div>
+      <p class="text-gray-600 dark:text-gray-400 mb-6">
+        {{ $t('penny.connections.deleteConfirm', { name: connToDelete?.connectionName }) || `Are you sure you want to delete "${connToDelete?.connectionName}"?` }}
+      </p>
+      <div class="flex justify-end space-x-3">
+        <button @click="cancelDeleteConn" class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 transition-colors">
+          {{ $t('common.cancel') || 'Cancel' }}
+        </button>
+        <button @click="confirmDeleteConn" class="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors">
+          {{ $t('common.delete') || 'Delete' }}
+        </button>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script>
@@ -284,6 +309,8 @@ export default {
     const filterType = ref('')
     const testingConnection = ref(false)
     const checkingHealth = ref(false)
+    const showDeleteConfirm = ref(false)
+    const connToDelete = ref(null)
 
     // Computed
     const connections = computed(() => pennyConnectionStore.connections)
@@ -319,9 +346,20 @@ export default {
     }
 
     const deleteConnectionConfirm = (connection) => {
-      if (confirm(`Are you sure you want to delete connection "${connection.connectionName}"?`)) {
-        deleteConnection(connection)
-      }
+      connToDelete.value = connection
+      showDeleteConfirm.value = true
+    }
+
+    const cancelDeleteConn = () => {
+      showDeleteConfirm.value = false
+      connToDelete.value = null
+    }
+
+    const confirmDeleteConn = async () => {
+      if (!connToDelete.value) return
+      await deleteConnection(connToDelete.value)
+      showDeleteConfirm.value = false
+      connToDelete.value = null
     }
 
     const deleteConnection = async (connection) => {
@@ -486,6 +524,8 @@ export default {
       filterType,
       testingConnection,
       checkingHealth,
+      showDeleteConfirm,
+      connToDelete,
 
       // Computed
       connections,
@@ -500,6 +540,8 @@ export default {
       createNewConnection,
       editConnection,
       deleteConnectionConfirm,
+      cancelDeleteConn,
+      confirmDeleteConn,
       deleteConnection,
       toggleConnectionStatus,
       testConnection,

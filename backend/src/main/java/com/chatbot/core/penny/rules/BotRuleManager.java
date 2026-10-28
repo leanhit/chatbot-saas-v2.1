@@ -7,14 +7,18 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.expression.EvaluationContext;
 import org.springframework.expression.ExpressionParser;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
-import org.springframework.expression.spel.support.StandardEvaluationContext;
+import org.springframework.expression.spel.support.SimpleEvaluationContext;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.publisher.Mono;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -47,6 +51,7 @@ public class BotRuleManager {
      * Create new rule
      */
     @Transactional
+    @CacheEvict(value = "botRules", key = "#botId")
     public BotRule createRule(UUID botId, String name, String description, String condition,
                              String action, BotRule.RuleType ruleType, BotRule.TriggerType triggerType,
                              String triggerValue, Integer priority, String createdBy) {
@@ -83,6 +88,7 @@ public class BotRuleManager {
      * Update existing rule
      */
     @Transactional
+    @CacheEvict(value = "botRules", key = "#result.botId")
     public BotRule updateRule(UUID ruleId, String name, String description, String condition,
                              String action, Integer priority, Boolean isActive, String updatedBy) {
         
@@ -120,18 +126,27 @@ public class BotRuleManager {
     }
 
     /**
-     * Delete rule (hard delete)
+     * Delete rule (soft delete)
      */
     @Transactional
+    @CacheEvict(value = "botRules", allEntries = true)
     public boolean deleteRule(UUID ruleId, String deletedBy) {
-        log.info("🗑️ Deleting rule: {} by: {}", ruleId, deletedBy);
+        log.info("🗑️ Soft deleting rule: {} by: {}", ruleId, deletedBy);
 
         try {
-            botRuleRepository.deleteById(ruleId);
-            log.info("✅ Rule deleted successfully: {}", ruleId);
+            BotRule rule = botRuleRepository.findById(ruleId)
+                .orElseThrow(() -> new IllegalArgumentException("Rule not found: " + ruleId));
+            
+            // Soft delete: set isActive = false and record deletion info
+            rule.setIsActive(false);
+            rule.setDeletedAt(java.time.LocalDateTime.now());
+            rule.setDeletedBy(deletedBy);
+            
+            botRuleRepository.save(rule);
+            log.info("✅ Rule soft deleted successfully: {}", ruleId);
             return true;
         } catch (Exception e) {
-            log.error("❌ Error deleting rule {}: {}", ruleId, e.getMessage(), e);
+            log.error("❌ Error soft deleting rule {}: {}", ruleId, e.getMessage(), e);
             return false;
         }
     }
@@ -146,6 +161,7 @@ public class BotRuleManager {
     /**
      * Get active rules for bot (for rule evaluation)
      */
+    @Cacheable(value = "botRules", key = "#botId", unless = "#result.isEmpty()")
     public List<BotRule> getRulesForBot(UUID botId) {
         return botRuleRepository.findByBotIdAndIsActiveTrueOrderByPriorityDesc(botId);
     }
@@ -300,7 +316,10 @@ public class BotRuleManager {
                 .bodyValue(payload)
                 .retrieve()
                 .bodyToMono(Map.class)
-                .block();
+                .timeout(Duration.ofSeconds(10)) // Add timeout to prevent indefinite blocking
+                .doOnError(e -> log.error("❌ Webhook timeout or error for rule {}: {}", rule.getId(), e.getMessage()))
+                .onErrorReturn(null) // Return null on error instead of throwing
+                .block(); // Note: This is blocking; should be refactored to fully reactive in future
 
             // Extract response text from webhook response
             if (webhookResponse != null) {
@@ -338,7 +357,11 @@ public class BotRuleManager {
 
         try {
             // Build SpEL evaluation context with conversation variables
-            EvaluationContext evalContext = new StandardEvaluationContext();
+            // Use SimpleEvaluationContext for security (read-only, no class loader access)
+            EvaluationContext evalContext = SimpleEvaluationContext
+                .forReadOnlyDataBinding()
+                .withInstanceMethods()
+                .build();
             evalContext.setVariable("userId", context.getUserId());
             evalContext.setVariable("botId", context.getBotId());
             evalContext.setVariable("platform", context.getPlatform());

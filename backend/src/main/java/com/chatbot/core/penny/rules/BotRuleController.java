@@ -3,6 +3,11 @@ package com.chatbot.core.penny.rules;
 import com.chatbot.core.tenant.infra.TenantContext;
 import com.chatbot.core.tenant.service.TenantPermissionValidator;
 import com.chatbot.core.tenant.exception.InsufficientPermissionException;
+import com.chatbot.core.penny.repository.PennyBotRepository;
+import com.chatbot.core.penny.model.PennyBot;
+import com.chatbot.core.penny.rules.dto.CreateBotRuleRequest;
+import com.chatbot.core.penny.rules.dto.UpdateBotRuleRequest;
+import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -23,10 +28,12 @@ public class BotRuleController {
 
     private final BotRuleManager botRuleManager;
     private final TenantPermissionValidator tenantPermissionValidator;
+    private final PennyBotRepository pennyBotRepository;
 
-    public BotRuleController(BotRuleManager botRuleManager, TenantPermissionValidator tenantPermissionValidator) {
+    public BotRuleController(BotRuleManager botRuleManager, TenantPermissionValidator tenantPermissionValidator, PennyBotRepository pennyBotRepository) {
         this.botRuleManager = botRuleManager;
         this.tenantPermissionValidator = tenantPermissionValidator;
+        this.pennyBotRepository = pennyBotRepository;
     }
 
     private Long getValidatedTenantId() {
@@ -43,13 +50,19 @@ public class BotRuleController {
         }
     }
 
+    private void validateBotBelongsToTenant(UUID botId, Long tenantId) {
+        PennyBot bot = pennyBotRepository.findByIdAndTenantId(botId, tenantId)
+            .orElseThrow(() -> new IllegalArgumentException("Bot not found or does not belong to your tenant"));
+        log.debug("✅ Bot {} validated to belong to tenant {}", botId, tenantId);
+    }
+
     /**
      * Create new rule
      */
     @PostMapping
     public ResponseEntity<Map<String, Object>> createRule(
             @PathVariable String botId,
-            @RequestBody Map<String, Object> request,
+            @Valid @RequestBody CreateBotRuleRequest request,
             Principal principal) {
         
         Long tenantId = getValidatedTenantId();
@@ -59,23 +72,16 @@ public class BotRuleController {
         UUID botUuid = UUID.fromString(botId);
         
         try {
-            String action = (String) request.get("action");
-            if (action == null || action.trim().isEmpty()) {
-                return ResponseEntity.badRequest().body(Map.of(
-                    "error", "Action field is required"
-                ));
-            }
-            
             BotRule rule = botRuleManager.createRule(
                 botUuid,
-                (String) request.getOrDefault("ruleName", request.get("name")),
-                (String) request.get("description"),
-                (String) request.get("condition"),
-                action,
-                BotRule.RuleType.valueOf((String) request.getOrDefault("ruleType", "RESPONSE")),
-                BotRule.TriggerType.valueOf((String) request.getOrDefault("triggerType", "INTENT")),
-                (String) request.get("triggerValue"),
-                (Integer) request.get("priority"),
+                request.getRuleName(),
+                request.getDescription(),
+                request.getCondition(),
+                request.getAction(),
+                request.getRuleType(),
+                request.getTriggerType(),
+                request.getTriggerValue(),
+                request.getPriority(),
                 createdBy
             );
             
@@ -109,7 +115,7 @@ public class BotRuleController {
     public ResponseEntity<Map<String, Object>> updateRule(
             @PathVariable String botId,
             @PathVariable String ruleId,
-            @RequestBody Map<String, Object> request,
+            @Valid @RequestBody UpdateBotRuleRequest request,
             Principal principal) {
         
         Long tenantId = getValidatedTenantId();
@@ -121,12 +127,12 @@ public class BotRuleController {
         try {
             BotRule rule = botRuleManager.updateRule(
                 ruleUuid,
-                (String) request.getOrDefault("ruleName", request.get("name")),
-                (String) request.get("description"),
-                (String) request.get("condition"),
-                (String) request.get("action"),
-                (Integer) request.get("priority"),
-                (Boolean) request.get("isActive"),
+                request.getRuleName(),
+                request.getDescription(),
+                request.getCondition(),
+                request.getAction(),
+                request.getPriority(),
+                request.getIsActive(),
                 updatedBy
             );
             
@@ -158,7 +164,9 @@ public class BotRuleController {
      */
     @GetMapping
     public ResponseEntity<List<Map<String, Object>>> getRules(@PathVariable String botId) {
+        Long tenantId = getValidatedTenantId();
         UUID botUuid = UUID.fromString(botId);
+        validateBotBelongsToTenant(botUuid, tenantId);
         
         List<BotRule> rules = botRuleManager.getAllRulesForBot(botUuid);
         
@@ -193,7 +201,9 @@ public class BotRuleController {
             @PathVariable String botId,
             @PathVariable String triggerType) {
         
+        Long tenantId = getValidatedTenantId();
         UUID botUuid = UUID.fromString(botId);
+        validateBotBelongsToTenant(botUuid, tenantId);
         BotRule.TriggerType type = BotRule.TriggerType.valueOf(triggerType.toUpperCase());
         
         List<BotRule> rules = botRuleManager.getRulesByType(botUuid, type);
@@ -254,6 +264,9 @@ public class BotRuleController {
             @PathVariable String ruleId,
             @RequestBody Map<String, Object> testData) {
         
+        Long tenantId = getValidatedTenantId();
+        UUID botUuid = UUID.fromString(botId);
+        validateBotBelongsToTenant(botUuid, tenantId);
         UUID ruleUuid = UUID.fromString(ruleId);
         
         try {
@@ -303,7 +316,9 @@ public class BotRuleController {
      */
     @GetMapping("/statistics")
     public ResponseEntity<Map<String, Object>> getRuleStatistics(@PathVariable String botId) {
+        Long tenantId = getValidatedTenantId();
         UUID botUuid = UUID.fromString(botId);
+        validateBotBelongsToTenant(botUuid, tenantId);
         
         List<BotRule> rules = botRuleManager.getRulesForBot(botUuid);
         
@@ -434,7 +449,9 @@ public class BotRuleController {
      */
     @GetMapping("/export/csv")
     public ResponseEntity<byte[]> exportRulesToCSV(@PathVariable String botId) {
+        Long tenantId = getValidatedTenantId();
         UUID botUuid = UUID.fromString(botId);
+        validateBotBelongsToTenant(botUuid, tenantId);
         
         try {
             List<BotRule> rules = botRuleManager.getAllRulesForBot(botUuid);

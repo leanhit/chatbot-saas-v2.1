@@ -211,6 +211,29 @@
     @close="showRuleModal = false"
     @saved="onRuleSaved"
   />
+
+  <!-- Delete Rule Confirm Modal -->
+  <div v-if="showDeleteConfirm" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[2000]">
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl p-6 max-w-md w-full mx-4">
+      <div class="flex items-center mb-4">
+        <div class="p-2 bg-red-100 dark:bg-red-900 rounded-full mr-3">
+          <Icon icon="mdi:alert" class="h-6 w-6 text-red-600 dark:text-red-400" />
+        </div>
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ $t('penny.rules.deleteRule') || 'Delete Rule' }}</h3>
+      </div>
+      <p class="text-gray-600 dark:text-gray-400 mb-6">
+        {{ $t('penny.rules.deleteRuleConfirm', { name: ruleToDelete?.name }) || `Are you sure you want to delete rule "${ruleToDelete?.name}"?` }}
+      </p>
+      <div class="flex justify-end space-x-3">
+        <button @click="cancelDelete" class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 transition-colors">
+          {{ $t('common.cancel') || 'Cancel' }}
+        </button>
+        <button @click="confirmDelete" class="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors">
+          {{ $t('common.delete') || 'Delete' }}
+        </button>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script>
@@ -244,6 +267,8 @@ export default {
     const editingRule = ref(null)
     const filterType = ref('')
     const testingRule = ref(false)
+    const showDeleteConfirm = ref(false)
+    const ruleToDelete = ref(null)
 
     // Computed
     const rules = computed(() => pennyRuleStore.rules)
@@ -280,9 +305,20 @@ export default {
     }
 
     const deleteRuleConfirm = (rule) => {
-      if (confirm(`Are you sure you want to delete rule "${rule.name}"?`)) {
-        deleteRule(rule)
-      }
+      ruleToDelete.value = rule
+      showDeleteConfirm.value = true
+    }
+
+    const cancelDelete = () => {
+      showDeleteConfirm.value = false
+      ruleToDelete.value = null
+    }
+
+    const confirmDelete = async () => {
+      if (!ruleToDelete.value) return
+      await deleteRule(ruleToDelete.value)
+      showDeleteConfirm.value = false
+      ruleToDelete.value = null
     }
 
     const deleteRule = async (rule) => {
@@ -390,6 +426,8 @@ export default {
       editingRule,
       filterType,
       testingRule,
+      showDeleteConfirm,
+      ruleToDelete,
 
       // Computed
       rules,
@@ -404,6 +442,8 @@ export default {
       createNewRule,
       editRule,
       deleteRuleConfirm,
+      cancelDelete,
+      confirmDelete,
       deleteRule,
       toggleRuleStatus,
       testRule,

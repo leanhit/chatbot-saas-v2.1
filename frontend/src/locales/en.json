@@ -120,7 +120,8 @@
     "yes": "Yes",
     "no": "No",
     "update": "Update",
-    "close": "Close"
+    "close": "Close",
+    "delete": "Delete"
   },
   "auth": {
     "login": {
@@ -621,7 +622,13 @@
     "inactive": "Inactive",
     "enable": "Enable",
     "disable": "Disable",
-    "actions": "Actions",
+    "actions": {
+      "simulate": "Simulate Payment",
+      "checkStatus": "Check Status",
+      "viewHistory": "View History",
+      "downloadQR": "Download QR",
+      "copySuccess": "Reference code copied successfully!"
+    },
     "test": "Test",
     "testMode": "Test Mode",
     "testBeforeSave": "Test before saving",
@@ -1099,6 +1106,27 @@
         "importExport": "Import/Export",
         "changelog": "History",
         "diff": "Diff Tool"
+      },
+      "ruleName": "Rule Name",
+      "enterRuleName": "Enter rule name...",
+      "describeRule": "Describe the rule (optional)...",
+      "ruleConfiguration": "Rule Configuration",
+      "triggerConfiguration": "Trigger Configuration",
+      "selectRuleType": "Select rule type...",
+      "selectTriggerType": "Select trigger type...",
+      "selectBot": "Select bot...",
+      "triggerType": "Trigger Type",
+      "triggerValue": "Trigger Value",
+      "status": "Status",
+      "testBeforeSave": "Test before saving",
+      "deleteRuleConfirm": "Are you sure you want to delete this rule? This action cannot be undone.",
+      "ruleType": {
+        "label": "Rule Type"
+      },
+      "condition": {
+        "label": "Condition",
+        "placeholder": "Enter condition expression...",
+        "help": "SpEL condition expression to evaluate against context"
       }
     },
     "metrics": {
@@ -1343,7 +1371,6 @@
     "referenceCode": "Reference Code",
     "amount": "Amount",
     "duration": "duration",
-    "status": "Status",
     "createdAt": "Created At",
     "expiresAt": "Expires At",
     "completedAt": "Completed At",
@@ -1354,13 +1381,6 @@
       "selectPackage": "Please select a service package",
       "noPendingPayment": "No pending payment to simulate",
       "statusCheck": "Error checking payment status"
-    },
-    "actions": {
-      "simulate": "Simulate Payment",
-      "checkStatus": "Check Status",
-      "viewHistory": "View History",
-      "downloadQR": "Download QR",
-      "copySuccess": "Reference code copied successfully!"
     },
     "history": {
       "title": "Deposit History",

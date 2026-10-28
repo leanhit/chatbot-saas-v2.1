@@ -260,6 +260,30 @@
         </div>
       </div>
     </div>
+    <!-- Cancel Ticket Confirm Modal -->
+    <div v-if="showCancelConfirm" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+      <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl p-6 max-w-md w-full border border-gray-200 dark:border-gray-700">
+        <div class="flex items-center mb-4">
+          <div class="p-2 bg-red-100 dark:bg-red-900 rounded-full mr-3">
+            <Icon icon="mdi:alert" class="h-6 w-6 text-red-600 dark:text-red-400" />
+          </div>
+          <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+            {{ $t('penny.escalation.cancelTicket') || 'Cancel Ticket' }}
+          </h3>
+        </div>
+        <p class="text-gray-600 dark:text-gray-400 mb-6">
+          {{ $t('penny.escalation.cancelConfirm') || 'Are you sure you want to cancel this ticket?' }}
+        </p>
+        <div class="flex justify-end space-x-3">
+          <button @click="dismissCancelConfirm" class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 transition-colors">
+            {{ $t('common.cancel') || 'Cancel' }}
+          </button>
+          <button @click="confirmCancelTicket" class="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors">
+            {{ $t('penny.escalation.confirmCancel') || 'Confirm Cancel' }}
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -299,7 +323,9 @@ export default {
       // Modals
       showAssign: false,
       showResolve: false,
+      showCancelConfirm: false,
       selectedTicket: null,
+      ticketToCancel: null,
       
       // Forms
       assignForm: {
@@ -477,17 +503,29 @@ export default {
     },
     
     async cancelTicket(ticket) {
-      if (!confirm(this.$t('penny.escalation.cancelConfirm'))) return;
-      
+      this.ticketToCancel = ticket
+      this.showCancelConfirm = true
+    },
+
+    async confirmCancelTicket() {
+      if (!this.ticketToCancel) return
+      const ticket = this.ticketToCancel
       try {
         await pennyApi.cancelEscalationTicket(this.botId, ticket.id);
-        
         ticket.status = 'CANCELLED';
         this.$toast.success(this.$t('penny.escalation.ticketCancelled'));
       } catch (error) {
         console.error('Error cancelling ticket:', error);
         this.$toast.error(this.$t('penny.escalation.failedToCancel'));
+      } finally {
+        this.showCancelConfirm = false
+        this.ticketToCancel = null
       }
+    },
+
+    dismissCancelConfirm() {
+      this.showCancelConfirm = false
+      this.ticketToCancel = null
     },
     
     statusBadgeClass(status) {
