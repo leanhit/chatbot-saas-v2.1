@@ -44,6 +44,10 @@ const RoutingRules = () => import("../views/admin/RoutingRules.vue");
 const SLAMonitoring = () => import("../views/admin/SLAMonitoring.vue");
 const EscalationTiers = () => import("../views/admin/EscalationTiers.vue");
 const Notifications = () => import("../views/notification/Notifications.vue");
+// Training Pages
+const TrainingLibrary = () => import("../views/training/TrainingLibrary.vue");
+const TrainingDetail = () => import("../views/training/TrainingDetail.vue");
+const AgentTrainingDashboard = () => import("../views/training/AgentTrainingDashboard.vue");
 var appname = " - Windzo Dashboard Admin Template";
 const routes = [
   // Root route - redirect to login
@@ -288,6 +292,26 @@ const routes = [
     name: "admin-escalation-tiers",
     component: EscalationTiers,
     meta: { requiresAuth: true, title: "Escalation Tiers" + appname },
+  },
+  // Training Routes
+  {
+    path: "/training/library",
+    name: "training-library",
+    component: TrainingLibrary,
+    meta: { requiresAuth: true, title: "Training Library" + appname },
+  },
+  {
+    path: "/training/detail/:id",
+    name: "training-detail",
+    component: TrainingDetail,
+    props: true,
+    meta: { requiresAuth: true, title: "Training Detail" + appname },
+  },
+  {
+    path: "/training/dashboard",
+    name: "training-dashboard",
+    component: AgentTrainingDashboard,
+    meta: { requiresAuth: true, title: "Agent Training Dashboard" + appname },
   },
 ];
 const router = createRouter({

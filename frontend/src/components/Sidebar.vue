@@ -231,6 +231,32 @@
               </template>
             </menu-accordion>
           </div>
+          <div class="item mt-3">
+            <menu-accordion>
+              <template v-slot:icon>
+                <Icon icon="mdi:school" />
+              </template>
+              <template v-slot:title> {{ $t('training.title') }} </template>
+              <template v-slot:content>
+                <router-link
+                  to="/training/library"
+                  @click.stop
+                  class="w-full text-left block rounded-md p-2.5 px-3 text-sm hover:bg-gray-200 dark:hover:bg-gray-700 flex items-center gap-2.5 transition-colors"
+                >
+                  <Icon icon="mdi:book-open-variant" class="text-base flex-shrink-0" />
+                  <span>{{ $t('training.library') }}</span>
+                </router-link>
+                <router-link
+                  to="/training/dashboard"
+                  @click.stop
+                  class="w-full text-left block rounded-md p-2.5 px-3 text-sm hover:bg-gray-200 dark:hover:bg-gray-700 flex items-center gap-2.5 transition-colors"
+                >
+                  <Icon icon="mdi:view-dashboard-outline" class="text-base flex-shrink-0" />
+                  <span>{{ $t('training.agentDashboard') }}</span>
+                </router-link>
+              </template>
+            </menu-accordion>
+          </div>
           <div class="item mt-3" v-if="tenantStore?.currentTenant?.role === 'OWNER'">
             <menu-accordion>
               <template v-slot:icon>
