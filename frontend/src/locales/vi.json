@@ -2106,5 +2106,68 @@
     "CANNOT_CREATE_AVATAR_CATEGORY": "Không thể tạo hoặc tìm category cho avatar",
     "CONVERSATION_ASSIGNED_TO_OTHER": "Cuộc hội thoại này đã được phân công cho Agent khác.",
     "NETWORK_ERROR": "Không thể kết nối đến máy chủ. Vui lòng kiểm tra kết nối mạng."
+  },
+  "training": {
+    "title": "Đào tạo",
+    "library": "Thư viện Đào tạo",
+    "detail": "Chi tiết Đào tạo",
+    "agentDashboard": "Dashboard Agent",
+    "agentDashboardTitle": "Dashboard Đào tạo Agent",
+    "createMaterial": "Tạo Tài liệu",
+    "edit": "Chỉnh sửa",
+    "publish": "Xuất bản",
+    "category": "Danh mục",
+    "type": "Loại",
+    "status": "Trạng thái",
+    "duration": "Thời lượng",
+    "search": "Tìm kiếm",
+    "searchPlaceholder": "Tìm kiếm tài liệu đào tạo...",
+    "searchAgent": "Tìm kiếm agent...",
+    "actions": "Hành động",
+    "overview": "Tổng quan",
+    "description": "Mô tả",
+    "content": "Nội dung",
+    "requiredSkills": "Kỹ năng yêu cầu",
+    "quizConfig": "Cấu hình Quiz",
+    "passScore": "Điểm đạt",
+    "quizQuestions": "Câu hỏi Quiz",
+    "questions": "câu hỏi",
+    "agentProgress": "Tiến độ Agent",
+    "agent": "Agent",
+    "onboardingStatus": "Trạng thái Onboarding",
+    "trainingProgress": "Tiến độ Đào tạo",
+    "skillScore": "Điểm Kỹ năng",
+    "certification": "Chứng chỉ",
+    "minutes": "phút",
+    "mandatory": "Bắt buộc",
+    "totalAgents": "Tổng số Agent",
+    "activeTraining": "Đào tạo đang hoạt động",
+    "completedTraining": "Đào tạo đã hoàn thành",
+    "certifiedAgents": "Agent đã được chứng nhận",
+    "agentList": "Danh sách Agent",
+    "loading": "Đang tải...",
+    "types": {
+      "document": "Tài liệu",
+      "video": "Video",
+      "quiz": "Quiz",
+      "interactive": "Tương tác",
+      "external": "Bên ngoài"
+    },
+    "statuses": {
+      "draft": "Nháp",
+      "published": "Đã xuất bản",
+      "archived": "Đã lưu trữ"
+    },
+    "progressStatus": {
+      "not_started": "Chưa bắt đầu",
+      "in_progress": "Đang thực hiện",
+      "completed": "Đã hoàn thành",
+      "failed": "Thất bại"
+    },
+    "difficulty": {
+      "beginner": "Cơ bản",
+      "intermediate": "Trung cấp",
+      "advanced": "Nâng cao"
+    }
   }
 }

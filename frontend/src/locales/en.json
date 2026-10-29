@@ -2048,5 +2048,68 @@
     "CANNOT_CREATE_AVATAR_CATEGORY": "Cannot create or find category for avatar",
     "CONVERSATION_ASSIGNED_TO_OTHER": "This conversation is already assigned to another agent.",
     "NETWORK_ERROR": "Unable to connect to the server. Please check your internet connection."
+  },
+  "training": {
+    "title": "Training",
+    "library": "Training Library",
+    "detail": "Training Detail",
+    "agentDashboard": "Agent Dashboard",
+    "agentDashboardTitle": "Agent Training Dashboard",
+    "createMaterial": "Create Material",
+    "edit": "Edit",
+    "publish": "Publish",
+    "category": "Category",
+    "type": "Type",
+    "status": "Status",
+    "duration": "Duration",
+    "search": "Search",
+    "searchPlaceholder": "Search training materials...",
+    "searchAgent": "Search agents...",
+    "actions": "Actions",
+    "overview": "Overview",
+    "description": "Description",
+    "content": "Content",
+    "requiredSkills": "Required Skills",
+    "quizConfig": "Quiz Configuration",
+    "passScore": "Pass Score",
+    "quizQuestions": "Quiz Questions",
+    "questions": "questions",
+    "agentProgress": "Agent Progress",
+    "agent": "Agent",
+    "onboardingStatus": "Onboarding Status",
+    "trainingProgress": "Training Progress",
+    "skillScore": "Skill Score",
+    "certification": "Certification",
+    "minutes": "minutes",
+    "mandatory": "Mandatory",
+    "totalAgents": "Total Agents",
+    "activeTraining": "Active Training",
+    "completedTraining": "Completed Training",
+    "certifiedAgents": "Certified Agents",
+    "agentList": "Agent List",
+    "loading": "Loading...",
+    "types": {
+      "document": "Document",
+      "video": "Video",
+      "quiz": "Quiz",
+      "interactive": "Interactive",
+      "external": "External"
+    },
+    "statuses": {
+      "draft": "Draft",
+      "published": "Published",
+      "archived": "Archived"
+    },
+    "progressStatus": {
+      "not_started": "Not Started",
+      "in_progress": "In Progress",
+      "completed": "Completed",
+      "failed": "Failed"
+    },
+    "difficulty": {
+      "beginner": "Beginner",
+      "intermediate": "Intermediate",
+      "advanced": "Advanced"
+    }
   }
 }
