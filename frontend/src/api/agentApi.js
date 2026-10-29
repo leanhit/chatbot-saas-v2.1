@@ -37,6 +37,20 @@ export default {
   },
 
   /**
+   * Get conversation statistics for a specific agent (OWNER only)
+   */
+  getAgentConversationStats(id, period = '7d') {
+    return api.get(`/agents/${id}/conversation-stats`, { params: { period } })
+  },
+
+  /**
+   * Get agent leaderboard (OWNER only)
+   */
+  getAgentLeaderboard(period = '7d') {
+    return api.get('/agents/leaderboard', { params: { period } })
+  },
+
+  /**
    * Create new agent
    */
   createAgent(agent) {

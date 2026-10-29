@@ -1759,6 +1759,49 @@
     "slaMonitoring": "Giám sát SLA",
     "escalationTiers": "Cấp độ Leo thang"
   },
+  "agentStats": {
+    "title": "Thống kê Cuộc trò chuyện",
+    "loading": "Đang tải...",
+    "period": {
+      "7d": "7 Ngày",
+      "30d": "30 Ngày",
+      "90d": "90 Ngày"
+    },
+    "tabs": {
+      "overview": "Tổng quan",
+      "charts": "Biểu đồ"
+    },
+    "kpi": {
+      "total": "Tổng",
+      "resolved": "Đã giải quyết",
+      "unresolved": "Chưa giải quyết",
+      "pending": "Đang chờ",
+      "rate": "Tỷ lệ",
+      "response": "Phản hồi",
+      "csatScore": "Điểm CSAT",
+      "slaBreaches": "Vi phạm SLA",
+      "resolutionRate": "Tỷ lệ giải quyết",
+      "csatProgress": "Điểm CSAT",
+      "violations": "Vi phạm trong khoảng thời gian đã chọn"
+    },
+    "charts": {
+      "resolutionRate": "Tỷ lệ giải quyết",
+      "csatScore": "Điểm CSAT",
+      "dailyConversations": "Cuộc trò chuyện hàng ngày",
+      "dailyConversationsSubtitle": "Lần cuối {period}",
+      "statusDistribution": "Phân phối trạng thái"
+    },
+    "leaderboard": {
+      "title": "Bảng xếp hạng Agent",
+      "noData": "Không có dữ liệu cho khoảng thời gian đã chọn",
+      "rank": "#",
+      "agent": "Agent",
+      "resolvedCount": "Đã giải quyết",
+      "resolutionRate": "Tỷ lệ",
+      "csat": "CSAT"
+    },
+    "viewStats": "Xem thống kê"
+  },
   "admin": {
     "user": {
       "loadingUsers": "Đang tải người dùng...",

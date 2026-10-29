@@ -2,9 +2,11 @@ package com.chatbot.core.message.store.controller;
 
 import com.chatbot.core.membership.model.MembershipStatus;
 import com.chatbot.core.membership.repository.TenantMemberRepository;
+import com.chatbot.core.message.store.dto.AgentConversationStatsDTO;
 import com.chatbot.core.message.store.dto.AgentRequestDTO;
 import com.chatbot.core.message.store.dto.AgentResponseDTO;
 import com.chatbot.core.message.store.model.Agent;
+import com.chatbot.core.message.store.service.AgentConversationStatsService;
 import com.chatbot.core.message.store.service.AgentProvisioningService;
 import com.chatbot.core.message.store.service.AgentService;
 import com.chatbot.core.tenant.infra.TenantContext;
@@ -45,6 +47,7 @@ public class AgentController {
 
     private final AgentService agentService;
     private final AgentProvisioningService agentProvisioningService;
+    private final AgentConversationStatsService agentStatsService;
     private final TenantPermissionValidator permissionValidator;
     private final TenantMemberRepository tenantMemberRepository;
     private final UserRepository userRepository;
@@ -118,6 +121,35 @@ public class AgentController {
         return agentService.getAgentDTOById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
+    }
+
+    /* ========== CONVERSATION STATS — OWNER only ========== */
+
+    /**
+     * Get conversation statistics for a specific agent (OWNER only)
+     */
+    @GetMapping("/{id}/conversation-stats")
+    @Operation(summary = "Get conversation stats for a specific agent (OWNER only)")
+    public ResponseEntity<AgentConversationStatsDTO> getAgentConversationStats(
+            @PathVariable Long id,
+            @RequestParam(defaultValue = "7d") String period) {
+        Long tenantId = requireTenantId();
+        if (tenantId == null) return ResponseEntity.badRequest().build();
+        if (!isOwner(tenantId)) return forbidden("Only OWNER can view agent stats");
+        return ResponseEntity.ok(agentStatsService.getAgentStats(id, tenantId, period));
+    }
+
+    /**
+     * Get agent leaderboard for all agents (OWNER only)
+     */
+    @GetMapping("/leaderboard")
+    @Operation(summary = "Get agent leaderboard (OWNER only)")
+    public ResponseEntity<List<AgentConversationStatsDTO>> getLeaderboard(
+            @RequestParam(defaultValue = "7d") String period) {
+        Long tenantId = requireTenantId();
+        if (tenantId == null) return ResponseEntity.badRequest().build();
+        if (!isOwner(tenantId)) return forbidden("Only OWNER can view leaderboard");
+        return ResponseEntity.ok(agentStatsService.getLeaderboard(tenantId, period));
     }
 
     // POST /agents removed — Agents are auto-provisioned when a TenantMember becomes ACTIVE.

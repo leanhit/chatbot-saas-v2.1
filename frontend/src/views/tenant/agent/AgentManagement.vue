@@ -34,6 +34,73 @@
       </div>
     </div>
 
+    <!-- Leaderboard Panel (OWNER only) -->
+    <div v-if="isOwner" class="mt-6 bg-white dark:bg-gray-800 rounded-lg p-6 border dark:border-gray-700">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-200 flex items-center gap-2">
+          <Icon icon="mdi:trophy" class="text-yellow-500 text-xl" />
+          {{ t('agentStats.leaderboard.title') }}
+        </h3>
+        <div class="flex gap-2">
+          <button
+            v-for="p in ['7d', '30d', '90d']"
+            :key="p"
+            @click="changeLeaderboardPeriod(p)"
+            :class="[
+              'px-3 py-1 rounded-lg text-sm font-medium transition',
+              leaderboardPeriod === p
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
+            ]"
+          >
+            {{ t(`agentStats.period.${p}`) }}
+          </button>
+        </div>
+      </div>
+      <div v-if="loadingLeaderboard" class="text-center py-4">
+        <Icon icon="mdi:loading" class="animate-spin text-2xl text-gray-400" />
+      </div>
+      <div v-else-if="leaderboard.length === 0" class="text-center py-4 text-gray-500 dark:text-gray-400">
+        {{ t('agentStats.leaderboard.noData') }}
+      </div>
+      <div v-else class="overflow-x-auto">
+        <table class="w-full">
+          <thead>
+            <tr class="border-b border-gray-200 dark:border-gray-700">
+              <th class="text-left py-2 px-3 text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('agentStats.leaderboard.rank') }}</th>
+              <th class="text-left py-2 px-3 text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('agentStats.leaderboard.agent') }}</th>
+              <th class="text-right py-2 px-3 text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('agentStats.leaderboard.resolvedCount') }}</th>
+              <th class="text-right py-2 px-3 text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('agentStats.leaderboard.resolutionRate') }}</th>
+              <th class="text-right py-2 px-3 text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('agentStats.leaderboard.csat') }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr
+              v-for="(agent, index) in leaderboard"
+              :key="agent.agentId"
+              class="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50"
+            >
+              <td class="py-2 px-3">
+                <span v-if="index === 0" class="text-2xl">🥇</span>
+                <span v-else-if="index === 1" class="text-2xl">🥈</span>
+                <span v-else-if="index === 2" class="text-2xl">🥉</span>
+                <span v-else class="text-gray-600 dark:text-gray-400">{{ index + 1 }}</span>
+              </td>
+              <td class="py-2 px-3 font-medium text-gray-900 dark:text-gray-200">{{ agent.agentName }}</td>
+              <td class="py-2 px-3 text-right text-gray-700 dark:text-gray-300">{{ agent.resolvedCount }}</td>
+              <td class="py-2 px-3 text-right text-gray-700 dark:text-gray-300">{{ agent.resolutionRate?.toFixed(1) }}%</td>
+              <td class="py-2 px-3 text-right">
+                <span class="flex items-center justify-end gap-1">
+                  <Icon icon="mdi:star" class="text-yellow-500" />
+                  <span class="text-gray-700 dark:text-gray-300">{{ agent.csatScore?.toFixed(1) || 'N/A' }}</span>
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
     <!-- Statistics Cards -->
     <div class="wrapper-card grid lg:grid-cols-4 grid-cols-1 md:grid-cols-2 gap-4 mt-6">
       <!-- Total Agents -->
@@ -191,6 +258,14 @@
             </div>
           </div>
           <div class="flex space-x-2 ml-4">
+            <button
+              v-if="isOwner"
+              @click="viewStats(agent)"
+              class="p-2 text-purple-600 hover:bg-purple-100 dark:hover:bg-purple-900/30 rounded-lg transition-colors"
+              :title="t('agentStats.viewStats')"
+            >
+              <Icon icon="mdi:chart-bar" class="text-lg" />
+            </button>
             <button
               v-if="canChangeStatus(agent)"
               @click="setAgentOnline(agent.id)"
@@ -401,16 +476,28 @@
         </form>
       </div>
     </div>
+
+    <!-- Agent Stats Modal -->
+    <AgentStatsModal
+      :is-open="showStatsModal"
+      :agent-id="selectedAgentForStats?.id"
+      :agent-name="selectedAgentForStats?.name"
+      @close="showStatsModal = false"
+    />
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { Icon } from '@iconify/vue'
 import agentApi from '@/api/agentApi'
 import { useToast } from '@/composables/useToast'
 import { useAuthStore } from '@/stores/authStore'
 import { useGatewayTenantStore } from '@/stores/tenant/gateway/myTenantStore'
+import AgentStatsModal from '@/components/AgentStatsModal.vue'
+
+const { t } = useI18n()
 
 const toast = useToast()
 const authStore = useAuthStore()
@@ -421,6 +508,13 @@ const agents = ref([])
 const showEditModal = ref(false)
 const currentAgent = ref({})
 const skillsString = ref('')
+
+// Stats modal state
+const showStatsModal = ref(false)
+const selectedAgentForStats = ref(null)
+const leaderboardPeriod = ref('7d')
+const leaderboard = ref([])
+const loadingLeaderboard = ref(false)
 
 // Pagination state
 const currentPage = ref(0)
@@ -553,8 +647,37 @@ const formatDate = (dateString) => {
   return new Date(dateString).toLocaleString()
 }
 
+// Leaderboard functions
+const loadLeaderboard = async () => {
+  if (!isOwner.value) return
+  loadingLeaderboard.value = true
+  try {
+    const response = await agentApi.getAgentLeaderboard(leaderboardPeriod.value)
+    leaderboard.value = response.data || []
+  } catch (error) {
+    console.error('Error loading leaderboard:', error)
+    toast.error(error, 'Error loading leaderboard')
+  } finally {
+    loadingLeaderboard.value = false
+  }
+}
+
+const changeLeaderboardPeriod = (period) => {
+  leaderboardPeriod.value = period
+  loadLeaderboard()
+}
+
+// Stats modal functions
+const viewStats = (agent) => {
+  selectedAgentForStats.value = agent
+  showStatsModal.value = true
+}
+
 onMounted(() => {
   loadAgents()
+  if (isOwner.value) {
+    loadLeaderboard()
+  }
 })
 </script>
 

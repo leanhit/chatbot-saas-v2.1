@@ -1701,6 +1701,49 @@
     "slaMonitoring": "SLA Monitoring",
     "escalationTiers": "Escalation Tiers"
   },
+  "agentStats": {
+    "title": "Conversation Statistics",
+    "loading": "Loading...",
+    "period": {
+      "7d": "7 Days",
+      "30d": "30 Days",
+      "90d": "90 Days"
+    },
+    "tabs": {
+      "overview": "Overview",
+      "charts": "Charts"
+    },
+    "kpi": {
+      "total": "Total",
+      "resolved": "Resolved",
+      "unresolved": "Unresolved",
+      "pending": "Pending",
+      "rate": "Rate",
+      "response": "Response",
+      "csatScore": "CSAT Score",
+      "slaBreaches": "SLA Breaches",
+      "resolutionRate": "Resolution Rate",
+      "csatProgress": "CSAT Score",
+      "violations": "Violations in selected period"
+    },
+    "charts": {
+      "resolutionRate": "Resolution Rate",
+      "csatScore": "CSAT Score",
+      "dailyConversations": "Daily Conversations",
+      "dailyConversationsSubtitle": "Last {period}",
+      "statusDistribution": "Status Distribution"
+    },
+    "leaderboard": {
+      "title": "Agent Leaderboard",
+      "noData": "No data available for selected period",
+      "rank": "#",
+      "agent": "Agent",
+      "resolvedCount": "Resolved",
+      "resolutionRate": "Rate",
+      "csat": "CSAT"
+    },
+    "viewStats": "View Statistics"
+  },
   "admin": {
     "user": {
       "loadingUsers": "Loading users...",

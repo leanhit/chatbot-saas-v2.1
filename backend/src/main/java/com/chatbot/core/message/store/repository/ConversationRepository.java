@@ -219,4 +219,30 @@ public interface ConversationRepository extends JpaRepository<Conversation, Long
     // Agent Reassignment: Find conversations with assigned agents
     @Query("SELECT c FROM Conversation c WHERE c.tenantId = :tenantId AND c.agentAssignedId IS NOT NULL")
     List<Conversation> findByTenantIdAndAgentAssignedIdIsNotNull(@Param("tenantId") Long tenantId);
+
+    // ========== Agent Conversation Statistics Queries ==========
+
+    // Total conversations assigned to agent within period
+    @Query("SELECT COUNT(c) FROM Conversation c WHERE c.tenantId = :tenantId AND c.agentAssignedId = :agentId AND c.createdAt >= :since")
+    Long countByAgentAndPeriod(@Param("tenantId") Long tenantId, @Param("agentId") Long agentId, @Param("since") java.time.LocalDateTime since);
+
+    // Count by resolution status for agent within period
+    @Query("SELECT COUNT(c) FROM Conversation c WHERE c.tenantId = :tenantId AND c.agentAssignedId = :agentId AND c.resolutionStatus = :status AND c.createdAt >= :since")
+    Long countByAgentAndStatusAndPeriod(@Param("tenantId") Long tenantId, @Param("agentId") Long agentId, @Param("status") String status, @Param("since") java.time.LocalDateTime since);
+
+    // Avg CSAT for agent within period
+    @Query("SELECT AVG(c.userSatisfactionRating) FROM Conversation c WHERE c.tenantId = :tenantId AND c.agentAssignedId = :agentId AND c.userSatisfactionRating IS NOT NULL AND c.createdAt >= :since")
+    Double getAvgCsatByAgentAndPeriod(@Param("tenantId") Long tenantId, @Param("agentId") Long agentId, @Param("since") java.time.LocalDateTime since);
+
+    // Avg first response time (seconds) for agent within period
+    @Query(value = "SELECT AVG(EXTRACT(EPOCH FROM (first_agent_response_time - created_at))) FROM conversations WHERE tenant_id = :tenantId AND agent_assigned_id = :agentId AND first_agent_response_time IS NOT NULL AND created_at >= :since", nativeQuery = true)
+    Double getAvgFirstResponseSecondsByAgent(@Param("tenantId") Long tenantId, @Param("agentId") Long agentId, @Param("since") java.time.LocalDateTime since);
+
+    // Sum SLA breaches for agent within period
+    @Query("SELECT COALESCE(SUM(c.slaBreachCount), 0) FROM Conversation c WHERE c.tenantId = :tenantId AND c.agentAssignedId = :agentId AND c.createdAt >= :since")
+    Long sumSlaBreachesByAgent(@Param("tenantId") Long tenantId, @Param("agentId") Long agentId, @Param("since") java.time.LocalDateTime since);
+
+    // Daily stats for bar chart (native SQL)
+    @Query(value = "SELECT DATE(created_at) as date, COUNT(*) as total, SUM(CASE WHEN resolution_status='resolved' THEN 1 ELSE 0 END) as resolved FROM conversations WHERE tenant_id = :tenantId AND agent_assigned_id = :agentId AND created_at >= :since GROUP BY DATE(created_at) ORDER BY date", nativeQuery = true)
+    List<Object[]> getDailyStatsByAgent(@Param("tenantId") Long tenantId, @Param("agentId") Long agentId, @Param("since") java.time.LocalDateTime since);
 }
