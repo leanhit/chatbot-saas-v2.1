@@ -218,7 +218,7 @@
               <template v-slot:icon>
                 <Icon icon="mdi:account-multiple" />
               </template>
-              <template v-slot:title> {{ $t('customers.title') }} </template>
+              <template v-slot:title> {{ $t('customer.title') }} </template>
               <template v-slot:content>
                 <router-link
                   to="/customers"
@@ -227,6 +227,30 @@
                 >
                   <Icon icon="mdi:account-box-multiple-outline" class="text-base flex-shrink-0" />
                   <span>{{ $t('customers.title') }}</span>
+                </router-link>
+                <router-link
+                  to="/customer/profiles"
+                  @click.stop
+                  class="w-full text-left block rounded-md p-2.5 px-3 text-sm hover:bg-gray-200 dark:hover:bg-gray-700 flex items-center gap-2.5 transition-colors"
+                >
+                  <Icon icon="mdi:account-card-outline" class="text-base flex-shrink-0" />
+                  <span>{{ $t('customer.title') }}</span>
+                </router-link>
+                <router-link
+                  to="/customer/feedback"
+                  @click.stop
+                  class="w-full text-left block rounded-md p-2.5 px-3 text-sm hover:bg-gray-200 dark:hover:bg-gray-700 flex items-center gap-2.5 transition-colors"
+                >
+                  <Icon icon="mdi:comment-text-outline" class="text-base flex-shrink-0" />
+                  <span>{{ $t('feedback.title') }}</span>
+                </router-link>
+                <router-link
+                  to="/customer/analytics"
+                  @click.stop
+                  class="w-full text-left block rounded-md p-2.5 px-3 text-sm hover:bg-gray-200 dark:hover:bg-gray-700 flex items-center gap-2.5 transition-colors"
+                >
+                  <Icon icon="mdi:chart-box-outline" class="text-base flex-shrink-0" />
+                  <span>{{ $t('analytics.title') }}</span>
                 </router-link>
               </template>
             </menu-accordion>

@@ -2172,5 +2172,71 @@
       "intermediate": "Trung cấp",
       "advanced": "Nâng cao"
     }
+  },
+  "customer": {
+    "title": "Hồ sơ Khách hàng",
+    "addCustomer": "Thêm Khách hàng",
+    "editCustomer": "Chỉnh sửa Khách hàng",
+    "name": "Tên",
+    "email": "Email",
+    "phone": "Số điện thoại",
+    "externalId": "ID bên ngoài",
+    "status": "Trạng thái",
+    "tier": "Gói",
+    "conversations": "Cuộc hội thoại",
+    "lastContact": "Liên lạc cuối",
+    "language": "Ngôn ngữ",
+    "timezone": "Múi giờ",
+    "searchPlaceholder": "Tìm kiếm khách hàng...",
+    "noCustomers": "Không tìm thấy khách hàng",
+    "confirmDelete": "Bạn có chắc chắn muốn xóa khách hàng này?",
+    "statusOptions": {
+      "active": "Hoạt động",
+      "inactive": "Không hoạt động",
+      "blocked": "Đã chặn",
+      "churned": "Đã rời đi"
+    },
+    "tierOptions": {
+      "free": "Miễn phí",
+      "basic": "Cơ bản",
+      "premium": "Cao cấp",
+      "enterprise": "Doanh nghiệp"
+    }
+  },
+  "feedback": {
+    "title": "Khảo sát Phản hồi",
+    "addFeedback": "Thêm Phản hồi",
+    "editFeedback": "Chỉnh sửa Phản hồi",
+    "type": "Loại",
+    "rating": "Đánh giá",
+    "comment": "Bình luận",
+    "category": "Danh mục",
+    "isAnonymous": "Ẩn danh",
+    "adminResponse": "Phản hồi Admin",
+    "searchPlaceholder": "Tìm kiếm phản hồi...",
+    "noFeedback": "Không tìm thấy phản hồi",
+    "confirmDelete": "Bạn có chắc chắn muốn xóa phản hồi này?",
+    "statusOptions": {
+      "pending": "Đang chờ",
+      "reviewed": "Đã xem",
+      "responded": "Đã phản hồi",
+      "closed": "Đã đóng"
+    },
+    "typeOptions": {
+      "conversation": "Cuộc hội thoại",
+      "agentPerformance": "Hiệu suất Agent",
+      "botResponse": "Phản hồi Bot",
+      "general": "Tổng quát"
+    }
+  },
+  "analytics": {
+    "title": "Phân tích Khách hàng",
+    "totalCustomers": "Tổng Khách hàng",
+    "activeCustomers": "Khách hàng Hoạt động",
+    "avgSatisfaction": "Độ hài lòng TB",
+    "totalFeedback": "Tổng Phản hồi",
+    "statusDistribution": "Phân bố Trạng thái",
+    "tierDistribution": "Phân bố Gói",
+    "recentFeedback": "Phản hồi Gần đây"
   }
 }

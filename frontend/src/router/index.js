@@ -48,6 +48,10 @@ const Notifications = () => import("../views/notification/Notifications.vue");
 const TrainingLibrary = () => import("../views/training/TrainingLibrary.vue");
 const TrainingDetail = () => import("../views/training/TrainingDetail.vue");
 const AgentTrainingDashboard = () => import("../views/training/AgentTrainingDashboard.vue");
+// Customer Pages
+const CustomerProfiles = () => import("../views/customer/CustomerProfiles.vue");
+const FeedbackSurvey = () => import("../views/customer/FeedbackSurvey.vue");
+const CustomerAnalytics = () => import("../views/customer/CustomerAnalytics.vue");
 var appname = " - Windzo Dashboard Admin Template";
 const routes = [
   // Root route - redirect to login
@@ -312,6 +316,25 @@ const routes = [
     name: "training-dashboard",
     component: AgentTrainingDashboard,
     meta: { requiresAuth: true, title: "Agent Training Dashboard" + appname },
+  },
+  // Customer Routes
+  {
+    path: "/customer/profiles",
+    name: "customer-profiles",
+    component: CustomerProfiles,
+    meta: { requiresAuth: true, title: "Customer Profiles" + appname },
+  },
+  {
+    path: "/customer/feedback",
+    name: "customer-feedback",
+    component: FeedbackSurvey,
+    meta: { requiresAuth: true, title: "Feedback Survey" + appname },
+  },
+  {
+    path: "/customer/analytics",
+    name: "customer-analytics",
+    component: CustomerAnalytics,
+    meta: { requiresAuth: true, title: "Customer Analytics" + appname },
   },
 ];
 const router = createRouter({

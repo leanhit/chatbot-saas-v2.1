@@ -2114,5 +2114,71 @@
       "intermediate": "Intermediate",
       "advanced": "Advanced"
     }
+  },
+  "customer": {
+    "title": "Customer Profiles",
+    "addCustomer": "Add Customer",
+    "editCustomer": "Edit Customer",
+    "name": "Name",
+    "email": "Email",
+    "phone": "Phone",
+    "externalId": "External ID",
+    "status": "Status",
+    "tier": "Tier",
+    "conversations": "Conversations",
+    "lastContact": "Last Contact",
+    "language": "Language",
+    "timezone": "Timezone",
+    "searchPlaceholder": "Search customers...",
+    "noCustomers": "No customers found",
+    "confirmDelete": "Are you sure you want to delete this customer?",
+    "statusOptions": {
+      "active": "Active",
+      "inactive": "Inactive",
+      "blocked": "Blocked",
+      "churned": "Churned"
+    },
+    "tierOptions": {
+      "free": "Free",
+      "basic": "Basic",
+      "premium": "Premium",
+      "enterprise": "Enterprise"
+    }
+  },
+  "feedback": {
+    "title": "Feedback Survey",
+    "addFeedback": "Add Feedback",
+    "editFeedback": "Edit Feedback",
+    "type": "Type",
+    "rating": "Rating",
+    "comment": "Comment",
+    "category": "Category",
+    "isAnonymous": "Anonymous",
+    "adminResponse": "Admin Response",
+    "searchPlaceholder": "Search feedback...",
+    "noFeedback": "No feedback found",
+    "confirmDelete": "Are you sure you want to delete this feedback?",
+    "statusOptions": {
+      "pending": "Pending",
+      "reviewed": "Reviewed",
+      "responded": "Responded",
+      "closed": "Closed"
+    },
+    "typeOptions": {
+      "conversation": "Conversation",
+      "agentPerformance": "Agent Performance",
+      "botResponse": "Bot Response",
+      "general": "General"
+    }
+  },
+  "analytics": {
+    "title": "Customer Analytics",
+    "totalCustomers": "Total Customers",
+    "activeCustomers": "Active Customers",
+    "avgSatisfaction": "Avg Satisfaction",
+    "totalFeedback": "Total Feedback",
+    "statusDistribution": "Status Distribution",
+    "tierDistribution": "Tier Distribution",
+    "recentFeedback": "Recent Feedback"
   }
 }
