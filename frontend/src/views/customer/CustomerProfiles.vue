@@ -261,7 +261,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { Icon } from '@iconify/vue'
 import { useI18n } from 'vue-i18n'
-import axios from '@/plugins/axios'
+import customerProfileApi from '@/api/customerProfileApi'
 
 const { t } = useI18n()
 
@@ -296,8 +296,7 @@ const filteredCustomers = computed(() => {
 const loadCustomers = async () => {
   try {
     loading.value = true
-    const response = await axios.get('/api/customer/profiles')
-    customers.value = response.data || []
+    customers.value = await customerProfileApi.getCustomerProfiles()
   } catch (err) {
     error.value = err.message
     console.error('Load customers error:', err)
@@ -359,9 +358,9 @@ const viewCustomer = (customer) => {
 const saveCustomer = async () => {
   try {
     if (isEdit.value) {
-      await axios.put(`/api/customer/profiles/${formData.value.id}`, formData.value)
+      await customerProfileApi.updateCustomerProfile(formData.value.id, formData.value)
     } else {
-      await axios.post('/api/customer/profiles', formData.value)
+      await customerProfileApi.createCustomerProfile(formData.value)
     }
     closeModal()
     await loadCustomers()
@@ -374,7 +373,8 @@ const saveCustomer = async () => {
 const deleteCustomer = async (customer) => {
   if (!confirm(t('customer.confirmDelete'))) return
   try {
-    await axios.delete(`/api/customer/profiles/${customer.id}`)
+    await customerProfileApi.updateCustomerStats(customer.id, { conversationCount: 1 })
+    await customerProfileApi.deleteCustomerProfile(customer.id)
     await loadCustomers()
   } catch (err) {
     error.value = err.message

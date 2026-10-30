@@ -144,7 +144,8 @@
 import { ref, onMounted } from 'vue'
 import { Icon } from '@iconify/vue'
 import { useI18n } from 'vue-i18n'
-import axios from '@/plugins/axios'
+import customerProfileApi from '@/api/customerProfileApi'
+import feedbackApi from '@/api/feedbackApi'
 
 const { t } = useI18n()
 
@@ -162,13 +163,10 @@ const recentFeedback = ref([])
 const loadAnalytics = async () => {
   try {
     loading.value = true
-    const [customersRes, feedbackRes] = await Promise.all([
-      axios.get('/api/customer/profiles'),
-      axios.get('/api/customer/feedback')
+    const [customers, feedback] = await Promise.all([
+      customerProfileApi.getCustomerProfiles(),
+      feedbackApi.getFeedback()
     ])
-
-    const customers = customersRes.data || []
-    const feedback = feedbackRes.data || []
 
     stats.value.totalCustomers = customers.length
     stats.value.activeCustomers = customers.filter(c => c.status === 'ACTIVE').length
@@ -200,8 +198,7 @@ const loadAnalytics = async () => {
 
 const loadRecentFeedback = async () => {
   try {
-    const response = await axios.get('/api/customer/feedback/recent?limit=5')
-    recentFeedback.value = response.data || []
+    recentFeedback.value = await feedbackApi.getRecentFeedback(5)
   } catch (err) {
     console.error('Load recent feedback error:', err)
   }

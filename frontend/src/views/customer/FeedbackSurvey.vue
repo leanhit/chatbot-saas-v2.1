@@ -216,7 +216,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { Icon } from '@iconify/vue'
 import { useI18n } from 'vue-i18n'
-import axios from '@/plugins/axios'
+import feedbackApi from '@/api/feedbackApi'
 
 const { t } = useI18n()
 
@@ -248,8 +248,7 @@ const filteredFeedback = computed(() => {
 const loadFeedback = async () => {
   try {
     loading.value = true
-    const response = await axios.get('/api/customer/feedback')
-    feedbackList.value = response.data || []
+    feedbackList.value = await feedbackApi.getFeedback()
   } catch (err) {
     error.value = err.message
     console.error('Load feedback error:', err)
@@ -305,9 +304,9 @@ const viewFeedback = (feedback) => {
 const saveFeedback = async () => {
   try {
     if (isEdit.value) {
-      await axios.put(`/api/customer/feedback/${formData.value.id}`, formData.value)
+      await feedbackApi.updateFeedback(formData.value.id, formData.value)
     } else {
-      await axios.post('/api/customer/feedback', formData.value)
+      await feedbackApi.createFeedback(formData.value)
     }
     closeModal()
     await loadFeedback()
@@ -320,7 +319,7 @@ const saveFeedback = async () => {
 const deleteFeedback = async (feedback) => {
   if (!confirm(t('feedback.confirmDelete'))) return
   try {
-    await axios.delete(`/api/customer/feedback/${feedback.id}`)
+    await feedbackApi.deleteFeedback(feedback.id)
     await loadFeedback()
   } catch (err) {
     error.value = err.message
