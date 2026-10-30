@@ -43,7 +43,7 @@ COPY --from=backend-build /build/backend/build/libs/*-0.0.1-SNAPSHOT.jar /app/ap
 # Copy Configuration files
 COPY app-deploy/nginx/nginx.conf /etc/nginx/conf.d/default.conf
 COPY app-deploy/nginx/host-sites/ /etc/nginx/conf.d/host-sites/
-COPY app-deploy/supervisor/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+COPY app-deploy/supervisor/supervisord.conf /etc/supervisor/supervisord.conf
 COPY app-deploy/config/application-docker.yml /app/config/application-docker.yml
 
 EXPOSE 80 443
@@ -51,4 +51,4 @@ EXPOSE 80 443
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
     CMD curl -f http://localhost/health || exit 1
 
-CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
+CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/supervisord.conf"]

@@ -120,7 +120,9 @@
     "no": "Không",
     "update": "Cập nhật",
     "close": "Đóng",
-    "delete": "Xóa"
+    "delete": "Xóa",
+    "all": "Tất cả",
+    "back": "Quay lại"
   },
   "auth": {
     "login": {
@@ -2124,6 +2126,7 @@
     "searchPlaceholder": "Tìm kiếm tài liệu đào tạo...",
     "searchAgent": "Tìm kiếm agent...",
     "actions": "Hành động",
+    "confirmDelete": "Bạn có chắc chắn muốn xóa tài liệu đào tạo này?",
     "overview": "Tổng quan",
     "description": "Mô tả",
     "content": "Nội dung",

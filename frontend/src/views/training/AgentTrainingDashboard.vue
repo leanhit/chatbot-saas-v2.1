@@ -185,10 +185,12 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { Icon } from '@iconify/vue'
+import { trainingApi } from '@/api/trainingApi'
 
 const loading = ref(false)
 const searchQuery = ref('')
 const filterStatus = ref('')
+const error = ref(null)
 
 const stats = ref({
   totalAgents: 0,
@@ -207,12 +209,41 @@ const filteredAgents = computed(() => {
   })
 })
 
-const refreshData = () => {
+const loadAgents = async () => {
+  try {
+    // TODO: Load agents with their training progress
+    // This would be a new API endpoint to get all agents with their training stats
+    // For now, we'll use a placeholder
+    agents.value = []
+  } catch (err) {
+    error.value = err.message
+    console.error('Load agents error:', err)
+  }
+}
+
+const loadStats = async () => {
+  try {
+    // TODO: Load training statistics
+    // This would be a new API endpoint to get training dashboard stats
+    stats.value = {
+      totalAgents: 0,
+      activeTraining: 0,
+      completedTraining: 0,
+      certifiedAgents: 0
+    }
+  } catch (err) {
+    error.value = err.message
+    console.error('Load stats error:', err)
+  }
+}
+
+const refreshData = async () => {
   loading.value = true
-  // TODO: Load data from API
-  setTimeout(() => {
-    loading.value = false
-  }, 1000)
+  await Promise.all([
+    loadAgents(),
+    loadStats()
+  ])
+  loading.value = false
 }
 
 const viewAgentDetails = (agent) => {
@@ -231,7 +262,6 @@ const assessSkills = (agent) => {
 }
 
 onMounted(() => {
-  // TODO: Load agents and stats from API
-  agents.value = []
+  refreshData()
 })
 </script>

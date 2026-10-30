@@ -28,7 +28,8 @@ import org.springframework.boot.autoconfigure.domain.EntityScan;
     "com.chatbot.core.payment.gateway.model",
     "com.chatbot.core.payment.invoice.model",
     "com.chatbot.core.payment.merchant.model",
-    "com.chatbot.core.payment.common.audit"
+    "com.chatbot.core.payment.common.audit",
+    "com.chatbot.core.training.model"
 })
 @ComponentScan(basePackages = {
     "com.chatbot.core",

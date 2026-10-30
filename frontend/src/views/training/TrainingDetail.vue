@@ -158,6 +158,7 @@
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { Icon } from '@iconify/vue'
+import { trainingApi } from '@/api/trainingApi'
 
 const route = useRoute()
 const router = useRouter()
@@ -166,6 +167,7 @@ const material = ref(null)
 const categories = ref([])
 const agentProgress = ref([])
 const loading = ref(true)
+const error = ref(null)
 
 const getCategoryName = (categoryId) => {
   const category = categories.value.find(c => c.id === categoryId)
@@ -196,18 +198,57 @@ const goBack = () => {
 }
 
 const editMaterial = () => {
-  // TODO: Open edit modal
-  console.log('Edit material:', material.value)
+  router.push({ name: 'training-library', query: { edit: material.value.id } })
 }
 
-const publishMaterial = () => {
-  // TODO: Publish material
-  console.log('Publish material:', material.value)
+const publishMaterial = async () => {
+  try {
+    const updatedMaterial = { ...material.value, status: 'PUBLISHED' }
+    const response = await trainingApi.updateMaterial(material.value.id, updatedMaterial)
+    material.value = response.data
+  } catch (err) {
+    error.value = err.message
+    console.error('Publish material error:', err)
+  }
+}
+
+const loadMaterial = async () => {
+  try {
+    const materialId = route.params.id
+    const response = await trainingApi.getMaterialById(materialId)
+    material.value = response.data
+  } catch (err) {
+    error.value = err.message
+    console.error('Load material error:', err)
+  }
+}
+
+const loadCategories = async () => {
+  try {
+    const response = await trainingApi.getAllCategories()
+    categories.value = response.data || []
+  } catch (err) {
+    console.error('Load categories error:', err)
+  }
+}
+
+const loadAgentProgress = async () => {
+  try {
+    // TODO: Load agent progress for this material
+    // This would be a new API endpoint to get all progress for a specific training material
+    agentProgress.value = []
+  } catch (err) {
+    console.error('Load agent progress error:', err)
+  }
 }
 
 onMounted(async () => {
-  const materialId = route.params.id
-  // TODO: Load material details from API
+  loading.value = true
+  await Promise.all([
+    loadMaterial(),
+    loadCategories(),
+    loadAgentProgress()
+  ])
   loading.value = false
 })
 </script>
