@@ -10,6 +10,8 @@ import java.util.Optional;
 @Repository
 public interface IntelligentSupervisorSessionRepository extends JpaRepository<SupervisorSession, Long> {
 
+    List<SupervisorSession> findByTenantIdOrderByJoinedAtDesc(Long tenantId);
+
     List<SupervisorSession> findByTenantIdAndSupervisorIdOrderByJoinedAtDesc(Long tenantId, Long supervisorId);
 
     List<SupervisorSession> findByTenantIdAndConversationIdOrderByJoinedAtDesc(Long tenantId, Long conversationId);

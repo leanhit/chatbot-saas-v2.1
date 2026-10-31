@@ -22,6 +22,12 @@ public class IntelligentSupervisorController {
 
     private final IntelligentSupervisorService supervisorService;
 
+    @GetMapping
+    public ResponseEntity<List<SupervisorSessionDTO>> getAllSessions(@RequestParam(required = false) Map<String, String> params) {
+        List<SupervisorSessionDTO> sessions = supervisorService.getAllSupervisorSessions(params);
+        return ResponseEntity.ok(sessions);
+    }
+
     @PostMapping
     public ResponseEntity<SupervisorSessionDTO> startSession(@Valid @RequestBody CreateSupervisorSessionRequest request) {
         SupervisorSessionDTO session = supervisorService.startSupervisorSession(request);

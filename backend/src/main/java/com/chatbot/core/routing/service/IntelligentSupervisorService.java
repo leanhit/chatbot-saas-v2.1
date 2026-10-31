@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -96,6 +97,16 @@ public class IntelligentSupervisorService {
                 .orElseThrow(() -> new RuntimeException("Supervisor session not found"));
         supervisorSessionRepository.delete(session);
         log.info("Supervisor session deleted successfully");
+    }
+
+    @Transactional(readOnly = true)
+    public List<SupervisorSessionDTO> getAllSupervisorSessions(Map<String, String> params) {
+        Long tenantId = com.chatbot.core.tenant.infra.TenantContext.getTenantId();
+        List<SupervisorSession> sessions = supervisorSessionRepository
+                .findByTenantIdOrderByJoinedAtDesc(tenantId);
+        return sessions.stream()
+                .map(this::mapToDTO)
+                .collect(Collectors.toList());
     }
 
     @Transactional(readOnly = true)
