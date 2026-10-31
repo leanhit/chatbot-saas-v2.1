@@ -14,6 +14,7 @@ import java.time.LocalDateTime;
 @Table(name = "agent_workload", indexes = {
     @Index(name = "idx_agent_workload_tenant", columnList = "tenantId"),
     @Index(name = "idx_agent_workload_agent", columnList = "agentId"),
+    @Index(name = "idx_agent_workload_team", columnList = "teamId"),
     @Index(name = "idx_agent_workload_status", columnList = "status")
 })
 @Data
@@ -31,6 +32,9 @@ public class AgentWorkload {
 
     @Column(name = "agent_id", nullable = false)
     private Long agentId;
+
+    @Column(name = "team_id")
+    private Long teamId;
 
     @Column(name = "active_conversations", nullable = false)
     @Builder.Default

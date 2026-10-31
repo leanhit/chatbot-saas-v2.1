@@ -228,18 +228,23 @@ public class IntelligentRoutingService {
         switch (rule.getRuleType()) {
             case SKILL_BASED:
                 assignedAgentId = routeBySkill(rule, context);
+                assignedTeamId = rule.getTargetTeamId();
                 break;
             case PRIORITY_BASED:
                 assignedAgentId = routeByPriority(rule, context);
+                assignedTeamId = rule.getTargetTeamId();
                 break;
             case ROUND_ROBIN:
                 assignedAgentId = routeByRoundRobin(rule);
+                assignedTeamId = rule.getTargetTeamId();
                 break;
             case LEAST_BUSY:
                 assignedAgentId = routeByLeastBusy(rule);
+                assignedTeamId = rule.getTargetTeamId();
                 break;
             case CUSTOM:
                 assignedAgentId = routeByCustom(rule, context);
+                assignedTeamId = rule.getTargetTeamId();
                 break;
             default:
                 // Default to target agent/team if specified
@@ -324,12 +329,24 @@ public class IntelligentRoutingService {
         Long tenantId = com.chatbot.core.tenant.infra.TenantContext.getTenantId();
         Long targetTeamId = rule.getTargetTeamId();
         
-        // Find all available agents in the team
-        List<AgentWorkload> availableAgents = agentWorkloadRepository
-                .findByTenantIdAndStatus(tenantId, AgentWorkload.AgentStatus.AVAILABLE)
-                .stream()
-                .filter(AgentWorkload::isAvailable)
-                .collect(Collectors.toList());
+        // Find all available agents in the team (if teamId specified) or all available agents
+        List<AgentWorkload> availableAgents;
+        if (targetTeamId != null) {
+            availableAgents = agentWorkloadRepository
+                    .findByTenantIdAndStatus(tenantId, AgentWorkload.AgentStatus.AVAILABLE)
+                    .stream()
+                    .filter(agent -> targetTeamId.equals(agent.getTeamId()))
+                    .filter(AgentWorkload::isAvailable)
+                    .collect(Collectors.toList());
+            log.info("Found {} available agents in team {}", availableAgents.size(), targetTeamId);
+        } else {
+            availableAgents = agentWorkloadRepository
+                    .findByTenantIdAndStatus(tenantId, AgentWorkload.AgentStatus.AVAILABLE)
+                    .stream()
+                    .filter(AgentWorkload::isAvailable)
+                    .collect(Collectors.toList());
+            log.info("Found {} available agents (no team filter)", availableAgents.size());
+        }
         
         if (availableAgents.isEmpty()) {
             log.warn("No available agents for round-robin routing");

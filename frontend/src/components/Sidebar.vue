@@ -284,7 +284,7 @@
           <div class="item mt-3">
             <menu-accordion>
               <template v-slot:icon>
-                <Icon icon="mdi:route" />
+                <Icon icon="mdi:routes" />
               </template>
               <template v-slot:title> {{ $t('routing.title') }} </template>
               <template v-slot:content>
