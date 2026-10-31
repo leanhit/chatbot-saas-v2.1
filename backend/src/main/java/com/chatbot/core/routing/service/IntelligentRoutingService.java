@@ -272,12 +272,14 @@ public class IntelligentRoutingService {
         
         Long tenantId = com.chatbot.core.tenant.infra.TenantContext.getTenantId();
         Long targetSkillId = rule.getTargetSkillId();
+        Long targetTeamId = rule.getTargetTeamId();
         
         // Find agents with the required skill who are available
         List<AgentWorkload> availableAgents = agentWorkloadRepository
                 .findByTenantIdAndStatus(tenantId, AgentWorkload.AgentStatus.AVAILABLE)
                 .stream()
                 .filter(AgentWorkload::isAvailable)
+                .filter(agent -> targetTeamId == null || targetTeamId.equals(agent.getTeamId()))
                 .collect(Collectors.toList());
         
         if (availableAgents.isEmpty()) {
@@ -301,12 +303,14 @@ public class IntelligentRoutingService {
         log.info("Applying priority-based routing for rule {}", rule.getName());
         
         Long tenantId = com.chatbot.core.tenant.infra.TenantContext.getTenantId();
+        Long targetTeamId = rule.getTargetTeamId();
         
         // Find available agents ordered by priority score
         List<AgentWorkload> availableAgents = agentWorkloadRepository
                 .findAvailableAgentsByPriority(tenantId, AgentWorkload.AgentStatus.AVAILABLE)
                 .stream()
                 .filter(AgentWorkload::isAvailable)
+                .filter(agent -> targetTeamId == null || targetTeamId.equals(agent.getTeamId()))
                 .collect(Collectors.toList());
         
         if (availableAgents.isEmpty()) {
@@ -314,8 +318,10 @@ public class IntelligentRoutingService {
             return rule.getTargetAgentId(); // Fallback to target agent
         }
         
-        // Select the highest priority agent
-        AgentWorkload selectedAgent = availableAgents.get(0);
+        // Select agent with highest priority score
+        AgentWorkload selectedAgent = availableAgents.stream()
+                .max(Comparator.comparingInt(AgentWorkload::getPriorityScore))
+                .orElse(availableAgents.get(0));
         
         log.info("Selected agent {} with priority score {}", 
                 selectedAgent.getAgentId(), selectedAgent.getPriorityScore());
@@ -369,28 +375,31 @@ public class IntelligentRoutingService {
         
         return selectedAgent.getAgentId();
     }
-    
     private Long routeByLeastBusy(RoutingRule rule) {
         log.info("Applying least-busy routing for rule {}", rule.getName());
         
         Long tenantId = com.chatbot.core.tenant.infra.TenantContext.getTenantId();
+        Long targetTeamId = rule.getTargetTeamId();
         
         // Find available agents ordered by workload (ascending)
         List<AgentWorkload> availableAgents = agentWorkloadRepository
-                .findAvailableAgentsByWorkload(tenantId, AgentWorkload.AgentStatus.AVAILABLE);
+                .findAvailableAgentsByWorkload(tenantId, AgentWorkload.AgentStatus.AVAILABLE)
+                .stream()
+                .filter(agent -> targetTeamId == null || targetTeamId.equals(agent.getTeamId()))
+                .collect(Collectors.toList());
         
         if (availableAgents.isEmpty()) {
             log.warn("No available agents for least-busy routing");
             return rule.getTargetAgentId(); // Fallback to target agent
         }
         
-        // Select the agent with lowest workload
-        AgentWorkload selectedAgent = availableAgents.get(0);
+        // Select agent with lowest workload percentage
+        AgentWorkload selectedAgent = availableAgents.stream()
+                .min(Comparator.comparingDouble(AgentWorkload::getWorkloadPercentage))
+                .orElse(availableAgents.get(0));
         
-        log.info("Selected least-busy agent {} with {} active conversations ({}% capacity)", 
-                selectedAgent.getAgentId(), 
-                selectedAgent.getActiveConversations(),
-                String.format("%.1f", selectedAgent.getWorkloadPercentage()));
+        log.info("Selected agent {} with workload percentage {}", 
+                selectedAgent.getAgentId(), selectedAgent.getWorkloadPercentage());
         
         return selectedAgent.getAgentId();
     }
