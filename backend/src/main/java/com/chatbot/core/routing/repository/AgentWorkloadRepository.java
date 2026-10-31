@@ -16,6 +16,8 @@ public interface AgentWorkloadRepository extends JpaRepository<AgentWorkload, Lo
 
     Optional<AgentWorkload> findByTenantIdAndAgentId(Long tenantId, Long agentId);
 
+    List<AgentWorkload> findByTenantIdAndTeamId(Long tenantId, Long teamId);
+
     List<AgentWorkload> findByTenantIdAndStatus(Long tenantId, AgentWorkload.AgentStatus status);
 
     List<AgentWorkload> findByTenantIdAndStatusOrderByPriorityScoreDesc(Long tenantId, AgentWorkload.AgentStatus status);

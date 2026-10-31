@@ -1,5 +1,7 @@
 package com.chatbot.core.routing.service;
 
+import com.chatbot.core.message.store.model.Conversation;
+import com.chatbot.core.message.store.repository.ConversationRepository;
 import com.chatbot.core.routing.dto.*;
 import com.chatbot.core.routing.model.AgentWorkload;
 import com.chatbot.core.routing.model.RoutingHistory;
@@ -7,6 +9,8 @@ import com.chatbot.core.routing.model.RoutingRule;
 import com.chatbot.core.routing.repository.AgentWorkloadRepository;
 import com.chatbot.core.routing.repository.IntelligentRoutingRuleRepository;
 import com.chatbot.core.routing.repository.RoutingHistoryRepository;
+import com.chatbot.core.training.model.AgentSkill;
+import com.chatbot.core.training.repository.AgentSkillRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -25,6 +29,8 @@ public class IntelligentRoutingService {
     private final IntelligentRoutingRuleRepository routingRuleRepository;
     private final AgentWorkloadRepository agentWorkloadRepository;
     private final RoutingHistoryRepository routingHistoryRepository;
+    private final AgentSkillRepository agentSkillRepository;
+    private final ConversationRepository conversationRepository;
     
     // Round-robin tracking per team
     private final Map<Long, Long> roundRobinIndex = new ConcurrentHashMap<>();
@@ -203,19 +209,184 @@ public class IntelligentRoutingService {
         if (conditions == null || conditions.isEmpty()) {
             return true; // No conditions means always match
         }
-        
-        // Simple condition evaluation - can be enhanced with complex logic
-        for (Map.Entry<String, Object> entry : conditions.entrySet()) {
-            String key = entry.getKey();
-            Object expectedValue = entry.getValue();
-            Object actualValue = conversationContext.get(key);
-            
-            if (!Objects.equals(expectedValue, actualValue)) {
+
+        // Check for logical operators (AND, OR)
+        if (conditions.containsKey("AND")) {
+            Object andConditions = conditions.get("AND");
+            if (andConditions instanceof List) {
+                for (Object cond : (List<?>) andConditions) {
+                    if (cond instanceof Map) {
+                        if (!evaluateConditions((Map<String, Object>) cond, conversationContext)) {
+                            return false;
+                        }
+                    }
+                }
+                return true;
+            }
+        }
+
+        if (conditions.containsKey("OR")) {
+            Object orConditions = conditions.get("OR");
+            if (orConditions instanceof List) {
+                for (Object cond : (List<?>) orConditions) {
+                    if (cond instanceof Map) {
+                        if (evaluateConditions((Map<String, Object>) cond, conversationContext)) {
+                            return true;
+                        }
+                    }
+                }
                 return false;
             }
         }
-        
+
+        // Evaluate individual conditions with operators
+        for (Map.Entry<String, Object> entry : conditions.entrySet()) {
+            String key = entry.getKey();
+            Object expectedValue = entry.getValue();
+
+            // Skip logical operators (already handled above)
+            if ("AND".equals(key) || "OR".equals(key)) {
+                continue;
+            }
+
+            Object actualValue = conversationContext.get(key);
+
+            // Parse operator from key (e.g., "age>18", "name contains 'John'")
+            if (key.contains(">")) {
+                String[] parts = key.split(">");
+                if (parts.length == 2) {
+                    String field = parts[0].trim();
+                    actualValue = conversationContext.get(field);
+                    if (!evaluateComparison(actualValue, expectedValue, ">")) {
+                        return false;
+                    }
+                }
+            } else if (key.contains("<")) {
+                String[] parts = key.split("<");
+                if (parts.length == 2) {
+                    String field = parts[0].trim();
+                    actualValue = conversationContext.get(field);
+                    if (!evaluateComparison(actualValue, expectedValue, "<")) {
+                        return false;
+                    }
+                }
+            } else if (key.contains(">=")) {
+                String[] parts = key.split(">=");
+                if (parts.length == 2) {
+                    String field = parts[0].trim();
+                    actualValue = conversationContext.get(field);
+                    if (!evaluateComparison(actualValue, expectedValue, ">=")) {
+                        return false;
+                    }
+                }
+            } else if (key.contains("<=")) {
+                String[] parts = key.split("<=");
+                if (parts.length == 2) {
+                    String field = parts[0].trim();
+                    actualValue = conversationContext.get(field);
+                    if (!evaluateComparison(actualValue, expectedValue, "<=")) {
+                        return false;
+                    }
+                }
+            } else if (key.contains("!=")) {
+                String[] parts = key.split("!=");
+                if (parts.length == 2) {
+                    String field = parts[0].trim();
+                    actualValue = conversationContext.get(field);
+                    if (Objects.equals(actualValue, expectedValue)) {
+                        return false;
+                    }
+                }
+            } else if (key.contains(" contains ")) {
+                String[] parts = key.split(" contains ");
+                if (parts.length == 2) {
+                    String field = parts[0].trim();
+                    actualValue = conversationContext.get(field);
+                    if (!evaluateContains(actualValue, expectedValue)) {
+                        return false;
+                    }
+                }
+            } else if (key.contains(" in ")) {
+                String[] parts = key.split(" in ");
+                if (parts.length == 2) {
+                    String field = parts[0].trim();
+                    actualValue = conversationContext.get(field);
+                    if (!evaluateIn(actualValue, expectedValue)) {
+                        return false;
+                    }
+                }
+            } else {
+                // Simple equality check
+                if (!Objects.equals(expectedValue, actualValue)) {
+                    return false;
+                }
+            }
+        }
+
         return true;
+    }
+
+    private boolean evaluateComparison(Object actual, Object expected, String operator) {
+        if (actual == null || expected == null) {
+            return false;
+        }
+
+        try {
+            double actualNum = Double.parseDouble(actual.toString());
+            double expectedNum = Double.parseDouble(expected.toString());
+
+            switch (operator) {
+                case ">":
+                    return actualNum > expectedNum;
+                case "<":
+                    return actualNum < expectedNum;
+                case ">=":
+                    return actualNum >= expectedNum;
+                case "<=":
+                    return actualNum <= expectedNum;
+                default:
+                    return false;
+            }
+        } catch (NumberFormatException e) {
+            log.warn("Failed to compare values: {} {} {}", actual, operator, expected);
+            return false;
+        }
+    }
+
+    private boolean evaluateContains(Object actual, Object expected) {
+        if (actual == null || expected == null) {
+            return false;
+        }
+        String actualStr = actual.toString().toLowerCase();
+        String expectedStr = expected.toString().toLowerCase();
+        return actualStr.contains(expectedStr);
+    }
+
+    private boolean evaluateIn(Object actual, Object expected) {
+        if (actual == null || expected == null) {
+            return false;
+        }
+
+        if (expected instanceof List) {
+            return ((List<?>) expected).contains(actual);
+        } else if (expected.getClass().isArray()) {
+            Object[] array = (Object[]) expected;
+            for (Object item : array) {
+                if (Objects.equals(item, actual)) {
+                    return true;
+                }
+            }
+            return false;
+        } else {
+            // Treat as comma-separated string
+            String[] values = expected.toString().split(",");
+            for (String value : values) {
+                if (value.trim().equals(actual.toString())) {
+                    return true;
+                }
+            }
+            return false;
+        }
     }
     
     private RoutingAssignmentResult executeRoutingRule(RoutingRule rule, Long conversationId, Map<String, Object> context) {
@@ -251,10 +422,15 @@ public class IntelligentRoutingService {
                 assignedAgentId = rule.getTargetAgentId();
                 assignedTeamId = rule.getTargetTeamId();
         }
-        
+
+        // Assign conversation to agent if routing succeeded
+        if (assignedAgentId != null) {
+            assignConversationToAgent(conversationId, assignedAgentId);
+        }
+
         // Save routing history
         saveRoutingHistory(conversationId, assignedAgentId, assignedTeamId, rule, context);
-        
+
         return RoutingAssignmentResult.builder()
                 .conversationId(conversationId)
                 .assigned(assignedAgentId != null || assignedTeamId != null)
@@ -266,14 +442,41 @@ public class IntelligentRoutingService {
                 .reason("Routing rule matched: " + rule.getName())
                 .build();
     }
+
+    private void assignConversationToAgent(Long conversationId, Long agentId) {
+        try {
+            Long tenantId = com.chatbot.core.tenant.infra.TenantContext.getTenantId();
+            Conversation conversation = conversationRepository.findById(conversationId).orElse(null);
+            if (conversation != null) {
+                conversation.setAgentAssignedId(agentId);
+                conversationRepository.save(conversation);
+                log.info("Conversation {} assigned to agent {}", conversationId, agentId);
+
+                // Update agent workload
+                AgentWorkload agentWorkload = agentWorkloadRepository
+                        .findByTenantIdAndAgentId(tenantId, agentId)
+                        .orElse(null);
+                if (agentWorkload != null) {
+                    agentWorkload.setActiveConversations(agentWorkload.getActiveConversations() + 1);
+                    agentWorkloadRepository.save(agentWorkload);
+                    log.info("Agent {} workload updated to {} active conversations",
+                            agentId, agentWorkload.getActiveConversations());
+                }
+            } else {
+                log.warn("Conversation {} not found for assignment", conversationId);
+            }
+        } catch (Exception e) {
+            log.error("Failed to assign conversation {} to agent {}", conversationId, agentId, e);
+        }
+    }
     
     private Long routeBySkill(RoutingRule rule, Map<String, Object> context) {
         log.info("Applying skill-based routing for rule {}", rule.getName());
-        
+
         Long tenantId = com.chatbot.core.tenant.infra.TenantContext.getTenantId();
         Long targetSkillId = rule.getTargetSkillId();
         Long targetTeamId = rule.getTargetTeamId();
-        
+
         // Find agents with the required skill who are available
         List<AgentWorkload> availableAgents = agentWorkloadRepository
                 .findByTenantIdAndStatus(tenantId, AgentWorkload.AgentStatus.AVAILABLE)
@@ -281,22 +484,63 @@ public class IntelligentRoutingService {
                 .filter(AgentWorkload::isAvailable)
                 .filter(agent -> targetTeamId == null || targetTeamId.equals(agent.getTeamId()))
                 .collect(Collectors.toList());
-        
+
         if (availableAgents.isEmpty()) {
-            log.warn("No available agents for skill-based routing");
-            return rule.getTargetAgentId(); // Fallback to target agent
+            log.warn("No available agents for skill-based routing, applying fallback logic");
+            return applyFallbackLogic(rule, "skill-based");
         }
-        
-        // In a real implementation, you would check agent skills against targetSkillId
-        // For now, select the agent with lowest workload
-        AgentWorkload selectedAgent = availableAgents.stream()
-                .min(Comparator.comparingInt(AgentWorkload::getActiveConversations))
-                .orElse(availableAgents.get(0));
-        
-        log.info("Selected agent {} with {} active conversations", 
+
+        // Real skill matching: Filter agents by skill and proficiency
+        List<AgentWorkload> skilledAgents = new ArrayList<>();
+        for (AgentWorkload agent : availableAgents) {
+            List<AgentSkill> skills = agentSkillRepository.findByAgentId(agent.getAgentId());
+            
+            // Check if agent has the required skill
+            boolean hasRequiredSkill = skills.stream()
+                    .anyMatch(skill -> skill.getId().equals(targetSkillId) || 
+                            (targetSkillId != null && skill.getSkillCategory().ordinal() == targetSkillId.intValue()));
+            
+            if (hasRequiredSkill) {
+                skilledAgents.add(agent);
+                log.debug("Agent {} has required skill", agent.getAgentId());
+            }
+        }
+
+        // If no agents with specific skill, use all available agents as fallback
+        List<AgentWorkload> candidateAgents = skilledAgents.isEmpty() ? availableAgents : skilledAgents;
+
+        // Select agent with highest skill score and lowest workload
+        AgentWorkload selectedAgent = candidateAgents.stream()
+                .max(Comparator.comparingInt(agent -> {
+                    // Calculate composite score: skill score - workload penalty
+                    int skillScore = getAgentSkillScore(agent.getAgentId(), targetSkillId);
+                    int workloadPenalty = agent.getActiveConversations() * 10;
+                    return skillScore - workloadPenalty;
+                }))
+                .orElse(candidateAgents.stream()
+                        .min(Comparator.comparingInt(AgentWorkload::getActiveConversations))
+                        .orElse(availableAgents.get(0)));
+
+        log.info("Selected agent {} with {} active conversations for skill-based routing",
                 selectedAgent.getAgentId(), selectedAgent.getActiveConversations());
-        
+
         return selectedAgent.getAgentId();
+    }
+
+    private int getAgentSkillScore(Long agentId, Long targetSkillId) {
+        List<AgentSkill> skills = agentSkillRepository.findByAgentId(agentId);
+        if (targetSkillId != null) {
+            return skills.stream()
+                    .filter(skill -> skill.getId().equals(targetSkillId) ||
+                            skill.getSkillCategory().ordinal() == targetSkillId.intValue())
+                    .mapToInt(AgentSkill::getScore)
+                    .findFirst()
+                    .orElse(50); // Default score if no matching skill
+        }
+        return (int) skills.stream()
+                .mapToInt(AgentSkill::getScore)
+                .average()
+                .orElse(50); // Average score across all skills
     }
     
     private Long routeByPriority(RoutingRule rule, Map<String, Object> context) {
@@ -314,8 +558,8 @@ public class IntelligentRoutingService {
                 .collect(Collectors.toList());
         
         if (availableAgents.isEmpty()) {
-            log.warn("No available agents for priority-based routing");
-            return rule.getTargetAgentId(); // Fallback to target agent
+            log.warn("No available agents for priority-based routing, applying fallback logic");
+            return applyFallbackLogic(rule, "priority-based");
         }
         
         // Select agent with highest priority score
@@ -355,8 +599,8 @@ public class IntelligentRoutingService {
         }
         
         if (availableAgents.isEmpty()) {
-            log.warn("No available agents for round-robin routing");
-            return rule.getTargetAgentId(); // Fallback to target agent
+            log.warn("No available agents for round-robin routing, applying fallback logic");
+            return applyFallbackLogic(rule, "round-robin");
         }
         
         // Get or initialize round-robin index for this team
@@ -389,8 +633,8 @@ public class IntelligentRoutingService {
                 .collect(Collectors.toList());
         
         if (availableAgents.isEmpty()) {
-            log.warn("No available agents for least-busy routing");
-            return rule.getTargetAgentId(); // Fallback to target agent
+            log.warn("No available agents for least-busy routing, applying fallback logic");
+            return applyFallbackLogic(rule, "least-busy");
         }
         
         // Select agent with lowest workload percentage
@@ -408,6 +652,57 @@ public class IntelligentRoutingService {
         // Custom routing logic based on rule conditions
         log.info("Applying custom routing for rule {}", rule.getName());
         return rule.getTargetAgentId(); // Placeholder - implement custom logic
+    }
+
+    private Long applyFallbackLogic(RoutingRule rule, String routingType) {
+        log.info("Applying fallback logic for {} routing", routingType);
+
+        Long tenantId = com.chatbot.core.tenant.infra.TenantContext.getTenantId();
+
+        // Fallback 1: Try target agent if specified
+        if (rule.getTargetAgentId() != null) {
+            AgentWorkload targetAgent = agentWorkloadRepository
+                    .findByTenantIdAndAgentId(tenantId, rule.getTargetAgentId())
+                    .orElse(null);
+            if (targetAgent != null && targetAgent.isAvailable()) {
+                log.info("Fallback: Using target agent {}", rule.getTargetAgentId());
+                return rule.getTargetAgentId();
+            }
+        }
+
+        // Fallback 2: Try target team if specified
+        if (rule.getTargetTeamId() != null) {
+            List<AgentWorkload> teamAgents = agentWorkloadRepository
+                    .findByTenantIdAndTeamId(tenantId, rule.getTargetTeamId())
+                    .stream()
+                    .filter(AgentWorkload::isAvailable)
+                    .collect(Collectors.toList());
+            if (!teamAgents.isEmpty()) {
+                AgentWorkload selected = teamAgents.stream()
+                        .min(Comparator.comparingInt(AgentWorkload::getActiveConversations))
+                        .orElse(teamAgents.get(0));
+                log.info("Fallback: Using team agent {} from team {}", selected.getAgentId(), rule.getTargetTeamId());
+                return selected.getAgentId();
+            }
+        }
+
+        // Fallback 3: Try any available agent in tenant
+        List<AgentWorkload> allAvailableAgents = agentWorkloadRepository
+                .findByTenantIdAndStatus(tenantId, AgentWorkload.AgentStatus.AVAILABLE)
+                .stream()
+                .filter(AgentWorkload::isAvailable)
+                .collect(Collectors.toList());
+        if (!allAvailableAgents.isEmpty()) {
+            AgentWorkload selected = allAvailableAgents.stream()
+                    .min(Comparator.comparingInt(AgentWorkload::getActiveConversations))
+                    .orElse(allAvailableAgents.get(0));
+            log.info("Fallback: Using any available agent {}", selected.getAgentId());
+            return selected.getAgentId();
+        }
+
+        // Fallback 4: No agents available - return null to indicate routing failure
+        log.error("Fallback failed: No agents available for routing");
+        return null;
     }
     
     private void saveRoutingHistory(Long conversationId, Long assignedAgentId, Long assignedTeamId, 
