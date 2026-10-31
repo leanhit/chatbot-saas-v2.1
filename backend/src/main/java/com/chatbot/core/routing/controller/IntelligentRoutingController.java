@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/routing/rules")
@@ -67,5 +68,19 @@ public class IntelligentRoutingController {
     public ResponseEntity<Void> deleteRoutingRule(@PathVariable Long id) {
         routingService.deleteRoutingRule(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/route/{conversationId}")
+    public ResponseEntity<RoutingAssignmentResult> routeConversation(
+            @PathVariable Long conversationId,
+            @RequestBody Map<String, Object> conversationContext) {
+        RoutingAssignmentResult result = routingService.routeConversation(conversationId, conversationContext);
+        return ResponseEntity.ok(result);
+    }
+
+    @GetMapping("/history/{conversationId}")
+    public ResponseEntity<List<RoutingAssignmentResult>> getRoutingHistory(@PathVariable Long conversationId) {
+        List<RoutingAssignmentResult> history = routingService.getRoutingHistory(conversationId);
+        return ResponseEntity.ok(history);
     }
 }

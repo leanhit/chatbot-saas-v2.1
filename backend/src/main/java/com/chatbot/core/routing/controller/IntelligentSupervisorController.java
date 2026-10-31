@@ -2,6 +2,8 @@ package com.chatbot.core.routing.controller;
 
 import com.chatbot.core.routing.dto.CreateSupervisorSessionRequest;
 import com.chatbot.core.routing.dto.SupervisorSessionDTO;
+import com.chatbot.core.routing.dto.SupervisorTakeoverResult;
+import com.chatbot.core.routing.model.SupervisorSession;
 import com.chatbot.core.routing.service.IntelligentSupervisorService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -84,5 +86,36 @@ public class IntelligentSupervisorController {
     public ResponseEntity<Void> deleteSession(@PathVariable Long id) {
         supervisorService.deleteSupervisorSession(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/takeover")
+    public ResponseEntity<SupervisorTakeoverResult> takeoverConversation(
+            @RequestBody Map<String, Object> request) {
+        Long supervisorId = ((Number) request.get("supervisorId")).longValue();
+        Long conversationId = ((Number) request.get("conversationId")).longValue();
+        SupervisorSession.SessionType sessionType = request.containsKey("sessionType") 
+                ? SupervisorSession.SessionType.valueOf((String) request.get("sessionType"))
+                : SupervisorSession.SessionType.TAKEOVER;
+        
+        SupervisorTakeoverResult result = supervisorService.takeoverConversation(supervisorId, conversationId, sessionType);
+        return ResponseEntity.ok(result);
+    }
+
+    @PostMapping("/release/{sessionId}")
+    public ResponseEntity<SupervisorTakeoverResult> releaseConversation(@PathVariable Long sessionId) {
+        SupervisorTakeoverResult result = supervisorService.releaseConversation(sessionId);
+        return ResponseEntity.ok(result);
+    }
+
+    @GetMapping("/taken-over/{conversationId}")
+    public ResponseEntity<Boolean> isConversationTakenOver(@PathVariable Long conversationId) {
+        boolean takenOver = supervisorService.isConversationTakenOver(conversationId);
+        return ResponseEntity.ok(takenOver);
+    }
+
+    @GetMapping("/active/conversation/{conversationId}")
+    public ResponseEntity<List<SupervisorSessionDTO>> getActiveSessionsForConversation(@PathVariable Long conversationId) {
+        List<SupervisorSessionDTO> sessions = supervisorService.getActiveSessionsForConversation(conversationId);
+        return ResponseEntity.ok(sessions);
     }
 }

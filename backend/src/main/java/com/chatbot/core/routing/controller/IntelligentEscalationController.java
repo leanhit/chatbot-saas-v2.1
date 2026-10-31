@@ -62,4 +62,18 @@ public class IntelligentEscalationController {
         escalationService.deleteEscalationRule(id);
         return ResponseEntity.noContent().build();
     }
+
+    @PostMapping("/evaluate/{conversationId}")
+    public ResponseEntity<EscalationResult> evaluateEscalation(
+            @PathVariable Long conversationId,
+            @RequestBody EscalationContext context) {
+        EscalationResult result = escalationService.evaluateEscalation(conversationId, context);
+        return ResponseEntity.ok(result);
+    }
+
+    @GetMapping("/history/{conversationId}")
+    public ResponseEntity<List<EscalationResult>> getEscalationHistory(@PathVariable Long conversationId) {
+        List<EscalationResult> history = escalationService.getEscalationHistory(conversationId);
+        return ResponseEntity.ok(history);
+    }
 }

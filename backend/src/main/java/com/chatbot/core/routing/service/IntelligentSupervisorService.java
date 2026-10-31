@@ -2,6 +2,7 @@ package com.chatbot.core.routing.service;
 
 import com.chatbot.core.routing.dto.CreateSupervisorSessionRequest;
 import com.chatbot.core.routing.dto.SupervisorSessionDTO;
+import com.chatbot.core.routing.dto.SupervisorTakeoverResult;
 import com.chatbot.core.routing.model.SupervisorSession;
 import com.chatbot.core.routing.repository.IntelligentSupervisorSessionRepository;
 import lombok.RequiredArgsConstructor;
@@ -170,5 +171,125 @@ public class IntelligentSupervisorService {
                 .createdAt(session.getCreatedAt())
                 .updatedAt(session.getUpdatedAt())
                 .build();
+    }
+
+    @Transactional
+    public SupervisorTakeoverResult takeoverConversation(Long supervisorId, Long conversationId, SupervisorSession.SessionType sessionType) {
+        log.info("Supervisor {} taking over conversation {} with session type {}", supervisorId, conversationId, sessionType);
+        
+        Long tenantId = com.chatbot.core.tenant.infra.TenantContext.getTenantId();
+        
+        // Check if there's already an active session for this supervisor and conversation
+        SupervisorSession existingSession = supervisorSessionRepository
+                .findFirstByTenantIdAndSupervisorIdAndConversationIdAndSessionStatusOrderByJoinedAtDesc(
+                        tenantId, supervisorId, conversationId, SupervisorSession.SessionStatus.ACTIVE)
+                .orElse(null);
+        
+        if (existingSession != null) {
+            log.warn("Active session already exists for supervisor {} and conversation {}", supervisorId, conversationId);
+            return SupervisorTakeoverResult.builder()
+                    .conversationId(conversationId)
+                    .supervisorId(supervisorId)
+                    .success(false)
+                    .reason("Active session already exists")
+                    .sessionId((Long) existingSession.getId())
+                    .build();
+        }
+        
+        // Create new supervisor session
+        SupervisorSession session = SupervisorSession.builder()
+                .supervisorId(supervisorId)
+                .conversationId(conversationId)
+                .sessionType(sessionType)
+                .sessionStatus(SupervisorSession.SessionStatus.ACTIVE)
+                .joinedAt(LocalDateTime.now())
+                .isSilent(sessionType == SupervisorSession.SessionType.MONITORING)
+                .canIntervene(sessionType != SupervisorSession.SessionType.MONITORING)
+                .interventionCount(0)
+                .build();
+        
+        session.setTenantId(tenantId);
+        SupervisorSession saved = supervisorSessionRepository.save(session);
+        
+        log.info("Supervisor takeover successful. Session ID: {}", saved.getId());
+        
+        // TODO: Mark conversation as taken over in conversation routing
+        // TODO: Send WebSocket notification to agents
+        // TODO: Send WebSocket notification to supervisor
+        
+        return SupervisorTakeoverResult.builder()
+                .conversationId(conversationId)
+                .supervisorId(supervisorId)
+                .success(true)
+                .sessionId((Long) saved.getId())
+                .sessionType(sessionType.name())
+                .takenOverAt(LocalDateTime.now())
+                .reason("Takeover successful")
+                .build();
+    }
+    
+    @Transactional
+    public SupervisorTakeoverResult releaseConversation(Long sessionId) {
+        log.info("Releasing conversation from supervisor session {}", sessionId);
+        
+        SupervisorSession session = supervisorSessionRepository.findById(sessionId)
+                .orElseThrow(() -> new RuntimeException("Supervisor session not found"));
+        
+        if (session.getSessionStatus() != SupervisorSession.SessionStatus.ACTIVE) {
+            log.warn("Session {} is not active", sessionId);
+            return SupervisorTakeoverResult.builder()
+                    .conversationId(session.getConversationId())
+                    .supervisorId(session.getSupervisorId())
+                    .success(false)
+                    .reason("Session is not active")
+                    .build();
+        }
+        
+        session.setSessionStatus(SupervisorSession.SessionStatus.ENDED);
+        session.setLeftAt(LocalDateTime.now());
+        
+        if (session.getJoinedAt() != null && session.getLeftAt() != null) {
+            long seconds = ChronoUnit.SECONDS.between(session.getJoinedAt(), session.getLeftAt());
+            session.setDurationSeconds((int) seconds);
+        }
+        
+        SupervisorSession updated = supervisorSessionRepository.save(session);
+        
+        log.info("Conversation released successfully");
+        
+        // TODO: Mark conversation as no longer taken over in conversation routing
+        // TODO: Send WebSocket notification to agents
+        // TODO: Send WebSocket notification to supervisor
+        
+        return SupervisorTakeoverResult.builder()
+                .conversationId(session.getConversationId())
+                .supervisorId(session.getSupervisorId())
+                .success(true)
+                .sessionId(sessionId)
+                .releasedAt(LocalDateTime.now())
+                .reason("Conversation released successfully")
+                .build();
+    }
+    
+    @Transactional(readOnly = true)
+    public boolean isConversationTakenOver(Long conversationId) {
+        Long tenantId = com.chatbot.core.tenant.infra.TenantContext.getTenantId();
+        List<SupervisorSession> activeSessions = supervisorSessionRepository
+                .findByTenantIdAndSessionStatus(tenantId, SupervisorSession.SessionStatus.ACTIVE);
+        
+        return activeSessions.stream()
+                .anyMatch(session -> session.getConversationId().equals(conversationId));
+    }
+    
+    @Transactional(readOnly = true)
+    public List<SupervisorSessionDTO> getActiveSessionsForConversation(Long conversationId) {
+        Long tenantId = com.chatbot.core.tenant.infra.TenantContext.getTenantId();
+        List<SupervisorSession> sessions = supervisorSessionRepository
+                .findByTenantIdAndConversationIdOrderByJoinedAtDesc(tenantId, conversationId);
+        
+        return sessions.stream()
+                .filter(session -> session.getSessionStatus() == SupervisorSession.SessionStatus.ACTIVE)
+                .map(this::mapToDTO)
+                .collect(Collectors.toList());
     }
 }
