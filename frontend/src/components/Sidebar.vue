@@ -281,6 +281,48 @@
               </template>
             </menu-accordion>
           </div>
+          <div class="item mt-3">
+            <menu-accordion>
+              <template v-slot:icon>
+                <Icon icon="mdi:route" />
+              </template>
+              <template v-slot:title> {{ $t('routing.title') }} </template>
+              <template v-slot:content>
+                <router-link
+                  to="/routing/queue"
+                  @click.stop
+                  class="w-full text-left block rounded-md p-2.5 px-3 text-sm hover:bg-gray-200 dark:hover:bg-gray-700 flex items-center gap-2.5 transition-colors"
+                >
+                  <Icon icon="mdi:view-list-outline" class="text-base flex-shrink-0" />
+                  <span>{{ $t('routing.queue.title') }}</span>
+                </router-link>
+                <router-link
+                  to="/routing/supervisor"
+                  @click.stop
+                  class="w-full text-left block rounded-md p-2.5 px-3 text-sm hover:bg-gray-200 dark:hover:bg-gray-700 flex items-center gap-2.5 transition-colors"
+                >
+                  <Icon icon="mdi:account-eye" class="text-base flex-shrink-0" />
+                  <span>{{ $t('routing.supervisor.title') }}</span>
+                </router-link>
+                <router-link
+                  to="/routing/simulation"
+                  @click.stop
+                  class="w-full text-left block rounded-md p-2.5 px-3 text-sm hover:bg-gray-200 dark:hover:bg-gray-700 flex items-center gap-2.5 transition-colors"
+                >
+                  <Icon icon="mdi:play-circle-outline" class="text-base flex-shrink-0" />
+                  <span>{{ $t('routing.simulation.title') }}</span>
+                </router-link>
+                <router-link
+                  to="/routing/escalation"
+                  @click.stop
+                  class="w-full text-left block rounded-md p-2.5 px-3 text-sm hover:bg-gray-200 dark:hover:bg-gray-700 flex items-center gap-2.5 transition-colors"
+                >
+                  <Icon icon="mdi:arrow-up-bold-box-outline" class="text-base flex-shrink-0" />
+                  <span>{{ $t('routing.escalation.title') }}</span>
+                </router-link>
+              </template>
+            </menu-accordion>
+          </div>
           <div class="item mt-3" v-if="tenantStore?.currentTenant?.role === 'OWNER'">
             <menu-accordion>
               <template v-slot:icon>

@@ -26,7 +26,8 @@ import java.util.Properties;
         "com.chatbot.core.app.guard.repository",
         "com.chatbot.core.license.repository",
         "com.chatbot.core.training.repository",
-        "com.chatbot.core.customer.repository"
+        "com.chatbot.core.customer.repository",
+        "com.chatbot.core.routing.repository"
     },
     entityManagerFactoryRef = "appEntityManagerFactory",
     transactionManagerRef = "appTransactionManager"
@@ -54,7 +55,8 @@ public class AppHubConfig {
             "com.chatbot.core.app.guard.model",
             "com.chatbot.core.license.model",
             "com.chatbot.core.training.model",
-            "com.chatbot.core.customer.model"
+            "com.chatbot.core.customer.model",
+            "com.chatbot.core.routing.model"
         );
 
         HibernateJpaVendorAdapter vendorAdapter = new HibernateJpaVendorAdapter();

@@ -52,6 +52,11 @@ const AgentTrainingDashboard = () => import("../views/training/AgentTrainingDash
 const CustomerProfiles = () => import("../views/customer/CustomerProfiles.vue");
 const FeedbackSurvey = () => import("../views/customer/FeedbackSurvey.vue");
 const CustomerAnalytics = () => import("../views/customer/CustomerAnalytics.vue");
+// Routing Pages
+const QueueView = () => import("../views/routing/QueueView.vue");
+const SupervisorDashboard = () => import("../views/routing/SupervisorDashboard.vue");
+const RoutingSimulation = () => import("../views/routing/RoutingSimulation.vue");
+const EscalationHistory = () => import("../views/routing/EscalationHistory.vue");
 var appname = " - Windzo Dashboard Admin Template";
 const routes = [
   // Root route - redirect to login
@@ -215,6 +220,31 @@ const routes = [
     name: "customers",
     component: CustomerData,
     meta: { requiresAuth: true, title: "Customer Data" + appname },
+  },
+  // Routing Routes
+  {
+    path: "/routing/queue",
+    name: "routing-queue",
+    component: QueueView,
+    meta: { requiresAuth: true, title: "Queue View" + appname },
+  },
+  {
+    path: "/routing/supervisor",
+    name: "routing-supervisor",
+    component: SupervisorDashboard,
+    meta: { requiresAuth: true, title: "Supervisor Dashboard" + appname },
+  },
+  {
+    path: "/routing/simulation",
+    name: "routing-simulation",
+    component: RoutingSimulation,
+    meta: { requiresAuth: true, title: "Routing Simulation" + appname },
+  },
+  {
+    path: "/routing/escalation",
+    name: "routing-escalation",
+    component: EscalationHistory,
+    meta: { requiresAuth: true, title: "Escalation Rules" + appname },
   },
   // Payment Routes (SimplePayment Only)
   {
