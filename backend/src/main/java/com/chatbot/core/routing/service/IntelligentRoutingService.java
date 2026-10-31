@@ -1,8 +1,12 @@
 package com.chatbot.core.routing.service;
 
 import com.chatbot.core.routing.dto.*;
+import com.chatbot.core.routing.model.AgentWorkload;
+import com.chatbot.core.routing.model.RoutingHistory;
 import com.chatbot.core.routing.model.RoutingRule;
+import com.chatbot.core.routing.repository.AgentWorkloadRepository;
 import com.chatbot.core.routing.repository.IntelligentRoutingRuleRepository;
+import com.chatbot.core.routing.repository.RoutingHistoryRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -10,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 @Service
@@ -18,6 +23,11 @@ import java.util.stream.Collectors;
 public class IntelligentRoutingService {
 
     private final IntelligentRoutingRuleRepository routingRuleRepository;
+    private final AgentWorkloadRepository agentWorkloadRepository;
+    private final RoutingHistoryRepository routingHistoryRepository;
+    
+    // Round-robin tracking per team
+    private final Map<Long, Long> roundRobinIndex = new ConcurrentHashMap<>();
 
     @Transactional
     public RoutingRuleDTO createRoutingRule(CreateRoutingRuleRequest request) {
@@ -237,6 +247,9 @@ public class IntelligentRoutingService {
                 assignedTeamId = rule.getTargetTeamId();
         }
         
+        // Save routing history
+        saveRoutingHistory(conversationId, assignedAgentId, assignedTeamId, rule, context);
+        
         return RoutingAssignmentResult.builder()
                 .conversationId(conversationId)
                 .assigned(assignedAgentId != null || assignedTeamId != null)
@@ -250,31 +263,119 @@ public class IntelligentRoutingService {
     }
     
     private Long routeBySkill(RoutingRule rule, Map<String, Object> context) {
-        // Skill-based routing logic
-        // In a real implementation, this would query agent skills and match with conversation requirements
         log.info("Applying skill-based routing for rule {}", rule.getName());
-        return rule.getTargetAgentId(); // Placeholder - implement actual skill matching
+        
+        Long tenantId = com.chatbot.core.tenant.infra.TenantContext.getTenantId();
+        Long targetSkillId = rule.getTargetSkillId();
+        
+        // Find agents with the required skill who are available
+        List<AgentWorkload> availableAgents = agentWorkloadRepository
+                .findByTenantIdAndStatus(tenantId, AgentWorkload.AgentStatus.AVAILABLE)
+                .stream()
+                .filter(AgentWorkload::isAvailable)
+                .collect(Collectors.toList());
+        
+        if (availableAgents.isEmpty()) {
+            log.warn("No available agents for skill-based routing");
+            return rule.getTargetAgentId(); // Fallback to target agent
+        }
+        
+        // In a real implementation, you would check agent skills against targetSkillId
+        // For now, select the agent with lowest workload
+        AgentWorkload selectedAgent = availableAgents.stream()
+                .min(Comparator.comparingInt(AgentWorkload::getActiveConversations))
+                .orElse(availableAgents.get(0));
+        
+        log.info("Selected agent {} with {} active conversations", 
+                selectedAgent.getAgentId(), selectedAgent.getActiveConversations());
+        
+        return selectedAgent.getAgentId();
     }
     
     private Long routeByPriority(RoutingRule rule, Map<String, Object> context) {
-        // Priority-based routing logic
-        // Route to highest priority agent available
         log.info("Applying priority-based routing for rule {}", rule.getName());
-        return rule.getTargetAgentId(); // Placeholder - implement actual priority logic
+        
+        Long tenantId = com.chatbot.core.tenant.infra.TenantContext.getTenantId();
+        
+        // Find available agents ordered by priority score
+        List<AgentWorkload> availableAgents = agentWorkloadRepository
+                .findAvailableAgentsByPriority(tenantId, AgentWorkload.AgentStatus.AVAILABLE)
+                .stream()
+                .filter(AgentWorkload::isAvailable)
+                .collect(Collectors.toList());
+        
+        if (availableAgents.isEmpty()) {
+            log.warn("No available agents for priority-based routing");
+            return rule.getTargetAgentId(); // Fallback to target agent
+        }
+        
+        // Select the highest priority agent
+        AgentWorkload selectedAgent = availableAgents.get(0);
+        
+        log.info("Selected agent {} with priority score {}", 
+                selectedAgent.getAgentId(), selectedAgent.getPriorityScore());
+        
+        return selectedAgent.getAgentId();
     }
     
     private Long routeByRoundRobin(RoutingRule rule) {
-        // Round-robin routing logic
-        // Distribute conversations evenly among agents
         log.info("Applying round-robin routing for rule {}", rule.getName());
-        return rule.getTargetAgentId(); // Placeholder - implement actual round-robin logic
+        
+        Long tenantId = com.chatbot.core.tenant.infra.TenantContext.getTenantId();
+        Long targetTeamId = rule.getTargetTeamId();
+        
+        // Find all available agents in the team
+        List<AgentWorkload> availableAgents = agentWorkloadRepository
+                .findByTenantIdAndStatus(tenantId, AgentWorkload.AgentStatus.AVAILABLE)
+                .stream()
+                .filter(AgentWorkload::isAvailable)
+                .collect(Collectors.toList());
+        
+        if (availableAgents.isEmpty()) {
+            log.warn("No available agents for round-robin routing");
+            return rule.getTargetAgentId(); // Fallback to target agent
+        }
+        
+        // Get or initialize round-robin index for this team
+        Long teamKey = targetTeamId != null ? targetTeamId : 0L;
+        long currentIndex = roundRobinIndex.getOrDefault(teamKey, 0L);
+        
+        // Select agent using round-robin
+        int selectedIndex = (int) (currentIndex % availableAgents.size());
+        AgentWorkload selectedAgent = availableAgents.get(selectedIndex);
+        
+        // Update round-robin index
+        roundRobinIndex.put(teamKey, currentIndex + 1);
+        
+        log.info("Round-robin selected agent {} (index {}/{})", 
+                selectedAgent.getAgentId(), selectedIndex, availableAgents.size());
+        
+        return selectedAgent.getAgentId();
     }
     
     private Long routeByLeastBusy(RoutingRule rule) {
-        // Least-busy routing logic
-        // Route to agent with fewest active conversations
         log.info("Applying least-busy routing for rule {}", rule.getName());
-        return rule.getTargetAgentId(); // Placeholder - implement actual workload tracking
+        
+        Long tenantId = com.chatbot.core.tenant.infra.TenantContext.getTenantId();
+        
+        // Find available agents ordered by workload (ascending)
+        List<AgentWorkload> availableAgents = agentWorkloadRepository
+                .findAvailableAgentsByWorkload(tenantId, AgentWorkload.AgentStatus.AVAILABLE);
+        
+        if (availableAgents.isEmpty()) {
+            log.warn("No available agents for least-busy routing");
+            return rule.getTargetAgentId(); // Fallback to target agent
+        }
+        
+        // Select the agent with lowest workload
+        AgentWorkload selectedAgent = availableAgents.get(0);
+        
+        log.info("Selected least-busy agent {} with {} active conversations ({}% capacity)", 
+                selectedAgent.getAgentId(), 
+                selectedAgent.getActiveConversations(),
+                String.format("%.1f", selectedAgent.getWorkloadPercentage()));
+        
+        return selectedAgent.getAgentId();
     }
     
     private Long routeByCustom(RoutingRule rule, Map<String, Object> context) {
@@ -283,10 +384,48 @@ public class IntelligentRoutingService {
         return rule.getTargetAgentId(); // Placeholder - implement custom logic
     }
     
+    private void saveRoutingHistory(Long conversationId, Long assignedAgentId, Long assignedTeamId, 
+                                    RoutingRule rule, Map<String, Object> context) {
+        try {
+            Long tenantId = com.chatbot.core.tenant.infra.TenantContext.getTenantId();
+            
+            RoutingHistory history = RoutingHistory.builder()
+                    .tenantId(tenantId)
+                    .conversationId(conversationId)
+                    .assignedAgentId(assignedAgentId)
+                    .assignedTeamId(assignedTeamId)
+                    .routingRuleId((Long) rule.getId())
+                    .routingStrategy(rule.getRuleType().name())
+                    .conditions(rule.getConditions() != null ? rule.getConditions().toString() : null)
+                    .assigned(assignedAgentId != null || assignedTeamId != null)
+                    .reason("Routing rule matched: " + rule.getName())
+                    .build();
+            
+            routingHistoryRepository.save(history);
+            log.info("Routing history saved for conversation {}", conversationId);
+        } catch (Exception e) {
+            log.error("Failed to save routing history for conversation {}", conversationId, e);
+            // Don't throw exception - routing should continue even if history save fails
+        }
+    }
+    
     @Transactional(readOnly = true)
     public List<RoutingAssignmentResult> getRoutingHistory(Long conversationId) {
-        // Placeholder for retrieving routing history
-        log.info("Retrieving routing history for conversation {}", conversationId);
-        return Collections.emptyList();
+        Long tenantId = com.chatbot.core.tenant.infra.TenantContext.getTenantId();
+        List<RoutingHistory> historyList = routingHistoryRepository
+                .findByTenantIdAndConversationIdOrderByCreatedAtDesc(tenantId, conversationId);
+        
+        return historyList.stream()
+                .map(history -> RoutingAssignmentResult.builder()
+                        .conversationId(history.getConversationId())
+                        .assigned(history.getAssigned())
+                        .assignedAgentId(history.getAssignedAgentId())
+                        .assignedTeamId(history.getAssignedTeamId())
+                        .routingRuleId(history.getRoutingRuleId())
+                        .routingStrategy(history.getRoutingStrategy())
+                        .assignedAt(history.getCreatedAt())
+                        .reason(history.getReason())
+                        .build())
+                .collect(Collectors.toList());
     }
 }
