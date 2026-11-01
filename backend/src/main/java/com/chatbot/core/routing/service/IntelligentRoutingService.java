@@ -651,7 +651,60 @@ public class IntelligentRoutingService {
     private Long routeByCustom(RoutingRule rule, Map<String, Object> context) {
         // Custom routing logic based on rule conditions
         log.info("Applying custom routing for rule {}", rule.getName());
-        return rule.getTargetAgentId(); // Placeholder - implement custom logic
+        
+        Long tenantId = com.chatbot.core.tenant.infra.TenantContext.getTenantId();
+        Long targetTeamId = rule.getTargetTeamId();
+        
+        // Custom routing can use conditions to determine selection criteria
+        // For example: conditions might specify "priority > 80" or "workload < 5"
+        
+        List<AgentWorkload> availableAgents = agentWorkloadRepository
+                .findByTenantIdAndStatus(tenantId, AgentWorkload.AgentStatus.AVAILABLE)
+                .stream()
+                .filter(AgentWorkload::isAvailable)
+                .filter(agent -> targetTeamId == null || targetTeamId.equals(agent.getTeamId()))
+                .collect(Collectors.toList());
+        
+        if (availableAgents.isEmpty()) {
+            log.warn("No available agents for custom routing, applying fallback logic");
+            return applyFallbackLogic(rule, "custom");
+        }
+        
+        // Apply custom conditions if specified
+        if (rule.getConditions() != null && !rule.getConditions().isEmpty()) {
+            // Filter agents based on custom conditions
+            List<AgentWorkload> filteredAgents = availableAgents.stream()
+                    .filter(agent -> evaluateAgentConditions(agent, rule.getConditions()))
+                    .collect(Collectors.toList());
+            
+            if (!filteredAgents.isEmpty()) {
+                availableAgents = filteredAgents;
+                log.info("Custom conditions filtered to {} agents", availableAgents.size());
+            }
+        }
+        
+        // Select agent with lowest workload from filtered list
+        AgentWorkload selectedAgent = availableAgents.stream()
+                .min(Comparator.comparingInt(AgentWorkload::getActiveConversations))
+                .orElse(availableAgents.get(0));
+        
+        log.info("Custom routing selected agent {} with {} active conversations",
+                selectedAgent.getAgentId(), selectedAgent.getActiveConversations());
+        
+        return selectedAgent.getAgentId();
+    }
+    
+    private boolean evaluateAgentConditions(AgentWorkload agent, Map<String, Object> conditions) {
+        // Evaluate custom conditions against agent attributes
+        Map<String, Object> agentContext = new HashMap<>();
+        agentContext.put("priorityScore", agent.getPriorityScore());
+        agentContext.put("activeConversations", agent.getActiveConversations());
+        agentContext.put("maxConcurrentConversations", agent.getMaxConcurrentConversations());
+        agentContext.put("workloadPercentage", agent.getWorkloadPercentage());
+        agentContext.put("status", agent.getStatus().name());
+        agentContext.put("teamId", agent.getTeamId());
+        
+        return evaluateConditions(conditions, agentContext);
     }
 
     private Long applyFallbackLogic(RoutingRule rule, String routingType) {
