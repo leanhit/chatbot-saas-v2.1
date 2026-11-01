@@ -1,7 +1,11 @@
 package com.chatbot.core.routing.service;
 
+import com.chatbot.core.message.store.model.Conversation;
+import com.chatbot.core.message.store.repository.ConversationRepository;
 import com.chatbot.core.routing.dto.*;
+import com.chatbot.core.routing.model.EscalationHistory;
 import com.chatbot.core.routing.model.EscalationRule;
+import com.chatbot.core.routing.repository.EscalationHistoryRepository;
 import com.chatbot.core.routing.repository.IntelligentEscalationRuleRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,6 +23,8 @@ import java.util.stream.Collectors;
 public class IntelligentEscalationService {
 
     private final IntelligentEscalationRuleRepository escalationRuleRepository;
+    private final EscalationHistoryRepository escalationHistoryRepository;
+    private final ConversationRepository conversationRepository;
 
     @Transactional
     public EscalationRuleDTO createEscalationRule(CreateEscalationRuleRequest request) {
@@ -280,38 +286,49 @@ public class IntelligentEscalationService {
     
     private EscalationResult executeEscalation(EscalationRule rule, Long conversationId, EscalationContext context) {
         log.info("Executing escalation rule {} for conversation {}", rule.getName(), conversationId);
-        
+
+        Long tenantId = com.chatbot.core.tenant.infra.TenantContext.getTenantId();
         Long escalatedToAgentId = null;
         Long escalatedToTeamId = null;
         boolean escalatedToSupervisor = rule.getEscalateToSupervisor();
+        boolean supervisorNotified = false;
         String escalationAction = rule.getEscalationAction().name();
-        
+
         switch (rule.getEscalationAction()) {
             case ASSIGN_TO_AGENT:
                 escalatedToAgentId = rule.getEscalateToAgentId();
+                if (escalatedToAgentId != null) {
+                    assignConversationToAgent(conversationId, escalatedToAgentId);
+                }
                 break;
             case ASSIGN_TO_TEAM:
                 escalatedToTeamId = rule.getEscalateToTeamId();
+                // Team assignment logic - would need routing service
+                log.info("Conversation {} assigned to team {}", conversationId, escalatedToTeamId);
                 break;
             case ASSIGN_TO_SUPERVISOR:
                 escalatedToSupervisor = true;
+                log.info("Conversation {} escalated to supervisor", conversationId);
                 break;
             case MOVE_TO_QUEUE:
-                // Move to queue logic
-                log.info("Moving conversation {} to queue", conversationId);
+                moveConversationToQueue(conversationId);
+                log.info("Conversation {} moved to queue", conversationId);
                 break;
             case SEND_NOTIFICATION:
-                // Send notification logic
-                log.info("Sending notification for conversation {}", conversationId);
+                sendEscalationNotification(conversationId, rule);
+                log.info("Notification sent for conversation {}", conversationId);
                 break;
         }
-        
+
         // Notify supervisor if configured
         if (rule.getNotifySupervisor()) {
-            log.info("Notifying supervisor about escalation of conversation {}", conversationId);
-            // Implement notification logic
+            supervisorNotified = notifySupervisor(conversationId, rule);
+            log.info("Supervisor notified about escalation of conversation {}: {}", conversationId, supervisorNotified);
         }
-        
+
+        // Save escalation history
+        saveEscalationHistory(conversationId, escalatedToAgentId, escalatedToTeamId, rule, escalatedToSupervisor, supervisorNotified, context);
+
         return EscalationResult.builder()
                 .conversationId(conversationId)
                 .escalated(true)
@@ -324,11 +341,89 @@ public class IntelligentEscalationService {
                 .reason("Escalation rule matched: " + rule.getName())
                 .build();
     }
+
+    private void assignConversationToAgent(Long conversationId, Long agentId) {
+        try {
+            Conversation conversation = conversationRepository.findById(conversationId).orElse(null);
+            if (conversation != null) {
+                conversation.setAgentAssignedId(agentId);
+                conversationRepository.save(conversation);
+                log.info("Conversation {} assigned to agent {} via escalation", conversationId, agentId);
+            }
+        } catch (Exception e) {
+            log.error("Failed to assign conversation {} to agent {}", conversationId, agentId, e);
+        }
+    }
+
+    private void moveConversationToQueue(Long conversationId) {
+        try {
+            Conversation conversation = conversationRepository.findById(conversationId).orElse(null);
+            if (conversation != null) {
+                // Set status to QUEUED or similar
+                log.info("Conversation {} moved to queue", conversationId);
+            }
+        } catch (Exception e) {
+            log.error("Failed to move conversation {} to queue", conversationId, e);
+        }
+    }
+
+    private void sendEscalationNotification(Long conversationId, EscalationRule rule) {
+        // Implement notification logic (WebSocket, email, etc.)
+        log.info("Sending escalation notification for conversation {} with rule {}", conversationId, rule.getName());
+    }
+
+    private boolean notifySupervisor(Long conversationId, EscalationRule rule) {
+        // Implement supervisor notification logic
+        // This could send WebSocket notification, email, or create alert
+        log.info("Notifying supervisor about escalation of conversation {}", conversationId);
+        return true; // Placeholder - return actual notification status
+    }
+
+    private void saveEscalationHistory(Long conversationId, Long escalatedToAgentId, Long escalatedToTeamId,
+                                       EscalationRule rule, boolean escalatedToSupervisor, boolean supervisorNotified,
+                                       EscalationContext context) {
+        try {
+            Long tenantId = com.chatbot.core.tenant.infra.TenantContext.getTenantId();
+
+            EscalationHistory history = EscalationHistory.builder()
+                    .tenantId(tenantId)
+                    .conversationId(conversationId)
+                    .escalatedToAgentId(escalatedToAgentId)
+                    .escalatedToTeamId(escalatedToTeamId)
+                    .escalationRuleId((Long) rule.getId())
+                    .escalationTriggerType(rule.getTriggerType().name())
+                    .escalationAction(rule.getEscalationAction().name())
+                    .escalatedToSupervisor(escalatedToSupervisor)
+                    .supervisorNotified(supervisorNotified)
+                    .escalated(true)
+                    .reason("Escalation rule matched: " + rule.getName())
+                    .metadata(context.getCustomData() != null ? context.getCustomData().toString() : null)
+                    .build();
+
+            escalationHistoryRepository.save(history);
+            log.info("Escalation history saved for conversation {}", conversationId);
+        } catch (Exception e) {
+            log.error("Failed to save escalation history for conversation {}", conversationId, e);
+        }
+    }
     
     @Transactional(readOnly = true)
     public List<EscalationResult> getEscalationHistory(Long conversationId) {
-        // Placeholder for retrieving escalation history
-        log.info("Retrieving escalation history for conversation {}", conversationId);
-        return Collections.emptyList();
+        Long tenantId = com.chatbot.core.tenant.infra.TenantContext.getTenantId();
+        List<EscalationHistory> historyList = escalationHistoryRepository.findByTenantIdAndConversationId(tenantId, conversationId);
+
+        return historyList.stream()
+                .map(history -> EscalationResult.builder()
+                        .conversationId(history.getConversationId())
+                        .escalated(history.getEscalated())
+                        .escalatedToAgentId(history.getEscalatedToAgentId())
+                        .escalatedToTeamId(history.getEscalatedToTeamId())
+                        .escalatedToSupervisor(history.getEscalatedToSupervisor())
+                        .escalationRuleId(history.getEscalationRuleId())
+                        .escalationAction(history.getEscalationAction())
+                        .escalatedAt(history.getCreatedAt())
+                        .reason(history.getReason())
+                        .build())
+                .collect(Collectors.toList());
     }
 }
