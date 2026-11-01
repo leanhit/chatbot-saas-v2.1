@@ -14,6 +14,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class SupervisorSessionDTO {
     private Long id;
+    private Long tenantId;
     private Long supervisorId;
     private Long conversationId;
     private SupervisorSession.SessionType sessionType;
