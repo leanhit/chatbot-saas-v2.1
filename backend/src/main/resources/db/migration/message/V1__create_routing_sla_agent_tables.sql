@@ -58,11 +58,6 @@ CREATE TABLE IF NOT EXISTS skills (
     updated_by  VARCHAR(255),
     created_at  TIMESTAMP    NOT NULL DEFAULT NOW(),
     updated_at  TIMESTAMP    NOT NULL DEFAULT NOW(),
-<<<<<<< HEAD
-=======
-    created_by  VARCHAR(255),
-    updated_by  VARCHAR(255),
->>>>>>> 5612669aff9c4b8ef387fa8c9e7fbdfd9feebfc7
     is_deleted  BOOLEAN      NOT NULL DEFAULT FALSE
 );
 
@@ -89,11 +84,6 @@ CREATE TABLE IF NOT EXISTS routing_rules (
     updated_by  VARCHAR(255),
     created_at  TIMESTAMP    NOT NULL DEFAULT NOW(),
     updated_at  TIMESTAMP    NOT NULL DEFAULT NOW(),
-<<<<<<< HEAD
-=======
-    created_by  VARCHAR(255),
-    updated_by  VARCHAR(255),
->>>>>>> 5612669aff9c4b8ef387fa8c9e7fbdfd9feebfc7
     is_deleted  BOOLEAN      NOT NULL DEFAULT FALSE
 );
 
