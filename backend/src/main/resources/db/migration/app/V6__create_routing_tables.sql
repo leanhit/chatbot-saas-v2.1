@@ -2,6 +2,41 @@
 -- V6: Create Intelligent Routing Tables for App Database
 -- ============================================================
 
+-- Conversation Routing Table
+CREATE TABLE IF NOT EXISTS conversation_routing (
+    id BIGSERIAL PRIMARY KEY,
+    tenant_id BIGINT NOT NULL,
+    conversation_id BIGINT NOT NULL,
+    routing_status VARCHAR(50) NOT NULL,
+    assigned_agent_id BIGINT,
+    assigned_team_id BIGINT,
+    routing_rule_id BIGINT,
+    priority INTEGER NOT NULL DEFAULT 5,
+    queue_position INTEGER,
+    assigned_at TIMESTAMP,
+    escalated_at TIMESTAMP,
+    escalation_rule_id BIGINT,
+    escalated_from_agent_id BIGINT,
+    escalated_to_agent_id BIGINT,
+    escalation_reason TEXT,
+    wait_time_seconds INTEGER,
+    handling_time_seconds INTEGER,
+    is_escalated BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT chk_conversation_routing_status CHECK (routing_status IN ('QUEUED', 'ASSIGNED', 'IN_PROGRESS', 'ESCALATED', 'COMPLETED', 'CANCELLED'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_conversation_routing_tenant ON conversation_routing(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_conversation_routing_conversation ON conversation_routing(conversation_id);
+CREATE INDEX IF NOT EXISTS idx_conversation_routing_status ON conversation_routing(routing_status);
+CREATE INDEX IF NOT EXISTS idx_conversation_routing_agent ON conversation_routing(assigned_agent_id);
+CREATE INDEX IF NOT EXISTS idx_conversation_routing_team ON conversation_routing(assigned_team_id);
+CREATE INDEX IF NOT EXISTS idx_conversation_routing_queue ON conversation_routing(queue_position);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_conversation_routing_unique ON conversation_routing(conversation_id);
+
+COMMENT ON TABLE conversation_routing IS 'Tracks conversation routing status and assignment';
+
 -- Routing Rules Table
 CREATE TABLE IF NOT EXISTS routing_rules (
     id BIGSERIAL PRIMARY KEY,
