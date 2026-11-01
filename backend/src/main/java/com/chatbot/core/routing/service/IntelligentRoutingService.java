@@ -175,34 +175,67 @@ public class IntelligentRoutingService {
     public RoutingAssignmentResult routeConversation(Long conversationId, Map<String, Object> conversationContext) {
         log.info("Routing conversation {} with context: {}", conversationId, conversationContext);
         
-        Long tenantId = com.chatbot.core.tenant.infra.TenantContext.getTenantId();
-        
-        // Get all active routing rules ordered by priority
-        List<RoutingRule> rules = routingRuleRepository.findByTenantIdAndIsActiveTrueOrderByPriorityAsc(tenantId);
-        
-        if (rules.isEmpty()) {
-            log.warn("No active routing rules found for tenant {}", tenantId);
+        // Validate inputs
+        if (conversationId == null) {
+            log.error("conversationId cannot be null");
             return RoutingAssignmentResult.builder()
-                    .conversationId(conversationId)
+                    .conversationId(null)
                     .assigned(false)
-                    .reason("No active routing rules")
+                    .reason("Invalid input: conversationId is null")
                     .build();
         }
         
-        // Evaluate rules in priority order
-        for (RoutingRule rule : rules) {
-            if (evaluateConditions(rule.getConditions(), conversationContext)) {
-                return executeRoutingRule(rule, conversationId, conversationContext);
-            }
+        if (conversationContext == null) {
+            log.warn("conversationContext is null, using empty context");
+            conversationContext = new HashMap<>();
         }
         
-        // If no rule matches, use default rule
-        RoutingRule defaultRule = rules.stream()
-                .filter(RoutingRule::getIsDefault)
-                .findFirst()
-                .orElse(rules.get(0));
+        // Get tenant context
+        Long tenantId = com.chatbot.core.tenant.infra.TenantContext.getTenantId();
+        if (tenantId == null) {
+            log.error("TenantContext.getTenantId() returned null - tenant context not set");
+            return RoutingAssignmentResult.builder()
+                    .conversationId(conversationId)
+                    .assigned(false)
+                    .reason("Tenant context not set - cannot route without tenant")
+                    .build();
+        }
         
-        return executeRoutingRule(defaultRule, conversationId, conversationContext);
+        try {
+            // Get all active routing rules ordered by priority
+            List<RoutingRule> rules = routingRuleRepository.findByTenantIdAndIsActiveTrueOrderByPriorityAsc(tenantId);
+            
+            if (rules.isEmpty()) {
+                log.warn("No active routing rules found for tenant {}", tenantId);
+                return RoutingAssignmentResult.builder()
+                        .conversationId(conversationId)
+                        .assigned(false)
+                        .reason("No active routing rules")
+                        .build();
+            }
+            
+            // Evaluate rules in priority order
+            for (RoutingRule rule : rules) {
+                if (evaluateConditions(rule.getConditions(), conversationContext)) {
+                    return executeRoutingRule(rule, conversationId, conversationContext);
+                }
+            }
+            
+            // If no rule matches, use default rule
+            RoutingRule defaultRule = rules.stream()
+                    .filter(RoutingRule::getIsDefault)
+                    .findFirst()
+                    .orElse(rules.get(0));
+            
+            return executeRoutingRule(defaultRule, conversationId, conversationContext);
+        } catch (Exception e) {
+            log.error("Error routing conversation {}", conversationId, e);
+            return RoutingAssignmentResult.builder()
+                    .conversationId(conversationId)
+                    .assigned(false)
+                    .reason("Routing failed: " + e.getMessage())
+                    .build();
+        }
     }
     
     private boolean evaluateConditions(Map<String, Object> conditions, Map<String, Object> conversationContext) {
