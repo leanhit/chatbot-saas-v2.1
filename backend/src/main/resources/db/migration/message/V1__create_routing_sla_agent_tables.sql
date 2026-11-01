@@ -1,10 +1,10 @@
 -- ============================================================
--- V8: Create Routing, SLA, Agent Management Tables
--- Phase 1.3: Attribute-based Routing (routing_rules)
+-- V1: Create SLA, Agent Management Tables
 -- Phase 2.1: SLA Monitoring (sla_configurations)
 -- Phase 2.2: Multi-tier Escalation (escalation_tiers)
 -- Phase 3.1: Agent Management (agents)
 -- Phase 3.2: Skills-based Routing (skills)
+-- Note: routing_rules, escalation_rules, supervisor_sessions moved to app database (V6)
 -- ============================================================
 
 -- ============================================================
@@ -66,32 +66,6 @@ CREATE INDEX IF NOT EXISTS idx_skill_category ON skills (category);
 CREATE INDEX IF NOT EXISTS idx_skill_active   ON skills (tenant_id, active);
 
 -- ============================================================
--- Table: routing_rules
--- ============================================================
-CREATE TABLE IF NOT EXISTS routing_rules (
-    id          BIGSERIAL PRIMARY KEY,
-    tenant_key  VARCHAR(255),
-    tenant_id   BIGINT       NOT NULL,
-    tenant_key  VARCHAR(255),
-    name        VARCHAR(255) NOT NULL,
-    description TEXT,
-    priority    INTEGER      NOT NULL DEFAULT 0,
-    conditions  TEXT,              -- JSON object
-    action      TEXT,              -- JSON object
-    active      BOOLEAN      NOT NULL DEFAULT TRUE,
-    rule_type   VARCHAR(50)  NOT NULL DEFAULT 'AUTO_ASSIGN',
-    created_by  VARCHAR(255),
-    updated_by  VARCHAR(255),
-    created_at  TIMESTAMP    NOT NULL DEFAULT NOW(),
-    updated_at  TIMESTAMP    NOT NULL DEFAULT NOW(),
-    is_deleted  BOOLEAN      NOT NULL DEFAULT FALSE
-);
-
-CREATE INDEX IF NOT EXISTS idx_routing_rule_tenant   ON routing_rules (tenant_id);
-CREATE INDEX IF NOT EXISTS idx_routing_rule_priority ON routing_rules (priority);
-CREATE INDEX IF NOT EXISTS idx_routing_rule_active   ON routing_rules (tenant_id, active);
-
--- ============================================================
 -- Table: sla_configurations
 -- ============================================================
 CREATE TABLE IF NOT EXISTS sla_configurations (
@@ -108,11 +82,6 @@ CREATE TABLE IF NOT EXISTS sla_configurations (
     updated_by             VARCHAR(255),
     created_at             TIMESTAMP    NOT NULL DEFAULT NOW(),
     updated_at             TIMESTAMP    NOT NULL DEFAULT NOW(),
-<<<<<<< HEAD
-=======
-    created_by             VARCHAR(255),
-    updated_by             VARCHAR(255),
->>>>>>> 5612669aff9c4b8ef387fa8c9e7fbdfd9feebfc7
     is_deleted             BOOLEAN      NOT NULL DEFAULT FALSE
 );
 
@@ -138,11 +107,6 @@ CREATE TABLE IF NOT EXISTS escalation_tiers (
     updated_by      VARCHAR(255),
     created_at      TIMESTAMP    NOT NULL DEFAULT NOW(),
     updated_at      TIMESTAMP    NOT NULL DEFAULT NOW(),
-<<<<<<< HEAD
-=======
-    created_by      VARCHAR(255),
-    updated_by      VARCHAR(255),
->>>>>>> 5612669aff9c4b8ef387fa8c9e7fbdfd9feebfc7
     is_deleted      BOOLEAN      NOT NULL DEFAULT FALSE
 );
 

@@ -63,13 +63,11 @@ CREATE TABLE IF NOT EXISTS routing_history (
     assigned_agent_id BIGINT,
     assigned_team_id BIGINT,
     routing_rule_id BIGINT,
-    rule_name VARCHAR(255),
-    rule_type VARCHAR(50),
-    assigned_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    routing_strategy VARCHAR(100) NOT NULL,
+    conditions TEXT,
+    assigned BOOLEAN NOT NULL DEFAULT FALSE,
     reason TEXT,
-    metadata JSONB,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Create indexes for routing_history
@@ -79,7 +77,7 @@ CREATE INDEX IF NOT EXISTS idx_routing_history_agent ON routing_history(assigned
 CREATE INDEX IF NOT EXISTS idx_routing_history_team ON routing_history(assigned_team_id);
 CREATE INDEX IF NOT EXISTS idx_routing_history_rule ON routing_history(routing_rule_id);
 CREATE INDEX IF NOT EXISTS idx_routing_history_tenant_conversation ON routing_history(tenant_id, conversation_id);
-CREATE INDEX IF NOT EXISTS idx_routing_history_assigned_at ON routing_history(assigned_at DESC);
+CREATE INDEX IF NOT EXISTS idx_routing_history_created_at ON routing_history(created_at DESC);
 
 -- Add comment to tables
 COMMENT ON TABLE agent_workload IS 'Tracks agent workload, availability, and capacity for intelligent routing';
