@@ -380,6 +380,151 @@ class IntelligentRoutingServiceTest {
         }
     }
 
+    @Test
+    void testRouteConversation_RoundRobinRouting_Success() {
+        // Arrange
+        try (MockedStatic<TenantContext> mockedTenantContext = mockStatic(TenantContext.class)) {
+            mockedTenantContext.when(TenantContext::getTenantId).thenReturn(TEST_TENANT_ID);
+
+            RoutingRule roundRobinRule = createRoutingRule(RoutingRule.RoutingRuleType.ROUND_ROBIN);
+            roundRobinRule.setRuleType(RoutingRule.RoutingRuleType.ROUND_ROBIN);
+            roundRobinRule.setTargetType(RoutingRule.TargetType.AGENT);
+            
+            AgentWorkload agent1 = createAgentWorkload(TEST_AGENT_ID, TEST_TEAM_ID);
+            AgentWorkload agent2 = createAgentWorkload(11L, TEST_TEAM_ID);
+
+            when(routingRuleRepository.findByTenantIdAndIsActiveTrueOrderByPriorityAsc(TEST_TENANT_ID))
+                    .thenReturn(List.of(roundRobinRule));
+            when(agentWorkloadRepository.findByTenantIdAndStatus(TEST_TENANT_ID, AgentWorkload.AgentStatus.AVAILABLE))
+                    .thenReturn(List.of(agent1, agent2));
+            when(conversationRepository.findById(TEST_CONVERSATION_ID)).thenReturn(Optional.of(new Conversation()));
+            when(agentWorkloadRepository.findByTenantIdAndAgentId(TEST_TENANT_ID, TEST_AGENT_ID))
+                    .thenReturn(Optional.of(agent1));
+            when(agentWorkloadRepository.save(any(AgentWorkload.class))).thenReturn(agent1);
+
+            Map<String, Object> context = new HashMap<>();
+
+            // Act
+            RoutingAssignmentResult result = intelligentRoutingService.routeConversation(TEST_CONVERSATION_ID, context);
+
+            // Assert
+            assertNotNull(result);
+            assertTrue(result.isAssigned());
+            assertNotNull(result.getAssignedAgentId());
+            assertEquals("ROUND_ROBIN", result.getRoutingStrategy());
+        }
+    }
+
+    @Test
+    void testRouteConversation_PriorityRouting_Success() {
+        // Arrange
+        try (MockedStatic<TenantContext> mockedTenantContext = mockStatic(TenantContext.class)) {
+            mockedTenantContext.when(TenantContext::getTenantId).thenReturn(TEST_TENANT_ID);
+
+            RoutingRule priorityRule = createRoutingRule(RoutingRule.RoutingRuleType.PRIORITY_BASED);
+            priorityRule.setRuleType(RoutingRule.RoutingRuleType.PRIORITY_BASED);
+            priorityRule.setTargetType(RoutingRule.TargetType.AGENT);
+            
+            AgentWorkload highPriorityAgent = createAgentWorkload(TEST_AGENT_ID, TEST_TEAM_ID);
+            highPriorityAgent.setPriorityScore(90);
+            AgentWorkload lowPriorityAgent = createAgentWorkload(11L, TEST_TEAM_ID);
+            lowPriorityAgent.setPriorityScore(50);
+
+            when(routingRuleRepository.findByTenantIdAndIsActiveTrueOrderByPriorityAsc(TEST_TENANT_ID))
+                    .thenReturn(List.of(priorityRule));
+            when(agentWorkloadRepository.findAvailableAgentsByPriority(TEST_TENANT_ID, AgentWorkload.AgentStatus.AVAILABLE))
+                    .thenReturn(List.of(highPriorityAgent, lowPriorityAgent));
+            when(conversationRepository.findById(TEST_CONVERSATION_ID)).thenReturn(Optional.of(new Conversation()));
+            when(agentWorkloadRepository.findByTenantIdAndAgentId(TEST_TENANT_ID, TEST_AGENT_ID))
+                    .thenReturn(Optional.of(highPriorityAgent));
+            when(agentWorkloadRepository.save(any(AgentWorkload.class))).thenReturn(highPriorityAgent);
+
+            Map<String, Object> context = new HashMap<>();
+
+            // Act
+            RoutingAssignmentResult result = intelligentRoutingService.routeConversation(TEST_CONVERSATION_ID, context);
+
+            // Assert
+            assertNotNull(result);
+            assertTrue(result.isAssigned());
+            assertEquals(TEST_AGENT_ID, result.getAssignedAgentId());
+            assertEquals("PRIORITY_BASED", result.getRoutingStrategy());
+        }
+    }
+
+    @Test
+    void testRouteConversation_LeastBusyRouting_Success() {
+        // Arrange
+        try (MockedStatic<TenantContext> mockedTenantContext = mockStatic(TenantContext.class)) {
+            mockedTenantContext.when(TenantContext::getTenantId).thenReturn(TEST_TENANT_ID);
+
+            RoutingRule leastBusyRule = createRoutingRule(RoutingRule.RoutingRuleType.LEAST_BUSY);
+            leastBusyRule.setRuleType(RoutingRule.RoutingRuleType.LEAST_BUSY);
+            leastBusyRule.setTargetType(RoutingRule.TargetType.AGENT);
+            
+            AgentWorkload busyAgent = createAgentWorkload(TEST_AGENT_ID, TEST_TEAM_ID);
+            busyAgent.setActiveConversations(8);
+            AgentWorkload idleAgent = createAgentWorkload(11L, TEST_TEAM_ID);
+            idleAgent.setActiveConversations(1);
+
+            when(routingRuleRepository.findByTenantIdAndIsActiveTrueOrderByPriorityAsc(TEST_TENANT_ID))
+                    .thenReturn(List.of(leastBusyRule));
+            when(agentWorkloadRepository.findAvailableAgentsByWorkload(TEST_TENANT_ID, AgentWorkload.AgentStatus.AVAILABLE))
+                    .thenReturn(List.of(busyAgent, idleAgent));
+            when(conversationRepository.findById(TEST_CONVERSATION_ID)).thenReturn(Optional.of(new Conversation()));
+            when(agentWorkloadRepository.findByTenantIdAndAgentId(TEST_TENANT_ID, 11L))
+                    .thenReturn(Optional.of(idleAgent));
+            when(agentWorkloadRepository.save(any(AgentWorkload.class))).thenReturn(idleAgent);
+
+            Map<String, Object> context = new HashMap<>();
+
+            // Act
+            RoutingAssignmentResult result = intelligentRoutingService.routeConversation(TEST_CONVERSATION_ID, context);
+
+            // Assert
+            assertNotNull(result);
+            assertTrue(result.isAssigned());
+            assertEquals(11L, result.getAssignedAgentId()); // Should select idle agent
+            assertEquals("LEAST_BUSY", result.getRoutingStrategy());
+        }
+    }
+
+    @Test
+    void testRouteConversation_NullConversationId_ReturnsError() {
+        // Arrange
+        try (MockedStatic<TenantContext> mockedTenantContext = mockStatic(TenantContext.class)) {
+            mockedTenantContext.when(TenantContext::getTenantId).thenReturn(TEST_TENANT_ID);
+
+            Map<String, Object> context = new HashMap<>();
+
+            // Act
+            RoutingAssignmentResult result = intelligentRoutingService.routeConversation(null, context);
+
+            // Assert
+            assertNotNull(result);
+            assertFalse(result.isAssigned());
+            assertEquals("Invalid input: conversationId is null", result.getReason());
+        }
+    }
+
+    @Test
+    void testRouteConversation_NullTenantContext_ReturnsError() {
+        // Arrange
+        try (MockedStatic<TenantContext> mockedTenantContext = mockStatic(TenantContext.class)) {
+            mockedTenantContext.when(TenantContext::getTenantId).thenReturn(null);
+
+            Map<String, Object> context = new HashMap<>();
+
+            // Act
+            RoutingAssignmentResult result = intelligentRoutingService.routeConversation(TEST_CONVERSATION_ID, context);
+
+            // Assert
+            assertNotNull(result);
+            assertFalse(result.isAssigned());
+            assertEquals("Tenant context not set - cannot route without tenant", result.getReason());
+        }
+    }
+
     // Helper methods
     private RoutingRule createRoutingRule(RoutingRule.RoutingRuleType ruleType) {
         RoutingRule rule = new RoutingRule();
