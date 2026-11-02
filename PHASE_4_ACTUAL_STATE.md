@@ -24,22 +24,22 @@
 - ✅ Exception handling in routeConversation()
 - ✅ Routing history save failure handling
 
-## ⚠️ Integration/Smoke/API Tests (BLOCKED)
+## ⚠️ Integration/Smoke/API Tests (BLOCKED - Attempted but Failed)
 
 ### Integration Tests (Repository Layer)
-- ❌ `RoutingRepositoryIntegrationTest.java` - BLOCKED: @DataJpaTest fails due to Spring context load complexity
-- ❌ `EscalationRepositoryIntegrationTest.java` - BLOCKED: @DataJpaTest fails due to Spring context load complexity
-- ❌ `SupervisorRepositoryIntegrationTest.java` - BLOCKED: @DataJpaTest fails due to Spring context load complexity
-- ❌ `TenantIsolationTest.java` - BLOCKED: @DataJpaTest fails due to Spring context load complexity
+- ❌ `RoutingRepositoryIntegrationTest.java` - ATTEMPTED: @DataJpaTest fails due to Spring context load complexity
+- ❌ `EscalationRepositoryIntegrationTest.java` - ATTEMPTED: @DataJpaTest fails due to Spring context load complexity
+- ❌ `SupervisorRepositoryIntegrationTest.java` - ATTEMPTED: @DataJpaTest fails due to Spring context load complexity
+- ❌ `TenantIsolationTest.java` - ATTEMPTED: @DataJpaTest fails due to Spring context load complexity
 
-**Reason:** @DataJpaTest attempts to load full Spring context which fails due to complex dependencies. Requires dedicated test configuration or Testcontainers setup.
+**Reason:** @DataJpaTest attempts to load full Spring context which fails due to complex dependencies (Redis, Kafka, etc.). ApplicationContext failure threshold exceeded. Requires dedicated @TestConfiguration or Testcontainers setup.
 
 ### Smoke Tests (Service Layer)
-- ❌ `RoutingSmokeTest.java` - BLOCKED: @SpringBootTest fails due to DTO/Service method mismatches
-- ❌ `EscalationSmokeTest.java` - BLOCKED: @SpringBootTest fails due to DTO/Service method mismatches
-- ❌ `SupervisorSmokeTest.java` - BLOCKED: @SpringBootTest fails due to DTO/Service method mismatches
+- ❌ `RoutingSmokeTest.java` - ATTEMPTED: @SpringBootTest fails due to DTO/Service method mismatches
+- ❌ `EscalationSmokeTest.java` - ATTEMPTED: @SpringBootTest fails due to DTO/Service method mismatches
+- ❌ `SupervisorSmokeTest.java` - ATTEMPTED: @SpringBootTest fails due to DTO/Service method mismatches
 
-**Reason:** DTO/Service method names do not match expected test interface. Requires service layer refactoring or test adaptation.
+**Reason:** DTO/Service method names do not match expected test interface. Example: `createSupervisorSession(Long, Long, SessionType, Long)` vs actual signature `(Long, Long, SessionType)`. Requires service layer refactoring or test adaptation.
 
 ### API Integration Tests (Controller Layer)
 - ❌ `RoutingControllerIntegrationTest.java` - BLOCKED: Depends on Task 1 & 2
@@ -55,14 +55,14 @@
 | Database Migrations | Completed | ✅ Completed | Files exist & verified |
 | Unit Tests | Completed | ✅ Completed | 51 tests PASSED |
 | Migration Verification | Completed | ✅ Completed | Entity-table mapping verified |
-| Integration Tests | Completed | ⚠️ BLOCKED | Spring context load complexity |
-| Smoke Tests | Completed | ⚠️ BLOCKED | DTO/Service method mismatches |
-| API Tests | Completed | ⚠️ BLOCKED | Depends on integration/smoke |
+| Integration Tests | Completed | ❌ ATTEMPTED & FAILED | @DataJpaTest Spring context load failure |
+| Smoke Tests | Completed | ❌ ATTEMPTED & FAILED | DTO/Service method mismatches |
+| API Tests | Completed | ❌ NOT ATTEMPTED | Depends on integration/smoke |
 | Code Quality | Completed | ✅ Completed | Code review verified |
 
 ## 🎯 Conclusion
 
-**Phase 4 Status:** PARTIALLY COMPLETED (with documented blockers)
+**Phase 4 Status:** PARTIALLY COMPLETED (with documented blockers - integration/smoke tests attempted but failed)
 
 **What's Done:**
 - Database migrations ✅ (V6, V24, V28 verified)
@@ -70,15 +70,18 @@
 - Migration verification ✅ (Entity-table mapping verified)
 - Basic code quality ✅
 
-**What's Blocked:**
-- Integration tests ⚠️ (@DataJpaTest fails due to Spring context load complexity)
-- Smoke tests ⚠️ (@SpringBootTest fails due to DTO/Service method mismatches)
-- API integration tests ⚠️ (Depends on integration/smoke tests)
+**What's Attempted but Failed:**
+- Integration tests ❌ (@DataJpaTest fails due to Spring context load complexity - ApplicationContext failure threshold exceeded)
+- Smoke tests ❌ (@SpringBootTest fails due to DTO/Service method mismatches - requires service API refactoring)
 
-**Merge Readiness:** 
+**What's Not Attempted:**
+- API integration tests ❌ (Depends on integration/smoke tests)
+
+**Merge Readiness:**
 - ✅ READY for development/staging with manual testing
 - ⚠️ NOT READY for production without integration/smoke/API tests
 - ✅ Migration SQL is production-ready
+- ✅ Unit tests provide basic validation
 
 ## 📋 Next Steps
 
@@ -89,9 +92,11 @@ See `PHASE_4_TASKS_TODO.md` for specific tasks to complete Phase 4.
 **Integration Tests Blocker:**
 - @DataJpaTest attempts to load full Spring context
 - Fails due to complex dependencies (Redis, Kafka, etc.)
-- Solution: Create dedicated @TestConfiguration or use Testcontainers
+- ApplicationContext failure threshold exceeded
+- Solution: Create dedicated @TestConfiguration or use Testcontainers with PostgreSQL
 
 **Smoke Tests Blocker:**
 - DTO/Service method names do not match expected test interface
-- Example: EscalationContext.setTenantId() does not exist
+- Example: `createSupervisorSession(Long, Long, SessionType, Long)` vs actual signature `(Long, Long, SessionType)`
+- Example: `endSupervisorSession(Long, Long)` vs actual signature `(Long, String, Integer)`
 - Solution: Refactor DTOs or adapt tests to actual service API
