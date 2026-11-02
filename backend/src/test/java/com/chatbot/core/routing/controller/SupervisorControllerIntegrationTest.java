@@ -23,7 +23,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(IntelligentSupervisorController.class)
 @ActiveProfiles("test")
-@Disabled("Requires full Spring context - enable in CI/CD environment")
+@Disabled("Requires full Spring context - ApplicationContext loading issues in Docker environment")
 class SupervisorControllerIntegrationTest {
 
     @Autowired

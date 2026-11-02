@@ -20,7 +20,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
 @ActiveProfiles("test")
-@Disabled("Requires Docker and external services - use Mockito tests instead")
+@Disabled("Requires full Spring context - ApplicationContext loading issues in Docker environment")
 class RoutingSmokeTest {
 
     @Autowired

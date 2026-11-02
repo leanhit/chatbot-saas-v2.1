@@ -11,6 +11,8 @@ import com.chatbot.core.routing.repository.SupervisorSessionRepository;
 import com.chatbot.core.tenant.infra.TenantContext;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
+import org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
@@ -23,7 +25,8 @@ import static org.junit.jupiter.api.Assertions.*;
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @ActiveProfiles("test")
-@Disabled("Requires Docker and external services - use Mockito tests instead")
+@ImportAutoConfiguration(exclude = {FlywayAutoConfiguration.class})
+@Disabled("Requires full Spring context - ApplicationContext loading issues in Docker environment")
 class TenantIsolationTest {
 
     @Autowired

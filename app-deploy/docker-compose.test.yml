@@ -1,0 +1,104 @@
+services:
+  # ----------------------------------------
+  # PostgreSQL for Testing (pgvector)
+  # ----------------------------------------
+  db-test:
+    image: ankane/pgvector:latest
+    container_name: chatbot_saas_postgres_test
+    restart: always
+    environment:
+      POSTGRES_DB: chatbot_test_db
+      POSTGRES_USER: chatbot_user
+      POSTGRES_PASSWORD: chatbot_Admin_2025
+    ports:
+      - "15432:5432"
+    networks:
+      - test-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U chatbot_user -d chatbot_test_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  # ----------------------------------------
+  # Redis for Testing
+  # ----------------------------------------
+  redis-test:
+    image: redis:7-alpine
+    container_name: chatbot_saas_redis_test
+    restart: always
+    command: redis-server --notify-keyspace-events Ex
+    ports:
+      - "16379:6379"
+    networks:
+      - test-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  # ----------------------------------------
+  # RabbitMQ for Testing
+  # ----------------------------------------
+  rabbitmq-test:
+    image: rabbitmq:3.12-management
+    container_name: chatbot_saas_rabbitmq_test
+    restart: always
+    environment:
+      RABBITMQ_DEFAULT_USER: admin
+      RABBITMQ_DEFAULT_PASS: admin123
+      RABBITMQ_DEFAULT_VHOST: /
+    ports:
+      - "15673:5672"
+      - "25672:15672"
+    networks:
+      - test-network
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  # ----------------------------------------
+  # Kafka + Zookeeper for Testing
+  # ----------------------------------------
+  zookeeper-test:
+    image: confluentinc/cp-zookeeper:7.5.0
+    container_name: chatbot_saas_zookeeper_test
+    restart: always
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "12181:2181"
+    networks:
+      - test-network
+
+  kafka-test:
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: chatbot_saas_kafka_test
+    restart: always
+    depends_on:
+      - zookeeper-test
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper-test:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-test:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+    ports:
+      - "19092:9092"
+    networks:
+      - test-network
+    healthcheck:
+      test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:9092"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+networks:
+  test-network:
+    driver: bridge
+    name: chatbot_saas_test_network
