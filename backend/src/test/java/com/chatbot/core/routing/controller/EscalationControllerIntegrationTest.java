@@ -21,7 +21,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(IntelligentEscalationController.class)
 @ActiveProfiles("test")
-@Disabled("Requires full Spring context - ApplicationContext loading issues in Docker environment")
+@Disabled("ApplicationContext loading issues - requires full Spring context configuration")
 class EscalationControllerIntegrationTest {
 
     @Autowired

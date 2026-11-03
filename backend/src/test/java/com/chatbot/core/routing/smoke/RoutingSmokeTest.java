@@ -20,7 +20,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
 @ActiveProfiles("test")
-@Disabled("Requires full Spring context - ApplicationContext loading issues in Docker environment")
+@Disabled("ApplicationContext loading issues - requires full Spring context configuration")
 class RoutingSmokeTest {
 
     @Autowired

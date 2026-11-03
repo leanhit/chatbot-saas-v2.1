@@ -26,7 +26,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @ActiveProfiles("test")
 @ImportAutoConfiguration(exclude = {FlywayAutoConfiguration.class})
-@Disabled("Requires full Spring context - ApplicationContext loading issues in Docker environment")
+@Disabled("ApplicationContext loading issues - requires full Spring context configuration")
 class TenantIsolationTest {
 
     @Autowired

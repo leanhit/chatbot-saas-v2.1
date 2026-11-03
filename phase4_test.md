@@ -1,34 +1,36 @@
 
 Dưới đây là checklist test còn thiếu chi tiết cho từng file, theo đúng kịch bản Phase 4. Mỗi file nên được tạo riêng để test một lớp và dễ maintain.
 
-## ✅ TRẠNG THÁI TEST PHASE 4 (Updated: Nov 2, 2026)
+## ✅ TRẠNG THÁI TEST PHASE 4 (Updated: Nov 3, 2026)
 
 ### Unit Tests (Mockito) - ✅ HOÀN THÀNH (36/36 tests passed)
 - ✅ RoutingServiceMockitoTest.java - 8 tests passed
 - ✅ EscalationServiceMockitoTest.java - 12 tests passed
 - ✅ SupervisorSessionServiceMockitoTest.java - 16 tests passed
 
-### Integration Tests (Testcontainers) - ⏸️ ĐÃ DISABLE (ApplicationContext loading issues in Docker)
-- ⏸️ TenantIsolationTest.java - @Disabled (ApplicationContext loading issues in Docker environment)
-- ⏸️ RoutingRepositoryIntegrationTest.java - @Disabled (ApplicationContext loading issues in Docker environment)
-- ⏸️ EscalationRepositoryIntegrationTest.java - @Disabled (ApplicationContext loading issues in Docker environment)
-- ⏸️ SupervisorRepositoryIntegrationTest.java - @Disabled (ApplicationContext loading issues in Docker environment)
+### Integration Tests (Testcontainers) - ⏸️ ĐÃ DISABLE (ApplicationContext loading issues)
+- ⏸️ TenantIsolationTest.java - @Disabled (ApplicationContext loading issues - requires full Spring context configuration)
+- ⏸️ RoutingRepositoryIntegrationTest.java - @Disabled (ApplicationContext loading issues - requires full Spring context configuration)
+- ⏸️ EscalationRepositoryIntegrationTest.java - @Disabled (ApplicationContext loading issues - requires full Spring context configuration)
+- ⏸️ SupervisorRepositoryIntegrationTest.java - @Disabled (ApplicationContext loading issues - requires full Spring context configuration)
 
-### Smoke Tests (Spring Context) - ⏸️ ĐÃ DISABLE (ApplicationContext loading issues in Docker)
-- ⏸️ RoutingSmokeTest.java - @Disabled (ApplicationContext loading issues in Docker environment)
-- ⏸️ EscalationSmokeTest.java - @Disabled (ApplicationContext loading issues in Docker environment)
-- ⏸️ SupervisorSmokeTest.java - @Disabled (ApplicationContext loading issues in Docker environment)
+### Smoke Tests (Spring Context) - ⏸️ ĐÃ DISABLE (ApplicationContext loading issues)
+- ⏸️ RoutingSmokeTest.java - @Disabled (ApplicationContext loading issues - requires full Spring context configuration)
+- ⏸️ EscalationSmokeTest.java - @Disabled (ApplicationContext loading issues - requires full Spring context configuration)
+- ⏸️ SupervisorSmokeTest.java - @Disabled (ApplicationContext loading issues - requires full Spring context configuration)
 
-### Controller Tests (Spring Context) - ⏸️ ĐÃ DISABLE (ApplicationContext loading issues in Docker)
-- ⏸️ RoutingControllerIntegrationTest.java - @Disabled (ApplicationContext loading issues in Docker environment)
-- ⏸️ EscalationControllerIntegrationTest.java - @Disabled (ApplicationContext loading issues in Docker environment)
-- ⏸️ SupervisorControllerIntegrationTest.java - @Disabled (ApplicationContext loading issues in Docker environment)
+### Controller Tests (Spring Context) - ⏸️ ĐÃ DISABLE (ApplicationContext loading issues)
+- ⏸️ RoutingControllerIntegrationTest.java - @Disabled (ApplicationContext loading issues - requires full Spring context configuration)
+- ⏸️ EscalationControllerIntegrationTest.java - @Disabled (ApplicationContext loading issues - requires full Spring context configuration)
+- ⏸️ SupervisorControllerIntegrationTest.java - @Disabled (ApplicationContext loading issues - requires full Spring context configuration)
 
 ### Docker Environment Status
 - ✅ Docker test services running (PostgreSQL, Redis, RabbitMQ, Kafka, Zookeeper)
+- ✅ App deployed and running successfully (http://localhost:8080)
 - ✅ Unit tests pass in Docker environment
 - ❌ Integration/Smoke/Controller tests fail due to ApplicationContext loading issues
-- ⚠️ Tests require full Spring context which fails to load in Docker environment
+- ⚠️ Tests require full Spring context which fails to load even with deployed app
+- ⚠️ Root cause: Complex Spring auto-configuration conflicts in test environment
 
 ---
 
