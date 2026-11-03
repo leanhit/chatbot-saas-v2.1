@@ -52,15 +52,21 @@ public class MetricsAlertService {
 
     private void checkMessageErrorRate() {
         try {
-            double errorCount = meterRegistry.counter("chatbot.message.errors").count();
-            double processedCount = meterRegistry.counter("chatbot.facebook.messages.processed").count();
+            // Check if counter exists before accessing it
+            var errorCounter = meterRegistry.find("chatbot.message.errors").counter();
+            var processedCounter = meterRegistry.find("chatbot.facebook.messages.processed").counter();
             
-            if (processedCount > 0) {
-                double errorRate = (errorCount / processedCount) * 100;
+            if (errorCounter != null && processedCounter != null) {
+                double errorCount = errorCounter.count();
+                double processedCount = processedCounter.count();
                 
-                if (errorRate > messageErrorRateThreshold) {
-                    log.warn("🚨 ALERT: Message error rate exceeds threshold: 当前={:.2f}%, 阈值={:.2f}%", 
-                        errorRate, messageErrorRateThreshold);
+                if (processedCount > 0) {
+                    double errorRate = (errorCount / processedCount) * 100;
+                    
+                    if (errorRate > messageErrorRateThreshold) {
+                        log.warn("🚨 ALERT: Message error rate exceeds threshold: 当前={:.2f}%, 阈值={:.2f}%", 
+                            errorRate, messageErrorRateThreshold);
+                    }
                 }
             }
         } catch (Exception e) {
@@ -70,15 +76,18 @@ public class MetricsAlertService {
 
     private void checkResponseTimes() {
         try {
-            meterRegistry.get("chatbot.operation.duration").timers().forEach(timer -> {
-                double mean = timer.mean(TimeUnit.MILLISECONDS);
-                String operation = timer.getId().getTag("operation");
-                
-                if (mean > responseTimeThreshold) {
-                    log.warn("🚨 ALERT: Response time exceeds threshold for operation '{}': 当前={:.2f}ms, 阈值={}ms", 
-                        operation, mean, responseTimeThreshold);
-                }
-            });
+            var timers = meterRegistry.find("chatbot.operation.duration").timers();
+            if (timers != null) {
+                timers.forEach(timer -> {
+                    double mean = timer.mean(TimeUnit.MILLISECONDS);
+                    String operation = timer.getId().getTag("operation");
+                    
+                    if (mean > responseTimeThreshold) {
+                        log.warn("🚨 ALERT: Response time exceeds threshold for operation '{}': 当前={:.2f}ms, 阈值={}ms", 
+                            operation, mean, responseTimeThreshold);
+                    }
+                });
+            }
         } catch (Exception e) {
             log.error("Error checking response times: {}", e.getMessage());
         }
@@ -86,11 +95,14 @@ public class MetricsAlertService {
 
     private void checkActiveConversations() {
         try {
-            Double activeConversations = meterRegistry.get("chatbot.conversations.active").gauge().value();
-            
-            if (activeConversations != null && activeConversations > activeConversationsThreshold) {
-                log.warn("🚨 ALERT: Active conversations exceed threshold: 当前={}, 阈值={}", 
-                    activeConversations, activeConversationsThreshold);
+            var gauge = meterRegistry.find("chatbot.conversations.active").gauge();
+            if (gauge != null) {
+                Double activeConversations = gauge.value();
+                
+                if (activeConversations != null && activeConversations > activeConversationsThreshold) {
+                    log.warn("🚨 ALERT: Active conversations exceed threshold: 当前={}, 阈值={}", 
+                        activeConversations, activeConversationsThreshold);
+                }
             }
         } catch (Exception e) {
             log.error("Error checking active conversations: {}", e.getMessage());
@@ -99,22 +111,27 @@ public class MetricsAlertService {
 
     private void checkDatabasePoolUsage() {
         try {
-            meterRegistry.get("hikaricp.connections.active").gauges().forEach(gauge -> {
-                double activeConnections = gauge.value();
-                
-                meterRegistry.get("hikaricp.connections.max").gauges().forEach(maxGauge -> {
-                    double maxConnections = maxGauge.value();
+            var activeGauges = meterRegistry.find("hikaricp.connections.active").gauges();
+            var maxGauges = meterRegistry.find("hikaricp.connections.max").gauges();
+            
+            if (activeGauges != null && maxGauges != null) {
+                activeGauges.forEach(gauge -> {
+                    double activeConnections = gauge.value();
                     
-                    if (maxConnections > 0) {
-                        double poolUsage = (activeConnections / maxConnections) * 100;
+                    maxGauges.forEach(maxGauge -> {
+                        double maxConnections = maxGauge.value();
                         
-                        if (poolUsage > databasePoolThreshold) {
-                            log.warn("🚨 ALERT: Database pool usage exceeds threshold: 当前={:.2f}%, 阈值={:.2f}%", 
-                                poolUsage, databasePoolThreshold);
+                        if (maxConnections > 0) {
+                            double poolUsage = (activeConnections / maxConnections) * 100;
+                            
+                            if (poolUsage > databasePoolThreshold) {
+                                log.warn("🚨 ALERT: Database pool usage exceeds threshold: 当前={:.2f}%, 阈值={:.2f}%", 
+                                    poolUsage, databasePoolThreshold);
+                            }
                         }
-                    }
+                    });
                 });
-            });
+            }
         } catch (Exception e) {
             log.error("Error checking database pool usage: {}", e.getMessage());
         }
