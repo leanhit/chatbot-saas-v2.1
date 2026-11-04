@@ -123,7 +123,8 @@
     "close": "Close",
     "delete": "Delete",
     "all": "All",
-    "back": "Back"
+    "back": "Back",
+    "view": "View"
   },
   "auth": {
     "login": {
@@ -1701,7 +1702,9 @@
     "skillsManagement": "Skills Management",
     "routingRules": "Routing Rules",
     "slaMonitoring": "SLA Monitoring",
-    "escalationTiers": "Escalation Tiers"
+    "escalationTiers": "Escalation Tiers",
+    "vipQueue": "VIP Queue",
+    "segments": "Segments"
   },
   "agentStats": {
     "title": "Conversation Statistics",
@@ -2123,8 +2126,18 @@
     "email": "Email",
     "phone": "Phone",
     "externalId": "External ID",
-    "status": "Status",
-    "tier": "Tier",
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive",
+      "blocked": "Blocked",
+      "churned": "Churned"
+    },
+    "tier": {
+      "free": "Free",
+      "basic": "Basic",
+      "premium": "Premium",
+      "enterprise": "Enterprise"
+    },
     "conversations": "Conversations",
     "lastContact": "Last Contact",
     "language": "Language",
@@ -2143,7 +2156,24 @@
       "basic": "Basic",
       "premium": "Premium",
       "enterprise": "Enterprise"
-    }
+    },
+    "vipQueue": "VIP Customer Queue",
+    "vipQueueDesc": "Monitor and prioritize premium tier customers",
+    "segments": "Customer Segments",
+    "segmentsDesc": "Overview of customers by tier",
+    "profileDetail": "Customer Profile",
+    "timeline": "Activity Timeline",
+    "notes": "Notes & Attributes",
+    "confirmDeleteTitle": "Delete Customer",
+    "totalMessages": "Total Messages",
+    "satisfactionScore": "Satisfaction Score",
+    "avgResponseTime": "Avg Response Time",
+    "avgSatisfaction": "Avg Satisfaction",
+    "sortByLastContact": "Sort by Last Contact",
+    "sortBySatisfaction": "Sort by Satisfaction",
+    "sortByConversations": "Sort by Conversations",
+    "noVIPCustomers": "No VIP customers found",
+    "slaWarning": "SLA Warnings"
   },
   "feedback": {
     "title": "Feedback Survey",
@@ -2169,7 +2199,8 @@
       "agentPerformance": "Agent Performance",
       "botResponse": "Bot Response",
       "general": "General"
-    }
+    },
+    "confirmDeleteTitle": "Delete Feedback"
   },
   "analytics": {
     "title": "Customer Analytics",

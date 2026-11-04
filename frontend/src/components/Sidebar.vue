@@ -252,6 +252,22 @@
                   <Icon icon="mdi:chart-box-outline" class="text-base flex-shrink-0" />
                   <span>{{ $t('analytics.title') }}</span>
                 </router-link>
+                <router-link
+                  to="/customer/vip-queue"
+                  @click.stop
+                  class="w-full text-left block rounded-md p-2.5 px-3 text-sm hover:bg-gray-200 dark:hover:bg-gray-700 flex items-center gap-2.5 transition-colors"
+                >
+                  <Icon icon="mdi:crown" class="text-base flex-shrink-0 text-amber-500" />
+                  <span>{{ $t('sidebar.vipQueue') }}</span>
+                </router-link>
+                <router-link
+                  to="/customer/segments"
+                  @click.stop
+                  class="w-full text-left block rounded-md p-2.5 px-3 text-sm hover:bg-gray-200 dark:hover:bg-gray-700 flex items-center gap-2.5 transition-colors"
+                >
+                  <Icon icon="mdi:chart-pie" class="text-base flex-shrink-0 text-blue-500" />
+                  <span>{{ $t('sidebar.segments') }}</span>
+                </router-link>
               </template>
             </menu-accordion>
           </div>

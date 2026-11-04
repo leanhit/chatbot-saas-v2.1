@@ -60,7 +60,7 @@
         </div>
         <div v-else class="space-y-3">
           <div v-for="(count, status) in statusDistribution" :key="status" class="flex items-center">
-            <div class="w-32 text-sm text-gray-600 dark:text-gray-400">{{ t(`customer.status.${status.toLowerCase()}`) }}</div>
+            <div class="w-32 text-sm text-gray-600 dark:text-gray-400">{{ t(`customer.statusOptions.${status.toLowerCase()}`) }}</div>
             <div class="flex-1 mx-4 bg-gray-200 dark:bg-gray-700 rounded-full h-4">
               <div
                 :class="getStatusColor(status)"
@@ -81,7 +81,7 @@
         </div>
         <div v-else class="space-y-3">
           <div v-for="(count, tier) in tierDistribution" :key="tier" class="flex items-center">
-            <div class="w-32 text-sm text-gray-600 dark:text-gray-400">{{ t(`customer.tier.${tier.toLowerCase()}`) }}</div>
+            <div class="w-32 text-sm text-gray-600 dark:text-gray-400">{{ t(`customer.tierOptions.${tier.toLowerCase()}`) }}</div>
             <div class="flex-1 mx-4 bg-gray-200 dark:bg-gray-700 rounded-full h-4">
               <div
                 :class="getTierColor(tier)"
@@ -93,6 +93,11 @@
           </div>
         </div>
       </div>
+    </div>
+
+    <!-- NPS Panel -->
+    <div class="mb-6">
+      <NPSPanel :feedback-list="allFeedback" />
     </div>
 
     <!-- Recent Feedback -->
@@ -146,6 +151,7 @@ import { Icon } from '@iconify/vue'
 import { useI18n } from 'vue-i18n'
 import customerProfileApi from '@/api/customerProfileApi'
 import feedbackApi from '@/api/feedbackApi'
+import NPSPanel from './NPSPanel.vue'
 
 const { t } = useI18n()
 
@@ -159,6 +165,7 @@ const stats = ref({
 const statusDistribution = ref({})
 const tierDistribution = ref({})
 const recentFeedback = ref([])
+const allFeedback = ref([])
 
 const loadAnalytics = async () => {
   try {
@@ -167,6 +174,7 @@ const loadAnalytics = async () => {
       customerProfileApi.getCustomerProfiles(),
       feedbackApi.getFeedback()
     ])
+    allFeedback.value = feedback
 
     stats.value.totalCustomers = customers.length
     stats.value.activeCustomers = customers.filter(c => c.status === 'ACTIVE').length

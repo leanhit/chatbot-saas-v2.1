@@ -27,20 +27,20 @@
           class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white"
         >
           <option value="">{{ t('common.all') }}</option>
-          <option value="ACTIVE">{{ t('customer.status.active') }}</option>
-          <option value="INACTIVE">{{ t('customer.status.inactive') }}</option>
-          <option value="BLOCKED">{{ t('customer.status.blocked') }}</option>
-          <option value="CHURNED">{{ t('customer.status.churned') }}</option>
+          <option value="ACTIVE">{{ t('customer.statusOptions.active') }}</option>
+          <option value="INACTIVE">{{ t('customer.statusOptions.inactive') }}</option>
+          <option value="BLOCKED">{{ t('customer.statusOptions.blocked') }}</option>
+          <option value="CHURNED">{{ t('customer.statusOptions.churned') }}</option>
         </select>
         <select
           v-model="filterTier"
           class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white"
         >
           <option value="">{{ t('common.all') }}</option>
-          <option value="FREE">{{ t('customer.tier.free') }}</option>
-          <option value="BASIC">{{ t('customer.tier.basic') }}</option>
-          <option value="PREMIUM">{{ t('customer.tier.premium') }}</option>
-          <option value="ENTERPRISE">{{ t('customer.tier.enterprise') }}</option>
+          <option value="FREE">{{ t('customer.tierOptions.free') }}</option>
+          <option value="BASIC">{{ t('customer.tierOptions.basic') }}</option>
+          <option value="PREMIUM">{{ t('customer.tierOptions.premium') }}</option>
+          <option value="ENTERPRISE">{{ t('customer.tierOptions.enterprise') }}</option>
         </select>
       </div>
     </div>
@@ -90,14 +90,17 @@
         <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
           <tr v-for="customer in filteredCustomers" :key="customer.id" class="hover:bg-gray-50 dark:hover:bg-gray-700">
             <td class="px-6 py-4 whitespace-nowrap">
-              <div class="flex items-center">
-                <img v-if="customer.avatarUrl" :src="customer.avatarUrl" class="h-10 w-10 rounded-full" />
-                <div v-else class="h-10 w-10 rounded-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center">
-                  <Icon icon="mdi:account" class="text-gray-500 dark:text-gray-400" />
+              <div class="flex items-center gap-3">
+                <img v-if="customer.avatarUrl" :src="customer.avatarUrl" class="h-10 w-10 rounded-full object-cover" />
+                <div v-else class="h-10 w-10 rounded-full bg-gradient-to-br from-blue-400 to-indigo-600 flex items-center justify-center flex-shrink-0">
+                  <span class="text-white text-sm font-semibold">{{ customer.name?.charAt(0)?.toUpperCase() || '?' }}</span>
                 </div>
-                <div class="ml-4">
-                  <div class="text-sm font-medium text-gray-900 dark:text-white">{{ customer.name }}</div>
-                  <div class="text-sm text-gray-500 dark:text-gray-400">{{ customer.externalId }}</div>
+                <div>
+                  <div class="flex items-center gap-2">
+                    <span class="text-sm font-medium text-gray-900 dark:text-white">{{ customer.name }}</span>
+                    <VIPBadge :tier="customer.tier" />
+                  </div>
+                  <div class="text-xs text-gray-500 dark:text-gray-400">{{ customer.externalId }}</div>
                 </div>
               </div>
             </td>
@@ -106,11 +109,11 @@
             </td>
             <td class="px-6 py-4 whitespace-nowrap">
               <span :class="getStatusClass(customer.status)" class="px-2 py-1 text-xs font-medium rounded-full">
-                {{ t(`customer.status.${customer.status?.toLowerCase()}`) }}
+                {{ t(`customer.statusOptions.${customer.status?.toLowerCase()}`) }}
               </span>
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-              {{ t(`customer.tier.${customer.tier?.toLowerCase()}`) }}
+              {{ t(`customer.tierOptions.${customer.tier?.toLowerCase()}`) }}
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
               {{ customer.totalConversations || 0 }}
@@ -119,13 +122,25 @@
               {{ formatDate(customer.lastContactAt) }}
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-              <button @click="viewCustomer(customer)" class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 mr-3">
+              <button
+                @click="viewCustomer(customer)"
+                class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 mr-3"
+                :title="t('common.view')"
+              >
                 <Icon icon="mdi:eye" class="inline-block" />
               </button>
-              <button @click="editCustomer(customer)" class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 mr-3">
+              <button
+                @click="editCustomer(customer)"
+                class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 mr-3"
+                :title="t('common.edit')"
+              >
                 <Icon icon="mdi:pencil" class="inline-block" />
               </button>
-              <button @click="deleteCustomer(customer)" class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300">
+              <button
+                @click="confirmDelete(customer)"
+                class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
+                :title="t('common.delete')"
+              >
                 <Icon icon="mdi:delete" class="inline-block" />
               </button>
             </td>
@@ -163,7 +178,7 @@
                   type="text"
                   required
                   :disabled="isEdit"
-                  class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white"
+                  class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white disabled:opacity-50"
                 />
               </div>
               <div>
@@ -194,10 +209,10 @@
                   v-model="formData.status"
                   class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white"
                 >
-                  <option value="ACTIVE">{{ t('customer.status.active') }}</option>
-                  <option value="INACTIVE">{{ t('customer.status.inactive') }}</option>
-                  <option value="BLOCKED">{{ t('customer.status.blocked') }}</option>
-                  <option value="CHURNED">{{ t('customer.status.churned') }}</option>
+                  <option value="ACTIVE">{{ t('customer.statusOptions.active') }}</option>
+                  <option value="INACTIVE">{{ t('customer.statusOptions.inactive') }}</option>
+                  <option value="BLOCKED">{{ t('customer.statusOptions.blocked') }}</option>
+                  <option value="CHURNED">{{ t('customer.statusOptions.churned') }}</option>
                 </select>
               </div>
               <div>
@@ -208,10 +223,10 @@
                   v-model="formData.tier"
                   class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white"
                 >
-                  <option value="FREE">{{ t('customer.tier.free') }}</option>
-                  <option value="BASIC">{{ t('customer.tier.basic') }}</option>
-                  <option value="PREMIUM">{{ t('customer.tier.premium') }}</option>
-                  <option value="ENTERPRISE">{{ t('customer.tier.enterprise') }}</option>
+                  <option value="FREE">{{ t('customer.tierOptions.free') }}</option>
+                  <option value="BASIC">{{ t('customer.tierOptions.basic') }}</option>
+                  <option value="PREMIUM">{{ t('customer.tierOptions.premium') }}</option>
+                  <option value="ENTERPRISE">{{ t('customer.tierOptions.enterprise') }}</option>
                 </select>
               </div>
               <div>
@@ -254,16 +269,31 @@
         </div>
       </div>
     </div>
+
+    <!-- Confirm Delete Modal -->
+    <ConfirmModal
+      v-model="showDeleteConfirm"
+      :title="t('customer.confirmDeleteTitle')"
+      :message="t('customer.confirmDelete')"
+      :confirm-text="t('common.delete')"
+      :cancel-text="t('common.cancel')"
+      variant="danger"
+      @confirm="executeDelete"
+    />
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { Icon } from '@iconify/vue'
 import { useI18n } from 'vue-i18n'
 import customerProfileApi from '@/api/customerProfileApi'
+import VIPBadge from '@/components/customer/VIPBadge.vue'
+import ConfirmModal from '@/components/common/ConfirmModal.vue'
 
 const { t } = useI18n()
+const router = useRouter()
 
 const customers = ref([])
 const loading = ref(true)
@@ -273,7 +303,11 @@ const filterStatus = ref('')
 const filterTier = ref('')
 const showModal = ref(false)
 const isEdit = ref(false)
-const formData = ref({
+const showDeleteConfirm = ref(false)
+const customerToDelete = ref(null)
+
+const emptyForm = () => ({
+  id: null,
   externalId: '',
   name: '',
   email: '',
@@ -281,12 +315,15 @@ const formData = ref({
   status: 'ACTIVE',
   tier: 'FREE',
   preferredLanguage: '',
-  timezone: ''
+  timezone: '',
 })
+
+const formData = ref(emptyForm())
 
 const filteredCustomers = computed(() => {
   return customers.value.filter(customer => {
-    if (searchQuery.value && !customer.name.toLowerCase().includes(searchQuery.value.toLowerCase()) && !customer.email?.toLowerCase().includes(searchQuery.value.toLowerCase())) return false
+    const q = searchQuery.value.toLowerCase()
+    if (q && !customer.name?.toLowerCase().includes(q) && !customer.email?.toLowerCase().includes(q)) return false
     if (filterStatus.value && customer.status !== filterStatus.value) return false
     if (filterTier.value && customer.tier !== filterTier.value) return false
     return true
@@ -296,6 +333,7 @@ const filteredCustomers = computed(() => {
 const loadCustomers = async () => {
   try {
     loading.value = true
+    error.value = null
     customers.value = await customerProfileApi.getCustomerProfiles()
   } catch (err) {
     error.value = err.message
@@ -310,34 +348,26 @@ const getStatusClass = (status) => {
     ACTIVE: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
     INACTIVE: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200',
     BLOCKED: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
-    CHURNED: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
+    CHURNED: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
   }
   return classes[status] || 'bg-gray-100 text-gray-800'
 }
 
 const formatDate = (date) => {
   if (!date) return '-'
-  return new Date(date).toLocaleDateString()
+  return new Date(date).toLocaleDateString('vi-VN')
 }
 
 const openCreateModal = () => {
   isEdit.value = false
-  formData.value = {
-    externalId: '',
-    name: '',
-    email: '',
-    phone: '',
-    status: 'ACTIVE',
-    tier: 'FREE',
-    preferredLanguage: '',
-    timezone: ''
-  }
+  formData.value = emptyForm()
   showModal.value = true
 }
 
 const editCustomer = (customer) => {
   isEdit.value = true
   formData.value = {
+    id: customer.id,
     externalId: customer.externalId,
     name: customer.name,
     email: customer.email,
@@ -345,19 +375,20 @@ const editCustomer = (customer) => {
     status: customer.status,
     tier: customer.tier,
     preferredLanguage: customer.preferredLanguage,
-    timezone: customer.timezone
+    timezone: customer.timezone,
   }
   showModal.value = true
 }
 
+// Fix: navigate to detail page instead of console.log
 const viewCustomer = (customer) => {
-  console.log('View customer:', customer)
-  // TODO: Navigate to customer detail page
+  router.push({ name: 'customer-profile-detail', params: { id: customer.id } })
 }
 
 const saveCustomer = async () => {
   try {
     if (isEdit.value) {
+      // Fix: use formData.value.id (was undefined before)
       await customerProfileApi.updateCustomerProfile(formData.value.id, formData.value)
     } else {
       await customerProfileApi.createCustomerProfile(formData.value)
@@ -370,30 +401,28 @@ const saveCustomer = async () => {
   }
 }
 
-const deleteCustomer = async (customer) => {
-  if (!confirm(t('customer.confirmDelete'))) return
+// Fix: use ConfirmModal + only call deleteCustomerProfile (removed wrong updateCustomerStats call)
+const confirmDelete = (customer) => {
+  customerToDelete.value = customer
+  showDeleteConfirm.value = true
+}
+
+const executeDelete = async () => {
+  if (!customerToDelete.value) return
   try {
-    await customerProfileApi.updateCustomerStats(customer.id, { conversationCount: 1 })
-    await customerProfileApi.deleteCustomerProfile(customer.id)
+    await customerProfileApi.deleteCustomerProfile(customerToDelete.value.id)
     await loadCustomers()
   } catch (err) {
     error.value = err.message
     console.error('Delete customer error:', err)
+  } finally {
+    customerToDelete.value = null
   }
 }
 
 const closeModal = () => {
   showModal.value = false
-  formData.value = {
-    externalId: '',
-    name: '',
-    email: '',
-    phone: '',
-    status: 'ACTIVE',
-    tier: 'FREE',
-    preferredLanguage: '',
-    timezone: ''
-  }
+  formData.value = emptyForm()
 }
 
 onMounted(() => {

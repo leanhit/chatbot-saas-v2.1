@@ -102,13 +102,10 @@
             </div>
           </div>
           <div class="flex space-x-2">
-            <button @click="viewFeedback(feedback)" class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300">
-              <Icon icon="mdi:eye" class="text-xl" />
-            </button>
-            <button @click="editFeedback(feedback)" class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300">
+            <button @click="editFeedback(feedback)" class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300" :title="t('common.edit')">
               <Icon icon="mdi:pencil" class="text-xl" />
             </button>
-            <button @click="deleteFeedback(feedback)" class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300">
+            <button @click="confirmDelete(feedback)" class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300" :title="t('common.delete')">
               <Icon icon="mdi:delete" class="text-xl" />
             </button>
           </div>
@@ -209,6 +206,17 @@
         </div>
       </div>
     </div>
+
+    <!-- Confirm Delete Modal -->
+    <ConfirmModal
+      v-model="showDeleteConfirm"
+      :title="t('feedback.confirmDeleteTitle')"
+      :message="t('feedback.confirmDelete')"
+      :confirm-text="t('common.delete')"
+      :cancel-text="t('common.cancel')"
+      variant="danger"
+      @confirm="executeDelete"
+    />
   </div>
 </template>
 
@@ -217,6 +225,7 @@ import { ref, computed, onMounted } from 'vue'
 import { Icon } from '@iconify/vue'
 import { useI18n } from 'vue-i18n'
 import feedbackApi from '@/api/feedbackApi'
+import ConfirmModal from '@/components/common/ConfirmModal.vue'
 
 const { t } = useI18n()
 
@@ -228,13 +237,19 @@ const filterStatus = ref('')
 const filterType = ref('')
 const showModal = ref(false)
 const isEdit = ref(false)
-const formData = ref({
+const showDeleteConfirm = ref(false)
+const feedbackToDelete = ref(null)
+
+const emptyForm = () => ({
+  id: null,
   type: 'GENERAL',
   rating: 5,
   comment: '',
   category: '',
-  isAnonymous: false
+  isAnonymous: false,
 })
+
+const formData = ref(emptyForm())
 
 const filteredFeedback = computed(() => {
   return feedbackList.value.filter(feedback => {
@@ -274,31 +289,22 @@ const formatDate = (date) => {
 
 const openCreateModal = () => {
   isEdit.value = false
-  formData.value = {
-    type: 'GENERAL',
-    rating: 5,
-    comment: '',
-    category: '',
-    isAnonymous: false
-  }
+  formData.value = emptyForm()
   showModal.value = true
 }
 
 const editFeedback = (feedback) => {
   isEdit.value = true
+  // Fix: store id so update call can use it
   formData.value = {
+    id: feedback.id,
     type: feedback.type,
     rating: feedback.rating,
     comment: feedback.comment,
     category: feedback.category,
-    isAnonymous: feedback.isAnonymous
+    isAnonymous: feedback.isAnonymous,
   }
   showModal.value = true
-}
-
-const viewFeedback = (feedback) => {
-  console.log('View feedback:', feedback)
-  // TODO: Navigate to feedback detail page
 }
 
 const saveFeedback = async () => {
@@ -316,26 +322,28 @@ const saveFeedback = async () => {
   }
 }
 
-const deleteFeedback = async (feedback) => {
-  if (!confirm(t('feedback.confirmDelete'))) return
+// Fix: use ConfirmModal instead of native confirm()
+const confirmDelete = (feedback) => {
+  feedbackToDelete.value = feedback
+  showDeleteConfirm.value = true
+}
+
+const executeDelete = async () => {
+  if (!feedbackToDelete.value) return
   try {
-    await feedbackApi.deleteFeedback(feedback.id)
+    await feedbackApi.deleteFeedback(feedbackToDelete.value.id)
     await loadFeedback()
   } catch (err) {
     error.value = err.message
     console.error('Delete feedback error:', err)
+  } finally {
+    feedbackToDelete.value = null
   }
 }
 
 const closeModal = () => {
   showModal.value = false
-  formData.value = {
-    type: 'GENERAL',
-    rating: 5,
-    comment: '',
-    category: '',
-    isAnonymous: false
-  }
+  formData.value = emptyForm()
 }
 
 onMounted(() => {

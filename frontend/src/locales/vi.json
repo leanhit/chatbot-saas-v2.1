@@ -122,7 +122,8 @@
     "close": "Đóng",
     "delete": "Xóa",
     "all": "Tất cả",
-    "back": "Quay lại"
+    "back": "Quay lại",
+    "view": "Xem"
   },
   "auth": {
     "login": {
@@ -1759,7 +1760,9 @@
     "skillsManagement": "Quản lý Kỹ năng",
     "routingRules": "Quy tắc Định tuyến",
     "slaMonitoring": "Giám sát SLA",
-    "escalationTiers": "Cấp độ Leo thang"
+    "escalationTiers": "Cấp độ Leo thang",
+    "vipQueue": "Hàng đợi VIP",
+    "segments": "Phân khúc"
   },
   "agentStats": {
     "title": "Thống kê Cuộc trò chuyện",
@@ -2181,8 +2184,18 @@
     "email": "Email",
     "phone": "Số điện thoại",
     "externalId": "ID bên ngoài",
-    "status": "Trạng thái",
-    "tier": "Gói",
+    "status": {
+      "active": "Hoạt động",
+      "inactive": "Không hoạt động",
+      "blocked": "Đã chặn",
+      "churned": "Đã rời đi"
+    },
+    "tier": {
+      "free": "Miễn phí",
+      "basic": "Cơ bản",
+      "premium": "Cao cấp",
+      "enterprise": "Doanh nghiệp"
+    },
     "conversations": "Cuộc hội thoại",
     "lastContact": "Liên lạc cuối",
     "language": "Ngôn ngữ",
@@ -2201,7 +2214,24 @@
       "basic": "Cơ bản",
       "premium": "Cao cấp",
       "enterprise": "Doanh nghiệp"
-    }
+    },
+    "vipQueue": "Hàng đợi VIP",
+    "vipQueueDesc": "Theo dõi và ưu tiên khách hàng gói cao cấp",
+    "segments": "Phân khúc khách hàng",
+    "segmentsDesc": "Tổng quan khách hàng theo gói dịch vụ",
+    "profileDetail": "Hồ sơ khách hàng",
+    "timeline": "Lịch sử hoạt động",
+    "notes": "Ghi chú & Thuộc tính",
+    "confirmDeleteTitle": "Xóa khách hàng",
+    "totalMessages": "Tổng tin nhắn",
+    "satisfactionScore": "Điểm hài lòng",
+    "avgResponseTime": "TG phản hồi TB",
+    "avgSatisfaction": "Hài lòng TB",
+    "sortByLastContact": "Sắp xếp theo lần liên hệ cuối",
+    "sortBySatisfaction": "Sắp xếp theo mức độ hài lòng",
+    "sortByConversations": "Sắp xếp theo số hội thoại",
+    "noVIPCustomers": "Không tìm thấy khách hàng VIP",
+    "slaWarning": "Cảnh báo SLA"
   },
   "feedback": {
     "title": "Khảo sát Phản hồi",
@@ -2217,17 +2247,18 @@
     "noFeedback": "Không tìm thấy phản hồi",
     "confirmDelete": "Bạn có chắc chắn muốn xóa phản hồi này?",
     "statusOptions": {
-      "pending": "Đang chờ",
+      "pending": "Chờ xử lý",
       "reviewed": "Đã xem",
       "responded": "Đã phản hồi",
       "closed": "Đã đóng"
     },
     "typeOptions": {
-      "conversation": "Cuộc hội thoại",
-      "agentPerformance": "Hiệu suất Agent",
+      "conversation": "Hội thoại",
+      "agentPerformance": "Hiệu suất tư vấn viên",
       "botResponse": "Phản hồi Bot",
-      "general": "Tổng quát"
-    }
+      "general": "Chung"
+    },
+    "confirmDeleteTitle": "Xóa phản hồi"
   },
   "analytics": {
     "title": "Phân tích Khách hàng",
