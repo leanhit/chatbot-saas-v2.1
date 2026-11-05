@@ -18,10 +18,8 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.*;
 
 @DataJpaTest
-@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @ActiveProfiles("test")
 @ImportAutoConfiguration(exclude = {FlywayAutoConfiguration.class})
-@Disabled("ApplicationContext loading issues - requires full Spring context configuration")
 class RoutingRepositoryIntegrationTest {
 
     @Autowired

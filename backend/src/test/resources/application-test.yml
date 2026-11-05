@@ -1,10 +1,10 @@
 # Test Configuration for Integration Tests
 spring:
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:15432/chatbot_test_db}
-    driver-class-name: org.postgresql.Driver
-    username: ${SPRING_DATASOURCE_USERNAME:chatbot_user}
-    password: ${SPRING_DATASOURCE_PASSWORD:chatbot_Admin_2025}
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
 
   jpa:
     hibernate:
@@ -12,7 +12,7 @@ spring:
     show-sql: true
     properties:
       hibernate:
-        dialect: org.hibernate.dialect.PostgreSQLDialect
+        dialect: org.hibernate.dialect.H2Dialect
         format_sql: true
 
   flyway:

@@ -234,9 +234,17 @@ const loadCategories = async () => {
 
 const loadAgentProgress = async () => {
   try {
-    // TODO: Load agent progress for this material
-    // This would be a new API endpoint to get all progress for a specific training material
-    agentProgress.value = []
+    const materialId = route.params.id
+    const response = await trainingApi.getMaterialProgress(materialId)
+    // Map backend data to frontend format
+    agentProgress.value = (response.data || []).map(progress => ({
+      id: progress.id,
+      agentName: progress.agentName || `Agent ${progress.agentId}`,
+      status: progress.status,
+      progress: progress.progress,
+      quizScore: progress.quizScore,
+      completedAt: progress.completedAt
+    }))
   } catch (err) {
     console.error('Load agent progress error:', err)
   }

@@ -93,18 +93,30 @@ export const trainingApi = {
   },
 
   // Certifications
-  // READ: Get all certification levels
-  getAllCertificationLevels() {
-    return axios.get('/api/training/certifications/levels');
+  // READ: Get certification levels
+  getCertificationLevels() {
+    return axios.get('/api/training/certifications/levels')
   },
 
-  // READ: Get certifications for an agent
   getAgentCertifications(agentId) {
-    return axios.get(`/api/training/certifications/agent/${agentId}`);
+    return axios.get(`/api/training/certifications/agent/${agentId}`)
   },
 
-  // CREATE: Award certification to agent
   awardCertification(data) {
-    return axios.post('/api/training/certifications/award', data);
+    return axios.post('/api/training/certifications/award', data)
+  },
+
+  // Training Dashboard
+  getTrainingDashboardStats() {
+    return axios.get('/api/training/dashboard/stats')
+  },
+
+  getAgentsWithTrainingStats() {
+    return axios.get('/api/training/dashboard/agents')
+  },
+
+  // Material Progress
+  getMaterialProgress(materialId) {
+    return axios.get(`/api/training/progress/material/${materialId}`)
   }
 };

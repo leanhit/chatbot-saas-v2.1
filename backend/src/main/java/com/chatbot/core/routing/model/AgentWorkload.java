@@ -12,9 +12,9 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "agent_workload", indexes = {
-    @Index(name = "idx_agent_workload_tenant", columnList = "tenantId"),
-    @Index(name = "idx_agent_workload_agent", columnList = "agentId"),
-    @Index(name = "idx_agent_workload_team", columnList = "teamId"),
+    @Index(name = "idx_agent_workload_tenant", columnList = "tenant_id"),
+    @Index(name = "idx_agent_workload_agent", columnList = "agent_id"),
+    @Index(name = "idx_agent_workload_team", columnList = "team_id"),
     @Index(name = "idx_agent_workload_status", columnList = "status")
 })
 @Data

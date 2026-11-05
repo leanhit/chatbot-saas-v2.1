@@ -11,12 +11,12 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "escalation_history", indexes = {
-    @Index(name = "idx_escalation_history_tenant", columnList = "tenantId"),
-    @Index(name = "idx_escalation_history_conversation", columnList = "conversationId"),
-    @Index(name = "idx_escalation_history_agent", columnList = "escalatedToAgentId"),
-    @Index(name = "idx_escalation_history_team", columnList = "escalatedToTeamId"),
-    @Index(name = "idx_escalation_history_rule", columnList = "escalationRuleId"),
-    @Index(name = "idx_escalation_history_created_at", columnList = "createdAt")
+    @Index(name = "idx_escalation_history_tenant", columnList = "tenant_id"),
+    @Index(name = "idx_escalation_history_conversation", columnList = "conversation_id"),
+    @Index(name = "idx_escalation_history_agent", columnList = "escalated_to_agent_id"),
+    @Index(name = "idx_escalation_history_team", columnList = "escalated_to_team_id"),
+    @Index(name = "idx_escalation_history_rule", columnList = "escalation_rule_id"),
+    @Index(name = "idx_escalation_history_created_at", columnList = "created_at")
 })
 @Data
 @Builder

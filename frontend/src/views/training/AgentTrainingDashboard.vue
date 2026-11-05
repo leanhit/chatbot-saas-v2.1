@@ -131,10 +131,10 @@
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
-            <tr v-for="agent in filteredAgents" :key="agent.id" class="hover:bg-gray-50 dark:hover:bg-gray-700">
+            <tr v-for="agent in filteredAgents" :key="agent.agentId" class="hover:bg-gray-50 dark:hover:bg-gray-700">
               <td class="px-4 py-3">
-                <div class="font-medium text-gray-900 dark:text-white">{{ agent.name }}</div>
-                <div class="text-sm text-gray-500 dark:text-gray-400">{{ agent.email }}</div>
+                <div class="font-medium text-gray-900 dark:text-white">{{ agent.agentName }}</div>
+                <div class="text-sm text-gray-500 dark:text-gray-400">{{ agent.agentEmail }}</div>
               </td>
               <td class="px-4 py-3">
                 <div class="flex items-center gap-2">
@@ -203,7 +203,7 @@ const agents = ref([])
 
 const filteredAgents = computed(() => {
   return agents.value.filter(agent => {
-    if (searchQuery.value && !agent.name.toLowerCase().includes(searchQuery.value.toLowerCase())) return false
+    if (searchQuery.value && !agent.agentName.toLowerCase().includes(searchQuery.value.toLowerCase())) return false
     if (filterStatus.value && agent.trainingStatus !== filterStatus.value) return false
     return true
   })
@@ -211,10 +211,8 @@ const filteredAgents = computed(() => {
 
 const loadAgents = async () => {
   try {
-    // TODO: Load agents with their training progress
-    // This would be a new API endpoint to get all agents with their training stats
-    // For now, we'll use a placeholder
-    agents.value = []
+    const response = await trainingApi.getAgentsWithTrainingStats()
+    agents.value = response.data || []
   } catch (err) {
     error.value = err.message
     console.error('Load agents error:', err)
@@ -223,9 +221,8 @@ const loadAgents = async () => {
 
 const loadStats = async () => {
   try {
-    // TODO: Load training statistics
-    // This would be a new API endpoint to get training dashboard stats
-    stats.value = {
+    const response = await trainingApi.getTrainingDashboardStats()
+    stats.value = response.data || {
       totalAgents: 0,
       activeTraining: 0,
       completedTraining: 0,

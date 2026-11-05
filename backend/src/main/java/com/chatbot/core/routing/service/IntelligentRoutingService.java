@@ -304,7 +304,7 @@ public class IntelligentRoutingService {
                     }
                 }
             } else if (key.contains(">=")) {
-                String[] parts = key.split(">=");
+                String[] parts = key.split(java.util.regex.Pattern.quote(">="));
                 if (parts.length == 2) {
                     String field = parts[0].trim();
                     actualValue = conversationContext.get(field);
@@ -313,7 +313,7 @@ public class IntelligentRoutingService {
                     }
                 }
             } else if (key.contains("<=")) {
-                String[] parts = key.split("<=");
+                String[] parts = key.split(java.util.regex.Pattern.quote("<="));
                 if (parts.length == 2) {
                     String field = parts[0].trim();
                     actualValue = conversationContext.get(field);
@@ -322,7 +322,7 @@ public class IntelligentRoutingService {
                     }
                 }
             } else if (key.contains("!=")) {
-                String[] parts = key.split("!=");
+                String[] parts = key.split(java.util.regex.Pattern.quote("!="));
                 if (parts.length == 2) {
                     String field = parts[0].trim();
                     actualValue = conversationContext.get(field);
