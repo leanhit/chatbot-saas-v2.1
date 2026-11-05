@@ -60,6 +60,8 @@ const QueueView = () => import("../views/routing/QueueView.vue");
 const SupervisorDashboard = () => import("../views/routing/SupervisorDashboard.vue");
 const RoutingSimulation = () => import("../views/routing/RoutingSimulation.vue");
 const EscalationHistory = () => import("../views/routing/EscalationHistory.vue");
+const TransferHistory = () => import("../views/routing/TransferHistory.vue");
+const AgentAssignment = () => import("../views/routing/AgentAssignment.vue");
 var appname = " - Windzo Dashboard Admin Template";
 const routes = [
   // Root route - redirect to login
@@ -248,6 +250,18 @@ const routes = [
     name: "routing-escalation",
     component: EscalationHistory,
     meta: { requiresAuth: true, title: "Escalation Rules" + appname },
+  },
+  {
+    path: "/routing/transfers",
+    name: "routing-transfers",
+    component: TransferHistory,
+    meta: { requiresAuth: true, title: "Transfer History" + appname },
+  },
+  {
+    path: "/routing/assignment",
+    name: "routing-assignment",
+    component: AgentAssignment,
+    meta: { requiresAuth: true, title: "Agent Assignment" + appname },
   },
   // Payment Routes (SimplePayment Only)
   {

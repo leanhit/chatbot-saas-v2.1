@@ -132,6 +132,83 @@ const routingApi = {
   async deleteSupervisorSession(id) {
     const response = await axios.delete(`/routing/supervisor-sessions/${id}`)
     return response.data
+  },
+
+  // Conversation Transfers
+  async getTransfers(params = {}) {
+    const response = await axios.get('/routing/transfers', { params })
+    return response.data
+  },
+
+  async getTransferById(id) {
+    const response = await axios.get(`/routing/transfers/${id}`)
+    return response.data
+  },
+
+  async createTransfer(data) {
+    const response = await axios.post('/routing/transfers', data)
+    return response.data
+  },
+
+  async getTransfersByConversation(conversationId) {
+    const response = await axios.get(`/routing/transfers/conversation/${conversationId}`)
+    return response.data
+  },
+
+  async getTransfersByAgent(agentId) {
+    const response = await axios.get(`/routing/transfers/agent/${agentId}`)
+    return response.data
+  },
+
+  async getPendingTransfers() {
+    const response = await axios.get('/routing/transfers/pending')
+    return response.data
+  },
+
+  async acceptTransfer(id) {
+    const response = await axios.post(`/routing/transfers/${id}/accept`)
+    return response.data
+  },
+
+  async rejectTransfer(id, reason) {
+    const response = await axios.post(`/routing/transfers/${id}/reject`, { reason })
+    return response.data
+  },
+
+  async completeTransfer(id) {
+    const response = await axios.post(`/routing/transfers/${id}/complete`)
+    return response.data
+  },
+
+  async cancelTransfer(id) {
+    const response = await axios.delete(`/routing/transfers/${id}`)
+    return response.data
+  },
+
+  async transferConversation(data) {
+    const response = await axios.post('/routing/transfers/transfer', data)
+    return response.data
+  },
+
+  // Agent Workload & Assignment
+  async getAgentWorkloads(params = {}) {
+    const response = await axios.get('/routing/agent-workloads', { params })
+    return response.data
+  },
+
+  async getAgentWorkloadById(agentId) {
+    const response = await axios.get(`/routing/agent-workloads/${agentId}`)
+    return response.data
+  },
+
+  async assignConversation(data) {
+    const response = await axios.post('/routing/assign', data)
+    return response.data
+  },
+
+  async getRoutingHistory(conversationId) {
+    const response = await axios.get(`/routing/history/${conversationId}`)
+    return response.data
   }
 }
 

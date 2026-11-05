@@ -835,4 +835,124 @@ public class IntelligentRoutingService {
                         .build())
                 .collect(Collectors.toList());
     }
+
+    @Transactional(readOnly = true)
+    public List<AgentWorkloadDTO> getAgentWorkloads(String status, String search) {
+        Long tenantId = com.chatbot.core.tenant.infra.TenantContext.getTenantId();
+        List<AgentWorkload> workloads;
+        
+        if (status != null && !status.isEmpty()) {
+            try {
+                AgentWorkload.AgentStatus agentStatus = AgentWorkload.AgentStatus.valueOf(status.toUpperCase());
+                workloads = agentWorkloadRepository.findByTenantIdAndStatus(tenantId, agentStatus);
+            } catch (IllegalArgumentException e) {
+                workloads = agentWorkloadRepository.findByTenantId(tenantId);
+            }
+        } else {
+            workloads = agentWorkloadRepository.findByTenantId(tenantId);
+        }
+        
+        // Filter by search if provided
+        if (search != null && !search.isEmpty()) {
+            String searchLower = search.toLowerCase();
+            workloads = workloads.stream()
+                    .filter(w -> {
+                        // We would need to join with user/team data for proper search
+                        // For now, filter by agent ID or team ID
+                        return String.valueOf(w.getAgentId()).contains(searchLower) ||
+                               String.valueOf(w.getTeamId()).contains(searchLower);
+                    })
+                    .collect(Collectors.toList());
+        }
+        
+        // Sort by priority score descending
+        workloads.sort((a, b) -> Integer.compare(b.getPriorityScore(), a.getPriorityScore()));
+        
+        return workloads.stream()
+                .map(this::convertToAgentWorkloadDTO)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public AgentWorkloadDTO getAgentWorkloadById(Long agentId) {
+        Long tenantId = com.chatbot.core.tenant.infra.TenantContext.getTenantId();
+        AgentWorkload workload = agentWorkloadRepository.findByTenantIdAndAgentId(tenantId, agentId)
+                .orElseThrow(() -> new RuntimeException("Agent workload not found for agent ID: " + agentId));
+        
+        return convertToAgentWorkloadDTO(workload);
+    }
+
+    @Transactional
+    public RoutingAssignmentResult assignConversationToAgent(Long conversationId, Long agentId, String reason) {
+        Long tenantId = com.chatbot.core.tenant.infra.TenantContext.getTenantId();
+        
+        // Get conversation
+        Conversation conversation = conversationRepository.findById(conversationId)
+                .orElseThrow(() -> new RuntimeException("Conversation not found: " + conversationId));
+        
+        // Verify conversation belongs to tenant
+        if (!conversation.getTenantId().equals(tenantId)) {
+            throw new RuntimeException("Conversation does not belong to current tenant");
+        }
+        
+        // Get agent workload
+        AgentWorkload workload = agentWorkloadRepository.findByTenantIdAndAgentId(tenantId, agentId)
+                .orElseThrow(() -> new RuntimeException("Agent workload not found for agent ID: " + agentId));
+        
+        // Check if agent is available
+        if (!workload.isAvailable()) {
+            throw new RuntimeException("Agent is not available for assignment");
+        }
+        
+        // Assign conversation to agent
+        conversation.setAgentAssignedId(agentId);
+        conversation.setStatus("assigned");
+        conversationRepository.save(conversation);
+        
+        // Increment agent workload
+        workload.setActiveConversations(workload.getActiveConversations() + 1);
+        workload.setLastActivityAt(LocalDateTime.now());
+        agentWorkloadRepository.save(workload);
+        
+        // Create routing history
+        RoutingHistory history = RoutingHistory.builder()
+                .tenantId(tenantId)
+                .conversationId(conversationId)
+                .assignedAgentId(agentId)
+                .routingStrategy("MANUAL_ASSIGNMENT")
+                .assigned(true)
+                .reason(reason != null ? reason : "Manually assigned to agent")
+                .build();
+        routingHistoryRepository.save(history);
+        
+        log.info("Conversation {} manually assigned to agent {}", conversationId, agentId);
+        
+        return RoutingAssignmentResult.builder()
+                .conversationId(conversationId)
+                .assigned(true)
+                .assignedAgentId(agentId)
+                .routingStrategy("MANUAL_ASSIGNMENT")
+                .assignedAt(LocalDateTime.now())
+                .reason(reason != null ? reason : "Manually assigned to agent")
+                .build();
+    }
+
+    private AgentWorkloadDTO convertToAgentWorkloadDTO(AgentWorkload workload) {
+        return AgentWorkloadDTO.builder()
+                .id(workload.getId())
+                .tenantId(workload.getTenantId())
+                .agentId(workload.getAgentId())
+                .teamId(workload.getTeamId())
+                .activeConversations(workload.getActiveConversations())
+                .maxConcurrentConversations(workload.getMaxConcurrentConversations())
+                .status(workload.getStatus().name())
+                .priorityScore(workload.getPriorityScore())
+                .lastActivityAt(workload.getLastActivityAt())
+                .createdAt(workload.getCreatedAt())
+                .updatedAt(workload.getUpdatedAt())
+                .workloadPercentage(workload.getWorkloadPercentage())
+                .isAvailable(workload.isAvailable())
+                .availableSlots(workload.getMaxConcurrentConversations() - workload.getActiveConversations())
+                .build();
+    }
 }
