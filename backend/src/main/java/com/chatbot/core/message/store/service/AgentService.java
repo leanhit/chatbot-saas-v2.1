@@ -26,6 +26,7 @@ import java.util.stream.Collectors;
 public class AgentService {
 
     private final AgentRepository agentRepository;
+    private final com.chatbot.core.training.service.OnboardingService onboardingService;
 
     // Email validation pattern
     private static final Pattern EMAIL_PATTERN = Pattern.compile(
@@ -330,6 +331,10 @@ public class AgentService {
      */
     @Transactional
     public void updateAgentStatus(Long agentId, Agent.AgentStatus status) {
+        // Phase 3: onboarding must be complete before agent goes ONLINE
+        if (status == Agent.AgentStatus.ONLINE) {
+            assertOnboardingComplete(agentId);
+        }
         agentRepository.findById(agentId).ifPresent(agent -> {
             agent.setStatus(status);
             agent.setLastActivityAt(LocalDateTime.now());
@@ -338,6 +343,26 @@ public class AgentService {
             
             log.info("Updated agent {} status to {}", agentId, status);
         });
+    }
+
+    /**
+     * Phase 3 rule: agent cannot go ONLINE until required onboarding tasks are completed.
+     */
+    private void assertOnboardingComplete(Long agentId) {
+        try {
+            Long tenantId = com.chatbot.core.tenant.infra.TenantContext.getTenantId();
+            if (tenantId == null) {
+                return; // no tenant context (e.g. system job) — skip gate
+            }
+            if (!onboardingService.isOnboardingComplete(agentId, tenantId)) {
+                throw new IllegalStateException(
+                    "Agent " + agentId + " cannot go ONLINE: onboarding tasks not completed");
+            }
+        } catch (IllegalStateException e) {
+            throw e;
+        } catch (Exception e) {
+            log.warn("[Onboarding] Could not verify onboarding status for agent {}: {}", agentId, e.getMessage());
+        }
     }
 
     /**

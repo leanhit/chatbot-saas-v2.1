@@ -19,6 +19,7 @@ import com.chatbot.core.training.repository.CertificationLevelRepository;
 import com.chatbot.core.training.repository.TrainingCategoryRepository;
 import com.chatbot.core.training.repository.TrainingMaterialRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,6 +28,7 @@ import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class TrainingService {
 
     private final TrainingMaterialRepository trainingMaterialRepository;
@@ -37,6 +39,7 @@ public class TrainingService {
     private final AgentCertificationRepository certificationRepository;
     private final AgentOnboardingProgressRepository onboardingProgressRepository;
     private final CertificationLevelRepository certificationLevelRepository;
+    private final CertificationService certificationService;
 
     // Training Materials
     public List<TrainingMaterial> getAllMaterials() {
@@ -144,12 +147,20 @@ public class TrainingService {
         trainingProgressRepository.save(progress);
 
         // Update skill score based on training completion
-        TrainingMaterial training = trainingMaterialRepository.findById(trainingId).orElse(null);
+        // (tenant-scoped lookup: material must belong to same tenant)
+        TrainingMaterial training = trainingMaterialRepository.findByIdAndTenantId(trainingId, tenantId).orElse(null);
         if (training != null && training.getRequiredSkills() != null && !training.getRequiredSkills().isEmpty()) {
             // Use first skill category from required skills
             String firstSkill = training.getRequiredSkills().iterator().next();
             AgentSkill.SkillCategory skillCategory = AgentSkill.SkillCategory.valueOf(firstSkill);
             updateSkillScore(agentId, skillCategory, quizScore, tenantId);
+        }
+
+        // Phase 3: auto-award certifications if agent now meets requirements
+        try {
+            certificationService.checkAndAutoAwardCertifications(agentId, tenantId);
+        } catch (Exception e) {
+            log.warn("[Certification] Auto-award check failed for agent {}: {}", agentId, e.getMessage());
         }
 
         return progress;

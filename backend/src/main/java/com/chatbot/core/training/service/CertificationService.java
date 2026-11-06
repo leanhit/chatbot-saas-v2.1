@@ -2,6 +2,7 @@ package com.chatbot.core.training.service;
 
 import com.chatbot.core.training.model.AgentCertification;
 import com.chatbot.core.training.model.AgentSkill;
+import com.chatbot.core.training.model.AgentTrainingProgress;
 import com.chatbot.core.training.model.CertificationLevel;
 import com.chatbot.core.training.repository.AgentCertificationRepository;
 import com.chatbot.core.training.repository.AgentSkillRepository;
@@ -25,6 +26,7 @@ public class CertificationService {
     private final AgentCertificationRepository certificationRepository;
     private final CertificationLevelRepository certificationLevelRepository;
     private final AgentSkillRepository agentSkillRepository;
+    private final com.chatbot.core.training.repository.AgentTrainingProgressRepository trainingProgressRepository;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     public CertificationLevel createCertificationLevel(CertificationLevel level) {
@@ -47,8 +49,8 @@ public class CertificationService {
             throw new IllegalStateException("Agent already has this certification");
         }
 
-        // Check if agent meets requirements
-        CertificationLevel level = certificationLevelRepository.findById(certificationLevelId)
+        // Check if agent meets requirements (tenant-scoped level lookup)
+        CertificationLevel level = certificationLevelRepository.findByIdAndTenantId(certificationLevelId, tenantId)
             .orElseThrow(() -> new IllegalArgumentException("Certification level not found"));
 
         if (!checkCertificationRequirements(agentId, level, tenantId)) {
@@ -99,10 +101,23 @@ public class CertificationService {
                 log.debug("Stats requirements not yet implemented for certification level: {}", level.getLevelName());
             }
 
-            // Check required training (if implemented)
+            // Check required training: agent must have COMPLETED progress for each required training
             if (level.getRequiredTrainingIds() != null && !level.getRequiredTrainingIds().isEmpty()) {
-                // TODO: Implement training completion checking when training progress tracking is enhanced
-                log.debug("Training requirements not yet implemented for certification level: {}", level.getLevelName());
+                List<String> requiredIds = objectMapper.readValue(
+                    level.getRequiredTrainingIds(),
+                    new TypeReference<List<String>>() {}
+                );
+                for (String trainingIdStr : requiredIds) {
+                    Long trainingId = Long.valueOf(trainingIdStr);
+                    boolean completed = trainingProgressRepository
+                        .findByAgentIdAndTrainingIdAndTenantId(agentId, trainingId, tenantId)
+                        .map(p -> p.getStatus() == AgentTrainingProgress.ProgressStatus.COMPLETED)
+                        .orElse(false);
+                    if (!completed) {
+                        log.debug("Agent {} has not completed required training {}", agentId, trainingId);
+                        return false;
+                    }
+                }
             }
 
             return true;

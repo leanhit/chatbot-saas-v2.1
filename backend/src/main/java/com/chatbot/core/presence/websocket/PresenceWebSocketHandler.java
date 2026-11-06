@@ -28,6 +28,7 @@ public class PresenceWebSocketHandler extends TextWebSocketHandler {
     private final ObjectMapper objectMapper;
     private final StringRedisTemplate redisTemplate;
     private final AgentRepository agentRepository;
+    private final com.chatbot.core.training.service.OnboardingService onboardingService;
 
     // Track sessions by tenantId for broadcasting
     private final Map<Long, Set<WebSocketSession>> tenantSessions = new ConcurrentHashMap<>();
@@ -53,11 +54,22 @@ public class PresenceWebSocketHandler extends TextWebSocketHandler {
         // Add user to online list in Redis
         presenceService.addOnlineMember(tenantId, userId, email, fullName != null ? fullName : email);
 
-        // Sync Agent.status to ONLINE
+        // Sync Agent.status to ONLINE (Phase 3: only if onboarding complete)
         agentRepository.findByUserIdAndTenantId(userId, tenantId).ifPresent(agent -> {
-            agent.setStatus(Agent.AgentStatus.ONLINE);
-            agentRepository.save(agent);
-            log.info("✅ [Presence] Agent {} (ID: {}) status set to ONLINE", agent.getName(), agent.getId());
+            boolean onboardingComplete;
+            try {
+                onboardingComplete = onboardingService.isOnboardingComplete(agent.getId(), tenantId);
+            } catch (Exception e) {
+                log.warn("⚠️ [Presence] Could not verify onboarding for agent {}: {}", agent.getId(), e.getMessage());
+                onboardingComplete = true; // fail-open to avoid breaking presence
+            }
+            if (onboardingComplete) {
+                agent.setStatus(Agent.AgentStatus.ONLINE);
+                agentRepository.save(agent);
+                log.info("✅ [Presence] Agent {} (ID: {}) status set to ONLINE", agent.getName(), agent.getId());
+            } else {
+                log.warn("⚠️ [Presence] Agent {} (ID: {}) onboarding incomplete — keeping status {}", agent.getName(), agent.getId(), agent.getStatus());
+            }
         });
 
         // Broadcast MEMBER_ONLINE to all sessions in the same tenant

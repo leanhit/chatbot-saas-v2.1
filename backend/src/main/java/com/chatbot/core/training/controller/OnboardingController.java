@@ -38,6 +38,16 @@ public class OnboardingController {
         return ResponseEntity.ok(progress);
     }
 
+    @PostMapping("/progress/complete")
+    public ResponseEntity<AgentOnboardingProgress> completeTask(
+            @RequestParam Long agentId,
+            @RequestParam Long taskId,
+            @RequestParam(required = false) String notes) {
+        Long tenantId = com.chatbot.core.tenant.infra.TenantContext.getTenantId();
+        AgentOnboardingProgress progress = onboardingService.completeTask(agentId, taskId, tenantId, notes);
+        return ResponseEntity.ok(progress);
+    }
+
     @GetMapping("/progress/agent/{agentId}")
     public ResponseEntity<List<AgentOnboardingProgress>> getAgentOnboardingProgress(@PathVariable Long agentId) {
         Long tenantId = com.chatbot.core.tenant.infra.TenantContext.getTenantId();

@@ -19,6 +19,11 @@ public class OnboardingService {
     private final AgentOnboardingProgressRepository onboardingProgressRepository;
 
     public AgentOnboardingTask createOnboardingTask(AgentOnboardingTask task) {
+        Long tenantId = com.chatbot.core.tenant.infra.TenantContext.getTenantId();
+        if (tenantId == null) {
+            throw new IllegalStateException("Tenant context not set");
+        }
+        task.setTenantId(tenantId);
         return onboardingTaskRepository.save(task);
     }
 
