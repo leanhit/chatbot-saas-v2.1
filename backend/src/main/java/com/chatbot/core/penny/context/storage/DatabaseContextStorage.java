@@ -2,6 +2,7 @@ package com.chatbot.core.penny.context.storage;
 
 import com.chatbot.config.StructuredLogging;
 import com.chatbot.core.message.store.model.Conversation;
+import com.chatbot.core.message.store.model.ConversationStatus;
 import com.chatbot.core.message.store.repository.ConversationRepository;
 import com.chatbot.core.tenant.infra.TenantContext;
 import com.chatbot.core.penny.context.ConversationContext;
@@ -132,7 +133,7 @@ public class DatabaseContextStorage {
             StructuredLogging.debugConditional("Getting active contexts for tenant", "tenantId", tenantId);
             
             Long tenantIdLong = Long.parseLong(tenantId);
-            List<Conversation> activeConversations = conversationRepository.findByTenantIdAndStatus(tenantIdLong, "open");
+            List<Conversation> activeConversations = conversationRepository.findByTenantIdAndStatus(tenantIdLong, ConversationStatus.OPEN);
             
             return activeConversations.stream()
                 .map(this::convertToConversationContext)
@@ -223,7 +224,8 @@ public class DatabaseContextStorage {
         try {
             StructuredLogging.debugConditional("Getting contexts by status", "status", status, "tenantId", tenantId);
             
-            List<Conversation> conversations = conversationRepository.findByTenantIdAndStatus(tenantId, status);
+            ConversationStatus conversationStatus = ConversationStatus.valueOf(status.toUpperCase());
+            List<Conversation> conversations = conversationRepository.findByTenantIdAndStatus(tenantId, conversationStatus);
             
             return conversations.stream()
                 .map(this::convertToConversationContext)
@@ -255,7 +257,7 @@ public class DatabaseContextStorage {
                 .orElse(null);
             
             if (conversation != null) {
-                conversation.setStatus(status);
+                conversation.setStatus(ConversationStatus.fromValue(status));
                 conversation.setUpdatedAt(LocalDateTime.now());
                 conversationRepository.save(conversation);
                 StructuredLogging.debugConditional("Updated context status", "contextId", contextId, "status", status);
@@ -436,7 +438,7 @@ public class DatabaseContextStorage {
         }
         
         // Set status
-        context.setStatus(conversation.getStatus());
+        context.setStatus(conversation.getStatus() != null ? conversation.getStatus().getValue() : null);
         
         return context;
     }

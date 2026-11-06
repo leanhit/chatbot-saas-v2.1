@@ -2,6 +2,7 @@ package com.chatbot.core.message.store.service;
 
 import com.chatbot.core.message.decision.exception.ConversationNotFoundException;
 import com.chatbot.core.message.store.model.Conversation;
+import com.chatbot.core.message.store.model.ConversationStatus;
 import com.chatbot.core.message.store.model.Message;
 import com.chatbot.core.message.store.dto.ConversationStatisticsDTO;
 import com.chatbot.core.message.store.dto.ChartDataPointDTO;
@@ -64,7 +65,7 @@ public class ConversationService {
                     Conversation c = Conversation.builder()
                             .connectionId(connectionId)
                             .externalUserId(externalUserId)
-                            .status("open")
+                            .status(ConversationStatus.OPEN)
                             .channel(channel)
                             .isClosedByAgent(false)
                             .isTakenOverByAgent(false)
@@ -219,7 +220,7 @@ public class ConversationService {
                 }
                 c.setIsTakenOverByAgent(true); // Ngắt Botpress
                 c.setAgentAssignedId(agentAssignedId); // Gán Agent
-                c.setStatus("active_agent"); // Cập nhật trạng thái
+                c.setStatus(ConversationStatus.ACTIVE_AGENT); // Cập nhật trạng thái
                 return conversationRepo.save(c);
             })
             .orElseThrow(() -> new ConversationNotFoundException("Conversation not found for takeover"));
@@ -241,7 +242,7 @@ public class ConversationService {
                 }
                 c.setIsTakenOverByAgent(false); // Kích hoạt lại Botpress
                 c.setAgentAssignedId(null); // Bỏ gán Agent
-                c.setStatus("open"); // Quay về trạng thái mở để bot xử lý
+                c.setStatus(ConversationStatus.OPEN); // Quay về trạng thái mở để bot xử lý
                 return conversationRepo.save(c);
             })
             .orElseThrow(() -> new ConversationNotFoundException("Conversation not found for release"));
@@ -360,12 +361,12 @@ public class ConversationService {
 
             if (isTakenOverByAgent) {
                 // Agent takeover → bot stop
-                conversation.setStatus("active_agent");  // Giữ đồng bộ với hàm takeoverConversation()
+                conversation.setStatus(ConversationStatus.ACTIVE_AGENT);  // Giữ đồng bộ với hàm takeoverConversation()
                 conversation.setAgentAssignedId(agentAssignedId);
                 log.debug("Conversation {} takeover → status=active_agent, agentAssignedId={}", conversationId, agentAssignedId);
             } else {
                 // Release → trả lại bot
-                conversation.setStatus("open");
+                conversation.setStatus(ConversationStatus.OPEN);
                 conversation.setAgentAssignedId(null); // Giải phóng Agent
                 log.debug("Conversation {} released → status=open, agentAssignedId reset", conversationId);
             }
@@ -473,7 +474,7 @@ public class ConversationService {
         
         // Set default values
         if (conversation.getStatus() == null) {
-            conversation.setStatus("open");
+            conversation.setStatus(ConversationStatus.OPEN);
         }
         if (conversation.getIsTakenOverByAgent() == null) {
             conversation.setIsTakenOverByAgent(false);

@@ -2,6 +2,7 @@ package com.chatbot.core.message.store.service;
 
 import com.chatbot.core.message.store.model.Agent;
 import com.chatbot.core.message.store.model.Conversation;
+import com.chatbot.core.message.store.model.ConversationStatus;
 import com.chatbot.core.message.store.repository.AgentRepository;
 import com.chatbot.core.message.store.repository.ConversationRepository;
 import com.chatbot.core.tenant.infra.TenantContext;
@@ -130,7 +131,7 @@ public class AgentReassignmentService {
                     // No online agents available, release conversation back to bot
                     conversation.setAgentAssignedId(null);
                     conversation.setIsTakenOverByAgent(false);
-                    conversation.setStatus("open");
+                    conversation.setStatus(ConversationStatus.OPEN);
                     conversationRepository.save(conversation);
                     reassignmentCount++;
                     log.info("🤖 [Reassignment] Conversation {} released back to bot (no online agents available)",
@@ -193,7 +194,7 @@ public class AgentReassignmentService {
             // No online agents available, release conversation back to bot
             conversation.setAgentAssignedId(null);
             conversation.setIsTakenOverByAgent(false);
-            conversation.setStatus("open");
+            conversation.setStatus(ConversationStatus.OPEN);
             conversationRepository.save(conversation);
             log.info("🤖 [Manual Reassignment] Conversation {} released back to bot (no online agents available)",
                 conversationId);

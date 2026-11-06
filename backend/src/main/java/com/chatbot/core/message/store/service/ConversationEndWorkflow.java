@@ -2,6 +2,7 @@ package com.chatbot.core.message.store.service;
 
 import com.chatbot.core.message.decision.exception.ConversationNotFoundException;
 import com.chatbot.core.message.store.model.Conversation;
+import com.chatbot.core.message.store.model.ConversationStatus;
 import com.chatbot.core.message.store.repository.ConversationRepository;
 import com.chatbot.core.notification.websocket.NotificationWebSocketHandler;
 import com.chatbot.shared.messenger.ChannelMessengerService;
@@ -60,7 +61,7 @@ public class ConversationEndWorkflow {
      * Close conversation
      */
     private void closeConversation(Conversation conversation, String endReason) {
-        conversation.setStatus("closed");
+        conversation.setStatus(ConversationStatus.CLOSED);
         if ("agent_closed".equals(endReason)) {
             conversation.setIsClosedByAgent(true);
         }
@@ -163,7 +164,7 @@ public class ConversationEndWorkflow {
 
         log.info("Reopening conversation {}", conversationId);
 
-        conversation.setStatus("open");
+        conversation.setStatus(ConversationStatus.OPEN);
         conversationRepository.save(conversation);
 
         // Notify agents
@@ -203,7 +204,7 @@ public class ConversationEndWorkflow {
         report.put("language", conversation.getLanguage());
 
         // Calculate duration if closed
-        if ("closed".equals(conversation.getStatus())) {
+        if (ConversationStatus.CLOSED.equals(conversation.getStatus())) {
             LocalDateTime createdAt = conversation.getCreatedAt();
             LocalDateTime closedAt = conversation.getUpdatedAt();
             long durationMinutes = ChronoUnit.MINUTES.between(createdAt, closedAt);

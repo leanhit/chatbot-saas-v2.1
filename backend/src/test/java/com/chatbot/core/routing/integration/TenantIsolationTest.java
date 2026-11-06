@@ -8,6 +8,7 @@ import com.chatbot.core.routing.repository.AgentWorkloadRepository;
 import com.chatbot.core.routing.repository.IntelligentEscalationRuleRepository;
 import com.chatbot.core.routing.repository.IntelligentRoutingRuleRepository;
 import com.chatbot.core.routing.repository.SupervisorSessionRepository;
+import com.chatbot.core.routing.test.RoutingTestConfiguration;
 import com.chatbot.core.tenant.infra.TenantContext;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,6 +18,7 @@ import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabas
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.context.annotation.Import;
 
 import java.util.List;
 
@@ -25,6 +27,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @DataJpaTest
 @ActiveProfiles("test")
 @ImportAutoConfiguration(exclude = {FlywayAutoConfiguration.class})
+@Import(RoutingTestConfiguration.class)
 class TenantIsolationTest {
 
     @Autowired

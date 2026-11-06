@@ -1,5 +1,6 @@
 package com.chatbot.core.message.store.model;
 
+import com.chatbot.core.message.store.converter.ConversationStatusConverter;
 import com.chatbot.core.message.store.model.Channel;
 import com.chatbot.core.tenant.infra.BaseTenantEntity;
 import com.fasterxml.jackson.annotation.JsonFormat;
@@ -51,7 +52,9 @@ public class Conversation extends BaseTenantEntity {
     @Column(name = "user_avatar")
     private String userAvatar;
 
-    private String status; // open | closed
+    @Convert(converter = ConversationStatusConverter.class)
+    @Column(name = "status")
+    private ConversationStatus status; // open | closed | queued | active_agent
 
     // Các trường mới được thêm
     @Enumerated(EnumType.STRING) 

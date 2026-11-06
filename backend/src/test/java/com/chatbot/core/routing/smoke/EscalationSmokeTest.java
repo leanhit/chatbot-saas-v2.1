@@ -5,11 +5,13 @@ import com.chatbot.core.routing.dto.EscalationResult;
 import com.chatbot.core.routing.model.EscalationRule;
 import com.chatbot.core.routing.repository.IntelligentEscalationRuleRepository;
 import com.chatbot.core.routing.service.IntelligentEscalationService;
+import com.chatbot.core.routing.test.RoutingTestConfiguration;
 import com.chatbot.core.tenant.infra.TenantContext;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.context.annotation.Import;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -19,7 +21,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
 @ActiveProfiles("test")
-@Disabled("ApplicationContext loading issues - requires full Spring context configuration")
+@Import(RoutingTestConfiguration.class)
 class EscalationSmokeTest {
 
     @Autowired

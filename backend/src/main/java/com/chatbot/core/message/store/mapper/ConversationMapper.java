@@ -29,7 +29,7 @@ public class ConversationMapper {
         dto.setUserName(c.getUserName());
         dto.setUserAvatar(c.getUserAvatar());
         
-        dto.setStatus(c.getStatus());
+        dto.setStatus(c.getStatus() != null ? c.getStatus().getValue() : null);
         
         // THÊM: Ánh xạ ownerId
         dto.setOwnerId(c.getOwnerId());

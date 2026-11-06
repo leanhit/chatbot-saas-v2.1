@@ -1,6 +1,7 @@
 package com.chatbot.core.message.store.service;
 
 import com.chatbot.core.message.store.model.Conversation;
+import com.chatbot.core.message.store.model.ConversationStatus;
 import com.chatbot.core.message.store.model.SLAConfiguration;
 import com.chatbot.core.message.store.repository.ConversationRepository;
 import com.chatbot.core.message.store.repository.SLAConfigurationRepository;
@@ -184,7 +185,7 @@ public class SLAMonitorService {
                 
                 try {
                     // Get all open conversations for this tenant
-                    List<Conversation> openConversations = conversationRepository.findByTenantIdAndStatus(tenantId, "open");
+                    List<Conversation> openConversations = conversationRepository.findByTenantIdAndStatus(tenantId, ConversationStatus.OPEN);
 
                     for (Conversation conversation : openConversations) {
                         if (isSLABreached(conversation)) {
@@ -256,7 +257,7 @@ public class SLAMonitorService {
      */
     public Map<String, Object> getSLAMetrics(Long tenantId) {
         List<Conversation> allConversations = conversationRepository.findByTenantId(tenantId);
-        List<Conversation> openConversations = conversationRepository.findByTenantIdAndStatus(tenantId, "open");
+        List<Conversation> openConversations = conversationRepository.findByTenantIdAndStatus(tenantId, ConversationStatus.OPEN);
 
         int totalConversations = allConversations.size();
         int openConversationsCount = openConversations.size();

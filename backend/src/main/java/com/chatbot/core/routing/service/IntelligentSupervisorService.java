@@ -4,7 +4,7 @@ import com.chatbot.core.routing.dto.CreateSupervisorSessionRequest;
 import com.chatbot.core.routing.dto.SupervisorSessionDTO;
 import com.chatbot.core.routing.dto.SupervisorTakeoverResult;
 import com.chatbot.core.routing.model.SupervisorSession;
-import com.chatbot.core.routing.repository.IntelligentSupervisorSessionRepository;
+import com.chatbot.core.routing.repository.SupervisorSessionRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -21,7 +21,7 @@ import java.util.stream.Collectors;
 @Slf4j
 public class IntelligentSupervisorService {
 
-    private final IntelligentSupervisorSessionRepository supervisorSessionRepository;
+    private final SupervisorSessionRepository supervisorSessionRepository;
 
     @Transactional
     public SupervisorSessionDTO startSupervisorSession(CreateSupervisorSessionRequest request) {
@@ -302,5 +302,108 @@ public class IntelligentSupervisorService {
                 .filter(session -> session.getSessionStatus() == SupervisorSession.SessionStatus.ACTIVE)
                 .map(this::mapToDTO)
                 .collect(Collectors.toList());
+    }
+
+    // Additional methods merged from SupervisorSessionService
+
+    @Transactional
+    public SupervisorSessionDTO createSupervisorSession(Long supervisorId, Long conversationId, SupervisorSession.SessionType sessionType) {
+        log.info("Creating supervisor session for supervisor {} and conversation {} with type {}", supervisorId, conversationId, sessionType);
+
+        Long tenantId = com.chatbot.core.tenant.infra.TenantContext.getTenantId();
+
+        // Check if active session already exists for this supervisor+conversation
+        supervisorSessionRepository.findByTenantIdAndSupervisorIdAndConversationId(tenantId, supervisorId, conversationId)
+                .ifPresent(existing -> {
+                    if (existing.getSessionStatus() == SupervisorSession.SessionStatus.ACTIVE) {
+                        throw new IllegalStateException("Active supervisor session already exists for supervisor " + supervisorId + " and conversation " + conversationId);
+                    }
+                });
+
+        SupervisorSession session = SupervisorSession.builder()
+                .supervisorId(supervisorId)
+                .conversationId(conversationId)
+                .sessionType(sessionType)
+                .sessionStatus(SupervisorSession.SessionStatus.ACTIVE)
+                .joinedAt(LocalDateTime.now())
+                .isSilent(sessionType == SupervisorSession.SessionType.MONITORING)
+                .canIntervene(sessionType != SupervisorSession.SessionType.MONITORING)
+                .interventionCount(0)
+                .build();
+        session.setTenantId(tenantId);
+
+        SupervisorSession saved = supervisorSessionRepository.save(session);
+        log.info("Supervisor session created successfully with ID: {}", saved.getId());
+
+        return mapToDTO(saved);
+    }
+
+    @Transactional
+    public SupervisorSessionDTO interruptSupervisorSession(Long sessionId) {
+        log.info("Interrupting supervisor session with ID: {}", sessionId);
+
+        SupervisorSession session = supervisorSessionRepository.findById(sessionId)
+                .orElseThrow(() -> new RuntimeException("Supervisor session not found"));
+
+        if (session.getSessionStatus() != SupervisorSession.SessionStatus.ACTIVE) {
+            throw new IllegalStateException("Cannot interrupt a session that is not active");
+        }
+
+        session.setSessionStatus(SupervisorSession.SessionStatus.INTERRUPTED);
+        session.setLeftAt(LocalDateTime.now());
+
+        // Calculate duration
+        if (session.getJoinedAt() != null) {
+            long seconds = ChronoUnit.SECONDS.between(session.getJoinedAt(), session.getLeftAt());
+            session.setDurationSeconds((int) seconds);
+        }
+
+        SupervisorSession updated = supervisorSessionRepository.save(session);
+        log.info("Supervisor session interrupted successfully. Duration: {} seconds", updated.getDurationSeconds());
+
+        return mapToDTO(updated);
+    }
+
+    @Transactional
+    public SupervisorSessionDTO updateMonitoredAgent(Long sessionId, Long monitoredAgentId) {
+        log.info("Updating monitored agent to {} for supervisor session with ID: {}", monitoredAgentId, sessionId);
+
+        SupervisorSession session = supervisorSessionRepository.findById(sessionId)
+                .orElseThrow(() -> new RuntimeException("Supervisor session not found"));
+
+        session.setMonitoredAgentId(monitoredAgentId);
+        SupervisorSession updated = supervisorSessionRepository.save(session);
+        log.info("Monitored agent updated successfully");
+
+        return mapToDTO(updated);
+    }
+
+    @Transactional(readOnly = true)
+    public List<SupervisorSessionDTO> getActiveSessionsBySupervisor(Long supervisorId) {
+        Long tenantId = com.chatbot.core.tenant.infra.TenantContext.getTenantId();
+        List<SupervisorSession> sessions = supervisorSessionRepository.findByTenantIdAndSupervisorIdAndSessionStatus(
+                tenantId, supervisorId, SupervisorSession.SessionStatus.ACTIVE);
+        return sessions.stream().map(this::mapToDTO).collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public List<SupervisorSessionDTO> getSessionsByConversation(Long conversationId) {
+        Long tenantId = com.chatbot.core.tenant.infra.TenantContext.getTenantId();
+        List<SupervisorSession> sessions = supervisorSessionRepository.findByTenantIdAndConversationId(tenantId, conversationId);
+        return sessions.stream().map(this::mapToDTO).collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public Long getActiveSessionCount() {
+        Long tenantId = com.chatbot.core.tenant.infra.TenantContext.getTenantId();
+        return supervisorSessionRepository.countByTenantIdAndSessionStatus(tenantId, SupervisorSession.SessionStatus.ACTIVE);
+    }
+
+    @Transactional(readOnly = true)
+    public List<SupervisorSessionDTO> getAllActiveSessions() {
+        Long tenantId = com.chatbot.core.tenant.infra.TenantContext.getTenantId();
+        List<SupervisorSession> sessions = supervisorSessionRepository.findByTenantIdAndSessionStatus(
+                tenantId, SupervisorSession.SessionStatus.ACTIVE);
+        return sessions.stream().map(this::mapToDTO).collect(Collectors.toList());
     }
 }

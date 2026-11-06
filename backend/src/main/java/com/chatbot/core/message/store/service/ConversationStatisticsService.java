@@ -1,6 +1,7 @@
 package com.chatbot.core.message.store.service;
 
 import com.chatbot.core.message.store.model.Conversation;
+import com.chatbot.core.message.store.model.ConversationStatus;
 import com.chatbot.core.message.store.dto.ConversationStatisticsDTO;
 import com.chatbot.core.message.store.dto.ChartDataPointDTO;
 import com.chatbot.core.message.store.dto.ActivityDTO;
@@ -263,7 +264,7 @@ public class ConversationStatisticsService {
                         activity.setType("closed");
                         activity.setTitle("Conversation closed");
                         activity.setDescription("Conversation with " + userName + " was closed");
-                    } else if ("open".equals(c.getStatus())) {
+                    } else if (ConversationStatus.OPEN.equals(c.getStatus())) {
                         activity.setType("conversation");
                         activity.setTitle("New conversation started");
                         activity.setDescription(userName + " started a new chat via " +

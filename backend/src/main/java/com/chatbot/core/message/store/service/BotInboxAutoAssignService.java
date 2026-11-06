@@ -3,6 +3,7 @@ package com.chatbot.core.message.store.service;
 import com.chatbot.core.message.store.model.Agent;
 import com.chatbot.core.message.store.model.AutoAssignConfig;
 import com.chatbot.core.message.store.model.Conversation;
+import com.chatbot.core.message.store.model.ConversationStatus;
 import com.chatbot.core.message.store.repository.AutoAssignConfigRepository;
 import com.chatbot.core.message.store.repository.ConversationRepository;
 import com.chatbot.core.tenant.model.Tenant;
@@ -91,7 +92,7 @@ public class BotInboxAutoAssignService {
         }
 
         // Skip if conversation is closed
-        if ("closed".equals(conversation.getStatus()) || "blocked".equals(conversation.getStatus())) {
+        if (ConversationStatus.CLOSED.equals(conversation.getStatus())) {
             return false;
         }
 

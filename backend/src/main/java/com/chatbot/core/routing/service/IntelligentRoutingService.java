@@ -1,6 +1,7 @@
 package com.chatbot.core.routing.service;
 
 import com.chatbot.core.message.store.model.Conversation;
+import com.chatbot.core.message.store.model.ConversationStatus;
 import com.chatbot.core.message.store.repository.ConversationRepository;
 import com.chatbot.core.routing.dto.*;
 import com.chatbot.core.routing.model.AgentWorkload;
@@ -65,8 +66,9 @@ public class IntelligentRoutingService {
     public RoutingRuleDTO updateRoutingRule(Long id, UpdateRoutingRuleRequest request) {
         log.info("Updating routing rule with ID: {}", id);
 
-        RoutingRule routingRule = routingRuleRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Routing rule not found"));
+        Long tenantId = com.chatbot.core.tenant.infra.TenantContext.getTenantId();
+        RoutingRule routingRule = routingRuleRepository.findByIdAndTenantId(id, tenantId)
+                .orElseThrow(() -> new RuntimeException("Routing rule not found or access denied"));
 
         routingRule.setName(request.getName());
         routingRule.setDescription(request.getDescription());
@@ -99,16 +101,18 @@ public class IntelligentRoutingService {
     @Transactional
     public void deleteRoutingRule(Long id) {
         log.info("Deleting routing rule with ID: {}", id);
-        RoutingRule routingRule = routingRuleRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Routing rule not found"));
+        Long tenantId = com.chatbot.core.tenant.infra.TenantContext.getTenantId();
+        RoutingRule routingRule = routingRuleRepository.findByIdAndTenantId(id, tenantId)
+                .orElseThrow(() -> new RuntimeException("Routing rule not found or access denied"));
         routingRuleRepository.delete(routingRule);
         log.info("Routing rule deleted successfully");
     }
 
     @Transactional(readOnly = true)
     public RoutingRuleDTO getRoutingRuleById(Long id) {
-        RoutingRule routingRule = routingRuleRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Routing rule not found"));
+        Long tenantId = com.chatbot.core.tenant.infra.TenantContext.getTenantId();
+        RoutingRule routingRule = routingRuleRepository.findByIdAndTenantId(id, tenantId)
+                .orElseThrow(() -> new RuntimeException("Routing rule not found or access denied"));
         return mapToDTO(routingRule);
     }
 
@@ -285,25 +289,8 @@ public class IntelligentRoutingService {
             Object actualValue = conversationContext.get(key);
 
             // Parse operator from key (e.g., "age>18", "name contains 'John'")
-            if (key.contains(">")) {
-                String[] parts = key.split(">");
-                if (parts.length == 2) {
-                    String field = parts[0].trim();
-                    actualValue = conversationContext.get(field);
-                    if (!evaluateComparison(actualValue, expectedValue, ">")) {
-                        return false;
-                    }
-                }
-            } else if (key.contains("<")) {
-                String[] parts = key.split("<");
-                if (parts.length == 2) {
-                    String field = parts[0].trim();
-                    actualValue = conversationContext.get(field);
-                    if (!evaluateComparison(actualValue, expectedValue, "<")) {
-                        return false;
-                    }
-                }
-            } else if (key.contains(">=")) {
+            // IMPORTANT: Check >= and <= BEFORE > and < to avoid incorrect matching
+            if (key.contains(">=")) {
                 String[] parts = key.split(java.util.regex.Pattern.quote(">="));
                 if (parts.length == 2) {
                     String field = parts[0].trim();
@@ -318,6 +305,24 @@ public class IntelligentRoutingService {
                     String field = parts[0].trim();
                     actualValue = conversationContext.get(field);
                     if (!evaluateComparison(actualValue, expectedValue, "<=")) {
+                        return false;
+                    }
+                }
+            } else if (key.contains(">")) {
+                String[] parts = key.split(">");
+                if (parts.length == 2) {
+                    String field = parts[0].trim();
+                    actualValue = conversationContext.get(field);
+                    if (!evaluateComparison(actualValue, expectedValue, ">")) {
+                        return false;
+                    }
+                }
+            } else if (key.contains("<")) {
+                String[] parts = key.split("<");
+                if (parts.length == 2) {
+                    String field = parts[0].trim();
+                    actualValue = conversationContext.get(field);
+                    if (!evaluateComparison(actualValue, expectedValue, "<")) {
                         return false;
                     }
                 }
@@ -523,15 +528,34 @@ public class IntelligentRoutingService {
             return applyFallbackLogic(rule, "skill-based");
         }
 
+        // Batch fetch all agent skills to avoid N+1 queries
+        List<Long> agentIds = availableAgents.stream()
+                .map(AgentWorkload::getAgentId)
+                .collect(Collectors.toList());
+        List<AgentSkill> allSkills = agentSkillRepository.findByAgentIdIn(agentIds);
+        
+        // Group skills by agent ID for efficient lookup
+        Map<Long, List<AgentSkill>> skillsByAgent = allSkills.stream()
+                .collect(Collectors.groupingBy(AgentSkill::getAgentId));
+
         // Real skill matching: Filter agents by skill and proficiency
         List<AgentWorkload> skilledAgents = new ArrayList<>();
         for (AgentWorkload agent : availableAgents) {
-            List<AgentSkill> skills = agentSkillRepository.findByAgentId(agent.getAgentId());
+            List<AgentSkill> skills = skillsByAgent.getOrDefault(agent.getAgentId(), new ArrayList<>());
             
             // Check if agent has the required skill
+            // targetSkillId should be compared with skill category name or ID
             boolean hasRequiredSkill = skills.stream()
-                    .anyMatch(skill -> skill.getId().equals(targetSkillId) || 
-                            (targetSkillId != null && skill.getSkillCategory().ordinal() == targetSkillId.intValue()));
+                    .anyMatch(skill -> {
+                        if (targetSkillId == null) {
+                            return true; // No specific skill required
+                        }
+                        // Compare by skill category name (case-insensitive)
+                        String skillCategoryName = skill.getSkillCategory().name();
+                        // Try to match by category name or by skill ID if available
+                        return skillCategoryName.equalsIgnoreCase(targetSkillId.toString()) ||
+                               skill.getId().equals(targetSkillId);
+                    });
             
             if (hasRequiredSkill) {
                 skilledAgents.add(agent);
@@ -546,7 +570,8 @@ public class IntelligentRoutingService {
         AgentWorkload selectedAgent = candidateAgents.stream()
                 .max(Comparator.comparingInt(agent -> {
                     // Calculate composite score: skill score - workload penalty
-                    int skillScore = getAgentSkillScore(agent.getAgentId(), targetSkillId);
+                    List<AgentSkill> agentSkills = skillsByAgent.getOrDefault(agent.getAgentId(), new ArrayList<>());
+                    int skillScore = getAgentSkillScore(agentSkills, targetSkillId);
                     int workloadPenalty = agent.getActiveConversations() * 10;
                     return skillScore - workloadPenalty;
                 }))
@@ -560,12 +585,14 @@ public class IntelligentRoutingService {
         return selectedAgent.getAgentId();
     }
 
-    private int getAgentSkillScore(Long agentId, Long targetSkillId) {
-        List<AgentSkill> skills = agentSkillRepository.findByAgentId(agentId);
+    private int getAgentSkillScore(List<AgentSkill> skills, Long targetSkillId) {
         if (targetSkillId != null) {
             return skills.stream()
-                    .filter(skill -> skill.getId().equals(targetSkillId) ||
-                            skill.getSkillCategory().ordinal() == targetSkillId.intValue())
+                    .filter(skill -> {
+                        String skillCategoryName = skill.getSkillCategory().name();
+                        return skillCategoryName.equalsIgnoreCase(targetSkillId.toString()) ||
+                               skill.getId().equals(targetSkillId);
+                    })
                     .mapToInt(AgentSkill::getScore)
                     .findFirst()
                     .orElse(50); // Default score if no matching skill
@@ -636,16 +663,22 @@ public class IntelligentRoutingService {
             return applyFallbackLogic(rule, "round-robin");
         }
         
-        // Get or initialize round-robin index for this team
+        // Get and update round-robin index atomically in one operation
         Long teamKey = targetTeamId != null ? targetTeamId : 0L;
-        long currentIndex = roundRobinIndex.getOrDefault(teamKey, 0L);
+        long[] result = new long[2]; // [currentIndex, nextIndex]
+        
+        roundRobinIndex.compute(teamKey, (k, v) -> {
+            long current = v == null ? 0L : v;
+            result[0] = current; // Store current index for selection
+            result[1] = current + 1; // Store next index for update
+            return current + 1; // Update to next index
+        });
+        
+        long currentIndex = result[0];
         
         // Select agent using round-robin
         int selectedIndex = (int) (currentIndex % availableAgents.size());
         AgentWorkload selectedAgent = availableAgents.get(selectedIndex);
-        
-        // Update round-robin index
-        roundRobinIndex.put(teamKey, currentIndex + 1);
         
         log.info("Round-robin selected agent {} (index {}/{})", 
                 selectedAgent.getAgentId(), selectedIndex, availableAgents.size());
@@ -906,7 +939,7 @@ public class IntelligentRoutingService {
         
         // Assign conversation to agent
         conversation.setAgentAssignedId(agentId);
-        conversation.setStatus("assigned");
+        conversation.setStatus(ConversationStatus.ACTIVE_AGENT);
         conversationRepository.save(conversation);
         
         // Increment agent workload

@@ -1,6 +1,7 @@
 package com.chatbot.core.message.store.service;
 
 import com.chatbot.core.message.store.model.Conversation;
+import com.chatbot.core.message.store.model.ConversationStatus;
 import com.chatbot.core.message.store.model.RoutingRule;
 import com.chatbot.core.message.store.repository.RoutingRuleRepository;
 import com.chatbot.core.message.store.repository.ConversationRepository;
@@ -223,7 +224,7 @@ public class RoutingRuleService {
      */
     private boolean handleBlock(Conversation conversation) {
         log.info("Routing rule blocked conversation {}", conversation.getId());
-        conversation.setStatus("blocked");
+        conversation.setStatus(ConversationStatus.QUEUED); // Use QUEUED as blocked status
         conversationRepository.save(conversation);
         return true;
     }

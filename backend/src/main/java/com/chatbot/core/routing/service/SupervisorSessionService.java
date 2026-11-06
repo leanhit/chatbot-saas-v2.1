@@ -16,6 +16,7 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@Deprecated
 public class SupervisorSessionService {
 
     private final SupervisorSessionRepository supervisorSessionRepository;

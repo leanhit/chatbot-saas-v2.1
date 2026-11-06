@@ -1,7 +1,9 @@
 package com.chatbot.core.routing.service;
 
 import com.chatbot.core.message.store.model.Conversation;
+import com.chatbot.core.message.store.model.ConversationStatus;
 import com.chatbot.core.message.store.repository.ConversationRepository;
+import com.chatbot.core.notification.websocket.NotificationWebSocketHandler;
 import com.chatbot.core.routing.dto.*;
 import com.chatbot.core.routing.model.EscalationHistory;
 import com.chatbot.core.routing.model.EscalationRule;
@@ -25,6 +27,7 @@ public class IntelligentEscalationService {
     private final IntelligentEscalationRuleRepository escalationRuleRepository;
     private final EscalationHistoryRepository escalationHistoryRepository;
     private final ConversationRepository conversationRepository;
+    private final NotificationWebSocketHandler notificationWebSocketHandler;
 
     @Transactional
     public EscalationRuleDTO createEscalationRule(CreateEscalationRuleRequest request) {
@@ -58,8 +61,9 @@ public class IntelligentEscalationService {
     public EscalationRuleDTO updateEscalationRule(Long id, UpdateEscalationRuleRequest request) {
         log.info("Updating escalation rule with ID: {}", id);
 
-        EscalationRule escalationRule = escalationRuleRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Escalation rule not found"));
+        Long tenantId = com.chatbot.core.tenant.infra.TenantContext.getTenantId();
+        EscalationRule escalationRule = escalationRuleRepository.findByIdAndTenantId(id, tenantId)
+                .orElseThrow(() -> new RuntimeException("Escalation rule not found or access denied"));
 
         escalationRule.setName(request.getName());
         escalationRule.setDescription(request.getDescription());
@@ -96,16 +100,18 @@ public class IntelligentEscalationService {
     @Transactional
     public void deleteEscalationRule(Long id) {
         log.info("Deleting escalation rule with ID: {}", id);
-        EscalationRule escalationRule = escalationRuleRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Escalation rule not found"));
+        Long tenantId = com.chatbot.core.tenant.infra.TenantContext.getTenantId();
+        EscalationRule escalationRule = escalationRuleRepository.findByIdAndTenantId(id, tenantId)
+                .orElseThrow(() -> new RuntimeException("Escalation rule not found or access denied"));
         escalationRuleRepository.delete(escalationRule);
         log.info("Escalation rule deleted successfully");
     }
 
     @Transactional(readOnly = true)
     public EscalationRuleDTO getEscalationRuleById(Long id) {
-        EscalationRule escalationRule = escalationRuleRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Escalation rule not found"));
+        Long tenantId = com.chatbot.core.tenant.infra.TenantContext.getTenantId();
+        EscalationRule escalationRule = escalationRuleRepository.findByIdAndTenantId(id, tenantId)
+                .orElseThrow(() -> new RuntimeException("Escalation rule not found or access denied"));
         return mapToDTO(escalationRule);
     }
 
@@ -359,8 +365,13 @@ public class IntelligentEscalationService {
         try {
             Conversation conversation = conversationRepository.findById(conversationId).orElse(null);
             if (conversation != null) {
-                // Set status to QUEUED or similar
+                // Set status to QUEUED and clear agent assignment using enum
+                conversation.setStatus(ConversationStatus.QUEUED);
+                conversation.setAgentAssignedId(null);
+                conversationRepository.save(conversation);
                 log.info("Conversation {} moved to queue", conversationId);
+            } else {
+                log.warn("Conversation {} not found for queue move", conversationId);
             }
         } catch (Exception e) {
             log.error("Failed to move conversation {} to queue", conversationId, e);
@@ -373,10 +384,30 @@ public class IntelligentEscalationService {
     }
 
     private boolean notifySupervisor(Long conversationId, EscalationRule rule) {
-        // Implement supervisor notification logic
-        // This could send WebSocket notification, email, or create alert
-        log.info("Notifying supervisor about escalation of conversation {}", conversationId);
-        return true; // Placeholder - return actual notification status
+        try {
+            // Get tenant ID from context
+            Long tenantId = com.chatbot.core.tenant.infra.TenantContext.getTenantId();
+            
+            // Create notification payload
+            Map<String, Object> notification = new HashMap<>();
+            notification.put("type", "ESCALATION_NOTIFICATION");
+            notification.put("conversationId", conversationId);
+            notification.put("ruleName", rule.getName());
+            notification.put("triggerType", rule.getTriggerType().name());
+            notification.put("escalationAction", rule.getEscalationAction().name());
+            notification.put("priority", String.valueOf(rule.getPriority()));
+            notification.put("timestamp", System.currentTimeMillis());
+            notification.put("tenantId", tenantId);
+            
+            // Send notification via WebSocket to tenant
+            notificationWebSocketHandler.broadcastToTenant(tenantId, notification);
+            
+            log.info("Supervisor notification sent for conversation {} via WebSocket", conversationId);
+            return true;
+        } catch (Exception e) {
+            log.error("Failed to notify supervisor for conversation {}: {}", conversationId, e.getMessage(), e);
+            return false;
+        }
     }
 
     private void saveEscalationHistory(Long conversationId, Long escalatedToAgentId, Long escalatedToTeamId,

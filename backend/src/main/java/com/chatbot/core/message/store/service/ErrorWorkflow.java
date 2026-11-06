@@ -2,6 +2,7 @@ package com.chatbot.core.message.store.service;
 
 import com.chatbot.core.message.decision.exception.ConversationNotFoundException;
 import com.chatbot.core.message.store.model.Conversation;
+import com.chatbot.core.message.store.model.ConversationStatus;
 import com.chatbot.core.message.store.repository.ConversationRepository;
 import com.chatbot.core.notification.websocket.NotificationWebSocketHandler;
 import com.chatbot.shared.messenger.ChannelMessengerService;
@@ -184,7 +185,7 @@ public class ErrorWorkflow {
             .orElseThrow(() -> new ConversationNotFoundException("Conversation not found: " + conversationId));
 
         // Check if conversation can be resumed
-        if ("open".equals(conversation.getStatus())) {
+        if (ConversationStatus.OPEN.equals(conversation.getStatus())) {
             log.info("Conversation {} is open, can resume normal processing", conversationId);
             // Fallback: Notify admins that conversation is ready to be resumed
             Map<String, Object> notification = new HashMap<>();

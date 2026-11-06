@@ -7,6 +7,7 @@ import com.chatbot.core.message.decision.exception.ConversationException;
 import com.chatbot.core.message.store.service.MessageService;
 import com.chatbot.core.message.store.service.ConversationService;
 import com.chatbot.core.message.store.model.Conversation;
+import com.chatbot.core.message.store.model.ConversationStatus;
 import com.chatbot.core.message.store.repository.ConversationRepository;
 import com.chatbot.core.tenant.infra.TenantContext;
 import com.chatbot.shared.exceptions.ErrorCode;
@@ -187,13 +188,13 @@ public class TakeoverController {
                 }
                 conversation.setAgentAssignedId(null);
                 conversation.setIsTakenOverByAgent(false);
-                conversation.setStatus("open");
+                conversation.setStatus(ConversationStatus.OPEN);
                 log.info("🔓 Conversation {} released by {}", conversationId, currentUserEmail);
             } else {
                 // Assign to agent
                 conversation.setAgentAssignedId(agentId);
                 conversation.setIsTakenOverByAgent(true);
-                conversation.setStatus("active_agent");
+                conversation.setStatus(ConversationStatus.ACTIVE_AGENT);
                 log.info("🔒 Conversation {} assigned to agent {} by {}", conversationId, agentId, currentUserEmail);
             }
             

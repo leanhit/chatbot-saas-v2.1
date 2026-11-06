@@ -2,6 +2,7 @@ package com.chatbot.core.message.store.service;
 
 import com.chatbot.core.message.decision.exception.ConversationNotFoundException;
 import com.chatbot.core.message.store.model.Conversation;
+import com.chatbot.core.message.store.model.ConversationStatus;
 import com.chatbot.core.message.store.repository.ConversationRepository;
 import com.chatbot.core.notification.websocket.NotificationWebSocketHandler;
 import com.chatbot.core.tenant.model.Tenant;
@@ -61,7 +62,7 @@ public class TimeoutWorkflow {
                 
                 try {
                     // Get all open conversations for this tenant
-                    List<Conversation> openConversations = conversationRepository.findByTenantIdAndStatus(tenantId, "open");
+                    List<Conversation> openConversations = conversationRepository.findByTenantIdAndStatus(tenantId, ConversationStatus.OPEN);
 
                     for (Conversation conversation : openConversations) {
                         if (isConversationInactive(conversation)) {

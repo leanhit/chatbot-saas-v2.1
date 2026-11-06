@@ -19,4 +19,6 @@ public interface IntelligentRoutingRuleRepository extends JpaRepository<RoutingR
     List<RoutingRule> findByTenantIdAndRuleTypeAndIsActiveTrue(Long tenantId, RoutingRule.RoutingRuleType ruleType);
 
     List<RoutingRule> findByTenantIdAndTargetTypeAndIsActiveTrue(Long tenantId, RoutingRule.TargetType targetType);
+
+    Optional<RoutingRule> findByIdAndTenantId(Long id, Long tenantId);
 }

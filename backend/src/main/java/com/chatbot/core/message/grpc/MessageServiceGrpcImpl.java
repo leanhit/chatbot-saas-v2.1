@@ -7,6 +7,7 @@ import com.chatbot.core.message.store.service.MessageService;
 import com.chatbot.core.message.store.service.ConversationService;
 import com.chatbot.core.message.store.model.Message;
 import com.chatbot.core.message.store.model.Conversation;
+// ConversationStatus domain enum used via fully-qualified name to avoid shadowing gRPC ConversationStatus
 import com.chatbot.core.grpc.util.GrpcMapperUtil;
 import com.chatbot.core.tenant.exception.TenantNotFoundException;
 import com.chatbot.core.tenant.service.TenantService;
@@ -464,7 +465,7 @@ class MessageServiceGrpcImpl extends MessageServiceGrpc.MessageServiceImplBase {
         conversation.setConnectionId(UUID.randomUUID());
         conversation.setExternalUserId(grpcConversation.getParticipantsList().isEmpty() ? "" : grpcConversation.getParticipantsList().get(0));
         conversation.setUserName(grpcConversation.getTitle());
-        conversation.setStatus("open");
+        conversation.setStatus(convertToDomainStatus(grpcConversation.getStatus()));
         conversation.setIsTakenOverByAgent(false);
         conversation.setIsClosedByAgent(false);
         return conversation;
@@ -481,13 +482,46 @@ class MessageServiceGrpcImpl extends MessageServiceGrpc.MessageServiceImplBase {
             .setType(ConversationType.CONVERSATION_TYPE_DIRECT)
             .setTitle(domainConversation.getUserName() != null ? domainConversation.getUserName() : "")
             .setDescription("")
-            .setStatus(domainConversation.getStatus() != null ? 
-                ConversationStatus.valueOf(domainConversation.getStatus().toUpperCase()) : 
-                ConversationStatus.CONVERSATION_STATUS_ACTIVE)
+            .setStatus(convertToGrpcStatus(domainConversation.getStatus()))
             .setCreatedAt(domainConversation.getCreatedAt() != null ? 
                 domainConversation.getCreatedAt().atZone(ZoneId.systemDefault()).toInstant().toEpochMilli() : 0)
             .setUpdatedAt(domainConversation.getUpdatedAt() != null ? 
                 domainConversation.getUpdatedAt().atZone(ZoneId.systemDefault()).toInstant().toEpochMilli() : 0)
             .build();
+    }
+
+    /**
+     * Convert domain ConversationStatus to gRPC ConversationStatus
+     */
+    private com.chatbot.message.grpc.MessageServiceProto.ConversationStatus convertToGrpcStatus(
+            com.chatbot.core.message.store.model.ConversationStatus domainStatus) {
+        if (domainStatus == null) {
+            return com.chatbot.message.grpc.MessageServiceProto.ConversationStatus.CONVERSATION_STATUS_ACTIVE;
+        }
+        
+        return switch (domainStatus) {
+            case OPEN        -> com.chatbot.message.grpc.MessageServiceProto.ConversationStatus.CONVERSATION_STATUS_ACTIVE;
+            case CLOSED      -> com.chatbot.message.grpc.MessageServiceProto.ConversationStatus.CONVERSATION_STATUS_CLOSED;
+            case QUEUED      -> com.chatbot.message.grpc.MessageServiceProto.ConversationStatus.CONVERSATION_STATUS_SUSPENDED;
+            case ACTIVE_AGENT -> com.chatbot.message.grpc.MessageServiceProto.ConversationStatus.CONVERSATION_STATUS_ACTIVE;
+        };
+    }
+
+    /**
+     * Convert gRPC ConversationStatus to domain ConversationStatus
+     */
+    private com.chatbot.core.message.store.model.ConversationStatus convertToDomainStatus(
+            com.chatbot.message.grpc.MessageServiceProto.ConversationStatus grpcStatus) {
+        if (grpcStatus == null) {
+            return com.chatbot.core.message.store.model.ConversationStatus.OPEN;
+        }
+        
+        return switch (grpcStatus) {
+            case CONVERSATION_STATUS_ACTIVE    -> com.chatbot.core.message.store.model.ConversationStatus.OPEN;
+            case CONVERSATION_STATUS_CLOSED    -> com.chatbot.core.message.store.model.ConversationStatus.CLOSED;
+            case CONVERSATION_STATUS_SUSPENDED -> com.chatbot.core.message.store.model.ConversationStatus.QUEUED;
+            case CONVERSATION_STATUS_ARCHIVED  -> com.chatbot.core.message.store.model.ConversationStatus.CLOSED;
+            default -> com.chatbot.core.message.store.model.ConversationStatus.OPEN;
+        };
     }
 }

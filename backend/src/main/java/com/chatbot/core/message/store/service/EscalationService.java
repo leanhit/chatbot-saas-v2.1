@@ -1,6 +1,7 @@
 package com.chatbot.core.message.store.service;
 
 import com.chatbot.core.message.store.model.Conversation;
+import com.chatbot.core.message.store.model.ConversationStatus;
 import com.chatbot.core.message.store.model.EscalationTier;
 import com.chatbot.core.message.store.repository.ConversationRepository;
 import com.chatbot.core.message.store.repository.EscalationTierRepository;
@@ -60,7 +61,7 @@ public class EscalationService {
                 
                 try {
                     // Get all open conversations for this tenant
-                    List<Conversation> openConversations = conversationRepository.findByTenantIdAndStatus(tenantId, "open");
+                    List<Conversation> openConversations = conversationRepository.findByTenantIdAndStatus(tenantId, ConversationStatus.OPEN);
 
                     for (Conversation conversation : openConversations) {
                         if (shouldEscalate(conversation)) {

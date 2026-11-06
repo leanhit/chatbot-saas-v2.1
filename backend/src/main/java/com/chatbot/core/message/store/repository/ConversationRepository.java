@@ -1,6 +1,7 @@
 package com.chatbot.core.message.store.repository;
 
 import com.chatbot.core.message.store.model.Conversation;
+import com.chatbot.core.message.store.model.ConversationStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -39,7 +40,7 @@ public interface ConversationRepository extends JpaRepository<Conversation, Long
     // 2. Lọc theo trạng thái, Agent phụ trách và tenant
     @Query("SELECT c FROM Conversation c WHERE c.status = :status AND c.agentAssignedId = :agentAssignedId AND c.tenantId = :tenantId")
     Page<Conversation> findByStatusAndAgentAssignedIdAndTenantId(
-        @Param("status") String status, 
+        @Param("status") ConversationStatus status, 
         @Param("agentAssignedId") Long agentAssignedId,
         @Param("tenantId") Long tenantId, 
         Pageable pageable
@@ -183,11 +184,11 @@ public interface ConversationRepository extends JpaRepository<Conversation, Long
     // SLA Monitoring: Find conversations by tenant and status
     List<Conversation> findByTenantIdAndStatus(
         @Param("tenantId") Long tenantId,
-        @Param("status") String status
+        @Param("status") ConversationStatus status
     );
 
     // Timeout Workflow: Find conversations by status (tenant-independent for scheduled jobs)
-    List<Conversation> findByStatus(@Param("status") String status);
+    List<Conversation> findByStatus(@Param("status") ConversationStatus status);
     
     @org.springframework.data.jpa.repository.Modifying
     @org.springframework.transaction.annotation.Transactional(value = "messageTransactionManager", rollbackFor = Exception.class)

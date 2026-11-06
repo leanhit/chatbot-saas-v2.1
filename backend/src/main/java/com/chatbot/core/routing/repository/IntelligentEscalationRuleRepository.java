@@ -17,4 +17,6 @@ public interface IntelligentEscalationRuleRepository extends JpaRepository<Escal
     Optional<EscalationRule> findFirstByTenantIdAndIsActiveTrueOrderByPriorityAsc(Long tenantId);
 
     List<EscalationRule> findByTenantIdAndEscalationActionAndIsActiveTrue(Long tenantId, EscalationRule.EscalationAction action);
+
+    Optional<EscalationRule> findByIdAndTenantId(Long id, Long tenantId);
 }
