@@ -34,6 +34,8 @@ class CertificationServiceTest {
     private AgentSkillRepository agentSkillRepository;
     @Mock
     private AgentTrainingProgressRepository trainingProgressRepository;
+    @Mock
+    private com.chatbot.core.message.store.service.AgentConversationStatsService agentConversationStatsService;
 
     @InjectMocks
     private CertificationService service;
@@ -102,6 +104,46 @@ class CertificationServiceTest {
 
         assertThrows(IllegalArgumentException.class,
             () -> service.awardCertification(1L, 10L, "admin", 1L));
+    }
+
+    @Test
+    void rejectsWhenStatsBelowThreshold() {
+        CertificationLevel lvl = level(11L, null);
+        lvl.setRequiredStats("{\"totalConversations\": 10}");
+        var statsDto = new com.chatbot.core.message.store.dto.AgentConversationStatsDTO();
+        statsDto.setTotalConversations(3L);
+        statsDto.setResolvedCount(1L);
+        statsDto.setResolutionRate(33.3);
+        statsDto.setCsatScore(4.0);
+
+        when(certificationRepository.findByAgentIdAndCertificationLevelIdAndTenantId(1L, 11L, 1L))
+            .thenReturn(Optional.empty());
+        when(certificationLevelRepository.findByIdAndTenantId(11L, 1L)).thenReturn(Optional.of(lvl));
+        when(agentConversationStatsService.getAgentStats(1L, 1L, "90d")).thenReturn(statsDto);
+
+        assertThrows(IllegalStateException.class,
+            () -> service.awardCertification(1L, 11L, "admin", 1L));
+        verify(certificationRepository, never()).save(any());
+    }
+
+    @Test
+    void awardsWhenStatsMeetThreshold() {
+        CertificationLevel lvl = level(11L, null);
+        lvl.setRequiredStats("{\"totalConversations\": 5, \"csatScore\": 4.0}");
+        var statsDto = new com.chatbot.core.message.store.dto.AgentConversationStatsDTO();
+        statsDto.setTotalConversations(20L);
+        statsDto.setResolvedCount(18L);
+        statsDto.setResolutionRate(90.0);
+        statsDto.setCsatScore(4.5);
+
+        when(certificationRepository.findByAgentIdAndCertificationLevelIdAndTenantId(1L, 11L, 1L))
+            .thenReturn(Optional.empty());
+        when(certificationLevelRepository.findByIdAndTenantId(11L, 1L)).thenReturn(Optional.of(lvl));
+        when(agentConversationStatsService.getAgentStats(1L, 1L, "90d")).thenReturn(statsDto);
+        when(certificationRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        AgentCertification result = service.awardCertification(1L, 11L, "admin", 1L);
+        assertNotNull(result);
     }
 
     @Test

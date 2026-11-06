@@ -27,6 +27,7 @@ public class CertificationService {
     private final CertificationLevelRepository certificationLevelRepository;
     private final AgentSkillRepository agentSkillRepository;
     private final com.chatbot.core.training.repository.AgentTrainingProgressRepository trainingProgressRepository;
+    private final com.chatbot.core.message.store.service.AgentConversationStatsService agentConversationStatsService;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     public CertificationLevel createCertificationLevel(CertificationLevel level) {
@@ -95,10 +96,34 @@ public class CertificationService {
                 }
             }
 
-            // Check required stats (if implemented)
+            // Check required stats: evaluated over last 90 days
+            // Supported keys: totalConversations, resolvedConversations, resolutionRate,
+            // avgFirstResponseSeconds, csatScore, slaBreachCount
             if (level.getRequiredStats() != null && !level.getRequiredStats().isEmpty()) {
-                // TODO: Implement stats checking when stats tracking is available
-                log.debug("Stats requirements not yet implemented for certification level: {}", level.getLevelName());
+                Map<String, Double> requiredStats = objectMapper.readValue(
+                    level.getRequiredStats(),
+                    new TypeReference<Map<String, Double>>() {}
+                );
+                var stats = agentConversationStatsService.getAgentStats(agentId, tenantId, "90d");
+                Map<String, Double> actualStats = Map.of(
+                    "totalConversations", stats.getTotalConversations() != null ? stats.getTotalConversations().doubleValue() : 0.0,
+                    "resolvedConversations", stats.getResolvedCount() != null ? stats.getResolvedCount().doubleValue() : 0.0,
+                    "resolutionRate", stats.getResolutionRate() != null ? stats.getResolutionRate() : 0.0,
+                    "avgFirstResponseSeconds", stats.getAvgFirstResponseSeconds() != null ? stats.getAvgFirstResponseSeconds() : 0.0,
+                    "csatScore", stats.getCsatScore() != null ? stats.getCsatScore() : 0.0,
+                    "slaBreachCount", stats.getSlaBreachCount() != null ? stats.getSlaBreachCount().doubleValue() : 0.0
+                );
+                for (Map.Entry<String, Double> entry : requiredStats.entrySet()) {
+                    Double actual = actualStats.get(entry.getKey());
+                    if (actual == null) {
+                        log.debug("Unknown requiredStats key '{}' for level {}", entry.getKey(), level.getLevelName());
+                        return false;
+                    }
+                    if (actual < entry.getValue()) {
+                        log.debug("Agent {} stat {} = {} below required {}", agentId, entry.getKey(), actual, entry.getValue());
+                        return false;
+                    }
+                }
             }
 
             // Check required training: agent must have COMPLETED progress for each required training
