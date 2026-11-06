@@ -2,6 +2,7 @@ package com.chatbot.core.message.store.service;
 
 import com.chatbot.core.message.store.model.AutoAssignConfig;
 import com.chatbot.core.message.store.model.Conversation;
+import com.chatbot.core.message.store.model.ConversationStatus;
 import com.chatbot.core.message.store.repository.AutoAssignConfigRepository;
 import com.chatbot.core.message.store.repository.ConversationRepository;
 import com.chatbot.core.tenant.infra.TenantContext;
@@ -82,7 +83,7 @@ class BotInboxAutoAssignServiceIntegrationTest {
         testConversation = Conversation.builder()
                 .tenantId(testTenantId)
                 .externalUserId("user-123")
-                .status("open")
+                .status(ConversationStatus.OPEN)
                 .isTakenOverByAgent(false)
                 .build();
         testConversation.setId(1L);
@@ -112,7 +113,7 @@ class BotInboxAutoAssignServiceIntegrationTest {
     @Test
     void testAutoAssignConversation_SkipIfClosed() {
         // Arrange
-        testConversation.setStatus("closed");
+        testConversation.setStatus(ConversationStatus.CLOSED);
 
         // Act
         boolean result = autoAssignService.autoAssignConversation(testConversation);

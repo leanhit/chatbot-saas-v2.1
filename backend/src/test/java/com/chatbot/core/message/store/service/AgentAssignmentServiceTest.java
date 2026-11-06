@@ -2,6 +2,7 @@ package com.chatbot.core.message.store.service;
 
 import com.chatbot.core.message.store.model.Agent;
 import com.chatbot.core.message.store.model.Conversation;
+import com.chatbot.core.message.store.model.ConversationStatus;
 import com.chatbot.core.message.store.repository.AgentRepository;
 import com.chatbot.core.message.store.repository.ConversationRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -54,7 +55,7 @@ class AgentAssignmentServiceTest {
         testConversation = Conversation.builder()
                 .tenantId(testTenantId)
                 .externalUserId("user-123")
-                .status("open")
+                .status(ConversationStatus.OPEN)
                 .build();
         testConversation.setId(1L);
     }

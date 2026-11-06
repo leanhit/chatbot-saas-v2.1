@@ -246,4 +246,25 @@ public interface ConversationRepository extends JpaRepository<Conversation, Long
     // Daily stats for bar chart (native SQL)
     @Query(value = "SELECT DATE(created_at) as date, COUNT(*) as total, SUM(CASE WHEN resolution_status='resolved' THEN 1 ELSE 0 END) as resolved FROM conversations WHERE tenant_id = :tenantId AND agent_assigned_id = :agentId AND created_at >= :since GROUP BY DATE(created_at) ORDER BY date", nativeQuery = true)
     List<Object[]> getDailyStatsByAgent(@Param("tenantId") Long tenantId, @Param("agentId") Long agentId, @Param("since") java.time.LocalDateTime since);
+
+    // Phase 5 analytics: conversations created in date range
+    @Query("SELECT c FROM Conversation c WHERE c.tenantId = :tenantId AND c.createdAt BETWEEN :from AND :to")
+    List<Conversation> findByTenantIdAndCreatedAtBetween(
+        @Param("tenantId") Long tenantId,
+        @Param("from") java.time.LocalDateTime from,
+        @Param("to") java.time.LocalDateTime to);
+
+    // Phase 5 analytics: conversations resolved in date range
+    @Query("SELECT c FROM Conversation c WHERE c.tenantId = :tenantId AND c.resolutionTime BETWEEN :from AND :to")
+    List<Conversation> findByTenantIdAndResolutionTimeBetween(
+        @Param("tenantId") Long tenantId,
+        @Param("from") java.time.LocalDateTime from,
+        @Param("to") java.time.LocalDateTime to);
+
+    // Phase 5 analytics: conversations escalated in date range
+    @Query("SELECT c FROM Conversation c WHERE c.tenantId = :tenantId AND c.lastEscalatedAt BETWEEN :from AND :to")
+    List<Conversation> findByTenantIdAndLastEscalatedAtBetween(
+        @Param("tenantId") Long tenantId,
+        @Param("from") java.time.LocalDateTime from,
+        @Param("to") java.time.LocalDateTime to);
 }

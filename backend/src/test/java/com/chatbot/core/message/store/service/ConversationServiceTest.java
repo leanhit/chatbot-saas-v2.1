@@ -1,6 +1,7 @@
 package com.chatbot.core.message.store.service;
 
 import com.chatbot.core.message.store.model.Conversation;
+import com.chatbot.core.message.store.model.ConversationStatus;
 import com.chatbot.core.message.store.repository.ConversationRepository;
 import com.chatbot.core.message.store.repository.MessageRepository;
 import com.chatbot.core.membership.model.TenantRole;
@@ -312,7 +313,7 @@ class ConversationServiceTest {
         conversation.setTenantId(testTenantId);
         conversation.setExternalUserId(externalUserId);
         conversation.setConnectionId(testConnectionId);
-        conversation.setStatus("open");
+        conversation.setStatus(ConversationStatus.OPEN);
         conversation.setIsTakenOverByAgent(false);
         return conversation;
     }

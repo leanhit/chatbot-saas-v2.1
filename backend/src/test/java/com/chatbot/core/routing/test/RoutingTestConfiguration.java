@@ -34,7 +34,7 @@ public class RoutingTestConfiguration {
     public KafkaTemplate<String, String> kafkaTemplate() {
         Map<String, Object> configs = new HashMap<>();
         configs.put("bootstrap.servers", "localhost:9092");
-        ProducerFactory<String, String> factory = new org.apache.kafka.clients.producer.KafkaProducerFactory<>(configs);
+        ProducerFactory<String, String> factory = new org.springframework.kafka.core.DefaultKafkaProducerFactory<>(configs);
         return new KafkaTemplate<>(factory);
     }
 

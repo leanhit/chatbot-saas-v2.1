@@ -2,6 +2,7 @@ package com.chatbot.core.message.store.service;
 
 import com.chatbot.core.message.store.model.Agent;
 import com.chatbot.core.message.store.model.Conversation;
+import com.chatbot.core.message.store.model.ConversationStatus;
 import com.chatbot.core.message.store.repository.AgentRepository;
 import com.chatbot.core.message.store.repository.ConversationRepository;
 import com.chatbot.core.tenant.model.TenantStatus;
@@ -159,7 +160,7 @@ class AgentReassignmentServiceTest {
 
         Conversation conversation = Conversation.builder()
                 .id(conversationId).tenantId(testTenantId)
-                .agentAssignedId(oldAgentId).isTakenOverByAgent(true).status("active_agent")
+                .agentAssignedId(oldAgentId).isTakenOverByAgent(true).status(ConversationStatus.ACTIVE_AGENT)
                 .build();
 
         Agent offlineAgent = createAgent(oldAgentId, Agent.AgentStatus.OFFLINE);

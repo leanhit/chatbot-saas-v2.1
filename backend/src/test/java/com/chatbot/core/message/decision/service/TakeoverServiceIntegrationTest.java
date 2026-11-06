@@ -3,6 +3,7 @@ package com.chatbot.core.message.decision.service;
 import com.chatbot.core.message.decision.model.TakeoverMessage;
 import com.chatbot.core.message.decision.websocket.TakeoverWebSocketHandler;
 import com.chatbot.core.message.store.model.Conversation;
+import com.chatbot.core.message.store.model.ConversationStatus;
 import com.chatbot.core.message.store.repository.ConversationRepository;
 import com.chatbot.core.message.store.service.MessageService;
 import com.chatbot.shared.messenger.ChannelMessengerService;
@@ -73,7 +74,7 @@ class TakeoverServiceIntegrationTest {
         testConversation = Conversation.builder()
                 .tenantId(1L)
                 .externalUserId("user-123")
-                .status("open")
+                .status(ConversationStatus.OPEN)
                 .isTakenOverByAgent(false)
                 .connectionId(connectionId)
                 .build();

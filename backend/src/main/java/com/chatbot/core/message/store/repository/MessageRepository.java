@@ -99,4 +99,11 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
     @Transactional(value = "messageTransactionManager", rollbackFor = Exception.class)
     @Query("DELETE FROM Message m WHERE m.tenantId = :tenantId")
     void deleteByTenantId(@Param("tenantId") Long tenantId);
+
+    // Phase 5 analytics: messages in date range
+    @Query("SELECT m FROM Message m WHERE m.tenantId = :tenantId AND m.createdAt BETWEEN :from AND :to")
+    List<Message> findByTenantIdAndCreatedAtBetween(
+        @Param("tenantId") Long tenantId,
+        @Param("from") java.time.LocalDateTime from,
+        @Param("to") java.time.LocalDateTime to);
 }
