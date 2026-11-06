@@ -212,6 +212,53 @@
           <!-- Tab: Notes / Attributes -->
           <div v-if="activeTab === 'notes'">
             <div class="space-y-4">
+              <!-- Agent notes (Phase 4) -->
+              <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+                <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Ghi chú của agent</h3>
+                <div class="flex gap-2 mb-4">
+                  <textarea
+                    v-model="newNoteContent"
+                    rows="2"
+                    placeholder="Thêm ghi chú về khách hàng này..."
+                    class="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white text-sm"
+                  ></textarea>
+                  <button
+                    @click="addNote"
+                    :disabled="noteSaving || !newNoteContent.trim()"
+                    class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 self-end"
+                  >
+                    {{ noteSaving ? 'Đang lưu...' : 'Thêm' }}
+                  </button>
+                </div>
+                <div v-if="notesLoading" class="text-center py-4">
+                  <Icon icon="mdi:loading" class="animate-spin text-2xl text-blue-600" />
+                </div>
+                <div v-else-if="customerNotes.length === 0" class="text-sm text-gray-400 dark:text-gray-500 text-center py-2">
+                  Chưa có ghi chú nào
+                </div>
+                <div v-else class="space-y-2">
+                  <div
+                    v-for="note in customerNotes"
+                    :key="note.id"
+                    class="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2 flex items-start justify-between gap-2"
+                  >
+                    <div class="flex-1 min-w-0">
+                      <p class="text-sm text-gray-900 dark:text-white whitespace-pre-wrap">{{ note.content }}</p>
+                      <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                        {{ note.authorName || 'Agent' }} · {{ formatDate(note.createdAt) }}
+                      </p>
+                    </div>
+                    <button
+                      @click="removeNote(note.id)"
+                      class="text-gray-400 hover:text-red-500 shrink-0"
+                      title="Xóa ghi chú"
+                    >
+                      <Icon icon="mdi:delete-outline" class="text-lg" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+
               <div>
                 <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Tags</h3>
                 <div v-if="customer.tags && Object.keys(customer.tags).length > 0" class="flex flex-wrap gap-2">
@@ -329,6 +376,12 @@ const feedbackLoading = ref(false)
 const timelineLoading = ref(false)
 const timelineEvents = ref([])
 
+// Notes tab (Phase 4)
+const customerNotes = ref([])
+const notesLoading = ref(false)
+const newNoteContent = ref('')
+const noteSaving = ref(false)
+
 const tabs = [
   { id: 'info', label: 'Thông tin', icon: 'mdi:account-details' },
   { id: 'timeline', label: 'Lịch sử', icon: 'mdi:timeline' },
@@ -378,37 +431,50 @@ async function loadFeedback() {
 async function loadTimeline() {
   timelineLoading.value = true
   try {
-    // Build timeline from feedback and customer data
-    const feedback = await feedbackApi.getFeedbackByCustomerProfileId(route.params.id)
-    const events = []
-
-    feedback.forEach(fb => {
-      events.push({
-        id: `fb-${fb.id}`,
-        type: 'feedback',
-        title: `Đánh giá ${fb.rating}/5 — ${fb.type || 'GENERAL'}`,
-        description: fb.comment || '',
-        badge: `${fb.rating}★`,
-        timestamp: fb.submittedAt,
-      })
-    })
-
-    if (customer.value?.firstContactAt) {
-      events.push({
-        id: 'first-contact',
-        type: 'conversation',
-        title: 'Lần đầu liên hệ',
-        description: '',
-        timestamp: customer.value.firstContactAt,
-      })
-    }
-
-    // Sort descending by timestamp
-    timelineEvents.value = events.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+    // Phase 4: use backend unified timeline (conversations + messages + feedback + notes)
+    timelineEvents.value = await customerProfileApi.getCustomerTimeline(route.params.id)
   } catch {
     timelineEvents.value = []
   } finally {
     timelineLoading.value = false
+  }
+}
+
+async function loadNotes() {
+  notesLoading.value = true
+  try {
+    customerNotes.value = await customerProfileApi.getCustomerNotes(route.params.id)
+  } catch {
+    customerNotes.value = []
+  } finally {
+    notesLoading.value = false
+  }
+}
+
+async function addNote() {
+  if (!newNoteContent.value.trim()) return
+  noteSaving.value = true
+  try {
+    await customerProfileApi.createCustomerNote(route.params.id, {
+      content: newNoteContent.value.trim(),
+    })
+    newNoteContent.value = ''
+    await loadNotes()
+    await loadTimeline()
+  } catch (err) {
+    console.error('Create note error:', err)
+  } finally {
+    noteSaving.value = false
+  }
+}
+
+async function removeNote(noteId) {
+  try {
+    await customerProfileApi.deleteCustomerNote(noteId)
+    await loadNotes()
+    await loadTimeline()
+  } catch (err) {
+    console.error('Delete note error:', err)
   }
 }
 
@@ -480,5 +546,6 @@ onMounted(async () => {
   // Load parallel data after customer is loaded
   loadFeedback()
   loadTimeline()
+  loadNotes()
 })
 </script>

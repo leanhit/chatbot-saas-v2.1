@@ -2,7 +2,9 @@ package com.chatbot.core.customer.service;
 
 import com.chatbot.core.customer.dto.*;
 import com.chatbot.core.customer.model.Feedback;
+import com.chatbot.core.customer.repository.CustomerProfileRepository;
 import com.chatbot.core.customer.repository.FeedbackRepository;
+import com.chatbot.core.message.store.repository.ConversationRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -18,9 +20,21 @@ import java.util.stream.Collectors;
 public class FeedbackService {
 
     private final FeedbackRepository feedbackRepository;
+    private final CustomerProfileRepository customerProfileRepository;
+    private final ConversationRepository conversationRepository;
 
     public FeedbackDTO createFeedback(CreateFeedbackRequest request, Long tenantId) {
         log.info("Creating feedback for customerProfileId: {}, tenantId: {}", request.getCustomerProfileId(), tenantId);
+
+        // Phase 4: validate linked entities belong to this tenant
+        if (request.getCustomerProfileId() != null
+                && !customerProfileRepository.existsByIdAndTenantId(request.getCustomerProfileId(), tenantId)) {
+            throw new IllegalArgumentException("Customer profile not found for tenant: " + request.getCustomerProfileId());
+        }
+        if (request.getConversationId() != null
+                && conversationRepository.findByIdAndTenantId(request.getConversationId(), tenantId).isEmpty()) {
+            throw new IllegalArgumentException("Conversation not found for tenant: " + request.getConversationId());
+        }
 
         Feedback feedback = Feedback.builder()
                 .customerProfileId(request.getCustomerProfileId())

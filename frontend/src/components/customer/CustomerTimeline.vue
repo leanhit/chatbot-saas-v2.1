@@ -78,6 +78,11 @@ const typeConfig = {
     icon: 'mdi:message-text',
     badge: 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300',
   },
+  message: {
+    dot: 'bg-green-500',
+    icon: 'mdi:chat',
+    badge: 'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300',
+  },
   feedback: {
     dot: 'bg-yellow-500',
     icon: 'mdi:star',

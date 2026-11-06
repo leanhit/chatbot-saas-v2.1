@@ -19,4 +19,6 @@ public interface CustomerProfileRepository extends JpaRepository<CustomerProfile
     List<CustomerProfile> findByTenantIdAndTier(Long tenantId, CustomerProfile.CustomerTier tier);
 
     boolean existsByExternalIdAndTenantId(String externalId, Long tenantId);
+
+    boolean existsByIdAndTenantId(Long id, Long tenantId);
 }

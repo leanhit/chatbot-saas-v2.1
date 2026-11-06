@@ -136,3 +136,13 @@ Có thể đưa lên staging: tenant isolation và repository/API integration c�
 Có thể bật automation/AI actions: routing, escalation, supervisor smoke tests và tenant isolation đã được xác minh.
 Có thể xem xét production: thêm security/compliance review, migration test trên PostgreSQL, monitoring và rollback plan.
 Tóm lại: làm Phase 5–6 trước là được, nhưng hãy bắt đầu bằng tenant/security nền tảng; triển khai AI theo kiểu hỗ trợ, chưa tự động hóa hành động. Đồng thời tiếp tục gỡ blocker của Phase 4 và không đánh dấu Phase 4 hoàn tất cho đến khi các test integration quan trọng thực sự chạy pass.
+
+====================================
+
+❌ CHƯA hoàn thành
+Giai đoạn	Còn thiếu
+0 — Chốt trạng thái	Chưa chuẩn hóa roadmap numbering, chưa có CI riêng cho unit+integration tests
+1 — Tenant/security foundation	Chưa rà soát hết findAll() trong training; chưa có test tenant isolation thực thi
+2 — Phase 4 routing	Unit tests ✅ nhưng repository tests trên DB thật ❌, tenant isolation tests ❌, smoke flow ❌ — vẫn blocked như plan yêu cầu
+3 — Năng lực agent	Training/skill score, certification threshold, onboarding→online rules — chưa làm
+4 — Customer experience	Profile detail, history/timeline, notes, feedback linking, sửa frontend (viewCustomer chỉ log, edit ID, delete), segmentation/VIP — chưa làm

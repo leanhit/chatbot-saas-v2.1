@@ -261,6 +261,12 @@ public interface ConversationRepository extends JpaRepository<Conversation, Long
         @Param("from") java.time.LocalDateTime from,
         @Param("to") java.time.LocalDateTime to);
 
+    // Phase 4: tenant-scoped lookup by externalUserId (customer timeline)
+    @Query("SELECT c FROM Conversation c WHERE c.externalUserId = :externalUserId AND c.tenantId = :tenantId ORDER BY c.updatedAt DESC")
+    List<Conversation> findByExternalUserIdAndTenantId(
+        @Param("externalUserId") String externalUserId,
+        @Param("tenantId") Long tenantId);
+
     // Phase 5 analytics: conversations escalated in date range
     @Query("SELECT c FROM Conversation c WHERE c.tenantId = :tenantId AND c.lastEscalatedAt BETWEEN :from AND :to")
     List<Conversation> findByTenantIdAndLastEscalatedAtBetween(
