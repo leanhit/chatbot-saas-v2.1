@@ -19,6 +19,8 @@ public interface SimplePaymentRepository extends JpaRepository<SimplePayment, Lo
 
     List<SimplePayment> findByUserIdAndTenantIdOrderByCreatedAtDesc(Long userId, Long tenantId);
 
+    List<SimplePayment> findByTenantId(Long tenantId);
+
     List<SimplePayment> findByStatusAndExpiresAtBefore(PaymentStatus status, LocalDateTime dateTime);
 
     @Query("SELECT p FROM SimplePayment p WHERE p.status = :status AND p.createdAt > :since")

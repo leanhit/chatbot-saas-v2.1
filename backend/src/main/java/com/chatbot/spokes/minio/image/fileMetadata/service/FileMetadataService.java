@@ -86,7 +86,11 @@ public class FileMetadataService {
 
     @Transactional(readOnly = true)
     public Page<FileResponseDTO> getAllFiles(Pageable pageable) {
-        Page<FileMetadata> fileMetadataPage = fileMetadataRepository.findAll(pageable); 
+        Long tenantId = com.chatbot.core.tenant.infra.TenantContext.getTenantId();
+        if (tenantId == null) {
+            throw new IllegalStateException("Tenant context not set");
+        }
+        Page<FileMetadata> fileMetadataPage = fileMetadataRepository.findAllByTenantId(tenantId, pageable);
         return fileMetadataPage.map(this::convertToDto);
     }
 

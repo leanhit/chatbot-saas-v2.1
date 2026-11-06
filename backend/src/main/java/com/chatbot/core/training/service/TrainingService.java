@@ -267,15 +267,15 @@ public class TrainingService {
                 // Get the highest level certification
                 AgentCertification highestCert = certifications.stream()
                     .max((c1, c2) -> {
-                        CertificationLevel level1 = certificationLevelRepository.findById(c1.getCertificationLevelId()).orElse(null);
-                        CertificationLevel level2 = certificationLevelRepository.findById(c2.getCertificationLevelId()).orElse(null);
+                        CertificationLevel level1 = certificationLevelRepository.findByIdAndTenantId(c1.getCertificationLevelId(), tenantId).orElse(null);
+                        CertificationLevel level2 = certificationLevelRepository.findByIdAndTenantId(c2.getCertificationLevelId(), tenantId).orElse(null);
                         if (level1 == null || level2 == null) return 0;
                         return Integer.compare(level1.getDisplayOrder(), level2.getDisplayOrder());
                     })
                     .orElse(null);
                 
                 if (highestCert != null) {
-                    CertificationLevel level = certificationLevelRepository.findById(highestCert.getCertificationLevelId()).orElse(null);
+                    CertificationLevel level = certificationLevelRepository.findByIdAndTenantId(highestCert.getCertificationLevelId(), tenantId).orElse(null);
                     summary.setCertification(level != null ? level.getLevelName() : null);
                 }
             }

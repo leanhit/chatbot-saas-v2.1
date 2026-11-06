@@ -35,7 +35,11 @@ public class MerchantApiKeyController {
     public ResponseEntity<List<MerchantApiKey>> getAllApiKeys() {
         log.info("🔑 Fetching all merchant API keys");
         
-        List<MerchantApiKey> keys = merchantApiKeyRepository.findAll();
+        Long tenantId = com.chatbot.core.tenant.infra.TenantContext.getTenantId();
+        if (tenantId == null) {
+            return ResponseEntity.status(403).build();
+        }
+        List<MerchantApiKey> keys = merchantApiKeyRepository.findByTenantId(tenantId);
         // Hide secrets for security
         keys.forEach(key -> {
             key.setApiSecret("********");

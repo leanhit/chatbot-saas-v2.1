@@ -1,6 +1,8 @@
 package com.chatbot.spokes.minio.image.fileMetadata.repository;
 
 import com.chatbot.spokes.minio.image.fileMetadata.model.FileMetadata;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -23,4 +25,9 @@ public interface FileMetadataRepository extends JpaRepository<FileMetadata, UUID
     @EntityGraph(attributePaths = {"category", "tags"})
     @Query("SELECT fm FROM FileMetadata fm WHERE fm.tenantId = :tenantId")
     List<FileMetadata> findAllByTenantId(@Param("tenantId") Long tenantId);
+
+    // Phân trang theo tenantId
+    @EntityGraph(attributePaths = {"category", "tags"})
+    @Query("SELECT fm FROM FileMetadata fm WHERE fm.tenantId = :tenantId")
+    Page<FileMetadata> findAllByTenantId(@Param("tenantId") Long tenantId, Pageable pageable);
 }

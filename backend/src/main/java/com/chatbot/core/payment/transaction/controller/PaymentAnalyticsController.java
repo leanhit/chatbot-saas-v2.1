@@ -4,6 +4,7 @@ import com.chatbot.core.payment.transaction.model.PaymentStatus;
 import com.chatbot.core.payment.transaction.model.SimplePayment;
 import com.chatbot.core.payment.transaction.repository.SimplePaymentRepository;
 import com.chatbot.core.user.repository.UserRepository;
+import com.chatbot.core.tenant.infra.TenantContext;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +29,15 @@ public class PaymentAnalyticsController {
     private final SimplePaymentRepository paymentRepository;
     private final UserRepository userRepository;
 
+    /** Tenant-scoped payments: never expose cross-tenant payment data. */
+    private List<SimplePayment> tenantPayments() {
+        Long tenantId = TenantContext.getTenantId();
+        if (tenantId == null) {
+            throw new IllegalStateException("Tenant context not set");
+        }
+        return paymentRepository.findByTenantId(tenantId);
+    }
+
     /**
      * Get payment dashboard analytics summary
      */
@@ -41,7 +51,7 @@ public class PaymentAnalyticsController {
         LocalDateTime monthStart = now.withDayOfMonth(1).withHour(0).withMinute(0).withSecond(0);
         LocalDateTime weekStart = now.minusDays(7);
 
-        List<SimplePayment> allPayments = paymentRepository.findAll();
+        List<SimplePayment> allPayments = tenantPayments();
 
         // Monthly revenue & completed count
         List<SimplePayment> monthlyPayments = allPayments.stream()
@@ -112,7 +122,7 @@ public class PaymentAnalyticsController {
         LocalDateTime start = parseDate(startDate, LocalDateTime.now().withDayOfMonth(1).withHour(0).withMinute(0));
         LocalDateTime end = parseDate(endDate, LocalDateTime.now());
 
-        List<SimplePayment> payments = paymentRepository.findAll().stream()
+        List<SimplePayment> payments = tenantPayments().stream()
                 .filter(p -> p.getStatus() == PaymentStatus.COMPLETED)
                 .filter(p -> p.getCreatedAt() != null && !p.getCreatedAt().isBefore(start) && !p.getCreatedAt().isAfter(end))
                 .toList();
@@ -172,7 +182,7 @@ public class PaymentAnalyticsController {
         LocalDateTime start = parseDate(startDate, LocalDateTime.now().withDayOfMonth(1).withHour(0).withMinute(0));
         LocalDateTime end = parseDate(endDate, LocalDateTime.now());
 
-        List<SimplePayment> payments = paymentRepository.findAll().stream()
+        List<SimplePayment> payments = tenantPayments().stream()
                 .filter(p -> p.getCreatedAt() != null && !p.getCreatedAt().isBefore(start) && !p.getCreatedAt().isAfter(end))
                 .toList();
 
@@ -214,7 +224,7 @@ public class PaymentAnalyticsController {
         LocalDateTime start = LocalDateTime.of(targetYear, targetMonth, 1, 0, 0);
         LocalDateTime end = start.plusMonths(1).minusNanos(1);
 
-        List<SimplePayment> payments = paymentRepository.findAll().stream()
+        List<SimplePayment> payments = tenantPayments().stream()
                 .filter(p -> p.getStatus() == PaymentStatus.COMPLETED)
                 .filter(p -> p.getCreatedAt() != null && !p.getCreatedAt().isBefore(start) && !p.getCreatedAt().isAfter(end))
                 .toList();
@@ -249,7 +259,7 @@ public class PaymentAnalyticsController {
         log.info("📊 Fetching payment trends: days={}", days);
 
         LocalDateTime since = LocalDateTime.now().minusDays(days);
-        List<SimplePayment> payments = paymentRepository.findAll().stream()
+        List<SimplePayment> payments = tenantPayments().stream()
                 .filter(p -> p.getCreatedAt() != null && p.getCreatedAt().isAfter(since))
                 .toList();
 
@@ -283,7 +293,7 @@ public class PaymentAnalyticsController {
         LocalDateTime start = parseDate(startDate, LocalDateTime.now().withDayOfMonth(1).withHour(0).withMinute(0));
         LocalDateTime end = parseDate(endDate, LocalDateTime.now());
 
-        List<SimplePayment> payments = paymentRepository.findAll().stream()
+        List<SimplePayment> payments = tenantPayments().stream()
                 .filter(p -> p.getStatus() == PaymentStatus.COMPLETED)
                 .filter(p -> p.getCreatedAt() != null && !p.getCreatedAt().isBefore(start) && !p.getCreatedAt().isAfter(end))
                 .toList();
