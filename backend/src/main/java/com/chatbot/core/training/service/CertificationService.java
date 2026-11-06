@@ -114,13 +114,19 @@ public class CertificationService {
                     "slaBreachCount", stats.getSlaBreachCount() != null ? stats.getSlaBreachCount().doubleValue() : 0.0
                 );
                 for (Map.Entry<String, Double> entry : requiredStats.entrySet()) {
-                    Double actual = actualStats.get(entry.getKey());
+                    String key = entry.getKey();
+                    Double threshold = entry.getValue();
+                    // "max:" prefix = upper bound (e.g. max:slaBreachCount = 5 means at most 5)
+                    boolean isMax = key.startsWith("max:");
+                    String statKey = isMax ? key.substring(4) : key;
+                    Double actual = actualStats.get(statKey);
                     if (actual == null) {
-                        log.debug("Unknown requiredStats key '{}' for level {}", entry.getKey(), level.getLevelName());
+                        log.debug("Unknown requiredStats key '{}' for level {}", key, level.getLevelName());
                         return false;
                     }
-                    if (actual < entry.getValue()) {
-                        log.debug("Agent {} stat {} = {} below required {}", agentId, entry.getKey(), actual, entry.getValue());
+                    boolean met = isMax ? actual <= threshold : actual >= threshold;
+                    if (!met) {
+                        log.debug("Agent {} stat {} = {} does not meet requirement {}{}", agentId, statKey, actual, isMax ? "<= " : ">= ", threshold);
                         return false;
                     }
                 }

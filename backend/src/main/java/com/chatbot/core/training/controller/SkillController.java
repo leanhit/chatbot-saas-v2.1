@@ -25,9 +25,10 @@ public class SkillController {
     @PostMapping("/update")
     public ResponseEntity<AgentSkill> updateSkill(
             @RequestParam Long agentId,
-            @RequestParam Integer score) {
+            @RequestParam Integer score,
+            @RequestParam(required = false) String category) {
         Long tenantId = com.chatbot.core.tenant.infra.TenantContext.getTenantId();
-        AgentSkill skill = skillAssessmentService.updateSkill(agentId, score, tenantId);
+        AgentSkill skill = skillAssessmentService.updateSkill(agentId, category, score, tenantId);
         return ResponseEntity.ok(skill);
     }
 }

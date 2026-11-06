@@ -16,13 +16,38 @@ public class SkillAssessmentService {
     private final AgentSkillRepository agentSkillRepository;
     private final AgentTrainingProgressRepository trainingProgressRepository;
 
-    public AgentSkill updateSkill(Long agentId, Integer score, Long tenantId) {
-        AgentSkill skill = AgentSkill.builder()
-            .agentId(agentId)
-            .score(score)
-            .build();
+    public AgentSkill updateSkill(Long agentId, String category, Integer score, Long tenantId) {
+        AgentSkill.SkillCategory skillCategory = category != null
+            ? AgentSkill.SkillCategory.valueOf(category.toUpperCase())
+            : null;
+        AgentSkill skill;
+        if (skillCategory != null) {
+            skill = agentSkillRepository
+                .findByAgentIdAndSkillCategoryAndTenantId(agentId, skillCategory, tenantId)
+                .orElse(AgentSkill.builder()
+                    .agentId(agentId)
+                    .skillCategory(skillCategory)
+                    .score(0)
+                    .proficiencyLevel(AgentSkill.ProficiencyLevel.BEGINNER)
+                    .build());
+        } else {
+            skill = AgentSkill.builder()
+                .agentId(agentId)
+                .score(0)
+                .proficiencyLevel(AgentSkill.ProficiencyLevel.BEGINNER)
+                .build();
+        }
         skill.setTenantId(tenantId);
+        skill.setScore(score);
+        skill.setProficiencyLevel(proficiencyFor(score));
         return agentSkillRepository.save(skill);
+    }
+
+    private AgentSkill.ProficiencyLevel proficiencyFor(int score) {
+        // Same thresholds as TrainingService.updateSkillScore
+        if (score >= 80) return AgentSkill.ProficiencyLevel.EXPERT;
+        if (score >= 60) return AgentSkill.ProficiencyLevel.INTERMEDIATE;
+        return AgentSkill.ProficiencyLevel.BEGINNER;
     }
 
     public List<AgentSkill> getAgentSkills(Long agentId, Long tenantId) {
