@@ -141,8 +141,8 @@ Tóm lại: làm Phase 5–6 trước là được, nhưng hãy bắt đầu b�
 
 ❌ CHƯA hoàn thành
 Giai đoạn	Còn thiếu
-0 — Chốt trạng thái	Chưa chuẩn hóa roadmap numbering, chưa có CI riêng cho unit+integration tests
-1 — Tenant/security foundation	Chưa rà soát hết findAll() trong training; chưa có test tenant isolation thực thi
+0 — Chốt trạng thái	✅ Đã chuẩn hóa roadmap numbering (canonical Giai đoạn 0–6 trong improvement_plan.md); còn thiếu CI riêng cho unit+integration tests
+1 — Tenant/security foundation	✅ Đã rà soát & fix findAll() (training sạch, payment analytics/merchant keys/file metadata đã tenant-scope); còn thiếu test tenant isolation thực thi
 2 — Phase 4 routing	Unit tests ✅ nhưng repository tests trên DB thật ❌, tenant isolation tests ❌, smoke flow ❌ — vẫn blocked như plan yêu cầu
-3 — Năng lực agent	Training/skill score, certification threshold, onboarding→online rules — chưa làm
+3 — Năng lực agent	✅ Hoàn thành: training→skill score, certification threshold (skills+training+stats, hỗ trợ max:), onboarding→online gate (API + WebSocket), tenant-scoped, unit tests pass
 4 — Customer experience	Profile detail, history/timeline, notes, feedback linking, sửa frontend (viewCustomer chỉ log, edit ID, delete), segmentation/VIP — chưa làm

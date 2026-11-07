@@ -107,6 +107,17 @@ Phase 3: Customer visibility
 Phase 4: Automation & routing
 Phase 5: AI & analytics
 Phase 6: Scale & integrations
+
+> **Roadmap numbering chuẩn (canonical)** — dùng trong `new_plan.md` và mọi báo cáo tiến độ:
+> - **Giai đoạn 0** — Chốt trạng thái & tiêu chí nghiệm thu
+> - **Giai đoạn 1** — Tenant/security foundation (tương ứng Phase 1 Foundation + Phase 0 backend cũ)
+> - **Giai đoạn 2** — Automation & routing (tương ứng Phase 4 cũ / Phase 3 backend cũ)
+> - **Giai đoạn 3** — Năng lực agent (tương ứng Phase 2 cũ / Phase 1 backend cũ)
+> - **Giai đoạn 4** — Customer experience (tương ứng Phase 3 cũ / Phase 2 backend cũ)
+> - **Giai đoạn 5** — AI & analytics (tương ứng Phase 5 cũ)
+> - **Giai đoạn 6** — Scale, compliance & integrations (tương ứng Phase 6 cũ)
+>
+> Các section "Phase 0–6" trong phần backend/frontend chi tiết bên dưới là cách đánh số cũ, chỉ mang tính tham khảo nội dung; khi báo cáo tiến độ luôn dùng Giai đoạn 0–6 ở trên.
 Tức là không cần “mọi thứ đều có trong 1 roadmap dài”, mà phải chia rõ:
 
 phải xong trước để tạo giá trị
