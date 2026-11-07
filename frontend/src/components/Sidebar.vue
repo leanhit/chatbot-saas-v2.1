@@ -100,6 +100,14 @@
                   <Icon icon="mdi:swap-horizontal" class="text-base flex-shrink-0" />
                   <span>{{ $t('sidebar.switchTenant') }}</span>
                 </router-link>
+                <router-link
+                  to="/tenant/audit-log"
+                  @click.stop
+                  class="w-full text-left block rounded-md p-2.5 px-3 text-sm hover:bg-gray-200 dark:hover:bg-gray-700 flex items-center gap-2.5 transition-colors"
+                >
+                  <Icon icon="mdi:clipboard-text-clock-outline" class="text-base flex-shrink-0" />
+                  <span>Audit Log</span>
+                </router-link>
                 <!-- Temporarily hidden
                 <router-link
                   to="/tenant/settings"
@@ -293,6 +301,30 @@
                 >
                   <Icon icon="mdi:view-dashboard-outline" class="text-base flex-shrink-0" />
                   <span>{{ $t('training.agentDashboard') }}</span>
+                </router-link>
+                <router-link
+                  to="/training/onboarding"
+                  @click.stop
+                  class="w-full text-left block rounded-md p-2.5 px-3 text-sm hover:bg-gray-200 dark:hover:bg-gray-700 flex items-center gap-2.5 transition-colors"
+                >
+                  <Icon icon="mdi:account-arrow-right" class="text-base flex-shrink-0" />
+                  <span>Onboarding Wizard</span>
+                </router-link>
+                <router-link
+                  to="/training/skills"
+                  @click.stop
+                  class="w-full text-left block rounded-md p-2.5 px-3 text-sm hover:bg-gray-200 dark:hover:bg-gray-700 flex items-center gap-2.5 transition-colors"
+                >
+                  <Icon icon="mdi:grid" class="text-base flex-shrink-0" />
+                  <span>Skill Matrix</span>
+                </router-link>
+                <router-link
+                  to="/training/certifications"
+                  @click.stop
+                  class="w-full text-left block rounded-md p-2.5 px-3 text-sm hover:bg-gray-200 dark:hover:bg-gray-700 flex items-center gap-2.5 transition-colors"
+                >
+                  <Icon icon="mdi:certificate-outline" class="text-base flex-shrink-0" />
+                  <span>Certifications</span>
                 </router-link>
               </template>
             </menu-accordion>

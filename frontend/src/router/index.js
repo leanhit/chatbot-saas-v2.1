@@ -53,6 +53,10 @@ const Notifications = () => import("../views/notification/Notifications.vue");
 const TrainingLibrary = () => import("../views/training/TrainingLibrary.vue");
 const TrainingDetail = () => import("../views/training/TrainingDetail.vue");
 const AgentTrainingDashboard = () => import("../views/training/AgentTrainingDashboard.vue");
+const OnboardingWizard = () => import("../views/training/OnboardingWizard.vue");
+const SkillMatrix = () => import("../views/training/SkillMatrix.vue");
+const CertificationOverview = () => import("../views/training/CertificationOverview.vue");
+const AuditLog = () => import("../views/tenant/AuditLog.vue");
 // Customer Pages
 const CustomerProfiles = () => import("../views/customer/CustomerProfiles.vue");
 const CustomerProfileDetail = () => import("../views/customer/CustomerProfileDetail.vue");
@@ -398,6 +402,30 @@ const routes = [
     name: "training-dashboard",
     component: AgentTrainingDashboard,
     meta: { requiresAuth: true, title: "Agent Training Dashboard" + appname },
+  },
+  {
+    path: "/training/onboarding",
+    name: "onboarding-wizard",
+    component: OnboardingWizard,
+    meta: { requiresAuth: true, title: "Onboarding Wizard" + appname },
+  },
+  {
+    path: "/training/skills",
+    name: "skill-matrix",
+    component: SkillMatrix,
+    meta: { requiresAuth: true, title: "Skill Matrix" + appname },
+  },
+  {
+    path: "/training/certifications",
+    name: "certification-overview",
+    component: CertificationOverview,
+    meta: { requiresAuth: true, title: "Certification Overview" + appname },
+  },
+  {
+    path: "/tenant/audit-log",
+    name: "audit-log",
+    component: AuditLog,
+    meta: { requiresAuth: true, title: "Audit Log" + appname },
   },
   {
     path: "/customer/profiles",
