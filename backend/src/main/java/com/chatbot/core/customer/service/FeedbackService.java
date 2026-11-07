@@ -22,6 +22,7 @@ public class FeedbackService {
     private final FeedbackRepository feedbackRepository;
     private final CustomerProfileRepository customerProfileRepository;
     private final ConversationRepository conversationRepository;
+    private final CustomerSegmentationService customerSegmentationService;
 
     public FeedbackDTO createFeedback(CreateFeedbackRequest request, Long tenantId) {
         log.info("Creating feedback for customerProfileId: {}, tenantId: {}", request.getCustomerProfileId(), tenantId);
@@ -53,6 +54,10 @@ public class FeedbackService {
 
         Feedback saved = feedbackRepository.save(feedback);
         log.info("Feedback created with id: {}", saved.getId());
+
+        if (saved.getCustomerProfileId() != null) {
+            updateCustomerSatisfactionScore(saved.getCustomerProfileId(), tenantId);
+        }
         return toDTO(saved);
     }
 
@@ -165,10 +170,6 @@ public class FeedbackService {
     @Transactional
     public void updateCustomerSatisfactionScore(Long customerProfileId, Long tenantId) {
         List<Feedback> feedbackList = feedbackRepository.findByCustomerProfileIdAndTenantId(customerProfileId, tenantId);
-        
-        if (feedbackList.isEmpty()) {
-            return;
-        }
 
         double avgRating = feedbackList.stream()
                 .filter(f -> f.getRating() != null)
@@ -176,9 +177,12 @@ public class FeedbackService {
                 .average()
                 .orElse(0.0);
 
-        // Note: This would require CustomerProfileRepository injection
-        // For now, just log the calculation
-        log.info("Calculated satisfaction score for customerProfileId {}: {}", customerProfileId, avgRating);
+        customerProfileRepository.findByIdAndTenantId(customerProfileId, tenantId).ifPresent(profile -> {
+            profile.setSatisfactionScore(Math.round(avgRating * 100.0) / 100.0);
+            customerProfileRepository.save(profile);
+            log.info("Updated satisfaction score for customerProfileId {}: {}", customerProfileId, avgRating);
+            customerSegmentationService.recalculateTier(customerProfileId, tenantId, false);
+        });
     }
 
     private FeedbackDTO toDTO(Feedback feedback) {

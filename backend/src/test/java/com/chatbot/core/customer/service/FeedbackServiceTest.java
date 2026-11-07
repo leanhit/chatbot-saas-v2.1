@@ -27,6 +27,8 @@ class FeedbackServiceTest {
     private CustomerProfileRepository customerProfileRepository;
     @Mock
     private ConversationRepository conversationRepository;
+    @Mock
+    private CustomerSegmentationService customerSegmentationService;
 
     @InjectMocks
     private FeedbackService service;
