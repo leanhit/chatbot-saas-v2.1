@@ -180,7 +180,7 @@ Còn thiếu: retry/DLQ tổng quát ngoài payment webhook + RabbitMQ (chưa c�
 Frontend — 🟡 Thiếu nhiều page so với plan
 Có: training (Library/Detail/Dashboard), customer (7 views), routing (Queue/Assignment/Supervisor/Escalation/Transfer), admin WebhookManagement, SkillsManagement.
 Có thêm: FunnelAnalysis, CustomReports, CustomerJourney (routes /analytics/*).
-Thiếu: Onboarding Wizard, Skill Matrix, Certification Overview, Audit Log UI, ~~2FA Setup~~, ~~GDPR Request Center~~ (đã có /settings/2fa, /settings/gdpr).
+Đã xong: Onboarding Wizard, Skill Matrix, Certification Overview, Audit Log UI (routes /training/onboarding, /training/skills, /training/certifications, /tenant/audit-log + sidebar). Bonus fix: trainingApi double /api prefix (404). ~~2FA Setup~~, ~~GDPR Request Center~~ (đã có /settings/2fa, /settings/gdpr).
 
 
 Kết luận
