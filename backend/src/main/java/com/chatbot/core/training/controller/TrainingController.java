@@ -4,6 +4,7 @@ import com.chatbot.core.training.dto.AgentTrainingSummary;
 import com.chatbot.core.training.dto.TrainingDashboardStats;
 import com.chatbot.core.training.model.*;
 import com.chatbot.core.training.service.*;
+import com.chatbot.core.tenant.infra.TenantContext;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -19,6 +20,14 @@ public class TrainingController {
     private final SkillAssessmentService skillAssessmentService;
     private final CertificationService certificationService;
     private final OnboardingService onboardingService;
+
+    private Long tenantId() {
+        Long tenantId = TenantContext.getTenantId();
+        if (tenantId == null) {
+            throw new IllegalStateException("Tenant context not set");
+        }
+        return tenantId;
+    }
 
     // Training Materials
     @GetMapping("/materials")
@@ -139,24 +148,21 @@ public class TrainingController {
 
     // Agent Onboarding
     @GetMapping("/onboarding/tasks")
-    public ResponseEntity<List<AgentOnboardingTask>> getAllOnboardingTasks(
-            @RequestHeader("X-Tenant-Id") Long tenantId) {
-        return ResponseEntity.ok(onboardingService.getAllOnboardingTasks(tenantId));
+    public ResponseEntity<List<AgentOnboardingTask>> getAllOnboardingTasks() {
+        return ResponseEntity.ok(onboardingService.getAllOnboardingTasks(tenantId()));
     }
 
     @GetMapping("/onboarding/progress/agent/{agentId}")
     public ResponseEntity<List<AgentOnboardingProgress>> getAgentOnboardingProgress(
-            @PathVariable Long agentId,
-            @RequestHeader("X-Tenant-Id") Long tenantId) {
-        return ResponseEntity.ok(onboardingService.getAgentOnboardingProgress(agentId, tenantId));
+            @PathVariable Long agentId) {
+        return ResponseEntity.ok(onboardingService.getAgentOnboardingProgress(agentId, tenantId()));
     }
 
     @PostMapping("/onboarding/tasks/{taskId}/start")
     public ResponseEntity<AgentOnboardingProgress> startOnboardingTask(
             @PathVariable Long taskId,
-            @RequestBody StartTaskRequest request,
-            @RequestHeader("X-Tenant-Id") Long tenantId) {
-        return ResponseEntity.ok(onboardingService.startTask(request.agentId, taskId, tenantId));
+            @RequestBody StartTaskRequest request) {
+        return ResponseEntity.ok(onboardingService.startTask(request.agentId, taskId, tenantId()));
     }
 
     // Agent Skills
@@ -175,41 +181,36 @@ public class TrainingController {
 
     // Certifications
     @GetMapping("/certifications/levels")
-    public ResponseEntity<List<CertificationLevel>> getAllCertificationLevels(
-            @RequestHeader("X-Tenant-Id") Long tenantId) {
-        return ResponseEntity.ok(certificationService.getAllCertificationLevels(tenantId));
+    public ResponseEntity<List<CertificationLevel>> getAllCertificationLevels() {
+        return ResponseEntity.ok(certificationService.getAllCertificationLevels(tenantId()));
     }
 
     @GetMapping("/certifications/agent/{agentId}")
     public ResponseEntity<List<AgentCertification>> getAgentCertifications(
-            @PathVariable Long agentId,
-            @RequestHeader("X-Tenant-Id") Long tenantId) {
-        return ResponseEntity.ok(certificationService.getAgentCertifications(agentId, tenantId));
+            @PathVariable Long agentId) {
+        return ResponseEntity.ok(certificationService.getAgentCertifications(agentId, tenantId()));
     }
 
     @PostMapping("/certifications/award")
     public ResponseEntity<AgentCertification> awardCertification(
-            @RequestBody AwardCertificationRequest request,
-            @RequestHeader("X-Tenant-Id") Long tenantId) {
+            @RequestBody AwardCertificationRequest request) {
         return ResponseEntity.ok(certificationService.awardCertification(
                 request.agentId,
                 request.certificationLevelId,
                 request.issuedBy,
-                tenantId
+                tenantId()
         ));
     }
 
     // Training Dashboard Statistics
     @GetMapping("/dashboard/stats")
-    public ResponseEntity<TrainingDashboardStats> getTrainingDashboardStats(
-            @RequestHeader("X-Tenant-Id") Long tenantId) {
-        return ResponseEntity.ok(trainingService.getTrainingDashboardStats(tenantId));
+    public ResponseEntity<TrainingDashboardStats> getTrainingDashboardStats() {
+        return ResponseEntity.ok(trainingService.getTrainingDashboardStats(tenantId()));
     }
 
     @GetMapping("/dashboard/agents")
-    public ResponseEntity<List<AgentTrainingSummary>> getAgentsWithTrainingStats(
-            @RequestHeader("X-Tenant-Id") Long tenantId) {
-        return ResponseEntity.ok(trainingService.getAgentsWithTrainingStats(tenantId));
+    public ResponseEntity<List<AgentTrainingSummary>> getAgentsWithTrainingStats() {
+        return ResponseEntity.ok(trainingService.getAgentsWithTrainingStats(tenantId()));
     }
 
     // DTOs
