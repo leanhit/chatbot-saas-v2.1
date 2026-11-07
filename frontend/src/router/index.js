@@ -35,6 +35,9 @@ const BankAccountManagement = () => import("../views/admin/BankAccountManagement
 const PackageManagement = () => import("../views/admin/PackageManagement.vue");
 const DiscountManagement = () => import("../views/admin/DiscountManagement.vue");
 const PaymentAnalytics = () => import("../views/admin/PaymentAnalytics.vue");
+const FunnelAnalysis = () => import("../views/analytics/FunnelAnalysis.vue");
+const CustomReports = () => import("../views/analytics/CustomReports.vue");
+const CustomerJourney = () => import("../views/analytics/CustomerJourney.vue");
 const WebhookManagement = () => import("../views/admin/WebhookManagement.vue");
 const UserManagement = () => import("../views/admin/UserManagement.vue");
 // Conversation Routing & Agent Management Pages
@@ -300,6 +303,24 @@ const routes = [
     name: "admin-analytics",
     component: PaymentAnalytics,
     meta: { requiresAuth: true, title: "Payment Analytics" + appname },
+  },
+  {
+    path: "/analytics/funnel",
+    name: "analytics-funnel",
+    component: FunnelAnalysis,
+    meta: { requiresAuth: true, title: "Funnel Analysis" + appname },
+  },
+  {
+    path: "/analytics/reports",
+    name: "analytics-reports",
+    component: CustomReports,
+    meta: { requiresAuth: true, title: "Custom Reports" + appname },
+  },
+  {
+    path: "/analytics/journey",
+    name: "analytics-journey",
+    component: CustomerJourney,
+    meta: { requiresAuth: true, title: "Customer Journey" + appname },
   },
   {
     path: "/admin/webhooks",

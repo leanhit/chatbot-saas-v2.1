@@ -119,6 +119,13 @@ public interface ConversationRepository extends JpaRepository<Conversation, Long
     // 9b. Tìm tất cả conversations theo externalUserId sắp xếp theo updatedAt DESC
     @Query("SELECT c FROM Conversation c WHERE c.externalUserId = :externalUserId ORDER BY c.updatedAt DESC")
     List<Conversation> findByExternalUserId(@Param("externalUserId") String externalUserId);
+
+    // 9c. Tìm tất cả conversations theo externalUserId trong tenant (cho customer journey)
+    @Query("SELECT c FROM Conversation c WHERE c.externalUserId = :externalUserId AND c.tenantId = :tenantId ORDER BY c.createdAt ASC")
+    List<Conversation> findByExternalUserIdAndTenantIdOrderByCreatedAtAsc(
+        @Param("externalUserId") String externalUserId,
+        @Param("tenantId") Long tenantId
+    );
     
     // 10. Count methods for dashboard statistics
     @Query("SELECT COUNT(c) FROM Conversation c WHERE c.tenantId = :tenantId")

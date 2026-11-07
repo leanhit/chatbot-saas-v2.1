@@ -12,6 +12,8 @@ public interface CustomerProfileRepository extends JpaRepository<CustomerProfile
 
     Optional<CustomerProfile> findByExternalIdAndTenantId(String externalId, Long tenantId);
 
+    Optional<CustomerProfile> findByIdAndTenantId(Long id, Long tenantId);
+
     List<CustomerProfile> findByTenantId(Long tenantId);
 
     List<CustomerProfile> findByTenantIdAndStatus(Long tenantId, CustomerProfile.CustomerStatus status);

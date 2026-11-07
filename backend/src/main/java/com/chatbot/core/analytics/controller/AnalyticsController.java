@@ -2,7 +2,10 @@ package com.chatbot.core.analytics.controller;
 
 import com.chatbot.core.analytics.dto.AnalyticsSummaryDTO;
 import com.chatbot.core.analytics.model.AnalyticsDailySummary;
+import com.chatbot.core.analytics.model.FunnelStage;
 import com.chatbot.core.analytics.service.AnalyticsAggregationService;
+import com.chatbot.core.analytics.service.CustomerJourneyService;
+import com.chatbot.core.analytics.service.FunnelService;
 import com.chatbot.core.tenant.infra.TenantContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,6 +29,8 @@ import java.util.Map;
 public class AnalyticsController {
 
     private final AnalyticsAggregationService aggregationService;
+    private final CustomerJourneyService journeyService;
+    private final FunnelService funnelService;
 
     @GetMapping("/summary")
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'SUPERVISOR')")
@@ -64,5 +69,70 @@ public class AnalyticsController {
         }
         AnalyticsDailySummary summary = aggregationService.aggregateForDate(tenantId, date);
         return ResponseEntity.ok(AnalyticsSummaryDTO.from(summary));
+    }
+
+    // ---------- Customer journey ----------
+
+    @GetMapping("/journey/{customerProfileId}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'SUPERVISOR', 'AGENT')")
+    public ResponseEntity<?> getCustomerJourney(@PathVariable Long customerProfileId) {
+        Long tenantId = TenantContext.getTenantId();
+        if (tenantId == null) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Tenant context missing"));
+        }
+        return ResponseEntity.ok(journeyService.getJourney(customerProfileId, tenantId));
+    }
+
+    // ---------- Funnel ----------
+
+    @GetMapping("/funnel")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'SUPERVISOR')")
+    public ResponseEntity<?> getFunnel() {
+        Long tenantId = TenantContext.getTenantId();
+        if (tenantId == null) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Tenant context missing"));
+        }
+        return ResponseEntity.ok(funnelService.computeFunnel(tenantId));
+    }
+
+    @GetMapping("/funnel/stages")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+    public ResponseEntity<?> listFunnelStages() {
+        Long tenantId = TenantContext.getTenantId();
+        if (tenantId == null) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Tenant context missing"));
+        }
+        return ResponseEntity.ok(funnelService.listStages(tenantId));
+    }
+
+    @PostMapping("/funnel/stages")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+    public ResponseEntity<?> createFunnelStage(@RequestBody FunnelStage stage) {
+        Long tenantId = TenantContext.getTenantId();
+        if (tenantId == null) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Tenant context missing"));
+        }
+        return ResponseEntity.ok(funnelService.createStage(stage, tenantId));
+    }
+
+    @PutMapping("/funnel/stages/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+    public ResponseEntity<?> updateFunnelStage(@PathVariable Long id, @RequestBody FunnelStage stage) {
+        Long tenantId = TenantContext.getTenantId();
+        if (tenantId == null) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Tenant context missing"));
+        }
+        return ResponseEntity.ok(funnelService.updateStage(id, stage, tenantId));
+    }
+
+    @DeleteMapping("/funnel/stages/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+    public ResponseEntity<?> deleteFunnelStage(@PathVariable Long id) {
+        Long tenantId = TenantContext.getTenantId();
+        if (tenantId == null) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Tenant context missing"));
+        }
+        funnelService.deleteStage(id, tenantId);
+        return ResponseEntity.ok(Map.of("deleted", true));
     }
 }

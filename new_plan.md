@@ -146,3 +146,49 @@ Giai đoạn	Còn thiếu
 2 — Phase 4 routing	Unit tests ✅ nhưng repository tests trên DB thật ❌, tenant isolation tests ❌, smoke flow ❌ — vẫn blocked như plan yêu cầu
 3 — Năng lực agent	✅ Hoàn thành: training→skill score, certification threshold (skills+training+stats, hỗ trợ max:), onboarding→online gate (API + WebSocket), tenant-scoped, unit tests pass
 4 — Customer experience	Profile detail, history/timeline, notes, feedback linking, sửa frontend (viewCustomer chỉ log, edit ID, delete), segmentation/VIP — chưa làm
+
+
+===============================================
+
+Audit improvement_plan.md vs code hiện tại
+Đối chiếu theo roadmap chuẩn Giai đoạn 0–6 (canonical đã chốt trong improvement_plan.md):
+
+Giai đoạn 0 — Foundation & measurements — ✅ Gần như hoàn thành
+Có: Tenant, Agent, CustomerProfile, Conversation, Message, TenantAuditLog, AuditEntity base; RBAC (SystemRole, TenantRole); audit (TenantAuditLogService, AuditService); tenant isolation diện rộng; OpenAPI/SpringDoc; centralized error handling.
+Thiếu: ConversationEvent entity riêng (mới chỉ có shared/messaging/EventTypes), soft-delete chưa xác nhận đồng nhất.
+Giai đoạn 1 — Tenant/security foundation — 🟡 Một phần
+Đã làm: rà soát & fix toàn bộ findAll() cross-tenant (payment analytics, merchant keys, file metadata — commit dfa9b5d).
+Còn thiếu: test tenant isolation thực thi (A không đọc/sửa/xóa được B), RBAC backend check chưa rà soát hết.
+Giai đoạn 2 — Automation & routing — 🟡 Implemented nhưng blocked kiểm thử
+Có: ConversationRoutingService, IntelligentRoutingController, RoutingRule, EscalationRule/Tier/History, ConversationTransfer, SupervisorSession, EscalationService, AIEscalationService, SLAMonitorService, BotInboxAutoAssignService.
+Còn thiếu: repository tests trên DB thật, tenant isolation tests, smoke flow — đúng trạng thái blocked trong new_plan.md.
+Giai đoạn 3 — Năng lực agent — ✅ Hoàn thành
+Training/skill/certification/onboarding + gate online, tenant-scoped, unit tests pass (đã verify API thật).
+
+Giai đoạn 4 — Customer experience — 🟡 Backend có, frontend còn lỗi
+Backend có: CustomerProfile, CustomerNote, CustomerTimelineService, Feedback + FeedbackService/Controller, CustomerSegmentationService.
+Frontend có: CustomerProfileDetail, CustomerProfiles, FeedbackSurvey, NPSPanel, SegmentOverview, VIPQueue, CustomerAnalytics.
+Thiếu/lỗi: CustomerMetadata, CustomerSegment entity, VIPConfig entity chưa thấy; các bug frontend đã ghi trong new_plan.md (viewCustomer chỉ log, edit ID, delete) chưa fix; feedback↔conversation linking chưa verify.
+Giai đoạn 5 — AI & analytics — � Đã bổ sung journey/funnel/report
+Đã làm thêm: CustomerJourneyService (timeline tính từ profile+conversation+feedback+sentiment, tenant-scoped), FunnelStage entity + FunnelService (stage config CRUD + conversion), CustomReport + ReportSchedule entities, ReportService (5 loại report: CONVERSATIONS/SENTIMENT/AI_USAGE/FEEDBACK/FUNNEL), ReportScheduler (cron + ShedLock, set TenantContext per schedule), API /api/analytics/journey|funnel|funnel/stages, /api/reports + /api/reports/schedules; frontend views FunnelAnalysis/CustomReports/CustomerJourney + analyticsApi.js + routes.
+Đã có sẵn: AiSuggestion accept/reject (= SuggestionFeedback), SentimentService, AnalyticsDailySummary + scheduled aggregation (ShedLock), LlmRoutingService provider abstraction qua PennyBot.
+Còn thiếu: AIProviderConfig per-tenant (hiện provider config nằm ở PennyBot), AI Suggestion Panel UI trong chat, Sentiment Live Indicator UI, unit tests cho service mới.
+Giai đoạn 6 — Scale/compliance — 🟡 Một phần
+Có: TenantAuditLog, Webhook + WebhookDeadLetter + WebhookEvent (payment), WebhookSignatureService, MerchantApiKey, RateLimitService/PennyRateLimiter, DataExportService (export), MessageArchivingService (retention).
+Thiếu: 2FA, GDPR deletion center, quota/rate-limit per tenant tổng quát (mới có Penny rate limit), retry/DLQ tổng quát ngoài payment webhook.
+Frontend — 🟡 Thiếu nhiều page so với plan
+Có: training (Library/Detail/Dashboard), customer (7 views), routing (Queue/Assignment/Supervisor/Escalation/Transfer), admin WebhookManagement, SkillsManagement.
+Có thêm: FunnelAnalysis, CustomReports, CustomerJourney (routes /analytics/*).
+Thiếu: Onboarding Wizard, Skill Matrix, Certification Overview, AI Suggestion Panel, Sentiment Live Indicator, Audit Log UI, 2FA Setup, GDPR Request Center.
+
+
+Kết luận
+Giai đoạn	Trạng thái
+0 Foundation	✅ ~90%
+1 Tenant/security	🟡 findAll xong, thiếu isolation tests
+2 Routing	🟡 code có, blocked test
+3 Agent	✅ xong
+4 Customer	🟡 backend ok, frontend lỗi + thiếu entity
+5 AI/analytics	� journey/funnel/report xong; thiếu AIProviderConfig, suggestion panel UI, sentiment indicator, unit tests
+6 Compliance	🟡 thiếu 2FA/GDPR/quota tổng quát
+Ưu tiên tiếp theo theo plan: Giai đoạn 4 (customer experience — sửa frontend bugs + notes/feedback linking) hoặc gỡ blocker Giai đoạn 2 (integration tests). Bạn muốn làm tiếp mục nào?
