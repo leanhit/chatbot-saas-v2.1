@@ -187,15 +187,15 @@
       </div>
 
       <!-- Chat Area -->
-      <div class="flex-1 bg-white dark:bg-gray-800 rounded-lg border dark:border-gray-700 flex flex-col" style="min-height: 600px;">
-        <div v-if="!selectedConversation" class="h-full flex items-center justify-center">
+      <div class="flex-1 bg-white dark:bg-gray-800 rounded-lg border dark:border-gray-700 flex" style="min-height: 600px;">
+        <div v-if="!selectedConversation" class="h-full flex-1 flex items-center justify-center">
           <div class="text-center">
             <Icon icon="mdi:chat" class="text-6xl text-gray-300" />
             <p class="mt-4 text-gray-500">Select a conversation to start messaging</p>
           </div>
         </div>
         
-        <div v-else class="h-full flex flex-col">
+        <div v-else class="h-full flex-1 flex flex-col min-w-0">
           <!-- Chat Header -->
           <div class="p-4 border-b dark:border-gray-700 flex items-center justify-between">
             <div class="flex items-center gap-3">
@@ -227,6 +227,15 @@
             </div>
             
             <div class="flex items-center gap-2">
+              <button
+                @click="showAiPanel = !showAiPanel"
+                :class="showAiPanel ? 'bg-purple-600 text-white' : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-200'"
+                class="px-3 py-2 rounded-lg flex items-center gap-1 text-sm hover:opacity-90"
+                title="AI Assistant"
+              >
+                <Icon icon="mdi:robot-outline" />
+                AI
+              </button>
               <span v-if="selectedConversation.isTakenOver" 
                 class="bg-green-100 text-green-800 text-sm px-3 py-1 rounded-full">
                 <Icon icon="mdi:hand-right" class="inline mr-1" />
@@ -349,6 +358,14 @@
             </p>
           </div>
         </div>
+
+        <!-- AI Assistant side panel -->
+        <AiAssistantPanel
+          v-if="showAiPanel && selectedConversation"
+          :conversation-id="selectedConversation.id"
+          class="w-80 flex-shrink-0"
+          @close="showAiPanel = false"
+        />
       </div>
     </div>
 
@@ -476,6 +493,7 @@ import takeoverWebSocketService from '@/services/takeoverWebSocketService'
 import ConversationItem from '../conversations/components/ConversationItem.vue'
 import RealTimeMessageIndicator from './components/RealTimeMessageIndicator.vue'
 import RealTimeMessageBubble from './components/RealTimeMessageBubble.vue'
+import AiAssistantPanel from '@/components/chat/AiAssistantPanel.vue'
 
 // Stores & Composables
 const toast = useToast()
@@ -550,6 +568,7 @@ const loadingMessages = ref(false)
 const takingOver = ref(false)
 const releasing = ref(false)
 const sendingMessage = ref(false)
+const showAiPanel = ref(false)
 const inboxType = ref('all')
 const filterBot = ref('all')
 const filterConnection = ref('all')
