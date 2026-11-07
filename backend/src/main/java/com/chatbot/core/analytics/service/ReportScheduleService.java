@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.List;
 
 /**
@@ -74,8 +75,8 @@ public class ReportScheduleService {
     }
 
     private LocalDateTime computeNextRun(String cron, LocalDateTime after) {
-        return CronExpression.parse(cron)
-            .next(after.atZone(ZoneId.systemDefault()).toInstant())
-            .atZone(ZoneId.systemDefault()).toLocalDateTime();
+        ZonedDateTime next = CronExpression.parse(cron)
+            .next(ZonedDateTime.of(after, ZoneId.systemDefault()));
+        return next != null ? next.toLocalDateTime() : after.plusDays(1);
     }
 }

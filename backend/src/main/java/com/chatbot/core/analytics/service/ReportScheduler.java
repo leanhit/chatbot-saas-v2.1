@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.List;
 
 /**
@@ -70,8 +71,8 @@ public class ReportScheduler {
     private LocalDateTime computeNextRun(String cron, LocalDateTime after) {
         try {
             CronExpression expr = CronExpression.parse(cron);
-            return expr.next(after.atZone(ZoneId.systemDefault()).toInstant())
-                .atZone(ZoneId.systemDefault()).toLocalDateTime();
+            ZonedDateTime next = expr.next(ZonedDateTime.of(after, ZoneId.systemDefault()));
+            return next != null ? next.toLocalDateTime() : after.plusDays(1);
         } catch (Exception e) {
             log.warn("[ReportScheduler] Invalid cron '{}', defaulting to +1 day", cron);
             return after.plusDays(1);
