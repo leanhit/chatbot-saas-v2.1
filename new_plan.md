@@ -172,7 +172,7 @@ Frontend có: CustomerProfileDetail, CustomerProfiles, FeedbackSurvey, NPSPanel,
 Giai đoạn 5 — AI & analytics — � Đã bổ sung journey/funnel/report
 Đã làm thêm: CustomerJourneyService (timeline tính từ profile+conversation+feedback+sentiment, tenant-scoped), FunnelStage entity + FunnelService (stage config CRUD + conversion), CustomReport + ReportSchedule entities, ReportService (5 loại report: CONVERSATIONS/SENTIMENT/AI_USAGE/FEEDBACK/FUNNEL), ReportScheduler (cron + ShedLock, set TenantContext per schedule), API /api/analytics/journey|funnel|funnel/stages, /api/reports + /api/reports/schedules; frontend views FunnelAnalysis/CustomReports/CustomerJourney + analyticsApi.js + routes.
 Đã có sẵn: AiSuggestion accept/reject (= SuggestionFeedback), SentimentService, AnalyticsDailySummary + scheduled aggregation (ShedLock), LlmRoutingService provider abstraction qua PennyBot.
-Còn thiếu: AIProviderConfig per-tenant (hiện provider config nằm ở PennyBot), AI Suggestion Panel UI trong chat, Sentiment Live Indicator UI, unit tests cho service mới.
+Đã xong: AI Suggestion Panel UI + Sentiment Live Indicator trong Chat.vue (AiAssistantPanel.vue, aiApi.js) — sentiment badge + generate/accept/reject suggestions; verify API sentiment OK, suggestion degrade gracefully khi LLM provider unavailable. AIProviderConfig per-tenant: provider config đã per-tenant qua PennyBot (providerType+modelName) — không cần entity riêng. Còn thiếu: unit tests cho service mới.
 Giai đoạn 6 — Scale/compliance — ✅ Đã bổ sung 2FA/GDPR/rate-limit
 Đã làm thêm: 2FA TOTP (TwoFactorService + /api/auth/2fa setup|enable|disable|status, login yêu cầu totpCode khi enabled, cột users.totp_secret/totp_enabled), GDPR deletion workflow (data_deletion_requests + DataDeletionService: PENDING→PROCESSING→COMPLETED, grace 30 ngày, auto-process hourly, anonymize customer PII + xóa messages/conversations/feedback), TenantRateLimitFilter (Redis sliding window 600 req/min/tenant, fail-open), frontend TwoFactorSetup.vue + GdprCenter.vue (routes /settings/2fa, /settings/gdpr). Đã test API thật: 2fa setup/enable/status OK, deletion create/cancel OK.
 Có sẵn: TenantAuditLog, Webhook + WebhookDeadLetter + WebhookEvent (payment), WebhookSignatureService, MerchantApiKey, RateLimitService/PennyRateLimiter, DataExportService (export), MessageArchivingService (retention), DLQManagementService + /api/admin/dlq (RabbitMQ inspect/replay).
@@ -180,7 +180,7 @@ Còn thiếu: retry/DLQ tổng quát ngoài payment webhook + RabbitMQ (chưa c�
 Frontend — 🟡 Thiếu nhiều page so với plan
 Có: training (Library/Detail/Dashboard), customer (7 views), routing (Queue/Assignment/Supervisor/Escalation/Transfer), admin WebhookManagement, SkillsManagement.
 Có thêm: FunnelAnalysis, CustomReports, CustomerJourney (routes /analytics/*).
-Thiếu: Onboarding Wizard, Skill Matrix, Certification Overview, AI Suggestion Panel, Sentiment Live Indicator, Audit Log UI, ~~2FA Setup~~, ~~GDPR Request Center~~ (đã có /settings/2fa, /settings/gdpr).
+Thiếu: Onboarding Wizard, Skill Matrix, Certification Overview, Audit Log UI, ~~2FA Setup~~, ~~GDPR Request Center~~ (đã có /settings/2fa, /settings/gdpr).
 
 
 Kết luận
