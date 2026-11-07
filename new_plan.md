@@ -145,7 +145,7 @@ Giai đoạn	Còn thiếu
 1 — Tenant/security foundation	✅ Đã rà soát & fix findAll() (training sạch, payment analytics/merchant keys/file metadata đã tenant-scope); còn thiếu test tenant isolation thực thi
 2 — Phase 4 routing	Unit tests ✅ nhưng repository tests trên DB thật ❌, tenant isolation tests ❌, smoke flow ❌ — vẫn blocked như plan yêu cầu
 3 — Năng lực agent	✅ Hoàn thành: training→skill score, certification threshold (skills+training+stats, hỗ trợ max:), onboarding→online gate (API + WebSocket), tenant-scoped, unit tests pass
-4 — Customer experience	Profile detail, history/timeline, notes, feedback linking, sửa frontend (viewCustomer chỉ log, edit ID, delete), segmentation/VIP — chưa làm
+4 — Customer experience	✅ Đã xong: profile detail/history/timeline, notes, feedback↔conversation linking, frontend bugs fixed (aa03603), satisfactionScore persist + tier recalc, segmentation/VIP; còn optional VIPConfig entity + unit tests mở rộng
 
 
 ===============================================
@@ -189,7 +189,8 @@ Giai đoạn	Trạng thái
 1 Tenant/security	🟡 findAll xong, thiếu isolation tests
 2 Routing	🟡 code có, blocked test
 3 Agent	✅ xong
-4 Customer	🟡 backend ok, frontend lỗi + thiếu entity
-5 AI/analytics	� journey/funnel/report xong; thiếu AIProviderConfig, suggestion panel UI, sentiment indicator, unit tests
-6 Compliance	✅ 2FA/GDPR/rate-limit xong (đã test API); thiếu DLQ tổng quát + unit tests
-Ưu tiên tiếp theo theo plan: Giai đoạn 4 (customer experience — sửa frontend bugs + notes/feedback linking) hoặc gỡ blocker Giai đoạn 2 (integration tests). Bạn muốn làm tiếp mục nào?
+4 Customer	✅ backend + frontend xong (trừ optional VIPConfig + unit tests)
+5 AI/analytics	✅ journey/funnel/report + AI Suggestion Panel UI + Sentiment Live Indicator xong (verify production 200); AIProviderConfig = per-tenant qua PennyBot; còn thiếu unit tests
+6 Compliance	✅ 2FA/GDPR/rate-limit xong (đã test API production); thiếu DLQ tổng quát + unit tests
+Frontend general	✅ Onboarding Wizard, Skill Matrix, Certification Overview, Audit Log UI + routes/sidebar; fix trainingApi double /api (404) + TrainingController X-Tenant-Id→TenantContext + audit createdAt ISO — verify production 200
+Ưu tiên tiếp theo: Giai đoạn 2 (routing integration/tenant-isolation tests — blocker duy nhất còn lại) hoặc unit tests cho các service mới (journey/funnel/report/AI/compliance). Bạn muốn làm tiếp mục nào?
