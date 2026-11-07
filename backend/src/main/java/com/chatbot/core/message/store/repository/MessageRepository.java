@@ -98,7 +98,7 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
     @Modifying
     @Transactional(value = "messageTransactionManager", rollbackFor = Exception.class)
     @Query("DELETE FROM Message m WHERE m.tenantId = :tenantId")
-    void deleteByTenantId(@Param("tenantId") Long tenantId);
+    int deleteByTenantId(@Param("tenantId") Long tenantId);
 
     // Phase 5 analytics: messages in date range
     @Query("SELECT m FROM Message m WHERE m.tenantId = :tenantId AND m.createdAt BETWEEN :from AND :to")

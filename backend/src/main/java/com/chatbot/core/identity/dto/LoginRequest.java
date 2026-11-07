@@ -21,4 +21,7 @@ public class LoginRequest {
     
     @NotBlank(message = "Mật khẩu không được để trống")
     private String password;
+
+    /** Optional TOTP code — required when the user has 2FA enabled. */
+    private String totpCode;
 }

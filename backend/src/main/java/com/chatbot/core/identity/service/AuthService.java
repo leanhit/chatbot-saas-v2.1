@@ -43,6 +43,7 @@ public class AuthService implements UserDetailsService {
     private final AuditService auditService;
     private final RateLimitService rateLimitService;
     private final RefreshTokenService refreshTokenService;
+    private final TwoFactorService twoFactorService;
 
     @Override
     @Cacheable(value = "userSessions", key = "#email")
@@ -128,6 +129,18 @@ public class AuthService implements UserDetailsService {
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
             auditService.logLoginFailure(request.getEmail(), "Invalid password");
             throw new AuthenticationException(IdentityConstants.INVALID_CREDENTIALS);
+        }
+
+        // 2FA: if enabled, require a valid TOTP code
+        if (twoFactorService.isEnabled(user)) {
+            if (request.getTotpCode() == null || request.getTotpCode().isBlank()) {
+                auditService.logLoginFailure(request.getEmail(), "2FA code required");
+                throw new AuthenticationException("2FA_REQUIRED");
+            }
+            if (!twoFactorService.verifyCode(user.getTotpSecret(), request.getTotpCode())) {
+                auditService.logLoginFailure(request.getEmail(), "Invalid 2FA code");
+                throw new AuthenticationException("Invalid 2FA code");
+            }
         }
 
         // Reset rate limit on successful login

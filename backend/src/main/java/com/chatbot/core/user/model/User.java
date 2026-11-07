@@ -38,6 +38,14 @@ public class User {
     @Column(name = "is_active", nullable = false, columnDefinition = "boolean default true")
     private Boolean isActive = true;
 
+    // --- 2FA (TOTP) ---
+    @Column(name = "totp_secret")
+    private String totpSecret;
+
+    @Builder.Default
+    @Column(name = "totp_enabled", nullable = false, columnDefinition = "boolean default false")
+    private Boolean totpEnabled = false;
+
     // --- audit ---
     @Column(name = "created_at")
     private LocalDateTime createdAt;

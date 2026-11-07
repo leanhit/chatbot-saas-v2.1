@@ -15,6 +15,8 @@ const Help = () => import("../views/help/Help.vue");
 const TenantOverview = () => import("../views/tenant/overview/TenantOverview.vue");
 const TenantMember = () => import("../views/tenant/member/TenantMember.vue");
 const TenantSettings = () => import("../views/tenant/settings/TenantSettings.vue");
+const TwoFactorSetup = () => import("../views/settings/TwoFactorSetup.vue");
+const GdprCenter = () => import("../views/settings/GdprCenter.vue");
 const BotManagement = () => import("../views/penny/bots/BotManagement.vue");
 const Connections = () => import("../views/penny/connections/Connections.vue");
 const Rules = () => import("../views/penny/rules/Rules.vue");
@@ -141,6 +143,18 @@ const routes = [
     name: "tenant-settings",
     component: TenantSettings,
     meta: { requiresAuth: true, title: "Tenant Settings" + appname },
+  },
+  {
+    path: "/settings/2fa",
+    name: "two-factor-setup",
+    component: TwoFactorSetup,
+    meta: { requiresAuth: true, title: "Two-Factor Authentication" + appname },
+  },
+  {
+    path: "/settings/gdpr",
+    name: "gdpr-center",
+    component: GdprCenter,
+    meta: { requiresAuth: true, title: "GDPR & Data Privacy" + appname },
   },
   {
     path: "/penny-bots",

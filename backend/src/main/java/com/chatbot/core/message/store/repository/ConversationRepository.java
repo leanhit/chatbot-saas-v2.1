@@ -200,7 +200,7 @@ public interface ConversationRepository extends JpaRepository<Conversation, Long
     @org.springframework.data.jpa.repository.Modifying
     @org.springframework.transaction.annotation.Transactional(value = "messageTransactionManager", rollbackFor = Exception.class)
     @Query("DELETE FROM Conversation c WHERE c.tenantId = :tenantId")
-    void deleteByTenantId(@Param("tenantId") Long tenantId);
+    int deleteByTenantId(@Param("tenantId") Long tenantId);
 
     // Satisfaction and Resolution tracking queries
     @Query("SELECT AVG(c.userSatisfactionRating) FROM Conversation c WHERE c.tenantId = :tenantId AND c.userSatisfactionRating IS NOT NULL")
