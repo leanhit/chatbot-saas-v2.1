@@ -236,7 +236,7 @@ class ConversationServiceTest {
         assertNotNull(result);
         assertTrue(result.getIsTakenOverByAgent());
         assertEquals(agentId, result.getAgentAssignedId());
-        assertEquals("active_agent", result.getStatus());
+        assertEquals(ConversationStatus.ACTIVE_AGENT, result.getStatus());
     }
 
     @Test
@@ -275,7 +275,7 @@ class ConversationServiceTest {
         assertNotNull(result);
         assertFalse(result.getIsTakenOverByAgent());
         assertNull(result.getAgentAssignedId());
-        assertEquals("open", result.getStatus());
+        assertEquals(ConversationStatus.OPEN, result.getStatus());
     }
 
     @Test

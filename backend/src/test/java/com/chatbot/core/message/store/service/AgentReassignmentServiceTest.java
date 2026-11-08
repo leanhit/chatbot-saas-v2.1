@@ -178,7 +178,7 @@ class AgentReassignmentServiceTest {
         verify(agentService, never()).incrementAgentLoad(anyLong());
         assertNull(conversation.getAgentAssignedId());
         assertFalse(conversation.getIsTakenOverByAgent());
-        assertEquals("open", conversation.getStatus());
+        assertEquals(ConversationStatus.OPEN, conversation.getStatus());
     }
 
     @Test

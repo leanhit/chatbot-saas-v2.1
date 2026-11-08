@@ -239,6 +239,7 @@ class BotRuleManagerTest {
             // Mock WebClient chain
             WebClient.RequestBodyUriSpec bodyUriSpec = mock(WebClient.RequestBodyUriSpec.class);
             WebClient.RequestBodySpec bodySpec = mock(WebClient.RequestBodySpec.class);
+            WebClient.RequestBodySpec bodySpecAfterHeaders = mock(WebClient.RequestBodySpec.class);
             WebClient.RequestHeadersSpec headersSpec = mock(WebClient.RequestHeadersSpec.class);
             WebClient.ResponseSpec responseSpec = mock(WebClient.ResponseSpec.class);
 
@@ -247,8 +248,8 @@ class BotRuleManagerTest {
 
             when(webClient.post()).thenReturn(bodyUriSpec);
             when(bodyUriSpec.uri(webhookUrl)).thenReturn(bodySpec);
-            doReturn(bodySpec).when(bodySpec).headers(any());
-            doReturn(headersSpec).when(bodySpec).bodyValue(any());
+            doReturn(bodySpecAfterHeaders).when(bodySpec).headers(any());
+            doReturn(headersSpec).when(bodySpecAfterHeaders).bodyValue(any());
             when(headersSpec.retrieve()).thenReturn(responseSpec);
             when(responseSpec.bodyToMono(Map.class)).thenReturn(reactor.core.publisher.Mono.just(webhookResponse));
 
@@ -288,12 +289,13 @@ class BotRuleManagerTest {
 
             WebClient.RequestBodyUriSpec bodyUriSpec = mock(WebClient.RequestBodyUriSpec.class);
             WebClient.RequestBodySpec bodySpec = mock(WebClient.RequestBodySpec.class);
+            WebClient.RequestBodySpec bodySpecAfterHeaders = mock(WebClient.RequestBodySpec.class);
             WebClient.RequestHeadersSpec headersSpec = mock(WebClient.RequestHeadersSpec.class);
 
             when(webClient.post()).thenReturn(bodyUriSpec);
             when(bodyUriSpec.uri(webhookUrl)).thenReturn(bodySpec);
-            doReturn(bodySpec).when(bodySpec).headers(any());
-            doReturn(headersSpec).when(bodySpec).bodyValue(any());
+            doReturn(bodySpecAfterHeaders).when(bodySpec).headers(any());
+            doReturn(headersSpec).when(bodySpecAfterHeaders).bodyValue(any());
             when(headersSpec.retrieve()).thenThrow(new RuntimeException("Connection refused"));
 
             // When

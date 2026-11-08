@@ -318,7 +318,7 @@ public class BotRuleManager {
                 .bodyToMono(Map.class)
                 .timeout(Duration.ofSeconds(10)) // Add timeout to prevent indefinite blocking
                 .doOnError(e -> log.error("❌ Webhook timeout or error for rule {}: {}", rule.getId(), e.getMessage()))
-                .onErrorReturn(null) // Return null on error instead of throwing
+                .onErrorResume(e -> Mono.empty()) // Return empty (null after block) on error instead of throwing
                 .block(); // Note: This is blocking; should be refactored to fully reactive in future
 
             // Extract response text from webhook response
