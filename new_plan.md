@@ -141,9 +141,9 @@ Tóm lại: làm Phase 5–6 trước là được, nhưng hãy bắt đầu b�
 
 ❌ CHƯA hoàn thành
 Giai đoạn	Còn thiếu
-0 — Chốt trạng thái	✅ Đã chuẩn hóa roadmap numbering (canonical Giai đoạn 0–6 trong improvement_plan.md); còn thiếu CI riêng cho unit+integration tests
-1 — Tenant/security foundation	✅ Đã rà soát & fix findAll() (training sạch, payment analytics/merchant keys/file metadata đã tenant-scope); còn thiếu test tenant isolation thực thi
-2 — Phase 4 routing	Unit tests ✅ nhưng repository tests trên DB thật ❌, tenant isolation tests ❌, smoke flow ❌ — vẫn blocked như plan yêu cầu
+0 — Chốt trạng thái	✅ Đã chuẩn hóa roadmap numbering + CI riêng (.github/workflows/test.yml chạy unit+integration); full suite 584 tests, 0 failures
+1 — Tenant/security foundation	✅ Đã rà soát & fix findAll() + TenantIsolationIntegrationTest (7 tests cross-module: customer/training/analytics/message store) trên PG thật
+2 — Phase 4 routing	✅ 163 tests pass (Testcontainers PG+Redis) + TenantIsolationTest; full suite 584/584 pass
 3 — Năng lực agent	✅ Hoàn thành: training→skill score, certification threshold (skills+training+stats, hỗ trợ max:), onboarding→online gate (API + WebSocket), tenant-scoped, unit tests pass
 4 — Customer experience	✅ Đã xong: profile detail/history/timeline, notes, feedback↔conversation linking, frontend bugs fixed (aa03603), satisfactionScore persist + tier recalc, segmentation/VIP; còn optional VIPConfig entity + unit tests mở rộng
 
