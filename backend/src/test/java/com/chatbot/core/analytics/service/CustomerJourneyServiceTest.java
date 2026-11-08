@@ -147,4 +147,43 @@ class CustomerJourneyServiceTest {
         List<CustomerJourneyService.JourneyEvent> events = service.getJourney(1L, 1L);
         assertTrue(events.stream().noneMatch(e -> e.type() == CustomerJourneyService.JourneyEventType.NEGATIVE_SENTIMENT));
     }
+
+    @Test
+    void agentAssignedRequiresBothIdAndResponseTime() {
+        Conversation c = conversation(10L, "fb-1", ConversationStatus.OPEN);
+        c.setAgentAssignedId(5L);
+        // firstAgentResponseTime intentionally null -> no AGENT_ASSIGNED event
+
+        when(customerProfileRepository.findByIdAndTenantId(1L, 1L))
+            .thenReturn(Optional.of(profile(1L, "fb-1")));
+        when(conversationRepository.findByExternalUserIdAndTenantIdOrderByCreatedAtAsc("fb-1", 1L))
+            .thenReturn(List.of(c));
+        when(sentimentRepository.findByTenantIdAndConversationIdAndIsDeletedFalseOrderByCreatedAtDesc(1L, 10L))
+            .thenReturn(List.of());
+        when(feedbackRepository.findByCustomerProfileIdAndTenantId(1L, 1L)).thenReturn(List.of());
+
+        List<CustomerJourneyService.JourneyEvent> events = service.getJourney(1L, 1L);
+        assertTrue(events.stream().noneMatch(e -> e.type() == CustomerJourneyService.JourneyEventType.AGENT_ASSIGNED));
+    }
+
+    @Test
+    void feedbackFallsBackToCreatedAtWhenSubmittedAtNull() {
+        Feedback fb = new Feedback();
+        fb.setConversationId(null);
+        fb.setRating(5);
+        fb.setSubmittedAt(null);
+        fb.setCreatedAt(LocalDateTime.of(2026, 1, 4, 8, 0));
+
+        when(customerProfileRepository.findByIdAndTenantId(1L, 1L))
+            .thenReturn(Optional.of(profile(1L, "fb-1")));
+        when(conversationRepository.findByExternalUserIdAndTenantIdOrderByCreatedAtAsc("fb-1", 1L))
+            .thenReturn(List.of());
+        when(feedbackRepository.findByCustomerProfileIdAndTenantId(1L, 1L)).thenReturn(List.of(fb));
+
+        List<CustomerJourneyService.JourneyEvent> events = service.getJourney(1L, 1L);
+        CustomerJourneyService.JourneyEvent feedbackEvent = events.stream()
+            .filter(e -> e.type() == CustomerJourneyService.JourneyEventType.FEEDBACK_RECEIVED)
+            .findFirst().orElseThrow();
+        assertEquals(LocalDateTime.of(2026, 1, 4, 8, 0), feedbackEvent.timestamp());
+    }
 }
