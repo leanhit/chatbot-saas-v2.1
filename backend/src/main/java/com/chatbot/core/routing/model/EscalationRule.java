@@ -1,7 +1,8 @@
 package com.chatbot.core.routing.model;
 
-import com.chatbot.core.routing.converter.JsonMapConverter;
 import com.chatbot.core.tenant.infra.BaseTenantEntity;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -48,8 +49,8 @@ public class EscalationRule extends BaseTenantEntity {
     @Column(name = "time_threshold_minutes")
     private Integer timeThresholdMinutes;
 
-    @Convert(converter = JsonMapConverter.class)
-    @Column(name = "conditions", columnDefinition = "json")
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "conditions", columnDefinition = "jsonb")
     private Map<String, Object> conditions;
 
     @Enumerated(EnumType.STRING)

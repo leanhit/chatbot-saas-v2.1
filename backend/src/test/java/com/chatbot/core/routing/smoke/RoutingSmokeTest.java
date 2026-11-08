@@ -1,18 +1,15 @@
 package com.chatbot.core.routing.smoke;
 
+import com.chatbot.config.AbstractTestcontainersIntegrationTest;
 import com.chatbot.core.routing.dto.RoutingAssignmentResult;
 import com.chatbot.core.routing.model.AgentWorkload;
 import com.chatbot.core.routing.model.RoutingRule;
 import com.chatbot.core.routing.repository.AgentWorkloadRepository;
 import com.chatbot.core.routing.repository.IntelligentRoutingRuleRepository;
 import com.chatbot.core.routing.service.IntelligentRoutingService;
-import com.chatbot.core.routing.test.RoutingTestConfiguration;
 import com.chatbot.core.tenant.infra.TenantContext;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.context.annotation.Import;
 
 import java.util.HashMap;
 import java.util.List;
@@ -20,10 +17,7 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@SpringBootTest
-@ActiveProfiles("test")
-@Import(RoutingTestConfiguration.class)
-class RoutingSmokeTest {
+class RoutingSmokeTest extends AbstractTestcontainersIntegrationTest {
 
     @Autowired
     private IntelligentRoutingService routingService;
@@ -297,6 +291,14 @@ class RoutingSmokeTest {
         defaultRule.setTenantId(TEST_TENANT_ID);
 
         routingRuleRepository.save(defaultRule);
+
+        AgentWorkload targetAgent = new AgentWorkload();
+        targetAgent.setAgentId(10L);
+        targetAgent.setTenantId(TEST_TENANT_ID);
+        targetAgent.setStatus(AgentWorkload.AgentStatus.AVAILABLE);
+        targetAgent.setActiveConversations(0);
+        targetAgent.setMaxConcurrentConversations(10);
+        agentWorkloadRepository.save(targetAgent);
 
         Map<String, Object> context = new HashMap<>();
         context.put("conversationId", TEST_CONVERSATION_ID);

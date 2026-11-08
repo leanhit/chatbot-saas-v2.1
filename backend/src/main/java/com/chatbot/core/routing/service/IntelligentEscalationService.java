@@ -9,6 +9,7 @@ import com.chatbot.core.routing.model.EscalationHistory;
 import com.chatbot.core.routing.model.EscalationRule;
 import com.chatbot.core.routing.repository.EscalationHistoryRepository;
 import com.chatbot.core.routing.repository.IntelligentEscalationRuleRepository;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -28,6 +29,7 @@ public class IntelligentEscalationService {
     private final EscalationHistoryRepository escalationHistoryRepository;
     private final ConversationRepository conversationRepository;
     private final NotificationWebSocketHandler notificationWebSocketHandler;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Transactional
     public EscalationRuleDTO createEscalationRule(CreateEscalationRuleRequest request) {
@@ -428,7 +430,7 @@ public class IntelligentEscalationService {
                     .supervisorNotified(supervisorNotified)
                     .escalated(true)
                     .reason("Escalation rule matched: " + rule.getName())
-                    .metadata(context.getCustomData() != null ? context.getCustomData().toString() : null)
+                    .metadata(toJson(context.getCustomData()))
                     .build();
 
             escalationHistoryRepository.save(history);
@@ -456,5 +458,17 @@ public class IntelligentEscalationService {
                         .reason(history.getReason())
                         .build())
                 .collect(Collectors.toList());
+    }
+
+    private String toJson(Map<String, Object> data) {
+        if (data == null || data.isEmpty()) {
+            return null;
+        }
+        try {
+            return objectMapper.writeValueAsString(data);
+        } catch (Exception e) {
+            log.warn("Failed to serialize escalation metadata: {}", e.getMessage());
+            return null;
+        }
     }
 }

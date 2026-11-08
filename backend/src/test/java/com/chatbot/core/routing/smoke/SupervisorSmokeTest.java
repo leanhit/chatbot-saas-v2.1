@@ -1,23 +1,17 @@
 package com.chatbot.core.routing.smoke;
 
+import com.chatbot.config.AbstractTestcontainersIntegrationTest;
 import com.chatbot.core.routing.dto.SupervisorSessionDTO;
 import com.chatbot.core.routing.model.SupervisorSession;
 import com.chatbot.core.routing.repository.SupervisorSessionRepository;
 import com.chatbot.core.routing.service.SupervisorSessionService;
-import com.chatbot.core.routing.test.RoutingTestConfiguration;
 import com.chatbot.core.tenant.infra.TenantContext;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.context.annotation.Import;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@SpringBootTest
-@ActiveProfiles("test")
-@Import(RoutingTestConfiguration.class)
-class SupervisorSmokeTest {
+class SupervisorSmokeTest extends AbstractTestcontainersIntegrationTest {
 
     @Autowired
     private SupervisorSessionService supervisorSessionService;

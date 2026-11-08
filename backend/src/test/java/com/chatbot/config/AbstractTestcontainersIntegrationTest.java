@@ -49,6 +49,7 @@ public abstract class AbstractTestcontainersIntegrationTest {
         registry.add("spring.data.redis.host", REDIS::getHost);
         registry.add("spring.data.redis.port", () -> REDIS.getMappedPort(6379));
         String jdbcUrl = POSTGRES.getJdbcUrl();
+        String sep = jdbcUrl.contains("?") ? "&" : "?";
         String username = POSTGRES.getUsername();
         String password = POSTGRES.getPassword();
         String driver = POSTGRES.getDriverClassName();
@@ -59,57 +60,57 @@ public abstract class AbstractTestcontainersIntegrationTest {
         registry.add("spring.datasource.driver-class-name", () -> driver);
         registry.add("spring.jpa.properties.hibernate.dialect", () -> "org.hibernate.dialect.PostgreSQLDialect");
 
-        registry.add("app.datasource.identity.jdbc-url", () -> jdbcUrl + "?currentSchema=identity_db");
+        registry.add("app.datasource.identity.jdbc-url", () -> jdbcUrl + sep + "currentSchema=identity_db,public");
         registry.add("app.datasource.identity.username", () -> username);
         registry.add("app.datasource.identity.password", () -> password);
         registry.add("app.datasource.identity.driver-class-name", () -> driver);
 
-        registry.add("app.datasource.user.jdbc-url", () -> jdbcUrl + "?currentSchema=user_db");
+        registry.add("app.datasource.user.jdbc-url", () -> jdbcUrl + sep + "currentSchema=user_db,public");
         registry.add("app.datasource.user.username", () -> username);
         registry.add("app.datasource.user.password", () -> password);
         registry.add("app.datasource.user.driver-class-name", () -> driver);
 
-        registry.add("app.datasource.tenant.jdbc-url", () -> jdbcUrl + "?currentSchema=tenant_db");
+        registry.add("app.datasource.tenant.jdbc-url", () -> jdbcUrl + sep + "currentSchema=tenant_db,public");
         registry.add("app.datasource.tenant.username", () -> username);
         registry.add("app.datasource.tenant.password", () -> password);
         registry.add("app.datasource.tenant.driver-class-name", () -> driver);
 
-        registry.add("app.datasource.app.jdbc-url", () -> jdbcUrl + "?currentSchema=app_db");
+        registry.add("app.datasource.app.jdbc-url", () -> jdbcUrl + sep + "currentSchema=app_db,public");
         registry.add("app.datasource.app.username", () -> username);
         registry.add("app.datasource.app.password", () -> password);
         registry.add("app.datasource.app.driver-class-name", () -> driver);
 
-        registry.add("app.datasource.billing.jdbc-url", () -> jdbcUrl + "?currentSchema=billing_db");
+        registry.add("app.datasource.billing.jdbc-url", () -> jdbcUrl + sep + "currentSchema=billing_db,public");
         registry.add("app.datasource.billing.username", () -> username);
         registry.add("app.datasource.billing.password", () -> password);
         registry.add("app.datasource.billing.driver-class-name", () -> driver);
 
-        registry.add("app.datasource.wallet.jdbc-url", () -> jdbcUrl + "?currentSchema=wallet_db");
+        registry.add("app.datasource.wallet.jdbc-url", () -> jdbcUrl + sep + "currentSchema=wallet_db,public");
         registry.add("app.datasource.wallet.username", () -> username);
         registry.add("app.datasource.wallet.password", () -> password);
         registry.add("app.datasource.wallet.driver-class-name", () -> driver);
 
-        registry.add("app.datasource.config.jdbc-url", () -> jdbcUrl + "?currentSchema=config_db");
+        registry.add("app.datasource.config.jdbc-url", () -> jdbcUrl + sep + "currentSchema=config_db,public");
         registry.add("app.datasource.config.username", () -> username);
         registry.add("app.datasource.config.password", () -> password);
         registry.add("app.datasource.config.driver-class-name", () -> driver);
 
-        registry.add("app.datasource.message.jdbc-url", () -> jdbcUrl + "?currentSchema=message_db");
+        registry.add("app.datasource.message.jdbc-url", () -> jdbcUrl + sep + "currentSchema=message_db,public");
         registry.add("app.datasource.message.username", () -> username);
         registry.add("app.datasource.message.password", () -> password);
         registry.add("app.datasource.message.driver-class-name", () -> driver);
 
-        registry.add("app.datasource.shared.jdbc-url", () -> jdbcUrl + "?currentSchema=shared_db");
+        registry.add("app.datasource.shared.jdbc-url", () -> jdbcUrl + sep + "currentSchema=shared_db,public");
         registry.add("app.datasource.shared.username", () -> username);
         registry.add("app.datasource.shared.password", () -> password);
         registry.add("app.datasource.shared.driver-class-name", () -> driver);
 
-        registry.add("app.datasource.spokes.jdbc-url", () -> jdbcUrl + "?currentSchema=spokes_db");
+        registry.add("app.datasource.spokes.jdbc-url", () -> jdbcUrl + sep + "currentSchema=spokes_db,public");
         registry.add("app.datasource.spokes.username", () -> username);
         registry.add("app.datasource.spokes.password", () -> password);
         registry.add("app.datasource.spokes.driver-class-name", () -> driver);
 
-        registry.add("payment.datasource.jdbc-url", () -> jdbcUrl + "?currentSchema=user_db");
+        registry.add("payment.datasource.jdbc-url", () -> jdbcUrl + sep + "currentSchema=user_db,public");
         registry.add("payment.datasource.username", () -> username);
         registry.add("payment.datasource.password", () -> password);
         registry.add("payment.datasource.driver-class-name", () -> driver);

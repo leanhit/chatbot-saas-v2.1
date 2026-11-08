@@ -1,18 +1,15 @@
 package com.chatbot.core.routing.controller;
 
 import com.chatbot.core.routing.dto.*;
-import com.chatbot.core.routing.model.RoutingRule;
+import com.chatbot.core.routing.model.*;
 import com.chatbot.core.routing.service.IntelligentRoutingService;
-import com.chatbot.core.routing.test.RoutingTestConfiguration;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.*;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 import org.springframework.http.MediaType;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.context.annotation.Import;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.util.*;
 
@@ -21,19 +18,23 @@ import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebMvcTest(IntelligentRoutingController.class)
-@ActiveProfiles("test")
-@Import(RoutingTestConfiguration.class)
 class RoutingControllerIntegrationTest {
 
-    @Autowired
     private MockMvc mockMvc;
-
-    @Autowired
     private ObjectMapper objectMapper;
 
-    @MockBean
+    @Mock
     private IntelligentRoutingService routingService;
+
+    @BeforeEach
+    void setUp() {
+        MockitoAnnotations.openMocks(this);
+        objectMapper = new ObjectMapper();
+        IntelligentRoutingController controller = new IntelligentRoutingController(routingService);
+        mockMvc = MockMvcBuilders.standaloneSetup(controller)
+                .setControllerAdvice(new com.chatbot.shared.exceptions.GlobalExceptionHandler())
+                .build();
+    }
 
     @Test
     void testPostCreateRoutingRule() throws Exception {

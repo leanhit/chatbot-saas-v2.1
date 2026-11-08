@@ -1,43 +1,27 @@
 package com.chatbot.core.routing.integration;
 
+import com.chatbot.config.AbstractTestcontainersIntegrationTest;
 import com.chatbot.core.routing.model.RoutingRule;
 import com.chatbot.core.routing.repository.IntelligentRoutingRuleRepository;
-import com.chatbot.core.routing.test.RoutingTestConfiguration;
 import com.chatbot.core.tenant.infra.TenantContext;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
-import org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration;
-import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
-import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
-import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.context.annotation.Import;
 
 import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@DataJpaTest
-@ActiveProfiles("test")
-@ImportAutoConfiguration(exclude = {FlywayAutoConfiguration.class})
-@Import(RoutingTestConfiguration.class)
-class RoutingRepositoryIntegrationTest {
+class RoutingRepositoryIntegrationTest extends AbstractTestcontainersIntegrationTest {
 
     @Autowired
     private IntelligentRoutingRuleRepository routingRuleRepository;
-
-    @Autowired
-    private TestEntityManager entityManager;
 
     private static final Long TEST_TENANT_ID = 1L;
 
     @BeforeEach
     void setUp() {
         routingRuleRepository.deleteAll();
-        entityManager.flush();
-        entityManager.clear();
         TenantContext.setTenantId(TEST_TENANT_ID);
     }
 
