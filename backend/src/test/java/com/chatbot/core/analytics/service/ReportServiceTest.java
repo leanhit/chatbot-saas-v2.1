@@ -172,4 +172,115 @@ class ReportServiceTest {
 
         assertTrue(service.getLatestResult(1L, 1L).isEmpty());
     }
+
+    // ---------- CRUD coverage ----------
+
+    @Test
+    void listReportsDelegatesToRepository() {
+        CustomReport r = report(1L, CustomReport.ReportType.CONVERSATIONS);
+        when(reportRepository.findByTenantIdAndIsDeletedFalse(1L)).thenReturn(List.of(r));
+
+        List<CustomReport> result = service.listReports(1L);
+
+        assertEquals(1, result.size());
+        assertEquals(1L, result.get(0).getId());
+    }
+
+    @Test
+    void createReportSetsTenantIdAndSaves() {
+        CustomReport r = report(null, CustomReport.ReportType.SENTIMENT);
+        r.setTenantId(null);
+        when(reportRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        CustomReport saved = service.createReport(r, 7L);
+
+        assertEquals(7L, saved.getTenantId());
+        verify(reportRepository).save(r);
+    }
+
+    @Test
+    void updateReportAppliesOnlyNonNullFields() {
+        CustomReport r = report(1L, CustomReport.ReportType.CONVERSATIONS);
+        r.setDescription("old desc");
+        r.setDateRangeDays(30);
+        when(reportRepository.findByIdAndTenantIdAndIsDeletedFalse(1L, 1L)).thenReturn(Optional.of(r));
+        when(reportRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        CustomReport update = new CustomReport();
+        update.setName("Renamed");
+        update.setDateRangeDays(7);
+        // description, reportType, filters left null -> must be preserved
+
+        CustomReport saved = service.updateReport(1L, update, 1L);
+
+        assertEquals("Renamed", saved.getName());
+        assertEquals(7, saved.getDateRangeDays());
+        assertEquals("old desc", saved.getDescription());
+        assertEquals(CustomReport.ReportType.CONVERSATIONS, saved.getReportType());
+    }
+
+    @Test
+    void updateReportThrowsWhenNotFoundOrOtherTenant() {
+        when(reportRepository.findByIdAndTenantIdAndIsDeletedFalse(1L, 2L)).thenReturn(Optional.empty());
+        assertThrows(IllegalArgumentException.class,
+            () -> service.updateReport(1L, new CustomReport(), 2L));
+    }
+
+    // ---------- Generation edge cases ----------
+
+    @Test
+    void generateReportThrowsWhenNotFound() {
+        when(reportRepository.findByIdAndTenantIdAndIsDeletedFalse(99L, 1L)).thenReturn(Optional.empty());
+        assertThrows(IllegalArgumentException.class, () -> service.generateReport(99L, 1L));
+    }
+
+    @Test
+    void getLatestResultThrowsForOtherTenant() {
+        when(reportRepository.findByIdAndTenantIdAndIsDeletedFalse(1L, 2L)).thenReturn(Optional.empty());
+        assertThrows(IllegalArgumentException.class, () -> service.getLatestResult(1L, 2L));
+    }
+
+    @Test
+    void getLatestResultReturnsStoredResult() {
+        CustomReport r = report(1L, CustomReport.ReportType.CONVERSATIONS);
+        r.setLastResult(Map.of("totals", Map.of("conversations", 42)));
+        when(reportRepository.findByIdAndTenantIdAndIsDeletedFalse(1L, 1L)).thenReturn(Optional.of(r));
+
+        Map<String, Object> result = service.getLatestResult(1L, 1L);
+
+        assertEquals(42, ((Map<?, ?>) result.get("totals")).get("conversations"));
+    }
+
+    @Test
+    void generateAiUsageReportReturnsZeroAcceptanceRateWhenNoSuggestions() {
+        CustomReport r = report(1L, CustomReport.ReportType.AI_USAGE);
+        AnalyticsDailySummary empty = summary(LocalDate.now());
+        empty.setAiSuggestionsCount(0);
+        empty.setAiSuggestionsAccepted(0);
+        empty.setAiSuggestionsRejected(0);
+        when(reportRepository.findByIdAndTenantIdAndIsDeletedFalse(1L, 1L)).thenReturn(Optional.of(r));
+        when(summaryRepository.findByTenantIdAndDateRange(eq(1L), any(), any()))
+            .thenReturn(List.of(empty));
+        when(reportRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        Map<String, Object> data = service.generateReport(1L, 1L);
+
+        assertEquals(0.0, (Double) data.get("acceptanceRate"), 0.001);
+    }
+
+    @Test
+    void generateReportDefaultsTo30DaysWhenDateRangeNull() {
+        CustomReport r = report(1L, CustomReport.ReportType.CONVERSATIONS);
+        r.setDateRangeDays(null);
+        when(reportRepository.findByIdAndTenantIdAndIsDeletedFalse(1L, 1L)).thenReturn(Optional.of(r));
+        when(summaryRepository.findByTenantIdAndDateRange(eq(1L), any(), any()))
+            .thenReturn(List.of());
+        when(reportRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        Map<String, Object> data = service.generateReport(1L, 1L);
+
+        LocalDate to = LocalDate.parse((String) data.get("to"));
+        LocalDate from = LocalDate.parse((String) data.get("from"));
+        assertEquals(30, java.time.temporal.ChronoUnit.DAYS.between(from, to));
+    }
 }
