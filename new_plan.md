@@ -145,7 +145,7 @@ Giai đoạn	Còn thiếu
 1 — Tenant/security foundation	✅ Đã rà soát & fix findAll() + TenantIsolationIntegrationTest (7 tests cross-module: customer/training/analytics/message store) trên PG thật
 2 — Phase 4 routing	✅ 163 tests pass (Testcontainers PG+Redis) + TenantIsolationTest; full suite 584/584 pass
 3 — Năng lực agent	✅ Hoàn thành: training→skill score, certification threshold (skills+training+stats, hỗ trợ max:), onboarding→online gate (API + WebSocket), tenant-scoped, unit tests pass
-4 — Customer experience	✅ Đã xong: profile detail/history/timeline, notes, feedback↔conversation linking, frontend bugs fixed (aa03603), satisfactionScore persist + tier recalc, segmentation/VIP; còn optional VIPConfig entity + unit tests mở rộng
+4 — Customer experience	✅ Đã xong: profile detail/history/timeline, notes, feedback↔conversation linking, frontend bugs fixed (aa03603), satisfactionScore persist + tier recalc, segmentation/VIP; ✅ VIPConfig entity xong (per-tenant thresholds + migration V8 + tests)
 
 
 ===============================================
