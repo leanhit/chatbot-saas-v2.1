@@ -28,5 +28,6 @@ public class MinioFileUploadedEvent {
     private String fileUrl;
     private UUID categoryId;
     private LocalDateTime uploadedAt;
+    @Builder.Default
     private final String eventType = "MINIO_FILE_UPLOADED";
 }

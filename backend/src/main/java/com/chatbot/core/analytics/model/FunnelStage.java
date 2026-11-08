@@ -48,6 +48,7 @@ public class FunnelStage extends BaseTenantEntity {
     private String matchValue;
 
     @Column(name = "active", nullable = false)
+    @Builder.Default
     private Boolean active = true;
 
     @Override

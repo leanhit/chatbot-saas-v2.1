@@ -51,6 +51,7 @@ public class CertificationLevel extends BaseTenantEntity {
     private Integer displayOrder;
 
     @Column(nullable = false)
+    @Builder.Default
     private Boolean active = true;
 
     @Column(name = "validity_days")

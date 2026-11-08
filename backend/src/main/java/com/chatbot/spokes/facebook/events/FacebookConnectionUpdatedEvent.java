@@ -24,5 +24,6 @@ public class FacebookConnectionUpdatedEvent {
     private boolean isActive;
     private boolean isEnabled;
     private LocalDateTime updatedAt;
+    @Builder.Default
     private final String eventType = "FACEBOOK_CONNECTION_UPDATED";
 }

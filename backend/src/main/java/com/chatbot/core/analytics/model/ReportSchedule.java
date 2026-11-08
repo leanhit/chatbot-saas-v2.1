@@ -33,6 +33,7 @@ public class ReportSchedule extends BaseTenantEntity {
     private String cronExpression;
 
     @Column(name = "enabled", nullable = false)
+    @Builder.Default
     private Boolean enabled = true;
 
     @Column(name = "next_run_at")

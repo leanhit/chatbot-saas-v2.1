@@ -24,5 +24,6 @@ public class FacebookConnectionCreatedEvent {
     private String pageId;
     private String ownerId;
     private LocalDateTime createdAt;
+    @Builder.Default
     private final String eventType = "FACEBOOK_CONNECTION_CREATED";
 }

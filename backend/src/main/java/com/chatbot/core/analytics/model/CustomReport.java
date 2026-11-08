@@ -47,6 +47,7 @@ public class CustomReport extends BaseTenantEntity {
     private ReportType reportType;
 
     @Column(name = "date_range_days", nullable = false)
+    @Builder.Default
     private Integer dateRangeDays = 30;
 
     /** Optional extra filters, e.g. {"status":"CLOSED","channel":"FACEBOOK"} */

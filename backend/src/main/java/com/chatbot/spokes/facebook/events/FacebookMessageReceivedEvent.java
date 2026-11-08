@@ -27,5 +27,6 @@ public class FacebookMessageReceivedEvent {
     private LocalDateTime timestamp;
     private UUID connectionId;
     private Long tenantId;
+    @Builder.Default
     private final String eventType = "FACEBOOK_MESSAGE_RECEIVED";
 }
