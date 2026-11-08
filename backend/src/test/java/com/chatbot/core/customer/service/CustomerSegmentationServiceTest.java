@@ -1,7 +1,9 @@
 package com.chatbot.core.customer.service;
 
 import com.chatbot.core.customer.model.CustomerProfile;
+import com.chatbot.core.customer.model.VipConfig;
 import com.chatbot.core.customer.repository.CustomerProfileRepository;
+import com.chatbot.core.customer.repository.VipConfigRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -22,6 +24,9 @@ class CustomerSegmentationServiceTest {
 
     @Mock
     private CustomerProfileRepository customerProfileRepository;
+
+    @Mock
+    private VipConfigRepository vipConfigRepository;
 
     @InjectMocks
     private CustomerSegmentationService service;
@@ -105,5 +110,73 @@ class CustomerSegmentationServiceTest {
         when(customerProfileRepository.findById(1L)).thenReturn(Optional.of(p));
 
         assertThrows(SecurityException.class, () -> service.recalculateTier(1L, 1L, false));
+    }
+
+    // ---------- VipConfig thresholds ----------
+
+    @Test
+    void customConfigLowersPremiumThreshold() {
+        VipConfig config = VipConfig.builder()
+            .basicMinConversations(2)
+            .premiumMinConversations(5)
+            .premiumMinSatisfaction(3.0)
+            .enterpriseMinConversations(20)
+            .build();
+
+        CustomerProfile p = profile(1L, 1L, 6, 3.5, CustomerProfile.CustomerTier.FREE);
+        // 6 conv >= premiumMin 5, satisfaction 3.5 >= 3.0 -> PREMIUM (defaults would give BASIC)
+        assertEquals(CustomerProfile.CustomerTier.PREMIUM, service.computeTier(p, config));
+    }
+
+    @Test
+    void customConfigRaisesEnterpriseThreshold() {
+        VipConfig config = VipConfig.builder()
+            .enterpriseMinConversations(100)
+            .build();
+
+        CustomerProfile p = profile(1L, 1L, 60, null, CustomerProfile.CustomerTier.FREE);
+        // 60 conv: default -> ENTERPRISE, custom -> BASIC
+        assertEquals(CustomerProfile.CustomerTier.BASIC, service.computeTier(p, config));
+    }
+
+    @Test
+    void nullConfigFieldsFallBackToDefaults() {
+        VipConfig config = VipConfig.builder().build();
+        config.setPremiumMinConversations(null);
+        config.setEnterpriseMinConversations(null);
+        config.setBasicMinConversations(null);
+        config.setPremiumMinSatisfaction(null);
+
+        CustomerProfile p = profile(1L, 1L, 50, null, CustomerProfile.CustomerTier.FREE);
+        assertEquals(CustomerProfile.CustomerTier.ENTERPRISE, service.computeTier(p, config));
+    }
+
+    @Test
+    void recalculateTierUsesTenantVipConfig() {
+        VipConfig config = VipConfig.builder()
+            .basicMinConversations(100)
+            .premiumMinConversations(200)
+            .enterpriseMinConversations(300)
+            .build();
+        CustomerProfile p = profile(1L, 1L, 60, 5.0, CustomerProfile.CustomerTier.FREE);
+        when(customerProfileRepository.findById(1L)).thenReturn(Optional.of(p));
+        when(vipConfigRepository.findByTenantIdAndIsDeletedFalse(1L)).thenReturn(Optional.of(config));
+
+        CustomerProfile result = service.recalculateTier(1L, 1L, true);
+
+        // 60 conv with custom thresholds (basic=100) -> FREE, not ENTERPRISE
+        assertEquals(CustomerProfile.CustomerTier.FREE, result.getTier());
+    }
+
+    @Test
+    void recalculateTierFallsBackWhenNoVipConfig() {
+        CustomerProfile p = profile(1L, 1L, 60, 5.0, CustomerProfile.CustomerTier.FREE);
+        when(customerProfileRepository.findById(1L)).thenReturn(Optional.of(p));
+        when(vipConfigRepository.findByTenantIdAndIsDeletedFalse(1L)).thenReturn(Optional.empty());
+        when(customerProfileRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        CustomerProfile result = service.recalculateTier(1L, 1L, true);
+
+        assertEquals(CustomerProfile.CustomerTier.ENTERPRISE, result.getTier());
     }
 }

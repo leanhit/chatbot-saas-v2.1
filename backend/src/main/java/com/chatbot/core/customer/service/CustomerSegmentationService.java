@@ -1,7 +1,9 @@
 package com.chatbot.core.customer.service;
 
 import com.chatbot.core.customer.model.CustomerProfile;
+import com.chatbot.core.customer.model.VipConfig;
 import com.chatbot.core.customer.repository.CustomerProfileRepository;
+import com.chatbot.core.customer.repository.VipConfigRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -32,25 +34,53 @@ public class CustomerSegmentationService {
     private static final int ENTERPRISE_MIN_CONVERSATIONS = 50;
 
     private final CustomerProfileRepository customerProfileRepository;
+    private final VipConfigRepository vipConfigRepository;
 
     /**
-     * Compute the tier from profile stats.
+     * Compute the tier from profile stats using built-in default thresholds.
      */
     public CustomerProfile.CustomerTier computeTier(CustomerProfile profile) {
+        return computeTier(profile, null);
+    }
+
+    /**
+     * Compute the tier from profile stats using tenant-specific thresholds
+     * when a VipConfig is provided; falls back to defaults for null fields.
+     */
+    public CustomerProfile.CustomerTier computeTier(CustomerProfile profile, VipConfig config) {
         int conversations = profile.getTotalConversations() != null ? profile.getTotalConversations() : 0;
         Double satisfaction = profile.getSatisfactionScore();
 
-        if (conversations >= ENTERPRISE_MIN_CONVERSATIONS) {
+        int basicMin = valueOrDefault(config != null ? config.getBasicMinConversations() : null, BASIC_MIN_CONVERSATIONS);
+        int premiumMin = valueOrDefault(config != null ? config.getPremiumMinConversations() : null, PREMIUM_MIN_CONVERSATIONS);
+        double premiumSat = config != null && config.getPremiumMinSatisfaction() != null
+            ? config.getPremiumMinSatisfaction() : PREMIUM_MIN_SATISFACTION;
+        int enterpriseMin = valueOrDefault(config != null ? config.getEnterpriseMinConversations() : null, ENTERPRISE_MIN_CONVERSATIONS);
+
+        if (conversations >= enterpriseMin) {
             return CustomerProfile.CustomerTier.ENTERPRISE;
         }
-        if (conversations >= PREMIUM_MIN_CONVERSATIONS
-                && satisfaction != null && satisfaction >= PREMIUM_MIN_SATISFACTION) {
+        if (conversations >= premiumMin
+                && satisfaction != null && satisfaction >= premiumSat) {
             return CustomerProfile.CustomerTier.PREMIUM;
         }
-        if (conversations >= BASIC_MIN_CONVERSATIONS) {
+        if (conversations >= basicMin) {
             return CustomerProfile.CustomerTier.BASIC;
         }
         return CustomerProfile.CustomerTier.FREE;
+    }
+
+    private int valueOrDefault(Integer value, int defaultValue) {
+        return value != null ? value : defaultValue;
+    }
+
+    private VipConfig loadConfig(Long tenantId) {
+        try {
+            return vipConfigRepository.findByTenantIdAndIsDeletedFalse(tenantId).orElse(null);
+        } catch (Exception e) {
+            log.warn("[Segmentation] Failed to load VipConfig for tenant {}: {}", tenantId, e.getMessage());
+            return null;
+        }
     }
 
     /**
@@ -66,7 +96,8 @@ public class CustomerSegmentationService {
             throw new SecurityException("Customer profile belongs to another tenant");
         }
 
-        CustomerProfile.CustomerTier computed = computeTier(profile);
+        VipConfig config = loadConfig(tenantId);
+        CustomerProfile.CustomerTier computed = computeTier(profile, config);
         CustomerProfile.CustomerTier current = profile.getTier() != null
             ? profile.getTier() : CustomerProfile.CustomerTier.FREE;
 
@@ -90,9 +121,10 @@ public class CustomerSegmentationService {
     @Transactional(value = "appTransactionManager", rollbackFor = Exception.class)
     public int recalculateAllForTenant(Long tenantId, boolean force) {
         List<CustomerProfile> profiles = customerProfileRepository.findByTenantId(tenantId);
+        VipConfig config = loadConfig(tenantId);
         int changed = 0;
         for (CustomerProfile profile : profiles) {
-            CustomerProfile.CustomerTier computed = computeTier(profile);
+            CustomerProfile.CustomerTier computed = computeTier(profile, config);
             CustomerProfile.CustomerTier current = profile.getTier() != null
                 ? profile.getTier() : CustomerProfile.CustomerTier.FREE;
             if (force || tierRank(computed) > tierRank(current)) {
