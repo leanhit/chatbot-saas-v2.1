@@ -142,11 +142,12 @@ public class PennyConfig {
     @ConditionalOnMissingBean
     public BotRuleManager botRuleManager(BotRuleRepository botRuleRepository,
                                         ResponseTemplateRepository responseTemplateRepository,
+                                        com.chatbot.core.penny.rules.BotWebhookDeadLetterRepository deadLetterRepository,
                                         com.fasterxml.jackson.databind.ObjectMapper objectMapper,
                                         org.springframework.web.reactive.function.client.WebClient webClient) {
         log.info("📐 Initializing Bot Rule Manager...");
         
-        BotRuleManager botRuleManager = new BotRuleManager(botRuleRepository, responseTemplateRepository, objectMapper, webClient);
+        BotRuleManager botRuleManager = new BotRuleManager(botRuleRepository, responseTemplateRepository, deadLetterRepository, objectMapper, webClient);
         
         log.info("✅ Bot Rule Manager initialized successfully");
         return botRuleManager;

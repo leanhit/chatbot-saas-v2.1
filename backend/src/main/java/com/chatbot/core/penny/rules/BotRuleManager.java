@@ -16,6 +16,7 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 import reactor.core.publisher.Mono;
 
 import java.time.Duration;
@@ -33,16 +34,23 @@ public class BotRuleManager {
 
     private final BotRuleRepository botRuleRepository;
     private final ResponseTemplateRepository responseTemplateRepository;
+    private final BotWebhookDeadLetterRepository deadLetterRepository;
     private final ObjectMapper objectMapper;
     private final WebClient webClient;
     private final ExpressionParser spelParser = new SpelExpressionParser();
 
+    private static final int DEFAULT_MAX_ATTEMPTS = 3;
+    private static final long DEFAULT_RETRY_DELAY_MS = 500;
+    private static final long MAX_RETRY_DELAY_MS = 10_000;
+
     public BotRuleManager(BotRuleRepository botRuleRepository,
                          ResponseTemplateRepository responseTemplateRepository,
+                         BotWebhookDeadLetterRepository deadLetterRepository,
                          ObjectMapper objectMapper,
                          WebClient webClient) {
         this.botRuleRepository = botRuleRepository;
         this.responseTemplateRepository = responseTemplateRepository;
+        this.deadLetterRepository = deadLetterRepository;
         this.objectMapper = objectMapper;
         this.webClient = webClient;
     }
@@ -300,46 +308,142 @@ public class BotRuleManager {
             }
 
             log.info("🌐 Calling webhook: {} for rule: {}", webhookUrl, rule.getId());
-            
+
             // Extract optional bearer token
             String bearerToken = (String) actionData.get("bearerToken");
-            
-            @SuppressWarnings("unchecked")
-            Map<String, Object> webhookResponse = webClient.post()
-                .uri(webhookUrl)
-                .headers(h -> {
-                    h.setContentType(MediaType.APPLICATION_JSON);
-                    if (bearerToken != null && !bearerToken.isBlank()) {
-                        h.setBearerAuth(bearerToken);
-                    }
-                })
-                .bodyValue(payload)
-                .retrieve()
-                .bodyToMono(Map.class)
-                .timeout(Duration.ofSeconds(10)) // Add timeout to prevent indefinite blocking
-                .doOnError(e -> log.error("❌ Webhook timeout or error for rule {}: {}", rule.getId(), e.getMessage()))
-                .onErrorResume(e -> Mono.empty()) // Return empty (null after block) on error instead of throwing
-                .block(); // Note: This is blocking; should be refactored to fully reactive in future
 
-            // Extract response text from webhook response
-            if (webhookResponse != null) {
-                Object responseText = webhookResponse.get("message");
-                if (responseText == null) responseText = webhookResponse.get("text");
-                if (responseText == null) responseText = webhookResponse.get("response");
-                if (responseText != null) {
-                    log.info("✅ Webhook responded successfully for rule: {}", rule.getId());
-                    return responseText.toString();
+            int maxAttempts = getIntConfig(actionData, "maxAttempts", DEFAULT_MAX_ATTEMPTS);
+            long baseDelayMs = getLongConfig(actionData, "retryDelayMs", DEFAULT_RETRY_DELAY_MS);
+
+            Map<String, Object> webhookResponse = null;
+            Exception lastError = null;
+            int attemptsMade = 0;
+
+            for (int attempt = 1; attempt <= maxAttempts; attempt++) {
+                attemptsMade = attempt;
+                try {
+                    webhookResponse = callWebhook(webhookUrl, bearerToken, payload);
+                    lastError = null;
+                    break;
+                } catch (Exception e) {
+                    lastError = e;
+                    boolean retryable = isRetryableWebhookError(e);
+                    log.warn("⚠️ Webhook attempt {}/{} failed for rule {} (retryable={}): {}",
+                            attempt, maxAttempts, rule.getId(), retryable, e.getMessage());
+                    if (!retryable || attempt == maxAttempts) {
+                        break;
+                    }
+                    long delayMs = Math.min(baseDelayMs * (1L << (attempt - 1)), MAX_RETRY_DELAY_MS);
+                    try {
+                        Thread.sleep(delayMs);
+                    } catch (InterruptedException ie) {
+                        Thread.currentThread().interrupt();
+                        break;
+                    }
                 }
             }
 
-            return (String) actionData.getOrDefault("defaultResponse",
-                "Yêu cầu đã được gửi thành công.");
+            if (lastError == null) {
+                // Extract response text from webhook response
+                if (webhookResponse != null) {
+                    Object responseText = webhookResponse.get("message");
+                    if (responseText == null) responseText = webhookResponse.get("text");
+                    if (responseText == null) responseText = webhookResponse.get("response");
+                    if (responseText != null) {
+                        log.info("✅ Webhook responded successfully for rule: {}", rule.getId());
+                        return responseText.toString();
+                    }
+                }
+                return (String) actionData.getOrDefault("defaultResponse",
+                    "Yêu cầu đã được gửi thành công.");
+            }
+
+            // All attempts failed — move to dead letter queue
+            saveToDeadLetter(rule, webhookUrl, payload, attemptsMade, lastError);
+            return (String) actionData.getOrDefault("errorResponse",
+                "Rất tiếc, có lỗi xảy ra khi xử lý yêu cầu. Vui lòng thử lại sau.");
 
         } catch (Exception e) {
             log.error("❌ Webhook call failed for rule {}: {}", rule.getId(), e.getMessage());
             return (String) actionData.getOrDefault("errorResponse",
                 "Rất tiếc, có lỗi xảy ra khi xử lý yêu cầu. Vui lòng thử lại sau.");
         }
+    }
+
+    /**
+     * Perform a single webhook HTTP call. Throws on transport/HTTP errors.
+     */
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> callWebhook(String webhookUrl, String bearerToken,
+                                            Map<String, Object> payload) {
+        return webClient.post()
+            .uri(webhookUrl)
+            .headers(h -> {
+                h.setContentType(MediaType.APPLICATION_JSON);
+                if (bearerToken != null && !bearerToken.isBlank()) {
+                    h.setBearerAuth(bearerToken);
+                }
+            })
+            .bodyValue(payload)
+            .retrieve()
+            .bodyToMono(Map.class)
+            .timeout(Duration.ofSeconds(10)) // Add timeout to prevent indefinite blocking
+            .block(); // Note: This is blocking; should be refactored to fully reactive in future
+    }
+
+    /**
+     * Retry on transient errors (timeouts, connection issues, 5xx).
+     * Do NOT retry on 4xx client errors — the request itself is invalid.
+     */
+    private boolean isRetryableWebhookError(Exception e) {
+        Throwable t = e;
+        while (t != null) {
+            if (t instanceof WebClientResponseException wce) {
+                return wce.getStatusCode().is5xxServerError();
+            }
+            t = t.getCause();
+        }
+        return true;
+    }
+
+    private void saveToDeadLetter(BotRule rule, String webhookUrl,
+                                  Map<String, Object> payload, int attempts, Exception error) {
+        try {
+            deadLetterRepository.save(BotWebhookDeadLetter.builder()
+                .ruleId(rule.getId())
+                .botId(rule.getBotId())
+                .ruleName(rule.getName())
+                .webhookUrl(webhookUrl)
+                .payload(toJson(payload))
+                .attempts(attempts)
+                .lastError(error.getMessage() != null ? error.getMessage() : error.getClass().getName())
+                .status("PENDING")
+                .build());
+            log.error("☠️ Webhook moved to dead letter queue. Rule: {}, URL: {}, attempts: {}",
+                    rule.getId(), webhookUrl, attempts);
+        } catch (Exception dlqError) {
+            log.error("❌ Failed to save webhook dead letter for rule {}: {}", rule.getId(), dlqError.getMessage());
+        }
+    }
+
+    private String toJson(Object data) {
+        try {
+            return objectMapper.writeValueAsString(data);
+        } catch (JsonProcessingException e) {
+            return String.valueOf(data);
+        }
+    }
+
+    private int getIntConfig(Map<String, Object> config, String key, int defaultValue) {
+        Object value = config.get(key);
+        if (value instanceof Number n) return n.intValue();
+        return defaultValue;
+    }
+
+    private long getLongConfig(Map<String, Object> config, String key, long defaultValue) {
+        Object value = config.get(key);
+        if (value instanceof Number n) return n.longValue();
+        return defaultValue;
     }
 
     /**

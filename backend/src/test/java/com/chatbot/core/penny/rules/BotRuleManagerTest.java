@@ -35,6 +35,9 @@ class BotRuleManagerTest {
     @Mock
     private WebClient webClient;
 
+    @Mock
+    private BotWebhookDeadLetterRepository deadLetterRepository;
+
     private ObjectMapper objectMapper;
     private BotRuleManager botRuleManager;
 
@@ -44,7 +47,7 @@ class BotRuleManagerTest {
     void setUp() {
         objectMapper = new ObjectMapper();
         botRuleManager = new BotRuleManager(
-            botRuleRepository, responseTemplateRepository, objectMapper, webClient);
+            botRuleRepository, responseTemplateRepository, deadLetterRepository, objectMapper, webClient);
 
         context = ConversationContext.builder()
             .contextId("ctx-1")
@@ -340,6 +343,169 @@ class BotRuleManagerTest {
             assertTrue(result.isMatched());
             // Should get the default missing-URL message
             assertTrue(result.getResponse().contains("webhook") || result.getResponse().contains("ghi nhận"));
+        }
+
+        @Test
+        @DisplayName("should retry webhook and succeed on second attempt")
+        void shouldRetryAndSucceedOnSecondAttempt() {
+            // Given
+            UUID botId = UUID.randomUUID();
+            String webhookUrl = "https://example.com/webhook-flaky";
+            BotRule rule = BotRule.builder()
+                .id(UUID.randomUUID())
+                .botId(botId)
+                .name("Flaky Webhook Rule")
+                .triggerType(BotRule.TriggerType.INTENT)
+                .triggerValue("order_inquiry")
+                .ruleType(BotRule.RuleType.WEBHOOK)
+                .action("{\"url\": \"" + webhookUrl + "\", \"maxAttempts\": 3, \"retryDelayMs\": 1}")
+                .condition("{}")
+                .isActive(true)
+                .priority(1)
+                .executionCount(0L)
+                .createdBy("admin")
+                .build();
+
+            when(botRuleRepository.findByBotIdAndIsActiveTrueOrderByPriorityDesc(botId))
+                .thenReturn(List.of(rule));
+
+            WebClient.RequestBodyUriSpec bodyUriSpec = mock(WebClient.RequestBodyUriSpec.class);
+            WebClient.RequestBodySpec bodySpec = mock(WebClient.RequestBodySpec.class);
+            WebClient.RequestBodySpec bodySpecAfterHeaders = mock(WebClient.RequestBodySpec.class);
+            WebClient.RequestHeadersSpec headersSpec = mock(WebClient.RequestHeadersSpec.class);
+            WebClient.ResponseSpec responseSpec = mock(WebClient.ResponseSpec.class);
+
+            Map<String, Object> webhookResponse = new HashMap<>();
+            webhookResponse.put("message", "Recovered after retry");
+
+            when(webClient.post()).thenReturn(bodyUriSpec);
+            when(bodyUriSpec.uri(webhookUrl)).thenReturn(bodySpec);
+            doReturn(bodySpecAfterHeaders).when(bodySpec).headers(any());
+            doReturn(headersSpec).when(bodySpecAfterHeaders).bodyValue(any());
+            when(headersSpec.retrieve()).thenReturn(responseSpec);
+            // First attempt fails, second succeeds
+            when(responseSpec.bodyToMono(Map.class))
+                .thenReturn(reactor.core.publisher.Mono.error(new RuntimeException("Connection timeout")))
+                .thenReturn(reactor.core.publisher.Mono.just(webhookResponse));
+
+            // When
+            BotRuleManager.RuleEvaluationResult result = botRuleManager.evaluateRules(
+                botId, "order_inquiry", "Kiểm tra đơn hàng", context);
+
+            // Then
+            assertNotNull(result);
+            assertTrue(result.isMatched());
+            assertEquals("Recovered after retry", result.getResponse());
+            verify(webClient, times(2)).post();
+            verify(deadLetterRepository, never()).save(any());
+        }
+
+        @Test
+        @DisplayName("should move webhook to dead letter queue after max retries")
+        void shouldMoveToDeadLetterAfterMaxRetries() {
+            // Given
+            UUID botId = UUID.randomUUID();
+            String webhookUrl = "https://example.com/webhook-down";
+            BotRule rule = BotRule.builder()
+                .id(UUID.randomUUID())
+                .botId(botId)
+                .name("Dead Webhook Rule")
+                .triggerType(BotRule.TriggerType.INTENT)
+                .triggerValue("order_inquiry")
+                .ruleType(BotRule.RuleType.WEBHOOK)
+                .action("{\"url\": \"" + webhookUrl + "\", \"maxAttempts\": 2, \"retryDelayMs\": 1, \"errorResponse\": \"Dịch vụ tạm lỗi.\"}")
+                .condition("{}")
+                .isActive(true)
+                .priority(1)
+                .executionCount(0L)
+                .createdBy("admin")
+                .build();
+
+            when(botRuleRepository.findByBotIdAndIsActiveTrueOrderByPriorityDesc(botId))
+                .thenReturn(List.of(rule));
+
+            WebClient.RequestBodyUriSpec bodyUriSpec = mock(WebClient.RequestBodyUriSpec.class);
+            WebClient.RequestBodySpec bodySpec = mock(WebClient.RequestBodySpec.class);
+            WebClient.RequestBodySpec bodySpecAfterHeaders = mock(WebClient.RequestBodySpec.class);
+            WebClient.RequestHeadersSpec headersSpec = mock(WebClient.RequestHeadersSpec.class);
+            WebClient.ResponseSpec responseSpec = mock(WebClient.ResponseSpec.class);
+
+            when(webClient.post()).thenReturn(bodyUriSpec);
+            when(bodyUriSpec.uri(webhookUrl)).thenReturn(bodySpec);
+            doReturn(bodySpecAfterHeaders).when(bodySpec).headers(any());
+            doReturn(headersSpec).when(bodySpecAfterHeaders).bodyValue(any());
+            when(headersSpec.retrieve()).thenReturn(responseSpec);
+            when(responseSpec.bodyToMono(Map.class))
+                .thenReturn(reactor.core.publisher.Mono.error(new RuntimeException("Connection refused")));
+
+            // When
+            BotRuleManager.RuleEvaluationResult result = botRuleManager.evaluateRules(
+                botId, "order_inquiry", "Kiểm tra đơn hàng", context);
+
+            // Then
+            assertNotNull(result);
+            assertTrue(result.isMatched());
+            assertEquals("Dịch vụ tạm lỗi.", result.getResponse());
+            verify(webClient, times(2)).post();
+            verify(deadLetterRepository).save(argThat(dl ->
+                dl.getRuleId().equals(rule.getId())
+                    && dl.getBotId().equals(botId)
+                    && dl.getWebhookUrl().equals(webhookUrl)
+                    && dl.getAttempts() == 2
+                    && "PENDING".equals(dl.getStatus())));
+        }
+
+        @Test
+        @DisplayName("should not retry webhook on 4xx client error")
+        void shouldNotRetryOnClientError() {
+            // Given
+            UUID botId = UUID.randomUUID();
+            String webhookUrl = "https://example.com/webhook-bad-request";
+            BotRule rule = BotRule.builder()
+                .id(UUID.randomUUID())
+                .botId(botId)
+                .name("Bad Request Webhook Rule")
+                .triggerType(BotRule.TriggerType.INTENT)
+                .triggerValue("order_inquiry")
+                .ruleType(BotRule.RuleType.WEBHOOK)
+                .action("{\"url\": \"" + webhookUrl + "\", \"maxAttempts\": 3, \"retryDelayMs\": 1, \"errorResponse\": \"Lỗi yêu cầu.\"}")
+                .condition("{}")
+                .isActive(true)
+                .priority(1)
+                .executionCount(0L)
+                .createdBy("admin")
+                .build();
+
+            when(botRuleRepository.findByBotIdAndIsActiveTrueOrderByPriorityDesc(botId))
+                .thenReturn(List.of(rule));
+
+            WebClient.RequestBodyUriSpec bodyUriSpec = mock(WebClient.RequestBodyUriSpec.class);
+            WebClient.RequestBodySpec bodySpec = mock(WebClient.RequestBodySpec.class);
+            WebClient.RequestBodySpec bodySpecAfterHeaders = mock(WebClient.RequestBodySpec.class);
+            WebClient.RequestHeadersSpec headersSpec = mock(WebClient.RequestHeadersSpec.class);
+            WebClient.ResponseSpec responseSpec = mock(WebClient.ResponseSpec.class);
+
+            org.springframework.web.reactive.function.client.WebClientResponseException clientError =
+                mock(org.springframework.web.reactive.function.client.WebClientResponseException.class);
+            when(clientError.getStatusCode()).thenReturn(org.springframework.http.HttpStatus.BAD_REQUEST);
+
+            when(webClient.post()).thenReturn(bodyUriSpec);
+            when(bodyUriSpec.uri(webhookUrl)).thenReturn(bodySpec);
+            doReturn(bodySpecAfterHeaders).when(bodySpec).headers(any());
+            doReturn(headersSpec).when(bodySpecAfterHeaders).bodyValue(any());
+            when(headersSpec.retrieve()).thenReturn(responseSpec);
+            when(responseSpec.bodyToMono(Map.class))
+                .thenReturn(reactor.core.publisher.Mono.error(clientError));
+
+            // When
+            BotRuleManager.RuleEvaluationResult result = botRuleManager.evaluateRules(
+                botId, "order_inquiry", "Kiểm tra đơn hàng", context);
+
+            // Then — 4xx is not retryable: single attempt, still goes to DLQ
+            assertNotNull(result);
+            assertEquals("Lỗi yêu cầu.", result.getResponse());
+            verify(webClient, times(1)).post();
+            verify(deadLetterRepository).save(argThat(dl -> dl.getAttempts() == 1));
         }
     }
 
