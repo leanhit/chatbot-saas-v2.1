@@ -130,4 +130,88 @@ class FunnelServiceTest {
         assertEquals(1, results.get(0).count());   // only c1 escalated
         assertEquals(1, results.get(1).count());   // only c2 has feedback
     }
+
+    @Test
+    void listStagesDelegatesToRepository() {
+        FunnelStage s = stage(1L, "Open", 1, FunnelStage.MatchType.STATUS, "open");
+        when(funnelStageRepository.findByTenantIdOrderByStageOrderAsc(1L)).thenReturn(List.of(s));
+
+        List<FunnelStage> result = service.listStages(1L);
+
+        assertEquals(1, result.size());
+        assertEquals("Open", result.get(0).getName());
+    }
+
+    @Test
+    void updateStageAppliesNonNullFieldsAndSaves() {
+        FunnelStage existing = stage(1L, "Old", 1, FunnelStage.MatchType.STATUS, "open");
+        when(funnelStageRepository.findById(1L)).thenReturn(Optional.of(existing));
+        when(funnelStageRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        FunnelStage update = new FunnelStage();
+        update.setName("New name");
+        update.setActive(false);
+        // stageOrder, matchType, matchValue null -> preserved
+
+        FunnelStage saved = service.updateStage(1L, update, 1L);
+
+        assertEquals("New name", saved.getName());
+        assertEquals(Boolean.FALSE, saved.getActive());
+        assertEquals(1, saved.getStageOrder());
+        assertEquals(FunnelStage.MatchType.STATUS, saved.getMatchType());
+        assertEquals("open", saved.getMatchValue());
+    }
+
+    @Test
+    void updateStageThrowsWhenNotFound() {
+        when(funnelStageRepository.findById(99L)).thenReturn(Optional.empty());
+        assertThrows(IllegalArgumentException.class,
+            () -> service.updateStage(99L, new FunnelStage(), 1L));
+    }
+
+    @Test
+    void deleteStageDeletesWhenTenantMatches() {
+        FunnelStage existing = stage(1L, "Open", 1, FunnelStage.MatchType.STATUS, "open");
+        when(funnelStageRepository.findById(1L)).thenReturn(Optional.of(existing));
+
+        service.deleteStage(1L, 1L);
+
+        verify(funnelStageRepository).delete(existing);
+    }
+
+    @Test
+    void computeFunnelMatchesAgentAssigned() {
+        FunnelStage assigned = stage(1L, "Assigned", 1, FunnelStage.MatchType.AGENT_ASSIGNED, null);
+        when(funnelStageRepository.findByTenantIdAndActiveTrueOrderByStageOrderAsc(1L))
+            .thenReturn(List.of(assigned));
+
+        Conversation withAgent = conv(1L, ConversationStatus.ACTIVE_AGENT);
+        withAgent.setAgentAssignedId(42L);
+        Conversation noAgent = conv(2L, ConversationStatus.OPEN);
+        when(conversationRepository.findByTenantId(1L)).thenReturn(List.of(withAgent, noAgent));
+        when(feedbackRepository.findByTenantId(1L)).thenReturn(List.of());
+
+        List<FunnelService.FunnelStageResult> results = service.computeFunnel(1L);
+
+        assertEquals(1, results.size());
+        assertEquals(1, results.get(0).count());
+    }
+
+    @Test
+    void computeFunnelConversionIsNullWhenPreviousStageEmpty() {
+        FunnelStage none = stage(1L, "None", 1, FunnelStage.MatchType.STATUS, "nonexistent_status");
+        FunnelStage some = stage(2L, "Some", 2, FunnelStage.MatchType.STATUS, "open");
+        when(funnelStageRepository.findByTenantIdAndActiveTrueOrderByStageOrderAsc(1L))
+            .thenReturn(List.of(none, some));
+        when(conversationRepository.findByTenantId(1L))
+            .thenReturn(List.of(conv(1L, ConversationStatus.OPEN)));
+        when(feedbackRepository.findByTenantId(1L)).thenReturn(List.of());
+
+        List<FunnelService.FunnelStageResult> results = service.computeFunnel(1L);
+
+        assertEquals(0, results.get(0).count());
+        assertEquals(1, results.get(1).count());
+        // previousCount == 0 -> conversion must be null, not divide-by-zero
+        assertNull(results.get(1).conversionFromPrevious());
+    }
 }
