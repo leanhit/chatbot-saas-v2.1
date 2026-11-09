@@ -20,9 +20,22 @@ import java.util.stream.Collectors;
 public class ResponseTemplateController {
 
     private final ResponseTemplateManager responseTemplateManager;
+    private final com.chatbot.core.tenant.service.TenantPermissionValidator permissionValidator;
 
-    public ResponseTemplateController(ResponseTemplateManager responseTemplateManager) {
+    public ResponseTemplateController(ResponseTemplateManager responseTemplateManager,
+                                      com.chatbot.core.tenant.service.TenantPermissionValidator permissionValidator) {
         this.responseTemplateManager = responseTemplateManager;
+        this.permissionValidator = permissionValidator;
+    }
+
+    private void requireOwnerOrEditor() {
+        Long tenantId = TenantContext.getTenantId();
+        String email = permissionValidator.getCurrentUserEmail();
+        if (tenantId == null || email == null || !permissionValidator.isOwnerOrEditor(tenantId, email)) {
+            throw new com.chatbot.core.tenant.exception.InsufficientPermissionException(
+                    com.chatbot.shared.exceptions.ErrorCode.INSUFFICIENT_PERMISSION,
+                    "Only tenant owner or editor can modify response templates");
+        }
     }
 
     /**
@@ -33,7 +46,7 @@ public class ResponseTemplateController {
             @PathVariable String botId,
             @RequestBody Map<String, Object> request,
             Principal principal) {
-        
+        requireOwnerOrEditor();
         // Validate tenant context
         Long tenantId = TenantContext.getTenantId();
         if (tenantId == null) {
@@ -92,7 +105,7 @@ public class ResponseTemplateController {
             @PathVariable String templateId,
             @RequestBody Map<String, Object> request,
             Principal principal) {
-        
+        requireOwnerOrEditor();
         String updatedBy = principal.getName();
         UUID templateUuid = UUID.fromString(templateId);
         
@@ -233,7 +246,7 @@ public class ResponseTemplateController {
             @PathVariable String botId,
             @PathVariable String templateId,
             @RequestBody Map<String, Object> variables) {
-        
+        requireOwnerOrEditor();
         UUID templateUuid = UUID.fromString(templateId);
         
         try {
@@ -270,7 +283,7 @@ public class ResponseTemplateController {
             @PathVariable String botId,
             @PathVariable String templateId,
             Principal principal) {
-        
+        requireOwnerOrEditor();
         String deletedBy = principal.getName();
         UUID templateUuid = UUID.fromString(templateId);
         

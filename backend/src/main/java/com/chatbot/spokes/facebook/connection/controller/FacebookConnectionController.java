@@ -5,6 +5,9 @@ import com.chatbot.spokes.facebook.connection.dto.FacebookConnectionResponse;
 import com.chatbot.spokes.facebook.connection.dto.UpdateFacebookConnectionRequest;
 import com.chatbot.spokes.facebook.connection.service.FacebookConnectionService;
 import com.chatbot.core.tenant.infra.TenantContext;
+import com.chatbot.core.tenant.service.TenantPermissionValidator;
+import com.chatbot.core.tenant.exception.InsufficientPermissionException;
+import com.chatbot.shared.exceptions.ErrorCode;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -29,9 +32,21 @@ import lombok.extern.slf4j.Slf4j;
 public class FacebookConnectionController {
 
     private final FacebookConnectionService facebookConnectionService;
+    private final TenantPermissionValidator permissionValidator;
 
-    public FacebookConnectionController(FacebookConnectionService facebookConnectionService) {
+    public FacebookConnectionController(FacebookConnectionService facebookConnectionService,
+                                        TenantPermissionValidator permissionValidator) {
         this.facebookConnectionService = facebookConnectionService;
+        this.permissionValidator = permissionValidator;
+    }
+
+    private void requireOwnerOrEditor() {
+        Long tenantId = TenantContext.getTenantId();
+        String email = permissionValidator.getCurrentUserEmail();
+        if (tenantId == null || email == null || !permissionValidator.isOwnerOrEditor(tenantId, email)) {
+            throw new InsufficientPermissionException(ErrorCode.INSUFFICIENT_PERMISSION,
+                    "Only tenant owner or editor can manage Facebook connections");
+        }
     }
 
     @PostMapping
@@ -45,6 +60,7 @@ public class FacebookConnectionController {
         }
     )
     public ResponseEntity<String> createConnection(@Valid @RequestBody CreateFacebookConnectionRequest request, Principal principal) {
+        requireOwnerOrEditor();
         // ✅ Validate tenant context
         Long tenantId = TenantContext.getTenantId();
         if (tenantId == null) {
@@ -71,7 +87,7 @@ public class FacebookConnectionController {
             @RequestParam String pageId,
             @RequestParam(required = false, defaultValue = "Auto-generated Bot") String botName,
             Principal principal) {
-        
+        requireOwnerOrEditor();
         // ✅ Validate tenant context
         Long tenantId = TenantContext.getTenantId();
         if (tenantId == null) {
@@ -107,6 +123,7 @@ public class FacebookConnectionController {
     public ResponseEntity<String> updateConnection(@PathVariable UUID connectionId,
                                                    @Valid @RequestBody UpdateFacebookConnectionRequest request,
                                                    Principal principal) {
+        requireOwnerOrEditor();
         String ownerId = principal.getName();
         facebookConnectionService.updateConnection(connectionId, ownerId, request);
         return ResponseEntity.ok("Connection updated successfully.");
@@ -190,6 +207,7 @@ public class FacebookConnectionController {
         }
     )
     public ResponseEntity<Map<String, String>> deleteConnection(@PathVariable String id, Principal principal) {
+        requireOwnerOrEditor();
         String ownerId = principal.getName();
         facebookConnectionService.deleteConnection(id, ownerId);
         return ResponseEntity.ok(Map.of(

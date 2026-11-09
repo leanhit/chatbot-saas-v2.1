@@ -13,6 +13,9 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import com.chatbot.core.tenant.service.TenantPermissionValidator;
+import com.chatbot.core.tenant.exception.InsufficientPermissionException;
+import com.chatbot.shared.exceptions.ErrorCode;
 
 /**
  * Custom Logic Controller - API quản lý custom logic cho bot
@@ -27,6 +30,7 @@ public class CustomLogicController {
     private final ResponseTemplateManager responseTemplateManager;
     private final ImportExportChangelogRepository changelogRepository;
     private final ObjectMapper objectMapper;
+    private final TenantPermissionValidator permissionValidator;
 
     /**
      * Import strategy enum
@@ -42,12 +46,23 @@ public class CustomLogicController {
                                 BotRuleManager botRuleManager,
                                 ResponseTemplateManager responseTemplateManager,
                                 ImportExportChangelogRepository changelogRepository,
-                                ObjectMapper objectMapper) {
+                                ObjectMapper objectMapper,
+                                TenantPermissionValidator permissionValidator) {
         this.customLogicEngine = customLogicEngine;
         this.botRuleManager = botRuleManager;
         this.responseTemplateManager = responseTemplateManager;
         this.changelogRepository = changelogRepository;
         this.objectMapper = objectMapper;
+        this.permissionValidator = permissionValidator;
+    }
+
+    private void requireOwnerOrEditor() {
+        Long tenantId = TenantContext.getTenantId();
+        String email = permissionValidator.getCurrentUserEmail();
+        if (tenantId == null || email == null || !permissionValidator.isOwnerOrEditor(tenantId, email)) {
+            throw new InsufficientPermissionException(ErrorCode.INSUFFICIENT_PERMISSION,
+                    "Only tenant owner or editor can modify bot custom logic");
+        }
     }
 
     /**
@@ -159,7 +174,7 @@ public class CustomLogicController {
             @PathVariable String botId,
             @RequestBody Map<String, Boolean> request,
             Principal principal) {
-        
+        requireOwnerOrEditor();
         // Validate tenant context
         Long tenantId = TenantContext.getTenantId();
         if (tenantId == null) {
@@ -716,7 +731,7 @@ public class CustomLogicController {
             @PathVariable String botId,
             @RequestBody Map<String, Object> importData,
             Principal principal) {
-        
+        requireOwnerOrEditor();
         // Validate tenant context
         Long tenantId = TenantContext.getTenantId();
         if (tenantId == null) {
@@ -1075,7 +1090,7 @@ public class CustomLogicController {
             @PathVariable String botId,
             @RequestBody BotpressImportDto botpressData,
             Principal principal) {
-        
+        requireOwnerOrEditor();
         // Validate tenant context
         Long tenantId = TenantContext.getTenantId();
         if (tenantId == null) {
