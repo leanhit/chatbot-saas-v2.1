@@ -1,6 +1,8 @@
 package com.chatbot.shared.grpc;
 
 import io.grpc.Status;
+import com.chatbot.shared.infrastructure.model.GrpcCallFailure;
+import com.chatbot.shared.infrastructure.repository.GrpcCallFailureRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;

@@ -7,7 +7,6 @@ CREATE TABLE IF NOT EXISTS conversations (
     id BIGSERIAL PRIMARY KEY,
     tenant_key VARCHAR(255),
     tenant_id BIGINT NOT NULL,
-    tenant_key VARCHAR(255),
     connection_id UUID,
     owner_id VARCHAR(255),
     external_user_id VARCHAR(255),

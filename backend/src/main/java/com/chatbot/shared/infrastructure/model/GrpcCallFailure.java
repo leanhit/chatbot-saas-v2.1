@@ -1,4 +1,4 @@
-package com.chatbot.shared.grpc;
+package com.chatbot.shared.infrastructure.model;
 
 import jakarta.persistence.*;
 import lombok.*;
