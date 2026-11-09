@@ -6,6 +6,9 @@ import com.chatbot.core.user.model.User;
 import com.chatbot.core.identity.security.CustomUserDetails;
 import com.chatbot.core.tenant.infra.TenantContext;
 import com.chatbot.core.tenant.service.TenantPackageService;
+import com.chatbot.core.tenant.service.TenantPermissionValidator;
+import com.chatbot.core.tenant.exception.InsufficientPermissionException;
+import com.chatbot.shared.exceptions.ErrorCode;
 import com.chatbot.core.payment.plan.model.Package;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -40,6 +43,27 @@ public class UserController {
 
     private final UserService userService;
     private final TenantPackageService tenantPackageService;
+    private final TenantPermissionValidator permissionValidator;
+
+    private void requireAdminOrTenantOwner() {
+        String email = permissionValidator.getCurrentUserEmail();
+        Long tenantId = TenantContext.getTenantId();
+        boolean allowed = email != null && (
+                permissionValidator.isAdmin(email)
+                || (tenantId != null && permissionValidator.isTenantAdmin(tenantId, email)));
+        if (!allowed) {
+            throw new InsufficientPermissionException(ErrorCode.INSUFFICIENT_PERMISSION,
+                    "Only admin or tenant owner can perform this action");
+        }
+    }
+
+    private void requireSelfOrAdmin(Long targetUserId) {
+        User current = permissionValidator.getCurrentUser();
+        if (current != null && current.getId().equals(targetUserId)) {
+            return;
+        }
+        requireAdminOrTenantOwner();
+    }
 
     // ===== NEW ENDPOINTS (/api/users) =====
     
@@ -52,6 +76,7 @@ public class UserController {
             @RequestParam(required = false) com.chatbot.core.identity.model.SystemRole role,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
+        requireAdminOrTenantOwner();
         org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(page, size, org.springframework.data.domain.Sort.by("id").descending());
         return ResponseEntity.ok(userService.searchUsers(search, role, pageable));
     }
@@ -61,6 +86,7 @@ public class UserController {
      */
     @PutMapping("/{id}/status")
     public ResponseEntity<Void> updateUserStatus(@PathVariable Long id, @RequestBody Map<String, Boolean> request) {
+        requireAdminOrTenantOwner();
         Boolean isActive = request.get("isActive");
         if (isActive != null) {
             userService.updateUserStatus(id, isActive);
@@ -95,6 +121,7 @@ public class UserController {
      */
     @GetMapping("/{id}")
     public ResponseEntity<UserProfileResponse> getUserProfile(@PathVariable Long id) {
+        requireSelfOrAdmin(id);
         return ResponseEntity.ok(userService.getProfile(id));
     }
 
@@ -135,6 +162,7 @@ public class UserController {
      */
     @GetMapping("/{id}/basic")
     public ResponseEntity<UserDto> getUserBasicInfo(@PathVariable Long id) {
+        requireSelfOrAdmin(id);
         com.chatbot.core.user.model.User user = userService.getUser(id);
         
         UserDto userDto = UserDto.builder()
