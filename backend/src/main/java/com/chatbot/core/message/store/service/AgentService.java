@@ -227,6 +227,11 @@ public class AgentService {
      * Get agent by ID as response DTO
      */
     public Optional<AgentResponseDTO> getAgentDTOById(Long agentId) {
+        Long tenantId = com.chatbot.core.tenant.infra.TenantContext.getTenantId();
+        if (tenantId != null) {
+            return agentRepository.findByIdAndTenantId(agentId, tenantId)
+                    .map(AgentResponseDTO::fromEntity);
+        }
         return agentRepository.findById(agentId)
                 .map(AgentResponseDTO::fromEntity);
     }
@@ -335,7 +340,11 @@ public class AgentService {
         if (status == Agent.AgentStatus.ONLINE) {
             assertOnboardingComplete(agentId);
         }
-        agentRepository.findById(agentId).ifPresent(agent -> {
+        Long tenantId = com.chatbot.core.tenant.infra.TenantContext.getTenantId();
+        var agentOpt = tenantId != null
+                ? agentRepository.findByIdAndTenantId(agentId, tenantId)
+                : agentRepository.findById(agentId);
+        agentOpt.ifPresent(agent -> {
             agent.setStatus(status);
             agent.setLastActivityAt(LocalDateTime.now());
             agent.setUpdatedAt(LocalDateTime.now());

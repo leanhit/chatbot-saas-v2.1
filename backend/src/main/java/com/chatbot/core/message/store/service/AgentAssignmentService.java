@@ -189,6 +189,10 @@ public class AgentAssignmentService {
         Agent newAgent = agentRepository.findById(newAgentId)
             .orElseThrow(() -> new ResourceNotFoundException("Agent not found for reassignment: " + newAgentId));
 
+        if (newAgent.getTenantId() == null || !newAgent.getTenantId().equals(conversation.getTenantId())) {
+            throw new ResourceNotFoundException("Agent not found for reassignment: " + newAgentId);
+        }
+
         // Check if new agent can accept more conversations
         if (!newAgent.canAcceptMoreConversations()) {
             log.warn("Agent {} cannot accept more conversations", newAgentId);

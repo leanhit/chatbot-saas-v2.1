@@ -33,8 +33,8 @@ public class AgentConversationStatsService {
         // Calculate period start date
         LocalDateTime since = calculatePeriodStart(period);
         
-        // Get agent info
-        Agent agent = agentRepository.findById(agentId)
+        // Get agent info (tenant-scoped)
+        Agent agent = agentRepository.findByIdAndTenantId(agentId, tenantId)
                 .orElseThrow(() -> new IllegalArgumentException("Agent not found: " + agentId));
         
         // Calculate KPI metrics

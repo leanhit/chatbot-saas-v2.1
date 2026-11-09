@@ -52,6 +52,12 @@ class AppRegistryService {
     public AppResponse getAppById(Long id) {
         AppRegistry app = appRegistryRepository.findById(id)
             .orElseThrow(() -> new ResourceNotFoundException("App not found with id: " + id));
+        Long tenantId = com.chatbot.core.tenant.infra.TenantContext.getTenantId();
+        if (tenantId != null
+                && !Boolean.TRUE.equals(app.getIsPublic())
+                && (app.getTenantId() == null || !app.getTenantId().equals(tenantId))) {
+            throw new ResourceNotFoundException("App not found with id: " + id);
+        }
         return convertToResponse(app);
     }
     

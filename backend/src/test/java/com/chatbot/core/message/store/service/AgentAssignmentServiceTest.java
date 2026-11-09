@@ -274,6 +274,7 @@ class AgentAssignmentServiceTest {
                 .currentLoad(currentLoad)
                 .maxConcurrentConversations(10)
                 .active(true)
+                .tenantId(testTenantId)
                 .build();
     }
 

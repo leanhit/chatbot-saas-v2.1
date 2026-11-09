@@ -44,4 +44,6 @@ public interface SLAConfigurationRepository extends JpaRepository<SLAConfigurati
     @org.springframework.transaction.annotation.Transactional(value = "messageTransactionManager", rollbackFor = Exception.class)
     @org.springframework.data.jpa.repository.Query("DELETE FROM SLAConfiguration s WHERE s.tenantId = :tenantId")
     void deleteByTenantId(@Param("tenantId") Long tenantId);
+
+    Optional<SLAConfiguration> findByIdAndTenantId(Long id, Long tenantId);
 }

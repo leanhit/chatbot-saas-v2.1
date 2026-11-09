@@ -97,4 +97,6 @@ public interface AgentRepository extends JpaRepository<Agent, Long> {
     @org.springframework.transaction.annotation.Transactional(value = "messageTransactionManager", rollbackFor = Exception.class)
     @Query("DELETE FROM Agent a WHERE a.tenantId = :tenantId")
     void deleteByTenantId(@Param("tenantId") Long tenantId);
+
+    Optional<Agent> findByIdAndTenantId(Long id, Long tenantId);
 }

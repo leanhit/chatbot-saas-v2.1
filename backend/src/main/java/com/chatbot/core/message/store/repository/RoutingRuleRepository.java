@@ -6,6 +6,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface RoutingRuleRepository extends JpaRepository<RoutingRule, Long> {
@@ -36,4 +37,6 @@ public interface RoutingRuleRepository extends JpaRepository<RoutingRule, Long> 
     @org.springframework.transaction.annotation.Transactional(value = "messageTransactionManager", rollbackFor = Exception.class)
     @org.springframework.data.jpa.repository.Query("DELETE FROM RoutingRule r WHERE r.tenantId = :tenantId")
     void deleteByTenantId(@Param("tenantId") Long tenantId);
+
+    Optional<RoutingRule> findByIdAndTenantId(Long id, Long tenantId);
 }

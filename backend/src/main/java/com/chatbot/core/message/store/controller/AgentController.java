@@ -304,6 +304,9 @@ public class AgentController {
         return agentService.getAgentById(agentId)
                 .map(agent -> {
                     try {
+                        if (agent.getTenantId() == null || !agent.getTenantId().equals(tenantId)) {
+                            return false;
+                        }
                         User currentUser = permissionValidator.getCurrentUser();
                         return agent.getUserId() != null && agent.getUserId().equals(currentUser.getId());
                     } catch (Exception e) {

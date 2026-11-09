@@ -52,8 +52,7 @@ public class IntelligentSupervisorService {
     public SupervisorSessionDTO endSupervisorSession(Long sessionId, String notes, Integer rating) {
         log.info("Ending supervisor session with ID: {}", sessionId);
 
-        SupervisorSession session = supervisorSessionRepository.findById(sessionId)
-                .orElseThrow(() -> new RuntimeException("Supervisor session not found"));
+        SupervisorSession session = findSessionForCurrentTenant(sessionId);
 
         session.setSessionStatus(SupervisorSession.SessionStatus.ENDED);
         session.setLeftAt(LocalDateTime.now());
@@ -80,8 +79,7 @@ public class IntelligentSupervisorService {
     public SupervisorSessionDTO recordIntervention(Long sessionId) {
         log.info("Recording intervention for supervisor session: {}", sessionId);
 
-        SupervisorSession session = supervisorSessionRepository.findById(sessionId)
-                .orElseThrow(() -> new RuntimeException("Supervisor session not found"));
+        SupervisorSession session = findSessionForCurrentTenant(sessionId);
 
         session.setInterventionCount(session.getInterventionCount() + 1);
         SupervisorSession updated = supervisorSessionRepository.save(session);
@@ -93,8 +91,7 @@ public class IntelligentSupervisorService {
     @Transactional
     public void deleteSupervisorSession(Long id) {
         log.info("Deleting supervisor session with ID: {}", id);
-        SupervisorSession session = supervisorSessionRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Supervisor session not found"));
+        SupervisorSession session = findSessionForCurrentTenant(id);
         supervisorSessionRepository.delete(session);
         log.info("Supervisor session deleted successfully");
     }
@@ -111,8 +108,7 @@ public class IntelligentSupervisorService {
 
     @Transactional(readOnly = true)
     public SupervisorSessionDTO getSupervisorSessionById(Long id) {
-        SupervisorSession session = supervisorSessionRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Supervisor session not found"));
+        SupervisorSession session = findSessionForCurrentTenant(id);
         return mapToDTO(session);
     }
 
@@ -161,6 +157,15 @@ public class IntelligentSupervisorService {
         Long tenantId = com.chatbot.core.tenant.infra.TenantContext.getTenantId();
         return supervisorSessionRepository.countByTenantIdAndSupervisorIdAndSessionStatus(
                 tenantId, supervisorId, SupervisorSession.SessionStatus.ACTIVE);
+    }
+
+    private SupervisorSession findSessionForCurrentTenant(Long sessionId) {
+        Long tenantId = com.chatbot.core.tenant.infra.TenantContext.getTenantId();
+        if (tenantId == null) {
+            throw new IllegalStateException("Tenant context not set");
+        }
+        return supervisorSessionRepository.findByIdAndTenantId(sessionId, tenantId)
+                .orElseThrow(() -> new RuntimeException("Supervisor session not found"));
     }
 
     private SupervisorSessionDTO mapToDTO(SupervisorSession session) {
@@ -243,9 +248,8 @@ public class IntelligentSupervisorService {
     public SupervisorTakeoverResult releaseConversation(Long sessionId) {
         log.info("Releasing conversation from supervisor session {}", sessionId);
         
-        SupervisorSession session = supervisorSessionRepository.findById(sessionId)
-                .orElseThrow(() -> new RuntimeException("Supervisor session not found"));
-        
+        SupervisorSession session = findSessionForCurrentTenant(sessionId);
+
         if (session.getSessionStatus() != SupervisorSession.SessionStatus.ACTIVE) {
             log.warn("Session {} is not active", sessionId);
             return SupervisorTakeoverResult.builder()
@@ -342,8 +346,7 @@ public class IntelligentSupervisorService {
     public SupervisorSessionDTO interruptSupervisorSession(Long sessionId) {
         log.info("Interrupting supervisor session with ID: {}", sessionId);
 
-        SupervisorSession session = supervisorSessionRepository.findById(sessionId)
-                .orElseThrow(() -> new RuntimeException("Supervisor session not found"));
+        SupervisorSession session = findSessionForCurrentTenant(sessionId);
 
         if (session.getSessionStatus() != SupervisorSession.SessionStatus.ACTIVE) {
             throw new IllegalStateException("Cannot interrupt a session that is not active");
@@ -368,8 +371,7 @@ public class IntelligentSupervisorService {
     public SupervisorSessionDTO updateMonitoredAgent(Long sessionId, Long monitoredAgentId) {
         log.info("Updating monitored agent to {} for supervisor session with ID: {}", monitoredAgentId, sessionId);
 
-        SupervisorSession session = supervisorSessionRepository.findById(sessionId)
-                .orElseThrow(() -> new RuntimeException("Supervisor session not found"));
+        SupervisorSession session = findSessionForCurrentTenant(sessionId);
 
         session.setMonitoredAgentId(monitoredAgentId);
         SupervisorSession updated = supervisorSessionRepository.save(session);

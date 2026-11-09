@@ -103,7 +103,7 @@ class SupervisorSessionServiceTest {
             session.setId(1L);
             session.setJoinedAt(LocalDateTime.now().minusMinutes(10));
 
-            when(supervisorSessionRepository.findById(1L)).thenReturn(Optional.of(session));
+            when(supervisorSessionRepository.findByIdAndTenantId(1L, TEST_TENANT_ID)).thenReturn(Optional.of(session));
             when(supervisorSessionRepository.save(any(SupervisorSession.class))).thenReturn(session);
 
             // Act
@@ -129,7 +129,7 @@ class SupervisorSessionServiceTest {
             session.setId(1L);
             session.setSessionStatus(SupervisorSession.SessionStatus.ENDED);
 
-            when(supervisorSessionRepository.findById(1L)).thenReturn(Optional.of(session));
+            when(supervisorSessionRepository.findByIdAndTenantId(1L, TEST_TENANT_ID)).thenReturn(Optional.of(session));
 
             // Act & Assert
             IllegalStateException exception = assertThrows(IllegalStateException.class, () -> {
@@ -137,6 +137,24 @@ class SupervisorSessionServiceTest {
             });
 
             assertEquals("Cannot end a session that is not active", exception.getMessage());
+        }
+    }
+
+    @Test
+    void testGetSupervisorSessionById_CrossTenant_NotFound() {
+        // Arrange — session belongs to another tenant, so tenant-scoped lookup returns empty
+        try (MockedStatic<TenantContext> mockedTenantContext = mockStatic(TenantContext.class)) {
+            mockedTenantContext.when(TenantContext::getTenantId).thenReturn(TEST_TENANT_ID);
+
+            when(supervisorSessionRepository.findByIdAndTenantId(1L, TEST_TENANT_ID))
+                    .thenReturn(Optional.empty());
+
+            // Act & Assert
+            RuntimeException exception = assertThrows(RuntimeException.class, () -> {
+                supervisorSessionService.getSupervisorSessionById(1L);
+            });
+
+            assertEquals("Supervisor session not found", exception.getMessage());
         }
     }
 
@@ -150,7 +168,7 @@ class SupervisorSessionServiceTest {
             session.setId(1L);
             session.setJoinedAt(LocalDateTime.now().minusMinutes(5));
 
-            when(supervisorSessionRepository.findById(1L)).thenReturn(Optional.of(session));
+            when(supervisorSessionRepository.findByIdAndTenantId(1L, TEST_TENANT_ID)).thenReturn(Optional.of(session));
             when(supervisorSessionRepository.save(any(SupervisorSession.class))).thenReturn(session);
 
             // Act
@@ -175,7 +193,7 @@ class SupervisorSessionServiceTest {
             session.setCanIntervene(true);
             session.setInterventionCount(2);
 
-            when(supervisorSessionRepository.findById(1L)).thenReturn(Optional.of(session));
+            when(supervisorSessionRepository.findByIdAndTenantId(1L, TEST_TENANT_ID)).thenReturn(Optional.of(session));
             when(supervisorSessionRepository.save(any(SupervisorSession.class))).thenReturn(session);
 
             // Act
@@ -197,7 +215,7 @@ class SupervisorSessionServiceTest {
             session.setId(1L);
             session.setCanIntervene(false);
 
-            when(supervisorSessionRepository.findById(1L)).thenReturn(Optional.of(session));
+            when(supervisorSessionRepository.findByIdAndTenantId(1L, TEST_TENANT_ID)).thenReturn(Optional.of(session));
 
             // Act & Assert
             IllegalStateException exception = assertThrows(IllegalStateException.class, () -> {
@@ -217,7 +235,7 @@ class SupervisorSessionServiceTest {
             SupervisorSession session = createSupervisorSession();
             session.setId(1L);
 
-            when(supervisorSessionRepository.findById(1L)).thenReturn(Optional.of(session));
+            when(supervisorSessionRepository.findByIdAndTenantId(1L, TEST_TENANT_ID)).thenReturn(Optional.of(session));
             when(supervisorSessionRepository.save(any(SupervisorSession.class))).thenReturn(session);
 
             // Act

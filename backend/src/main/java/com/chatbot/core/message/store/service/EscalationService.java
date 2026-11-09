@@ -292,7 +292,11 @@ public class EscalationService {
      */
     @Transactional
     public EscalationTier updateEscalationTier(Long tierId, EscalationTier updatedTier) {
-        return escalationTierRepository.findById(tierId)
+        Long tenantId = com.chatbot.core.tenant.infra.TenantContext.getTenantId();
+        if (tenantId == null) {
+            throw new IllegalStateException("Tenant context not set");
+        }
+        return escalationTierRepository.findByIdAndTenantId(tierId, tenantId)
             .map(existingTier -> {
                 existingTier.setName(updatedTier.getName());
                 existingTier.setTimeoutSeconds(updatedTier.getTimeoutSeconds());
@@ -309,6 +313,12 @@ public class EscalationService {
      */
     @Transactional
     public void deleteEscalationTier(Long tierId) {
-        escalationTierRepository.deleteById(tierId);
+        Long tenantId = com.chatbot.core.tenant.infra.TenantContext.getTenantId();
+        if (tenantId == null) {
+            throw new IllegalStateException("Tenant context not set");
+        }
+        EscalationTier tier = escalationTierRepository.findByIdAndTenantId(tierId, tenantId)
+            .orElseThrow(() -> new RuntimeException("Escalation tier not found: " + tierId));
+        escalationTierRepository.delete(tier);
     }
 }

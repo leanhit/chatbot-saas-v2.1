@@ -179,7 +179,7 @@ class SupervisorSessionServiceMockitoTest {
         session.setId(sessionId);
         session.setSessionStatus(SupervisorSession.SessionStatus.ACTIVE);
 
-        when(supervisorSessionRepository.findById(sessionId)).thenReturn(Optional.of(session));
+        when(supervisorSessionRepository.findByIdAndTenantId(sessionId, TEST_TENANT_ID)).thenReturn(Optional.of(session));
 
         SupervisorSession updatedSession = new SupervisorSession();
         updatedSession.setId(sessionId);
@@ -217,7 +217,7 @@ class SupervisorSessionServiceMockitoTest {
         session.setId(sessionId);
         session.setSessionStatus(SupervisorSession.SessionStatus.ENDED);
 
-        when(supervisorSessionRepository.findById(sessionId)).thenReturn(Optional.of(session));
+        when(supervisorSessionRepository.findByIdAndTenantId(sessionId, TEST_TENANT_ID)).thenReturn(Optional.of(session));
 
         // Act & Assert
         assertThrows(IllegalStateException.class, () -> {
@@ -234,7 +234,7 @@ class SupervisorSessionServiceMockitoTest {
         session.setId(sessionId);
         session.setSessionStatus(SupervisorSession.SessionStatus.ACTIVE);
 
-        when(supervisorSessionRepository.findById(sessionId)).thenReturn(Optional.of(session));
+        when(supervisorSessionRepository.findByIdAndTenantId(sessionId, TEST_TENANT_ID)).thenReturn(Optional.of(session));
 
         when(supervisorSessionRepository.save(any(SupervisorSession.class))).thenAnswer(invocation -> {
             SupervisorSession saved = invocation.getArgument(0);
@@ -262,7 +262,7 @@ class SupervisorSessionServiceMockitoTest {
         session.setId(sessionId);
         session.setSessionStatus(SupervisorSession.SessionStatus.ENDED);
 
-        when(supervisorSessionRepository.findById(sessionId)).thenReturn(Optional.of(session));
+        when(supervisorSessionRepository.findByIdAndTenantId(sessionId, TEST_TENANT_ID)).thenReturn(Optional.of(session));
 
         // Act & Assert
         assertThrows(IllegalStateException.class, () -> {
@@ -281,7 +281,7 @@ class SupervisorSessionServiceMockitoTest {
         session.setCanIntervene(true);
         session.setInterventionCount(0);
 
-        when(supervisorSessionRepository.findById(sessionId)).thenReturn(Optional.of(session));
+        when(supervisorSessionRepository.findByIdAndTenantId(sessionId, TEST_TENANT_ID)).thenReturn(Optional.of(session));
 
         SupervisorSession updatedSession = new SupervisorSession();
         updatedSession.setId(sessionId);
@@ -307,7 +307,7 @@ class SupervisorSessionServiceMockitoTest {
         session.setId(sessionId);
         session.setSessionStatus(SupervisorSession.SessionStatus.ENDED);
 
-        when(supervisorSessionRepository.findById(sessionId)).thenReturn(Optional.of(session));
+        when(supervisorSessionRepository.findByIdAndTenantId(sessionId, TEST_TENANT_ID)).thenReturn(Optional.of(session));
 
         // Act & Assert
         assertThrows(IllegalStateException.class, () -> {
@@ -325,7 +325,7 @@ class SupervisorSessionServiceMockitoTest {
         session.setSessionStatus(SupervisorSession.SessionStatus.ACTIVE);
         session.setCanIntervene(false);
 
-        when(supervisorSessionRepository.findById(sessionId)).thenReturn(Optional.of(session));
+        when(supervisorSessionRepository.findByIdAndTenantId(sessionId, TEST_TENANT_ID)).thenReturn(Optional.of(session));
 
         // Act & Assert
         assertThrows(IllegalStateException.class, () -> {
@@ -342,7 +342,7 @@ class SupervisorSessionServiceMockitoTest {
         SupervisorSession session = new SupervisorSession();
         session.setId(sessionId);
 
-        when(supervisorSessionRepository.findById(sessionId)).thenReturn(Optional.of(session));
+        when(supervisorSessionRepository.findByIdAndTenantId(sessionId, TEST_TENANT_ID)).thenReturn(Optional.of(session));
 
         SupervisorSession updatedSession = new SupervisorSession();
         updatedSession.setId(sessionId);

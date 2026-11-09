@@ -263,7 +263,11 @@ public class RoutingRuleService {
      */
     @Transactional
     public RoutingRule updateRoutingRule(Long ruleId, RoutingRule updatedRule) {
-        return routingRuleRepository.findById(ruleId)
+        Long tenantId = com.chatbot.core.tenant.infra.TenantContext.getTenantId();
+        if (tenantId == null) {
+            throw new IllegalStateException("Tenant context not set");
+        }
+        return routingRuleRepository.findByIdAndTenantId(ruleId, tenantId)
             .map(existingRule -> {
                 existingRule.setName(updatedRule.getName());
                 existingRule.setDescription(updatedRule.getDescription());
@@ -282,7 +286,13 @@ public class RoutingRuleService {
      */
     @Transactional
     public void deleteRoutingRule(Long ruleId) {
-        routingRuleRepository.deleteById(ruleId);
+        Long tenantId = com.chatbot.core.tenant.infra.TenantContext.getTenantId();
+        if (tenantId == null) {
+            throw new IllegalStateException("Tenant context not set");
+        }
+        RoutingRule rule = routingRuleRepository.findByIdAndTenantId(ruleId, tenantId)
+            .orElseThrow(() -> new RuntimeException("Routing rule not found: " + ruleId));
+        routingRuleRepository.delete(rule);
     }
 
     /**

@@ -38,4 +38,6 @@ public interface SupervisorSessionRepository extends JpaRepository<SupervisorSes
     List<SupervisorSession> findByTenantIdAndMonitoredAgentId(Long tenantId, Long monitoredAgentId);
 
     long countByTenantIdAndSupervisorIdAndSessionStatus(Long tenantId, Long supervisorId, SupervisorSession.SessionStatus status);
+
+    Optional<SupervisorSession> findByIdAndTenantId(Long id, Long tenantId);
 }

@@ -89,7 +89,19 @@ class CategoryService {
 
     // --- READ by ID (DTO cho client) ---
     public Optional<CategoryResponseDTO> getCategoryDtoById(UUID id) {
-        return categoryRepository.findById(id).map(this::convertToResponseDTO);
+        Long tenantId = TenantContext.getTenantId();
+        return categoryRepository.findById(id)
+                .filter(category -> isVisibleToTenant(category, tenantId))
+                .map(this::convertToResponseDTO);
+    }
+
+    private boolean isVisibleToTenant(Category category, Long tenantId) {
+        // Global categories (tenantId == null) are visible to everyone;
+        // tenant categories only to their own tenant. No tenant context → internal call, allow.
+        if (tenantId == null) {
+            return true;
+        }
+        return category.getTenantId() == null || category.getTenantId().equals(tenantId);
     }
 
     // --- READ by ID (Entity cho nội bộ Service) ---
@@ -124,9 +136,15 @@ class CategoryService {
     // --- DELETE ---
     @Transactional
     public void deleteCategory(UUID id) {
-        if (!categoryRepository.existsById(id)) {
-            throw new RuntimeException("Không tìm thấy danh mục với id: " + id);
+        Long tenantId = TenantContext.getTenantId();
+        if (tenantId == null) {
+            throw new RuntimeException("Không tìm thấy tenant ID trong context khi xóa danh mục");
         }
-        categoryRepository.deleteById(id);
+        Category category = categoryRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy danh mục với id: " + id));
+        if (category.getTenantId() == null || !category.getTenantId().equals(tenantId)) {
+            throw new RuntimeException("Không có quyền xóa danh mục này");
+        }
+        categoryRepository.delete(category);
     }
 }

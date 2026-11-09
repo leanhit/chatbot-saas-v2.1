@@ -357,7 +357,11 @@ public class SLAMonitorService {
      */
     @Transactional
     public SLAConfiguration updateSLAConfiguration(Long configId, SLAConfiguration updatedConfig) {
-        return slaConfigurationRepository.findById(configId)
+        Long tenantId = com.chatbot.core.tenant.infra.TenantContext.getTenantId();
+        if (tenantId == null) {
+            throw new IllegalStateException("Tenant context not set");
+        }
+        return slaConfigurationRepository.findByIdAndTenantId(configId, tenantId)
             .map(existingConfig -> {
                 existingConfig.setExpectedResponseTime(updatedConfig.getExpectedResponseTime());
                 existingConfig.setMaxBreachCount(updatedConfig.getMaxBreachCount());
@@ -373,6 +377,12 @@ public class SLAMonitorService {
      */
     @Transactional
     public void deleteSLAConfiguration(Long configId) {
-        slaConfigurationRepository.deleteById(configId);
+        Long tenantId = com.chatbot.core.tenant.infra.TenantContext.getTenantId();
+        if (tenantId == null) {
+            throw new IllegalStateException("Tenant context not set");
+        }
+        SLAConfiguration config = slaConfigurationRepository.findByIdAndTenantId(configId, tenantId)
+            .orElseThrow(() -> new ResourceNotFoundException("SLA configuration not found: " + configId));
+        slaConfigurationRepository.delete(config);
     }
 }

@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface EscalationTierRepository extends JpaRepository<EscalationTier, Long> {
 
@@ -32,4 +33,6 @@ public interface EscalationTierRepository extends JpaRepository<EscalationTier, 
      * Count escalation tiers by tenant ID
      */
     Long countByTenantId(Long tenantId);
+
+    Optional<EscalationTier> findByIdAndTenantId(Long id, Long tenantId);
 }
