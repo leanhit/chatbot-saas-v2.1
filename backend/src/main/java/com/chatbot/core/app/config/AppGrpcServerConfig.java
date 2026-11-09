@@ -5,6 +5,7 @@ import com.chatbot.core.app.grpc.AppServiceGrpcImpl;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
 import lombok.extern.slf4j.Slf4j;
+import com.chatbot.shared.grpc.GrpcFailureInterceptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -31,6 +32,7 @@ class AppGrpcServerConfig {
     private String privateKeyPath;
 
     private final AppServiceGrpcImpl appServiceGrpcImpl;
+    private final GrpcFailureInterceptor grpcFailureInterceptor;
 
     private Server grpcServer;
 
@@ -40,6 +42,7 @@ class AppGrpcServerConfig {
         
         io.grpc.ServerBuilder<?> serverBuilder = ServerBuilder.forPort(grpcPort)
                 .addService(appServiceGrpcImpl)
+                .intercept(grpcFailureInterceptor)
                 .maxInboundMessageSize(10 * 1024 * 1024) // 10MB
                 .maxInboundMetadataSize(10 * 1024 * 1024); // 10MB
 
@@ -55,6 +58,7 @@ class AppGrpcServerConfig {
             log.warn("Failed to start App gRPC server on port {}: {}. Falling back to dynamic port...", grpcPort, e.getMessage());
             io.grpc.ServerBuilder<?> fallbackBuilder = ServerBuilder.forPort(0)
                     .addService(appServiceGrpcImpl)
+                    .intercept(grpcFailureInterceptor)
                     .maxInboundMessageSize(10 * 1024 * 1024)
                     .maxInboundMetadataSize(10 * 1024 * 1024);
             grpcServer = fallbackBuilder.build().start();
