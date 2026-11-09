@@ -3,6 +3,10 @@ package com.chatbot.core.routing.controller;
 import com.chatbot.core.routing.dto.AgentWorkloadDTO;
 import com.chatbot.core.routing.dto.RoutingAssignmentResult;
 import com.chatbot.core.routing.service.IntelligentRoutingService;
+import com.chatbot.core.tenant.infra.TenantContext;
+import com.chatbot.core.tenant.service.TenantPermissionValidator;
+import com.chatbot.core.tenant.exception.InsufficientPermissionException;
+import com.chatbot.shared.exceptions.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -18,6 +22,16 @@ import java.util.Map;
 public class AgentWorkloadController {
 
     private final IntelligentRoutingService routingService;
+    private final TenantPermissionValidator permissionValidator;
+
+    private void requireOwnerOrEditor() {
+        Long tenantId = TenantContext.getTenantId();
+        String email = permissionValidator.getCurrentUserEmail();
+        if (tenantId == null || email == null || !permissionValidator.isOwnerOrEditor(tenantId, email)) {
+            throw new InsufficientPermissionException(ErrorCode.INSUFFICIENT_PERMISSION,
+                    "Only tenant owner or editor can manually assign conversations");
+        }
+    }
 
     @GetMapping("/agent-workloads")
     public ResponseEntity<List<AgentWorkloadDTO>> getAgentWorkloads(
@@ -36,6 +50,7 @@ public class AgentWorkloadController {
     @PostMapping("/assign")
     public ResponseEntity<RoutingAssignmentResult> assignConversation(
             @RequestBody Map<String, Object> request) {
+        requireOwnerOrEditor();
         Long conversationId = ((Number) request.get("conversationId")).longValue();
         Long agentId = ((Number) request.get("agentId")).longValue();
         String reason = request.containsKey("reason") ? (String) request.get("reason") : null;

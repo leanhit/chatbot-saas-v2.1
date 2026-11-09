@@ -7,6 +7,9 @@ import com.chatbot.core.customer.service.CustomerProfileService;
 import com.chatbot.core.customer.service.CustomerSegmentationService;
 import com.chatbot.core.customer.service.CustomerTimelineService;
 import com.chatbot.core.tenant.infra.TenantContext;
+import com.chatbot.core.tenant.service.TenantPermissionValidator;
+import com.chatbot.core.tenant.exception.InsufficientPermissionException;
+import com.chatbot.shared.exceptions.ErrorCode;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,6 +29,16 @@ public class CustomerProfileController {
     private final CustomerNoteService customerNoteService;
     private final CustomerTimelineService customerTimelineService;
     private final CustomerSegmentationService customerSegmentationService;
+    private final TenantPermissionValidator permissionValidator;
+
+    private void requireOwnerOrEditor() {
+        Long tenantId = TenantContext.getTenantId();
+        String email = permissionValidator.getCurrentUserEmail();
+        if (tenantId == null || email == null || !permissionValidator.isOwnerOrEditor(tenantId, email)) {
+            throw new InsufficientPermissionException(ErrorCode.INSUFFICIENT_PERMISSION,
+                    "Only tenant owner or editor can delete customer profiles");
+        }
+    }
 
     @PostMapping
     public ResponseEntity<CustomerProfileDTO> createCustomerProfile(@RequestBody CreateCustomerProfileRequest request) {
@@ -80,6 +93,7 @@ public class CustomerProfileController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteCustomerProfile(@PathVariable Long id) {
+        requireOwnerOrEditor();
         Long tenantId = TenantContext.getTenantId();
         customerProfileService.deleteCustomerProfile(id, tenantId);
         return ResponseEntity.ok().build();

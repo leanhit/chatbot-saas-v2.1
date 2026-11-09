@@ -2,6 +2,10 @@ package com.chatbot.core.routing.controller;
 
 import com.chatbot.core.routing.dto.*;
 import com.chatbot.core.routing.service.TransferService;
+import com.chatbot.core.tenant.infra.TenantContext;
+import com.chatbot.core.tenant.service.TenantPermissionValidator;
+import com.chatbot.core.tenant.exception.InsufficientPermissionException;
+import com.chatbot.shared.exceptions.ErrorCode;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -18,6 +22,16 @@ import java.util.Map;
 public class TransferController {
 
     private final TransferService transferService;
+    private final TenantPermissionValidator permissionValidator;
+
+    private void requireOwnerOrEditor() {
+        Long tenantId = TenantContext.getTenantId();
+        String email = permissionValidator.getCurrentUserEmail();
+        if (tenantId == null || email == null || !permissionValidator.isOwnerOrEditor(tenantId, email)) {
+            throw new InsufficientPermissionException(ErrorCode.INSUFFICIENT_PERMISSION,
+                    "Only tenant owner or editor can perform this transfer action");
+        }
+    }
 
     @PostMapping
     public ResponseEntity<ConversationTransferDTO> createTransfer(@Valid @RequestBody CreateTransferRequest request) {
@@ -78,12 +92,14 @@ public class TransferController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> cancelTransfer(@PathVariable Long id) {
+        requireOwnerOrEditor();
         transferService.cancelTransfer(id);
         return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/transfer")
     public ResponseEntity<TransferResult> transferConversation(@RequestBody Map<String, Object> request) {
+        requireOwnerOrEditor();
         Long conversationId = ((Number) request.get("conversationId")).longValue();
         Long fromAgentId = ((Number) request.get("fromAgentId")).longValue();
         Long toAgentId = ((Number) request.get("toAgentId")).longValue();

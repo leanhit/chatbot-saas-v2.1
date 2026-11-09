@@ -3,6 +3,10 @@ package com.chatbot.spokes.minio.image.fileMetadata.controller;
 import com.chatbot.spokes.minio.image.fileMetadata.dto.FileResponseDTO;
 import com.chatbot.spokes.minio.image.fileMetadata.service.FileMetadataService;
 import com.chatbot.spokes.minio.image.fileMetadata.dto.FileRequestDTO;
+import com.chatbot.core.tenant.infra.TenantContext;
+import com.chatbot.core.tenant.service.TenantPermissionValidator;
+import com.chatbot.core.tenant.exception.InsufficientPermissionException;
+import com.chatbot.shared.exceptions.ErrorCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.security.core.Authentication;
@@ -19,9 +23,21 @@ import lombok.extern.slf4j.Slf4j;
 public class FileMetadataController {
 
     private final FileMetadataService fileMetadataService;
+    private final TenantPermissionValidator permissionValidator;
 
-    public FileMetadataController(FileMetadataService fileMetadataService) {
+    public FileMetadataController(FileMetadataService fileMetadataService,
+                                  TenantPermissionValidator permissionValidator) {
         this.fileMetadataService = fileMetadataService;
+        this.permissionValidator = permissionValidator;
+    }
+
+    private void requireOwnerOrEditor() {
+        Long tenantId = TenantContext.getTenantId();
+        String email = permissionValidator.getCurrentUserEmail();
+        if (tenantId == null || email == null || !permissionValidator.isOwnerOrEditor(tenantId, email)) {
+            throw new InsufficientPermissionException(ErrorCode.INSUFFICIENT_PERMISSION,
+                    "Only tenant owner or editor can manage files");
+        }
     }
 
     /**
@@ -34,7 +50,7 @@ public class FileMetadataController {
     public ResponseEntity<List<FileResponseDTO>> handleUpload(
             @Validated @ModelAttribute FileRequestDTO requestDTO,
             Authentication authentication) throws Exception {
-
+        requireOwnerOrEditor();
         String email = authentication != null ? authentication.getName() : null;
         if (email == null) {
             throw new IllegalArgumentException("Không tìm thấy thông tin người dùng từ token");
@@ -68,6 +84,7 @@ public class FileMetadataController {
      */
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteFile(@PathVariable String id) {
+        requireOwnerOrEditor();
         boolean deleted = fileMetadataService.deleteFileById(id);
         if (deleted) {
             return ResponseEntity.ok().build();
@@ -86,7 +103,7 @@ public class FileMetadataController {
     public ResponseEntity<FileResponseDTO> updateFile(
             @PathVariable String id,
             @Validated @RequestBody FileRequestDTO requestDTO) {
-        
+        requireOwnerOrEditor();
         FileResponseDTO updatedFile = fileMetadataService.updateFile(id, requestDTO);
         if (updatedFile != null) {
             return ResponseEntity.ok(updatedFile);
@@ -180,7 +197,7 @@ public class FileMetadataController {
     public ResponseEntity<FileResponseDTO> updateFileContent(
             @PathVariable String id,
             @ModelAttribute FileRequestDTO requestDTO) throws Exception {
-
+        requireOwnerOrEditor();
         FileResponseDTO updatedFile = fileMetadataService.updateFileContent(id, requestDTO);
         return ResponseEntity.ok(updatedFile);
     }

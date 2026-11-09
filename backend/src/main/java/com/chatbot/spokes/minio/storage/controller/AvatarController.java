@@ -1,6 +1,9 @@
 package com.chatbot.spokes.minio.storage.controller;
 
 import com.chatbot.core.tenant.infra.TenantContext;
+import com.chatbot.core.tenant.service.TenantPermissionValidator;
+import com.chatbot.core.tenant.exception.InsufficientPermissionException;
+import com.chatbot.shared.exceptions.ErrorCode;
 import com.chatbot.spokes.minio.storage.service.AvatarStorageService;
 import com.chatbot.core.user.model.User;
 import com.chatbot.core.user.repository.AuthRepository;
@@ -32,6 +35,16 @@ public class AvatarController {
 
     private final AvatarStorageService avatarStorageService;
     private final AuthRepository authRepository;
+    private final TenantPermissionValidator permissionValidator;
+
+    private void requireOwnerOrEditor() {
+        Long tenantId = TenantContext.getTenantId();
+        String email = permissionValidator.getCurrentUserEmail();
+        if (tenantId == null || email == null || !permissionValidator.isOwnerOrEditor(tenantId, email)) {
+            throw new InsufficientPermissionException(ErrorCode.INSUFFICIENT_PERMISSION,
+                    "Only tenant owner or editor can manage tenant logo");
+        }
+    }
 
     @Operation(summary = "Upload user avatar", description = "Upload user avatar with automatic bucket creation")
     @PostMapping("/user/avatar")
@@ -80,7 +93,7 @@ public class AvatarController {
     @PostMapping("/tenant/logo")
     public ResponseEntity<Map<String, String>> uploadTenantLogo(
             @Parameter(description = "Logo image file") @RequestParam("file") MultipartFile file) {
-        
+        requireOwnerOrEditor();
         try {
             // Get current tenant ID from context
             Long tenantId = TenantContext.getTenantId();
@@ -139,7 +152,7 @@ public class AvatarController {
     @DeleteMapping("/tenant/logo/{objectName}")
     public ResponseEntity<Map<String, String>> deleteTenantLogo(
             @Parameter(description = "Logo object name") @PathVariable String objectName) {
-        
+        requireOwnerOrEditor();
         try {
             avatarStorageService.deleteTenantLogo(objectName);
             
@@ -159,6 +172,7 @@ public class AvatarController {
     @Operation(summary = "Check avatar bucket status", description = "Check if avatar buckets exist and create if needed")
     @PostMapping("/check-buckets")
     public ResponseEntity<Map<String, String>> checkAvatarBuckets() {
+        requireOwnerOrEditor();
         try {
             // This will trigger bucket creation if they don't exist
             // We can create dummy operations to ensure buckets are created
