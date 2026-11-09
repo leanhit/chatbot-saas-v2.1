@@ -3,6 +3,9 @@ package com.chatbot.core.message.store.controller;
 import com.chatbot.core.message.store.model.RoutingRule;
 import com.chatbot.core.message.store.service.RoutingRuleService;
 import com.chatbot.core.tenant.infra.TenantContext;
+import com.chatbot.core.tenant.service.TenantPermissionValidator;
+import com.chatbot.core.tenant.exception.InsufficientPermissionException;
+import com.chatbot.shared.exceptions.ErrorCode;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,6 +25,16 @@ import java.util.List;
 public class RoutingRuleController {
 
     private final RoutingRuleService routingRuleService;
+    private final TenantPermissionValidator permissionValidator;
+
+    private void requireOwnerOrEditor() {
+        Long tenantId = TenantContext.getTenantId();
+        String email = permissionValidator.getCurrentUserEmail();
+        if (tenantId == null || email == null || !permissionValidator.isOwnerOrEditor(tenantId, email)) {
+            throw new InsufficientPermissionException(ErrorCode.INSUFFICIENT_PERMISSION,
+                    "Only tenant owner or editor can modify routing rules");
+        }
+    }
 
     /**
      * Get all routing rules for current tenant
@@ -56,6 +69,7 @@ public class RoutingRuleController {
      */
     @PostMapping
     public ResponseEntity<RoutingRule> createRoutingRule(@RequestBody RoutingRule rule) {
+        requireOwnerOrEditor();
         Long tenantId = TenantContext.getTenantId();
         if (tenantId == null) {
             return ResponseEntity.badRequest().build();
@@ -73,6 +87,7 @@ public class RoutingRuleController {
     public ResponseEntity<RoutingRule> updateRoutingRule(
             @PathVariable Long id,
             @Valid @RequestBody RoutingRule rule) {
+        requireOwnerOrEditor();
         Long tenantId = TenantContext.getTenantId();
         if (tenantId == null) {
             return ResponseEntity.badRequest().build();
@@ -88,6 +103,7 @@ public class RoutingRuleController {
      */
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteRoutingRule(@PathVariable Long id) {
+        requireOwnerOrEditor();
         routingRuleService.deleteRoutingRule(id);
         return ResponseEntity.noContent().build();
     }
@@ -97,6 +113,7 @@ public class RoutingRuleController {
      */
     @PostMapping("/defaults")
     public ResponseEntity<Void> createDefaultRoutingRules() {
+        requireOwnerOrEditor();
         Long tenantId = TenantContext.getTenantId();
         if (tenantId == null) {
             return ResponseEntity.badRequest().build();

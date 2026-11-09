@@ -4,6 +4,9 @@ import com.chatbot.core.message.store.model.SLAConfiguration;
 import com.chatbot.core.message.store.repository.SLAConfigurationRepository;
 import com.chatbot.core.message.store.service.SLAMonitorService;
 import com.chatbot.core.tenant.infra.TenantContext;
+import com.chatbot.core.tenant.service.TenantPermissionValidator;
+import com.chatbot.core.tenant.exception.InsufficientPermissionException;
+import com.chatbot.shared.exceptions.ErrorCode;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,6 +27,16 @@ public class SLAConfigurationController {
 
     private final SLAMonitorService slaMonitorService;
     private final SLAConfigurationRepository slaConfigurationRepository;
+    private final TenantPermissionValidator permissionValidator;
+
+    private void requireOwnerOrEditor() {
+        Long tenantId = TenantContext.getTenantId();
+        String email = permissionValidator.getCurrentUserEmail();
+        if (tenantId == null || email == null || !permissionValidator.isOwnerOrEditor(tenantId, email)) {
+            throw new InsufficientPermissionException(ErrorCode.INSUFFICIENT_PERMISSION,
+                    "Only tenant owner or editor can modify SLA configuration");
+        }
+    }
 
     /**
      * Get all SLA configurations for current tenant
@@ -61,6 +74,7 @@ public class SLAConfigurationController {
      */
     @PostMapping
     public ResponseEntity<SLAConfiguration> createSLAConfiguration(@RequestBody SLAConfiguration config) {
+        requireOwnerOrEditor();
         Long tenantId = TenantContext.getTenantId();
         if (tenantId == null) {
             return ResponseEntity.badRequest().build();
@@ -78,6 +92,7 @@ public class SLAConfigurationController {
     public ResponseEntity<SLAConfiguration> updateSLAConfiguration(
             @PathVariable Long id,
             @Valid @RequestBody SLAConfiguration config) {
+        requireOwnerOrEditor();
         Long tenantId = TenantContext.getTenantId();
         if (tenantId == null) {
             return ResponseEntity.badRequest().build();
@@ -92,6 +107,7 @@ public class SLAConfigurationController {
      */
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteSLAConfiguration(@PathVariable Long id) {
+        requireOwnerOrEditor();
         slaMonitorService.deleteSLAConfiguration(id);
         return ResponseEntity.noContent().build();
     }
@@ -101,6 +117,7 @@ public class SLAConfigurationController {
      */
     @PostMapping("/defaults")
     public ResponseEntity<Void> createDefaultSLAConfigurations() {
+        requireOwnerOrEditor();
         Long tenantId = TenantContext.getTenantId();
         if (tenantId == null) {
             return ResponseEntity.badRequest().build();

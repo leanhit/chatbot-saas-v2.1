@@ -4,6 +4,9 @@ import com.chatbot.core.message.store.model.EscalationTier;
 import com.chatbot.core.message.store.repository.EscalationTierRepository;
 import com.chatbot.core.message.store.service.EscalationService;
 import com.chatbot.core.tenant.infra.TenantContext;
+import com.chatbot.core.tenant.service.TenantPermissionValidator;
+import com.chatbot.core.tenant.exception.InsufficientPermissionException;
+import com.chatbot.shared.exceptions.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -23,6 +26,16 @@ public class EscalationTierController {
 
     private final EscalationTierRepository escalationTierRepository;
     private final EscalationService escalationService;
+    private final TenantPermissionValidator permissionValidator;
+
+    private void requireOwnerOrEditor() {
+        Long tenantId = TenantContext.getTenantId();
+        String email = permissionValidator.getCurrentUserEmail();
+        if (tenantId == null || email == null || !permissionValidator.isOwnerOrEditor(tenantId, email)) {
+            throw new InsufficientPermissionException(ErrorCode.INSUFFICIENT_PERMISSION,
+                    "Only tenant owner or editor can modify escalation configuration");
+        }
+    }
 
     /**
      * Get all escalation tiers for current tenant
@@ -60,6 +73,7 @@ public class EscalationTierController {
      */
     @PostMapping
     public ResponseEntity<EscalationTier> createEscalationTier(@RequestBody EscalationTier tier) {
+        requireOwnerOrEditor();
         Long tenantId = TenantContext.getTenantId();
         if (tenantId == null) {
             return ResponseEntity.badRequest().build();
@@ -77,14 +91,13 @@ public class EscalationTierController {
     public ResponseEntity<EscalationTier> updateEscalationTier(
             @PathVariable Long id,
             @RequestBody EscalationTier tier) {
+        requireOwnerOrEditor();
         Long tenantId = TenantContext.getTenantId();
         if (tenantId == null) {
             return ResponseEntity.badRequest().build();
         }
         
-        tier.setTenantId(tenantId);
-        tier.setId(id);
-        EscalationTier updatedTier = escalationTierRepository.save(tier);
+        EscalationTier updatedTier = escalationService.updateEscalationTier(id, tier);
         return ResponseEntity.ok(updatedTier);
     }
 
@@ -93,7 +106,8 @@ public class EscalationTierController {
      */
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteEscalationTier(@PathVariable Long id) {
-        escalationTierRepository.deleteById(id);
+        requireOwnerOrEditor();
+        escalationService.deleteEscalationTier(id);
         return ResponseEntity.noContent().build();
     }
 
@@ -102,6 +116,7 @@ public class EscalationTierController {
      */
     @PostMapping("/defaults")
     public ResponseEntity<Void> createDefaultEscalationTiers() {
+        requireOwnerOrEditor();
         Long tenantId = TenantContext.getTenantId();
         if (tenantId == null) {
             return ResponseEntity.badRequest().build();
