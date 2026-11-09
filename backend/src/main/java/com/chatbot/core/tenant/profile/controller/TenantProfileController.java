@@ -7,6 +7,10 @@ import com.chatbot.core.tenant.model.Tenant;
 import com.chatbot.core.tenant.repository.TenantRepository;
 import com.chatbot.core.tenant.exception.TenantNotFoundException;
 import com.chatbot.core.tenant.exception.BusinessLogicException;
+import com.chatbot.core.tenant.exception.InsufficientPermissionException;
+import com.chatbot.core.tenant.infra.TenantContext;
+import com.chatbot.core.tenant.service.TenantPermissionValidator;
+import com.chatbot.shared.exceptions.ErrorCode;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -29,6 +33,28 @@ public class TenantProfileController {
 
     private final TenantProfileService tenantProfileService;
     private final TenantRepository tenantRepository;
+    private final TenantPermissionValidator permissionValidator;
+
+    private Tenant resolveTenantForRead(String tenantKey) {
+        Tenant tenant = tenantRepository.findByTenantKey(tenantKey)
+                .orElseThrow(() -> new TenantNotFoundException("Tenant not found with key: " + tenantKey));
+        Long contextTenantId = TenantContext.getTenantId();
+        if (contextTenantId == null || !contextTenantId.equals(tenant.getId())) {
+            throw new InsufficientPermissionException(ErrorCode.CANNOT_ACCESS_TENANT,
+                    "Tenant key does not match current tenant");
+        }
+        return tenant;
+    }
+
+    private Tenant resolveTenantForWrite(String tenantKey) {
+        Tenant tenant = resolveTenantForRead(tenantKey);
+        String email = permissionValidator.getCurrentUserEmail();
+        if (email == null || !permissionValidator.isOwnerOrEditor(tenant.getId(), email)) {
+            throw new InsufficientPermissionException(ErrorCode.INSUFFICIENT_PERMISSION,
+                    "Only tenant owner or editor can modify tenant profile");
+        }
+        return tenant;
+    }
 
     @GetMapping("/{tenantKey}/profile")
     @Operation(
@@ -43,8 +69,7 @@ public class TenantProfileController {
     public ResponseEntity<TenantProfileResponse> getProfile(
             @PathVariable String tenantKey
     ) {
-        Tenant tenant = tenantRepository.findByTenantKey(tenantKey)
-                .orElseThrow(() -> new TenantNotFoundException("Tenant not found with key: " + tenantKey));
+        Tenant tenant = resolveTenantForRead(tenantKey);
         return ResponseEntity.ok(
                 tenantProfileService.getProfile(tenant.getId())
         );
@@ -67,8 +92,7 @@ public class TenantProfileController {
     ) {
         log.info("[TenantProfileController] ===== START updateProfile: tenantKey={}", tenantKey);
         try {
-            Tenant tenant = tenantRepository.findByTenantKey(tenantKey)
-                    .orElseThrow(() -> new RuntimeException("Tenant not found with key: " + tenantKey));
+            Tenant tenant = resolveTenantForWrite(tenantKey);
             log.info("[TenantProfileController] Found tenant: id={}, name={}", tenant.getId(), tenant.getName());
             
             TenantProfileResponse response = tenantProfileService.upsertProfile(tenant.getId(), request);
@@ -126,11 +150,7 @@ public class TenantProfileController {
             
             log.info("✅ [TENANT PROFILE CONTROLLER] File validation passed, finding tenant");
             
-            Tenant tenant = tenantRepository.findByTenantKey(tenantKey)
-                    .orElseThrow(() -> {
-                        log.error("❌ [TENANT PROFILE CONTROLLER] Tenant not found: {}", tenantKey);
-                        return new RuntimeException("Tenant not found with key: " + tenantKey);
-                    });
+            Tenant tenant = resolveTenantForWrite(tenantKey);
             
             log.info("✅ [TENANT PROFILE CONTROLLER] Found tenant: {} (ID: {}), calling service", tenant.getTenantKey(), tenant.getId());
             
@@ -163,8 +183,7 @@ public class TenantProfileController {
             @PathVariable String tenantKey,
             @RequestBody TenantProfileRequest request
     ) {
-        Tenant tenant = tenantRepository.findByTenantKey(tenantKey)
-                .orElseThrow(() -> new TenantNotFoundException("Tenant not found with key: " + tenantKey));
+        Tenant tenant = resolveTenantForWrite(tenantKey);
         
         return ResponseEntity.ok(
             tenantProfileService.upsertProfile(tenant.getId(), request)
@@ -187,8 +206,7 @@ public class TenantProfileController {
             @RequestPart(value = "request", required = false) TenantProfileRequest request,
             @RequestParam(value = "logo", required = false) MultipartFile file
     ) {
-        Tenant tenant = tenantRepository.findByTenantKey(tenantKey)
-                .orElseThrow(() -> new TenantNotFoundException("Tenant not found with key: " + tenantKey));
+        Tenant tenant = resolveTenantForWrite(tenantKey);
         
         // Handle logo upload first if provided
         if (file != null && !file.isEmpty()) {
