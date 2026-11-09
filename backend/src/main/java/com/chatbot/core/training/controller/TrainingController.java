@@ -4,6 +4,10 @@ import com.chatbot.core.training.dto.AgentTrainingSummary;
 import com.chatbot.core.training.dto.TrainingDashboardStats;
 import com.chatbot.core.training.model.*;
 import com.chatbot.core.training.service.*;
+import com.chatbot.core.training.repository.AgentTrainingProgressRepository;
+import com.chatbot.core.message.store.model.Agent;
+import com.chatbot.core.message.store.repository.AgentRepository;
+import com.chatbot.core.user.model.User;
 import com.chatbot.core.tenant.infra.TenantContext;
 import com.chatbot.core.tenant.service.TenantPermissionValidator;
 import com.chatbot.core.tenant.exception.InsufficientPermissionException;
@@ -24,6 +28,8 @@ public class TrainingController {
     private final CertificationService certificationService;
     private final OnboardingService onboardingService;
     private final TenantPermissionValidator permissionValidator;
+    private final AgentTrainingProgressRepository trainingProgressRepository;
+    private final AgentRepository agentRepository;
 
     private void requireOwnerOrEditor() {
         Long tenantId = TenantContext.getTenantId();
@@ -31,6 +37,23 @@ public class TrainingController {
         if (tenantId == null || email == null || !permissionValidator.isOwnerOrEditor(tenantId, email)) {
             throw new InsufficientPermissionException(ErrorCode.INSUFFICIENT_PERMISSION,
                     "Only tenant owner or editor can modify training configuration");
+        }
+    }
+
+    private void requireSelfAgentOrOwnerOrEditor(Long agentId) {
+        Long tenantId = TenantContext.getTenantId();
+        if (tenantId == null) {
+            throw new IllegalStateException("Tenant context not set");
+        }
+        Agent agent = agentRepository.findByIdAndTenantId(agentId, tenantId)
+                .orElseThrow(() -> new IllegalArgumentException("Agent not found"));
+        User current = permissionValidator.getCurrentUser();
+        boolean isSelf = current != null && (
+                (agent.getUserId() != null && agent.getUserId().equals(current.getId()))
+                || (agent.getEmail() != null && current.getEmail() != null
+                    && agent.getEmail().equalsIgnoreCase(current.getEmail())));
+        if (!isSelf) {
+            requireOwnerOrEditor();
         }
     }
 
@@ -161,6 +184,13 @@ public class TrainingController {
     public ResponseEntity<AgentTrainingProgress> updateProgress(
             @PathVariable Long progressId,
             @RequestBody AgentTrainingProgress progress) {
+        AgentTrainingProgress existing = trainingProgressRepository.findById(progressId)
+                .orElseThrow(() -> new IllegalArgumentException("Training progress not found"));
+        if (!tenantId().equals(existing.getTenantId())) {
+            throw new InsufficientPermissionException(ErrorCode.CANNOT_ACCESS_TENANT,
+                    "Training progress does not belong to current tenant");
+        }
+        requireSelfAgentOrOwnerOrEditor(existing.getAgentId());
         progress.setId(progressId);
         return ResponseEntity.ok(skillAssessmentService.updateTrainingProgress(progress));
     }

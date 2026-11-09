@@ -130,8 +130,20 @@ public class AvatarController {
     @Operation(summary = "Delete user avatar", description = "Delete user avatar by object name")
     @DeleteMapping("/user/avatar/{objectName}")
     public ResponseEntity<Map<String, String>> deleteUserAvatar(
+            @AuthenticationPrincipal UserDetails userDetails,
             @Parameter(description = "Avatar object name") @PathVariable String objectName) {
-        
+        if (userDetails == null) {
+            Map<String, String> unauthResponse = new HashMap<>();
+            unauthResponse.put("error", "User not authenticated");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(unauthResponse);
+        }
+        User user = authRepository.findByEmail(userDetails.getUsername())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        if (!objectName.startsWith("avatar_" + user.getId() + "_")) {
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("error", "Cannot delete another user's avatar");
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(errorResponse);
+        }
         try {
             avatarStorageService.deleteUserAvatar(objectName);
             
@@ -153,6 +165,12 @@ public class AvatarController {
     public ResponseEntity<Map<String, String>> deleteTenantLogo(
             @Parameter(description = "Logo object name") @PathVariable String objectName) {
         requireOwnerOrEditor();
+        Long tenantId = TenantContext.getTenantId();
+        if (tenantId == null || !objectName.startsWith("logo_" + tenantId + "_")) {
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("error", "Cannot delete another tenant's logo");
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(errorResponse);
+        }
         try {
             avatarStorageService.deleteTenantLogo(objectName);
             

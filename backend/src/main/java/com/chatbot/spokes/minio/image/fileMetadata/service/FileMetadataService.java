@@ -363,8 +363,15 @@ public class FileMetadataService {
     public byte[] getFileContent(String id) {
         try {
             UUID fileId = UUID.fromString(id);
-            FileMetadata file = fileMetadataRepository.findById(fileId)
-                .orElseThrow(() -> new IllegalArgumentException("File not found: " + id));
+            Long tenantId = TenantContext.getTenantId();
+            FileMetadata file;
+            if (tenantId != null) {
+                file = fileMetadataRepository.findByIdAndTenantId(fileId, tenantId)
+                    .orElseThrow(() -> new IllegalArgumentException("File not found: " + id));
+            } else {
+                file = fileMetadataRepository.findById(fileId)
+                    .orElseThrow(() -> new IllegalArgumentException("File not found: " + id));
+            }
             
             return minioClient.getObject(
                 io.minio.GetObjectArgs.builder()

@@ -3,6 +3,9 @@ package com.chatbot.core.training.controller;
 import com.chatbot.core.training.model.AgentOnboardingProgress;
 import com.chatbot.core.training.model.AgentOnboardingTask;
 import com.chatbot.core.training.service.OnboardingService;
+import com.chatbot.core.message.store.model.Agent;
+import com.chatbot.core.message.store.repository.AgentRepository;
+import com.chatbot.core.user.model.User;
 import com.chatbot.core.tenant.infra.TenantContext;
 import com.chatbot.core.tenant.service.TenantPermissionValidator;
 import com.chatbot.core.tenant.exception.InsufficientPermissionException;
@@ -20,6 +23,7 @@ public class OnboardingController {
 
     private final OnboardingService onboardingService;
     private final TenantPermissionValidator permissionValidator;
+    private final AgentRepository agentRepository;
 
     private void requireOwnerOrEditor() {
         Long tenantId = TenantContext.getTenantId();
@@ -27,6 +31,23 @@ public class OnboardingController {
         if (tenantId == null || email == null || !permissionValidator.isOwnerOrEditor(tenantId, email)) {
             throw new InsufficientPermissionException(ErrorCode.INSUFFICIENT_PERMISSION,
                     "Only tenant owner or editor can modify onboarding tasks");
+        }
+    }
+
+    private void requireSelfAgentOrOwnerOrEditor(Long agentId) {
+        Long tenantId = TenantContext.getTenantId();
+        if (tenantId == null) {
+            throw new IllegalStateException("Tenant context not set");
+        }
+        Agent agent = agentRepository.findByIdAndTenantId(agentId, tenantId)
+                .orElseThrow(() -> new IllegalArgumentException("Agent not found"));
+        User current = permissionValidator.getCurrentUser();
+        boolean isSelf = current != null && (
+                (agent.getUserId() != null && agent.getUserId().equals(current.getId()))
+                || (agent.getEmail() != null && current.getEmail() != null
+                    && agent.getEmail().equalsIgnoreCase(current.getEmail())));
+        if (!isSelf) {
+            requireOwnerOrEditor();
         }
     }
 
@@ -48,6 +69,7 @@ public class OnboardingController {
     public ResponseEntity<AgentOnboardingProgress> startTask(
             @RequestParam Long agentId,
             @RequestParam Long taskId) {
+        requireSelfAgentOrOwnerOrEditor(agentId);
         Long tenantId = com.chatbot.core.tenant.infra.TenantContext.getTenantId();
         AgentOnboardingProgress progress = onboardingService.startTask(agentId, taskId, tenantId);
         return ResponseEntity.ok(progress);
@@ -58,6 +80,7 @@ public class OnboardingController {
             @RequestParam Long agentId,
             @RequestParam Long taskId,
             @RequestParam(required = false) String notes) {
+        requireSelfAgentOrOwnerOrEditor(agentId);
         Long tenantId = com.chatbot.core.tenant.infra.TenantContext.getTenantId();
         AgentOnboardingProgress progress = onboardingService.completeTask(agentId, taskId, tenantId, notes);
         return ResponseEntity.ok(progress);
