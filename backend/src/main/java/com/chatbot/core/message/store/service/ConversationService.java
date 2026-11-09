@@ -42,6 +42,7 @@ public class ConversationService {
     private final RoutingRuleService routingRuleService;
     private final ConversationEndWorkflow conversationEndWorkflow;
     private final TenantMemberService tenantMemberService;
+    private final ConversationEventService conversationEventService;
 
     /**
      * Tìm kiếm Conversation hiện có hoặc tạo mới nếu chưa tồn tại.
@@ -195,6 +196,8 @@ public class ConversationService {
             .orElseThrow(() -> new ConversationNotFoundException("Conversation not found"));
         
         conversationEndWorkflow.handleConversationEnd(conversationId, "agent_closed");
+        conversationEventService.record(conversationId, ConversationEventService.CONVERSATION_CLOSED,
+                ConversationEventService.ACTOR_SYSTEM, null, null, ConversationStatus.CLOSED.getValue(), null);
         
         return conversationRepo.findById(conversationId).orElse(conversation);
     }
@@ -221,7 +224,10 @@ public class ConversationService {
                 c.setIsTakenOverByAgent(true); // Ngắt Botpress
                 c.setAgentAssignedId(agentAssignedId); // Gán Agent
                 c.setStatus(ConversationStatus.ACTIVE_AGENT); // Cập nhật trạng thái
-                return conversationRepo.save(c);
+                Conversation saved = conversationRepo.save(c);
+                conversationEventService.record(conversationId, ConversationEventService.CONVERSATION_TAKEN_OVER,
+                        ConversationEventService.ACTOR_AGENT, String.valueOf(agentAssignedId), null, ConversationStatus.ACTIVE_AGENT.getValue(), null);
+                return saved;
             })
             .orElseThrow(() -> new ConversationNotFoundException("Conversation not found for takeover"));
     }
@@ -243,7 +249,10 @@ public class ConversationService {
                 c.setIsTakenOverByAgent(false); // Kích hoạt lại Botpress
                 c.setAgentAssignedId(null); // Bỏ gán Agent
                 c.setStatus(ConversationStatus.OPEN); // Quay về trạng thái mở để bot xử lý
-                return conversationRepo.save(c);
+                Conversation saved = conversationRepo.save(c);
+                conversationEventService.record(conversationId, ConversationEventService.CONVERSATION_RELEASED,
+                        ConversationEventService.ACTOR_AGENT, null, ConversationStatus.ACTIVE_AGENT.getValue(), ConversationStatus.OPEN.getValue(), null);
+                return saved;
             })
             .orElseThrow(() -> new ConversationNotFoundException("Conversation not found for release"));
     }
@@ -483,7 +492,10 @@ public class ConversationService {
             conversation.setIsClosedByAgent(false);
         }
         
-        return conversationRepo.save(conversation);
+        Conversation saved = conversationRepo.save(conversation);
+        conversationEventService.record(saved.getId(), ConversationEventService.CONVERSATION_CREATED,
+                ConversationEventService.ACTOR_SYSTEM, saved.getOwnerId(), null, ConversationStatus.OPEN.getValue(), null);
+        return saved;
     }
 
     /**

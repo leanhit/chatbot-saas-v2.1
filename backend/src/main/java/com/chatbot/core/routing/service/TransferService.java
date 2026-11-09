@@ -7,6 +7,7 @@ import com.chatbot.core.routing.model.AgentWorkload;
 import com.chatbot.core.routing.model.ConversationTransfer;
 import com.chatbot.core.routing.repository.AgentWorkloadRepository;
 import com.chatbot.core.routing.repository.ConversationTransferRepository;
+import com.chatbot.core.message.store.service.ConversationEventService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -24,6 +25,7 @@ public class TransferService {
     private final ConversationTransferRepository transferRepository;
     private final ConversationRepository conversationRepository;
     private final AgentWorkloadRepository agentWorkloadRepository;
+    private final ConversationEventService conversationEventService;
 
     @Transactional
     public ConversationTransferDTO createTransfer(CreateTransferRequest request) {
@@ -68,6 +70,9 @@ public class TransferService {
 
         ConversationTransfer saved = transferRepository.save(transfer);
         log.info("Transfer created successfully with ID: {}", saved.getId());
+        conversationEventService.record(saved.getConversationId(), ConversationEventService.TRANSFER_CREATED,
+                ConversationEventService.ACTOR_SYSTEM, null,
+                String.valueOf(request.getFromAgentId()), String.valueOf(request.getToAgentId()), null);
 
         return mapToDTO(saved);
     }
@@ -98,6 +103,8 @@ public class TransferService {
 
         ConversationTransfer updated = transferRepository.save(transfer);
         log.info("Transfer accepted successfully");
+        conversationEventService.record(transfer.getConversationId(), ConversationEventService.TRANSFER_ACCEPTED,
+                ConversationEventService.ACTOR_AGENT, String.valueOf(transfer.getToAgentId()), null, null, null);
 
         return mapToDTO(updated);
     }
@@ -121,6 +128,8 @@ public class TransferService {
 
         ConversationTransfer updated = transferRepository.save(transfer);
         log.info("Transfer rejected successfully");
+        conversationEventService.record(transfer.getConversationId(), ConversationEventService.TRANSFER_REJECTED,
+                ConversationEventService.ACTOR_AGENT, String.valueOf(transfer.getToAgentId()), null, null, reason);
 
         return mapToDTO(updated);
     }
@@ -141,6 +150,8 @@ public class TransferService {
 
         ConversationTransfer updated = transferRepository.save(transfer);
         log.info("Transfer completed successfully");
+        conversationEventService.record(transfer.getConversationId(), ConversationEventService.TRANSFER_COMPLETED,
+                ConversationEventService.ACTOR_SYSTEM, null, null, null, null);
 
         return mapToDTO(updated);
     }
@@ -159,6 +170,8 @@ public class TransferService {
         transfer.setStatus(ConversationTransfer.TransferStatus.CANCELLED.name());
         transferRepository.save(transfer);
         log.info("Transfer cancelled successfully");
+        conversationEventService.record(transfer.getConversationId(), ConversationEventService.TRANSFER_CANCELLED,
+                ConversationEventService.ACTOR_SYSTEM, null, null, null, null);
     }
 
     @Transactional(readOnly = true)

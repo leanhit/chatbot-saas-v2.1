@@ -38,6 +38,9 @@ class AgentAssignmentServiceTest {
     @Mock
     private ObjectMapper objectMapper;
 
+    @Mock
+    private ConversationEventService conversationEventService;
+
     private AgentAssignmentService agentAssignmentService;
 
     private Conversation testConversation;
@@ -49,7 +52,8 @@ class AgentAssignmentServiceTest {
                 agentRepository,
                 conversationRepository,
                 agentService,
-                objectMapper   // ← injected bean thay vì new ObjectMapper()
+                objectMapper,   // ← injected bean thay vì new ObjectMapper()
+                conversationEventService
         );
 
         testConversation = Conversation.builder()

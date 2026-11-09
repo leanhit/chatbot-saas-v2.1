@@ -27,6 +27,7 @@ public class AgentAssignmentService {
     private final ConversationRepository conversationRepository;
     private final AgentService agentService;
     private final ObjectMapper objectMapper;
+    private final ConversationEventService conversationEventService;
 
     /**
      * Assign conversation to best matching agent based on skills
@@ -208,6 +209,8 @@ public class AgentAssignmentService {
         conversation.setAgentAssignedId(newAgentId);
         conversation.setIsTakenOverByAgent(true);
         conversationRepository.save(conversation);
+        conversationEventService.record(conversationId, ConversationEventService.CONVERSATION_REASSIGNED,
+                ConversationEventService.ACTOR_SYSTEM, String.valueOf(newAgentId), null, null, null);
 
         // Increment load for new agent
         agentService.incrementAgentLoad(newAgentId);

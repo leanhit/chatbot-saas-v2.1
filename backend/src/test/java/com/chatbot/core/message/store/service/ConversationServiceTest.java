@@ -53,6 +53,9 @@ class ConversationServiceTest {
     @Mock
     private TenantMemberService tenantMemberService;
 
+    @Mock
+    private ConversationEventService conversationEventService;
+
     private ConversationService conversationService;
 
     private Long testTenantId = 1L;
@@ -66,7 +69,8 @@ class ConversationServiceTest {
                 messageRepository,
                 routingRuleService,
                 conversationEndWorkflow,
-                tenantMemberService
+                tenantMemberService,
+                conversationEventService
         );
 
         // Set tenant context

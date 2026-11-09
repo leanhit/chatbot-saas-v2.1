@@ -31,6 +31,8 @@ import java.util.Map;
 
 import com.chatbot.core.user.repository.AuthRepository;
 import com.chatbot.core.user.model.User;
+import com.chatbot.core.message.store.model.ConversationEvent;
+import com.chatbot.core.message.store.service.ConversationEventService;
 
 @RestController
 @RequestMapping("/api/conversations")
@@ -44,6 +46,7 @@ public class ConversationController {
     private final ConversationMapper conversationMapper; // Giả định đã có
     private final AuthRepository authRepository;
     private final SLAMonitorService slaMonitorService;
+    private final ConversationEventService conversationEventService;
 
     // --------------------------------------------------------------------------
     // 1. LẤY TẤT CẢ CONVERSATIONS (Default)
@@ -361,6 +364,11 @@ public class ConversationController {
     // --------------------------------------------------------------------------
     // ENDPOINT MỚI: GET CONVERSATION BY ID
     // --------------------------------------------------------------------------
+    @GetMapping("/{conversationId}/events")
+    public ResponseEntity<List<ConversationEvent>> getConversationEvents(@PathVariable Long conversationId) {
+        return ResponseEntity.ok(conversationEventService.getEvents(conversationId));
+    }
+
     @GetMapping("/{conversationId}")
     @Operation(
         summary = "Get conversation by ID",
