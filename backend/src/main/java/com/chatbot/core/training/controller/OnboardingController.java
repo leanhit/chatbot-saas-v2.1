@@ -3,6 +3,10 @@ package com.chatbot.core.training.controller;
 import com.chatbot.core.training.model.AgentOnboardingProgress;
 import com.chatbot.core.training.model.AgentOnboardingTask;
 import com.chatbot.core.training.service.OnboardingService;
+import com.chatbot.core.tenant.infra.TenantContext;
+import com.chatbot.core.tenant.service.TenantPermissionValidator;
+import com.chatbot.core.tenant.exception.InsufficientPermissionException;
+import com.chatbot.shared.exceptions.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -15,6 +19,16 @@ import java.util.List;
 public class OnboardingController {
 
     private final OnboardingService onboardingService;
+    private final TenantPermissionValidator permissionValidator;
+
+    private void requireOwnerOrEditor() {
+        Long tenantId = TenantContext.getTenantId();
+        String email = permissionValidator.getCurrentUserEmail();
+        if (tenantId == null || email == null || !permissionValidator.isOwnerOrEditor(tenantId, email)) {
+            throw new InsufficientPermissionException(ErrorCode.INSUFFICIENT_PERMISSION,
+                    "Only tenant owner or editor can modify onboarding tasks");
+        }
+    }
 
     @GetMapping("/tasks")
     public ResponseEntity<List<AgentOnboardingTask>> getAllOnboardingTasks() {
@@ -25,6 +39,7 @@ public class OnboardingController {
 
     @PostMapping("/tasks")
     public ResponseEntity<AgentOnboardingTask> createOnboardingTask(@RequestBody AgentOnboardingTask task) {
+        requireOwnerOrEditor();
         AgentOnboardingTask created = onboardingService.createOnboardingTask(task);
         return ResponseEntity.ok(created);
     }

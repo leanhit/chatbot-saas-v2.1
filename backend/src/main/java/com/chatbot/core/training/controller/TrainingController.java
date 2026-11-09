@@ -5,6 +5,9 @@ import com.chatbot.core.training.dto.TrainingDashboardStats;
 import com.chatbot.core.training.model.*;
 import com.chatbot.core.training.service.*;
 import com.chatbot.core.tenant.infra.TenantContext;
+import com.chatbot.core.tenant.service.TenantPermissionValidator;
+import com.chatbot.core.tenant.exception.InsufficientPermissionException;
+import com.chatbot.shared.exceptions.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -20,6 +23,16 @@ public class TrainingController {
     private final SkillAssessmentService skillAssessmentService;
     private final CertificationService certificationService;
     private final OnboardingService onboardingService;
+    private final TenantPermissionValidator permissionValidator;
+
+    private void requireOwnerOrEditor() {
+        Long tenantId = TenantContext.getTenantId();
+        String email = permissionValidator.getCurrentUserEmail();
+        if (tenantId == null || email == null || !permissionValidator.isOwnerOrEditor(tenantId, email)) {
+            throw new InsufficientPermissionException(ErrorCode.INSUFFICIENT_PERMISSION,
+                    "Only tenant owner or editor can modify training configuration");
+        }
+    }
 
     private Long tenantId() {
         Long tenantId = TenantContext.getTenantId();
@@ -49,12 +62,14 @@ public class TrainingController {
 
     @PostMapping("/materials")
     public ResponseEntity<TrainingMaterial> createTrainingMaterial(@RequestBody TrainingMaterial trainingMaterial) {
+        requireOwnerOrEditor();
         TrainingMaterial created = trainingService.createTrainingMaterial(trainingMaterial);
         return ResponseEntity.ok(created);
     }
 
     @PutMapping("/materials/{id}")
     public ResponseEntity<TrainingMaterial> updateMaterial(@PathVariable Long id, @RequestBody TrainingMaterial trainingMaterial) {
+        requireOwnerOrEditor();
         TrainingMaterial existing = trainingService.getMaterialById(id)
             .orElseThrow(() -> new IllegalArgumentException("Training material not found"));
         
@@ -81,6 +96,7 @@ public class TrainingController {
 
     @DeleteMapping("/materials/{id}")
     public ResponseEntity<Void> deleteMaterial(@PathVariable Long id) {
+        requireOwnerOrEditor();
         trainingService.deleteMaterial(id);
         return ResponseEntity.ok().build();
     }
@@ -100,12 +116,14 @@ public class TrainingController {
 
     @PostMapping("/categories")
     public ResponseEntity<TrainingCategory> createCategory(@RequestBody TrainingCategory category) {
+        requireOwnerOrEditor();
         TrainingCategory created = trainingService.createCategory(category);
         return ResponseEntity.ok(created);
     }
 
     @PutMapping("/categories/{id}")
     public ResponseEntity<TrainingCategory> updateCategory(@PathVariable Long id, @RequestBody TrainingCategory category) {
+        requireOwnerOrEditor();
         TrainingCategory existing = trainingService.getCategoryById(id)
             .orElseThrow(() -> new IllegalArgumentException("Training category not found"));
         
@@ -119,6 +137,7 @@ public class TrainingController {
 
     @DeleteMapping("/categories/{id}")
     public ResponseEntity<Void> deleteCategory(@PathVariable Long id) {
+        requireOwnerOrEditor();
         trainingService.deleteCategory(id);
         return ResponseEntity.ok().build();
     }
@@ -175,6 +194,7 @@ public class TrainingController {
     public ResponseEntity<AgentSkill> updateAgentSkill(
             @PathVariable Long skillId,
             @RequestBody AgentSkill skill) {
+        requireOwnerOrEditor();
         skill.setId(skillId);
         return ResponseEntity.ok(skillAssessmentService.updateAgentSkill(skill));
     }
@@ -194,6 +214,7 @@ public class TrainingController {
     @PostMapping("/certifications/award")
     public ResponseEntity<AgentCertification> awardCertification(
             @RequestBody AwardCertificationRequest request) {
+        requireOwnerOrEditor();
         return ResponseEntity.ok(certificationService.awardCertification(
                 request.agentId,
                 request.certificationLevelId,
