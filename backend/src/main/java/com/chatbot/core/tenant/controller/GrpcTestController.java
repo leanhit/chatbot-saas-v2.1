@@ -5,12 +5,14 @@ import com.chatbot.core.tenant.grpc.TenantGrpcClient;
 import com.chatbot.core.tenant.grpc.TenantServiceProto.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Profile;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
 import java.util.Map;
 
+@Profile({"development", "dev", "local", "test"})
 @RestController
 @RequestMapping("/api/tenant/grpc-test")
 @Slf4j

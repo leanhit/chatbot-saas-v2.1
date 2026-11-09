@@ -3,6 +3,7 @@ package com.chatbot.core.metrics.test;
 import com.chatbot.core.metrics.service.BusinessMetricsService;
 import io.micrometer.core.instrument.MeterRegistry;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Profile;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -14,6 +15,7 @@ import java.util.Map;
  * Test controller to verify metrics and monitoring configuration.
  * Access: GET /api/metrics/test
  */
+@Profile({"development", "dev", "local", "test"})
 @RestController
 @RequestMapping("/api/metrics")
 public class MetricsTestController {
