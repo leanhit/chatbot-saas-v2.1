@@ -161,12 +161,12 @@
 - [x] GDPR: tenant export/delete + **customer-level anonymize/export** (fix 2026-11-11). Anonymize đã mở rộng: pseudonymize `externalId`, xóa customer notes, scrub feedback comment/adminResponse (fix 2026-11-11).
 - [x] Rate limit/quota per tenant — `TenantRateLimitFilter` Redis sliding window.
 - [x] 2FA — `TwoFactorService`/`TwoFactorController` đã tồn tại.
-- [ ] Data retention policy job (purge soft-deleted records theo TTL) — chưa có.
-- [ ] Tenant API keys (nếu cần public API) — chưa có.
+- [x] Data retention policy job — `DataRetentionPurgeService` daily 04:30 purge soft-deleted records theo TTL (`app.retention.purge.*-days`) (fix 2026-11-11).
+- [ ] Tenant API keys (nếu cần public API) — chưa có; cần quyết định API surface + scopes trước khi implement auth filter.
 
 ### Known gaps
-- Conversation-events outbound webhook — chưa làm (cần nếu tích hợp CRM).
-- Data retention auto-purge — chưa có scheduled job.
+- ~~Conversation-events outbound webhook~~ → đã có `TenantWebhook` + `/api/tenant/webhooks` CRUD + `ConversationWebhookDispatcher` (async, HMAC-SHA256, event filter) hook vào `ConversationEventService` (fix 2026-11-11). v1 chưa có retry queue/DLQ.
+- ~~Data retention auto-purge~~ → `DataRetentionPurgeService` (fix 2026-11-11).
 - ~~Frontend GDPR UI~~ → đã thêm Export (download JSON) + Anonymize (confirm) buttons vào `CustomerProfileDetail.vue` (fix 2026-11-11).
 - ~~GDPR export scope~~ → export giờ gồm profile + feedback + notes + **conversations + messages** (link `externalId`↔`externalUserId`) (fix 2026-11-11).
 
