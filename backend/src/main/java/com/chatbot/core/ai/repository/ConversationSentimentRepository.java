@@ -3,9 +3,11 @@ package com.chatbot.core.ai.repository;
 import com.chatbot.core.ai.model.ConversationSentiment;
 import com.chatbot.core.ai.model.SentimentLabel;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -34,4 +36,10 @@ public interface ConversationSentimentRepository extends JpaRepository<Conversat
         @Param("label") SentimentLabel label,
         @Param("from") LocalDateTime from,
         @Param("to") LocalDateTime to);
+
+    // Data retention: hard-delete soft-deleted sentiment rows older than cutoff
+    @Modifying
+    @Transactional(value = "messageTransactionManager", rollbackFor = Exception.class)
+    @Query(value = "DELETE FROM conversation_sentiment WHERE is_deleted = true AND updated_at < :cutoff", nativeQuery = true)
+    int purgeSoftDeletedBefore(@Param("cutoff") LocalDateTime cutoff);
 }

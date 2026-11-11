@@ -126,4 +126,10 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
         @Param("from") java.time.LocalDateTime from,
         @Param("to") java.time.LocalDateTime to,
         @Param("sender") String sender);
+
+    // Data retention: hard-delete soft-deleted messages older than cutoff
+    @Modifying
+    @Transactional(value = "messageTransactionManager", rollbackFor = Exception.class)
+    @Query(value = "DELETE FROM messages WHERE is_deleted = true AND updated_at < :cutoff", nativeQuery = true)
+    int purgeSoftDeletedBefore(@Param("cutoff") java.time.LocalDateTime cutoff);
 }

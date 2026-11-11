@@ -5,8 +5,10 @@ import com.chatbot.core.message.store.model.ConversationStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
 import java.util.UUID;
@@ -287,4 +289,10 @@ public interface ConversationRepository extends JpaRepository<Conversation, Long
         @Param("tenantId") Long tenantId,
         @Param("from") java.time.LocalDateTime from,
         @Param("to") java.time.LocalDateTime to);
+
+    // Data retention: hard-delete soft-deleted conversations older than cutoff
+    @Modifying
+    @Transactional(value = "messageTransactionManager", rollbackFor = Exception.class)
+    @Query(value = "DELETE FROM conversations WHERE is_deleted = true AND updated_at < :cutoff", nativeQuery = true)
+    int purgeSoftDeletedBefore(@Param("cutoff") java.time.LocalDateTime cutoff);
 }

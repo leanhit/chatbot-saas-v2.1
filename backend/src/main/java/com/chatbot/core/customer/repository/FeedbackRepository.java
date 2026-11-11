@@ -32,4 +32,10 @@ public interface FeedbackRepository extends JpaRepository<Feedback, Long> {
     @Transactional(value = "appTransactionManager", rollbackFor = Exception.class)
     @Query("DELETE FROM Feedback f WHERE f.tenantId = :tenantId")
     int deleteByTenantId(@Param("tenantId") Long tenantId);
+
+    // Data retention: hard-delete soft-deleted feedback older than cutoff
+    @Modifying
+    @Transactional(value = "appTransactionManager", rollbackFor = Exception.class)
+    @Query(value = "DELETE FROM feedback WHERE is_deleted = true AND updated_at < :cutoff", nativeQuery = true)
+    int purgeSoftDeletedBefore(@Param("cutoff") java.time.LocalDateTime cutoff);
 }
