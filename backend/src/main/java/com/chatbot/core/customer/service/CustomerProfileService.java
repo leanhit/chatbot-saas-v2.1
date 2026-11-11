@@ -185,6 +185,24 @@ public class CustomerProfileService {
         profile.setTags(null);
         profile.setPreferredLanguage(null);
         profile.setTimezone(null);
+        // Pseudonymize externalId to break re-linkage while keeping uniqueness
+        profile.setExternalId("anon-" + id);
+
+        // Erase free-text PII: agent notes are deleted, feedback comments scrubbed
+        // (ratings/types kept for aggregate analytics).
+        List<CustomerNote> notes = customerNoteRepository
+                .findByTenantIdAndCustomerProfileIdAndIsDeletedFalseOrderByCreatedAtDesc(tenantId, id);
+        if (!notes.isEmpty()) {
+            customerNoteRepository.deleteAll(notes);
+        }
+        List<Feedback> feedbackList = feedbackRepository.findByCustomerProfileIdAndTenantId(id, tenantId);
+        for (Feedback fb : feedbackList) {
+            fb.setComment(null);
+            fb.setAdminResponse(null);
+        }
+        if (!feedbackList.isEmpty()) {
+            feedbackRepository.saveAll(feedbackList);
+        }
 
         CustomerProfile saved = customerProfileRepository.save(profile);
         auditLogService.logActionAsync(tenantId, currentUserEmail(),

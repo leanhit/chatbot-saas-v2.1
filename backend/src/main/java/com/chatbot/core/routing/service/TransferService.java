@@ -34,8 +34,8 @@ public class TransferService {
 
         Long tenantId = com.chatbot.core.tenant.infra.TenantContext.getTenantId();
 
-        // Validate conversation exists
-        Conversation conversation = conversationRepository.findById(request.getConversationId())
+        // Validate conversation exists (tenant-scoped)
+        Conversation conversation = conversationRepository.findByIdAndTenantId(request.getConversationId(), tenantId)
                 .orElseThrow(() -> new RuntimeException("Conversation not found"));
 
         // Validate agents exist and are available
@@ -77,12 +77,17 @@ public class TransferService {
         return mapToDTO(saved);
     }
 
+    private ConversationTransfer findTransferForTenant(Long transferId) {
+        Long tenantId = com.chatbot.core.tenant.infra.TenantContext.getTenantId();
+        return transferRepository.findByIdAndTenantId(transferId, tenantId)
+                .orElseThrow(() -> new RuntimeException("Transfer not found"));
+    }
+
     @Transactional
     public ConversationTransferDTO acceptTransfer(Long transferId) {
         log.info("Accepting transfer with ID: {}", transferId);
 
-        ConversationTransfer transfer = transferRepository.findById(transferId)
-                .orElseThrow(() -> new RuntimeException("Transfer not found"));
+        ConversationTransfer transfer = findTransferForTenant(transferId);
 
         if (!ConversationTransfer.TransferStatus.PENDING.name().equals(transfer.getStatus())) {
             throw new IllegalStateException("Transfer is not in pending status");
@@ -91,8 +96,8 @@ public class TransferService {
         transfer.setStatus(ConversationTransfer.TransferStatus.ACCEPTED.name());
         transfer.setAcceptedAt(LocalDateTime.now());
 
-        // Update conversation assignment
-        Conversation conversation = conversationRepository.findById(transfer.getConversationId())
+        // Update conversation assignment (tenant-scoped)
+        Conversation conversation = conversationRepository.findByIdAndTenantId(transfer.getConversationId(), transfer.getTenantId())
                 .orElseThrow(() -> new RuntimeException("Conversation not found"));
         conversation.setAgentAssignedId(transfer.getToAgentId());
         conversationRepository.save(conversation);
@@ -113,8 +118,7 @@ public class TransferService {
     public ConversationTransferDTO rejectTransfer(Long transferId, String reason) {
         log.info("Rejecting transfer with ID: {}", transferId);
 
-        ConversationTransfer transfer = transferRepository.findById(transferId)
-                .orElseThrow(() -> new RuntimeException("Transfer not found"));
+        ConversationTransfer transfer = findTransferForTenant(transferId);
 
         if (!ConversationTransfer.TransferStatus.PENDING.name().equals(transfer.getStatus())) {
             throw new IllegalStateException("Transfer is not in pending status");
@@ -138,8 +142,7 @@ public class TransferService {
     public ConversationTransferDTO completeTransfer(Long transferId) {
         log.info("Completing transfer with ID: {}", transferId);
 
-        ConversationTransfer transfer = transferRepository.findById(transferId)
-                .orElseThrow(() -> new RuntimeException("Transfer not found"));
+        ConversationTransfer transfer = findTransferForTenant(transferId);
 
         if (!ConversationTransfer.TransferStatus.ACCEPTED.name().equals(transfer.getStatus())) {
             throw new IllegalStateException("Transfer must be accepted before completion");
@@ -160,8 +163,7 @@ public class TransferService {
     public void cancelTransfer(Long transferId) {
         log.info("Cancelling transfer with ID: {}", transferId);
 
-        ConversationTransfer transfer = transferRepository.findById(transferId)
-                .orElseThrow(() -> new RuntimeException("Transfer not found"));
+        ConversationTransfer transfer = findTransferForTenant(transferId);
 
         if (ConversationTransfer.TransferStatus.COMPLETED.name().equals(transfer.getStatus())) {
             throw new IllegalStateException("Cannot cancel a completed transfer");
@@ -176,8 +178,7 @@ public class TransferService {
 
     @Transactional(readOnly = true)
     public ConversationTransferDTO getTransferById(Long transferId) {
-        ConversationTransfer transfer = transferRepository.findById(transferId)
-                .orElseThrow(() -> new RuntimeException("Transfer not found"));
+        ConversationTransfer transfer = findTransferForTenant(transferId);
         return mapToDTO(transfer);
     }
 
@@ -226,8 +227,8 @@ public class TransferService {
         Long tenantId = com.chatbot.core.tenant.infra.TenantContext.getTenantId();
 
         try {
-            // Validate conversation
-            Conversation conversation = conversationRepository.findById(conversationId)
+            // Validate conversation (tenant-scoped)
+            Conversation conversation = conversationRepository.findByIdAndTenantId(conversationId, tenantId)
                     .orElseThrow(() -> new RuntimeException("Conversation not found"));
 
             // Validate target agent is available

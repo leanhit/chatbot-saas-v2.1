@@ -484,7 +484,9 @@ public class IntelligentRoutingService {
     private void assignConversationToAgent(Long conversationId, Long agentId) {
         try {
             Long tenantId = com.chatbot.core.tenant.infra.TenantContext.getTenantId();
-            Conversation conversation = conversationRepository.findById(conversationId).orElse(null);
+            Conversation conversation = tenantId != null
+                    ? conversationRepository.findByIdAndTenantId(conversationId, tenantId).orElse(null)
+                    : null;
             if (conversation != null) {
                 conversation.setAgentAssignedId(agentId);
                 conversationRepository.save(conversation);
@@ -919,14 +921,9 @@ public class IntelligentRoutingService {
     public RoutingAssignmentResult assignConversationToAgent(Long conversationId, Long agentId, String reason) {
         Long tenantId = com.chatbot.core.tenant.infra.TenantContext.getTenantId();
         
-        // Get conversation
-        Conversation conversation = conversationRepository.findById(conversationId)
+        // Get conversation (tenant-scoped)
+        Conversation conversation = conversationRepository.findByIdAndTenantId(conversationId, tenantId)
                 .orElseThrow(() -> new RuntimeException("Conversation not found: " + conversationId));
-        
-        // Verify conversation belongs to tenant
-        if (!conversation.getTenantId().equals(tenantId)) {
-            throw new RuntimeException("Conversation does not belong to current tenant");
-        }
         
         // Get agent workload
         AgentWorkload workload = agentWorkloadRepository.findByTenantIdAndAgentId(tenantId, agentId)

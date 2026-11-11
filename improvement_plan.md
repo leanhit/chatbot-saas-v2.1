@@ -62,6 +62,7 @@
 ### Known gaps
 - ~~Certification award chỉ manual~~ → đã có auto-award qua `checkAndAutoAwardCertifications`.
 - ~~`approveTask/rejectTask` chưa expose~~ → đã thêm endpoints.
+- ~~`updateProgress` mass assignment~~ → đã fix: chỉ copy field whitelist (status/progress/quizScore/timestamps/notes) lên entity load từ DB, `agentId`/`trainingId`/`tenantId` không thể bị ghi đè (fix 2026-11-11).
 
 ---
 
@@ -112,6 +113,7 @@
 3. ~~`handleRouteToQueue` không có consumer~~ → đã thêm `tryAssignFromQueue` (skill-aware → load-balance fallback → `reassignConversation`); retry mỗi 30s qua `BotInboxAutoAssignService`.
 4. ~~`SupervisorSessionService` deprecated duplicate~~ → đã xóa file, không còn reference.
 5. ~~Whisper: `isSilent`/`canIntervene` có field nhưng chưa có message path riêng~~ → backend `sendWhisper()` + endpoint + frontend whisper modal trong `SupervisorDashboard.vue` (fix 2026-11-11).
+6. ~~Tenant isolation: `findById` không kèm tenant trong routing/escalation/transfer~~ → đã chuyển sang `findByIdAndTenantId` trong `IntelligentRoutingService`, `IntelligentEscalationService`, `TransferService` (+ `findByIdAndTenantId` trên `ConversationTransferRepository`) (fix 2026-11-11). Còn lại: internal workflows (`TimeoutWorkflow`, `ErrorWorkflow`, `ConversationEndWorkflow`, `SLAMonitorService`, `AIEscalationService`) dùng `findById` nhưng conversationId đến từ tenant-scoped queries/scheduler — rủi ro thấp, theo dõi khi refactor.
 
 ---
 
@@ -155,7 +157,7 @@
 
 ### DoD
 - [x] Webhook CRUD + delivery + retry — payment domain backend + frontend khớp nhau.
-- [x] GDPR: tenant export/delete + **customer-level anonymize/export** (fix 2026-11-11).
+- [x] GDPR: tenant export/delete + **customer-level anonymize/export** (fix 2026-11-11). Anonymize đã mở rộng: pseudonymize `externalId`, xóa customer notes, scrub feedback comment/adminResponse (fix 2026-11-11).
 - [x] Rate limit/quota per tenant — `TenantRateLimitFilter` Redis sliding window.
 - [x] 2FA — `TwoFactorService`/`TwoFactorController` đã tồn tại.
 - [ ] Data retention policy job (purge soft-deleted records theo TTL) — chưa có.
@@ -165,6 +167,7 @@
 - Conversation-events outbound webhook — chưa làm (cần nếu tích hợp CRM).
 - Data retention auto-purge — chưa có scheduled job.
 - ~~Frontend GDPR UI~~ → đã thêm Export (download JSON) + Anonymize (confirm) buttons vào `CustomerProfileDetail.vue` (fix 2026-11-11).
+- GDPR export scope: hiện gồm profile + feedback + notes; **chưa gồm conversations/messages** — cần quyết định phạm vi theo yêu cầu sản phẩm.
 
 ---
 

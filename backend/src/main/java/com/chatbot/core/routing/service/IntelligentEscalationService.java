@@ -352,7 +352,10 @@ public class IntelligentEscalationService {
 
     private void assignConversationToAgent(Long conversationId, Long agentId) {
         try {
-            Conversation conversation = conversationRepository.findById(conversationId).orElse(null);
+            Long tenantId = com.chatbot.core.tenant.infra.TenantContext.getTenantId();
+            Conversation conversation = tenantId != null
+                    ? conversationRepository.findByIdAndTenantId(conversationId, tenantId).orElse(null)
+                    : null;
             if (conversation != null) {
                 conversation.setAgentAssignedId(agentId);
                 conversationRepository.save(conversation);
@@ -365,7 +368,10 @@ public class IntelligentEscalationService {
 
     private void moveConversationToQueue(Long conversationId) {
         try {
-            Conversation conversation = conversationRepository.findById(conversationId).orElse(null);
+            Long tenantId = com.chatbot.core.tenant.infra.TenantContext.getTenantId();
+            Conversation conversation = tenantId != null
+                    ? conversationRepository.findByIdAndTenantId(conversationId, tenantId).orElse(null)
+                    : null;
             if (conversation != null) {
                 // Set status to QUEUED and clear agent assignment using enum
                 conversation.setStatus(ConversationStatus.QUEUED);

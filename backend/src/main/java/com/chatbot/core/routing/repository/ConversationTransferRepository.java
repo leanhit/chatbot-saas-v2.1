@@ -22,5 +22,7 @@ public interface ConversationTransferRepository extends JpaRepository<Conversati
 
     Optional<ConversationTransfer> findByTenantIdAndConversationIdAndStatus(Long tenantId, Long conversationId, String status);
 
+    Optional<ConversationTransfer> findByIdAndTenantId(Long id, Long tenantId);
+
     long countByTenantIdAndStatus(Long tenantId, String status);
 }

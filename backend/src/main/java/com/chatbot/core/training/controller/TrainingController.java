@@ -191,8 +191,16 @@ public class TrainingController {
                     "Training progress does not belong to current tenant");
         }
         requireSelfAgentOrOwnerOrEditor(existing.getAgentId());
-        progress.setId(progressId);
-        return ResponseEntity.ok(skillAssessmentService.updateTrainingProgress(progress));
+        // Field whitelist: only mutable progress fields may be updated;
+        // id/agentId/trainingId/tenantId always come from the persisted entity.
+        existing.setStatus(progress.getStatus());
+        existing.setProgress(progress.getProgress());
+        existing.setQuizScore(progress.getQuizScore());
+        existing.setStartedAt(progress.getStartedAt());
+        existing.setCompletedAt(progress.getCompletedAt());
+        existing.setTimeSpentSeconds(progress.getTimeSpentSeconds());
+        existing.setNotes(progress.getNotes());
+        return ResponseEntity.ok(skillAssessmentService.updateTrainingProgress(existing));
     }
 
     // Agent Onboarding
