@@ -99,6 +99,22 @@ public class CustomerProfileController {
         return ResponseEntity.ok().build();
     }
 
+    @PostMapping("/{id}/anonymize")
+    public ResponseEntity<CustomerProfileDTO> anonymizeCustomerProfile(@PathVariable Long id) {
+        requireOwnerOrEditor();
+        Long tenantId = TenantContext.getTenantId();
+        CustomerProfileDTO anonymized = customerProfileService.anonymizeCustomerProfile(id, tenantId);
+        return ResponseEntity.ok(anonymized);
+    }
+
+    @GetMapping("/{id}/export")
+    public ResponseEntity<Map<String, Object>> exportCustomerData(@PathVariable Long id) {
+        requireOwnerOrEditor();
+        Long tenantId = TenantContext.getTenantId();
+        Map<String, Object> export = customerProfileService.exportCustomerData(id, tenantId);
+        return ResponseEntity.ok(export);
+    }
+
     @PostMapping("/{id}/stats")
     public ResponseEntity<Void> updateConversationStats(
             @PathVariable Long id,

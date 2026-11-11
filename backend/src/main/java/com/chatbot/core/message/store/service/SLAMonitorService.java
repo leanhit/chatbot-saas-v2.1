@@ -43,6 +43,7 @@ public class SLAMonitorService {
     private final AgentEmailNotificationService agentEmailNotificationService;
     private final SlackNotificationService slackNotificationService;
     private final TenantPackageService tenantPackageService;
+    private final EscalationService escalationService;
 
     // Default SLA thresholds (in seconds) - used as fallback
     private static final long DEFAULT_VIP_RESPONSE_TIME = 300; // 5 minutes for VIP
@@ -249,7 +250,27 @@ public class SLAMonitorService {
     private void triggerEscalation(Conversation conversation) {
         log.warn("Triggering escalation for conversation {} due to repeated SLA breaches (Breach count: {})", 
             conversation.getId(), conversation.getSlaBreachCount());
-        // Note: Stopped broadcasting escalation_required to the frontend via WebSocket as requested by the user
+
+        // Broadcast SLA escalation event to tenant (WebSocket + Redis pub/sub)
+        try {
+            Map<String, Object> notification = new HashMap<>();
+            notification.put("type", "sla_escalation");
+            notification.put("conversationId", conversation.getId());
+            notification.put("slaBreachCount", conversation.getSlaBreachCount());
+            notification.put("customerTier", conversation.getCustomerTier());
+            notification.put("priority", "urgent");
+            notification.put("timestamp", LocalDateTime.now());
+            notificationWebSocketHandler.broadcastToTenant(conversation.getTenantId(), notification);
+        } catch (Exception e) {
+            log.warn("Failed to broadcast SLA escalation for conversation {}: {}", conversation.getId(), e.getMessage());
+        }
+
+        // Escalate through the tier-based escalation pipeline (persists tier + notifies)
+        try {
+            escalationService.escalateConversation(conversation);
+        } catch (Exception e) {
+            log.error("Failed to escalate conversation {} after SLA breaches", conversation.getId(), e);
+        }
     }
 
     /**

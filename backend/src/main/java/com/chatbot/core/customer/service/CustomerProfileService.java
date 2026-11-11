@@ -1,15 +1,23 @@
 package com.chatbot.core.customer.service;
 
 import com.chatbot.core.customer.dto.*;
+import com.chatbot.core.customer.model.CustomerNote;
 import com.chatbot.core.customer.model.CustomerProfile;
+import com.chatbot.core.customer.model.Feedback;
+import com.chatbot.core.customer.repository.CustomerNoteRepository;
 import com.chatbot.core.customer.repository.CustomerProfileRepository;
+import com.chatbot.core.customer.repository.FeedbackRepository;
+import com.chatbot.core.tenant.service.TenantAuditLogService;
+import com.chatbot.core.tenant.service.TenantPermissionValidator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -18,6 +26,18 @@ import java.util.stream.Collectors;
 public class CustomerProfileService {
 
     private final CustomerProfileRepository customerProfileRepository;
+    private final FeedbackRepository feedbackRepository;
+    private final CustomerNoteRepository customerNoteRepository;
+    private final TenantAuditLogService auditLogService;
+    private final TenantPermissionValidator permissionValidator;
+
+    private String currentUserEmail() {
+        try {
+            return permissionValidator.getCurrentUserEmail();
+        } catch (Exception e) {
+            return "system";
+        }
+    }
 
     public CustomerProfileDTO createCustomerProfile(CreateCustomerProfileRequest request, Long tenantId) {
         log.info("Creating customer profile for externalId: {}, tenantId: {}", request.getExternalId(), tenantId);
@@ -139,7 +159,63 @@ public class CustomerProfileService {
         }
 
         customerProfileRepository.delete(profile);
+        auditLogService.logActionAsync(tenantId, currentUserEmail(),
+                "CUSTOMER_PROFILE_DELETED", "customerProfileId=" + id);
         log.info("Customer profile deleted with id: {}", id);
+    }
+
+    /**
+     * GDPR right to erasure: anonymize PII while keeping aggregate stats
+     * (conversations, messages, satisfaction) for analytics integrity.
+     */
+    @Transactional
+    public CustomerProfileDTO anonymizeCustomerProfile(Long id, Long tenantId) {
+        CustomerProfile profile = customerProfileRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Customer profile not found with id: " + id));
+
+        if (!profile.getTenantId().equals(tenantId)) {
+            throw new IllegalArgumentException("Access denied: Customer profile does not belong to tenant");
+        }
+
+        profile.setName("Deleted User");
+        profile.setEmail(null);
+        profile.setPhone(null);
+        profile.setAvatarUrl(null);
+        profile.setCustomAttributes(null);
+        profile.setTags(null);
+        profile.setPreferredLanguage(null);
+        profile.setTimezone(null);
+
+        CustomerProfile saved = customerProfileRepository.save(profile);
+        auditLogService.logActionAsync(tenantId, currentUserEmail(),
+                "CUSTOMER_PROFILE_ANONYMIZED", "customerProfileId=" + id + " (GDPR erasure)");
+        log.info("Customer profile anonymized (GDPR) with id: {}", id);
+        return toDTO(saved);
+    }
+
+    /**
+     * GDPR right of access: export all data held for a customer profile.
+     */
+    @Transactional(readOnly = true)
+    public Map<String, Object> exportCustomerData(Long id, Long tenantId) {
+        CustomerProfile profile = customerProfileRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Customer profile not found with id: " + id));
+
+        if (!profile.getTenantId().equals(tenantId)) {
+            throw new IllegalArgumentException("Access denied: Customer profile does not belong to tenant");
+        }
+
+        List<Feedback> feedback = feedbackRepository.findByCustomerProfileIdAndTenantId(id, tenantId);
+        List<CustomerNote> notes = customerNoteRepository
+                .findByTenantIdAndCustomerProfileIdAndIsDeletedFalseOrderByCreatedAtDesc(tenantId, id);
+
+        Map<String, Object> export = new HashMap<>();
+        export.put("profile", toDTO(profile));
+        export.put("feedback", feedback);
+        export.put("notes", notes);
+        export.put("exportedAt", LocalDateTime.now().toString());
+        log.info("Customer data exported (GDPR) for profile id: {}", id);
+        return export;
     }
 
     @Transactional

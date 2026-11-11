@@ -67,6 +67,20 @@
         <!-- Actions -->
         <div class="flex gap-2">
           <button
+            @click="exportData"
+            class="px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 text-sm rounded-lg transition-colors flex items-center gap-2"
+          >
+            <Icon icon="mdi:download" />
+            Export
+          </button>
+          <button
+            @click="anonymizeCustomer"
+            class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm rounded-lg transition-colors flex items-center gap-2"
+          >
+            <Icon icon="mdi:shield-remove" />
+            Anonymize
+          </button>
+          <button
             @click="openEditModal"
             class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg transition-colors flex items-center gap-2"
           >
@@ -489,6 +503,35 @@ function openEditModal() {
     timezone: customer.value.timezone,
   }
   showEditModal.value = true
+}
+
+async function exportData() {
+  try {
+    const data = await customerProfileApi.exportCustomerData(route.params.id)
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `customer-${route.params.id}-export-${new Date().toISOString().slice(0, 10)}.json`
+    a.click()
+    URL.revokeObjectURL(url)
+  } catch (err) {
+    console.error('Export error:', err)
+    alert('Export failed: ' + (err.message || err))
+  }
+}
+
+async function anonymizeCustomer() {
+  if (!confirm('Anonymize this customer? PII will be permanently removed (GDPR right to erasure). This cannot be undone.')) return
+  try {
+    customer.value = await customerProfileApi.anonymizeCustomerProfile(route.params.id)
+    await loadFeedback()
+    await loadNotes()
+    await loadTimeline()
+  } catch (err) {
+    console.error('Anonymize error:', err)
+    alert('Anonymize failed: ' + (err.message || err))
+  }
 }
 
 async function saveEdit() {

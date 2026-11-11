@@ -1,15 +1,19 @@
 package com.chatbot.core.message.store.service;
 
+import com.chatbot.core.message.store.model.Agent;
 import com.chatbot.core.message.store.model.Conversation;
 import com.chatbot.core.message.store.model.ConversationStatus;
 import com.chatbot.core.message.store.model.RoutingRule;
 import com.chatbot.core.message.store.repository.RoutingRuleRepository;
 import com.chatbot.core.message.store.repository.ConversationRepository;
+import com.chatbot.core.tenant.service.TenantAuditLogService;
+import com.chatbot.core.tenant.service.TenantPermissionValidator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -28,6 +32,16 @@ public class RoutingRuleService {
     private final AgentAssignmentService agentAssignmentService;
     private final ConversationRepository conversationRepository;
     private final EscalationService escalationService;
+    private final TenantAuditLogService auditLogService;
+    private final TenantPermissionValidator permissionValidator;
+
+    private String currentUserEmail() {
+        try {
+            return permissionValidator.getCurrentUserEmail();
+        } catch (Exception e) {
+            return "system";
+        }
+    }
 
     /**
      * Apply routing rules to a conversation
@@ -199,12 +213,64 @@ public class RoutingRuleService {
     private boolean handleRouteToQueue(Conversation conversation, Map<String, Object> action) {
         String queueName = (String) action.get("queueName");
         log.info("Routing rule routed conversation {} to queue: {}", conversation.getId(), queueName);
-        
+
         if (queueName != null && !queueName.isEmpty()) {
             conversation.setQueueName(queueName);
             conversationRepository.save(conversation);
         }
+
+        // Best-effort immediate assignment. If no agent is available the
+        // conversation keeps its queueName and is retried by
+        // BotInboxAutoAssignService on the next cycle.
+        // Optional "requiredSkills" in the action enables skill-based routing.
+        List<String> requiredSkills = extractRequiredSkills(action);
+        tryAssignFromQueue(conversation, requiredSkills);
         return true;
+    }
+
+    /**
+     * Extract optional requiredSkills list from a rule action map.
+     */
+    @SuppressWarnings("unchecked")
+    private List<String> extractRequiredSkills(Map<String, Object> action) {
+        Object skills = action.get("requiredSkills");
+        if (skills instanceof List) {
+            return ((List<Object>) skills).stream()
+                    .filter(s -> s != null)
+                    .map(Object::toString)
+                    .toList();
+        }
+        return Collections.emptyList();
+    }
+
+    /**
+     * Try to assign a queued conversation to an online agent.
+     * Skill-aware first (rule requiredSkills, then conversation-derived skills),
+     * then load-balancing fallback.
+     */
+    private void tryAssignFromQueue(Conversation conversation, List<String> requiredSkills) {
+        if (agentAssignmentService == null) {
+            return;
+        }
+        try {
+            Optional<Agent> agent = Optional.empty();
+            if (requiredSkills != null && !requiredSkills.isEmpty()) {
+                agent = agentAssignmentService.assignConversationToAgent(conversation, requiredSkills);
+            }
+            if (agent.isEmpty()) {
+                agent = agentAssignmentService.autoAssignConversation(conversation);
+            }
+            if (agent.isEmpty()) {
+                agent = agentAssignmentService.assignConversationToAgent(conversation, Collections.emptyList());
+            }
+            if (agent.isPresent()
+                    && agentAssignmentService.reassignConversation(conversation.getId(), agent.get().getId())) {
+                log.info("Queue assignment: conversation {} assigned to agent {}",
+                        conversation.getId(), agent.get().getId());
+            }
+        } catch (Exception e) {
+            log.error("Queue assignment failed for conversation {}", conversation.getId(), e);
+        }
     }
 
     /**
@@ -255,7 +321,10 @@ public class RoutingRuleService {
      */
     @Transactional
     public RoutingRule createRoutingRule(RoutingRule rule) {
-        return routingRuleRepository.save(rule);
+        RoutingRule saved = routingRuleRepository.save(rule);
+        auditLogService.logActionAsync(rule.getTenantId(), currentUserEmail(),
+                "ROUTING_RULE_CREATED", "ruleId=" + saved.getId() + ", name=" + saved.getName());
+        return saved;
     }
 
     /**
@@ -276,7 +345,10 @@ public class RoutingRuleService {
                 existingRule.setAction(updatedRule.getAction());
                 existingRule.setActive(updatedRule.getActive());
                 existingRule.setRuleType(updatedRule.getRuleType());
-                return routingRuleRepository.save(existingRule);
+                RoutingRule saved = routingRuleRepository.save(existingRule);
+                auditLogService.logActionAsync(tenantId, currentUserEmail(),
+                        "ROUTING_RULE_UPDATED", "ruleId=" + ruleId + ", name=" + saved.getName());
+                return saved;
             })
             .orElseThrow(() -> new RuntimeException("Routing rule not found: " + ruleId));
     }
@@ -293,6 +365,8 @@ public class RoutingRuleService {
         RoutingRule rule = routingRuleRepository.findByIdAndTenantId(ruleId, tenantId)
             .orElseThrow(() -> new RuntimeException("Routing rule not found: " + ruleId));
         routingRuleRepository.delete(rule);
+        auditLogService.logActionAsync(tenantId, currentUserEmail(),
+                "ROUTING_RULE_DELETED", "ruleId=" + ruleId + ", name=" + rule.getName());
     }
 
     /**

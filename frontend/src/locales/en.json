@@ -2281,7 +2281,12 @@
       "notes": "Notes",
       "cancel": "Cancel",
       "start": "Start",
-      "confirmEnd": "Confirm End"
+      "confirmEnd": "Confirm End",
+      "whisper": "Whisper",
+      "whisperTitle": "Send Whisper",
+      "whisperPlaceholder": "Internal note to the agent (customer cannot see this)...",
+      "sendWhisper": "Send",
+      "whisperSent": "Whisper sent"
     },
     "sessionTypes": {
       "monitoring": "Monitoring",

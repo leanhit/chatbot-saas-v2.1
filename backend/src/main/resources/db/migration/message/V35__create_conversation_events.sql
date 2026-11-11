@@ -12,14 +12,13 @@ CREATE TABLE IF NOT EXISTS conversation_events (
     metadata JSONB,
     occurred_at TIMESTAMP NOT NULL,
     is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMES
-TAMP,                                                     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMES
-TAMP,                                                     created_by VARCHAR(255),
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_by VARCHAR(255),
     updated_by VARCHAR(255)
 );
 
-CREATE INDEX IF NOT EXISTS idx_conv_event_tenant ON co
-nversation_events(tenant_id);                         CREATE INDEX IF NOT EXISTS idx_conv_event_conversatio
-n ON conversation_events(conversation_id);            CREATE INDEX IF NOT EXISTS idx_conv_event_type ON conv
-ersation_events(event_type);                          CREATE INDEX IF NOT EXISTS idx_conv_event_occurred ON c
-onversation_events(occurred_at);                      
+CREATE INDEX IF NOT EXISTS idx_conv_event_tenant ON conversation_events(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_conv_event_conversation ON conversation_events(conversation_id);
+CREATE INDEX IF NOT EXISTS idx_conv_event_type ON conversation_events(event_type);
+CREATE INDEX IF NOT EXISTS idx_conv_event_occurred ON conversation_events(occurred_at);

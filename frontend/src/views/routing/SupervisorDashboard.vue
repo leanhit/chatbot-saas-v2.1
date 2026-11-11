@@ -99,6 +99,13 @@
                 {{ session.isSilent ? $t('routing.supervisor.silent') : $t('routing.supervisor.canIntervene') }}
               </span>
               <button
+                v-if="session.canIntervene"
+                @click="openWhisperModal(session)"
+                class="px-3 py-1 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors text-sm"
+              >
+                {{ $t('routing.supervisor.whisper') }}
+              </button>
+              <button
                 @click="endSession(session)"
                 class="px-3 py-1 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors text-sm"
               >
@@ -342,6 +349,48 @@
         </form>
       </div>
     </div>
+    <!-- Whisper Modal -->
+    <div v-if="showWhisperModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md mx-4">
+        <div class="flex justify-between items-center p-6 border-b border-gray-200 dark:border-gray-700">
+          <h2 class="text-xl font-bold text-gray-900 dark:text-white">{{ $t('routing.supervisor.whisperTitle') }}</h2>
+          <button
+            @click="closeWhisperModal"
+            class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+          >
+            <Icon icon="mdi:close" class="text-2xl" />
+          </button>
+        </div>
+        <form @submit.prevent="confirmWhisper" class="p-6">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              {{ $t('routing.supervisor.whisperPlaceholder') }}
+            </label>
+            <textarea
+              v-model="whisperContent"
+              rows="3"
+              required
+              class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+            />
+          </div>
+          <div class="mt-6 flex justify-end space-x-3">
+            <button
+              type="button"
+              @click="closeWhisperModal"
+              class="px-4 py-2 bg-gray-200 dark:bg-gray-600 text-gray-900 dark:text-white rounded-md hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors"
+            >
+              {{ $t('routing.supervisor.cancel') }}
+            </button>
+            <button
+              type="submit"
+              class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors"
+            >
+              {{ $t('routing.supervisor.sendWhisper') }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -359,7 +408,10 @@ const loading = ref(false)
 const loadingHistory = ref(false)
 const showStartSessionModal = ref(false)
 const showEndSessionModal = ref(false)
+const showWhisperModal = ref(false)
 const currentSession = ref(null)
+const whisperSession = ref(null)
+const whisperContent = ref('')
 
 const stats = ref({
   activeSessions: 0,
@@ -458,6 +510,29 @@ const confirmEndSession = async () => {
     await loadRecentSessions()
   } catch (err) {
     console.error('End session error:', err)
+  }
+}
+
+const openWhisperModal = (session) => {
+  whisperSession.value = session
+  whisperContent.value = ''
+  showWhisperModal.value = true
+}
+
+const closeWhisperModal = () => {
+  showWhisperModal.value = false
+  whisperSession.value = null
+  whisperContent.value = ''
+}
+
+const confirmWhisper = async () => {
+  if (!whisperSession.value || !whisperContent.value.trim()) return
+  try {
+    await routingApi.sendWhisper(whisperSession.value.id, whisperContent.value.trim())
+    closeWhisperModal()
+    await loadRecentSessions()
+  } catch (err) {
+    console.error('Send whisper error:', err)
   }
 }
 

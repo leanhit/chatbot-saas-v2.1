@@ -55,6 +55,14 @@ public class IntelligentSupervisorController {
         return ResponseEntity.ok(session);
     }
 
+    @PostMapping("/{id}/whisper")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'SUPERVISOR')")
+    public ResponseEntity<Void> sendWhisper(@PathVariable Long id, @RequestBody Map<String, String> request) {
+        String content = request.get("content");
+        supervisorService.sendWhisper(id, content);
+        return ResponseEntity.ok().build();
+    }
+
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'SUPERVISOR')")
     public ResponseEntity<SupervisorSessionDTO> getSession(@PathVariable Long id) {

@@ -1,5 +1,8 @@
 package com.chatbot.core.routing.service;
 
+import com.chatbot.core.message.store.model.ConversationStatus;
+import com.chatbot.core.message.store.repository.ConversationRepository;
+import com.chatbot.core.notification.websocket.NotificationWebSocketHandler;
 import com.chatbot.core.routing.dto.CreateSupervisorSessionRequest;
 import com.chatbot.core.routing.dto.SupervisorSessionDTO;
 import com.chatbot.core.routing.dto.SupervisorTakeoverResult;
@@ -12,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -22,6 +26,8 @@ import java.util.stream.Collectors;
 public class IntelligentSupervisorService {
 
     private final SupervisorSessionRepository supervisorSessionRepository;
+    private final ConversationRepository conversationRepository;
+    private final NotificationWebSocketHandler notificationWebSocketHandler;
 
     @Transactional
     public SupervisorSessionDTO startSupervisorSession(CreateSupervisorSessionRequest request) {
@@ -86,6 +92,48 @@ public class IntelligentSupervisorService {
 
         log.info("Intervention recorded. Total interventions: {}", updated.getInterventionCount());
         return mapToDTO(updated);
+    }
+
+    /**
+     * Send a whisper (internal note) from supervisor to the agent handling the conversation.
+     * Whisper is broadcast to the tenant via WebSocket only — it is never sent to the customer.
+     * Requires an ACTIVE session with canIntervene=true.
+     */
+    @Transactional
+    public void sendWhisper(Long sessionId, String content) {
+        log.info("Supervisor whisper on session {}", sessionId);
+
+        SupervisorSession session = findSessionForCurrentTenant(sessionId);
+
+        if (session.getSessionStatus() != SupervisorSession.SessionStatus.ACTIVE) {
+            throw new IllegalStateException("Cannot whisper on a session that is not active");
+        }
+        if (!Boolean.TRUE.equals(session.getCanIntervene())) {
+            throw new IllegalStateException("Session does not allow intervention (silent monitoring)");
+        }
+        if (content == null || content.isBlank()) {
+            throw new IllegalArgumentException("Whisper content must not be empty");
+        }
+
+        session.setInterventionCount(session.getInterventionCount() + 1);
+        supervisorSessionRepository.save(session);
+
+        try {
+            Map<String, Object> data = new HashMap<>();
+            data.put("conversationId", session.getConversationId());
+            data.put("supervisorId", session.getSupervisorId());
+            data.put("sessionId", sessionId);
+            data.put("sessionType", session.getSessionType() != null ? session.getSessionType().name() : null);
+            data.put("content", content);
+            data.put("timestamp", System.currentTimeMillis());
+
+            Map<String, Object> event = new HashMap<>();
+            event.put("type", "SUPERVISOR_WHISPER");
+            event.put("data", data);
+            notificationWebSocketHandler.broadcastToTenant(session.getTenantId(), event);
+        } catch (Exception e) {
+            log.error("Failed to broadcast whisper for session {}: {}", sessionId, e.getMessage());
+        }
     }
 
     @Transactional
@@ -159,6 +207,47 @@ public class IntelligentSupervisorService {
                 tenantId, supervisorId, SupervisorSession.SessionStatus.ACTIVE);
     }
 
+    private void markConversationTakenOver(Long conversationId, Long tenantId) {
+        conversationRepository.findByIdAndTenantId(conversationId, tenantId).ifPresent(conv -> {
+            conv.setIsTakenOverByAgent(true);
+            conv.setStatus(ConversationStatus.ACTIVE_AGENT);
+            conversationRepository.save(conv);
+            log.info("Conversation {} marked as taken over by supervisor (tenant {})", conversationId, tenantId);
+        });
+    }
+
+    private void markConversationReleased(Long conversationId, Long tenantId) {
+        conversationRepository.findByIdAndTenantId(conversationId, tenantId).ifPresent(conv -> {
+            conv.setIsTakenOverByAgent(false);
+            if (ConversationStatus.ACTIVE_AGENT.equals(conv.getStatus())) {
+                conv.setStatus(ConversationStatus.OPEN);
+            }
+            conversationRepository.save(conv);
+            log.info("Conversation {} released from supervisor takeover (tenant {})", conversationId, tenantId);
+        });
+    }
+
+    private void broadcastSupervisorEvent(Long tenantId, Long conversationId, Long supervisorId,
+                                          String action, Long sessionId, String sessionType) {
+        try {
+            Map<String, Object> data = new HashMap<>();
+            data.put("conversationId", conversationId);
+            data.put("supervisorId", supervisorId);
+            data.put("sessionId", sessionId);
+            data.put("sessionType", sessionType);
+            data.put("action", action);
+            data.put("timestamp", System.currentTimeMillis());
+
+            Map<String, Object> event = new HashMap<>();
+            event.put("type", "SUPERVISOR_EVENT");
+            event.put("data", data);
+            notificationWebSocketHandler.broadcastToTenant(tenantId, event);
+        } catch (Exception e) {
+            log.error("Failed to broadcast supervisor event {} for conversation {}: {}",
+                    action, conversationId, e.getMessage());
+        }
+    }
+
     private SupervisorSession findSessionForCurrentTenant(Long sessionId) {
         Long tenantId = com.chatbot.core.tenant.infra.TenantContext.getTenantId();
         if (tenantId == null) {
@@ -228,11 +317,17 @@ public class IntelligentSupervisorService {
         SupervisorSession saved = supervisorSessionRepository.save(session);
         
         log.info("Supervisor takeover successful. Session ID: {}", saved.getId());
-        
-        // TODO: Mark conversation as taken over in conversation routing
-        // TODO: Send WebSocket notification to agents
-        // TODO: Send WebSocket notification to supervisor
-        
+
+        // TAKEOVER sessions take the conversation away from the bot/agent;
+        // monitoring-type sessions only observe and must not change state.
+        if (sessionType == SupervisorSession.SessionType.TAKEOVER) {
+            markConversationTakenOver(conversationId, tenantId);
+        }
+        broadcastSupervisorEvent(tenantId, conversationId, supervisorId,
+                sessionType == SupervisorSession.SessionType.TAKEOVER
+                        ? "supervisor_takeover_started" : "supervisor_session_started",
+                (Long) saved.getId(), sessionType.name());
+
         return SupervisorTakeoverResult.builder()
                 .conversationId(conversationId)
                 .supervisorId(supervisorId)
@@ -269,13 +364,17 @@ public class IntelligentSupervisorService {
         }
         
         SupervisorSession updated = supervisorSessionRepository.save(session);
-        
+
         log.info("Conversation released successfully");
-        
-        // TODO: Mark conversation as no longer taken over in conversation routing
-        // TODO: Send WebSocket notification to agents
-        // TODO: Send WebSocket notification to supervisor
-        
+
+        // Only TAKEOVER sessions mutated the conversation state — restore it.
+        if (session.getSessionType() == SupervisorSession.SessionType.TAKEOVER) {
+            markConversationReleased(session.getConversationId(), session.getTenantId());
+        }
+        broadcastSupervisorEvent(session.getTenantId(), session.getConversationId(),
+                session.getSupervisorId(), "supervisor_session_ended",
+                sessionId, session.getSessionType() != null ? session.getSessionType().name() : null);
+
         return SupervisorTakeoverResult.builder()
                 .conversationId(session.getConversationId())
                 .supervisorId(session.getSupervisorId())

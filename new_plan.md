@@ -157,8 +157,8 @@ Giai đoạn 0 — Foundation & measurements — ✅ Gần như hoàn thành
 Có: Tenant, Agent, CustomerProfile, Conversation, Message, TenantAuditLog, AuditEntity base; RBAC (SystemRole, TenantRole); audit (TenantAuditLogService, AuditService); tenant isolation diện rộng; OpenAPI/SpringDoc; centralized error handling.
 Thiếu: ConversationEvent entity riêng (mới chỉ có shared/messaging/EventTypes), soft-delete chưa xác nhận đồng nhất.
 Giai đoạn 1 — Tenant/security foundation — 🟡 Một phần
-Đã làm: rà soát & fix toàn bộ findAll() cross-tenant (payment analytics, merchant keys, file metadata — commit dfa9b5d).
-Còn thiếu: test tenant isolation thực thi (A không đọc/sửa/xóa được B), RBAC backend check chưa rà soát hết.
+Đã làm: rà soát & fix toàn bộ findAll() cross-tenant (payment analytics, merchant keys, file metadata — commit dfa9b5d); fix toàn bộ findById() không check tenant trên BaseTenantEntity entities (SupervisorSession, EscalationTier, RoutingRule, SLAConfiguration, Agent, Category, AppRegistry — commit 693febca).
+Còn thiếu: RBAC backend check chưa rà soát hết.
 Giai đoạn 2 — Automation & routing — ✅ Tests pass trên Testcontainers
 Có: ConversationRoutingService, IntelligentRoutingController, RoutingRule, EscalationRule/Tier/History, ConversationTransfer, SupervisorSession, EscalationService, AIEscalationService, SLAMonitorService, BotInboxAutoAssignService.
 Đã xong: 4 repository integration tests + TenantIsolationTest + 3 smoke tests (routing/escalation/supervisor) chạy trên PostgreSQL pgvector + Redis container thật qua AbstractTestcontainersIntegrationTest; MultiFlywayConfig conditional (app.flyway.enabled), ddl-auto=create-drop per schema; fix URL currentSchema (separator & + include public cho pgvector type); fix JSONB columns sang @JdbcTypeCode(SqlTypes.JSON); controller tests (@WebMvcTest bị full ComponentScan nuốt context) chuyển sang standalone MockMvc + GlobalExceptionHandler (22/22 pass).
@@ -168,15 +168,15 @@ Training/skill/certification/onboarding + gate online, tenant-scoped, unit tests
 Giai đoạn 4 — Customer experience — 🟡 Backend có, frontend còn lỗi
 Backend có: CustomerProfile, CustomerNote, CustomerTimelineService, Feedback + FeedbackService/Controller, CustomerSegmentationService.
 Frontend có: CustomerProfileDetail, CustomerProfiles, FeedbackSurvey, NPSPanel, SegmentOverview, VIPQueue, CustomerAnalytics.
-Đã verify: frontend bugs đã fix (commit aa03603 — viewCustomer→detail route, edit dùng formData.id, delete qua ConfirmModal); feedback↔conversation linking tenant-validated trong FeedbackService; segmentation/VIP có business rules thật (CustomerSegmentationService); metadata cover bởi customAttributes/tags JSON. Đã fix thêm: updateCustomerSatisfactionScore trước chỉ log → giờ persist satisfactionScore + auto recalc tier khi tạo feedback. Còn lại: VIPConfig entity (rules đang hardcode trong service — optional), unit tests mở rộng.
+Đã verify: frontend bugs đã fix (commit aa03603 — viewCustomer→detail route, edit dùng formData.id, delete qua ConfirmModal); feedback↔conversation linking tenant-validated trong FeedbackService; segmentation/VIP có business rules thật (CustomerSegmentationService); metadata cover bởi customAttributes/tags JSON. Đã fix thêm: updateCustomerSatisfactionScore trước chỉ log → giờ persist satisfactionScore + auto recalc tier khi tạo feedback. VIPConfig entity đã xong (per-tenant thresholds + migration V8 + tests).
 Giai đoạn 5 — AI & analytics — � Đã bổ sung journey/funnel/report
 Đã làm thêm: CustomerJourneyService (timeline tính từ profile+conversation+feedback+sentiment, tenant-scoped), FunnelStage entity + FunnelService (stage config CRUD + conversion), CustomReport + ReportSchedule entities, ReportService (5 loại report: CONVERSATIONS/SENTIMENT/AI_USAGE/FEEDBACK/FUNNEL), ReportScheduler (cron + ShedLock, set TenantContext per schedule), API /api/analytics/journey|funnel|funnel/stages, /api/reports + /api/reports/schedules; frontend views FunnelAnalysis/CustomReports/CustomerJourney + analyticsApi.js + routes.
 Đã có sẵn: AiSuggestion accept/reject (= SuggestionFeedback), SentimentService, AnalyticsDailySummary + scheduled aggregation (ShedLock), LlmRoutingService provider abstraction qua PennyBot.
-Đã xong: AI Suggestion Panel UI + Sentiment Live Indicator trong Chat.vue (AiAssistantPanel.vue, aiApi.js) — sentiment badge + generate/accept/reject suggestions; verify API sentiment OK, suggestion degrade gracefully khi LLM provider unavailable. AIProviderConfig per-tenant: provider config đã per-tenant qua PennyBot (providerType+modelName) — không cần entity riêng. Còn thiếu: unit tests cho service mới.
+Đã xong: AI Suggestion Panel UI + Sentiment Live Indicator trong Chat.vue (AiAssistantPanel.vue, aiApi.js) — sentiment badge + generate/accept/reject suggestions; verify API sentiment OK, suggestion degrade gracefully khi LLM provider unavailable. AIProviderConfig per-tenant: provider config đã per-tenant qua PennyBot (providerType+modelName) — không cần entity riêng. Unit tests đã có & pass (71 tests): CustomerJourneyServiceTest, FunnelServiceTest, ReportServiceTest, ReportSchedulerTest, ReportScheduleServiceTest.
 Giai đoạn 6 — Scale/compliance — ✅ Đã bổ sung 2FA/GDPR/rate-limit
 Đã làm thêm: 2FA TOTP (TwoFactorService + /api/auth/2fa setup|enable|disable|status, login yêu cầu totpCode khi enabled, cột users.totp_secret/totp_enabled), GDPR deletion workflow (data_deletion_requests + DataDeletionService: PENDING→PROCESSING→COMPLETED, grace 30 ngày, auto-process hourly, anonymize customer PII + xóa messages/conversations/feedback), TenantRateLimitFilter (Redis sliding window 600 req/min/tenant, fail-open), frontend TwoFactorSetup.vue + GdprCenter.vue (routes /settings/2fa, /settings/gdpr). Đã test API thật: 2fa setup/enable/status OK, deletion create/cancel OK.
 Có sẵn: TenantAuditLog, Webhook + WebhookDeadLetter + WebhookEvent (payment), WebhookSignatureService, MerchantApiKey, RateLimitService/PennyRateLimiter, DataExportService (export), MessageArchivingService (retention), DLQManagementService + /api/admin/dlq (RabbitMQ inspect/replay).
-Còn thiếu: retry/DLQ tổng quát ngoài payment webhook + RabbitMQ (chưa có DLQ cho Kafka/gRPC calls), unit tests.
+Còn thiếu: retry/DLQ tổng quát ngoài payment webhook + RabbitMQ (chưa có DLQ cho Kafka/gRPC calls). Unit tests compliance đã có (TwoFactorServiceTest, DataDeletionServiceTest, TenantRateLimitFilterTest).
 Frontend — 🟡 Thiếu nhiều page so với plan
 Có: training (Library/Detail/Dashboard), customer (7 views), routing (Queue/Assignment/Supervisor/Escalation/Transfer), admin WebhookManagement, SkillsManagement.
 Có thêm: FunnelAnalysis, CustomReports, CustomerJourney (routes /analytics/*).
@@ -186,11 +186,11 @@ Có thêm: FunnelAnalysis, CustomReports, CustomerJourney (routes /analytics/*).
 Kết luận
 Giai đoạn	Trạng thái
 0 Foundation	✅ ~90%
-1 Tenant/security	🟡 findAll xong, thiếu isolation tests
-2 Routing	🟡 code có, blocked test
+1 Tenant/security	✅ findAll + findById tenant-scoped fixes xong (commit 693febca), TenantIsolationIntegrationTest + regression tests cross-tenant pass; còn RBAC backend audit
+2 Routing	✅ code + tests pass trên Testcontainers (163 tests)
 3 Agent	✅ xong
-4 Customer	✅ backend + frontend xong (trừ optional VIPConfig + unit tests)
-5 AI/analytics	✅ journey/funnel/report + AI Suggestion Panel UI + Sentiment Live Indicator xong (verify production 200); AIProviderConfig = per-tenant qua PennyBot; còn thiếu unit tests
-6 Compliance	✅ 2FA/GDPR/rate-limit xong (đã test API production); thiếu DLQ tổng quát + unit tests
+4 Customer	✅ backend + frontend xong (VIPConfig entity đã có — per-tenant thresholds + migration V8 + tests)
+5 AI/analytics	✅ journey/funnel/report + AI Suggestion Panel UI + Sentiment Live Indicator xong (verify production 200); AIProviderConfig = per-tenant qua PennyBot; unit tests đã có (71 tests pass)
+6 Compliance	✅ 2FA/GDPR/rate-limit xong (đã test API production) + unit tests (TwoFactorServiceTest, DataDeletionServiceTest, TenantRateLimitFilterTest); thiếu DLQ tổng quát cho Kafka/gRPC
 Frontend general	✅ Onboarding Wizard, Skill Matrix, Certification Overview, Audit Log UI + routes/sidebar; fix trainingApi double /api (404) + TrainingController X-Tenant-Id→TenantContext + audit createdAt ISO — verify production 200
-Ưu tiên tiếp theo: unit tests cho các service mới (journey/funnel/report/AI/compliance) hoặc CI riêng chạy unit+integration tests (Giai đoạn 0 còn thiếu).
+Ưu tiên tiếp theo: RBAC backend audit (cùng mạch tenant isolation), ConversationEvent entity riêng (Phase 0), DLQ tổng quát cho Kafka/gRPC (Phase 6), soft-delete consistency sweep.

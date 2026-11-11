@@ -75,6 +75,18 @@ const customerProfileApi = {
     const response = await axios.post(`/customer/profiles/${id}/recalculate-tier`, null, { params: { force } })
     return response.data
   },
+
+  // GDPR: anonymize customer PII (right to erasure)
+  async anonymizeCustomerProfile(id) {
+    const response = await axios.post(`/customer/profiles/${id}/anonymize`)
+    return response.data
+  },
+
+  // GDPR: export all customer data (right of access)
+  async exportCustomerData(id) {
+    const response = await axios.get(`/customer/profiles/${id}/export`)
+    return response.data
+  },
 }
 
 export default customerProfileApi

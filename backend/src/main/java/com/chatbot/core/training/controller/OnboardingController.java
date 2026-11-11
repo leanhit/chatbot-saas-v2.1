@@ -92,4 +92,30 @@ public class OnboardingController {
         List<AgentOnboardingProgress> progress = onboardingService.getAgentOnboardingProgress(agentId, tenantId);
         return ResponseEntity.ok(progress);
     }
+
+    @PostMapping("/progress/approve")
+    public ResponseEntity<Void> approveTask(
+            @RequestParam Long agentId,
+            @RequestParam Long taskId,
+            @RequestParam(required = false) String comments) {
+        requireOwnerOrEditor();
+        Long tenantId = com.chatbot.core.tenant.infra.TenantContext.getTenantId();
+        Long supervisorId = permissionValidator.getCurrentUser() != null
+                ? permissionValidator.getCurrentUser().getId() : null;
+        onboardingService.approveTask(agentId, taskId, supervisorId, comments, tenantId);
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/progress/reject")
+    public ResponseEntity<Void> rejectTask(
+            @RequestParam Long agentId,
+            @RequestParam Long taskId,
+            @RequestParam(required = false) String comments) {
+        requireOwnerOrEditor();
+        Long tenantId = com.chatbot.core.tenant.infra.TenantContext.getTenantId();
+        Long supervisorId = permissionValidator.getCurrentUser() != null
+                ? permissionValidator.getCurrentUser().getId() : null;
+        onboardingService.rejectTask(agentId, taskId, supervisorId, comments, tenantId);
+        return ResponseEntity.ok().build();
+    }
 }

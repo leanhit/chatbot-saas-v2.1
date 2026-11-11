@@ -104,6 +104,11 @@ const routingApi = {
     return response.data
   },
 
+  async sendWhisper(id, content) {
+    const response = await axios.post(`/routing/supervisor-sessions/${id}/whisper`, { content })
+    return response.data
+  },
+
   async getSupervisorSessionsBySupervisor(supervisorId) {
     const response = await axios.get(`/routing/supervisor-sessions/supervisor/${supervisorId}`)
     return response.data

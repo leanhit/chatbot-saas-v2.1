@@ -2,6 +2,7 @@ package com.chatbot.core.training.service;
 
 import com.chatbot.core.message.store.model.Agent;
 import com.chatbot.core.message.store.repository.AgentRepository;
+import com.chatbot.core.message.store.service.AgentAssignmentService;
 import com.chatbot.core.training.dto.AgentTrainingSummary;
 import com.chatbot.core.training.dto.TrainingDashboardStats;
 import com.chatbot.core.training.model.AgentCertification;
@@ -40,6 +41,7 @@ public class TrainingService {
     private final AgentOnboardingProgressRepository onboardingProgressRepository;
     private final CertificationLevelRepository certificationLevelRepository;
     private final CertificationService certificationService;
+    private final AgentAssignmentService agentAssignmentService;
 
     // Training Materials
     public List<TrainingMaterial> getAllMaterials() {
@@ -312,5 +314,14 @@ public class TrainingService {
         }
 
         agentSkillRepository.save(skill);
+
+        // Bridge to routing: expose skill on Agent.skills when INTERMEDIATE+
+        if (newScore >= 60) {
+            try {
+                agentAssignmentService.addSkillToAgent(agentId, skillCategory.name().toLowerCase());
+            } catch (Exception e) {
+                log.warn("[SkillBridge] Failed to sync skill {} to agent {}: {}", skillCategory, agentId, e.getMessage());
+            }
+        }
     }
 }

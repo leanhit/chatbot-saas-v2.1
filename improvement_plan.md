@@ -1,576 +1,194 @@
-Mô hình nâng cấp của bạn đang đúng hướng, nhưng tôi khuyên bạn nên tinh chỉnh lại theo kiểu “MVP + foundation-first” thay vì “đẩy hết feature theo timeline dài”. Với một hệ thống SaaS chatbot hiện có, nếu triển khai quá nhiều module cùng lúc sẽ dễ rơi vào tình trạng:
+# Improvement Plan — Chatbot SaaS v2.1
 
-tốn thời gian xây core không đủ chắc
-backend/frontend không thống nhất schema
-analytics và AI làm chậm release
-người dùng không thấy giá trị rõ ràng trong 1–2 tháng đầu
-Tôi đề xuất bạn đổi hướng như sau:
-
-Core roadmap nên chia 3 lớp:
-Lớp 1: Nền tảng vận hành
-Lớp 2: Tăng năng suất agent
-Lớp 3: Tối ưu phân tích + AI
-Ưu tiên thực hiện theo thứ tự:
-Phase A: Stabilize + Metrics
-Agent profile
-Conversation stats
-Customer profile
-Feedback survey
-Audit log
-Role-based access control
-Phase B: Agent performance
-Training module
-Onboarding flow
-Skill assessment
-Certification
-Phase C: Intelligent routing + monitoring
-Smart routing
-Auto-escalation
-SLA monitoring
-Supervisor mode
-Phase D: Analytics & AI
-Conversation analytics
-Funnel analysis
-Journey mapping
-AI suggestions
-Real-time sentiment
-Phase E: Extension
-Webhooks
-Third-party integrations
-Custom bot framework
-GDPR/2FA compliance
-Về kế hoạch của bạn: Các phần tốt nhất nên giữ nguyên:
-Agent Training Module
-Skill Assessment
-Certification
-Conversation Analytics
-Customer Profiles
-Smart Routing Advanced
-Auto-escalation
-Supervisor Mode
-Các phần nên hạ xuống priority hoặc tách ra thành phase sau:
-
-Agent-to-Agent Chat
-Custom Bot Framework
-Third-party integrations (Salesforce/Zendesk/HubSpot)
-Custom Reports (nếu chưa có data layer ổn định)
-GDPR/2FA nếu chưa cần ngay ở SaaS đầu tiên
-Tôi khuyên bạn rút gọn ngay thành 2 nhánh chính:
-Nhánh A: “Agent productivity”
-Training
-Onboarding
-Skill matrix
-Certification
-Nhánh B: “Operational intelligence”
-Analytics
-Customer profile
-Routing automation
-Escalation
-Feedback loop
-Nên làm theo cơ chế data-first:
-Đầu tiên định nghĩa domain chính:
-Agent
-Customer
-Conversation
-ConversationEvent
-Queue / Routing
-TrainingMaterial
-SkillScore
-Feedback
-Sau đó mới dựng UI
-Đừng build UI trước khi core data và event model đã ổn
-Gợi ý sắp xếp lại roadmap theo 6 tháng:
-Tháng 1–2:
-Training
-Skill assessment
-Customer profile
-Feedback
-Tháng 3–4:
-Smart routing
-Escalation
-Supervisor mode
-Dashboard analytics
-Tháng 5–6:
-Conversation analytics
-Funnel & journey
-AI suggestion
-Sentiment realtime
-Dành cho repo hiện tại của bạn: Vì repo đang là Java Spring Boot + Vue.js, nên ưu tiên:
-backend: domain services, repository layer, DTOs, event-driven jobs
-frontend: module-based dashboard, lazy route, reusable components
-analytics: store in DB first, not just display in UI
-real-time features: Use WebSocket or async event bus, không nên làm ngay từ đầu nếu chưa có infra vững
-Khuyến nghị cuối cùng: Bạn nên giữ nguyên “Improvement Plan”, nhưng đổi tên các phase thành:
-Phase 1: Foundation & measurements
-Phase 2: Agent enablement
-Phase 3: Customer visibility
-Phase 4: Automation & routing
-Phase 5: AI & analytics
-Phase 6: Scale & integrations
-
-> **Roadmap numbering chuẩn (canonical)** — dùng trong `new_plan.md` và mọi báo cáo tiến độ:
-> - **Giai đoạn 0** — Chốt trạng thái & tiêu chí nghiệm thu
-> - **Giai đoạn 1** — Tenant/security foundation (tương ứng Phase 1 Foundation + Phase 0 backend cũ)
-> - **Giai đoạn 2** — Automation & routing (tương ứng Phase 4 cũ / Phase 3 backend cũ)
-> - **Giai đoạn 3** — Năng lực agent (tương ứng Phase 2 cũ / Phase 1 backend cũ)
-> - **Giai đoạn 4** — Customer experience (tương ứng Phase 3 cũ / Phase 2 backend cũ)
-> - **Giai đoạn 5** — AI & analytics (tương ứng Phase 5 cũ)
-> - **Giai đoạn 6** — Scale, compliance & integrations (tương ứng Phase 6 cũ)
+> **Mục đích**: kế hoạch nâng cấp backend (Java Spring Boot) + frontend (Vue 3) theo hướng data-first, chia phase rõ ràng, mỗi phase có Definition of Done (DoD) và known gaps đối chiếu với code hiện tại.
 >
-> Các section "Phase 0–6" trong phần backend/frontend chi tiết bên dưới là cách đánh số cũ, chỉ mang tính tham khảo nội dung; khi báo cáo tiến độ luôn dùng Giai đoạn 0–6 ở trên.
-Tức là không cần “mọi thứ đều có trong 1 roadmap dài”, mà phải chia rõ:
+> **Cập nhật**: 2026-11-11 — đã đối chiếu với codebase thực tế.
 
-phải xong trước để tạo giá trị
-có thể trì hoãn sau
-Nếu bạn muốn, tôi có thể làm tiếp cho bạn 1 trong 3 thứ:
+---
 
-Chuyển bản kế hoạch này thành backlog Jira/epic + story
-Chia thành roadmap 6 tháng theo sprint
-Soạn một “implementation plan” rành cho backend Java + frontend Vue dựa trên repo hiện tại của bạn
-viết kế hoạch nâng cấp backend và frontend riêng
-Dưới đây là kế hoạch nâng cấp riêng cho Backend và Frontend, dựa trên repo hiện tại Java Spring Boot + Vue.js của bạn.
+## 0. Nguyên tắc chung
 
-Mục tiêu tổng quát:
+- **Data-first**: domain model ổn định trước, UI sau. Domain chính: `Tenant`, `Agent`, `Customer`, `Conversation`, `ConversationMessage`, `ConversationEvent`, `RoutingRule`, `EscalationTier`, `TrainingMaterial`, `AgentSkill`, `Feedback`, `AiSuggestion`.
+- **Tenant isolation là bắt buộc**: mọi query/service phải qua `TenantContext` + `tenantId`; mutation endpoint phải check `TenantPermissionValidator`.
+- **Module khép kín**: mỗi module = backend (entity + repository + service + controller + DTO) + frontend (route + store + views). Không build UI trước khi API ổn.
+- **Definition of Done (DoD) chung cho mọi phase**:
+  1. API chạy đúng, tenant-scoped, có `@PreAuthorize`/permission check phù hợp.
+  2. Frontend page dùng được end-to-end (không mock data).
+  3. Có test tối thiểu (unit cho service rule, integration cho luồng chính).
+  4. Không còn `TODO`/stub trong luồng chính của phase.
+  5. Cập nhật file này: đánh dấu phase done + ghi known gaps còn lại.
 
-Tăng năng suất agent
-Tăng khả năng theo dõi và phân tích hội thoại
-Nâng cấp trải nghiệm quản trị và dashboard
-Giữ nền tảng hiệu quả, dễ mở rộng và dễ bảo trì
-Kế hoạch nâng cấp Backend
-1.1. Nguyên tắc triển khai
+---
 
-Đầu tiên xây domain model rõ ràng: Agent, Customer, Conversation, Feedback, Skill, Training, Routing, Escalation
-Tách service layer theo business domain
-Dùng event-driven và async processing cho analytics / AI / real-time
-Luôn giữ tenant isolation và RBAC
-Không làm quá nhiều feature cùng lúc trong một sprint
-1.2. Lộ trình Backend theo phase
+## Phase 1 — Foundation & Tenant/Security (Giai đoạn 1)
 
-Phase 0: Nền tảng và chuẩn hóa dữ liệu Mục tiêu:
+### Scope
+- Tenant context, RBAC (`TenantPermissionValidator`), audit log (`TenantAuditLogService`).
+- Base entity: `createdAt/updatedAt`, soft delete (`isDeleted`), DTO + mapper.
+- Centralized error handling, API versioning, health check.
 
-Làm nền cho các module sau
-Chuẩn hóa schema, tenant, permissions, audit
-Công việc chính:
+### Trạng thái code hiện tại
+- TenantContext, TenantPermissionValidator, TenantAuditLogService, soft delete trên nhiều entity.
+- `@PreAuthorize` trên `AnalyticsController`, permission check trong `TrainingController`/`OnboardingController`.
 
-Tạo model core:
-Tenant
-User / Agent / Supervisor / Admin
-Customer
-Conversation
-ConversationMessage
-ConversationEvent
-ConversationStatus
-Thêm base entities:
-CreatedAt, UpdatedAt, CreatedBy, UpdatedBy
-Soft delete
-Tăng cường:
-RBAC / permissions
-Audit log
-Multi-tenant filtering
-API versioning
-DTO + mapper layer
-Bổ sung:
-OpenAPI/Swagger
-Health check + metrics
-Centralized error handling
-Kết quả mong muốn:
-Backend chuẩn hóa, dễ phát triển module mới
-Bất kỳ feature nào đều có thể ăn theo cùng một schema
-Phase 1: Agent Performance & Training Mục tiêu:
+### DoD
+- [x] Tenant isolation trên các module chính.
+- [~] Audit log được ghi cho **mọi** mutation nhạy cảm — đã bổ sung `CUSTOMER_PROFILE_DELETED/ANONYMIZED` + `ROUTING_RULE_*` (2026-11-11); còn thiếu training/escalation/SLA/agent/package mutations.
+- [x] RBAC matrix rõ ràng — đã tạo `docs/rbac-matrix.md` (2026-11-11).
 
-Tăng hiệu suất và kỹ năng của agent
-Công việc chính:
+### Known gaps
+- Audit log coverage chưa đồng đều giữa các controller (một phần đã fix).
+- ~~Chưa có RBAC matrix document~~ → đã có `docs/rbac-matrix.md`.
 
-Tạo entities:
-TrainingMaterial
-TrainingCategory
-AgentTrainingProgress
-AgentOnboardingTask
-AgentOnboardingProgress
-AgentSkill
-AgentCertification
-CertificationLevel
-Service:
-TrainingService
-OnboardingService
-SkillAssessmentService
-CertificationService
-API:
-GET /api/training/materials
-POST /api/training/materials
-GET /api/agents/{id}/training-progress
-POST /api/agents/{id}/complete-training
-GET /api/agents/{id}/skills
-POST /api/agents/{id}/certifications
-Business rules:
-Training completion -> update skill score
-Certification được auto-award theo threshold
-Onboarding checklist phải được hoàn thành trước khi agent đi online
-Phase 2: Customer & Experience Layer Mục tiêu:
+---
 
-Dữ liệu khách hàng tốt hơn, dễ theo dõi, dễ phản hồi
-Công việc chính:
+## Phase 2 — Agent Enablement (Giai đoạn 3)
 
-Tạo entities:
-CustomerProfile
-CustomerMetadata
-CustomerSegment
-CustomerFeedback
-VIPConfig
-Service:
-CustomerProfileService
-CustomerSegmentService
-FeedbackService
-VIPRoutingService
-API:
-GET /api/customers/{id}
-POST /api/customers/{id}/notes
-GET /api/customers/{id}/history
-POST /api/feedback
-GET /api/segments
-POST /api/customers/{id}/vip
-Business rules:
-VIP customer được ưu tiên routing
-Feedback được gắn với conversation và CSAT
-Mỗi customer profile có lịch sử tương tác đầy đủ
-Phase 3: Routing, Escalation & Supervisor Mục tiêu:
+### Scope
+- Training materials/categories, agent training progress, onboarding tasks/progress, skill assessment, certification levels.
+- Agent conversation stats (KPI, leaderboard).
 
-Tự động phân luồng hiệu quả hơn, giảm SLA breach
-Công việc chính:
+### Trạng thái code hiện tại
+- Backend đầy đủ: `TrainingService`, `SkillAssessmentService`, `CertificationService`, `OnboardingService`, `AgentConversationStatsService`.
+- API: `/api/training/**`, `/api/onboarding/**`.
+- Frontend: có `admin/SkillsManagement.vue`; **cần verify** `TrainingLibrary`, `OnboardingWizard`, `SkillMatrix`, `Certification` views đã có chưa.
 
-Nâng cấp ConversationRoutingService:
-skill-based routing
-workload balancing
-availability-aware routing
-priority queue
-Tạo entities:
-EscalationRule
-EscalationPolicy
-ConversationTransfer
-SupervisorMonitoringSession
-Service:
-EscalationService
-TransferService
-SupervisorService
-API:
-POST /api/routing/assign
-POST /api/conversations/{id}/transfer
-POST /api/escalations
-GET /api/escalations/history
-POST /api/supervisors/watch
-Business rules:
-Nếu customer có sentiment âm hoặc SLA sắp vượt ngưỡng -> auto-escalate
-Supervisor có thể listen / takeover / whisper
-Phase 4: Analytics & Reporting Mục tiêu:
+### DoD
+- [x] Agent hoàn thành training → skill score cập nhật → certification auto-award: `TrainingService.completeTraining` → `updateSkillScore` → `checkAndAutoAwardCertifications` (verify 2026-11-11).
+- [x] Onboarding checklist chặn agent "đi online": `AgentService.updateAgentStatus(ONLINE)` → `assertOnboardingComplete` throw; `PresenceWebSocketHandler` cũng check (verify 2026-11-11).
+- [x] Frontend: Training Library + Onboarding Wizard + Skill Matrix + Certification Overview đã có views + routes (verify 2026-11-11).
+- [x] Supervisor approve/reject onboarding task: đã expose `POST /api/onboarding/progress/approve|reject` (fix 2026-11-11).
 
-Hệ thống có dữ liệu để ra quyết định
-Công việc chính:
+### Known gaps
+- ~~Certification award chỉ manual~~ → đã có auto-award qua `checkAndAutoAwardCertifications`.
+- ~~`approveTask/rejectTask` chưa expose~~ → đã thêm endpoints.
 
-Tạo entities:
-ConversationAnalytics
-CustomerJourney
-FunnelStage
-CustomReport
-ReportSchedule
-Service:
-AnalyticsService
-JourneyService
-FunnelService
-ReportGenerationService
-API:
-GET /api/analytics/conversations
-GET /api/analytics/sentiment
-GET /api/analytics/funnel
-GET /api/analytics/journey/{customerId}
-POST /api/reports
-Việc cần làm:
-Tạo scheduled jobs để aggregate data
-Bổ sung caching cho query báo cáo dài
-Tối ưu query aggregation theo tenant + date range
-Mục tiêu:
-Dashboard không cần tính real-time từ dữ liệu gốc mỗi lần render
-Phase 5: AI & Real-time Features Mục tiêu:
+---
 
-Tạo giá trị AI cao hơn
-Công việc chính:
+## Phase 3 — Customer Experience (Giai đoạn 4)
 
-Tạo:
-SuggestionService
-SentimentAnalysisService
-AIProviderConfig
-SuggestionFeedback
-Integrations:
-OpenAI / LLM provider
-real-time sentiment scoring
-AI suggestion for agent responses
-API:
-POST /api/ai/suggest
-GET /api/ai/suggestions/{conversationId}
-GET /api/conversations/{id}/sentiment
-Business rules:
-Gợi ý response dựa trên context
-Đánh giá độ tin cậy của suggestion
-Theo dõi phản hồi của agent với suggestion
-Phase 6: Security, Compliance & Scale Mục tiêu:
+### Scope
+- Customer profile (tier, block, tags, custom attributes), feedback/CSAT/NPS, VIP routing, segments.
 
-Dễ triển khai production và tuân thủ compliance
-Công việc chính:
+### Trạng thái code hiện tại
+- `CustomerProfileService`, `FeedbackService`/`FeedbackController` đầy đủ filter (status/type/date-range/recent).
+- Frontend: `customer/CustomerProfiles.vue`, `CustomerProfileDetail.vue`, `FeedbackSurvey.vue`, `NPSPanel.vue`, `VIPQueue.vue`, `SegmentOverview.vue`, `CustomerAnalytics.vue`.
+- VIP tier đã được `RoutingRuleService.createDefaultRoutingRules` dùng (vip_queue/enterprise_queue).
 
-Audit log
-Data retention policy
-GDPR export/deletion support
-Two-factor authentication
-Webhook service
-API key management
-Retry logic + dead-letter queue
-Rate limiting / quota per tenant
-1.3. Backend ưu tiên thực hiện trong 6 tháng
+### DoD
+- [x] Feedback gắn với conversation + cập nhật `satisfactionScore`: `createFeedback` tự gọi `updateCustomerSatisfactionScore` + `recalculateTier` (verify 2026-11-11).
+- [x] Customer timeline/history hiển thị đầy đủ trên `CustomerProfileDetail` — tab Timeline dùng `CustomerTimelineService` unified events (verify 2026-11-11).
+- [x] VIP customer ưu tiên routing: default rules `vip_queue`/`enterprise_queue` + `handleRouteToQueue` giờ try assign ngay (fix 2026-11-11).
 
-Tháng 1-2:
-Core domain + RBAC + audit
-Training + onboarding + skills
-Tháng 3-4:
-Customer profiles + feedback + routing + escalation
-Supervisor features
-Tháng 5-6:
-Analytics + report + AI suggestion + sentiment
-Security/compliance + webhooks
-1.4. Kiến trúc Backend khuyến nghị
+### Known gaps
+- ~~`handleRouteToQueue` chỉ lưu `queueName`, không có consumer~~ → đã fix (try assign + retry).
+- Customer segment: có `SegmentOverview.vue` nhưng cần verify backend `CustomerSegmentService`/`CustomerSegmentationService` — `FeedbackService` đã inject `CustomerSegmentationService` nên backend có tồn tại.
 
-Java Spring Boot
-Spring Security + JWT
-Spring Data JPA / PostgreSQL
-Redis cho cache và rate limit
-RabbitMQ cho async jobs
-WebSocket cho supervisor / live monitoring
-OpenAPI / SpringDoc
-Prometheus + Grafana cho observability
-gRPC vẫn giữ cho Hub-Spoke nếu bạn đang dùng, nhưng không làm phức tạp quá
-Kế hoạch nâng cấp Frontend
-2.1. Nguyên tắc triển khai
+---
 
-Chia UI theo module: Agent, Customer, Analytics, Admin
-Dùng design system thống nhất
-Mỗi module phải có route riêng, store riêng, API service riêng
-Đừng làm toàn bộ dashboard dạng “single page mega app”
-Cho user thấy giá trị nhanh: dashboard, training, customer profile, routing, analytics
-2.2. Lộ trình Frontend theo phase
+## Phase 4 — Automation & Routing (Giai đoạn 2)
 
-Phase 0: Foundation UI & Architecture Mục tiêu:
+### Scope
+- Attribute-based routing rules, skill-based + workload balancing, multi-tier escalation, SLA monitoring, supervisor takeover/whisper.
 
-Chuẩn hóa giao diện và codebase
-Công việc chính:
+### Trạng thái code hiện tại
+- `RoutingRuleService` (conditions + actions: assign/route/escalate/block/custom).
+- `EscalationService` (tier theo thời gian, scheduled 1 phút, notify WebSocket+email+Slack).
+- `SLAMonitorService` (SLA config per tier + package fallback, breach count, scheduled).
+- `AIEscalationService` (LLM sentiment/complexity → auto-escalate).
+- `IntelligentSupervisorService` takeover/release/session đã wire vào `Conversation` + WebSocket (fix 2026-11-11).
+- Frontend: `admin/RoutingRules.vue`, `EscalationTiers.vue`, `SLAMonitoring.vue`.
 
-Tách frontend thành modules:
-auth
-agent
-customer
-analytics
-admin
-settings
-Create reusable components:
-DataTable
-Card
-MetricWidget
-FilterBar
-StatusBadge
-Modal, Drawer, Tabs
-Tạo shared store structure:
-userStore
-tenantStore
-notificationStore
-globalFilterStore
-Cải thiện:
-i18n
-route guards
-loading/error states
-API interceptor
-Kết quả:
-Frontend dễ mở rộng, không phụ thuộc quá nhiều vào logic lẫn nhau
-Phase 1: Agent Workspace & Productivity UI Mục tiêu:
+### DoD
+- [x] **SLA breach → escalation thực sự xảy ra**: `SLAMonitorService.triggerEscalation()` đã gọi `EscalationService.escalateConversation()` + broadcast `sla_escalation` qua WebSocket (fix 2026-11-11).
+- [x] **Supervisor takeover khép kín**: `IntelligentSupervisorService.takeoverConversation` mark `isTakenOverByAgent`/`ACTIVE_AGENT` khi sessionType=TAKEOVER; `releaseConversation` restore state; broadcast `SUPERVISOR_EVENT` qua WebSocket (fix 2026-11-11).
+- [x] Skill-based routing: routing rule action hỗ trợ `requiredSkills` → `AgentAssignmentService.assignConversationToAgent` match `Agent.skills` + load balancing (fix 2026-11-11). **Bridge đã có**: `AgentSkill` score ≥ 60 (INTERMEDIATE+) tự sync sang `Agent.skills` qua `SkillAssessmentService`/`TrainingService` → `addSkillToAgent` (skill string = category lowercase, vd "technical", "billing") (fix 2026-11-11).
+- [x] Workload balancing: `AgentAssignmentService.assignByLoadBalancing`/`assignBySkillMatchAndLoad` đã cân bằng theo `currentLoad`/`maxConcurrentConversations` + filter ONLINE.
+- [x] Frontend supervisor dashboard: `SupervisorDashboard.vue` có whisper button + modal gọi `POST /{id}/whisper` (fix 2026-11-11).
 
-Tăng hiệu suất làm việc của agent
-Các page:
+### Known gaps (đã xử lý 2026-11-11)
+1. ~~`SLAMonitorService.triggerEscalation()` là stub~~ → đã wire `EscalationService` + WebSocket `sla_escalation`.
+2. ~~`IntelligentSupervisorService.takeoverConversation/releaseConversation` thiếu wiring~~ → đã mark conversation state + broadcast `SUPERVISOR_EVENT`.
+3. ~~`handleRouteToQueue` không có consumer~~ → đã thêm `tryAssignFromQueue` (skill-aware → load-balance fallback → `reassignConversation`); retry mỗi 30s qua `BotInboxAutoAssignService`.
+4. ~~`SupervisorSessionService` deprecated duplicate~~ → đã xóa file, không còn reference.
+5. ~~Whisper: `isSilent`/`canIntervene` có field nhưng chưa có message path riêng~~ → backend `sendWhisper()` + endpoint + frontend whisper modal trong `SupervisorDashboard.vue` (fix 2026-11-11).
 
-Agent Dashboard
-Training Library
-Training Detail
-Onboarding Wizard
-Skill Matrix
-Certification Overview
-Agent Profile
-Performance analytics card
-Component:
+---
 
-Progress panel
-Quiz viewer
-Skill radar chart
-Badge display
-Certificate modal
-Phase 2: Customer Experience UI Mục tiêu:
+## Phase 5 — AI & Analytics (Giai đoạn 5)
 
-Hiển thị thông tin khách hàng và feedback rõ ràng
-Các page:
+### Scope
+- Daily aggregation, customer journey, funnel, custom reports, AI suggestions + feedback, sentiment.
 
-Customer Management
-Customer Profile Detail
-Conversation History
-Feedback Center
-VIP Customer Queue
-Segment Overview
-Component:
+### Trạng thái code hiện tại
+- `AnalyticsController` (`/api/analytics/summary`, `/journey/{id}`, `/funnel` + stages CRUD).
+- `AnalyticsAggregationService`, `CustomerJourneyService`, `FunnelService`, `ReportService` (5 report types).
+- `AiSuggestionService` (generate, confidence, PENDING status), `AIEscalationService`.
+- Frontend: `analytics/CustomReports.vue`, `CustomerJourney.vue`, `FunnelAnalysis.vue`.
 
-Customer Timeline
-Conversation Tag list
-Feedback form
-NPS panel
-VIP badge
-Phase 3: Routing, Escalation & Supervisor UI Mục tiêu:
+### DoD
+- [x] Aggregation chạy scheduled: `AnalyticsAggregationService.aggregateDailyScheduled` cron 01:30 hằng ngày, ShedLock, per-tenant `TenantContext` (verify 2026-11-11).
+- [x] AI suggestion accept/reject feedback loop: `AiSuggestionController` có `/{id}/accept` + `/{id}/reject` → status ACCEPTED/REJECTED → đếm trong `aggregateForDate` (`aiSuggestionsAccepted/Rejected`, `aiAcceptanceRate`) (verify 2026-11-11).
+- [x] Report scheduling: `ReportSchedule` + `ReportScheduleService` + `ReportScheduler` (poll mỗi 60s, cron expression per schedule, ShedLock) (verify 2026-11-11 — đánh giá trước đó sai, đã tồn tại).
+- [ ] Caching cho query báo cáo dài — chưa verify Redis cache layer (minor).
 
-Tạo panel điều phối và giám sát
-Các page:
+### Known gaps
+- ~~`ReportSchedule` chưa implement~~ → đã có đầy đủ.
+- ~~Sentiment realtime~~ → `SentimentController`: `POST /api/ai/sentiment/score/{conversationId}` (on-demand scoring) + `GET /conversation/{id}` latest — đủ cho use case realtime per-conversation.
+- Word cloud / heatmap charts — cần verify frontend analytics views có đủ chart types.
 
-Live Queue
-Agent Assignment
-Supervisor Dashboard
-Escalation Monitor
-Transfer History
-Takeover Panel
-Component:
+---
 
-Queue board
-Agent status cards
-Conversation actions
-SLA warning banners
-Transfer modal
-Whisper panel
-Phase 4: Analytics Dashboard UI Mục tiêu:
+## Phase 6 — Scale, Compliance & Integrations (Giai đoạn 6)
 
-Hiển thị KPI và insight cho quản lý
-Các page:
+### Scope
+- Webhooks, third-party integrations, GDPR export/delete, 2FA, data retention, API key management, rate limit/quota, DLQ.
 
-Overview Dashboard
-Conversation Analytics
-Customer Journey
-Funnel Analysis
-Custom Reports
-Feedback Dashboard
-Charts:
+### Trạng thái code hiện tại
+- Webhook backend **đã có** cho payment domain: `payment/gateway/WebhookService` + `WebhookSignatureService` + `WebhookDeadLetter` (DLQ) + `MerchantWebhookDispatcher`; frontend `WebhookManagement.vue` gọi `paymentAPI` — khớp nhau (verify 2026-11-11).
+- Webhook cho **conversation/bot events** (outbound tenant webhooks) — chưa làm, cần quyết định scope.
+- GDPR: tenant-level export/delete đã có (`DataExportController`, `DataDeletionController` 30-day grace); **customer-level vừa thêm** `POST /api/customer/profiles/{id}/anonymize` + `GET /{id}/export` (fix 2026-11-11).
+- 2FA: `TwoFactorService` + `TwoFactorController` đã có (verify 2026-11-11).
+- Rate limit: `TenantRateLimitFilter` per-tenant 600 req/min Redis + auth/payment/penny limiters (verify 2026-11-11).
+- API key: `MerchantApiKeyController` cho payment merchant; tenant API keys chưa thấy.
+- Data retention: soft delete (`isDeleted`) có sẵn; chưa có retention policy job.
 
-line chart
-bar chart
-pie chart
-funnel chart
-heatmap
-sentiment trend
-word cloud
-Phase 5: AI Support UI Mục tiêu:
+### DoD
+- [x] Webhook CRUD + delivery + retry — payment domain backend + frontend khớp nhau.
+- [x] GDPR: tenant export/delete + **customer-level anonymize/export** (fix 2026-11-11).
+- [x] Rate limit/quota per tenant — `TenantRateLimitFilter` Redis sliding window.
+- [x] 2FA — `TwoFactorService`/`TwoFactorController` đã tồn tại.
+- [ ] Data retention policy job (purge soft-deleted records theo TTL) — chưa có.
+- [ ] Tenant API keys (nếu cần public API) — chưa có.
 
-Giúp agent làm việc nhanh hơn
-Các page:
+### Known gaps
+- Conversation-events outbound webhook — chưa làm (cần nếu tích hợp CRM).
+- Data retention auto-purge — chưa có scheduled job.
+- ~~Frontend GDPR UI~~ → đã thêm Export (download JSON) + Anonymize (confirm) buttons vào `CustomerProfileDetail.vue` (fix 2026-11-11).
 
-AI Suggestion Panel
-Conversation Prompt Assistant
-Sentiment Live Indicator
-Suggestion Feedback Page
-Component:
+---
 
-suggestion sidebar
-confidence score badge
-accept/reject action buttons
-sentiment status pill
-Phase 6: Admin & Security Config UI Mục tiêu:
+## Ma trận tích hợp giữa các module (điểm dễ gãy nhất)
 
-Quản lý hệ thống, bảo mật, compliance
-Các page:
+| Flow | Trạng thái |
+|---|---|
+| SLA breach → Escalation → Notification | Xong — `triggerEscalation()` gọi `EscalationService` + broadcast `sla_escalation` |
+| Escalation tier → notify agent/supervisor | Xong — WebSocket + email + Slack |
+| AI sentiment → auto-escalate | Xong — `AIEscalationService` (async) |
+| Routing rule → assign/queue/escalate | Xong — `handleRouteToQueue` giờ try assign ngay + retry qua auto-assign job |
+| Supervisor takeover → conversation state | Xong — TAKEOVER mark `isTakenOverByAgent`/`ACTIVE_AGENT`, release restore + `SUPERVISOR_EVENT` broadcast |
+| Feedback submit → customer satisfactionScore | Xong — `createFeedback` auto update score + recalculate tier |
+| Training complete → skill score → certification | Xong — `completeTraining` chain auto-award |
+| Analytics ← conversation events | Xong — nightly aggregation cron + ReportScheduler + sentiment/AI metrics |
 
-Audit Log
-Webhook Config
-API Key Management
-Data Retention Policy
-2FA Setup
-GDPR Request Center
-2.3. Frontend ưu tiên thực hiện trong 6 tháng
+**Nguyên tắc**: trước khi thêm feature mới, ưu tiên đóng các dòng chưa xong trong bảng trên — đây là nơi "có code nhưng chưa tạo giá trị".
 
-Tháng 1-2:
-Design system + module architecture + Agent dashboard + Training
-Tháng 3-4:
-Customer profile + feedback + routing + supervisor monitor
-Tháng 5-6:
-Analytics + reports + AI suggestion + admin/security pages
-2.4. Công nghệ khuyến nghị cho frontend
+---
 
-Vue 3 + Composition API
-Pinia store
-Vue Router
-Axios / API client
-ECharts hoặc Chart.js
-Tailwind CSS hoặc element-plus tùy style system
-Form validation: VeeValidate
-Date/time utilities
-WebSocket client for live updates
-Mối quan hệ Backend – Frontend
-Backend cung cấp:
-domain logic
-APIs
-queued jobs
-analytics and AI service
-Frontend cung cấp:
-dashboard view
-workflow UI
-forms, filters, charts
-role-based interaction
-Cách triển khai nên theo từng module:
+## Thứ tự đề xuất thực hiện tiếp theo
 
-Module training: backend + frontend cùng đi
-Module customer: backend + frontend cùng đi
-Module analytics: backend aggregate + frontend dashboard
-Module AI: backend + frontend suggestion panel
-Module security: backend API + frontend config screen
-Khuyến nghị thực hiện theo mô hình “2 vòng” Vòng 1 – Core value:
-Agent training
-Customer profile
-Feedback
-Routing
-Supervisor dashboard
-Vòng 2 – Growth intelligence:
-
-Conversation analytics
-Journey map
-Funnel analysis
-AI suggestion
-Sentiment live
-Webhooks
-Gợi ý ưu tiên thực tế cho repo hiện tại Nếu dự án của bạn đang cần có giá trị kinh doanh rõ ràng nhanh nhất, nên ưu tiên:
-Backend:
-Training + Skill + Certification
-Customer Profile + Feedback
-Smart Routing + Escalation
-Analytics Dashboard
-Frontend:
-Agent Dashboard
-Customer Center
-Supervisor Queue
-Analytics dashboard
-Admin/security settings
-Kết luận Backend nên tập trung vào:
-Domain chuẩn hóa
-Tenant isolation
-Workflow automation
-Analytics và AI foundation
-Frontend nên tập trung vào:
-
-Dashboard UX
-Module hóa rõ ràng
-Role-based access
-Live operational views
-Nếu bạn muốn, tôi có thể làm tiếp cho bạn 2 phần rất hữu ích:
-
-Bản roadmap 6 tháng theo sprint chi tiết từng tuần
-Bảng task backlog Backend + Frontend dạng Jira/Notion style, gồm story, acceptance criteria, priority, estimate time
-Block pasted, 1 total
-Ask anything or type @ to add context
-
-
-===============================
-
+1. ~~Hotfix integration gaps Phase 4~~ — **xong** (2026-11-11): SLA→escalation, supervisor takeover, queue consumer, skill-based routing, whisper backend.
+2. ~~Verify & hoàn thiện Phase 2~~ — **xong** (2026-11-11): auto-certification, onboarding enforcement, frontend training views, approve/reject endpoints.
+3. ~~Phase 5 hardening~~ — **xong** (2026-11-11, verify): scheduled aggregation, ReportSchedule/ReportScheduler, AI suggestion feedback loop, sentiment endpoints đều đã tồn tại.
+4. ~~Phase 6~~ — **phần lớn xong** (2026-11-11): payment webhooks, GDPR tenant+customer, 2FA, rate-limit đều đã có; vừa thêm customer anonymize/export. Còn lại: data retention purge job, conversation-events webhook, tenant API keys — theo nhu cầu.
+5. Dọn nợ kỹ thuật còn lại: ~~audit log coverage~~ (một phần — xem Phase 1), ~~RBAC matrix doc~~ (xong), ~~bridge `AgentSkill`↔`Agent.skills`~~ (xong — score ≥60 auto-sync). Frontend whisper panel + GDPR buttons đã xong (2026-11-11).

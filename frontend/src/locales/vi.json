@@ -2339,7 +2339,12 @@
       "notes": "Ghi chú",
       "cancel": "Hủy",
       "start": "Bắt đầu",
-      "confirmEnd": "Xác nhận Kết thúc"
+      "confirmEnd": "Xác nhận Kết thúc",
+      "whisper": "Thì thầm",
+      "whisperTitle": "Gửi Whisper",
+      "whisperPlaceholder": "Ghi chú nội bộ cho agent (khách hàng không thấy)...",
+      "sendWhisper": "Gửi",
+      "whisperSent": "Đã gửi whisper"
     },
     "sessionTypes": {
       "monitoring": "Giám sát",
