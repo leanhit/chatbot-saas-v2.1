@@ -4,6 +4,12 @@ import com.chatbot.core.customer.dto.CreateCustomerProfileRequest;
 import com.chatbot.core.customer.dto.UpdateCustomerProfileRequest;
 import com.chatbot.core.customer.model.CustomerProfile;
 import com.chatbot.core.customer.repository.CustomerProfileRepository;
+import com.chatbot.core.customer.repository.CustomerNoteRepository;
+import com.chatbot.core.customer.repository.FeedbackRepository;
+import com.chatbot.core.message.store.repository.ConversationRepository;
+import com.chatbot.core.message.store.repository.MessageRepository;
+import com.chatbot.core.tenant.service.TenantAuditLogService;
+import com.chatbot.core.tenant.service.TenantPermissionValidator;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -21,6 +27,12 @@ import static org.mockito.Mockito.*;
 class CustomerProfileServiceTest {
 
     @Mock private CustomerProfileRepository customerProfileRepository;
+    @Mock private FeedbackRepository feedbackRepository;
+    @Mock private CustomerNoteRepository customerNoteRepository;
+    @Mock private TenantAuditLogService auditLogService;
+    @Mock private TenantPermissionValidator permissionValidator;
+    @Mock private ConversationRepository conversationRepository;
+    @Mock private MessageRepository messageRepository;
 
     @InjectMocks
     private CustomerProfileService service;

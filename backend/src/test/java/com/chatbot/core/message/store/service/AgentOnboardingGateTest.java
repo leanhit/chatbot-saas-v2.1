@@ -56,7 +56,7 @@ class AgentOnboardingGateTest {
     void allowsGoingOnlineWhenOnboardingComplete() {
         TenantContext.setTenantId(1L);
         Agent a = agent(1L);
-        when(agentRepository.findById(1L)).thenReturn(Optional.of(a));
+        when(agentRepository.findByIdAndTenantId(1L, 1L)).thenReturn(Optional.of(a));
         when(onboardingService.isOnboardingComplete(1L, 1L)).thenReturn(true);
 
         agentService.updateAgentStatus(1L, Agent.AgentStatus.ONLINE);

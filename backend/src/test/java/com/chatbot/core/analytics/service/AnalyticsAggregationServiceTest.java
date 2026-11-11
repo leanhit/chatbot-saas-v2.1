@@ -60,8 +60,9 @@ class AnalyticsAggregationServiceTest {
     private void stubEmptySources() {
         when(conversationRepository.findByTenantIdAndCreatedAtBetween(eq(1L), any(), any())).thenReturn(List.of());
         when(conversationRepository.findByTenantIdAndResolutionTimeBetween(eq(1L), any(), any())).thenReturn(List.of());
-        when(conversationRepository.findByTenantIdAndLastEscalatedAtBetween(eq(1L), any(), any())).thenReturn(List.of());
-        when(messageRepository.findByTenantIdAndCreatedAtBetween(eq(1L), any(), any())).thenReturn(List.of());
+        when(conversationRepository.countByTenantIdAndLastEscalatedAtBetween(eq(1L), any(), any())).thenReturn(0L);
+        when(messageRepository.countByTenantIdAndCreatedAtBetween(eq(1L), any(), any())).thenReturn(0L);
+        when(messageRepository.countByTenantIdAndCreatedAtBetweenAndSender(eq(1L), any(), any(), anyString())).thenReturn(0L);
         when(sentimentRepository.avgScoreByTenantIdBetween(eq(1L), any(), any())).thenReturn(null);
         when(sentimentRepository.countByTenantIdAndLabelBetween(eq(1L), eq(SentimentLabel.NEGATIVE), any(), any())).thenReturn(0L);
         when(aiSuggestionRepository.countByTenantIdBetween(eq(1L), any(), any())).thenReturn(0L);
@@ -83,10 +84,14 @@ class AnalyticsAggregationServiceTest {
             .thenReturn(List.of(created1, created2));
         when(conversationRepository.findByTenantIdAndResolutionTimeBetween(eq(1L), any(), any()))
             .thenReturn(List.of(created2));
-        when(conversationRepository.findByTenantIdAndLastEscalatedAtBetween(eq(1L), any(), any()))
-            .thenReturn(List.of(escalated));
-        when(messageRepository.findByTenantIdAndCreatedAtBetween(eq(1L), any(), any()))
-            .thenReturn(List.of(msg("user"), msg("USER"), msg("bot"), msg("agent"), msg("system-x")));
+        when(conversationRepository.countByTenantIdAndLastEscalatedAtBetween(eq(1L), any(), any()))
+            .thenReturn(1L);
+        when(messageRepository.countByTenantIdAndCreatedAtBetween(eq(1L), any(), any()))
+            .thenReturn(5L);
+        when(messageRepository.countByTenantIdAndCreatedAtBetweenAndSender(eq(1L), any(), any(), eq("user")))
+            .thenReturn(2L);
+        when(messageRepository.countByTenantIdAndCreatedAtBetweenAndSender(eq(1L), any(), any(), eq("agent")))
+            .thenReturn(1L);
         when(sentimentRepository.avgScoreByTenantIdBetween(eq(1L), any(), any())).thenReturn(0.35);
         when(sentimentRepository.countByTenantIdAndLabelBetween(eq(1L), eq(SentimentLabel.NEGATIVE), any(), any())).thenReturn(4L);
         when(aiSuggestionRepository.countByTenantIdBetween(eq(1L), any(), any())).thenReturn(10L);

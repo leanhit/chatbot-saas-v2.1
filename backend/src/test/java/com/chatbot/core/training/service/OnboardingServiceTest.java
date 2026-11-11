@@ -4,6 +4,8 @@ import com.chatbot.core.training.model.AgentOnboardingProgress;
 import com.chatbot.core.training.model.AgentOnboardingTask;
 import com.chatbot.core.training.repository.AgentOnboardingProgressRepository;
 import com.chatbot.core.training.repository.AgentOnboardingTaskRepository;
+import com.chatbot.core.tenant.service.TenantAuditLogService;
+import com.chatbot.core.tenant.service.TenantPermissionValidator;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -21,6 +23,8 @@ class OnboardingServiceTest {
 
     @Mock private AgentOnboardingTaskRepository onboardingTaskRepository;
     @Mock private AgentOnboardingProgressRepository onboardingProgressRepository;
+    @Mock private TenantAuditLogService auditLogService;
+    @Mock private TenantPermissionValidator permissionValidator;
 
     @InjectMocks
     private OnboardingService service;
