@@ -33,11 +33,11 @@
 
 ### DoD
 - [x] Tenant isolation trên các module chính.
-- [~] Audit log được ghi cho **mọi** mutation nhạy cảm — đã bổ sung `CUSTOMER_PROFILE_DELETED/ANONYMIZED` + `ROUTING_RULE_*` (2026-11-11); còn thiếu training/escalation/SLA/agent/package mutations.
+- [x] Audit log được ghi cho **mọi** mutation nhạy cảm — đã phủ: tenant/membership, GDPR customer, routing rules, escalation tiers, SLA configs, onboarding approve/reject (fix 2026-11-11). Còn lại: training material CRUD, agent management, package/billing mutations.
 - [x] RBAC matrix rõ ràng — đã tạo `docs/rbac-matrix.md` (2026-11-11).
 
 ### Known gaps
-- Audit log coverage chưa đồng đều giữa các controller (một phần đã fix).
+- ~~Audit log coverage chưa đồng đều giữa các controller~~ → đã phủ các mutation nhạy cảm chính (xem DoD).
 - ~~Chưa có RBAC matrix document~~ → đã có `docs/rbac-matrix.md`.
 
 ---
@@ -137,6 +137,7 @@
 ### Known gaps
 - ~~`ReportSchedule` chưa implement~~ → đã có đầy đủ.
 - ~~Sentiment realtime~~ → `SentimentController`: `POST /api/ai/sentiment/score/{conversationId}` (on-demand scoring) + `GET /conversation/{id}` latest — đủ cho use case realtime per-conversation.
+- ~~Aggregation self-invocation `@Transactional` bypass + load messages vào memory~~ → đã fix: self-injection `ObjectProvider` + count queries cho messages/escalations (fix 2026-11-11). Conversation lists vẫn load entities cho avg response/resolution — chấp nhận được, chuyển DB-side AVG nếu tenant lớn.
 - Word cloud / heatmap charts — cần verify frontend analytics views có đủ chart types.
 
 ---
@@ -167,7 +168,7 @@
 - Conversation-events outbound webhook — chưa làm (cần nếu tích hợp CRM).
 - Data retention auto-purge — chưa có scheduled job.
 - ~~Frontend GDPR UI~~ → đã thêm Export (download JSON) + Anonymize (confirm) buttons vào `CustomerProfileDetail.vue` (fix 2026-11-11).
-- GDPR export scope: hiện gồm profile + feedback + notes; **chưa gồm conversations/messages** — cần quyết định phạm vi theo yêu cầu sản phẩm.
+- ~~GDPR export scope~~ → export giờ gồm profile + feedback + notes + **conversations + messages** (link `externalId`↔`externalUserId`) (fix 2026-11-11).
 
 ---
 

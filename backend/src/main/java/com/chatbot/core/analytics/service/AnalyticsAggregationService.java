@@ -8,7 +8,6 @@ import com.chatbot.core.analytics.model.AnalyticsDailySummary;
 import com.chatbot.core.analytics.repository.AnalyticsDailySummaryRepository;
 import com.chatbot.core.message.store.model.Conversation;
 import com.chatbot.core.message.store.model.ConversationStatus;
-import com.chatbot.core.message.store.model.Message;
 import com.chatbot.core.message.store.repository.ConversationRepository;
 import com.chatbot.core.message.store.repository.MessageRepository;
 import com.chatbot.core.tenant.infra.TenantContext;
@@ -18,6 +17,7 @@ import com.chatbot.core.tenant.repository.TenantRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -48,6 +48,9 @@ public class AnalyticsAggregationService {
     private final ConversationSentimentRepository sentimentRepository;
     private final AiSuggestionRepository aiSuggestionRepository;
     private final TenantRepository tenantRepository;
+    // Self-injection so scheduled job calls aggregateForDate through the
+    // Spring proxy — @Transactional actually applies (no self-invocation bypass).
+    private final ObjectProvider<AnalyticsAggregationService> selfProvider;
 
     /**
      * Nightly job: aggregate yesterday's metrics for all active tenants.
@@ -64,7 +67,7 @@ public class AnalyticsAggregationService {
                 }
                 try {
                     TenantContext.executeWithTenantId(tenant.getId(), () -> {
-                        aggregateForDate(tenant.getId(), yesterday);
+                        selfProvider.getObject().aggregateForDate(tenant.getId(), yesterday);
                         return null;
                     });
                 } catch (Exception e) {
@@ -86,22 +89,13 @@ public class AnalyticsAggregationService {
 
         List<Conversation> created = conversationRepository.findByTenantIdAndCreatedAtBetween(tenantId, from, to);
         List<Conversation> resolved = conversationRepository.findByTenantIdAndResolutionTimeBetween(tenantId, from, to);
-        List<Conversation> escalated = conversationRepository.findByTenantIdAndLastEscalatedAtBetween(tenantId, from, to);
-        List<Message> messages = messageRepository.findByTenantIdAndCreatedAtBetween(tenantId, from, to);
+        long escalatedCount = conversationRepository.countByTenantIdAndLastEscalatedAtBetween(tenantId, from, to);
 
-        int userMessages = 0;
-        int botMessages = 0;
-        int agentMessages = 0;
-        for (Message m : messages) {
-            String sender = m.getSender() == null ? "" : m.getSender().toLowerCase();
-            if ("user".equals(sender)) {
-                userMessages++;
-            } else if ("agent".equals(sender)) {
-                agentMessages++;
-            } else {
-                botMessages++;
-            }
-        }
+        // Count messages in DB instead of loading entities into memory
+        long totalMessages = messageRepository.countByTenantIdAndCreatedAtBetween(tenantId, from, to);
+        long userMessages = messageRepository.countByTenantIdAndCreatedAtBetweenAndSender(tenantId, from, to, "user");
+        long agentMessages = messageRepository.countByTenantIdAndCreatedAtBetweenAndSender(tenantId, from, to, "agent");
+        long botMessages = totalMessages - userMessages - agentMessages;
 
         Double avgFirstResponse = averageMinutes(created, Conversation::getFirstAgentResponseTime);
         Double avgResolution = averageMinutes(resolved, Conversation::getResolutionTime);
@@ -120,7 +114,7 @@ public class AnalyticsAggregationService {
         metrics.put("resolutionRate", created.isEmpty() ? 0.0 :
             (double) resolved.size() / created.size());
         metrics.put("escalationRate", created.isEmpty() ? 0.0 :
-            (double) escalated.size() / created.size());
+            (double) escalatedCount / created.size());
         metrics.put("aiAcceptanceRate", aiTotal == 0 ? 0.0 : (double) aiAccepted / aiTotal);
 
         AnalyticsDailySummary summary = summaryRepository
@@ -140,11 +134,11 @@ public class AnalyticsAggregationService {
         summary.setClosedConversations((int) resolved.stream()
             .filter(c -> ConversationStatus.CLOSED.equals(c.getStatus()))
             .count());
-        summary.setTotalMessages(messages.size());
-        summary.setUserMessages(userMessages);
-        summary.setBotMessages(botMessages);
-        summary.setAgentMessages(agentMessages);
-        summary.setEscalationsCount(escalated.size());
+        summary.setTotalMessages((int) totalMessages);
+        summary.setUserMessages((int) userMessages);
+        summary.setBotMessages((int) botMessages);
+        summary.setAgentMessages((int) agentMessages);
+        summary.setEscalationsCount((int) escalatedCount);
         summary.setAvgFirstResponseMinutes(avgFirstResponse);
         summary.setAvgResolutionMinutes(avgResolution);
         summary.setAvgSentimentScore(avgSentiment);

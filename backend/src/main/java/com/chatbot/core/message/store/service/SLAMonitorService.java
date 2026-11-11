@@ -11,7 +11,9 @@ import com.chatbot.core.notification.slack.SlackNotificationService;
 import com.chatbot.core.tenant.model.Tenant;
 import com.chatbot.core.tenant.model.TenantStatus;
 import com.chatbot.core.tenant.repository.TenantRepository;
+import com.chatbot.core.tenant.service.TenantAuditLogService;
 import com.chatbot.core.tenant.service.TenantPackageService;
+import com.chatbot.core.tenant.service.TenantPermissionValidator;
 import com.chatbot.core.payment.plan.model.Package;
 import com.chatbot.shared.exceptions.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -44,6 +46,16 @@ public class SLAMonitorService {
     private final SlackNotificationService slackNotificationService;
     private final TenantPackageService tenantPackageService;
     private final EscalationService escalationService;
+    private final TenantAuditLogService auditLogService;
+    private final TenantPermissionValidator permissionValidator;
+
+    private String currentUserEmail() {
+        try {
+            return permissionValidator.getCurrentUserEmail();
+        } catch (Exception e) {
+            return "system";
+        }
+    }
 
     // Default SLA thresholds (in seconds) - used as fallback
     private static final long DEFAULT_VIP_RESPONSE_TIME = 300; // 5 minutes for VIP
@@ -388,7 +400,10 @@ public class SLAMonitorService {
                 existingConfig.setMaxBreachCount(updatedConfig.getMaxBreachCount());
                 existingConfig.setActive(updatedConfig.getActive());
                 existingConfig.setDescription(updatedConfig.getDescription());
-                return slaConfigurationRepository.save(existingConfig);
+                SLAConfiguration saved = slaConfigurationRepository.save(existingConfig);
+                auditLogService.logActionAsync(tenantId, currentUserEmail(),
+                        "SLA_CONFIG_UPDATED", "configId=" + configId);
+                return saved;
             })
             .orElseThrow(() -> new ResourceNotFoundException("SLA configuration not found: " + configId));
     }
@@ -405,5 +420,7 @@ public class SLAMonitorService {
         SLAConfiguration config = slaConfigurationRepository.findByIdAndTenantId(configId, tenantId)
             .orElseThrow(() -> new ResourceNotFoundException("SLA configuration not found: " + configId));
         slaConfigurationRepository.delete(config);
+        auditLogService.logActionAsync(tenantId, currentUserEmail(),
+                "SLA_CONFIG_DELETED", "configId=" + configId);
     }
 }

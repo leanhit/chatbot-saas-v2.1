@@ -74,7 +74,7 @@ class IntelligentRoutingServiceTest {
             when(agentWorkloadRepository.findByTenantIdAndStatus(TEST_TENANT_ID, AgentWorkload.AgentStatus.AVAILABLE))
                     .thenReturn(List.of(agent));
             when(agentSkillRepository.findByAgentId(TEST_AGENT_ID)).thenReturn(List.of(skill));
-            when(conversationRepository.findById(TEST_CONVERSATION_ID)).thenReturn(Optional.of(new Conversation()));
+            when(conversationRepository.findByIdAndTenantId(TEST_CONVERSATION_ID, TEST_TENANT_ID)).thenReturn(Optional.of(new Conversation()));
             when(agentWorkloadRepository.findByTenantIdAndAgentId(TEST_TENANT_ID, TEST_AGENT_ID))
                     .thenReturn(Optional.of(agent));
             when(agentWorkloadRepository.save(any(AgentWorkload.class))).thenReturn(agent);
@@ -112,7 +112,7 @@ class IntelligentRoutingServiceTest {
                     .thenReturn(List.of(defaultRule));
             when(agentWorkloadRepository.findByTenantIdAndAgentId(TEST_TENANT_ID, TEST_AGENT_ID))
                     .thenReturn(Optional.of(createAgentWorkload(TEST_AGENT_ID, null)));
-            when(conversationRepository.findById(TEST_CONVERSATION_ID)).thenReturn(Optional.of(new Conversation()));
+            when(conversationRepository.findByIdAndTenantId(TEST_CONVERSATION_ID, TEST_TENANT_ID)).thenReturn(Optional.of(new Conversation()));
             when(agentWorkloadRepository.save(any(AgentWorkload.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
             Map<String, Object> context = new HashMap<>();
@@ -181,7 +181,7 @@ class IntelligentRoutingServiceTest {
             when(agentWorkloadRepository.findByTenantIdAndStatus(tenant1Id, AgentWorkload.AgentStatus.AVAILABLE))
                     .thenReturn(List.of(tenant1Agent));
             when(agentSkillRepository.findByAgentId(TEST_AGENT_ID)).thenReturn(List.of());
-            when(conversationRepository.findById(TEST_CONVERSATION_ID)).thenReturn(Optional.of(new Conversation()));
+            when(conversationRepository.findByIdAndTenantId(TEST_CONVERSATION_ID, TEST_TENANT_ID)).thenReturn(Optional.of(new Conversation()));
 
             Map<String, Object> context = new HashMap<>();
 
@@ -397,7 +397,7 @@ class IntelligentRoutingServiceTest {
                     .thenReturn(List.of(roundRobinRule));
             when(agentWorkloadRepository.findByTenantIdAndStatus(TEST_TENANT_ID, AgentWorkload.AgentStatus.AVAILABLE))
                     .thenReturn(List.of(agent1, agent2));
-            when(conversationRepository.findById(TEST_CONVERSATION_ID)).thenReturn(Optional.of(new Conversation()));
+            when(conversationRepository.findByIdAndTenantId(TEST_CONVERSATION_ID, TEST_TENANT_ID)).thenReturn(Optional.of(new Conversation()));
             when(agentWorkloadRepository.findByTenantIdAndAgentId(TEST_TENANT_ID, TEST_AGENT_ID))
                     .thenReturn(Optional.of(agent1));
             when(agentWorkloadRepository.save(any(AgentWorkload.class))).thenReturn(agent1);
@@ -434,7 +434,7 @@ class IntelligentRoutingServiceTest {
                     .thenReturn(List.of(priorityRule));
             when(agentWorkloadRepository.findAvailableAgentsByPriority(TEST_TENANT_ID, AgentWorkload.AgentStatus.AVAILABLE))
                     .thenReturn(List.of(highPriorityAgent, lowPriorityAgent));
-            when(conversationRepository.findById(TEST_CONVERSATION_ID)).thenReturn(Optional.of(new Conversation()));
+            when(conversationRepository.findByIdAndTenantId(TEST_CONVERSATION_ID, TEST_TENANT_ID)).thenReturn(Optional.of(new Conversation()));
             when(agentWorkloadRepository.findByTenantIdAndAgentId(TEST_TENANT_ID, TEST_AGENT_ID))
                     .thenReturn(Optional.of(highPriorityAgent));
             when(agentWorkloadRepository.save(any(AgentWorkload.class))).thenReturn(highPriorityAgent);
@@ -471,7 +471,7 @@ class IntelligentRoutingServiceTest {
                     .thenReturn(List.of(leastBusyRule));
             when(agentWorkloadRepository.findAvailableAgentsByWorkload(TEST_TENANT_ID, AgentWorkload.AgentStatus.AVAILABLE))
                     .thenReturn(List.of(busyAgent, idleAgent));
-            when(conversationRepository.findById(TEST_CONVERSATION_ID)).thenReturn(Optional.of(new Conversation()));
+            when(conversationRepository.findByIdAndTenantId(TEST_CONVERSATION_ID, TEST_TENANT_ID)).thenReturn(Optional.of(new Conversation()));
             when(agentWorkloadRepository.findByTenantIdAndAgentId(TEST_TENANT_ID, 11L))
                     .thenReturn(Optional.of(idleAgent));
             when(agentWorkloadRepository.save(any(AgentWorkload.class))).thenReturn(idleAgent);
@@ -522,6 +522,54 @@ class IntelligentRoutingServiceTest {
             assertNotNull(result);
             assertFalse(result.isAssigned());
             assertEquals("Tenant context not set - cannot route without tenant", result.getReason());
+        }
+    }
+
+    @Test
+    void testAssignConversationToAgent_CrossTenantConversation_Rejected() {
+        // Tenant A context, but conversation belongs to tenant B →
+        // tenant-scoped lookup returns empty and nothing is mutated.
+        try (MockedStatic<TenantContext> mockedTenantContext = mockStatic(TenantContext.class)) {
+            mockedTenantContext.when(TenantContext::getTenantId).thenReturn(TEST_TENANT_ID);
+
+            when(conversationRepository.findByIdAndTenantId(TEST_CONVERSATION_ID, TEST_TENANT_ID))
+                    .thenReturn(Optional.empty());
+
+            RuntimeException ex = assertThrows(RuntimeException.class,
+                    () -> intelligentRoutingService.assignConversationToAgent(
+                            TEST_CONVERSATION_ID, TEST_AGENT_ID, "cross-tenant attempt"));
+            assertTrue(ex.getMessage().contains("Conversation not found"));
+            verify(conversationRepository, never()).save(any(Conversation.class));
+            verify(agentWorkloadRepository, never()).save(any(AgentWorkload.class));
+        }
+    }
+
+    @Test
+    void testAssignConversationToAgent_SameTenant_Success() {
+        try (MockedStatic<TenantContext> mockedTenantContext = mockStatic(TenantContext.class)) {
+            mockedTenantContext.when(TenantContext::getTenantId).thenReturn(TEST_TENANT_ID);
+
+            Conversation conversation = new Conversation();
+            conversation.setId(TEST_CONVERSATION_ID);
+            conversation.setTenantId(TEST_TENANT_ID);
+            AgentWorkload workload = createAgentWorkload(TEST_AGENT_ID, TEST_TEAM_ID);
+
+            when(conversationRepository.findByIdAndTenantId(TEST_CONVERSATION_ID, TEST_TENANT_ID))
+                    .thenReturn(Optional.of(conversation));
+            when(agentWorkloadRepository.findByTenantIdAndAgentId(TEST_TENANT_ID, TEST_AGENT_ID))
+                    .thenReturn(Optional.of(workload));
+            when(agentWorkloadRepository.save(any(AgentWorkload.class)))
+                    .thenAnswer(inv -> inv.getArgument(0));
+            when(routingHistoryRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+            RoutingAssignmentResult result = intelligentRoutingService.assignConversationToAgent(
+                    TEST_CONVERSATION_ID, TEST_AGENT_ID, "manual assign");
+
+            assertNotNull(result);
+            assertTrue(result.isAssigned());
+            assertEquals(TEST_AGENT_ID, result.getAssignedAgentId());
+            assertEquals(TEST_AGENT_ID, conversation.getAgentAssignedId());
+            verify(conversationRepository, times(1)).save(conversation);
         }
     }
 

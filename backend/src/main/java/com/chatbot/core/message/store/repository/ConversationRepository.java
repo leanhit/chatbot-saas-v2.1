@@ -280,4 +280,11 @@ public interface ConversationRepository extends JpaRepository<Conversation, Long
         @Param("tenantId") Long tenantId,
         @Param("from") java.time.LocalDateTime from,
         @Param("to") java.time.LocalDateTime to);
+
+    // Phase 5 analytics: count escalated conversations in date range
+    @Query("SELECT COUNT(c) FROM Conversation c WHERE c.tenantId = :tenantId AND c.lastEscalatedAt BETWEEN :from AND :to")
+    long countByTenantIdAndLastEscalatedAtBetween(
+        @Param("tenantId") Long tenantId,
+        @Param("from") java.time.LocalDateTime from,
+        @Param("to") java.time.LocalDateTime to);
 }

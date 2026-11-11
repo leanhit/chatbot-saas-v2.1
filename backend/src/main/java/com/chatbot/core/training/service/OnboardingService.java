@@ -4,6 +4,8 @@ import com.chatbot.core.training.model.AgentOnboardingProgress;
 import com.chatbot.core.training.model.AgentOnboardingTask;
 import com.chatbot.core.training.repository.AgentOnboardingProgressRepository;
 import com.chatbot.core.training.repository.AgentOnboardingTaskRepository;
+import com.chatbot.core.tenant.service.TenantAuditLogService;
+import com.chatbot.core.tenant.service.TenantPermissionValidator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,6 +19,16 @@ public class OnboardingService {
 
     private final AgentOnboardingTaskRepository onboardingTaskRepository;
     private final AgentOnboardingProgressRepository onboardingProgressRepository;
+    private final TenantAuditLogService auditLogService;
+    private final TenantPermissionValidator permissionValidator;
+
+    private String currentUserEmail() {
+        try {
+            return permissionValidator.getCurrentUserEmail();
+        } catch (Exception e) {
+            return "system";
+        }
+    }
 
     public AgentOnboardingTask createOnboardingTask(AgentOnboardingTask task) {
         Long tenantId = com.chatbot.core.tenant.infra.TenantContext.getTenantId();
@@ -94,6 +106,8 @@ public class OnboardingService {
         progress.setSupervisorComments(comments);
         progress.setApprovedAt(LocalDateTime.now().toString());
         onboardingProgressRepository.save(progress);
+        auditLogService.logActionAsync(tenantId, currentUserEmail(),
+                "ONBOARDING_TASK_APPROVED", "agentId=" + agentId + ", taskId=" + taskId);
     }
 
     @Transactional
@@ -106,5 +120,7 @@ public class OnboardingService {
         progress.setSupervisorId(supervisorId);
         progress.setSupervisorComments(comments);
         onboardingProgressRepository.save(progress);
+        auditLogService.logActionAsync(tenantId, currentUserEmail(),
+                "ONBOARDING_TASK_REJECTED", "agentId=" + agentId + ", taskId=" + taskId);
     }
 }

@@ -7,6 +7,10 @@ import com.chatbot.core.customer.model.Feedback;
 import com.chatbot.core.customer.repository.CustomerNoteRepository;
 import com.chatbot.core.customer.repository.CustomerProfileRepository;
 import com.chatbot.core.customer.repository.FeedbackRepository;
+import com.chatbot.core.message.store.model.Conversation;
+import com.chatbot.core.message.store.model.Message;
+import com.chatbot.core.message.store.repository.ConversationRepository;
+import com.chatbot.core.message.store.repository.MessageRepository;
 import com.chatbot.core.tenant.service.TenantAuditLogService;
 import com.chatbot.core.tenant.service.TenantPermissionValidator;
 import lombok.RequiredArgsConstructor;
@@ -30,6 +34,8 @@ public class CustomerProfileService {
     private final CustomerNoteRepository customerNoteRepository;
     private final TenantAuditLogService auditLogService;
     private final TenantPermissionValidator permissionValidator;
+    private final ConversationRepository conversationRepository;
+    private final MessageRepository messageRepository;
 
     private String currentUserEmail() {
         try {
@@ -227,10 +233,39 @@ public class CustomerProfileService {
         List<CustomerNote> notes = customerNoteRepository
                 .findByTenantIdAndCustomerProfileIdAndIsDeletedFalseOrderByCreatedAtDesc(tenantId, id);
 
+        // GDPR right of access: include conversations + messages linked via
+        // externalId ↔ externalUserId (same link as CustomerTimelineService).
+        List<Map<String, Object>> conversationsExport = new java.util.ArrayList<>();
+        if (profile.getExternalId() != null) {
+            List<Conversation> conversations = conversationRepository
+                    .findByExternalUserIdAndTenantId(profile.getExternalId(), tenantId);
+            for (Conversation c : conversations) {
+                Map<String, Object> convEntry = new HashMap<>();
+                convEntry.put("id", c.getId());
+                convEntry.put("status", c.getStatus());
+                convEntry.put("channel", c.getChannel());
+                convEntry.put("language", c.getLanguage());
+                convEntry.put("createdAt", c.getCreatedAt());
+                convEntry.put("resolutionTime", c.getResolutionTime());
+                List<Message> msgs = messageRepository
+                        .findByConversationIdAndTenantIdOrderByCreatedAtAsc(c.getId(), tenantId);
+                convEntry.put("messages", msgs.stream().map(m -> {
+                    Map<String, Object> mm = new HashMap<>();
+                    mm.put("id", m.getId());
+                    mm.put("sender", m.getSender());
+                    mm.put("content", m.getContent());
+                    mm.put("createdAt", m.getCreatedAt());
+                    return mm;
+                }).collect(Collectors.toList()));
+                conversationsExport.add(convEntry);
+            }
+        }
+
         Map<String, Object> export = new HashMap<>();
         export.put("profile", toDTO(profile));
         export.put("feedback", feedback);
         export.put("notes", notes);
+        export.put("conversations", conversationsExport);
         export.put("exportedAt", LocalDateTime.now().toString());
         log.info("Customer data exported (GDPR) for profile id: {}", id);
         return export;

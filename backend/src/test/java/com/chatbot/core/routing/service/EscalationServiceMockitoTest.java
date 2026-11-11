@@ -293,7 +293,7 @@ class EscalationServiceMockitoTest {
         conversation.setId(TEST_CONVERSATION_ID);
         conversation.setAgentAssignedId(null);
 
-        when(conversationRepository.findById(TEST_CONVERSATION_ID)).thenReturn(Optional.of(conversation));
+        when(conversationRepository.findByIdAndTenantId(TEST_CONVERSATION_ID, TEST_TENANT_ID)).thenReturn(Optional.of(conversation));
         when(conversationRepository.save(any(Conversation.class))).thenReturn(conversation);
 
         EscalationContext context = new EscalationContext();

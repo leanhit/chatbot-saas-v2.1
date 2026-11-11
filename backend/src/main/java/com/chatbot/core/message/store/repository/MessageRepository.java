@@ -22,6 +22,12 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
         Pageable pageable
     );
 
+    // GDPR export: all messages of a conversation in chronological order
+    @Query("SELECT m FROM Message m WHERE m.conversationId = :conversationId AND m.tenantId = :tenantId ORDER BY m.createdAt ASC")
+    List<Message> findByConversationIdAndTenantIdOrderByCreatedAtAsc(
+        @Param("conversationId") Long conversationId,
+        @Param("tenantId") Long tenantId);
+
     // Phương thức mới 1: Đếm số lượng tin nhắn chưa đọc trong 1 Conversation
     @Query("SELECT COUNT(m) FROM Message m WHERE m.conversationId = :conversationId AND m.tenantId = :tenantId AND m.isRead = :isRead")
     long countByConversationIdAndTenantIdAndIsRead(
@@ -106,4 +112,18 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
         @Param("tenantId") Long tenantId,
         @Param("from") java.time.LocalDateTime from,
         @Param("to") java.time.LocalDateTime to);
+
+    // Phase 5 analytics: count messages in date range (avoid loading entities)
+    @Query("SELECT COUNT(m) FROM Message m WHERE m.tenantId = :tenantId AND m.createdAt BETWEEN :from AND :to")
+    long countByTenantIdAndCreatedAtBetween(
+        @Param("tenantId") Long tenantId,
+        @Param("from") java.time.LocalDateTime from,
+        @Param("to") java.time.LocalDateTime to);
+
+    @Query("SELECT COUNT(m) FROM Message m WHERE m.tenantId = :tenantId AND m.createdAt BETWEEN :from AND :to AND LOWER(m.sender) = :sender")
+    long countByTenantIdAndCreatedAtBetweenAndSender(
+        @Param("tenantId") Long tenantId,
+        @Param("from") java.time.LocalDateTime from,
+        @Param("to") java.time.LocalDateTime to,
+        @Param("sender") String sender);
 }

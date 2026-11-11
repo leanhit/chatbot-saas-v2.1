@@ -1,12 +1,15 @@
 
 Dưới đây là checklist test còn thiếu chi tiết cho từng file, theo đúng kịch bản Phase 4. Mỗi file nên được tạo riêng để test một lớp và dễ maintain.
 
-## ✅ TRẠNG THÁI TEST PHASE 4 (Updated: Nov 3, 2026)
+## ✅ TRẠNG THÁI TEST PHASE 4 (Updated: Nov 11, 2026)
 
-### Unit Tests (Mockito) - ✅ HOÀN THÀNH (36/36 tests passed)
+### Unit Tests (Mockito) - ✅ HOÀN THÀNH (62/62 tests passed)
 - ✅ RoutingServiceMockitoTest.java - 8 tests passed
 - ✅ EscalationServiceMockitoTest.java - 12 tests passed
-- ✅ SupervisorSessionServiceMockitoTest.java - 16 tests passed
+- ✅ IntelligentRoutingServiceTest.java - 18 tests passed (gồm 2 test tenant-isolation mới cho `assignConversationToAgent`)
+- ✅ IntelligentEscalationServiceTest.java - 9 tests passed
+- ✅ ConditionEvaluationTest.java - 15 tests passed
+- ✅ Đã xóa 3 test file obsolete tham chiếu `SupervisorSessionService` (service đã deprecated/xóa)
 
 ### Integration Tests (Testcontainers) - ⏸️ ĐÃ DISABLE (ApplicationContext loading issues)
 - ⏸️ TenantIsolationTest.java - @Disabled (ApplicationContext loading issues - requires full Spring context configuration)

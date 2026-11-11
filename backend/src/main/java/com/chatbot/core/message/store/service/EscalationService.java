@@ -11,6 +11,8 @@ import com.chatbot.core.notification.slack.SlackNotificationService;
 import com.chatbot.core.tenant.model.Tenant;
 import com.chatbot.core.tenant.model.TenantStatus;
 import com.chatbot.core.tenant.repository.TenantRepository;
+import com.chatbot.core.tenant.service.TenantAuditLogService;
+import com.chatbot.core.tenant.service.TenantPermissionValidator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
@@ -39,6 +41,16 @@ public class EscalationService {
     private final TenantRepository tenantRepository;
     private final AgentEmailNotificationService agentEmailNotificationService;
     private final SlackNotificationService slackNotificationService;
+    private final TenantAuditLogService auditLogService;
+    private final TenantPermissionValidator permissionValidator;
+
+    private String currentUserEmail() {
+        try {
+            return permissionValidator.getCurrentUserEmail();
+        } catch (Exception e) {
+            return "system";
+        }
+    }
 
     /**
      * Check for conversations that need escalation
@@ -303,7 +315,10 @@ public class EscalationService {
                 existingTier.setActive(updatedTier.getActive());
                 existingTier.setDescription(updatedTier.getDescription());
                 existingTier.setRequiredRole(updatedTier.getRequiredRole());
-                return escalationTierRepository.save(existingTier);
+                EscalationTier saved = escalationTierRepository.save(existingTier);
+                auditLogService.logActionAsync(tenantId, currentUserEmail(),
+                        "ESCALATION_TIER_UPDATED", "tierId=" + tierId + ", name=" + saved.getName());
+                return saved;
             })
             .orElseThrow(() -> new RuntimeException("Escalation tier not found: " + tierId));
     }
@@ -320,5 +335,7 @@ public class EscalationService {
         EscalationTier tier = escalationTierRepository.findByIdAndTenantId(tierId, tenantId)
             .orElseThrow(() -> new RuntimeException("Escalation tier not found: " + tierId));
         escalationTierRepository.delete(tier);
+        auditLogService.logActionAsync(tenantId, currentUserEmail(),
+                "ESCALATION_TIER_DELETED", "tierId=" + tierId + ", name=" + tier.getName());
     }
 }
