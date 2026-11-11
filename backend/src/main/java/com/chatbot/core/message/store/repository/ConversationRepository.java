@@ -196,6 +196,13 @@ public interface ConversationRepository extends JpaRepository<Conversation, Long
         @Param("status") ConversationStatus status
     );
 
+    // Tenant public API: paged conversations by tenant + status
+    Page<Conversation> findByTenantIdAndStatus(
+        Long tenantId,
+        ConversationStatus status,
+        Pageable pageable
+    );
+
     // Timeout Workflow: Find conversations by status (tenant-independent for scheduled jobs)
     List<Conversation> findByStatus(@Param("status") ConversationStatus status);
     

@@ -132,7 +132,7 @@
 - [x] Aggregation chạy scheduled: `AnalyticsAggregationService.aggregateDailyScheduled` cron 01:30 hằng ngày, ShedLock, per-tenant `TenantContext` (verify 2026-11-11).
 - [x] AI suggestion accept/reject feedback loop: `AiSuggestionController` có `/{id}/accept` + `/{id}/reject` → status ACCEPTED/REJECTED → đếm trong `aggregateForDate` (`aiSuggestionsAccepted/Rejected`, `aiAcceptanceRate`) (verify 2026-11-11).
 - [x] Report scheduling: `ReportSchedule` + `ReportScheduleService` + `ReportScheduler` (poll mỗi 60s, cron expression per schedule, ShedLock) (verify 2026-11-11 — đánh giá trước đó sai, đã tồn tại).
-- [ ] Caching cho query báo cáo dài — chưa verify Redis cache layer (minor).
+- [x] Caching cho query báo cáo dài — `@Cacheable("reports")` trên `getLatestResult` + evict on generate/update/delete, TTL 10m Redis (fix 2026-11-11).
 
 ### Known gaps
 - ~~`ReportSchedule` chưa implement~~ → đã có đầy đủ.
@@ -162,10 +162,10 @@
 - [x] Rate limit/quota per tenant — `TenantRateLimitFilter` Redis sliding window.
 - [x] 2FA — `TwoFactorService`/`TwoFactorController` đã tồn tại.
 - [x] Data retention policy job — `DataRetentionPurgeService` daily 04:30 purge soft-deleted records theo TTL (`app.retention.purge.*-days`) (fix 2026-11-11).
-- [ ] Tenant API keys (nếu cần public API) — chưa có; cần quyết định API surface + scopes trước khi implement auth filter.
+- [x] Tenant API keys — `TenantApiKey` (SHA-256 hash, role, expiry) + `/api/tenant/api-keys` CRUD + `TenantApiKeyAuthFilter` cho `/api/tenant-api/**` (conversations + messages read API) + frontend UI (fix 2026-11-11).
 
 ### Known gaps
-- ~~Conversation-events outbound webhook~~ → đã có `TenantWebhook` + `/api/tenant/webhooks` CRUD + `ConversationWebhookDispatcher` (async, HMAC-SHA256, event filter) hook vào `ConversationEventService` (fix 2026-11-11). v1 chưa có retry queue/DLQ.
+- ~~Conversation-events outbound webhook~~ → đã có `TenantWebhook` + `/api/tenant/webhooks` CRUD + `ConversationWebhookDispatcher` (async, HMAC-SHA256, event filter) hook vào `ConversationEventService` + **retry queue** `tenant_webhook_deliveries` + `WebhookDeliveryRetryService` backoff 1m→6h max 5 attempts (fix 2026-11-11).
 - ~~Data retention auto-purge~~ → `DataRetentionPurgeService` (fix 2026-11-11).
 - ~~Frontend GDPR UI~~ → đã thêm Export (download JSON) + Anonymize (confirm) buttons vào `CustomerProfileDetail.vue` (fix 2026-11-11).
 - ~~GDPR export scope~~ → export giờ gồm profile + feedback + notes + **conversations + messages** (link `externalId`↔`externalUserId`) (fix 2026-11-11).

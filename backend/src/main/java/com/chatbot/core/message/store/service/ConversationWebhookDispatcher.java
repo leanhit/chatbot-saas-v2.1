@@ -1,6 +1,8 @@
 package com.chatbot.core.message.store.service;
 
 import com.chatbot.core.tenant.model.TenantWebhook;
+import com.chatbot.core.tenant.model.TenantWebhookDelivery;
+import com.chatbot.core.tenant.repository.TenantWebhookDeliveryRepository;
 import com.chatbot.core.tenant.repository.TenantWebhookRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,8 +21,8 @@ import java.util.Map;
 
 /**
  * Dispatches conversation lifecycle events to tenant-configured outbound
- * webhooks. Best-effort: failures are logged, never break the main flow.
- * v1: fire-and-forget POST with HMAC-SHA256 signature; no retry queue.
+ * webhooks. Best-effort: failures are logged and queued for retry
+ * by WebhookDeliveryRetryService (exponential backoff, max 5 attempts).
  */
 @Service
 @RequiredArgsConstructor
@@ -28,6 +30,7 @@ import java.util.Map;
 public class ConversationWebhookDispatcher {
 
     private final TenantWebhookRepository webhookRepository;
+    private final TenantWebhookDeliveryRepository deliveryRepository;
 
     private final WebClient webhookWebClient = WebClient.builder()
             .codecs(configurer -> configurer.defaultCodecs().maxInMemorySize(2 * 1024 * 1024))
@@ -73,11 +76,33 @@ public class ConversationWebhookDispatcher {
                     .timeout(Duration.ofSeconds(5))
                     .subscribe(
                             resp -> log.debug("[WebhookDispatch] Delivered {} to {}", eventType, webhook.getUrl()),
-                            err -> log.warn("[WebhookDispatch] Delivery failed {} -> {}: {}",
-                                    eventType, webhook.getUrl(), err.getMessage()));
+                            err -> {
+                                log.warn("[WebhookDispatch] Delivery failed {} -> {}: {}",
+                                        eventType, webhook.getUrl(), err.getMessage());
+                                queueForRetry(webhook, eventType, conversationId, body, err.getMessage());
+                            });
         } catch (Exception e) {
             log.warn("[WebhookDispatch] Error delivering {} to {}: {}",
                     eventType, webhook.getUrl(), e.getMessage());
+        }
+    }
+
+    private void queueForRetry(TenantWebhook webhook, String eventType, Long conversationId,
+                               String body, String error) {
+        try {
+            deliveryRepository.save(TenantWebhookDelivery.builder()
+                    .tenantId(webhook.getTenantId())
+                    .webhookId(webhook.getId())
+                    .eventType(eventType)
+                    .conversationId(conversationId)
+                    .payload(body)
+                    .status(TenantWebhookDelivery.Status.PENDING)
+                    .attempts(0)
+                    .nextRetryAt(LocalDateTime.now().plusMinutes(1))
+                    .lastError(error)
+                    .build());
+        } catch (Exception e) {
+            log.error("[WebhookDispatch] Failed to queue retry for webhook {}: {}", webhook.getId(), e.getMessage());
         }
     }
 

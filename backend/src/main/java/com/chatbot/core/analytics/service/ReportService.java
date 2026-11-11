@@ -8,6 +8,8 @@ import com.chatbot.core.customer.model.Feedback;
 import com.chatbot.core.customer.repository.FeedbackRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -43,6 +45,7 @@ public class ReportService {
     }
 
     @Transactional
+    @CacheEvict(value = "reports", key = "#id + '-' + #tenantId")
     public CustomReport updateReport(Long id, CustomReport update, Long tenantId) {
         CustomReport report = reportRepository.findByIdAndTenantIdAndIsDeletedFalse(id, tenantId)
             .orElseThrow(() -> new IllegalArgumentException("Report not found"));
@@ -51,10 +54,12 @@ public class ReportService {
         if (update.getReportType() != null) report.setReportType(update.getReportType());
         if (update.getDateRangeDays() != null) report.setDateRangeDays(update.getDateRangeDays());
         if (update.getFilters() != null) report.setFilters(update.getFilters());
-        return reportRepository.save(report);
+        CustomReport saved = reportRepository.save(report);
+        return saved;
     }
 
     @Transactional
+    @CacheEvict(value = "reports", key = "#id + '-' + #tenantId")
     public void deleteReport(Long id, Long tenantId) {
         CustomReport report = reportRepository.findByIdAndTenantIdAndIsDeletedFalse(id, tenantId)
             .orElseThrow(() -> new IllegalArgumentException("Report not found"));
@@ -65,6 +70,7 @@ public class ReportService {
     // ---------- Generation ----------
 
     @Transactional
+    @CacheEvict(value = "reports", key = "#reportId + '-' + #tenantId")
     public Map<String, Object> generateReport(Long reportId, Long tenantId) {
         CustomReport report = reportRepository.findByIdAndTenantIdAndIsDeletedFalse(reportId, tenantId)
             .orElseThrow(() -> new IllegalArgumentException("Report not found"));
@@ -77,6 +83,7 @@ public class ReportService {
     }
 
     @Transactional(readOnly = true)
+    @Cacheable(value = "reports", key = "#reportId + '-' + #tenantId")
     public Map<String, Object> getLatestResult(Long reportId, Long tenantId) {
         CustomReport report = reportRepository.findByIdAndTenantIdAndIsDeletedFalse(reportId, tenantId)
             .orElseThrow(() -> new IllegalArgumentException("Report not found"));

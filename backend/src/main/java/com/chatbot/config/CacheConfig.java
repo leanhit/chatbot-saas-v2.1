@@ -79,6 +79,7 @@ public class CacheConfig {
         cacheConfigurations.put("auditLogs",           defaultConfig.entryTtl(Duration.ofMinutes(30)));
         cacheConfigurations.put("users",               defaultConfig.entryTtl(Duration.ofMinutes(30)));
         cacheConfigurations.put("conversations",       defaultConfig.entryTtl(Duration.ofMinutes(10)));
+        cacheConfigurations.put("reports",             defaultConfig.entryTtl(Duration.ofMinutes(10)));
 
         // --- Package caches (merged from PackageCacheConfig) ---
         cacheConfigurations.put("packages",            defaultConfig.entryTtl(Duration.ofMinutes(30)));

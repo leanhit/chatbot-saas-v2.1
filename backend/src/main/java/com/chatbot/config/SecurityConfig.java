@@ -156,6 +156,9 @@ public class SecurityConfig {
                 .requestMatchers("/api/simple-payment/health").permitAll()
                 .requestMatchers("/api/v1/merchant/payments/**").permitAll()
                 .requestMatchers("/api/merchant/payment/**").permitAll()
+
+                // ================= TENANT API KEY SURFACE (X-API-Key auth via TenantApiKeyAuthFilter) =================
+                .requestMatchers("/api/tenant-api/**").permitAll()
                 
                 // ================= PACKAGES APIs (PUBLIC) =================
                 .requestMatchers("/api/v1/packages/active", "/api/payment/packages/active").permitAll()

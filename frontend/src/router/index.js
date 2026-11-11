@@ -16,6 +16,7 @@ const TenantOverview = () => import("../views/tenant/overview/TenantOverview.vue
 const TenantMember = () => import("../views/tenant/member/TenantMember.vue");
 const TenantSettings = () => import("../views/tenant/settings/TenantSettings.vue");
 const TenantWebhooks = () => import("../views/tenant/settings/TenantWebhooks.vue");
+const TenantApiKeys = () => import("../views/tenant/settings/TenantApiKeys.vue");
 const TwoFactorSetup = () => import("../views/settings/TwoFactorSetup.vue");
 const GdprCenter = () => import("../views/settings/GdprCenter.vue");
 const BotManagement = () => import("../views/penny/bots/BotManagement.vue");
@@ -154,6 +155,12 @@ const routes = [
     name: "tenant-webhooks",
     component: TenantWebhooks,
     meta: { requiresAuth: true, title: "Outbound Webhooks" + appname },
+  },
+  {
+    path: "/tenant/settings/api-keys",
+    name: "tenant-api-keys",
+    component: TenantApiKeys,
+    meta: { requiresAuth: true, title: "API Keys" + appname },
   },
   {
     path: "/settings/2fa",
