@@ -5,6 +5,8 @@ import com.chatbot.core.message.store.dto.AgentResponseDTO;
 import com.chatbot.core.message.store.model.Agent;
 import com.chatbot.core.message.store.repository.AgentRepository;
 import com.chatbot.shared.exceptions.ResourceNotFoundException;
+import com.chatbot.core.tenant.service.TenantAuditLogService;
+import com.chatbot.core.tenant.service.TenantPermissionValidator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -27,6 +29,16 @@ public class AgentService {
 
     private final AgentRepository agentRepository;
     private final com.chatbot.core.training.service.OnboardingService onboardingService;
+    private final TenantAuditLogService auditLogService;
+    private final TenantPermissionValidator permissionValidator;
+
+    private String currentUserEmail() {
+        try {
+            return permissionValidator.getCurrentUserEmail();
+        } catch (Exception e) {
+            return "system";
+        }
+    }
 
     // Email validation pattern
     private static final Pattern EMAIL_PATTERN = Pattern.compile(
@@ -83,7 +95,9 @@ public class AgentService {
         
         Agent savedAgent = agentRepository.save(agent);
         log.info("Created new agent: {} for tenant {}", savedAgent.getEmail(), savedAgent.getTenantId());
-        
+        auditLogService.logActionAsync(savedAgent.getTenantId(), currentUserEmail(),
+                "AGENT_CREATED", "agentId=" + savedAgent.getId() + ", email=" + savedAgent.getEmail());
+
         return savedAgent;
     }
 
@@ -139,7 +153,10 @@ public class AgentService {
         existing.setAvatarUrl(updatedAgent.getAvatarUrl());
         existing.setMaxConcurrentConversations(updatedAgent.getMaxConcurrentConversations());
         existing.setUpdatedAt(LocalDateTime.now());
-        return agentRepository.save(existing);
+        Agent saved = agentRepository.save(existing);
+        auditLogService.logActionAsync(tenantId, currentUserEmail(),
+                "AGENT_UPDATED", "agentId=" + agentId);
+        return saved;
     }
 
     /**
@@ -262,6 +279,8 @@ public class AgentService {
         }
         agentRepository.deleteById(agentId);
         log.info("Deleted agent: {} from tenant: {}", agentId, tenantId);
+        auditLogService.logActionAsync(tenantId, currentUserEmail(),
+                "AGENT_DELETED", "agentId=" + agentId);
     }
 
     /**

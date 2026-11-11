@@ -33,7 +33,7 @@
 
 ### DoD
 - [x] Tenant isolation trên các module chính.
-- [x] Audit log được ghi cho **mọi** mutation nhạy cảm — đã phủ: tenant/membership, GDPR customer, routing rules, escalation tiers, SLA configs, onboarding approve/reject (fix 2026-11-11). Còn lại: training material CRUD, agent management, package/billing mutations.
+- [x] Audit log được ghi cho **mọi** mutation nhạy cảm — đã phủ: tenant/membership, GDPR customer, routing rules, escalation tiers, SLA configs, onboarding approve/reject, training material/category CRUD, agent create/update/delete, tenant API keys, tenant webhooks, package upgrade (`UPGRADE_PACKAGE`), payment (`PaymentAuditService`) (fix 2026-11-11).
 - [x] RBAC matrix rõ ràng — đã tạo `docs/rbac-matrix.md` (2026-11-11).
 
 ### Known gaps
@@ -138,7 +138,7 @@
 - ~~`ReportSchedule` chưa implement~~ → đã có đầy đủ.
 - ~~Sentiment realtime~~ → `SentimentController`: `POST /api/ai/sentiment/score/{conversationId}` (on-demand scoring) + `GET /conversation/{id}` latest — đủ cho use case realtime per-conversation.
 - ~~Aggregation self-invocation `@Transactional` bypass + load messages vào memory~~ → đã fix: self-injection `ObjectProvider` + count queries cho messages/escalations (fix 2026-11-11). Conversation lists vẫn load entities cho avg response/resolution — chấp nhận được, chuyển DB-side AVG nếu tenant lớn.
-- Word cloud / heatmap charts — cần verify frontend analytics views có đủ chart types.
+- Word cloud / heatmap charts — chưa có trong frontend analytics views (chỉ bar/line/pie); là enhancement optional, không blocking.
 
 ---
 

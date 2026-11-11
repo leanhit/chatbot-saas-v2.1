@@ -19,6 +19,8 @@ import com.chatbot.core.training.repository.AgentTrainingProgressRepository;
 import com.chatbot.core.training.repository.CertificationLevelRepository;
 import com.chatbot.core.training.repository.TrainingCategoryRepository;
 import com.chatbot.core.training.repository.TrainingMaterialRepository;
+import com.chatbot.core.tenant.service.TenantAuditLogService;
+import com.chatbot.core.tenant.service.TenantPermissionValidator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -42,6 +44,16 @@ public class TrainingService {
     private final CertificationLevelRepository certificationLevelRepository;
     private final CertificationService certificationService;
     private final AgentAssignmentService agentAssignmentService;
+    private final TenantAuditLogService auditLogService;
+    private final TenantPermissionValidator permissionValidator;
+
+    private String currentUserEmail() {
+        try {
+            return permissionValidator.getCurrentUserEmail();
+        } catch (Exception e) {
+            return "system";
+        }
+    }
 
     // Training Materials
     public List<TrainingMaterial> getAllMaterials() {
@@ -75,7 +87,10 @@ public class TrainingService {
             throw new IllegalStateException("Tenant context not set");
         }
         trainingMaterial.setTenantId(tenantId);
-        return trainingMaterialRepository.save(trainingMaterial);
+        TrainingMaterial saved = trainingMaterialRepository.save(trainingMaterial);
+        auditLogService.logActionAsync(tenantId, currentUserEmail(),
+                "TRAINING_MATERIAL_CREATED", "materialId=" + saved.getId() + ", title=" + saved.getTitle());
+        return saved;
     }
 
     public void deleteMaterial(Long id) {
@@ -89,6 +104,8 @@ public class TrainingService {
             throw new IllegalArgumentException("Training material does not belong to this tenant");
         }
         trainingMaterialRepository.deleteById(id);
+        auditLogService.logActionAsync(tenantId, currentUserEmail(),
+                "TRAINING_MATERIAL_DELETED", "materialId=" + id);
     }
 
     // Training Categories
@@ -115,7 +132,10 @@ public class TrainingService {
             throw new IllegalStateException("Tenant context not set");
         }
         category.setTenantId(tenantId);
-        return trainingCategoryRepository.save(category);
+        TrainingCategory saved = trainingCategoryRepository.save(category);
+        auditLogService.logActionAsync(tenantId, currentUserEmail(),
+                "TRAINING_CATEGORY_CREATED", "categoryId=" + saved.getId() + ", name=" + saved.getName());
+        return saved;
     }
 
     public void deleteCategory(Long id) {
@@ -129,6 +149,8 @@ public class TrainingService {
             throw new IllegalArgumentException("Training category does not belong to this tenant");
         }
         trainingCategoryRepository.deleteById(id);
+        auditLogService.logActionAsync(tenantId, currentUserEmail(),
+                "TRAINING_CATEGORY_DELETED", "categoryId=" + id);
     }
 
     @Transactional
