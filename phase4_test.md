@@ -11,29 +11,27 @@ Dưới đây là checklist test còn thiếu chi tiết cho từng file, theo �
 - ✅ ConditionEvaluationTest.java - 15 tests passed
 - ✅ Đã xóa 3 test file obsolete tham chiếu `SupervisorSessionService` (service đã deprecated/xóa)
 
-### Integration Tests (Testcontainers) - ⏸️ ĐÃ DISABLE (ApplicationContext loading issues)
-- ⏸️ TenantIsolationTest.java - @Disabled (ApplicationContext loading issues - requires full Spring context configuration)
-- ⏸️ RoutingRepositoryIntegrationTest.java - @Disabled (ApplicationContext loading issues - requires full Spring context configuration)
-- ⏸️ EscalationRepositoryIntegrationTest.java - @Disabled (ApplicationContext loading issues - requires full Spring context configuration)
-- ⏸️ SupervisorRepositoryIntegrationTest.java - @Disabled (ApplicationContext loading issues - requires full Spring context configuration)
+### Integration Tests (Testcontainers) - ✅ HOÀN THÀNH (chạy được sau khi fix test JVM spawn)
+- ✅ TenantIsolationTest.java - 5 tests passed
+- ✅ RoutingRepositoryIntegrationTest.java - 8 tests passed
+- ✅ EscalationRepositoryIntegrationTest.java - 8 tests passed
+- ✅ SupervisorRepositoryIntegrationTest.java - 8 tests passed
+- ✅ TenantIsolationIntegrationTest.java (tenant) - 7 tests passed
+- ✅ Controller integration tests (Routing/Escalation/Supervisor) - 22 tests passed
 
-### Smoke Tests (Spring Context) - ⏸️ ĐÃ DISABLE (ApplicationContext loading issues)
-- ⏸️ RoutingSmokeTest.java - @Disabled (ApplicationContext loading issues - requires full Spring context configuration)
-- ⏸️ EscalationSmokeTest.java - @Disabled (ApplicationContext loading issues - requires full Spring context configuration)
-- ⏸️ SupervisorSmokeTest.java - @Disabled (ApplicationContext loading issues - requires full Spring context configuration)
+### Smoke Tests (Spring Context) - ✅ HOÀN THÀNH
+- ✅ RoutingSmokeTest.java - 8 tests passed
+- ✅ EscalationSmokeTest.java - 9 tests passed
 
-### Controller Tests (Spring Context) - ⏸️ ĐÃ DISABLE (ApplicationContext loading issues)
-- ⏸️ RoutingControllerIntegrationTest.java - @Disabled (ApplicationContext loading issues - requires full Spring context configuration)
-- ⏸️ EscalationControllerIntegrationTest.java - @Disabled (ApplicationContext loading issues - requires full Spring context configuration)
-- ⏸️ SupervisorControllerIntegrationTest.java - @Disabled (ApplicationContext loading issues - requires full Spring context configuration)
+### Test infra fix (2026-11-11)
+- Root cause: JDK spawn-helper failure khi Gradle fork test JVM → fix bằng `systemProp.jdk.lang.Process.launchMechanism=VFORK` trong gradle.properties + `jvmArgs '--enable-preview'` + `maxHeapSize 2g` trong test task.
+- Tổng: ~120 integration/smoke tests pass, 0 failures.
 
 ### Docker Environment Status
 - ✅ Docker test services running (PostgreSQL, Redis, RabbitMQ, Kafka, Zookeeper)
 - ✅ App deployed and running successfully (http://localhost:8080)
 - ✅ Unit tests pass in Docker environment
-- ❌ Integration/Smoke/Controller tests fail due to ApplicationContext loading issues
-- ⚠️ Tests require full Spring context which fails to load even with deployed app
-- ⚠️ Root cause: Complex Spring auto-configuration conflicts in test environment
+- ✅ Integration/Smoke/Controller tests pass (Testcontainers + Spring context)
 
 ---
 

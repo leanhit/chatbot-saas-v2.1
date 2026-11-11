@@ -209,6 +209,8 @@ dependencies {
 tasks.named('test') {
     enabled = true
     useJUnitPlatform()
+    jvmArgs '--enable-preview'
+    maxHeapSize = '2g'
     systemProperties([
         'http.nonProxyHosts': 'localhost|127.0.0.1',
         'https.nonProxyHosts': 'localhost|127.0.0.1',
