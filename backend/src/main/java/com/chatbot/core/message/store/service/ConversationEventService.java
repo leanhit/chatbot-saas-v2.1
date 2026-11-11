@@ -12,7 +12,9 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Records and queries conversation lifecycle events.
@@ -42,6 +44,7 @@ public class ConversationEventService {
     public static final String ACTOR_BOT = "BOT";
 
     private final ConversationEventRepository eventRepository;
+    private final ConversationWebhookDispatcher webhookDispatcher;
 
     @Transactional(transactionManager = "messageTransactionManager", propagation = Propagation.REQUIRES_NEW)
     public void record(Long conversationId, String eventType, String actorType, String actorId,
@@ -63,6 +66,15 @@ public class ConversationEventService {
                     .build();
             event.setTenantId(tenantId);
             eventRepository.save(event);
+
+            // Best-effort outbound webhook dispatch (async, never breaks flow)
+            Map<String, Object> payload = new HashMap<>();
+            payload.put("actorType", actorType);
+            payload.put("actorId", actorId);
+            payload.put("from", fromValue);
+            payload.put("to", toValue);
+            payload.put("metadata", metadata);
+            webhookDispatcher.dispatch(tenantId, eventType, conversationId, payload);
         } catch (Exception e) {
             log.warn("Failed to record conversation event {} for conversation {}: {}", eventType, conversationId, e.getMessage());
         }
