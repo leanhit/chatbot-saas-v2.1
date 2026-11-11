@@ -83,6 +83,23 @@
           </div>
         </div>
 
+        <!-- Outbound Webhooks -->
+        <div class="bg-white dark:bg-gray-800 shadow rounded-lg">
+          <div class="p-6 flex items-center justify-between">
+            <div>
+              <h2 class="text-lg font-medium text-gray-900 dark:text-white">Outbound Webhooks</h2>
+              <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">Receive conversation events at your endpoints.</p>
+            </div>
+            <router-link
+              to="/tenant/settings/webhooks"
+              class="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600"
+            >
+              <Icon icon="mdi:webhook" class="h-4 w-4 mr-2" />
+              Manage Webhooks
+            </router-link>
+          </div>
+        </div>
+
         <!-- Tenant Administration -->
         <div class="bg-white dark:bg-gray-800 shadow rounded-lg">
           <div class="p-6 border-b border-gray-200 dark:border-gray-700">
