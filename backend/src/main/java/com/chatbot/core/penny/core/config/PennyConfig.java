@@ -49,7 +49,9 @@ public class PennyConfig {
             ErrorHandler errorHandler,
             AnalyticsCollector analyticsCollector,
             CustomLogicEngine customLogicEngine,
-            MeterRegistry meterRegistry) {
+            MeterRegistry meterRegistry,
+            RedisTemplate<String, Object> redisTemplate,
+            com.chatbot.core.penny.repository.PennyConversationContextRepository contextRepository) {
         
         log.info("🚀 Initializing Penny Middleware Engine...");
         
@@ -60,7 +62,9 @@ public class PennyConfig {
             errorHandler,
             analyticsCollector,
             customLogicEngine,
-            meterRegistry
+            meterRegistry,
+            redisTemplate,
+            contextRepository
         );
         
         log.info("✅ Penny Middleware Engine initialized successfully");

@@ -26,6 +26,9 @@ public class GeminiLlmProvider implements LlmProvider {
     private WebClient webClient;
     private String modelName = "gemini-1.5-pro";
     private static final String API_BASE = "https://generativelanguage.googleapis.com/v1beta/models";
+    private volatile long lastHealthCheckMs = 0;
+    private volatile boolean lastHealthResult = false;
+    private static final long HEALTH_CACHE_TTL_MS = 60_000;
 
     @Override
     public LlmResponse generateResponse(LlmRequest request) {
@@ -35,6 +38,7 @@ public class GeminiLlmProvider implements LlmProvider {
         }
 
         long startTime = System.currentTimeMillis();
+        String effectiveModel = resolveModelName(request);
         try {
             // Build request body
             Map<String, Object> body = new HashMap<>();
@@ -84,7 +88,7 @@ public class GeminiLlmProvider implements LlmProvider {
             body.put("generationConfig", generationConfig);
 
             // Make API call
-            String url = String.format("%s/%s:generateContent?key=%s", API_BASE, modelName, apiKey);
+            String url = String.format("%s/%s:generateContent?key=%s", API_BASE, effectiveModel, apiKey);
 
             @SuppressWarnings("unchecked")
             Map<String, Object> response = getWebClient()
@@ -118,12 +122,12 @@ public class GeminiLlmProvider implements LlmProvider {
             @SuppressWarnings("unchecked")
             Map<String, Object> usageMetadata = (Map<String, Object>) response.get("usageMetadata");
 
-            log.info("Gemini response generated in {}ms, model: {}", processingTime, modelName);
+            log.info("Gemini response generated in {}ms, model: {}", processingTime, effectiveModel);
 
             return LlmResponse.builder()
                 .success(true)
                 .text(text)
-                .model(modelName)
+                .model(effectiveModel)
                 .promptTokens(usageMetadata != null ? 
                     ((Number) usageMetadata.get("promptTokenCount")).intValue() : null)
                 .completionTokens(usageMetadata != null ? 
@@ -142,7 +146,30 @@ public class GeminiLlmProvider implements LlmProvider {
     @Override
     public boolean isHealthy() {
         String apiKey = apiKeyManager.getGeminiApiKey();
-        return apiKey != null && !apiKey.isBlank();
+        if (apiKey == null || apiKey.isBlank()) {
+            return false;
+        }
+        // Cached real probe: list models verifies API key is still valid.
+        long now = System.currentTimeMillis();
+        if (now - lastHealthCheckMs < HEALTH_CACHE_TTL_MS) {
+            return lastHealthResult;
+        }
+        try {
+            String url = String.format("%s?key=%s", API_BASE, apiKey);
+            getWebClient()
+                .get()
+                .uri(url)
+                .retrieve()
+                .bodyToMono(String.class)
+                .timeout(Duration.ofSeconds(5))
+                .block();
+            lastHealthResult = true;
+        } catch (Exception e) {
+            log.warn("Gemini health probe failed: {}", e.getMessage());
+            lastHealthResult = false;
+        }
+        lastHealthCheckMs = now;
+        return lastHealthResult;
     }
 
     @Override

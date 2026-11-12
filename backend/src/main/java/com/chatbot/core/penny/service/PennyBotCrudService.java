@@ -117,8 +117,8 @@ public class PennyBotCrudService {
     public PennyBot updateBot(UUID botId, String botName, String description, Boolean isEnabled) {
         log.info("🔄 Updating Penny bot: {}", botId);
         
-        PennyBot bot = pennyBotRepository.findById(botId)
-            .orElseThrow(() -> new IllegalArgumentException("Bot not found: " + botId));
+        PennyBot bot = getBot(botId);
+        assertBotTenantAccess(bot);
         
         if (botName != null && !botName.isBlank()) {
             bot.setBotName(botName);
@@ -146,6 +146,7 @@ public class PennyBotCrudService {
         log.info("📝 Updating Penny bot: {} with updates: {}", botId, updates);
         
         PennyBot bot = getBot(botId);
+        assertBotTenantAccess(bot);
         
         if (!bot.getOwnerId().equals(ownerId)) {
             throw new AccessDeniedException("Not authorized to update this bot");
@@ -188,6 +189,7 @@ public class PennyBotCrudService {
         log.info("🔄 Toggling Penny bot: {} to {} by owner: {}", botId, enabled, ownerId);
         
         PennyBot bot = getBot(botId);
+        assertBotTenantAccess(bot);
         
         if (!bot.getOwnerId().equals(ownerId)) {
             throw new AccessDeniedException("Not authorized to toggle this bot status");
@@ -211,6 +213,7 @@ public class PennyBotCrudService {
         log.info("🔍 Checking if bot can be deleted: {} by owner: {}", botId, ownerId);
         
         PennyBot bot = getBot(botId);
+        assertBotTenantAccess(bot);
         
         if (!bot.getOwnerId().equals(ownerId)) {
             throw new IllegalArgumentException("Bot does not belong to owner: " + ownerId);
@@ -280,6 +283,10 @@ public class PennyBotCrudService {
      * Get all bots for owner
      */
     public List<PennyBot> getBotsForOwner(String ownerId) {
+        Long tenantId = TenantContext.getTenantId();
+        if (tenantId != null) {
+            return pennyBotRepository.findAllByTenantIdAndOwnerIdAndIsActiveTrue(tenantId, ownerId);
+        }
         return pennyBotRepository.findActiveBotsByOwner(ownerId);
     }
 
@@ -321,6 +328,7 @@ public class PennyBotCrudService {
             }
             
             PennyBot bot = getBot(botId);
+            assertBotTenantAccess(bot);
             
             if (ownerId != null && !"public".equals(ownerId)) {
                 if (!bot.getOwnerId().equals(ownerId)) {
@@ -361,6 +369,17 @@ public class PennyBotCrudService {
         } catch (Exception e) {
             log.error("❌ Error processing message for bot {}: {}", botId, e.getMessage(), e);
             return "Sorry, I encountered an error while processing your message. Please try again.";
+        }
+    }
+
+    /**
+     * Defense-in-depth tenant check: when a tenant context is present, the bot
+     * must belong to that tenant even if it was resolved without tenant scoping.
+     */
+    private void assertBotTenantAccess(PennyBot bot) {
+        Long tenantId = TenantContext.getTenantId();
+        if (tenantId != null && bot.getTenantId() != null && !bot.getTenantId().equals(tenantId)) {
+            throw new AccessDeniedException("Bot does not belong to current tenant");
         }
     }
 

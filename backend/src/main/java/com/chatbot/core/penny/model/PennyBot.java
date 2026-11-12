@@ -92,6 +92,10 @@ public class PennyBot {
     @Builder.Default
     private LlmProviderType providerType = LlmProviderType.OPENAI;
 
+    @Column(name = "fallback_provider_type")
+    @Enumerated(EnumType.STRING)
+    private LlmProviderType fallbackProviderType; // null = default fallback order
+
     @Column(name = "model_name")
     @Builder.Default
     private String modelName = "gpt-4o-mini";

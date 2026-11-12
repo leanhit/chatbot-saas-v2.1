@@ -9,9 +9,11 @@ import com.chatbot.core.penny.error.ErrorHandler;
 import com.chatbot.core.penny.routing.ProviderSelector;
 import com.chatbot.core.penny.routing.dto.IntentAnalysisResult;
 import com.chatbot.core.penny.routing.dto.ProviderSelection;
+import com.chatbot.core.penny.repository.PennyConversationContextRepository;
 import com.chatbot.core.penny.rules.CustomLogicEngine;
 import com.chatbot.core.penny.service.IntentAnalyzer;
 import io.micrometer.core.instrument.MeterRegistry;
+import org.springframework.data.redis.core.RedisTemplate;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -39,6 +41,8 @@ class PennyMiddlewareEngineTest {
     @Mock private ErrorHandler errorHandler;
     @Mock private AnalyticsCollector analyticsCollector;
     @Mock private CustomLogicEngine customLogicEngine;
+    @Mock private RedisTemplate<String, Object> redisTemplate;
+    @Mock private PennyConversationContextRepository contextRepository;
 
     private PennyMiddlewareEngine engine;
     private MeterRegistry meterRegistry;
@@ -48,7 +52,8 @@ class PennyMiddlewareEngineTest {
         meterRegistry = new SimpleMeterRegistry();
         engine = new PennyMiddlewareEngine(
             contextManager, intentAnalyzer, providerSelector,
-            errorHandler, analyticsCollector, customLogicEngine, meterRegistry);
+            errorHandler, analyticsCollector, customLogicEngine, meterRegistry,
+            redisTemplate, contextRepository);
 
         // ErrorHandler should always return an error MiddlewareResponse for any exception
         lenient().when(errorHandler.handleError(any(Exception.class), any(), anyLong()))

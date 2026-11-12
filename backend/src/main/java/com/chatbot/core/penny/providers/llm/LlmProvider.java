@@ -38,4 +38,15 @@ public interface LlmProvider {
      * @return Model name (e.g., "gpt-4o-mini", "claude-3-5-sonnet")
      */
     String getModelName();
+
+    /**
+     * Resolve the model to use for a specific request: per-request override
+     * takes precedence over the provider's configured default.
+     */
+    default String resolveModelName(LlmRequest request) {
+        if (request != null && request.getModelName() != null && !request.getModelName().isBlank()) {
+            return request.getModelName();
+        }
+        return getModelName();
+    }
 }

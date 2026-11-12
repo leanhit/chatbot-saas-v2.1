@@ -19,6 +19,8 @@ public interface PennyKnowledgeDocumentRepository extends JpaRepository<PennyKno
 
     Optional<PennyKnowledgeDocument> findByBotIdAndDocumentName(UUID botId, String documentName);
 
+    Optional<PennyKnowledgeDocument> findByIdAndBotIdAndTenantId(UUID id, UUID botId, Long tenantId);
+
     List<PennyKnowledgeDocument> findByStatus(String status);
 
     List<PennyKnowledgeDocument> findByTenantId(Long tenantId);

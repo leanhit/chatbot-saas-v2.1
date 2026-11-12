@@ -27,14 +27,18 @@ public class OllamaLlmProvider implements LlmProvider {
 
     private WebClient webClient;
     private String modelName = "llama3:8b";
+    private volatile long lastHealthCheckMs = 0;
+    private volatile boolean lastHealthResult = false;
+    private static final long HEALTH_CACHE_TTL_MS = 60_000;
 
     @Override
     public LlmResponse generateResponse(LlmRequest request) {
         long startTime = System.currentTimeMillis();
+        String effectiveModel = resolveModelName(request);
         try {
             // Build request body
             Map<String, Object> body = new HashMap<>();
-            body.put("model", modelName);
+            body.put("model", effectiveModel);
             body.put("stream", false);
 
             // Build prompt
@@ -102,12 +106,12 @@ public class OllamaLlmProvider implements LlmProvider {
             @SuppressWarnings("unchecked")
             Map<String, Object> evalCount = (Map<String, Object>) response.get("eval_count");
 
-            log.info("Ollama response generated in {}ms, model: {}", processingTime, modelName);
+            log.info("Ollama response generated in {}ms, model: {}", processingTime, effectiveModel);
 
             return LlmResponse.builder()
                 .success(true)
                 .text(text)
-                .model(modelName)
+                .model(effectiveModel)
                 .promptTokens(promptEvalCount != null ? ((Number) promptEvalCount).intValue() : null)
                 .completionTokens(evalCount != null ? ((Number) evalCount).intValue() : null)
                 .totalTokens(promptEvalCount != null && evalCount != null ? 
@@ -123,6 +127,11 @@ public class OllamaLlmProvider implements LlmProvider {
 
     @Override
     public boolean isHealthy() {
+        // Cached probe: /api/tags verifies the Ollama server is reachable.
+        long now = System.currentTimeMillis();
+        if (now - lastHealthCheckMs < HEALTH_CACHE_TTL_MS) {
+            return lastHealthResult;
+        }
         try {
             String url = String.format("%s/api/tags", baseUrl);
             getWebClient()
@@ -132,11 +141,13 @@ public class OllamaLlmProvider implements LlmProvider {
                 .bodyToMono(Map.class)
                 .timeout(Duration.ofSeconds(5))
                 .block();
-            return true;
+            lastHealthResult = true;
         } catch (Exception e) {
             log.warn("Ollama health check failed: {}", e.getMessage());
-            return false;
+            lastHealthResult = false;
         }
+        lastHealthCheckMs = now;
+        return lastHealthResult;
     }
 
     @Override

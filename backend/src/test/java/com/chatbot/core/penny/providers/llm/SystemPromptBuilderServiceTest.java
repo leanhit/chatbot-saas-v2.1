@@ -62,7 +62,7 @@ class SystemPromptBuilderServiceTest {
         assertNotNull(prompt);
         assertTrue(prompt.contains("[ROLE & PERSONA]"));
         assertTrue(prompt.contains("[CUSTOM INSTRUCTIONS]"));
-        assertTrue(prompt.contains("[KNOWLEDGE BASE CONTEXT (RAG)]"));
+        assertTrue(prompt.contains("[REFERENCE DOCUMENTS — UNTRUSTED DATA]"));
         assertTrue(prompt.contains("[RULES]"));
         assertTrue(prompt.contains("Test Business"));
         assertTrue(prompt.contains("Be helpful and concise"));
@@ -76,7 +76,7 @@ class SystemPromptBuilderServiceTest {
         String prompt = systemPromptBuilderService.buildSystemPrompt(bot, "test query");
 
         assertNotNull(prompt);
-        assertFalse(prompt.contains("[KNOWLEDGE BASE CONTEXT (RAG)]"));
+        assertFalse(prompt.contains("[REFERENCE DOCUMENTS"));
     }
 
     @Test
@@ -85,7 +85,7 @@ class SystemPromptBuilderServiceTest {
         String prompt = systemPromptBuilderService.buildSystemPrompt(bot, null);
 
         assertNotNull(prompt);
-        assertFalse(prompt.contains("[KNOWLEDGE BASE CONTEXT (RAG)]"));
+        assertFalse(prompt.contains("[REFERENCE DOCUMENTS"));
     }
 
     @Test
@@ -94,7 +94,7 @@ class SystemPromptBuilderServiceTest {
         String prompt = systemPromptBuilderService.buildSystemPrompt(bot, "");
 
         assertNotNull(prompt);
-        assertFalse(prompt.contains("[KNOWLEDGE BASE CONTEXT (RAG)]"));
+        assertFalse(prompt.contains("[REFERENCE DOCUMENTS"));
     }
 
     @Test
@@ -192,7 +192,7 @@ class SystemPromptBuilderServiceTest {
     void shouldIncludeResponseRules() {
         String prompt = systemPromptBuilderService.buildSystemPrompt(bot, null);
 
-        assertTrue(prompt.contains("Ưu tiên trả lời dựa trên KNOWLEDGE BASE CONTEXT"));
+        assertTrue(prompt.contains("Ưu tiên trả lời dựa trên REFERENCE DOCUMENTS"));
         assertTrue(prompt.contains("Trả lời bằng ngôn ngữ mà khách hàng sử dụng"));
     }
 }

@@ -17,7 +17,9 @@ public class TextChunkerService {
     private static final int MIN_CHUNK_SIZE = 500;
     private static final int MAX_CHUNK_SIZE = 800;
     private static final int OVERLAP_SIZE = 100;
-    private static final int APPROX_TOKENS_PER_WORD = 4; // Rough estimate for English/Vietnamese
+    // Conservative fallback; estimateTokens() uses language-aware heuristic.
+    private static final int APPROX_CHARS_PER_TOKEN_ASCII = 4;
+    private static final int APPROX_CHARS_PER_TOKEN_VIETNAMESE = 3; // used for overlap sizing
 
     /**
      * Chunk text with metadata
@@ -108,25 +110,50 @@ public class TextChunkerService {
      * Get overlap text from the end of current chunk
      */
     private String getOverlapText(String text) {
-        if (text.length() <= OVERLAP_SIZE * APPROX_TOKENS_PER_WORD) {
+        // Use the Vietnamese-aware chars-per-token estimate for overlap sizing
+        // so we don't under-overlap on Vietnamese documents.
+        int overlapChars = OVERLAP_SIZE * APPROX_CHARS_PER_TOKEN_VIETNAMESE;
+        if (text.length() <= overlapChars) {
             return text;
         }
-
-        // Take last N characters as overlap
-        int overlapChars = OVERLAP_SIZE * APPROX_TOKENS_PER_WORD;
         return text.substring(text.length() - overlapChars);
     }
 
     /**
-     * Estimate token count (rough approximation)
-     * For more accurate tokenization, use a proper tokenizer like tiktoken
+     * Estimate token count with language-aware heuristic.
+     *
+     * <p>Vietnamese text has many diacritic characters (each represented as a
+     * multi-byte Unicode code point) so the byte-to-token ratio is lower than
+     * plain ASCII English.
+     *
+     * <ul>
+     *   <li>Vietnamese (high non-ASCII ratio): ~2.5 chars/token</li>
+     *   <li>English / ASCII:                   ~4.0 chars/token</li>
+     *   <li>Mixed (default):                   ~3.0 chars/token</li>
+     * </ul>
+     *
+     * Note: this is still an approximation. For exact counts per model use a
+     * proper tokenizer such as <a href="https://github.com/knuddelsgmbh/jtokkit">jtokkit</a>.
      */
     private int estimateTokens(String text) {
         if (text == null || text.isEmpty()) {
             return 0;
         }
-        // Rough estimate: ~4 characters per token for English/Vietnamese
-        return (text.length() / APPROX_TOKENS_PER_WORD) + 1;
+        long nonAsciiCount = text.chars()
+                .filter(c -> c > 127)
+                .count();
+        double nonAsciiRatio = (double) nonAsciiCount / text.length();
+
+        // Pick chars-per-token based on detected language mix
+        double charsPerToken;
+        if (nonAsciiRatio > 0.4) {
+            charsPerToken = 2.5; // predominantly Vietnamese
+        } else if (nonAsciiRatio > 0.15) {
+            charsPerToken = 3.0; // mixed Vietnamese/English
+        } else {
+            charsPerToken = 4.0; // predominantly English / ASCII
+        }
+        return (int) Math.ceil(text.length() / charsPerToken) + 1;
     }
 
     /**

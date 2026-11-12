@@ -4,6 +4,8 @@ import com.chatbot.core.penny.model.PennyKnowledgeChunk;
 import com.chatbot.core.penny.repository.PennyKnowledgeChunkRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import io.micrometer.core.instrument.MeterRegistry;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -32,6 +34,7 @@ public class KnowledgeChunkSearchService {
 
     private final PennyKnowledgeChunkRepository chunkRepository;
     private final EmbeddingService embeddingService;
+    private final ObjectProvider<MeterRegistry> meterRegistryProvider;
 
     /**
      * Search for relevant document chunks based on query text
@@ -64,6 +67,9 @@ public class KnowledgeChunkSearchService {
 
             log.info("🔍 Vector search returned {} chunks for bot {} (threshold: {})", 
                 chunks.size(), botId, similarityThreshold);
+            if (chunks.isEmpty()) {
+                safeIncrement("penny.rag.no_result");
+            }
             return chunks;
 
         } catch (Exception e) {
@@ -112,16 +118,21 @@ public class KnowledgeChunkSearchService {
         }
 
         StringBuilder context = new StringBuilder();
-        int totalChars = 0;
+        int totalTokens = 0;
 
         for (PennyKnowledgeChunk chunk : chunks) {
             String snippet = chunkToContextSnippet(chunk);
-            if (totalChars + snippet.length() > maxContextTokens * 4) { // Approximate 4 chars per token
-                log.debug("Context truncated at {} chars to stay within token limit", totalChars);
+            // Prefer the token count recorded at chunk time; fall back to a
+            // conservative estimate (~3.5 chars/token for mixed vi/en text).
+            int chunkTokens = chunk.getChunkTokens() != null && chunk.getChunkTokens() > 0
+                ? chunk.getChunkTokens()
+                : (int) Math.ceil(snippet.length() / 3.5);
+            if (totalTokens + chunkTokens > maxContextTokens) {
+                log.debug("Context truncated at {} tokens to stay within limit {}", totalTokens, maxContextTokens);
                 break;
             }
             context.append(snippet).append("\n\n---\n\n");
-            totalChars += snippet.length();
+            totalTokens += chunkTokens;
         }
 
         return context.toString();
@@ -182,6 +193,17 @@ public class KnowledgeChunkSearchService {
      */
     public boolean isEnabled() {
         return embeddingService.isEnabled();
+    }
+
+    private void safeIncrement(String name, String... tags) {
+        try {
+            MeterRegistry registry = meterRegistryProvider != null ? meterRegistryProvider.getIfAvailable() : null;
+            if (registry != null) {
+                registry.counter(name, tags).increment();
+            }
+        } catch (Exception ignored) {
+            // metrics must never break search
+        }
     }
 
     /**

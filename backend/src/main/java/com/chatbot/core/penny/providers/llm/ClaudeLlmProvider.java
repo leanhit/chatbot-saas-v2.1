@@ -27,6 +27,10 @@ public class ClaudeLlmProvider implements LlmProvider {
     private WebClient webClient;
     private String modelName = "claude-3-5-sonnet-20241022";
     private static final String API_URL = "https://api.anthropic.com/v1/messages";
+    private static final String MODELS_URL = "https://api.anthropic.com/v1/models";
+    private volatile long lastHealthCheckMs = 0;
+    private volatile boolean lastHealthResult = false;
+    private static final long HEALTH_CACHE_TTL_MS = 60_000;
 
     @Override
     public LlmResponse generateResponse(LlmRequest request) {
@@ -36,10 +40,11 @@ public class ClaudeLlmProvider implements LlmProvider {
         }
 
         long startTime = System.currentTimeMillis();
+        String effectiveModel = resolveModelName(request);
         try {
             // Build request body
             Map<String, Object> body = new HashMap<>();
-            body.put("model", modelName);
+            body.put("model", effectiveModel);
             body.put("max_tokens", request.getMaxTokens() != null ? request.getMaxTokens() : 1000);
             
             if (request.getTemperature() != null) {
@@ -106,12 +111,12 @@ public class ClaudeLlmProvider implements LlmProvider {
             @SuppressWarnings("unchecked")
             Map<String, Object> usage = (Map<String, Object>) response.get("usage");
 
-            log.info("Claude response generated in {}ms, model: {}", processingTime, modelName);
+            log.info("Claude response generated in {}ms, model: {}", processingTime, effectiveModel);
 
             return LlmResponse.builder()
                 .success(true)
                 .text(text)
-                .model(modelName)
+                .model(effectiveModel)
                 .promptTokens(usage != null ? ((Number) usage.get("input_tokens")).intValue() : null)
                 .completionTokens(usage != null ? ((Number) usage.get("output_tokens")).intValue() : null)
                 .totalTokens(usage != null ? ((Number) usage.get("input_tokens")).intValue() + 
@@ -128,7 +133,33 @@ public class ClaudeLlmProvider implements LlmProvider {
     @Override
     public boolean isHealthy() {
         String apiKey = apiKeyManager.getClaudeApiKey();
-        return apiKey != null && !apiKey.isBlank();
+        if (apiKey == null || apiKey.isBlank()) {
+            return false;
+        }
+        // Cached real probe: list models verifies API key is still valid.
+        long now = System.currentTimeMillis();
+        if (now - lastHealthCheckMs < HEALTH_CACHE_TTL_MS) {
+            return lastHealthResult;
+        }
+        try {
+            getWebClient(apiKey)
+                .get()
+                .uri(MODELS_URL)
+                .headers(headers -> {
+                    headers.set("x-api-key", apiKey);
+                    headers.set("anthropic-version", "2023-06-01");
+                })
+                .retrieve()
+                .bodyToMono(String.class)
+                .timeout(Duration.ofSeconds(5))
+                .block();
+            lastHealthResult = true;
+        } catch (Exception e) {
+            log.warn("Claude health probe failed: {}", e.getMessage());
+            lastHealthResult = false;
+        }
+        lastHealthCheckMs = now;
+        return lastHealthResult;
     }
 
     @Override

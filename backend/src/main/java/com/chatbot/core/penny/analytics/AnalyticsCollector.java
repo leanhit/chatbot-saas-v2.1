@@ -5,12 +5,16 @@ import com.chatbot.core.penny.dto.request.MiddlewareRequest;
 import com.chatbot.core.penny.dto.response.MiddlewareResponse;
 import com.chatbot.core.penny.routing.dto.IntentAnalysisResult;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.scheduling.annotation.Async;
+import io.micrometer.core.instrument.Gauge;
+import io.micrometer.core.instrument.MeterRegistry;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -30,15 +34,28 @@ public class AnalyticsCollector {
     private final AtomicLong totalProcessingTime;
     private final AnalyticsEventRepository analyticsEventRepository;
     
-    public AnalyticsCollector(PennyProperties properties, AnalyticsEventRepository analyticsEventRepository) {
+    public AnalyticsCollector(PennyProperties properties, AnalyticsEventRepository analyticsEventRepository,
+                              ObjectProvider<MeterRegistry> meterRegistryProvider) {
         this.properties = properties;
         this.analyticsEventRepository = analyticsEventRepository;
         this.eventQueue = new ConcurrentLinkedQueue<>();
         this.totalProcessed = new AtomicLong(0);
         this.totalErrors = new AtomicLong(0);
-        this.providerUsage = new HashMap<>();
-        this.intentCounts = new HashMap<>();
+        this.providerUsage = new ConcurrentHashMap<>();
+        this.intentCounts = new ConcurrentHashMap<>();
         this.totalProcessingTime = new AtomicLong(0);
+
+        // Queue backlog gauge for alerting on analytics pipeline stalls
+        try {
+            MeterRegistry registry = meterRegistryProvider != null ? meterRegistryProvider.getIfAvailable() : null;
+            if (registry != null) {
+                Gauge.builder("penny.analytics.queue.size", eventQueue, java.util.Queue::size)
+                    .description("Pending analytics events in queue")
+                    .register(registry);
+            }
+        } catch (Exception e) {
+            log.warn("Could not register analytics queue gauge: {}", e.getMessage());
+        }
     }
     
     /**
@@ -81,13 +98,9 @@ public class AnalyticsCollector {
             QueueEvent event = new QueueEvent("message_processed", Instant.now(), 
                 buildEventData(request, response, analysis, processingTime));
             
-            // Add to queue for batch processing
+            // Add to queue for batch processing — a scheduled flush persists
+            // events periodically; no synchronous DB write on the request path.
             eventQueue.offer(event);
-            
-            // Process batch if needed
-            if (eventQueue.size() >= properties.getAnalytics().getBatchSize()) {
-                flushEvents();
-            }
             
             log.debug("📊 Analytics collected - Provider: {}, Intent: {}, Time: {}ms", 
                 response.getProviderUsed(), analysis.getPrimaryIntent(), processingTime);
@@ -126,38 +139,44 @@ public class AnalyticsCollector {
     }
     
     /**
-     * Flush events to storage
+     * Flush events to storage. Runs on the scheduler thread (or via direct
+     * call); events are re-queued if persistence fails so no data is lost.
      */
-    @Async
+    @Scheduled(fixedDelayString = "${penny.analytics.flush-interval-ms:30000}",
+               initialDelayString = "${penny.analytics.flush-interval-ms:30000}")
     @Transactional
     public void flushEvents() {
         if (!properties.getAnalytics().isEnabled() || eventQueue.isEmpty()) {
             return;
         }
         
+        List<QueueEvent> polled = new ArrayList<>();
         try {
-            List<com.chatbot.core.penny.analytics.AnalyticsEvent> events = new ArrayList<>();
             QueueEvent queueEvent;
-            while ((queueEvent = eventQueue.poll()) != null && events.size() < properties.getAnalytics().getBatchSize()) {
-                // Convert queue event to entity for persistence
-                com.chatbot.core.penny.analytics.AnalyticsEvent entityEvent = 
-                    com.chatbot.core.penny.analytics.AnalyticsEvent.builder()
-                        .eventType(queueEvent.getEventType())
-                        .timestamp(queueEvent.getTimestamp())
-                        .data(queueEvent.getData())
-                        .build();
-                events.add(entityEvent);
+            while ((queueEvent = eventQueue.poll()) != null && polled.size() < properties.getAnalytics().getBatchSize()) {
+                polled.add(queueEvent);
             }
             
-            if (!events.isEmpty()) {
-                // Persist events to database
-                log.debug("📊 Persisting {} analytics events to database", events.size());
-                analyticsEventRepository.saveAll(events);
-                log.info("✅ Successfully persisted {} analytics events", events.size());
+            if (polled.isEmpty()) {
+                return;
             }
+            
+            List<com.chatbot.core.penny.analytics.AnalyticsEvent> events = new ArrayList<>(polled.size());
+            for (QueueEvent qe : polled) {
+                events.add(com.chatbot.core.penny.analytics.AnalyticsEvent.builder()
+                    .eventType(qe.getEventType())
+                    .timestamp(qe.getTimestamp())
+                    .data(qe.getData())
+                    .build());
+            }
+            
+            analyticsEventRepository.saveAll(events);
+            log.debug("📊 Persisted {} analytics events to database", events.size());
             
         } catch (Exception e) {
-            log.error("❌ Error flushing analytics events: {}", e.getMessage(), e);
+            // Re-queue events so a transient DB failure does not lose analytics data.
+            polled.forEach(eventQueue::offer);
+            log.error("❌ Error flushing analytics events ({} events re-queued): {}", polled.size(), e.getMessage(), e);
         }
     }
     

@@ -1,0 +1,71 @@
+# Prometheus alert rules for Penny Bot middleware metrics.
+# Metric names assume Micrometer Prometheus registry (default naming).
+groups:
+  - name: penny-availability
+    rules:
+      - alert: PennyHighErrorRate
+        expr: |
+          sum(rate(penny_messages_errors_total[5m]))
+            / clamp_min(sum(rate(penny_messages_processed_total[5m])), 1) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Penny message error rate above 5%"
+          description: "Error rate is {{ $value | humanizePercentage }} over the last 5 minutes."
+
+      - alert: PennyAllProvidersFailing
+        expr: increase(penny_llm_all_providers_failed_total[10m]) > 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "All LLM providers failing for Penny"
+          description: "Every configured LLM provider failed in the last 10 minutes."
+
+      - alert: PennyProviderFailureSpike
+        expr: sum by (provider) (rate(penny_llm_provider_failure_total[5m])) > 0.5
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "LLM provider {{ $labels.provider }} failing frequently"
+
+      - alert: PennyEmbeddingFailures
+        expr: |
+          sum(rate(penny_embedding_failures_total[10m]))
+            / clamp_min(sum(rate(penny_embedding_requests_total[10m])), 1) > 0.2
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Embedding failure rate above 20%"
+          description: "RAG ingestion quality is degraded; documents may be marked PARTIAL/FAILED."
+
+      - alert: PennyAnalyticsQueueBacklog
+        expr: penny_analytics_queue_size > 10000
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Analytics event queue backlog"
+          description: "{{ $value }} events pending — analytics flush may be stalled."
+
+      - alert: PennyRagNoResultSpike
+        expr: sum(rate(penny_rag_no_result_total[15m])) > 1
+        for: 15m
+        labels:
+          severity: info
+        annotations:
+          summary: "RAG returning no results frequently"
+          description: "Knowledge base may be missing coverage for common queries."
+
+      - alert: PennyHighLatency
+        expr: |
+          histogram_quantile(0.95,
+            sum by (le) (rate(penny_message_processing_time_seconds_bucket[5m]))) > 10
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "P95 message processing latency above 10s"

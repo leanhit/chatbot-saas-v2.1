@@ -1,0 +1,113 @@
+{
+  "title": "Penny Bot Middleware",
+  "uid": "penny-middleware",
+  "tags": ["penny", "chatbot"],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "30s",
+  "time": { "from": "now-6h", "to": "now" },
+  "panels": [
+    {
+      "id": 1,
+      "title": "Messages Processed / Errors",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "targets": [
+        { "expr": "sum(rate(penny_messages_processed_total[5m]))", "legendFormat": "processed/s" },
+        { "expr": "sum(rate(penny_messages_errors_total[5m]))", "legendFormat": "errors/s" }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "Error Rate %",
+      "type": "stat",
+      "gridPos": { "h": 8, "w": 6, "x": 12, "y": 0 },
+      "targets": [
+        { "expr": "100 * sum(rate(penny_messages_errors_total[5m])) / clamp_min(sum(rate(penny_messages_processed_total[5m])), 1)", "legendFormat": "error %" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "percent", "thresholds": { "steps": [ { "value": 0, "color": "green" }, { "value": 2, "color": "yellow" }, { "value": 5, "color": "red" } ] } } }
+    },
+    {
+      "id": 3,
+      "title": "P95 Processing Latency",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 6, "x": 18, "y": 0 },
+      "targets": [
+        { "expr": "histogram_quantile(0.95, sum by (le) (rate(penny_message_processing_time_seconds_bucket[5m])))", "legendFormat": "p95" },
+        { "expr": "histogram_quantile(0.50, sum by (le) (rate(penny_message_processing_time_seconds_bucket[5m])))", "legendFormat": "p50" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "s" } }
+    },
+    {
+      "id": 4,
+      "title": "LLM Provider Failures",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "targets": [
+        { "expr": "sum by (provider) (rate(penny_llm_provider_failure_total[5m]))", "legendFormat": "{{provider}} failures/s" },
+        { "expr": "sum(rate(penny_llm_provider_fallback_success_total[5m]))", "legendFormat": "fallback success/s" },
+        { "expr": "sum(rate(penny_llm_all_providers_failed_total[5m]))", "legendFormat": "ALL FAILED/s" }
+      ]
+    },
+    {
+      "id": 5,
+      "title": "Provider Usage",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "targets": [
+        { "expr": "sum by (provider) (rate(penny_provider_usage_total[5m]))", "legendFormat": "{{provider}}" }
+      ]
+    },
+    {
+      "id": 6,
+      "title": "Embedding Pipeline",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
+      "targets": [
+        { "expr": "sum(rate(penny_embedding_requests_total[5m]))", "legendFormat": "requests/s" },
+        { "expr": "sum(rate(penny_embedding_failures_total[5m]))", "legendFormat": "failures/s" },
+        { "expr": "sum(rate(penny_embedding_cache_hit_total[5m]))", "legendFormat": "cache hit/s" },
+        { "expr": "sum(rate(penny_embedding_cache_miss_total[5m]))", "legendFormat": "cache miss/s" }
+      ]
+    },
+    {
+      "id": 7,
+      "title": "RAG Search",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 },
+      "targets": [
+        { "expr": "sum(rate(penny_rag_no_result_total[5m]))", "legendFormat": "no-result/s" }
+      ]
+    },
+    {
+      "id": 8,
+      "title": "Active Conversations / Bots",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 24 },
+      "targets": [
+        { "expr": "penny_conversations_active", "legendFormat": "conversations" },
+        { "expr": "penny_bots_active", "legendFormat": "bots" }
+      ]
+    },
+    {
+      "id": 9,
+      "title": "Analytics Queue Backlog",
+      "type": "stat",
+      "gridPos": { "h": 8, "w": 6, "x": 12, "y": 24 },
+      "targets": [
+        { "expr": "penny_analytics_queue_size", "legendFormat": "queue size" }
+      ],
+      "fieldConfig": { "defaults": { "thresholds": { "steps": [ { "value": 0, "color": "green" }, { "value": 1000, "color": "yellow" }, { "value": 10000, "color": "red" } ] } } }
+    },
+    {
+      "id": 10,
+      "title": "Provider Fallbacks",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 6, "x": 18, "y": 24 },
+      "targets": [
+        { "expr": "sum by (from, to) (rate(penny_providers_fallback_total[5m]))", "legendFormat": "{{from}} -> {{to}}" }
+      ]
+    }
+  ]
+}

@@ -3,6 +3,8 @@ package com.chatbot.core.penny.controller;
 import com.chatbot.core.tenant.infra.TenantContext;
 import com.chatbot.core.tenant.service.TenantPermissionValidator;
 import com.chatbot.core.tenant.exception.InsufficientPermissionException;
+import com.chatbot.core.penny.security.PennyRateLimiter;
+import com.chatbot.core.penny.service.PennyBotApiKeyService;
 import com.chatbot.core.penny.service.PennyBotManager;
 import com.chatbot.core.penny.model.PennyBot;
 import com.chatbot.core.penny.model.PennyBotType;
@@ -14,6 +16,7 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
+import jakarta.servlet.http.HttpServletRequest;
 import java.security.Principal;
 import java.util.List;
 import java.util.Map;
@@ -33,15 +36,21 @@ public class PennyBotController {
     private final TenantPermissionValidator tenantPermissionValidator;
     private final BotRuleManager botRuleManager;
     private final ResponseTemplateManager responseTemplateManager;
+    private final PennyBotApiKeyService pennyBotApiKeyService;
+    private final PennyRateLimiter pennyRateLimiter;
 
     public PennyBotController(PennyBotManager pennyBotManager, 
                               TenantPermissionValidator tenantPermissionValidator,
                               BotRuleManager botRuleManager,
-                              ResponseTemplateManager responseTemplateManager) {
+                              ResponseTemplateManager responseTemplateManager,
+                              PennyBotApiKeyService pennyBotApiKeyService,
+                              PennyRateLimiter pennyRateLimiter) {
         this.pennyBotManager = pennyBotManager;
         this.tenantPermissionValidator = tenantPermissionValidator;
         this.botRuleManager = botRuleManager;
         this.responseTemplateManager = responseTemplateManager;
+        this.pennyBotApiKeyService = pennyBotApiKeyService;
+        this.pennyRateLimiter = pennyRateLimiter;
     }
     
     private Long getValidatedTenantId() {
@@ -125,9 +134,10 @@ public class PennyBotController {
      */
     @GetMapping
     public ResponseEntity<List<Map<String, Object>>> getBots(Principal principal) {
+        Long tenantId = getValidatedTenantId();
         String ownerId = principal.getName();
         
-        log.info("📋 Getting Penny bots for owner: {}", ownerId);
+        log.info("📋 Getting Penny bots for owner: {} in tenant: {}", ownerId, tenantId);
         
         List<PennyBot> bots = pennyBotManager.getBotsForOwner(ownerId);
         
@@ -154,7 +164,8 @@ public class PennyBotController {
      */
     @GetMapping("/{botId}")
     public ResponseEntity<Map<String, Object>> getBotById(@PathVariable String botId) {
-        log.info("🔍 Getting bot details for ID: {}", botId);
+        Long tenantId = getValidatedTenantId();
+        log.info("🔍 Getting bot details for ID: {} in tenant: {}", botId, tenantId);
         
         UUID botUuid = UUID.fromString(botId);
         PennyBot bot = pennyBotManager.getBot(botUuid);
@@ -177,7 +188,8 @@ public class PennyBotController {
      */
     @GetMapping("/{botId}/health")
     public ResponseEntity<Map<String, Object>> getBotHealth(@PathVariable String botId) {
-        log.info("🏥 Getting health status for bot: {}", botId);
+        Long tenantId = getValidatedTenantId();
+        log.info("🏥 Getting health status for bot: {} in tenant: {}", botId, tenantId);
         
         UUID botUuid = UUID.fromString(botId);
         Map<String, Object> health = pennyBotManager.getBotHealth(botUuid);
@@ -253,10 +265,11 @@ public class PennyBotController {
             @RequestParam(defaultValue = "7days") String timeRange,
             Principal principal) {
         
+        Long tenantId = getValidatedTenantId();
         String ownerId = principal.getName();
         UUID botUuid = UUID.fromString(botId);
         
-        log.info("📊 Getting analytics for bot: {} by owner: {} with range: {}", botId, ownerId, timeRange);
+        log.info("📊 Getting analytics for bot: {} by owner: {} in tenant: {} with range: {}", botId, ownerId, tenantId, timeRange);
         
         Map<String, Object> analytics = pennyBotManager.getBotAnalytics(botUuid, timeRange, ownerId);
         return ResponseEntity.ok(analytics);
@@ -271,12 +284,13 @@ public class PennyBotController {
             @RequestBody Map<String, String> request,
             Principal principal) {
         
+        Long tenantId = getValidatedTenantId();
         String ownerId = principal.getName();
         UUID botUuid = UUID.fromString(botId);
         String message = request.get("message");
         boolean isTestMode = "true".equals(request.get("testMode"));
         
-        log.info("💬 Chatting with Penny bot: {} by owner: {} - Message: {} - TestMode: {}", botId, ownerId, message, isTestMode);
+        log.info("💬 Chatting with Penny bot: {} by owner: {} in tenant: {} - Message: {} - TestMode: {}", botId, ownerId, tenantId, message, isTestMode);
         
         PennyBot bot = pennyBotManager.getBot(botUuid);
         if (!bot.getOwnerId().equals(ownerId)) {
@@ -307,11 +321,14 @@ public class PennyBotController {
     public ResponseEntity<Map<String, Object>> chatWithBotPublic(
             @PathVariable String botId,
             @RequestBody Map<String, String> request,
-            @RequestHeader(value = "X-Public-API-Key", required = false) String apiKey) {
+            @RequestHeader(value = "X-Public-API-Key", required = false) String apiKey,
+            HttpServletRequest httpRequest) {
         
-        if (!isValidPublicApiKey(apiKey)) {
-            log.warn("⚠️ Invalid or missing API key for public chat with bot: {}", botId);
-            throw new AccessDeniedException("Invalid or missing API key");
+        // Rate limit public endpoint per client IP before any processing
+        String clientIp = extractClientIp(httpRequest);
+        if (!pennyRateLimiter.allowPublic(clientIp)) {
+            log.warn("⚠️ Public chat rate limited for IP: {} bot: {}", clientIp, botId);
+            throw new AccessDeniedException("Rate limit exceeded. Please try again later.");
         }
         
         UUID botUuid = UUID.fromString(botId);
@@ -320,6 +337,19 @@ public class PennyBotController {
         log.info("💬 Public chat with Penny bot: {} - Message: {}", botId, message);
         
         PennyBot bot = pennyBotManager.getBot(botUuid);
+        
+        // Per-bot API keys take precedence; the shared env key is only a
+        // backward-compatible fallback for bots without configured keys.
+        boolean authorized;
+        if (pennyBotApiKeyService.hasActiveKeys(botUuid)) {
+            authorized = pennyBotApiKeyService.validatePublicKey(botUuid, apiKey);
+        } else {
+            authorized = isValidPublicApiKey(apiKey);
+        }
+        if (!authorized) {
+            log.warn("⚠️ Invalid or missing API key for public chat with bot: {}", botId);
+            throw new AccessDeniedException("Invalid or missing API key");
+        }
         
         if (!bot.isActive() || !bot.isEnabled()) {
             throw new IllegalStateException("Bot is not active. Please activate the bot first.");
@@ -337,6 +367,18 @@ public class PennyBotController {
         ));
     }
     
+    private String extractClientIp(HttpServletRequest request) {
+        String ip = request.getHeader("X-Forwarded-For");
+        if (ip != null && !ip.isBlank()) {
+            return ip.split(",")[0].trim();
+        }
+        ip = request.getHeader("X-Real-IP");
+        if (ip != null && !ip.isBlank()) {
+            return ip.trim();
+        }
+        return request.getRemoteAddr();
+    }
+
     private boolean isValidPublicApiKey(String apiKey) {
         String expectedKey = System.getenv("PENNY_PUBLIC_API_KEY");
         if (expectedKey == null || expectedKey.isBlank()) {
@@ -344,6 +386,65 @@ public class PennyBotController {
             return false;
         }
         return expectedKey.equals(apiKey);
+    }
+
+    /**
+     * Create a public API key for a bot (OWNER only). Plaintext returned once.
+     */
+    @PostMapping("/{botId}/api-keys")
+    public ResponseEntity<Map<String, Object>> createApiKey(
+            @PathVariable String botId,
+            @RequestBody(required = false) Map<String, String> request,
+            Principal principal) {
+        Long tenantId = getValidatedTenantId();
+        UUID botUuid = UUID.fromString(botId);
+        String name = request != null ? request.get("name") : null;
+
+        Map<String, Object> result = pennyBotApiKeyService.createApiKey(
+            botUuid, tenantId, name, principal.getName());
+        return ResponseEntity.ok(result);
+    }
+
+    /**
+     * List public API keys for a bot (OWNER only, metadata only).
+     */
+    @GetMapping("/{botId}/api-keys")
+    public ResponseEntity<Map<String, Object>> listApiKeys(
+            @PathVariable String botId,
+            Principal principal) {
+        Long tenantId = getValidatedTenantId();
+        UUID botUuid = UUID.fromString(botId);
+
+        List<com.chatbot.core.penny.model.PennyBotApiKey> keys =
+            pennyBotApiKeyService.listApiKeys(botUuid, tenantId, principal.getName());
+
+        List<Map<String, Object>> keyList = keys.stream().map(k -> Map.<String, Object>of(
+            "id", k.getId().toString(),
+            "keyPrefix", k.getKeyPrefix(),
+            "name", k.getName() != null ? k.getName() : "",
+            "isActive", k.isActive(),
+            "expiresAt", k.getExpiresAt() != null ? k.getExpiresAt().toString() : "",
+            "lastUsedAt", k.getLastUsedAt() != null ? k.getLastUsedAt().toString() : "",
+            "createdAt", k.getCreatedAt().toString()
+        )).collect(Collectors.toList());
+
+        return ResponseEntity.ok(Map.of("apiKeys", keyList));
+    }
+
+    /**
+     * Revoke a public API key (OWNER only).
+     */
+    @DeleteMapping("/{botId}/api-keys/{keyId}")
+    public ResponseEntity<Map<String, String>> revokeApiKey(
+            @PathVariable String botId,
+            @PathVariable String keyId,
+            Principal principal) {
+        Long tenantId = getValidatedTenantId();
+        UUID botUuid = UUID.fromString(botId);
+        UUID keyUuid = UUID.fromString(keyId);
+
+        pennyBotApiKeyService.revokeApiKey(keyUuid, botUuid, tenantId, principal.getName());
+        return ResponseEntity.ok(Map.of("message", "API key revoked", "keyId", keyId));
     }
     
     /**
@@ -514,6 +615,18 @@ public class PennyBotController {
                         bot.setProviderType(com.chatbot.core.penny.model.LlmProviderType.valueOf(providerType));
                     } catch (IllegalArgumentException e) {
                         log.warn("Invalid provider type: {}, keeping current", providerType);
+                    }
+                }
+                if (botConfig.containsKey("fallbackProviderType")) {
+                    Object fallback = botConfig.get("fallbackProviderType");
+                    if (fallback == null || fallback.toString().isBlank()) {
+                        bot.setFallbackProviderType(null);
+                    } else {
+                        try {
+                            bot.setFallbackProviderType(com.chatbot.core.penny.model.LlmProviderType.valueOf(fallback.toString()));
+                        } catch (IllegalArgumentException e) {
+                            log.warn("Invalid fallback provider type: {}, keeping current", fallback);
+                        }
                     }
                 }
                 if (botConfig.containsKey("modelName")) {

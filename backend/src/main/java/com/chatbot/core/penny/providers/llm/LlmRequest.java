@@ -69,6 +69,13 @@ public class LlmRequest {
     private Map<String, Object> additionalParams;
 
     /**
+     * Optional per-request model override. When set, the provider must use this
+     * model for this request only — providers are shared singletons and must
+     * not be mutated per request.
+     */
+    private String modelName;
+
+    /**
      * Message in conversation history
      */
     @Data

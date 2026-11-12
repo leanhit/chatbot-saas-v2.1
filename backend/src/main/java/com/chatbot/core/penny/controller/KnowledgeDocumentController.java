@@ -2,6 +2,7 @@ package com.chatbot.core.penny.controller;
 
 import com.chatbot.core.penny.model.PennyKnowledgeDocument;
 import com.chatbot.core.penny.service.DocumentProcessingService;
+import com.chatbot.core.tenant.infra.TenantContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -27,6 +28,14 @@ public class KnowledgeDocumentController {
 
     private final DocumentProcessingService documentProcessingService;
 
+    private Long getTenantId() {
+        Long tenantId = TenantContext.getTenantId();
+        if (tenantId == null) {
+            throw new IllegalStateException("Tenant context not found. Please provide X-Tenant-Key header");
+        }
+        return tenantId;
+    }
+
     /**
      * Upload and process a knowledge document
      * POST /api/v1/penny/knowledge-base/upload
@@ -36,10 +45,10 @@ public class KnowledgeDocumentController {
     public ResponseEntity<?> uploadDocument(
             @RequestParam("file") MultipartFile file,
             @RequestParam("botId") UUID botId,
-            @RequestParam("tenantId") Long tenantId,
             @RequestParam("documentName") String documentName,
             @RequestParam(value = "uploadedBy", required = false) String uploadedBy) {
 
+        Long tenantId = getTenantId();
         try {
             log.info("Upload request: document={}, bot={}, tenant={}", documentName, botId, tenantId);
 
@@ -86,9 +95,9 @@ public class KnowledgeDocumentController {
     @GetMapping("/documents")
     @PreAuthorize("hasAuthority('TENANT_ADMIN') or hasAuthority('BOT_OWNER')")
     public ResponseEntity<?> getDocuments(
-            @RequestParam UUID botId,
-            @RequestParam Long tenantId) {
+            @RequestParam UUID botId) {
 
+        Long tenantId = getTenantId();
         try {
             List<PennyKnowledgeDocument> documents = documentProcessingService
                 .getDocumentsByBotAndTenant(botId, tenantId);
@@ -107,8 +116,9 @@ public class KnowledgeDocumentController {
     @GetMapping("/documents/{documentId}")
     @PreAuthorize("hasAuthority('TENANT_ADMIN') or hasAuthority('BOT_OWNER')")
     public ResponseEntity<?> getDocument(@PathVariable UUID documentId) {
+        Long tenantId = getTenantId();
         try {
-            PennyKnowledgeDocument document = documentProcessingService.getDocument(documentId);
+            PennyKnowledgeDocument document = documentProcessingService.getDocument(documentId, tenantId);
             if (document == null) {
                 return ResponseEntity.notFound().build();
             }
@@ -127,8 +137,9 @@ public class KnowledgeDocumentController {
     @DeleteMapping("/documents/{documentId}")
     @PreAuthorize("hasAuthority('TENANT_ADMIN') or hasAuthority('BOT_OWNER')")
     public ResponseEntity<?> deleteDocument(@PathVariable UUID documentId) {
+        Long tenantId = getTenantId();
         try {
-            documentProcessingService.deleteDocument(documentId);
+            documentProcessingService.deleteDocument(documentId, tenantId);
             return ResponseEntity.ok(new SuccessResponse("Document deleted successfully"));
         } catch (Exception e) {
             log.error("Error deleting document: {}", e.getMessage(), e);
@@ -144,8 +155,9 @@ public class KnowledgeDocumentController {
     @DeleteMapping("/documents/bot/{botId}")
     @PreAuthorize("hasAuthority('TENANT_ADMIN') or hasAuthority('BOT_OWNER')")
     public ResponseEntity<?> deleteDocumentsByBot(@PathVariable UUID botId) {
+        Long tenantId = getTenantId();
         try {
-            documentProcessingService.deleteDocumentsByBot(botId);
+            documentProcessingService.deleteDocumentsByBot(botId, tenantId);
             return ResponseEntity.ok(new SuccessResponse("All documents for bot deleted successfully"));
         } catch (Exception e) {
             log.error("Error deleting documents for bot: {}", e.getMessage(), e);
@@ -164,8 +176,9 @@ public class KnowledgeDocumentController {
             @PathVariable UUID documentId,
             @RequestParam("file") MultipartFile file) {
 
+        Long tenantId = getTenantId();
         try {
-            PennyKnowledgeDocument document = documentProcessingService.reprocessDocument(documentId, file);
+            PennyKnowledgeDocument document = documentProcessingService.reprocessDocument(documentId, file, tenantId);
             return ResponseEntity.ok(new UploadResponse(
                 document.getId(),
                 document.getDocumentName(),

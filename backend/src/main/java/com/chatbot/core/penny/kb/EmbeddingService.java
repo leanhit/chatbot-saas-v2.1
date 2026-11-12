@@ -10,7 +10,9 @@ import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry;
 import io.github.resilience4j.retry.Retry;
 import io.github.resilience4j.retry.RetryRegistry;
+import io.micrometer.core.instrument.MeterRegistry;
 import jakarta.annotation.PostConstruct;
+import org.springframework.beans.factory.ObjectProvider;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -18,6 +20,8 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
@@ -46,6 +50,7 @@ public class EmbeddingService {
     private final CircuitBreakerRegistry circuitBreakerRegistry;
     private final RetryRegistry retryRegistry;
     private final PennyProperties pennyProperties;
+    private final ObjectProvider<MeterRegistry> meterRegistryProvider;
 
     private OpenAIClient openAIClient;
     private boolean enabled = false;
@@ -100,10 +105,11 @@ public class EmbeddingService {
         try {
             String cacheKey = getCacheKey(text);
             
-            // Try to get from Redis cache first
-            @SuppressWarnings("unchecked")
-            List<Double> cached = (List<Double>) redisTemplate.opsForValue().get(cacheKey);
+            // Try to get from Redis cache first — cache failures must not
+            // prevent calling the embedding provider.
+            List<Double> cached = safeCacheGet(cacheKey);
             if (cached != null && !cached.isEmpty()) {
+                safeIncrement("penny.embedding.cache.hit");
                 log.debug("📦 Embedding cache hit for text ({} chars)", text.length());
                 // Convert List<Double> to float[]
                 float[] embedding = new float[cached.size()];
@@ -112,6 +118,9 @@ public class EmbeddingService {
                 }
                 return embedding;
             }
+
+            safeIncrement("penny.embedding.cache.miss");
+            safeIncrement("penny.embedding.requests");
 
             // Generate embedding via OpenAI API with circuit breaker and retry
             Supplier<float[]> embeddingSupplier = CircuitBreaker.decorateSupplier(
@@ -145,8 +154,7 @@ public class EmbeddingService {
                 // Circuit breaker fallback: try to return cached embedding
                 if (pennyProperties.getRag().isCircuitBreakerFallbackEnabled()) {
                     log.warn("⚠️ Circuit breaker open, attempting fallback to cached embedding");
-                    @SuppressWarnings("unchecked")
-                    List<Double> cachedFallback = (List<Double>) redisTemplate.opsForValue().get(cacheKey);
+                    List<Double> cachedFallback = safeCacheGet(cacheKey);
                     if (cachedFallback != null && !cachedFallback.isEmpty()) {
                         log.info("✅ Fallback to cached embedding successful");
                         float[] cachedEmbedding = new float[cachedFallback.size()];
@@ -167,15 +175,12 @@ public class EmbeddingService {
             for (float f : embedding) {
                 redisEmbeddingList.add((double) f);
             }
-            redisTemplate.opsForValue().set(
-                cacheKey,
-                redisEmbeddingList,
-                pennyProperties.getRag().getCacheTtl()
-            );
+            safeCacheSet(cacheKey, redisEmbeddingList);
 
             return embedding;
 
         } catch (Exception e) {
+            safeIncrement("penny.embedding.failures");
             log.error("❌ Error generating embedding: {}", e.getMessage(), e);
             return null;
         }
@@ -306,9 +311,58 @@ public class EmbeddingService {
 
     // ─── Private helpers ───────────────────────────────────────────────────
 
+    /**
+     * Increment a counter without letting metrics failures break the pipeline.
+     */
+    private void safeIncrement(String name, String... tags) {
+        try {
+            MeterRegistry registry = meterRegistryProvider != null ? meterRegistryProvider.getIfAvailable() : null;
+            if (registry != null) {
+                registry.counter(name, tags).increment();
+            }
+        } catch (Exception ignored) {
+            // metrics must never break embedding generation
+        }
+    }
+
+    /**
+     * Cache read that tolerates Redis outages — returns null on any error.
+     */
+    @SuppressWarnings("unchecked")
+    private List<Double> safeCacheGet(String cacheKey) {
+        try {
+            return (List<Double>) redisTemplate.opsForValue().get(cacheKey);
+        } catch (Exception e) {
+            log.warn("⚠️ Embedding cache read failed (Redis unavailable?), continuing without cache: {}", e.getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Cache write that tolerates Redis outages — failures are logged only.
+     */
+    private void safeCacheSet(String cacheKey, List<Double> value) {
+        try {
+            redisTemplate.opsForValue().set(cacheKey, value, pennyProperties.getRag().getCacheTtl());
+        } catch (Exception e) {
+            log.warn("⚠️ Embedding cache write failed (Redis unavailable?), skipping cache: {}", e.getMessage());
+        }
+    }
+
     private String getCacheKey(String text) {
-        // Use hash of text as cache key to avoid storing full text in Redis key
-        int hash = text.hashCode();
-        return "embedding:" + Math.abs(hash);
+        // SHA-256 over model + text: avoids String.hashCode collisions and
+        // prevents stale hits when the embedding model changes.
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] hash = digest.digest((embeddingModel + ":" + text).getBytes(StandardCharsets.UTF_8));
+            StringBuilder sb = new StringBuilder("embedding:");
+            for (int i = 0; i < 16; i++) {
+                sb.append(String.format("%02x", hash[i]));
+            }
+            return sb.toString();
+        } catch (Exception e) {
+            // Fallback: still deterministic, though weaker
+            return "embedding:" + embeddingModel + ":" + text.hashCode();
+        }
     }
 }

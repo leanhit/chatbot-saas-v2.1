@@ -124,4 +124,70 @@ public class IntentAnalyzerVnTest {
         // Then
         assertTrue(result2.getEntities().containsKey("location"));
     }
+
+    @Test
+    public void testMessageWithNewline() {
+        // Given - multi-line message
+        MiddlewareRequest request = MiddlewareRequest.builder()
+            .message("Chào shop\nMình muốn hỏi về đơn hàng")
+            .language("vi")
+            .build();
+
+        // When
+        IntentAnalysisResult result = intentAnalyzer.analyze(request, context);
+
+        // Then - should still detect order intent, not crash
+        assertNotNull(result.getPrimaryIntent());
+        assertTrue(result.getAllIntents().contains("order_inquiry")
+            || result.getAllIntents().contains("greeting"));
+    }
+
+    @Test
+    public void testVeryShortMessage() {
+        // Given - ambiguous short message
+        MiddlewareRequest request = MiddlewareRequest.builder()
+            .message("ok")
+            .language("vi")
+            .build();
+
+        // When
+        IntentAnalysisResult result = intentAnalyzer.analyze(request, context);
+
+        // Then - must return a result, not throw
+        assertNotNull(result.getPrimaryIntent());
+        assertNotNull(result.getConfidence());
+    }
+
+    @Test
+    public void testGreetingIntent() {
+        // Given
+        MiddlewareRequest request = MiddlewareRequest.builder()
+            .message("xin chào")
+            .language("vi")
+            .build();
+
+        // When
+        IntentAnalysisResult result = intentAnalyzer.analyze(request, context);
+
+        // Then
+        assertEquals("greeting", result.getPrimaryIntent());
+    }
+
+    @Test
+    public void testProcessingTimeIsDurationNotTimestamp() {
+        // Given
+        MiddlewareRequest request = MiddlewareRequest.builder()
+            .message("kiểm tra đơn hàng")
+            .language("vi")
+            .build();
+
+        // When
+        IntentAnalysisResult result = intentAnalyzer.analyze(request, context);
+
+        // Then - processingTime must be a small duration (ms), not epoch millis
+        assertNotNull(result.getProcessingTime());
+        assertTrue(result.getProcessingTime() >= 0);
+        assertTrue(result.getProcessingTime() < 60_000,
+            "processingTime should be elapsed ms, got: " + result.getProcessingTime());
+    }
 }

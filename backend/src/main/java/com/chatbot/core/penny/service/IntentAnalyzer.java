@@ -35,6 +35,7 @@ public class IntentAnalyzer {
      * Analyze intent and entities from message
      */
     public IntentAnalysisResult analyze(MiddlewareRequest request, ConversationContext context) {
+        long startTime = System.currentTimeMillis();
         String originalMessage = request.getMessage();
         String message = VietnameseTextNormalizer.normalize(originalMessage);
         String unaccentedMessage = VietnameseTextNormalizer.removeAccents(originalMessage);
@@ -57,7 +58,7 @@ public class IntentAnalyzer {
         // Determine message type
         String messageType = determineMessageType(message, unaccentedMessage, entities);
         
-        return buildResult(request, primaryIntent, confidence, entities, allIntents, messageType, message);
+        return buildResult(request, primaryIntent, confidence, entities, allIntents, messageType, message, startTime);
     }
 
     /**
@@ -74,7 +75,7 @@ public class IntentAnalyzer {
      */
     private IntentAnalysisResult buildResult(MiddlewareRequest request, String primaryIntent, 
             double confidence, Map<String, Object> entities, List<String> allIntents, 
-            String messageType, String message) {
+            String messageType, String message, long startTime) {
         // Calculate complexity
         String complexity = calculateComplexity(message, entities, allIntents);
         
@@ -86,7 +87,7 @@ public class IntentAnalyzer {
             .messageType(messageType)
             .complexity(complexity)
             .language(request.isVietnamese() ? "vi" : "en")
-            .processingTime(System.currentTimeMillis())
+            .processingTime(System.currentTimeMillis() - startTime)
             .build();
         
         log.debug("🎯 Intent analysis completed - Intent: {}, Confidence: {}, Entities: {}", 

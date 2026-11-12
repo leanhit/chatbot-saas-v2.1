@@ -36,6 +36,11 @@ public interface PennyBotRepository extends JpaRepository<PennyBot, UUID> {
     List<PennyBot> findByOwnerIdAndIsActiveTrue(String ownerId);
 
     /**
+     * Find all active bots by tenant ID and owner ID (multi-tenant safe)
+     */
+    List<PennyBot> findAllByTenantIdAndOwnerIdAndIsActiveTrue(Long tenantId, String ownerId);
+
+    /**
      * Find bot by tenant ID and bot type
      */
     Optional<PennyBot> findByTenantIdAndBotTypeAndIsActiveTrue(Long tenantId, PennyBotType botType);

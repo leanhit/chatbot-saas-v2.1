@@ -3,6 +3,7 @@ package com.chatbot.core.penny.core;
 import com.chatbot.core.penny.analytics.AnalyticsCollector;
 import com.chatbot.core.penny.context.ContextManager;
 import com.chatbot.core.penny.context.ConversationContext;
+import com.chatbot.core.penny.repository.PennyConversationContextRepository;
 import com.chatbot.core.penny.dto.request.MiddlewareRequest;
 import com.chatbot.core.penny.dto.response.MiddlewareResponse;
 import com.chatbot.core.penny.error.ErrorHandler;
@@ -17,6 +18,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -39,6 +41,8 @@ public class PennyMiddlewareEngine {
     private final AnalyticsCollector analyticsCollector;
     private final CustomLogicEngine customLogicEngine;
     private final MeterRegistry meterRegistry;
+    private final RedisTemplate<String, Object> redisTemplate;
+    private final PennyConversationContextRepository contextRepository;
     
     // Metrics counters
     private final Counter pennyRequestsTotal;
@@ -50,7 +54,9 @@ public class PennyMiddlewareEngine {
                                 ErrorHandler errorHandler,
                                 AnalyticsCollector analyticsCollector,
                                 CustomLogicEngine customLogicEngine,
-                                MeterRegistry meterRegistry) {
+                                MeterRegistry meterRegistry,
+                                RedisTemplate<String, Object> redisTemplate,
+                                PennyConversationContextRepository contextRepository) {
         this.contextManager = contextManager;
         this.intentAnalyzer = intentAnalyzer;
         this.providerSelector = providerSelector;
@@ -58,6 +64,8 @@ public class PennyMiddlewareEngine {
         this.analyticsCollector = analyticsCollector;
         this.customLogicEngine = customLogicEngine;
         this.meterRegistry = meterRegistry;
+        this.redisTemplate = redisTemplate;
+        this.contextRepository = contextRepository;
         
         // Initialize metrics counters
         this.pennyRequestsTotal = Counter.builder("penny_requests_total")
@@ -190,10 +198,17 @@ public class PennyMiddlewareEngine {
      * Get health status of middleware engine
      */
     public EngineHealthStatus getHealthStatus() {
+        Map<String, ComponentHealth> components = checkComponents();
+        String overall = components.values().stream()
+            .map(ComponentHealth::getStatus)
+            .anyMatch("unhealthy"::equals) ? "unhealthy"
+            : components.values().stream()
+                .map(ComponentHealth::getStatus)
+                .anyMatch("degraded"::equals) ? "degraded" : "healthy";
         return EngineHealthStatus.builder()
-            .status("healthy")
+            .status(overall)
             .timestamp(Instant.now())
-            .components(checkComponents())
+            .components(components)
             .build();
     }
     
@@ -308,25 +323,57 @@ public class PennyMiddlewareEngine {
     private java.util.Map<String, ComponentHealth> checkComponents() {
         java.util.Map<String, ComponentHealth> components = new java.util.HashMap<>();
         
-        // Check context manager
-        components.put("contextManager", ComponentHealth.builder()
-            .status("healthy")
-            .lastCheck(Instant.now())
-            .build());
+        // Context manager: real probe of Redis + context DB
+        components.put("contextManager", checkContextStorage());
             
-        // Check intent analyzer
+        // Intent analyzer: in-process component, healthy if bean is wired
         components.put("intentAnalyzer", ComponentHealth.builder()
-            .status("healthy")
+            .status(intentAnalyzer != null ? "healthy" : "unhealthy")
             .lastCheck(Instant.now())
+            .message(intentAnalyzer != null ? "In-process analyzer" : "Bean not initialized")
             .build());
             
-        // Check provider selector
+        // Provider selector: in-process component, healthy if bean is wired
         components.put("providerSelector", ComponentHealth.builder()
-            .status("healthy")
+            .status(providerSelector != null ? "healthy" : "unhealthy")
             .lastCheck(Instant.now())
+            .message(providerSelector != null ? "In-process selector" : "Bean not initialized")
             .build());
         
         return components;
+    }
+    
+    /**
+     * Probe Redis connectivity and context DB reachability.
+     * degraded = one storage down (fallback may still work),
+     * unhealthy = both down.
+     */
+    private ComponentHealth checkContextStorage() {
+        boolean redisOk = false;
+        boolean dbOk = false;
+        StringBuilder message = new StringBuilder();
+        
+        try {
+            String pong = redisTemplate.getConnectionFactory()
+                .getConnection().ping();
+            redisOk = "PONG".equalsIgnoreCase(pong);
+        } catch (Exception e) {
+            message.append("redis: ").append(e.getMessage()).append("; ");
+        }
+        
+        try {
+            contextRepository.count();
+            dbOk = true;
+        } catch (Exception e) {
+            message.append("db: ").append(e.getMessage());
+        }
+        
+        String status = (redisOk && dbOk) ? "healthy" : (!redisOk && !dbOk) ? "unhealthy" : "degraded";
+        return ComponentHealth.builder()
+            .status(status)
+            .lastCheck(Instant.now())
+            .message(message.length() > 0 ? message.toString() : "redis+db ok")
+            .build();
     }
     
     // Inner classes

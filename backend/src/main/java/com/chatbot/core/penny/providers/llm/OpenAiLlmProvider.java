@@ -25,6 +25,9 @@ public class OpenAiLlmProvider implements LlmProvider {
     private OpenAIClient client;
     private String modelName = "gpt-4o-mini";
     private boolean initialized = false;
+    private volatile long lastHealthCheckMs = 0;
+    private volatile boolean lastHealthResult = false;
+    private static final long HEALTH_CACHE_TTL_MS = 60_000;
 
     @Override
     public LlmResponse generateResponse(LlmRequest request) {
@@ -33,6 +36,7 @@ public class OpenAiLlmProvider implements LlmProvider {
         }
 
         long startTime = System.currentTimeMillis();
+        String effectiveModel = resolveModelName(request);
         try {
             // Build messages
             List<ChatCompletionMessageParam> messages = new ArrayList<>();
@@ -69,7 +73,7 @@ public class OpenAiLlmProvider implements LlmProvider {
 
             // Build completion params
             ChatCompletionCreateParams.Builder paramsBuilder = ChatCompletionCreateParams.builder()
-                .model(modelName)
+                .model(effectiveModel)
                 .messages(messages);
 
             if (request.getTemperature() != null) {
@@ -92,12 +96,12 @@ public class OpenAiLlmProvider implements LlmProvider {
             long completionTokens = completion.usage().map(u -> u.completionTokens()).orElse(0L);
             long totalTokens = completion.usage().map(u -> u.totalTokens()).orElse(0L);
 
-            log.info("OpenAI response generated in {}ms, model: {}", processingTime, modelName);
+            log.info("OpenAI response generated in {}ms, model: {}", processingTime, effectiveModel);
 
             return LlmResponse.builder()
                 .success(true)
                 .text(text)
-                .model(modelName)
+                .model(effectiveModel)
                 .promptTokens((int) promptTokens)
                 .completionTokens((int) completionTokens)
                 .totalTokens((int) totalTokens)
@@ -113,7 +117,23 @@ public class OpenAiLlmProvider implements LlmProvider {
 
     @Override
     public boolean isHealthy() {
-        return initialized && client != null;
+        if (!initialized || client == null) {
+            return false;
+        }
+        // Cached real probe: list models verifies API key is still valid.
+        long now = System.currentTimeMillis();
+        if (now - lastHealthCheckMs < HEALTH_CACHE_TTL_MS) {
+            return lastHealthResult;
+        }
+        try {
+            client.models().list();
+            lastHealthResult = true;
+        } catch (Exception e) {
+            log.warn("OpenAI health probe failed: {}", e.getMessage());
+            lastHealthResult = false;
+        }
+        lastHealthCheckMs = now;
+        return lastHealthResult;
     }
 
     @Override

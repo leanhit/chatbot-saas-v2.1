@@ -205,6 +205,7 @@ public class ContextManager {
             .botId(request.getBotId())
             .userId(request.getUserId())
             .platform(request.getPlatform())
+            .tenantId(com.chatbot.core.tenant.infra.TenantContext.getTenantId())
             .createdAt(Instant.now())
             .lastUpdated(Instant.now())
             .messageCount(0)
