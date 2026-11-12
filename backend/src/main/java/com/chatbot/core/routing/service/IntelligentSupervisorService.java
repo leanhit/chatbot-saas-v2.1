@@ -31,8 +31,18 @@ public class IntelligentSupervisorService {
 
     @Transactional
     public SupervisorSessionDTO startSupervisorSession(CreateSupervisorSessionRequest request) {
-        log.info("Starting supervisor session for supervisor: {}, conversation: {}", 
+        log.info("Starting supervisor session for supervisor: {}, conversation: {}",
                 request.getSupervisorId(), request.getConversationId());
+
+        Long tenantId = com.chatbot.core.tenant.infra.TenantContext.getTenantId();
+        if (tenantId == null) {
+            throw new IllegalStateException("Tenant context not set");
+        }
+        if (request.getConversationId() != null
+                && conversationRepository.findByIdAndTenantId(request.getConversationId(), tenantId).isEmpty()) {
+            throw new IllegalArgumentException(
+                    "Conversation " + request.getConversationId() + " not found for tenant " + tenantId);
+        }
 
         SupervisorSession session = SupervisorSession.builder()
                 .supervisorId(request.getSupervisorId())

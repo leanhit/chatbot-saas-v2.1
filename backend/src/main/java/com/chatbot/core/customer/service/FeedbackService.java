@@ -165,6 +165,10 @@ public class FeedbackService {
 
         feedbackRepository.delete(feedback);
         log.info("Feedback deleted with id: {}", id);
+
+        if (feedback.getCustomerProfileId() != null) {
+            updateCustomerSatisfactionScore(feedback.getCustomerProfileId(), tenantId);
+        }
     }
 
     @Transactional

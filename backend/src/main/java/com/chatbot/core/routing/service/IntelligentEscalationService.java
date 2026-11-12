@@ -35,6 +35,11 @@ public class IntelligentEscalationService {
     public EscalationRuleDTO createEscalationRule(CreateEscalationRuleRequest request) {
         log.info("Creating escalation rule: {}", request.getName());
 
+        Long tenantId = com.chatbot.core.tenant.infra.TenantContext.getTenantId();
+        if (tenantId == null) {
+            throw new IllegalStateException("Tenant context not set");
+        }
+
         EscalationRule escalationRule = EscalationRule.builder()
                 .name(request.getName())
                 .description(request.getDescription())
@@ -311,8 +316,7 @@ public class IntelligentEscalationService {
                 break;
             case ASSIGN_TO_TEAM:
                 escalatedToTeamId = rule.getEscalateToTeamId();
-                // Team assignment logic - would need routing service
-                log.info("Conversation {} assigned to team {}", conversationId, escalatedToTeamId);
+                assignConversationToTeam(conversationId, escalatedToTeamId);
                 break;
             case ASSIGN_TO_SUPERVISOR:
                 escalatedToSupervisor = true;
@@ -386,9 +390,48 @@ public class IntelligentEscalationService {
         }
     }
 
+    /**
+     * Assign conversation to a team queue: mark it QUEUED and clear the
+     * current agent so team-based routing can pick it up. The target team
+     * is persisted in escalation history (escalatedToTeamId).
+     */
+    private void assignConversationToTeam(Long conversationId, Long teamId) {
+        try {
+            Long tenantId = com.chatbot.core.tenant.infra.TenantContext.getTenantId();
+            Conversation conversation = tenantId != null
+                    ? conversationRepository.findByIdAndTenantId(conversationId, tenantId).orElse(null)
+                    : null;
+            if (conversation != null) {
+                conversation.setStatus(ConversationStatus.QUEUED);
+                conversation.setAgentAssignedId(null);
+                conversationRepository.save(conversation);
+                log.info("Conversation {} queued for team {} via escalation", conversationId, teamId);
+            } else {
+                log.warn("Conversation {} not found for team assignment", conversationId);
+            }
+        } catch (Exception e) {
+            log.error("Failed to assign conversation {} to team {}", conversationId, teamId, e);
+        }
+    }
+
     private void sendEscalationNotification(Long conversationId, EscalationRule rule) {
-        // Implement notification logic (WebSocket, email, etc.)
-        log.info("Sending escalation notification for conversation {} with rule {}", conversationId, rule.getName());
+        try {
+            Long tenantId = com.chatbot.core.tenant.infra.TenantContext.getTenantId();
+
+            Map<String, Object> notification = new HashMap<>();
+            notification.put("type", "ESCALATION_ACTION_NOTIFICATION");
+            notification.put("conversationId", conversationId);
+            notification.put("ruleName", rule.getName());
+            notification.put("escalationAction", rule.getEscalationAction().name());
+            notification.put("priority", String.valueOf(rule.getPriority()));
+            notification.put("timestamp", System.currentTimeMillis());
+            notification.put("tenantId", tenantId);
+
+            notificationWebSocketHandler.broadcastToTenant(tenantId, notification);
+            log.info("Escalation notification broadcast for conversation {}", conversationId);
+        } catch (Exception e) {
+            log.error("Failed to send escalation notification for conversation {}: {}", conversationId, e.getMessage(), e);
+        }
     }
 
     private boolean notifySupervisor(Long conversationId, EscalationRule rule) {

@@ -544,28 +544,25 @@ public class IntelligentRoutingService {
         List<AgentWorkload> skilledAgents = new ArrayList<>();
         for (AgentWorkload agent : availableAgents) {
             List<AgentSkill> skills = skillsByAgent.getOrDefault(agent.getAgentId(), new ArrayList<>());
-            
-            // Check if agent has the required skill
-            // targetSkillId should be compared with skill category name or ID
+
             boolean hasRequiredSkill = skills.stream()
-                    .anyMatch(skill -> {
-                        if (targetSkillId == null) {
-                            return true; // No specific skill required
-                        }
-                        // Compare by skill category name (case-insensitive)
-                        String skillCategoryName = skill.getSkillCategory().name();
-                        // Try to match by category name or by skill ID if available
-                        return skillCategoryName.equalsIgnoreCase(targetSkillId.toString()) ||
-                               skill.getId().equals(targetSkillId);
-                    });
-            
+                    .anyMatch(skill -> matchesTargetSkill(skill, targetSkillId));
+
             if (hasRequiredSkill) {
                 skilledAgents.add(agent);
                 log.debug("Agent {} has required skill", agent.getAgentId());
             }
         }
 
-        // If no agents with specific skill, use all available agents as fallback
+        // If a specific skill was required but no agent has it, use the standard
+        // fallback chain (target agent -> target team -> any available agent)
+        // instead of silently assigning an unskilled agent.
+        if (targetSkillId != null && skilledAgents.isEmpty()) {
+            log.warn("No available agent has skill category ordinal {} for rule {}, applying fallback logic",
+                    targetSkillId, rule.getName());
+            return applyFallbackLogic(rule, "skill-based");
+        }
+
         List<AgentWorkload> candidateAgents = skilledAgents.isEmpty() ? availableAgents : skilledAgents;
 
         // Select agent with highest skill score and lowest workload
@@ -587,14 +584,22 @@ public class IntelligentRoutingService {
         return selectedAgent.getAgentId();
     }
 
+    /**
+     * targetSkillId references the ordinal of {@link AgentSkill.SkillCategory}.
+     * Returns true when no specific skill is required (targetSkillId == null).
+     */
+    private boolean matchesTargetSkill(AgentSkill skill, Long targetSkillId) {
+        if (targetSkillId == null) {
+            return true;
+        }
+        AgentSkill.SkillCategory category = skill.getSkillCategory();
+        return category != null && category.ordinal() == targetSkillId;
+    }
+
     private int getAgentSkillScore(List<AgentSkill> skills, Long targetSkillId) {
         if (targetSkillId != null) {
             return skills.stream()
-                    .filter(skill -> {
-                        String skillCategoryName = skill.getSkillCategory().name();
-                        return skillCategoryName.equalsIgnoreCase(targetSkillId.toString()) ||
-                               skill.getId().equals(targetSkillId);
-                    })
+                    .filter(skill -> matchesTargetSkill(skill, targetSkillId))
                     .mapToInt(AgentSkill::getScore)
                     .findFirst()
                     .orElse(50); // Default score if no matching skill

@@ -33,6 +33,11 @@ public class CreateRoutingRuleRequest {
 
     private Long targetTeamId;
 
+    /**
+     * Ordinal of {@code AgentSkill.SkillCategory} (0=COMMUNICATION, 1=TECHNICAL,
+     * 2=PROBLEM_SOLVING, 3=PRODUCT_KNOWLEDGE, 4=SALES, 5=BILLING, 6=LANGUAGE,
+     * 7=CUSTOMER_SERVICE). Only used when ruleType=SKILL_BASED.
+     */
     private Long targetSkillId;
 
     private Map<String, Object> conditions;

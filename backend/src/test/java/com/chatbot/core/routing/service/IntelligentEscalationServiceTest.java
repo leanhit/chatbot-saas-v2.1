@@ -66,7 +66,7 @@ class IntelligentEscalationServiceTest {
 
             when(escalationRuleRepository.findByTenantIdAndIsActiveTrueOrderByPriorityAsc(TEST_TENANT_ID))
                     .thenReturn(List.of(waitTimeRule));
-            when(conversationRepository.findById(TEST_CONVERSATION_ID)).thenReturn(Optional.of(new Conversation()));
+            when(conversationRepository.findByIdAndTenantId(TEST_CONVERSATION_ID, TEST_TENANT_ID)).thenReturn(Optional.of(new Conversation()));
             when(escalationHistoryRepository.save(any(EscalationHistory.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
             // Act
@@ -94,7 +94,7 @@ class IntelligentEscalationServiceTest {
 
             when(escalationRuleRepository.findByTenantIdAndIsActiveTrueOrderByPriorityAsc(TEST_TENANT_ID))
                     .thenReturn(List.of(noResponseRule));
-            when(conversationRepository.findById(TEST_CONVERSATION_ID)).thenReturn(Optional.of(new Conversation()));
+            when(conversationRepository.findByIdAndTenantId(TEST_CONVERSATION_ID, TEST_TENANT_ID)).thenReturn(Optional.of(new Conversation()));
             when(escalationHistoryRepository.save(any(EscalationHistory.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
             // Act
@@ -120,7 +120,7 @@ class IntelligentEscalationServiceTest {
 
             when(escalationRuleRepository.findByTenantIdAndIsActiveTrueOrderByPriorityAsc(TEST_TENANT_ID))
                     .thenReturn(List.of(satisfactionRule));
-            when(conversationRepository.findById(TEST_CONVERSATION_ID)).thenReturn(Optional.of(new Conversation()));
+            when(conversationRepository.findByIdAndTenantId(TEST_CONVERSATION_ID, TEST_TENANT_ID)).thenReturn(Optional.of(new Conversation()));
             when(escalationHistoryRepository.save(any(EscalationHistory.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
             // Act
@@ -146,7 +146,7 @@ class IntelligentEscalationServiceTest {
 
             when(escalationRuleRepository.findByTenantIdAndIsActiveTrueOrderByPriorityAsc(TEST_TENANT_ID))
                     .thenReturn(List.of(priorityRule));
-            when(conversationRepository.findById(TEST_CONVERSATION_ID)).thenReturn(Optional.of(new Conversation()));
+            when(conversationRepository.findByIdAndTenantId(TEST_CONVERSATION_ID, TEST_TENANT_ID)).thenReturn(Optional.of(new Conversation()));
             when(escalationHistoryRepository.save(any(EscalationHistory.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
             // Act
@@ -172,7 +172,7 @@ class IntelligentEscalationServiceTest {
 
             when(escalationRuleRepository.findByTenantIdAndIsActiveTrueOrderByPriorityAsc(TEST_TENANT_ID))
                     .thenReturn(List.of(tierRule));
-            when(conversationRepository.findById(TEST_CONVERSATION_ID)).thenReturn(Optional.of(new Conversation()));
+            when(conversationRepository.findByIdAndTenantId(TEST_CONVERSATION_ID, TEST_TENANT_ID)).thenReturn(Optional.of(new Conversation()));
             when(escalationHistoryRepository.save(any(EscalationHistory.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
             // Act
@@ -204,7 +204,7 @@ class IntelligentEscalationServiceTest {
 
             when(escalationRuleRepository.findByTenantIdAndIsActiveTrueOrderByPriorityAsc(TEST_TENANT_ID))
                     .thenReturn(List.of(customRule));
-            when(conversationRepository.findById(TEST_CONVERSATION_ID)).thenReturn(Optional.of(new Conversation()));
+            when(conversationRepository.findByIdAndTenantId(TEST_CONVERSATION_ID, TEST_TENANT_ID)).thenReturn(Optional.of(new Conversation()));
             when(escalationHistoryRepository.save(any(EscalationHistory.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
             // Act
@@ -280,7 +280,7 @@ class IntelligentEscalationServiceTest {
 
             when(escalationRuleRepository.findByTenantIdAndIsActiveTrueOrderByPriorityAsc(tenant1Id))
                     .thenReturn(List.of(tenant1Rule));
-            when(conversationRepository.findById(TEST_CONVERSATION_ID)).thenReturn(Optional.of(new Conversation()));
+            when(conversationRepository.findByIdAndTenantId(TEST_CONVERSATION_ID, TEST_TENANT_ID)).thenReturn(Optional.of(new Conversation()));
             when(escalationHistoryRepository.save(any(EscalationHistory.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
             // Act
