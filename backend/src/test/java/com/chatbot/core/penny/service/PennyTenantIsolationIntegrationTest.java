@@ -1,8 +1,8 @@
 package com.chatbot.core.penny.service;
 
-import com.chatbot.core.penny.context.ContextManager;
+import com.chatbot.core.penny.context.ConversationContext;
 import com.chatbot.core.penny.context.storage.DatabaseContextStorage;
-import com.chatbot.core.penny.dto.ConversationContext;
+import com.chatbot.core.penny.dto.request.MiddlewareRequest;
 import com.chatbot.core.penny.model.PennyBot;
 import com.chatbot.core.penny.model.PennyBotType;
 import com.chatbot.core.penny.model.PennyKnowledgeDocument;
@@ -175,18 +175,24 @@ class PennyTenantIsolationIntegrationTest extends AbstractTestcontainersIntegrat
     void contextIsolatedByTenant() {
         // Save context under Tenant A
         TenantContext.setTenantId(TENANT_A);
-        ConversationContext ctxA = new ConversationContext();
-        ctxA.setTenantId(TENANT_A);
-        ctxA.setBotId(botA.getId().toString());
-        ctxA.setUserId("user-1");
-        ctxA.setPlatform("web");
-        ctxA.setContextId(UUID.randomUUID().toString());
+        ConversationContext ctxA = ConversationContext.builder()
+                .contextId(UUID.randomUUID().toString())
+                .tenantId(TENANT_A)
+                .botId(botA.getId().toString())
+                .userId("user-1")
+                .platform("web")
+                .status("active")
+                .build();
         databaseContextStorage.saveContext(ctxA);
 
         // Now switch to Tenant B and try to load the same external user/platform
         TenantContext.setTenantId(TENANT_B);
-        ConversationContext loaded = databaseContextStorage.loadContext(
-                botB.getId().toString(), "user-1", "web");
+        MiddlewareRequest requestB = MiddlewareRequest.builder()
+                .botId(botB.getId().toString())
+                .userId("user-1")
+                .platform("web")
+                .build();
+        ConversationContext loaded = databaseContextStorage.loadContext(requestB);
 
         assertThat(loaded).isNull();
     }
@@ -197,19 +203,24 @@ class PennyTenantIsolationIntegrationTest extends AbstractTestcontainersIntegrat
     void contextFallbackFromDb() {
         TenantContext.setTenantId(TENANT_A);
 
-        ConversationContext saved = new ConversationContext();
-        saved.setTenantId(TENANT_A);
-        saved.setBotId(botA.getId().toString());
-        saved.setUserId("user-db-fallback");
-        saved.setPlatform("telegram");
-        saved.setContextId(UUID.randomUUID().toString());
-        saved.setStatus("active");
+        ConversationContext saved = ConversationContext.builder()
+                .contextId(UUID.randomUUID().toString())
+                .tenantId(TENANT_A)
+                .botId(botA.getId().toString())
+                .userId("user-db-fallback")
+                .platform("telegram")
+                .status("active")
+                .build();
 
         databaseContextStorage.saveContext(saved);
 
-        // Load directly from DB (bypassing Redis)
-        ConversationContext loaded = databaseContextStorage.loadContext(
-                botA.getId().toString(), "user-db-fallback", "telegram");
+        // Load directly from DB (bypassing Redis) via MiddlewareRequest
+        MiddlewareRequest request = MiddlewareRequest.builder()
+                .botId(botA.getId().toString())
+                .userId("user-db-fallback")
+                .platform("telegram")
+                .build();
+        ConversationContext loaded = databaseContextStorage.loadContext(request);
 
         assertThat(loaded).isNotNull();
         assertThat(loaded.getUserId()).isEqualTo("user-db-fallback");
@@ -223,19 +234,24 @@ class PennyTenantIsolationIntegrationTest extends AbstractTestcontainersIntegrat
     void differentBotsDoNotShareContext() {
         // Tenant A saves context
         TenantContext.setTenantId(TENANT_A);
-        ConversationContext ctxA = new ConversationContext();
-        ctxA.setTenantId(TENANT_A);
-        ctxA.setBotId(botA.getId().toString());
-        ctxA.setUserId("shared-user");
-        ctxA.setPlatform("web");
-        ctxA.setContextId(UUID.randomUUID().toString());
-        ctxA.setStatus("active");
+        ConversationContext ctxA = ConversationContext.builder()
+                .contextId(UUID.randomUUID().toString())
+                .tenantId(TENANT_A)
+                .botId(botA.getId().toString())
+                .userId("shared-user")
+                .platform("web")
+                .status("active")
+                .build();
         databaseContextStorage.saveContext(ctxA);
 
         // Tenant B tries to load with the same userId
         TenantContext.setTenantId(TENANT_B);
-        ConversationContext ctxB = databaseContextStorage.loadContext(
-                botB.getId().toString(), "shared-user", "web");
+        MiddlewareRequest requestB = MiddlewareRequest.builder()
+                .botId(botB.getId().toString())
+                .userId("shared-user")
+                .platform("web")
+                .build();
+        ConversationContext ctxB = databaseContextStorage.loadContext(requestB);
 
         assertThat(ctxB).isNull();
     }
