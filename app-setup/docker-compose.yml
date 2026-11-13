@@ -9,7 +9,7 @@ services:
     environment:
       POSTGRES_DB: chatbot_identity_db
       POSTGRES_USER: chatbot_user
-      POSTGRES_PASSWORD: chatbot_Admin_2025
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD must be set in .env}
     volumes:
       - postgres_identity_data:/var/lib/postgresql/data
       - ./postgres-init-identity.sql:/docker-entrypoint-initdb.d/init.sql
@@ -33,7 +33,7 @@ services:
     environment:
       POSTGRES_DB: chatbot_user_db
       POSTGRES_USER: chatbot_user
-      POSTGRES_PASSWORD: chatbot_Admin_2025
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD must be set in .env}
     volumes:
       - postgres_user_data:/var/lib/postgresql/data
       - ./postgres-init-user.sql:/docker-entrypoint-initdb.d/init.sql
@@ -57,7 +57,7 @@ services:
     environment:
       POSTGRES_DB: chatbot_tenant_db
       POSTGRES_USER: chatbot_user
-      POSTGRES_PASSWORD: chatbot_Admin_2025
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD must be set in .env}
     volumes:
       - postgres_tenant_data:/var/lib/postgresql/data
       - ./postgres-init-tenant.sql:/docker-entrypoint-initdb.d/init.sql
@@ -81,7 +81,7 @@ services:
     environment:
       POSTGRES_DB: chatbot_app_db
       POSTGRES_USER: chatbot_user
-      POSTGRES_PASSWORD: chatbot_Admin_2025
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD must be set in .env}
     volumes:
       - postgres_app_data:/var/lib/postgresql/data
       - ./postgres-init-app.sql:/docker-entrypoint-initdb.d/init.sql
@@ -105,7 +105,7 @@ services:
     environment:
       POSTGRES_DB: chatbot_config_db
       POSTGRES_USER: chatbot_user
-      POSTGRES_PASSWORD: chatbot_Admin_2025
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD must be set in .env}
     volumes:
       - postgres_config_data:/var/lib/postgresql/data
       - ./postgres-init-config.sql:/docker-entrypoint-initdb.d/init.sql
@@ -129,7 +129,7 @@ services:
     environment:
       POSTGRES_DB: chatbot_message_db
       POSTGRES_USER: chatbot_user
-      POSTGRES_PASSWORD: chatbot_Admin_2025
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD must be set in .env}
     volumes:
       - postgres_message_data:/var/lib/postgresql/data
       - ./postgres-init-message.sql:/docker-entrypoint-initdb.d/init.sql
@@ -154,13 +154,13 @@ services:
       POSTGRES_HOST: db-identity
       POSTGRES_PORT: 5432
       POSTGRES_USER: chatbot_user
-      POSTGRES_PASSWORD: chatbot_Admin_2025
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD must be set in .env}
       POSTGRES_DB: chatbot_identity_db
       POOL_MODE: transaction
       DATABASES_HOST: db-identity
       DATABASES_PORT: 5432
       DATABASES_USER: chatbot_user
-      DATABASES_PASSWORD: chatbot_Admin_2025
+      DATABASES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD must be set in .env}
       DATABASES_DB: chatbot_identity_db
       DATABASES_NAME: chatbot_identity_db
       DATABASES_HOST_USER: db-user
@@ -216,8 +216,8 @@ services:
     container_name: chatbot_saas_minio
     restart: always
     environment:
-      MINIO_ROOT_USER: minioadmin
-      MINIO_ROOT_PASSWORD: minioadmin
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:?MINIO_ROOT_USER must be set in .env}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?MINIO_ROOT_PASSWORD must be set in .env}
       MINIO_API_CORS_ALLOW_ORIGIN: "http://localhost:3000,http://localhost:3001,http://localhost:3002,http://localhost:3003,http://localhost:8080,http://127.0.0.1:3000,http://127.0.0.1:3001,http://127.0.0.1:3002,http://127.0.0.1:3003,http://127.0.0.1:8080"
       MINIO_API_CORS_ALLOW_METHODS: "GET,POST,PUT,DELETE,HEAD,OPTIONS"
       MINIO_API_CORS_ALLOW_HEADERS: "Authorization,Content-Type,X-Tenant-Key,Accept,Accept-Language,Connection,Referer,Sec-Fetch-Dest,Sec-Fetch-Mode,Sec-Fetch-Site,User-Agent,sec-ch-ua,sec-ch-ua-mobile,sec-ch-ua-platform"
@@ -241,8 +241,8 @@ services:
     container_name: chatbot_saas_rabbitmq
     restart: always
     environment:
-      RABBITMQ_DEFAULT_USER: admin
-      RABBITMQ_DEFAULT_PASS: admin123
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:?RABBITMQ_USER must be set in .env}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:?RABBITMQ_PASSWORD must be set in .env}
       RABBITMQ_DEFAULT_VHOST: /
     ports:
       - "5672:5672"

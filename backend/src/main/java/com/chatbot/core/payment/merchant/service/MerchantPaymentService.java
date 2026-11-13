@@ -8,6 +8,7 @@ import com.chatbot.core.payment.merchant.model.MerchantPaymentSession;
 import com.chatbot.core.payment.merchant.model.MerchantPaymentSession.SessionStatus;
 import com.chatbot.core.payment.merchant.repository.MerchantApiKeyRepository;
 import com.chatbot.core.payment.merchant.repository.MerchantPaymentSessionRepository;
+import com.chatbot.core.tenant.infra.TenantContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -74,7 +75,11 @@ public class MerchantPaymentService {
     public MerchantPaymentSession getSessionStatus(String sessionId) {
         log.info("🏪 Getting payment session status: {}", sessionId);
 
-        MerchantPaymentSession session = sessionRepository.findBySessionId(sessionId)
+        Long tenantId = TenantContext.getTenantId();
+        if (tenantId == null) {
+            throw new RuntimeException("Tenant context required");
+        }
+        MerchantPaymentSession session = sessionRepository.findBySessionIdAndTenantId(sessionId, tenantId)
                 .orElseThrow(() -> new RuntimeException("Session not found: " + sessionId));
 
         // Check if session is expired
@@ -93,7 +98,11 @@ public class MerchantPaymentService {
     public MerchantPaymentSession cancelSession(String sessionId) {
         log.info("🏪 Cancelling payment session: {}", sessionId);
 
-        MerchantPaymentSession session = sessionRepository.findBySessionId(sessionId)
+        Long tenantId = TenantContext.getTenantId();
+        if (tenantId == null) {
+            throw new RuntimeException("Tenant context required");
+        }
+        MerchantPaymentSession session = sessionRepository.findBySessionIdAndTenantId(sessionId, tenantId)
                 .orElseThrow(() -> new RuntimeException("Session not found: " + sessionId));
 
         if (!session.canCancel()) {
@@ -113,7 +122,11 @@ public class MerchantPaymentService {
     public void completeMerchantPayment(String sessionId, String paymentReferenceCode, String bankTransactionId) {
         log.info("🏪 Completing merchant payment session: {}", sessionId);
 
-        MerchantPaymentSession session = sessionRepository.findBySessionId(sessionId)
+        Long tenantId = TenantContext.getTenantId();
+        if (tenantId == null) {
+            throw new RuntimeException("Tenant context required");
+        }
+        MerchantPaymentSession session = sessionRepository.findBySessionIdAndTenantId(sessionId, tenantId)
                 .orElseThrow(() -> new RuntimeException("Session not found: " + sessionId));
 
         if (!session.canComplete()) {

@@ -11,16 +11,25 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
 
 @Configuration
 public class SecurityHeadersConfig implements WebMvcConfigurer {
 
+    @org.springframework.beans.factory.annotation.Value("${ALLOWED_ORIGINS:http://localhost:3003,http://localhost:8080}")
+    private String rawAllowedOrigins;
+
     @Override
     public void addCorsMappings(CorsRegistry registry) {
+        List<String> origins = Arrays.stream(rawAllowedOrigins.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .toList();
         registry.addMapping("/**")
-                .allowedOriginPatterns("http://localhost:*", "https://*.truyenthongviet.vn", "https://truyenthongviet.vn", "https://*.startai.vn", "https://startai.vn", "https://103.149.99.7", "https://*.facebook.com")
+                .allowedOriginPatterns(origins.toArray(new String[0]))
                 .allowedMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
-                .allowedHeaders("Authorization", "Content-Type", "X-Tenant-Key", "Cache-Control")
+                .allowedHeaders("Authorization", "Content-Type", "X-Tenant-Key", "X-API-Key", "Accept-Language", "Cache-Control")
                 .exposedHeaders("X-Tenant-Key", "X-Total-Count")
                 .allowCredentials(true);
     }

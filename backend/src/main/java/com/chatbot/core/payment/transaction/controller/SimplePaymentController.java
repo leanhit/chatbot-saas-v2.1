@@ -414,9 +414,10 @@ public class SimplePaymentController {
      * Simulate bank payment for testing purposes.
      */
     @PostMapping({"/test/simulate-payment", "/simulate-payment"})
+    @PreAuthorize("hasRole('SYSTEM_ADMIN')")
     @Operation(
         summary = "Simulate bank payment",
-        description = "Simulate bank transfer payment completion for testing purposes"
+        description = "Simulate bank transfer payment completion for testing purposes (SYSTEM_ADMIN only)"
     )
     public ResponseEntity<Object> simulatePayment(@RequestBody Map<String, Object> request) {
         log.info("🧪 Simulating bank payment for request: {}", request);

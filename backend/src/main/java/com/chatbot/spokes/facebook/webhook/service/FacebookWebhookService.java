@@ -28,7 +28,7 @@ public class FacebookWebhookService {
     @Value("${facebook.webhook.verify-token:your_facebook_verify_token}")
     private String verifyToken;
 
-    @Value("${facebook.app.secret:${FACEBOOK_APP_SECRET:51c0c2a53c21e6c09662ace9fa79a5ff}}")
+    @Value("${facebook.app.secret:${FACEBOOK_APP_SECRET:}}")
     private String appSecret;
 
     @Value("${facebook.webhook.signature-check.enabled:true}")

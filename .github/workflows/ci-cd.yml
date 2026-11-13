@@ -1,24 +1,88 @@
-name: Build & Deploy Chatbot SaaS App
+name: CI/CD Pipeline
 
 on:
   push:
     branches:
       - main
       - master
+  pull_request:
+    branches:
+      - main
+      - master
 
 jobs:
-  build-and-deploy:
-    name: Build Docker Image and Deploy to Server
+  backend-test:
+    name: Backend Tests
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: gradle
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Run tests
+        run: ./gradlew test --no-daemon
+        env:
+          TESTCONTAINERS_RYUK_DISABLED: "false"
+
+      - name: Upload test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-test-results
+          path: backend/build/reports/tests/
+          if-no-files-found: ignore
+
+  frontend-build:
+    name: Frontend Build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies (strict)
+        run: npm ci
+
+      - name: Build frontend
+        run: npm run build
+
+  deploy:
+    name: Build Docker Image and Deploy to Server
+    needs: [backend-test, frontend-build]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
     env:
       SERVER_HOST: ${{ secrets.SERVER_HOST || vars.SERVER_HOST }}
       SERVER_USER: ${{ secrets.SERVER_USER || vars.SERVER_USER || 'root' }}
       SERVER_SSH_KEY: ${{ secrets.SERVER_SSH_KEY || vars.SERVER_SSH_KEY || secrets.PRIVATE_SCERET_KEY_CONNECT_TO_UBUNTU_SERVER }}
       SERVER_PORT: ${{ secrets.SERVER_PORT || vars.SERVER_PORT || '4433' }}
       SERVER_PATH: ${{ vars.SERVER_PATH || secrets.SERVER_PATH || '/root/chatbot-saas-v2.1/app-deploy' }}
-    permissions:
-      contents: read
-      packages: write
 
     steps:
       - name: Checkout Code
@@ -61,19 +125,20 @@ jobs:
           key: ${{ env.SERVER_SSH_KEY }}
           port: ${{ env.SERVER_PORT }}
           script: |
+            set -e
             APP_PATH="${{ env.SERVER_PATH }}"
             echo "Navigating to app deployment path: $APP_PATH"
             cd "$APP_PATH"
-            
+
             echo "Logging into GHCR on server..."
-            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin || true
-            
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+
             echo "Pulling latest image..."
-            docker compose pull || true
-            
+            docker compose pull
+
             echo "Restarting application container..."
             docker compose up -d
-            
+
             echo "Cleaning up dangling images..."
             docker image prune -f
             echo "Deployment completed successfully!"

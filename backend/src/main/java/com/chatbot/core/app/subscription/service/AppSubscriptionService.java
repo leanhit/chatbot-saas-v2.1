@@ -9,6 +9,7 @@ import com.chatbot.core.app.subscription.model.SubscriptionStatus;
 import com.chatbot.core.app.subscription.repository.AppSubscriptionRepository;
 import com.chatbot.core.app.registry.service.AppRegistryService;
 import com.chatbot.core.tenant.service.PackageLimitValidationService;
+import com.chatbot.core.tenant.infra.TenantContext;
 import com.chatbot.shared.exceptions.ResourceNotFoundException;
 import com.chatbot.shared.exceptions.ValidationException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -80,6 +81,10 @@ class AppSubscriptionService {
     public SubscriptionResponse getSubscriptionById(Long id) {
         AppSubscription subscription = subscriptionRepository.findById(id)
             .orElseThrow(() -> new ResourceNotFoundException("Subscription not found with id: " + id));
+        Long tenantId = TenantContext.getTenantId();
+        if (tenantId != null && !tenantId.equals(subscription.getTenantId())) {
+            throw new ResourceNotFoundException("Subscription not found with id: " + id);
+        }
         return convertToResponse(subscription);
     }
     
@@ -98,13 +103,21 @@ class AppSubscriptionService {
     
     @Transactional(readOnly = true, transactionManager = "tenantTransactionManager")
     public List<SubscriptionResponse> getSubscriptionsByUser(Long userId) {
-        List<AppSubscription> subscriptions = subscriptionRepository.findByUserId(userId);
+        Long tenantId = TenantContext.getTenantId();
+        if (tenantId == null) {
+            throw new ValidationException("Tenant context required");
+        }
+        List<AppSubscription> subscriptions = subscriptionRepository.findByUserIdAndTenantId(userId, tenantId);
         return subscriptions.stream().map(this::convertToResponse).collect(Collectors.toList());
     }
     
     @Transactional(readOnly = true, transactionManager = "tenantTransactionManager")
     public List<SubscriptionResponse> getSubscriptionsByApp(Long appId) {
-        List<AppSubscription> subscriptions = subscriptionRepository.findByAppId(appId);
+        Long tenantId = TenantContext.getTenantId();
+        if (tenantId == null) {
+            throw new ValidationException("Tenant context required");
+        }
+        List<AppSubscription> subscriptions = subscriptionRepository.findAllByAppIdAndTenantId(appId, tenantId);
         return subscriptions.stream().map(this::convertToResponse).collect(Collectors.toList());
     }
     
@@ -170,15 +183,31 @@ class AppSubscriptionService {
     
     @Transactional(readOnly = true)
     public List<SubscriptionResponse> getExpiredSubscriptions() {
+        // Scheduler method - unscoped for global expiry processing
         List<AppSubscription> subscriptions = subscriptionRepository.findExpiredSubscriptions(
             LocalDateTime.now(), SubscriptionStatus.ACTIVE);
+        return subscriptions.stream().map(this::convertToResponse).collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public List<SubscriptionResponse> getExpiredSubscriptionsByTenant(Long tenantId) {
+        List<AppSubscription> subscriptions = subscriptionRepository.findExpiredSubscriptionsByTenant(
+            tenantId, LocalDateTime.now(), SubscriptionStatus.ACTIVE);
         return subscriptions.stream().map(this::convertToResponse).collect(Collectors.toList());
     }
     
     @Transactional(readOnly = true)
     public List<SubscriptionResponse> getExpiredTrials() {
+        // Scheduler method - unscoped for global trial expiry processing
         List<AppSubscription> subscriptions = subscriptionRepository.findExpiredTrials(
             LocalDateTime.now(), SubscriptionStatus.TRIAL);
+        return subscriptions.stream().map(this::convertToResponse).collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public List<SubscriptionResponse> getExpiredTrialsByTenant(Long tenantId) {
+        List<AppSubscription> subscriptions = subscriptionRepository.findExpiredTrialsByTenant(
+            tenantId, LocalDateTime.now(), SubscriptionStatus.TRIAL);
         return subscriptions.stream().map(this::convertToResponse).collect(Collectors.toList());
     }
     

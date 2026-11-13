@@ -12,7 +12,9 @@ import java.util.Optional;
 public interface AppGuardRepository extends JpaRepository<AppGuard, Long> {
     
     List<AppGuard> findByAppId(Long appId);
-    
+
+    List<AppGuard> findByAppIdAndTenantId(Long appId, Long tenantId);
+
     List<AppGuard> findByAppIdAndIsActive(Long appId, Boolean isActive);
     
     List<AppGuard> findByGuardType(GuardType guardType);

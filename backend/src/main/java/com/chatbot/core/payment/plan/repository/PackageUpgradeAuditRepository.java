@@ -16,9 +16,17 @@ public interface PackageUpgradeAuditRepository extends JpaRepository<PackageUpgr
 
     List<PackageUpgradeAudit> findByPaymentReferenceCode(String paymentReferenceCode);
 
+    List<PackageUpgradeAudit> findByPaymentReferenceCodeAndTenantId(String paymentReferenceCode, Long tenantId);
+
     Optional<PackageUpgradeAudit> findByPaymentReferenceCodeAndUpgradeStatus(
         String paymentReferenceCode, 
         UpgradeStatus status
+    );
+
+    Optional<PackageUpgradeAudit> findByPaymentReferenceCodeAndUpgradeStatusAndTenantId(
+        String paymentReferenceCode,
+        UpgradeStatus status,
+        Long tenantId
     );
 
     List<PackageUpgradeAudit> findByUpgradeStatusAndProcessedAtBefore(
@@ -26,7 +34,15 @@ public interface PackageUpgradeAuditRepository extends JpaRepository<PackageUpgr
         LocalDateTime before
     );
 
+    List<PackageUpgradeAudit> findByUpgradeStatusAndProcessedAtBeforeAndTenantId(
+        UpgradeStatus status,
+        LocalDateTime before,
+        Long tenantId
+    );
+
     List<PackageUpgradeAudit> findByUserIdOrderByCreatedAtDesc(Long userId);
+
+    List<PackageUpgradeAudit> findByUserIdAndTenantIdOrderByCreatedAtDesc(Long userId, Long tenantId);
 
     @org.springframework.data.jpa.repository.Modifying
     @org.springframework.transaction.annotation.Transactional(value = "sharedTransactionManager", rollbackFor = Exception.class)

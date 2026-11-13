@@ -215,6 +215,6 @@ BEGIN
     RAISE NOTICE '';
     RAISE NOTICE '🔑 Default Login:';
     RAISE NOTICE '  Email: admin@chatbot.com';
-    RAISE NOTICE '  Password: admin123';
+    RAISE NOTICE '  Password: <see seed script / set a new password after first login>';
     RAISE NOTICE '';
 END $$;

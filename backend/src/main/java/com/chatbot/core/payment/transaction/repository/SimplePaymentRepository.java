@@ -17,6 +17,8 @@ public interface SimplePaymentRepository extends JpaRepository<SimplePayment, Lo
 
     Optional<SimplePayment> findByReferenceCode(String referenceCode);
 
+    Optional<SimplePayment> findByReferenceCodeAndTenantId(String referenceCode, Long tenantId);
+
     List<SimplePayment> findByUserIdAndTenantIdOrderByCreatedAtDesc(Long userId, Long tenantId);
 
     List<SimplePayment> findByTenantId(Long tenantId);
@@ -59,10 +61,17 @@ public interface SimplePaymentRepository extends JpaRepository<SimplePayment, Lo
     // Methods for payment analytics
     List<SimplePayment> findByCreatedAtBetween(LocalDateTime startDate, LocalDateTime endDate);
 
+    List<SimplePayment> findByCreatedAtBetweenAndTenantId(LocalDateTime startDate, LocalDateTime endDate, Long tenantId);
+
     List<SimplePayment> findByStatusAndCreatedAtAfter(PaymentStatus status, LocalDateTime since);
+
+    List<SimplePayment> findByStatusAndCreatedAtAfterAndTenantId(PaymentStatus status, LocalDateTime since, Long tenantId);
 
     @Query("SELECT COUNT(p) FROM SimplePayment p WHERE p.status = :status")
     Long countByStatus(@Param("status") PaymentStatus status);
+
+    @Query("SELECT COUNT(p) FROM SimplePayment p WHERE p.status = :status AND p.tenantId = :tenantId")
+    Long countByStatusAndTenantId(@Param("status") PaymentStatus status, @Param("tenantId") Long tenantId);
 
     @org.springframework.data.jpa.repository.Modifying
     @org.springframework.transaction.annotation.Transactional(value = "messageTransactionManager", rollbackFor = Exception.class)

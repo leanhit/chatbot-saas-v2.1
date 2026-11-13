@@ -154,8 +154,8 @@ curl -X DELETE http://localhost:8080/api/admin/dlq/clear/chatbot.queue.default.d
 Access RabbitMQ Management Console:
 ```
 URL: http://localhost:15672
-Username: admin
-Password: admin123
+Username: <RABBITMQ_USER from .env>
+Password: <RABBITMQ_PASSWORD from .env>
 ```
 
 Navigate to:

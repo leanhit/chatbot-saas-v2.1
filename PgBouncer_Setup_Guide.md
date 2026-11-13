@@ -63,7 +63,7 @@ docker run -d \
   -e POSTGRES_HOST=postgres \
   -e POSTGRES_PORT=5432 \
   -e POSTGRES_USER=chatbot_user \
-  -e POSTGRES_PASSWORD=chatbot_Admin_2025 \
+  -e POSTGRES_PASSWORD=$DB_PASSWORD \
   -e POSTGRES_DB=chatbot_identity_db \
   -e POOL_MODE=transaction \
   edoburu/pgbouncer
@@ -129,7 +129,7 @@ admin_users = postgres
 To generate MD5 hash:
 ```bash
 echo -n "passwordusername" | md5sum
-# Example: echo -n "chatbot_Admin_2025chatbot_user" | md5sum
+# Example: echo -n "YOUR_PASSWORDchatbot_user" | md5sum
 ```
 
 ## Service Management

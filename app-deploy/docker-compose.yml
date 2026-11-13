@@ -15,13 +15,13 @@ services:
       - SPRING_KAFKA_BOOTSTRAP_SERVERS=chatbot_saas_kafka:9092
       - KAFKA_ENABLED=true
       - DB_USER=${DB_USER:-chatbot_user}
-      - DB_PASSWORD=${DB_PASSWORD:-chatbot_Admin_2025}
-      - JWT_SECRET=${JWT_SECRET:-ChangeMeSuperSecretKeyForChatbotSaaS2026!}
+      - DB_PASSWORD=${DB_PASSWORD:?DB_PASSWORD must be set}
+      - JWT_SECRET=${JWT_SECRET:?JWT_SECRET must be set}
       - MINIO_ENDPOINT=${MINIO_ENDPOINT:-http://minio:9000}
-      - MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY:-minioadmin}
-      - MINIO_SECRET_KEY=${MINIO_SECRET_KEY:-minioadmin}
+      - MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY:?MINIO_ACCESS_KEY must be set}
+      - MINIO_SECRET_KEY=${MINIO_SECRET_KEY:?MINIO_SECRET_KEY must be set}
       - MINIO_BUCKET=${MINIO_BUCKET:-chatbot-files}
-      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-http://localhost,http://localhost:8080,https://truyenthongviet.vn,https://www.truyenthongviet.vn,https://chat.truyenthongviet.vn,https://startai.vn,https://www.startai.vn,https://chat.startai.vn,http://103.149.99.7,http://103.149.99.7:8080,https://103.149.99.7}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:?ALLOWED_ORIGINS must be set}
     volumes:
       - ./config/application-docker.yml:/app/config/application-docker.yml
       - ./logs:/app/logs

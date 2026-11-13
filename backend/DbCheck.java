@@ -7,7 +7,11 @@ public class DbCheck {
     public static void main(String[] args) {
         String url = "jdbc:postgresql://localhost:5435/chatbot_tenant_db";
         String user = "chatbot_user";
-        String password = "chatbot_Admin_2025";
+        String password = System.getenv("DB_PASSWORD");
+        if (password == null || password.isBlank()) {
+            System.err.println("DB_PASSWORD env var is required");
+            return;
+        }
 
         try (Connection conn = DriverManager.getConnection(url, user, password)) {
             String sql = "SELECT id, email, status, expires_at FROM tenant_invitations WHERE email = 'dqctfacebook@gmail.com'";

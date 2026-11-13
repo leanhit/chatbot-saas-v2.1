@@ -16,6 +16,8 @@ public interface MerchantPaymentSessionRepository extends JpaRepository<Merchant
 
     Optional<MerchantPaymentSession> findBySessionId(String sessionId);
 
+    Optional<MerchantPaymentSession> findBySessionIdAndTenantId(String sessionId, Long tenantId);
+
     List<MerchantPaymentSession> findByMerchantIdOrderByCreatedAtDesc(Long merchantId);
 
     List<MerchantPaymentSession> findByMerchantOrderId(String merchantOrderId);
@@ -45,5 +47,13 @@ public interface MerchantPaymentSessionRepository extends JpaRepository<Merchant
 
     @org.springframework.data.jpa.repository.Modifying
     @org.springframework.transaction.annotation.Transactional(value = "sharedTransactionManager", rollbackFor = Exception.class)
+    void deleteBySessionIdAndTenantId(String sessionId, Long tenantId);
+
+    @org.springframework.data.jpa.repository.Modifying
+    @org.springframework.transaction.annotation.Transactional(value = "sharedTransactionManager", rollbackFor = Exception.class)
     void deleteByMerchantId(Long merchantId);
+
+    @org.springframework.data.jpa.repository.Modifying
+    @org.springframework.transaction.annotation.Transactional(value = "sharedTransactionManager", rollbackFor = Exception.class)
+    void deleteByMerchantIdAndTenantId(Long merchantId, Long tenantId);
 }

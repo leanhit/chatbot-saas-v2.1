@@ -16,7 +16,11 @@ public interface InvoiceRepository extends JpaRepository<Invoice, Long> {
 
     Optional<Invoice> findByInvoiceNumber(String invoiceNumber);
 
+    Optional<Invoice> findByInvoiceNumberAndTenantId(String invoiceNumber, Long tenantId);
+
     List<Invoice> findByUserIdOrderByCreatedAtDesc(Long userId);
+
+    List<Invoice> findByUserIdAndTenantIdOrderByCreatedAtDesc(Long userId, Long tenantId);
 
     List<Invoice> findByTenantIdOrderByCreatedAtDesc(Long tenantId);
 
@@ -33,6 +37,10 @@ public interface InvoiceRepository extends JpaRepository<Invoice, Long> {
     @org.springframework.data.jpa.repository.Modifying
     @org.springframework.transaction.annotation.Transactional(value = "sharedTransactionManager", rollbackFor = Exception.class)
     void deleteByInvoiceNumber(String invoiceNumber);
+
+    @org.springframework.data.jpa.repository.Modifying
+    @org.springframework.transaction.annotation.Transactional(value = "sharedTransactionManager", rollbackFor = Exception.class)
+    void deleteByInvoiceNumberAndTenantId(String invoiceNumber, Long tenantId);
 
     @org.springframework.data.jpa.repository.Modifying
     @org.springframework.transaction.annotation.Transactional(value = "sharedTransactionManager", rollbackFor = Exception.class)

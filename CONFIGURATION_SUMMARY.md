@@ -20,14 +20,14 @@
 - **Odoo**: 3005
 
 ## Fixed Issues
-1. ✅ Database credentials统一使用 `chatbot_user`/`chatbot_Admin_2025`
+1. ✅ Database credentials统一使用 `chatbot_user` + password từ env `DB_PASSWORD`
 2. ✅ gRPC port mapping corrected for hub communication
 3. ✅ Removed duplicate health check intervals in Penny config
 4. ✅ Docker Compose files synchronized with hub architecture
 
 ## Environment Variables
 - `SPRING_PROFILES_ACTIVE`: development (default)
-- `JWT_SECRET`: Hh52JKs3NlFlk7MpT6VYjIML9Zn7sgfhW67X7j3Xr8Y=
+- `JWT_SECRET`: <set via env var — no default>
 - `JWT_EXPIRATION`: 86400000ms (24 hours)
 - `SERVER_PORT`: 8080
 

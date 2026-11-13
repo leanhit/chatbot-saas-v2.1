@@ -69,8 +69,8 @@ public class OrderLookupService {
 
         log.info("📦 [Order Tool Calling] Looking up order code: '{}' for tenant: {}", orderCode, tenantId);
 
-        // 1. Search DB for matching referenceCode
-        Optional<SimplePayment> paymentOpt = simplePaymentRepository.findByReferenceCode(orderCode);
+        // 1. Search DB for matching referenceCode scoped to tenant
+        Optional<SimplePayment> paymentOpt = simplePaymentRepository.findByReferenceCodeAndTenantId(orderCode, tenantId);
         if (paymentOpt.isPresent()) {
             SimplePayment payment = paymentOpt.get();
             String statusDesc = formatPaymentStatus(payment.getStatus());

@@ -55,6 +55,18 @@ docker-compose.override.yml
 /frontend/.env
 /frontend/.env.local
 /frontend/.env.*.local
+/app-setup/.env
+/app-deploy/.env
+/app-deploy/.env.*
+
+# Secrets & keys — never commit
+*.pem
+*.key
+*.p12
+*.jks
+application-local.properties
+application-local.yml
+secrets-generated.yaml
 
 # Backups
 /backups/

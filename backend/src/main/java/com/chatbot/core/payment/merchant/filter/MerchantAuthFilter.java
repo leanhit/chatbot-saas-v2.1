@@ -2,6 +2,7 @@ package com.chatbot.core.payment.merchant.filter;
 
 import com.chatbot.core.payment.merchant.model.MerchantApiKey;
 import com.chatbot.core.payment.merchant.repository.MerchantApiKeyRepository;
+import com.chatbot.core.tenant.infra.TenantContext;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -75,7 +76,10 @@ public class MerchantAuthFilter extends OncePerRequestFilter {
         request.setAttribute("tenantId", merchantKey.getTenantId());
         request.setAttribute("merchantName", merchantKey.getName());
 
-        log.info("🔑 Merchant authenticated: {} (ID: {})", merchantKey.getName(), merchantKey.getId());
+        // Set tenant context for downstream services
+        TenantContext.setTenantId(merchantKey.getTenantId());
+
+        log.info("🔑 Merchant authenticated: {} (ID: {}, Tenant: {})", merchantKey.getName(), merchantKey.getId(), merchantKey.getTenantId());
 
         filterChain.doFilter(request, response);
     }

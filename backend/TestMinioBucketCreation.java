@@ -5,9 +5,15 @@ public class TestMinioBucketCreation {
     public static void main(String[] args) {
         try {
             // Initialize MinIO client
+            String accessKey = System.getenv("MINIO_ACCESS_KEY");
+            String secretKey = System.getenv("MINIO_SECRET_KEY");
+            if (accessKey == null || secretKey == null) {
+                System.err.println("MINIO_ACCESS_KEY and MINIO_SECRET_KEY env vars are required");
+                return;
+            }
             MinioClient minioClient = MinioClient.builder()
                 .endpoint("http://localhost:9000")
-                .credentials("minioadmin", "minioadmin")
+                .credentials(accessKey, secretKey)
                 .build();
             
             // Test bucket creation

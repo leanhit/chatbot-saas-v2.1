@@ -15,7 +15,7 @@ COPY backend/build.gradle backend/settings.gradle backend/gradlew ./
 COPY backend/gradle ./gradle
 RUN ./gradlew dependencies --no-daemon || true
 COPY backend/src ./src
-RUN ./gradlew bootJar -x test --no-daemon
+RUN ./gradlew bootJar --no-daemon
 
 # Stage 3: Final Runtime Image
 FROM eclipse-temurin:21-jdk

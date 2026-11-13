@@ -16,11 +16,15 @@ import java.util.Optional;
 public interface AppSubscriptionRepository extends JpaRepository<AppSubscription, Long> {
     
     Optional<AppSubscription> findByAppIdAndTenantId(Long appId, Long tenantId);
-    
+
+    List<AppSubscription> findAllByAppIdAndTenantId(Long appId, Long tenantId);
+
     List<AppSubscription> findByTenantId(Long tenantId);
     
     List<AppSubscription> findByUserId(Long userId);
-    
+
+    List<AppSubscription> findByUserIdAndTenantId(Long userId, Long tenantId);
+
     List<AppSubscription> findByAppId(Long appId);
     
     List<AppSubscription> findBySubscriptionStatus(SubscriptionStatus status);
@@ -33,9 +37,15 @@ public interface AppSubscriptionRepository extends JpaRepository<AppSubscription
     
     @Query("SELECT s FROM AppSubscription s WHERE s.subscriptionEnd <= :now AND s.subscriptionStatus = :status")
     List<AppSubscription> findExpiredSubscriptions(@Param("now") LocalDateTime now, @Param("status") SubscriptionStatus status);
+
+    @Query("SELECT s FROM AppSubscription s WHERE s.tenantId = :tenantId AND s.subscriptionEnd <= :now AND s.subscriptionStatus = :status")
+    List<AppSubscription> findExpiredSubscriptionsByTenant(@Param("tenantId") Long tenantId, @Param("now") LocalDateTime now, @Param("status") SubscriptionStatus status);
     
     @Query("SELECT s FROM AppSubscription s WHERE s.trialEnd <= :now AND s.subscriptionStatus = :status")
     List<AppSubscription> findExpiredTrials(@Param("now") LocalDateTime now, @Param("status") SubscriptionStatus status);
+
+    @Query("SELECT s FROM AppSubscription s WHERE s.tenantId = :tenantId AND s.trialEnd <= :now AND s.subscriptionStatus = :status")
+    List<AppSubscription> findExpiredTrialsByTenant(@Param("tenantId") Long tenantId, @Param("now") LocalDateTime now, @Param("status") SubscriptionStatus status);
     
     @Query("SELECT COUNT(s) FROM AppSubscription s WHERE s.appId = :appId AND s.subscriptionStatus = :status")
     long countByAppIdAndSubscriptionStatus(@Param("appId") Long appId, @Param("status") SubscriptionStatus status);

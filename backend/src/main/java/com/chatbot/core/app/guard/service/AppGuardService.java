@@ -52,18 +52,33 @@ class AppGuardService {
     
     @Transactional(readOnly = true, transactionManager = "tenantTransactionManager")
     public AppGuard getGuardById(Long id) {
-        return appGuardRepository.findById(id)
+        AppGuard guard = appGuardRepository.findById(id)
             .orElseThrow(() -> new ResourceNotFoundException("Guard not found with id: " + id));
+        Long tenantId = com.chatbot.core.tenant.infra.TenantContext.getTenantId();
+        if (tenantId != null && !tenantId.equals(guard.getTenantId())) {
+            throw new ResourceNotFoundException("Guard not found with id: " + id);
+        }
+        return guard;
     }
     
     @Transactional(readOnly = true, transactionManager = "tenantTransactionManager")
     public List<AppGuard> getGuardsByAppId(Long appId) {
-        return appGuardRepository.findByAppId(appId);
+        Long tenantId = com.chatbot.core.tenant.infra.TenantContext.getTenantId();
+        if (tenantId == null) {
+            throw new ValidationException("Tenant context required");
+        }
+        return appGuardRepository.findByAppIdAndTenantId(appId, tenantId);
     }
     
     @Transactional(readOnly = true, transactionManager = "tenantTransactionManager")
     public List<AppGuard> getActiveGuardsByAppId(Long appId) {
-        return appGuardRepository.findByAppIdAndIsActive(appId, true);
+        Long tenantId = com.chatbot.core.tenant.infra.TenantContext.getTenantId();
+        if (tenantId == null) {
+            throw new ValidationException("Tenant context required");
+        }
+        return appGuardRepository.findByAppIdAndTenantId(appId, tenantId).stream()
+            .filter(g -> g.getIsActive() != null && g.getIsActive())
+            .collect(Collectors.toList());
     }
     
     @Transactional(readOnly = true, transactionManager = "tenantTransactionManager")

@@ -1,5 +1,5 @@
 #!/bin/bash
-# Production Deployment Script for truyenthongviet.vn (103.149.99.7)
+# Production Deployment Script
 
 set -e
 

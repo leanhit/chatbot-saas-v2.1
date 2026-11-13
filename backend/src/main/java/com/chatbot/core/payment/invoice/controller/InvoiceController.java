@@ -3,6 +3,7 @@ package com.chatbot.core.payment.invoice.controller;
 import com.chatbot.core.payment.invoice.model.Invoice;
 import com.chatbot.core.payment.invoice.model.Invoice.InvoiceStatus;
 import com.chatbot.core.payment.invoice.service.InvoiceService;
+import com.chatbot.core.tenant.infra.TenantContext;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -35,7 +36,7 @@ public class InvoiceController {
         log.info("📄 Fetching invoice: {}", invoiceNumber);
 
         try {
-            Invoice invoice = invoiceService.getInvoiceByNumber(invoiceNumber);
+            Invoice invoice = invoiceService.getInvoiceByNumberAndTenant(invoiceNumber, TenantContext.getTenantId());
             return ResponseEntity.ok(invoice);
         } catch (Exception e) {
             log.error("❌ Failed to fetch invoice: {}", e.getMessage());
@@ -54,7 +55,7 @@ public class InvoiceController {
     public ResponseEntity<List<Invoice>> getUserInvoices(@PathVariable Long userId) {
         log.info("📄 Fetching invoices for user: {}", userId);
 
-        List<Invoice> invoices = invoiceService.getUserInvoices(userId);
+        List<Invoice> invoices = invoiceService.getUserInvoices(userId, TenantContext.getTenantId());
         return ResponseEntity.ok(invoices);
     }
 
@@ -68,6 +69,11 @@ public class InvoiceController {
     )
     public ResponseEntity<List<Invoice>> getTenantInvoices(@PathVariable Long tenantId) {
         log.info("📄 Fetching invoices for tenant: {}", tenantId);
+
+        Long contextTenantId = TenantContext.getTenantId();
+        if (contextTenantId == null || !contextTenantId.equals(tenantId)) {
+            return ResponseEntity.status(403).build();
+        }
 
         List<Invoice> invoices = invoiceService.getTenantInvoices(tenantId);
         return ResponseEntity.ok(invoices);
@@ -111,7 +117,12 @@ public class InvoiceController {
         log.info("🗑️ Deleting invoice: {}", invoiceNumber);
 
         try {
-            invoiceService.deleteInvoice(invoiceNumber);
+            Long tenantId = TenantContext.getTenantId();
+            if (tenantId != null) {
+                invoiceService.deleteInvoice(invoiceNumber, tenantId);
+            } else {
+                invoiceService.deleteInvoice(invoiceNumber);
+            }
             return ResponseEntity.ok(Map.of("message", "Invoice deleted successfully"));
         } catch (Exception e) {
             log.error("❌ Failed to delete invoice: {}", e.getMessage());

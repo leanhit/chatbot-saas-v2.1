@@ -29,7 +29,7 @@ import java.util.List;
 @EnableWebMvc
 public class SecurityConfig {
 
-    @org.springframework.beans.factory.annotation.Value("${ALLOWED_ORIGINS:http://localhost,http://localhost:8080,https://*.truyenthongviet.vn,https://truyenthongviet.vn,https://*.startai.vn,https://startai.vn,http://103.149.99.7,http://103.149.99.7:8080,https://103.149.99.7}")
+    @org.springframework.beans.factory.annotation.Value("${ALLOWED_ORIGINS:http://localhost:3003,http://localhost:8080}")
     private String rawAllowedOrigins;
 
     // ===================== PASSWORD =====================
@@ -59,15 +59,6 @@ public class SecurityConfig {
                 .filter(s -> !s.isEmpty())
                 .collect(java.util.stream.Collectors.toList());
 
-        // Always ensure localhost, server IP and domain patterns are allowed
-        if (!origins.contains("http://localhost:*")) origins.add("http://localhost:*");
-        if (!origins.contains("http://103.149.99.7:*")) origins.add("http://103.149.99.7:*");
-        if (!origins.contains("https://103.149.99.7:*")) origins.add("https://103.149.99.7:*");
-        if (!origins.contains("https://*.truyenthongviet.vn")) origins.add("https://*.truyenthongviet.vn");
-        if (!origins.contains("https://truyenthongviet.vn")) origins.add("https://truyenthongviet.vn");
-        if (!origins.contains("https://*.startai.vn")) origins.add("https://*.startai.vn");
-        if (!origins.contains("https://startai.vn")) origins.add("https://startai.vn");
-
         config.setAllowedOriginPatterns(origins);
         config.setAllowedMethods(List.of(
                 "GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"
@@ -76,6 +67,8 @@ public class SecurityConfig {
                 "Authorization",
                 "Content-Type",
                 "X-Tenant-Key",
+                "X-API-Key",
+                "Accept-Language",
                 "Cache-Control"
         ));
         config.setExposedHeaders(List.of("X-Tenant-Key", "X-Total-Count"));
@@ -133,7 +126,8 @@ public class SecurityConfig {
 
                 // ================= PUBLIC APIs =================
                 // Most specific paths first
-                .requestMatchers("/actuator/**", "/api/actuator/**", "/health").permitAll()
+                .requestMatchers("/actuator/health", "/actuator/health/**", "/api/actuator/health", "/health").permitAll()
+                .requestMatchers("/actuator/**", "/api/actuator/**").authenticated()
                 .requestMatchers("/penny/bots/*/chat/public").permitAll()
                 .requestMatchers("/webhooks/**", "/api/webhooks/**").permitAll()
                 .requestMatchers("/webhooks/facebook/botpress/**").permitAll()
@@ -151,7 +145,6 @@ public class SecurityConfig {
                 .requestMatchers("/api/public/simple-payment/**").permitAll()
                 .requestMatchers("/api/simple-payment/public/**").permitAll()
                 .requestMatchers("/api/simple-payment/events/**", "/api/payment/events/**").permitAll()
-                .requestMatchers("/api/simple-payment/test/**", "/api/payment/test/**", "/api/simple-payment/simulate-payment", "/api/payment/simulate-payment").permitAll()
                 .requestMatchers("/api/simple-payment/bank-info").permitAll()
                 .requestMatchers("/api/simple-payment/health").permitAll()
                 .requestMatchers("/api/v1/merchant/payments/**").permitAll()

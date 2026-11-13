@@ -162,9 +162,9 @@ show_status() {
 show_service_info() {
     echo "🌐 Service URLs:"
     echo "=================="
-    echo "📊 MinIO Console: http://localhost:9090 (minioadmin/minioadmin)"
+    echo "📊 MinIO Console: http://localhost:9090 (credentials from .env)"
     echo "📁 MinIO API: http://localhost:9000"
-    echo "🐰 RabbitMQ Management: http://localhost:15672 (admin/admin123)"
+    echo "🐰 RabbitMQ Management: http://localhost:15672 (credentials from .env)"
     echo "� Redis: localhost:6380"
     echo ""
     echo "�🗄️  Multi-Database Setup:"

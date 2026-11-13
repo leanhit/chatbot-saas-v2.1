@@ -33,11 +33,11 @@ CREATE TRIGGER update_users_updated_at
     FOR EACH ROW 
     EXECUTE FUNCTION update_updated_at_column();
 
--- Insert default admin user (password: admin123)
+-- Insert default admin user (password hash — change after first login)
 INSERT INTO users (email, password_hash, first_name, last_name, role, status, email_verified)
 VALUES (
     'admin@chatbot.com',
-    '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', -- admin123
+    '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi',
     'System',
     'Administrator',
     'SUPER_ADMIN',

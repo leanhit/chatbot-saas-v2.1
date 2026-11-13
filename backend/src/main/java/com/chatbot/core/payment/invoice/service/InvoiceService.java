@@ -109,7 +109,7 @@ public class InvoiceService {
     }
 
     /**
-     * Get invoice by invoice number
+     * Get invoice by invoice number (internal/admin use — not tenant-scoped)
      */
     @Transactional(readOnly = true, transactionManager = "paymentTransactionManager")
     public Invoice getInvoiceByNumber(String invoiceNumber) {
@@ -118,11 +118,34 @@ public class InvoiceService {
     }
 
     /**
-     * Get invoices for user
+     * Get invoice by invoice number scoped to tenant
+     */
+    @Transactional(readOnly = true, transactionManager = "paymentTransactionManager")
+    public Invoice getInvoiceByNumberAndTenant(String invoiceNumber, Long tenantId) {
+        if (tenantId == null) {
+            throw new RuntimeException("Tenant context required");
+        }
+        return invoiceRepository.findByInvoiceNumberAndTenantId(invoiceNumber, tenantId)
+                .orElseThrow(() -> new RuntimeException("Invoice not found: " + invoiceNumber));
+    }
+
+    /**
+     * Get invoices for user (internal/admin use — not tenant-scoped)
      */
     @Transactional(readOnly = true, transactionManager = "paymentTransactionManager")
     public java.util.List<Invoice> getUserInvoices(Long userId) {
         return invoiceRepository.findByUserIdOrderByCreatedAtDesc(userId);
+    }
+
+    /**
+     * Get invoices for user scoped to tenant
+     */
+    @Transactional(readOnly = true, transactionManager = "paymentTransactionManager")
+    public java.util.List<Invoice> getUserInvoices(Long userId, Long tenantId) {
+        if (tenantId == null) {
+            throw new RuntimeException("Tenant context required");
+        }
+        return invoiceRepository.findByUserIdAndTenantIdOrderByCreatedAtDesc(userId, tenantId);
     }
 
     /**
@@ -165,11 +188,23 @@ public class InvoiceService {
     }
 
     /**
-     * Delete invoice
+     * Delete invoice (internal/admin use — not tenant-scoped)
      */
     @Transactional(transactionManager = "paymentTransactionManager")
     public void deleteInvoice(String invoiceNumber) {
         log.info("🗑️ Deleting invoice: {}", invoiceNumber);
         invoiceRepository.deleteByInvoiceNumber(invoiceNumber);
+    }
+
+    /**
+     * Delete invoice scoped to tenant
+     */
+    @Transactional(transactionManager = "paymentTransactionManager")
+    public void deleteInvoice(String invoiceNumber, Long tenantId) {
+        log.info("🗑️ Deleting invoice: {} for tenant: {}", invoiceNumber, tenantId);
+        if (tenantId == null) {
+            throw new RuntimeException("Tenant context required");
+        }
+        invoiceRepository.deleteByInvoiceNumberAndTenantId(invoiceNumber, tenantId);
     }
 }

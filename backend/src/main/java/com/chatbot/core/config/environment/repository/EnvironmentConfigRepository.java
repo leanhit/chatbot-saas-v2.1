@@ -11,22 +11,37 @@ import java.util.Optional;
 
 @Repository
 public interface EnvironmentConfigRepository extends JpaRepository<EnvironmentConfig, Long> {
-    
+
     Optional<EnvironmentConfig> findByEnvironmentAndConfigKeyAndIsActive(String environment, String configKey, Boolean isActive);
-    
+
+    Optional<EnvironmentConfig> findByEnvironmentAndConfigKeyAndTenantIdAndIsActive(String environment, String configKey, Long tenantId, Boolean isActive);
+
     List<EnvironmentConfig> findByEnvironmentAndIsActiveOrderByConfigKey(String environment, Boolean isActive);
-    
+
+    List<EnvironmentConfig> findByEnvironmentAndTenantIdAndIsActiveOrderByConfigKey(String environment, Long tenantId, Boolean isActive);
+
     List<EnvironmentConfig> findByConfigKeyAndIsActiveOrderByEnvironment(String configKey, Boolean isActive);
-    
+
+    List<EnvironmentConfig> findByConfigKeyAndTenantIdAndIsActiveOrderByEnvironment(String configKey, Long tenantId, Boolean isActive);
+
     @Query("SELECT ec FROM EnvironmentConfig ec WHERE ec.environment = :environment AND ec.isActive = true ORDER BY ec.configKey")
     List<EnvironmentConfig> findActiveConfigsByEnvironment(@Param("environment") String environment);
-    
+
+    @Query("SELECT ec FROM EnvironmentConfig ec WHERE ec.environment = :environment AND ec.tenantId = :tenantId AND ec.isActive = true ORDER BY ec.configKey")
+    List<EnvironmentConfig> findActiveConfigsByEnvironmentAndTenantId(@Param("environment") String environment, @Param("tenantId") Long tenantId);
+
     @Query("SELECT ec FROM EnvironmentConfig ec WHERE ec.configKey = :configKey AND ec.isActive = true ORDER BY ec.environment")
     List<EnvironmentConfig> findActiveConfigsByKey(@Param("configKey") String configKey);
-    
+
+    @Query("SELECT ec FROM EnvironmentConfig ec WHERE ec.configKey = :configKey AND ec.tenantId = :tenantId AND ec.isActive = true ORDER BY ec.environment")
+    List<EnvironmentConfig> findActiveConfigsByKeyAndTenantId(@Param("configKey") String configKey, @Param("tenantId") Long tenantId);
+
     @Query("SELECT DISTINCT ec.environment FROM EnvironmentConfig ec WHERE ec.isActive = true")
     List<String> findActiveEnvironments();
-    
+
     @Query("SELECT COUNT(ec) FROM EnvironmentConfig ec WHERE ec.environment = :environment AND ec.isActive = true")
     long countActiveConfigsByEnvironment(@Param("environment") String environment);
+
+    @Query("SELECT COUNT(ec) FROM EnvironmentConfig ec WHERE ec.environment = :environment AND ec.tenantId = :tenantId AND ec.isActive = true")
+    long countActiveConfigsByEnvironmentAndTenantId(@Param("environment") String environment, @Param("tenantId") Long tenantId);
 }

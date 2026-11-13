@@ -52,7 +52,7 @@ RSA_PUBLIC_KEY="-----BEGIN PUBLIC KEY-----..."    # cho RS256
 ```properties
 # Security Configuration
 spring.security.jwt.algorithm=${JWT_ALGORITHM:HS256}
-spring.security.jwt.secret=${JWT_SECRET:Hh52JKs3NlFlk7MpT6VYjIML9Zn7sgfhW67X7j3Xr8Y=}
+spring.security.jwt.secret=${JWT_SECRET}
 spring.security.jwt.rsa.private-key=${RSA_PRIVATE_KEY:}
 spring.security.jwt.rsa.public-key=${RSA_PUBLIC_KEY:}
 ```
