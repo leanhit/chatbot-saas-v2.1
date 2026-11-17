@@ -713,3 +713,182 @@ Target PostgreSQL max_connections? Để tính lại pool size.
 Frontend framework: Vue CLI hay đang migrate sang Vite? (ảnh hưởng router setup)
 Secret manager: Dùng GitHub Secrets thuần, hay tích hợp Vault/AWS Secrets Manager?
 Penny Bot P0/P1/P2: ✅ DONE (12/11/2026, 874 tests) Kế hoạch này: chatbot-saas-v2.1 toàn hệ thống
+
+===================================================
+
+
+Mình đã so sánh từng mục P0/P1/P2 trong code_preview.md với code hiện tại (commit 0d696ece). Chỉ đọc, không sửa gì. Báo cáo chi tiết nằm ở 
+code_preview_vs_code.md
+.
+
+Tổng thể: P0-C và P1-D gần như đã làm xong, P0-B còn vài điểm nhỏ. Vẫn còn hở về secrets và RBAC, còn P2 thì chưa bắt đầu.
+
+Mục	Trạng thái
+P0-C CI/CD	✅ Đã gộp thành ci-cd.yml, deploy chỉ chạy khi test và build qua
+P1-D Migration	🟢 Flyway riêng cho 8 database, 86 migration. Vẫn còn script SQL init cũ chạy song song
+P0-B CORS	🟢 Đã bỏ wildcard và IP production, đã thêm header thiếu. Actuator mới chỉ yêu cầu đăng nhập (chưa yêu cầu ADMIN), Swagger vẫn công khai
+P0-A Secrets	🟠 application.properties đã sạch, nhưng app-deploy/env.local và .env vẫn nằm trong git, chứa password DB, MinIO và JWT secret
+P1-A Tenant	🟠 Repository training/analytics thực ra đã lọc theo tenant (tài liệu ghi "cần kiểm tra"). Test cross-tenant mới có ở 3/9 domain
+P1-C Frontend	🟠 src/store/ là code thừa: không còn Vuex, không file nào import, chỉ cần xoá. Router chưa có kiểm tra role
+P1-B RBAC	🔴 isTenantAdmin() vẫn chỉ kiểm tra OWNER, giống hệt isOwner()
+P2	🔴 Chưa có giới hạn số bản ghi mỗi trang, chưa chống xử lý webhook trùng, tổng connection pool vẫn 113
+Phát hiện mới: vì sao app Docker crash
+Theo P0-A, giá trị mặc định của RSA key đã bị xoá khỏi application.properties, nên giờ RSA_PRIVATE_KEY là bắt buộc. Nhưng docker-compose.yml không truyền RSA_PRIVATE_KEY và RSA_PUBLIC_KEY vào container, nên app không khởi động được và restart liên tục. Ngoài ra, phần sửa chưa commit trong app-deploy/.env đang xoá luôn dòng DB_USER.
+
+Thứ tự nên làm
+Thêm RSA_* vào docker-compose.yml và .env, khôi phục DB_USER.
+git rm --cached hai file .env và env.local, rồi đổi toàn bộ secret đã lộ.
+Phân tích và sửa 69 test fail.
+Sửa isTenantAdmin().
+Bạn muốn mình bắt đầu từ mục nào?
+
+Compare Preview
+Compare Deep
+Code Preview Vs Code
+9:11 AM
+
+
+
+làm tuần tự
+9:15 AM
+
+
+Task
+Env Gap
+Fill Env
+Test Failures
+Diag2
+Dbauth
+9:15 AM
+
+
+
+tiếp tục
+9:30 AM
+
+
+9:30 AM
+
+
+
+
+
+
+
+Overview
+
+Artifact
+
+
+code_preview.md × Code thực tế
+Scan ngày 17/11/2026 · HEAD 0d696ece · chỉ đọc, không sửa code Script: 
+compare_preview.sh
+, 
+compare_deep.sh
+
+Tổng quan
+Hạng mục	Kế hoạch	Thực tế	Kết luận
+P0-A Secrets	Xoá default, xoay key	Properties sạch, nhưng env.local còn secret và được commit	🟠 Một phần
+P0-B CORS	Bỏ wildcard, thêm headers, khoá actuator	Đã làm phần lớn	🟢 Gần xong
+P0-C CI/CD	Gộp pipeline, needs:	ci-cd.yml đúng mẫu	✅ Xong
+P1-A Tenant	Scope toàn bộ + test cross-tenant	Repo đã scope; test chỉ 3 domain	🟠 Một phần
+P1-B RBAC	Tách isTenantOwner/isTenantAdmin	isTenantAdmin vẫn chỉ check OWNER	🔴 Chưa làm
+P1-C Frontend	Bỏ Vuex store/, role guard	store/ là code chết; router chưa có meta.roles	🟠 Một phần
+P1-D Migration	Flyway mọi hub	MultiFlywayConfig đủ 8 hub, 86 migration	🟢 Hầu hết xong
+P2-A Pagination	Global max page size	Không có; 101 endpoint trả List	🔴 Chưa làm
+P2-B Idempotency	Webhook dedupe	Chưa thấy cơ chế chung	🔴 Chưa làm
+P2-C Pool	Tổng ≤ max_connections	Vẫn 113 (+50 default)	🔴 Chưa làm
+P0-A — Secrets
+✅ Đã làm
+
+Mọi app.datasource.*.password=${DB_PASSWORD}, không còn default
+jwt.secret=${JWT_SECRET}, jwt.rsa.private-key=${RSA_PRIVATE_KEY} — không còn key inline
+RabbitMQ, MinIO: không còn default
+Không có file *.pem/*.key nào được track; .gitignore có *.pem, *.key
+JwtService.java chỉ chứa chuỗi BEGIN PRIVATE KEY để strip header (không phải key)
+❌ Còn hở
+
+CAUTION
+
+app-deploy/env.local đang được track trong git và chứa chatbot_Admin_2025, minioadmin, JWT secret Hh52JK…. File này được sửa lần cuối trong chính commit 0d696ece. app-deploy/.env cũng đang được track (.gitignore có rule nhưng không có tác dụng với file đã track).
+
+application-facebook-token.properties:9 — FACEBOOK_APP_SECRET vẫn có default value
+Chưa xoá lịch sử git (BFG/filter-repo) → secret cũ vẫn lấy lại được
+Chưa có bằng chứng đã xoay secret (DB password, JWT, Facebook)
+🔥 Tác dụng phụ — nguyên nhân container crash
+
+Nơi	Trạng thái
+application.properties:169	${RSA_PRIVATE_KEY} — bắt buộc, không default
+app-deploy/docker-compose.yml	Không truyền RSA_PRIVATE_KEY / RSA_PUBLIC_KEY
+app-deploy/.env	Không có RSA_*; diff chưa commit còn xoá DB_USER
+→ Xoá default RSA (đúng theo plan) nhưng chưa cập nhật deploy config → jwtService không khởi tạo được → chatbot_saas_app restart lặp.
+
+P0-B — CORS & SecurityConfig
+Yêu cầu	Thực tế
+Bỏ hardcode 103.149.99.7, *.startai.vn, localhost:*	✅ Không còn; default chỉ localhost:3003,localhost:8080
+Thêm Accept-Language, X-API-Key	✅ Có (dòng 66-73)
+Actuator: chỉ health public	✅ /actuator/** → authenticated()
+Actuator khác cần ADMIN	🟡 Chỉ authenticated() — mọi user đăng nhập đều xem được metrics
+simulate-payment, /test/**	✅ Không còn trong permitAll
+Swagger	🟡 Vẫn permitAll — nên tắt ở production
+SecurityConfigTest kiểm tra CORS	❌ Không có
+Còn 26 permitAll, đáng review: /api/v1/merchant/payments/**, /api/merchant/payment/**, /api/tenant-api/** (dựa vào filter API key), /ws/**, /api/simple-payment/events/**.
+
+P0-C — CI/CD ✅
+test.yml + deploy.yml đã gộp thành ci-cd.yml
+deploy có needs: [backend-test, frontend-build]
+Frontend dùng npm ci (không fallback), có upload-artifact
+Không còn || true trong workflow
+Dockerfile dùng bootJar (không -x test). Còn dependencies || true — chỉ là bước cache, chấp nhận được
+WARNING
+
+Pipeline đúng, nhưng backend hiện có 69 test fail (16/11) → nếu push, deploy sẽ bị chặn.
+
+P1-A — Tenant isolation
+Repository — khớp với tài liệu:
+
+training/*: mọi repo đều có bản ...AndTenantId; còn các bản cũ findByAgentId, findByCategoryId, findByAgentIdIn (chưa deprecate)
+analytics/ReportScheduleRepository: scoped; findByEnabledTrue... unscoped là hợp lệ (scheduler)
+Tài liệu ghi training/analytics "❓ Cần kiểm tra" → thực tế đã scope ở tầng repo
+Test cross-tenant — mới có 3:
+
+routing/integration/TenantIsolationTest
+tenant/integration/TenantIsolationIntegrationTest
+penny/service/PennyTenantIsolationIntegrationTest
+Thiếu cho: message, customer, training, analytics, payment, config (tiêu chí nghiệm thu yêu cầu mỗi domain ≥ 1).
+
+P1-B — RBAC 🔴
+java
+
+// TenantPermissionValidator.java — HIỆN TẠI
+public boolean isTenantAdmin(Long tenantId, String userEmail) {
+    ...map(member -> member.getRole() == TenantRole.OWNER)   // giống hệt isOwner()
+}
+isOwner() đã tồn tại; isTenantAdmin() là bản sao không cache → chưa tách semantics
+TenantRole có OWNER, EDITOR… — cần xác nhận có role ADMIN trong tenant hay không trước khi sửa
+✅ @CacheEvict đã có trong TenantMemberService (dòng 74, 108, 150)
+✅ Có TenantPermissionValidatorTest, docs/rbac-matrix.md (chưa đối chiếu nội dung)
+P1-C — Frontend
+Yêu cầu	Thực tế
+Migrate Vuex store/	vuex không có trong package.json; main.js chỉ dùng Pinia; 0 import từ store/ → src/store/ là code chết, chỉ cần xoá
+Role guard	Router có beforeEach, requiresAuth (63 route), requiresOwner; 0 route có meta.roles
+Tách router	router/index.js vẫn 538 dòng
+README	Vẫn là Windzo template
+Build	✅ npm run build pass (16/11)
+P1-D — Migration 🟢
+MultiFlywayConfig.java cấu hình Flyway riêng cho 8 hub
+86 file migration: message 37, shared 17, tenant 9, app 7, spokes 6, config 4, user 4, identity 2
+spring.jpa.hibernate.ddl-auto=none; app.hibernate.ddl-auto=${HIBERNATE_DDL_AUTO:none}
+❌ app-setup/postgres-init-*.sql (9 file) vẫn tồn tại → 2 nguồn schema
+❌ Chưa có job CI chạy migrate từ DB rỗng
+P2 — Chưa bắt đầu
+Pagination: không có setMaxPageSize / PageableHandlerMethodArgumentResolver; 101 method controller trả List<…>
+Idempotency: chỉ có xử lý cục bộ trong message/takeover; không có bảng webhook delivery chung
+Pool: identity 5 + user 50 + tenant 20 + app 5 + config 3 + message 30 = 113, thêm spring.datasource 50
+Việc cần làm ngay (theo mức độ)
+🔴 Sửa deploy: thêm RSA_PRIVATE_KEY, RSA_PUBLIC_KEY vào docker-compose.yml + .env; khôi phục DB_USER
+🔴 Gỡ secret khỏi git: git rm --cached app-deploy/.env app-deploy/env.local, xoay toàn bộ secret, xoá history
+🔴 Sửa 69 test fail (chưa phân tích nguyên nhân)
+🟠 Sửa isTenantAdmin() + test
+🟠 Xoá default FACEBOOK_APP_SECRET; actuator → hasRole('ADMIN'); tắt Swagger ở prod
+🟡 Test cross-tenant cho 6 domain còn lại; xoá frontend/src/store/

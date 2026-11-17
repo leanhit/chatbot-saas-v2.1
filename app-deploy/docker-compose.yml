@@ -17,6 +17,13 @@ services:
       - DB_USER=${DB_USER:-chatbot_user}
       - DB_PASSWORD=${DB_PASSWORD:?DB_PASSWORD must be set}
       - JWT_SECRET=${JWT_SECRET:?JWT_SECRET must be set}
+      # RS256 is the default algorithm (application.properties) -> RSA keys are mandatory.
+      # Values: base64 body of PKCS#8 private key / X.509 public key (PEM headers optional).
+      - JWT_ALGORITHM=${JWT_ALGORITHM:-RS256}
+      - RSA_PRIVATE_KEY=${RSA_PRIVATE_KEY:?RSA_PRIVATE_KEY must be set}
+      - RSA_PUBLIC_KEY=${RSA_PUBLIC_KEY:?RSA_PUBLIC_KEY must be set}
+      - RABBITMQ_USER=${RABBITMQ_USER:?RABBITMQ_USER must be set}
+      - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:?RABBITMQ_PASSWORD must be set}
       - MINIO_ENDPOINT=${MINIO_ENDPOINT:-http://minio:9000}
       - MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY:?MINIO_ACCESS_KEY must be set}
       - MINIO_SECRET_KEY=${MINIO_SECRET_KEY:?MINIO_SECRET_KEY must be set}

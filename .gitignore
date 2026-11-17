@@ -58,6 +58,9 @@ docker-compose.override.yml
 /app-setup/.env
 /app-deploy/.env
 /app-deploy/.env.*
+/app-deploy/env.local
+# Templates with placeholders only are allowed
+!/app-deploy/env.example
 
 # Secrets & keys — never commit
 *.pem
