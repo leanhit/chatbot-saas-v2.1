@@ -9,13 +9,13 @@ import com.chatbot.core.tenant.profile.repository.TenantProfileRepository;
 import com.chatbot.core.tenant.profile.service.TenantProfileService;
 import com.chatbot.core.membership.repository.TenantMemberRepository;
 import com.chatbot.core.membership.service.TenantMembershipFacade;
+import com.chatbot.core.message.store.service.AgentProvisioningService;
 import com.chatbot.core.user.service.UserService;
 import com.chatbot.core.user.model.User;
 import com.chatbot.core.user.repository.AuthRepository;
 import com.chatbot.core.user.repository.UserRepository;
 import com.chatbot.shared.address.service.AddressService;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -34,7 +34,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-@Disabled("Requires complex transaction manager setup - not Phase 4 test")
 public class TenantServiceIntegrationTest {
 
     @Mock private TenantRepository tenantRepository;
@@ -48,6 +47,9 @@ public class TenantServiceIntegrationTest {
     @Mock private AddressService addressService;
     @Mock private TenantAuditLogService auditLogService;
     @Mock private TenantPermissionValidator permissionValidator;
+    @Mock private TenantCleanupService tenantCleanupService;
+    @Mock private TenantValidationService tenantValidationService;
+    @Mock private AgentProvisioningService agentProvisioningService;
     @Mock private ApplicationEventPublisher eventPublisher;
     @Mock private PlatformTransactionManager tenantTransactionManager;
 
