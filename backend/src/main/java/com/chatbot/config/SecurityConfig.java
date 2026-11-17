@@ -127,7 +127,7 @@ public class SecurityConfig {
                 // ================= PUBLIC APIs =================
                 // Most specific paths first
                 .requestMatchers("/actuator/health", "/actuator/health/**", "/api/actuator/health", "/health").permitAll()
-                .requestMatchers("/actuator/**", "/api/actuator/**").authenticated()
+                .requestMatchers("/actuator/**", "/api/actuator/**").hasRole("ADMIN")
                 .requestMatchers("/penny/bots/*/chat/public").permitAll()
                 .requestMatchers("/webhooks/**", "/api/webhooks/**").permitAll()
                 .requestMatchers("/webhooks/facebook/botpress/**").permitAll()

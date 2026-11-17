@@ -16,4 +16,10 @@ public interface TenantWebhookDeliveryRepository extends JpaRepository<TenantWeb
     List<TenantWebhookDelivery> findPendingDue(@Param("now") LocalDateTime now);
 
     List<TenantWebhookDelivery> findByTenantIdOrderByCreatedAtDesc(Long tenantId);
+
+    List<TenantWebhookDelivery> findByTenantIdAndStatusOrderByCreatedAtDesc(Long tenantId, TenantWebhookDelivery.Status status);
+
+    long countByTenantIdAndStatus(Long tenantId, TenantWebhookDelivery.Status status);
+
+    long countByStatus(TenantWebhookDelivery.Status status);
 }

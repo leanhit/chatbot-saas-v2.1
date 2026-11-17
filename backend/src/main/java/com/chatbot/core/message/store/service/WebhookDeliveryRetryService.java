@@ -108,6 +108,22 @@ public class WebhookDeliveryRetryService {
         deliveryRepository.save(delivery);
     }
 
+    /**
+     * Daily DLQ check — logs ERROR when permanently failed deliveries exist.
+     * Wire to alerting (log-based) when FAILED count > 0.
+     */
+    @Scheduled(cron = "0 0 8 * * *") // 08:00 daily
+    @SchedulerLock(name = "WebhookDeliveryRetryService_dlqAlert", lockAtMostFor = "10m", lockAtLeastFor = "1m")
+    @Transactional(value = "tenantTransactionManager", readOnly = true)
+    public void alertFailedDeliveries() {
+        long failed = deliveryRepository.countByStatus(TenantWebhookDelivery.Status.FAILED);
+        if (failed > 0) {
+            log.error("[WebhookDLQ] {} webhook deliveries permanently FAILED — check /api/tenant/webhooks/deliveries?status=FAILED", failed);
+        } else {
+            log.debug("[WebhookDLQ] No failed deliveries");
+        }
+    }
+
     private String sign(String body, String secret) {
         if (secret == null || secret.isBlank()) {
             return "";

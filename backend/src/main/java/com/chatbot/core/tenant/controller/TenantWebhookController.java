@@ -1,6 +1,7 @@
 package com.chatbot.core.tenant.controller;
 
 import com.chatbot.core.tenant.model.TenantWebhook;
+import com.chatbot.core.tenant.model.TenantWebhookDelivery;
 import com.chatbot.core.tenant.service.TenantWebhookService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -43,5 +44,21 @@ public class TenantWebhookController {
     public ResponseEntity<Void> deleteWebhook(@PathVariable Long id) {
         webhookService.deleteWebhook(id);
         return ResponseEntity.noContent().build();
+    }
+
+    // ===================== DELIVERY MONITORING (DLQ) =====================
+
+    @GetMapping("/deliveries")
+    @PreAuthorize("hasAnyRole('ADMIN', 'OWNER', 'EDITOR')")
+    public ResponseEntity<List<TenantWebhookDelivery>> listDeliveries(
+            @RequestParam(required = false) TenantWebhookDelivery.Status status,
+            @RequestParam(defaultValue = "50") int limit) {
+        return ResponseEntity.ok(webhookService.listDeliveries(status, limit));
+    }
+
+    @GetMapping("/deliveries/stats")
+    @PreAuthorize("hasAnyRole('ADMIN', 'OWNER', 'EDITOR')")
+    public ResponseEntity<java.util.Map<String, Long>> deliveryStats() {
+        return ResponseEntity.ok(webhookService.deliveryStats());
     }
 }

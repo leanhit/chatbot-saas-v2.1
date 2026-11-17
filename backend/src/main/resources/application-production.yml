@@ -238,3 +238,10 @@ rate-limit:
   enabled: true
   requests-per-minute: 100
   burst-capacity: 200
+
+# Swagger/OpenAPI — disabled in production (P0-B)
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false

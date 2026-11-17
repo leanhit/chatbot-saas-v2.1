@@ -2,6 +2,8 @@ package com.chatbot.core.tenant.service;
 
 import com.chatbot.core.tenant.infra.TenantContext;
 import com.chatbot.core.tenant.model.TenantWebhook;
+import com.chatbot.core.tenant.model.TenantWebhookDelivery;
+import com.chatbot.core.tenant.repository.TenantWebhookDeliveryRepository;
 import com.chatbot.core.tenant.repository.TenantWebhookRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,6 +21,7 @@ import java.util.List;
 public class TenantWebhookService {
 
     private final TenantWebhookRepository webhookRepository;
+    private final TenantWebhookDeliveryRepository deliveryRepository;
     private final TenantAuditLogService auditLogService;
     private final TenantPermissionValidator permissionValidator;
 
@@ -78,5 +81,27 @@ public class TenantWebhookService {
         webhookRepository.delete(webhook);
         auditLogService.logActionAsync(tenantId, currentUserEmail(),
                 "TENANT_WEBHOOK_DELETED", "webhookId=" + id + ", url=" + webhook.getUrl());
+    }
+
+    // ===================== DELIVERY MONITORING (DLQ) =====================
+
+    @Transactional(value = "tenantTransactionManager", readOnly = true)
+    public List<TenantWebhookDelivery> listDeliveries(TenantWebhookDelivery.Status status, int limit) {
+        Long tenantId = requireTenantId();
+        int safeLimit = Math.min(Math.max(limit, 1), 200);
+        List<TenantWebhookDelivery> deliveries = status == null
+                ? deliveryRepository.findByTenantIdOrderByCreatedAtDesc(tenantId)
+                : deliveryRepository.findByTenantIdAndStatusOrderByCreatedAtDesc(tenantId, status);
+        return deliveries.size() > safeLimit ? deliveries.subList(0, safeLimit) : deliveries;
+    }
+
+    @Transactional(value = "tenantTransactionManager", readOnly = true)
+    public java.util.Map<String, Long> deliveryStats() {
+        Long tenantId = requireTenantId();
+        java.util.Map<String, Long> stats = new java.util.LinkedHashMap<>();
+        for (TenantWebhookDelivery.Status s : TenantWebhookDelivery.Status.values()) {
+            stats.put(s.name(), deliveryRepository.countByTenantIdAndStatus(tenantId, s));
+        }
+        return stats;
     }
 }
