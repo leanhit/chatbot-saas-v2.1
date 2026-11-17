@@ -730,7 +730,7 @@ P0-C CI/CD	✅ Đã gộp thành ci-cd.yml, deploy chỉ chạy khi test và bui
 P1-D Migration	🟢 Flyway riêng cho 8 database, 86 migration. Vẫn còn script SQL init cũ chạy song song
 P0-B CORS	🟢 Đã bỏ wildcard và IP production, đã thêm header thiếu. Actuator mới chỉ yêu cầu đăng nhập (chưa yêu cầu ADMIN), Swagger vẫn công khai
 P0-A Secrets	✅ .env/env.local đã untrack + gitignore; RSA_* bắt buộc trong compose; FACEBOOK_APP_SECRET thành placeholder	🟢 Code xong — còn rotate secret & xoá git history
-P1-A Tenant	🟠 Repository training/analytics đã lọc theo tenant. Test cross-tenant mới có ở 3/9 domain	🟠 Một phần (user tạm skip)
+P1-A Tenant	✅ Repo scoped + CrossDomainTenantIsolationTest cover 6 domain còn thiếu (8 tests)	✅ Xong
 P1-C Frontend	✅ Đã xoá src/store/ (code chết); router có requiresSystemAdmin guard trên 10 route /admin/*	✅ Xong
 P1-B RBAC	✅ isTenantAdmin() delegate isOwner() có cache + 3 unit test (TenantRole không có ADMIN)	✅ Xong
 P2	� Pagination global cap 200/50 xong (101 endpoints còn lại); webhook idempotency xong; pool 113→58	🟡 Một phần
@@ -896,8 +896,8 @@ Việc cần làm ngay (theo mức độ)
 ✅ ~~Sửa isTenantAdmin() + test~~ — done
 🟠 Rotate secrets đã lộ trong git history (DB password, JWT, Facebook, MinIO, RabbitMQ)
 🟠 Xoá git history chứa secret (BFG Repo-Cleaner / git filter-repo)
-🟠 Actuator → hasRole('ADMIN'); tắt Swagger ở prod; review 26 permitAll endpoints
-🟡 Test cross-tenant cho 6 domain còn lại (user tạm skip)
-🟡 Migrate 101 list endpoints sang Pageable (theo domain: messages → customers → training → analytics → payment → config)
-🟡 DLQ monitoring/alert cho webhook FAILED deliveries
-🟡 Tách router/index.js (~540 dòng); sửa README frontend (còn Windzo template)
+✅ ~~Actuator → hasRole('ADMIN')~~ — done (commit 346ff318); Swagger tắt ở prod qua springdoc.enabled=false; còn review 26 permitAll
+✅ ~~Test cross-tenant 6 domain~~ — done: CrossDomainTenantIsolationTest 8 tests pass (commit ae43d6f0)
+🟡 Migrate list endpoints — incremental: global cap 200/50 + bounded TrainingMaterial & ConversationTransfer (commit 8867c426); conversations/messages/customers/agents đã Page sẵn; còn ~90 endpoint List nhỏ (config/reference data) cần rà soát dần
+✅ ~~DLQ monitoring~~ — done: GET /api/tenant/webhooks/deliveries(+stats) + daily FAILED alert (commit 346ff318)
+✅ ~~Tách router/index.js~~ — done: 11 route modules, 65 routes preserved, build pass (commit b768c5f0); README frontend đã viết lại (commit 740598c9)
