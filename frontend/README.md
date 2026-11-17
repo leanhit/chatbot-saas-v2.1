@@ -1,108 +1,58 @@
-<h1 align="center">Windzo Dashboard Admin</h1>
-<p align="center">this dashboard app on development fork 
-this repo and contribute</p>
+# Chatbot SaaS — Frontend
 
-<div align="center">
-<img src="https://img.shields.io/github/repo-size/sahrullahh/windzo" />
-<img src="https://img.shields.io/github/license/sahrullahh/windzo" />
-<a href="https://www.npmjs.com/package/windzo">
-<img src="https://img.shields.io/npm/v/windzo">
-</a>
-</div>
+Vue 3 + Pinia + Vue Router frontend for the multi-tenant chatbot SaaS platform.
 
-<p align="center">Windzo is a free open source dashboard admin template, using vue js and tailwind css framework, make your app build easily and fast.</p>
+## Stack
 
-<!-- <img src="./windzo-light-mode.png" /> -->
+- **Vue 3** (Composition API) + **Vue Router 4**
+- **Pinia** for state management (`src/stores/`)
+- **TailwindCSS** for styling
+- Axios-based API layer (`src/api/`, `src/services/`)
 
-![Windzo UI Dashboard Mohammad Sahrullah](https://github.com/sahrullahh/windzo/blob/master/windzo.png)
-
-<!-- <img src="./windzo-dark-mode.png" /> -->
-
-## Live Demo
-
-Click here to <a href="https://windzo.vercel.app/">Live Demo.</a>
-
-## Installation
-
-<p>1. clone this repo first or download zip code </p>
+## Project Structure
 
 ```
-git clone https://github.com/sahrullahh/windzo.git
+src/
+├── api/            # API client modules
+├── components/     # Reusable UI components
+├── composables/    # Composition functions
+├── locales/        # i18n
+├── router/
+│   ├── index.js    # Router instance + navigation guard
+│   └── routes/     # Route modules by domain
+│       ├── core.js       # auth, dashboard, notifications
+│       ├── tenant.js     # tenant settings, members, agents, audit
+│       ├── penny.js      # Penny bot management
+│       ├── messaging.js  # chat + customer data
+│       ├── routing.js    # queue, supervisor, escalation
+│       ├── payment.js    # deposit, history (OWNER only)
+│       ├── admin.js      # /admin/* (requiresSystemAdmin)
+│       ├── analytics.js  # funnel, reports, journey
+│       ├── training.js   # training library, certifications
+│       └── customer.js   # profiles, feedback, VIP queue
+├── stores/         # Pinia stores (authStore, tenant stores)
+├── views/          # Page components
+└── main.js
 ```
 
-<p>2. Open windzo folder and follow the step </p>
+## Route Guards
 
-## Step to run this app
+Navigation guard in `src/router/index.js` enforces:
 
-## 1. Project setup
+- `requiresAuth` — JWT token required
+- `requiresOwner` — tenant OWNER role (payment routes)
+- `requiresSystemAdmin` — system ADMIN/SYSTEM_ADMIN role (`/admin/*` routes)
+- `skipTenantCheck` — routes that don't need an active tenant
 
-<p>before use,  install all dependencies app first with command :</p>
+## Development
 
-using npm :
-
-```
+```bash
 npm install
+npm run serve    # dev server
+npm run build    # production build
 ```
 
-using yarn :
+## Notes
 
-```
-yarn install
-```
-
-### 2. Compiles and hot-reloads for development
-
-<p>run this command to compile code :</p>
-
-using npm :
-
-```
-npm run serve
-```
-
-using yarn :
-
-```
-yarn serve
-```
-
-### 3. Compiles and minifies for production
-
-<p>build your app project to production with command :</p>
-
-using npm :
-
-```
-npm run build
-```
-
-using yarn :
-
-```
-yarn build
-```
-
-## Open Contribute
-
-This repository ready to contribute
-
-##### Contribute Guide
-
-- Fork this repository
-- `npm install` or `yarn install`
-- make change
-- open pull request
-
-## Author
-
-Windzo is created by <a href="https://github.com/sahrullahh">Mohammad Sahrullah.</a>
-
-## License
-
-[MIT](https://github.com/sahrullahh/windzo/blob/master/LICENSE)
-
-## Support Me
-
-support or not it doesn't matter, if you want to help to buy energy for me, I'm very grateful. I will be more diligent in developing this dashboard.
-
-<a href='https://ko-fi.com/I2I1BJP7L' target='_blank'><img height='36' style='border:0px;height:36px;' src='https://cdn.ko-fi.com/cdn/kofi5.png?v=3' border='0' alt='Buy Me a Coffee at ko-fi.com' /></a>
+- This project was originally scaffolded from the Windzo admin template; the README has been updated to reflect the actual codebase.
+- Backend: Spring Boot 3.4 / Java 21 — see `../backend`.
