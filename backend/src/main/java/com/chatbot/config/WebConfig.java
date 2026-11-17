@@ -1,10 +1,15 @@
 package com.chatbot.config;
 
 import org.springframework.context.annotation.Configuration;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.web.PageableHandlerMethodArgumentResolver;
+import org.springframework.web.method.support.HandlerMethodArgumentResolver;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import com.chatbot.core.tenant.guard.TenantContextInterceptor;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
+
+import java.util.List;
 
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
@@ -21,6 +26,18 @@ public class WebConfig implements WebMvcConfigurer {
         registry.addInterceptor(tenantContextInterceptor)
                 .addPathPatterns("/api/**")
                 .excludePathPatterns("/api/auth/**", "/api/error", "/api/actuator/**", "/api/public/**");
+    }
+
+    /**
+     * P2-A: global pagination guard — hard cap page size at 200,
+     * default page size 50 when client doesn't specify.
+     */
+    @Override
+    public void addArgumentResolvers(List<HandlerMethodArgumentResolver> resolvers) {
+        PageableHandlerMethodArgumentResolver resolver = new PageableHandlerMethodArgumentResolver();
+        resolver.setMaxPageSize(200);
+        resolver.setFallbackPageable(PageRequest.of(0, 50));
+        resolvers.add(resolver);
     }
 
     @Override

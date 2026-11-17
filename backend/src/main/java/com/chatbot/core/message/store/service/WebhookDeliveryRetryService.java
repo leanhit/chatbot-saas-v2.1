@@ -67,6 +67,11 @@ public class WebhookDeliveryRetryService {
         int attempt = delivery.getAttempts() + 1;
         delivery.setAttempts(attempt);
 
+        // Backfill idempotency key for rows created before V9 migration
+        if (delivery.getDeliveryKey() == null || delivery.getDeliveryKey().isBlank()) {
+            delivery.setDeliveryKey(java.util.UUID.randomUUID().toString());
+        }
+
         try {
             String signature = sign(delivery.getPayload(), webhook.getSecret());
             webClient.post()
@@ -74,6 +79,7 @@ public class WebhookDeliveryRetryService {
                     .header("Content-Type", "application/json")
                     .header("X-Chatbot-Event", delivery.getEventType())
                     .header("X-Chatbot-Signature", "sha256=" + signature)
+                    .header("X-Chatbot-Delivery-Id", delivery.getDeliveryKey())
                     .header("X-Chatbot-Retry", String.valueOf(attempt))
                     .bodyValue(delivery.getPayload())
                     .retrieve()

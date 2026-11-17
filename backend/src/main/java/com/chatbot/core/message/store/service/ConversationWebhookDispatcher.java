@@ -18,6 +18,7 @@ import java.time.LocalDateTime;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * Dispatches conversation lifecycle events to tenant-configured outbound
@@ -61,8 +62,10 @@ public class ConversationWebhookDispatcher {
 
     private void deliver(TenantWebhook webhook, String eventType, Long conversationId,
                          Map<String, Object> payload) {
+        // One idempotency key per (webhook, event) — stable across retries
+        String deliveryKey = UUID.randomUUID().toString();
         try {
-            String body = buildBody(webhook, eventType, conversationId, payload);
+            String body = buildBody(webhook, eventType, conversationId, payload, deliveryKey);
             String signature = sign(body, webhook.getSecret());
 
             webhookWebClient.post()
@@ -70,6 +73,7 @@ public class ConversationWebhookDispatcher {
                     .header("Content-Type", "application/json")
                     .header("X-Chatbot-Event", eventType)
                     .header("X-Chatbot-Signature", "sha256=" + signature)
+                    .header("X-Chatbot-Delivery-Id", deliveryKey)
                     .bodyValue(body)
                     .retrieve()
                     .bodyToMono(String.class)
@@ -79,7 +83,7 @@ public class ConversationWebhookDispatcher {
                             err -> {
                                 log.warn("[WebhookDispatch] Delivery failed {} -> {}: {}",
                                         eventType, webhook.getUrl(), err.getMessage());
-                                queueForRetry(webhook, eventType, conversationId, body, err.getMessage());
+                                queueForRetry(webhook, eventType, conversationId, body, deliveryKey, err.getMessage());
                             });
         } catch (Exception e) {
             log.warn("[WebhookDispatch] Error delivering {} to {}: {}",
@@ -88,13 +92,14 @@ public class ConversationWebhookDispatcher {
     }
 
     private void queueForRetry(TenantWebhook webhook, String eventType, Long conversationId,
-                               String body, String error) {
+                               String body, String deliveryKey, String error) {
         try {
             deliveryRepository.save(TenantWebhookDelivery.builder()
                     .tenantId(webhook.getTenantId())
                     .webhookId(webhook.getId())
                     .eventType(eventType)
                     .conversationId(conversationId)
+                    .deliveryKey(deliveryKey)
                     .payload(body)
                     .status(TenantWebhookDelivery.Status.PENDING)
                     .attempts(0)
@@ -107,9 +112,10 @@ public class ConversationWebhookDispatcher {
     }
 
     private String buildBody(TenantWebhook webhook, String eventType, Long conversationId,
-                             Map<String, Object> payload) {
+                             Map<String, Object> payload, String deliveryKey) {
         StringBuilder sb = new StringBuilder("{");
         sb.append("\"event\":\"").append(eventType).append("\",");
+        sb.append("\"deliveryId\":\"").append(deliveryKey).append("\",");
         sb.append("\"conversationId\":").append(conversationId).append(",");
         sb.append("\"tenantId\":").append(webhook.getTenantId()).append(",");
         sb.append("\"timestamp\":\"").append(LocalDateTime.now()).append("\",");

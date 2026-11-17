@@ -40,6 +40,13 @@ public class TenantWebhookDelivery {
     @Column(name = "conversation_id")
     private Long conversationId;
 
+    /**
+     * Stable idempotency key sent as X-Chatbot-Delivery-Id header.
+     * Reused across retries so receivers can deduplicate.
+     */
+    @Column(name = "delivery_key", length = 64, unique = true)
+    private String deliveryKey;
+
     @Column(name = "payload", nullable = false, columnDefinition = "TEXT")
     private String payload;
 
