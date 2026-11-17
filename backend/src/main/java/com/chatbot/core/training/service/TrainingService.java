@@ -23,6 +23,7 @@ import com.chatbot.core.tenant.service.TenantAuditLogService;
 import com.chatbot.core.tenant.service.TenantPermissionValidator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -55,13 +56,15 @@ public class TrainingService {
         }
     }
 
-    // Training Materials
+    // Training Materials — bounded to MAX_LIST_SIZE (P2-A)
+    private static final int MAX_LIST_SIZE = 200;
+
     public List<TrainingMaterial> getAllMaterials() {
         Long tenantId = com.chatbot.core.tenant.infra.TenantContext.getTenantId();
         if (tenantId == null) {
             throw new IllegalStateException("Tenant context not set");
         }
-        return trainingMaterialRepository.findByTenantId(tenantId);
+        return trainingMaterialRepository.findByTenantId(tenantId, PageRequest.of(0, MAX_LIST_SIZE));
     }
 
     public List<TrainingMaterial> getMaterialsByCategory(Long categoryId) {
@@ -69,7 +72,7 @@ public class TrainingService {
         if (tenantId == null) {
             throw new IllegalStateException("Tenant context not set");
         }
-        return trainingMaterialRepository.findByTenantIdAndCategoryId(tenantId, categoryId);
+        return trainingMaterialRepository.findByTenantIdAndCategoryId(tenantId, categoryId, PageRequest.of(0, MAX_LIST_SIZE));
     }
 
     public Optional<TrainingMaterial> getMaterialById(Long id) {

@@ -1,6 +1,7 @@
 package com.chatbot.core.routing.repository;
 
 import com.chatbot.core.routing.model.ConversationTransfer;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -11,6 +12,8 @@ import java.util.Optional;
 public interface ConversationTransferRepository extends JpaRepository<ConversationTransfer, Long> {
 
     List<ConversationTransfer> findByTenantId(Long tenantId);
+
+    List<ConversationTransfer> findByTenantId(Long tenantId, Pageable pageable);
 
     List<ConversationTransfer> findByTenantIdAndConversationIdOrderByCreatedAtDesc(Long tenantId, Long conversationId);
 

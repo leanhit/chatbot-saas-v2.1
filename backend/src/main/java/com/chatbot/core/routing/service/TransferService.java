@@ -10,6 +10,7 @@ import com.chatbot.core.routing.repository.ConversationTransferRepository;
 import com.chatbot.core.message.store.service.ConversationEventService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -210,10 +211,12 @@ public class TransferService {
         return transfers.stream().map(this::mapToDTO).collect(Collectors.toList());
     }
 
+    private static final int MAX_LIST_SIZE = 200;
+
     @Transactional(readOnly = true)
     public List<ConversationTransferDTO> getAllTransfers() {
         Long tenantId = com.chatbot.core.tenant.infra.TenantContext.getTenantId();
-        List<ConversationTransfer> transfers = transferRepository.findByTenantId(tenantId);
+        List<ConversationTransfer> transfers = transferRepository.findByTenantId(tenantId, PageRequest.of(0, MAX_LIST_SIZE));
         return transfers.stream()
                 .sorted((t1, t2) -> t2.getCreatedAt().compareTo(t1.getCreatedAt()))
                 .map(this::mapToDTO)
