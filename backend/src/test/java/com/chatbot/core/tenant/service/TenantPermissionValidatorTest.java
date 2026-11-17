@@ -157,6 +157,35 @@ class TenantPermissionValidatorTest {
         assertTrue(validator.isOwnerOrEditor(1L, "e@test.com"));
     }
 
+    // ---------- isTenantAdmin ----------
+
+    @Test
+    void isTenantAdminTrueForOwner() {
+        when(authRepository.findByEmail("o@test.com")).thenReturn(Optional.of(user(1L, null)));
+        when(tenantMemberRepository.findByTenantIdAndUserIdAndStatus(1L, 1L, MembershipStatus.ACTIVE))
+            .thenReturn(Optional.of(member(TenantRole.OWNER)));
+        assertTrue(validator.isTenantAdmin(1L, "o@test.com"));
+    }
+
+    @Test
+    void isTenantAdminFalseForEditorAndMember() {
+        when(authRepository.findByEmail("e@test.com")).thenReturn(Optional.of(user(2L, null)));
+        when(tenantMemberRepository.findByTenantIdAndUserIdAndStatus(1L, 2L, MembershipStatus.ACTIVE))
+            .thenReturn(Optional.of(member(TenantRole.EDITOR)));
+        assertFalse(validator.isTenantAdmin(1L, "e@test.com"));
+
+        when(authRepository.findByEmail("m@test.com")).thenReturn(Optional.of(user(3L, null)));
+        when(tenantMemberRepository.findByTenantIdAndUserIdAndStatus(1L, 3L, MembershipStatus.ACTIVE))
+            .thenReturn(Optional.of(member(TenantRole.MEMBER)));
+        assertFalse(validator.isTenantAdmin(1L, "m@test.com"));
+    }
+
+    @Test
+    void isTenantAdminFalseForUnknownUser() {
+        when(authRepository.findByEmail("ghost@test.com")).thenReturn(Optional.empty());
+        assertFalse(validator.isTenantAdmin(1L, "ghost@test.com"));
+    }
+
     // ---------- isAdminOrOwner ----------
 
     @Test

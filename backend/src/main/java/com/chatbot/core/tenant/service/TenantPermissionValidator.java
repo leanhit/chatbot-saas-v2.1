@@ -85,16 +85,11 @@ public class TenantPermissionValidator {
 
     /**
      * Kiểm tra user có phải TENANT ADMIN (admin trong tenant, không phải system admin) không.
+     * TenantRole không có role ADMIN riêng — OWNER là tenant admin cao nhất,
+     * nên method này tương đương isOwner() và dùng chung cache.
      */
     public boolean isTenantAdmin(Long tenantId, String userEmail) {
-        Long userId = authRepository.findByEmail(userEmail)
-                .map(User::getId)
-                .orElse(null);
-        if (userId == null) return false;
-        return tenantMemberRepository
-                .findByTenantIdAndUserIdAndStatus(tenantId, userId, MembershipStatus.ACTIVE)
-                .map(member -> member.getRole() == TenantRole.OWNER)
-                .orElse(false);
+        return isOwner(tenantId, userEmail);
     }
 
     /**

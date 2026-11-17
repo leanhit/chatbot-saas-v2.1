@@ -316,25 +316,25 @@ const routes = [
     path: "/admin/bank-account",
     name: "admin-bank-account",
     component: BankAccountManagement,
-    meta: { requiresAuth: true, title: "Bank Account Management" + appname },
+    meta: { requiresAuth: true, requiresSystemAdmin: true, title: "Bank Account Management" + appname },
   },
   {
     path: "/admin/packages",
     name: "admin-packages",
     component: PackageManagement,
-    meta: { requiresAuth: true, title: "Package Management" + appname },
+    meta: { requiresAuth: true, requiresSystemAdmin: true, title: "Package Management" + appname },
   },
   {
     path: "/admin/discounts",
     name: "admin-discounts",
     component: DiscountManagement,
-    meta: { requiresAuth: true, title: "Discount Management" + appname },
+    meta: { requiresAuth: true, requiresSystemAdmin: true, title: "Discount Management" + appname },
   },
   {
     path: "/admin/analytics",
     name: "admin-analytics",
     component: PaymentAnalytics,
-    meta: { requiresAuth: true, title: "Payment Analytics" + appname },
+    meta: { requiresAuth: true, requiresSystemAdmin: true, title: "Payment Analytics" + appname },
   },
   {
     path: "/analytics/funnel",
@@ -358,13 +358,13 @@ const routes = [
     path: "/admin/webhooks",
     name: "admin-webhooks",
     component: WebhookManagement,
-    meta: { requiresAuth: true, title: "Webhook Management" + appname },
+    meta: { requiresAuth: true, requiresSystemAdmin: true, title: "Webhook Management" + appname },
   },
   {
     path: "/admin/users",
     name: "admin-users",
     component: UserManagement,
-    meta: { requiresAuth: true, title: "User Management" + appname },
+    meta: { requiresAuth: true, requiresSystemAdmin: true, title: "User Management" + appname },
   },
   // Conversation Routing & Agent Management Routes
   {
@@ -377,25 +377,25 @@ const routes = [
     path: "/admin/skills",
     name: "admin-skills",
     component: SkillsManagement,
-    meta: { requiresAuth: true, title: "Skills Management" + appname },
+    meta: { requiresAuth: true, requiresSystemAdmin: true, title: "Skills Management" + appname },
   },
   {
     path: "/admin/routing-rules",
     name: "admin-routing-rules",
     component: RoutingRules,
-    meta: { requiresAuth: true, title: "Routing Rules" + appname },
+    meta: { requiresAuth: true, requiresSystemAdmin: true, title: "Routing Rules" + appname },
   },
   {
     path: "/admin/sla-monitoring",
     name: "admin-sla-monitoring",
     component: SLAMonitoring,
-    meta: { requiresAuth: true, title: "SLA Monitoring" + appname },
+    meta: { requiresAuth: true, requiresSystemAdmin: true, title: "SLA Monitoring" + appname },
   },
   {
     path: "/admin/escalation-tiers",
     name: "admin-escalation-tiers",
     component: EscalationTiers,
-    meta: { requiresAuth: true, title: "Escalation Tiers" + appname },
+    meta: { requiresAuth: true, requiresSystemAdmin: true, title: "Escalation Tiers" + appname },
   },
   // Training Routes
   {
@@ -528,6 +528,11 @@ router.beforeEach(async (to, from, next) => {
   // 4. Role-based access control
   if (to.meta.requiresOwner && tenantStore.currentTenant?.role !== 'OWNER') {
     return next({ name: 'dashboard' }); // redirect to dashboard if not owner
+  }
+  
+  // 5. System admin routes (backend enforces hasRole('ADMIN') — this is UX guard only)
+  if (to.meta.requiresSystemAdmin && !authStore.isAnyAdmin) {
+    return next({ name: 'dashboard' });
   }
   
   next();
