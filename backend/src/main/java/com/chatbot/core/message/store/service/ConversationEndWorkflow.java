@@ -15,6 +15,7 @@ import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.Map;
+import com.chatbot.shared.utils.DateUtils;
 
 /**
  * Service for handling conversation end scenarios
@@ -78,7 +79,7 @@ public class ConversationEndWorkflow {
     private void summarizeConversation(Conversation conversation) {
         // Calculate conversation duration
         LocalDateTime createdAt = conversation.getCreatedAt();
-        LocalDateTime closedAt = LocalDateTime.now();
+        LocalDateTime closedAt = DateUtils.nowUtcLocalDateTime();
         long durationMinutes = ChronoUnit.MINUTES.between(createdAt, closedAt);
 
         // In a real implementation, this would:
@@ -147,7 +148,7 @@ public class ConversationEndWorkflow {
         notification.put("conversationId", conversation.getId());
         notification.put("endReason", endReason);
         notification.put("priority", "low");
-        notification.put("timestamp", LocalDateTime.now());
+        notification.put("timestamp", DateUtils.nowUtcLocalDateTime());
 
         notificationWebSocketHandler.broadcastToTenant(conversation.getTenantId(), notification);
 
@@ -178,7 +179,7 @@ public class ConversationEndWorkflow {
         ));
         notification.put("conversationId", conversation.getId());
         notification.put("priority", "medium");
-        notification.put("timestamp", LocalDateTime.now());
+        notification.put("timestamp", DateUtils.nowUtcLocalDateTime());
 
         notificationWebSocketHandler.broadcastToTenant(conversation.getTenantId(), notification);
     }

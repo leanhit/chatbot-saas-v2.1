@@ -7,6 +7,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
+import com.chatbot.shared.utils.DateUtils;
 
 public abstract class BaseService<T, ID, R extends BaseRepository<T, ID>> {
 
@@ -153,7 +154,7 @@ public abstract class BaseService<T, ID, R extends BaseRepository<T, ID>> {
         if (entity instanceof AuditEntity) {
             AuditEntity auditEntity = (AuditEntity) entity;
             auditEntity.setUpdatedBy(updatedBy);
-            auditEntity.setUpdatedAt(java.time.LocalDateTime.now());
+            auditEntity.setUpdatedAt(com.chatbot.shared.utils.DateUtils.nowUtcLocalDateTime());
         }
     }
 
@@ -161,9 +162,9 @@ public abstract class BaseService<T, ID, R extends BaseRepository<T, ID>> {
         if (entity instanceof AuditEntity) {
             AuditEntity auditEntity = (AuditEntity) entity;
             auditEntity.setCreatedBy(createdBy);
-            auditEntity.setCreatedAt(java.time.LocalDateTime.now());
+            auditEntity.setCreatedAt(com.chatbot.shared.utils.DateUtils.nowUtcLocalDateTime());
             auditEntity.setUpdatedBy(createdBy);
-            auditEntity.setUpdatedAt(java.time.LocalDateTime.now());
+            auditEntity.setUpdatedAt(com.chatbot.shared.utils.DateUtils.nowUtcLocalDateTime());
         }
     }
 

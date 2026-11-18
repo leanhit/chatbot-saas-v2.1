@@ -71,12 +71,12 @@ public class PennyKnowledgeDocument {
     @JsonFormat(pattern = DateUtils.STANDARD_JSON_FORMAT, timezone = DateUtils.STANDARD_TIMEZONE)
     @Column(name = "created_at", nullable = false, updatable = false)
     @Builder.Default
-    private LocalDateTime createdAt = LocalDateTime.now();
+    private LocalDateTime createdAt = DateUtils.nowUtcLocalDateTime();
 
     @JsonFormat(pattern = DateUtils.STANDARD_JSON_FORMAT, timezone = DateUtils.STANDARD_TIMEZONE)
     @Column(name = "updated_at", nullable = false)
     @Builder.Default
-    private LocalDateTime updatedAt = LocalDateTime.now();
+    private LocalDateTime updatedAt = DateUtils.nowUtcLocalDateTime();
 
     @JsonFormat(pattern = DateUtils.STANDARD_JSON_FORMAT, timezone = DateUtils.STANDARD_TIMEZONE)
     @Column(name = "processed_at")
@@ -84,12 +84,12 @@ public class PennyKnowledgeDocument {
 
     @PrePersist
     protected void onCreate() {
-        createdAt = LocalDateTime.now();
-        updatedAt = LocalDateTime.now();
+        createdAt = DateUtils.nowUtcLocalDateTime();
+        updatedAt = DateUtils.nowUtcLocalDateTime();
     }
 
     @PreUpdate
     protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
+        updatedAt = DateUtils.nowUtcLocalDateTime();
     }
 }

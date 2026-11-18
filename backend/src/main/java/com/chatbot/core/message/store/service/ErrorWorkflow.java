@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
+import com.chatbot.shared.utils.DateUtils;
 
 /**
  * Service for handling error scenarios in conversation processing
@@ -69,7 +70,7 @@ public class ErrorWorkflow {
             errorEntry.put("errorType", errorType);
             errorEntry.put("errorMessage", errorMessage);
             errorEntry.put("severity", severity);
-            errorEntry.put("timestamp", LocalDateTime.now());
+            errorEntry.put("timestamp", DateUtils.nowUtcLocalDateTime());
 
             // In a real implementation, this would be stored properly in customAttributes or error log table
             log.info("Logged error to conversation {}: {}", conversation.getId(), errorEntry);
@@ -98,7 +99,7 @@ public class ErrorWorkflow {
         notification.put("errorType", errorType);
         notification.put("severity", severity);
         notification.put("priority", "high".equals(severity) ? "high" : "urgent");
-        notification.put("timestamp", LocalDateTime.now());
+        notification.put("timestamp", DateUtils.nowUtcLocalDateTime());
 
         notificationWebSocketHandler.broadcastToTenant(conversation.getTenantId(), notification);
 
@@ -166,7 +167,7 @@ public class ErrorWorkflow {
         notification.put("conversationId", conversation.getId());
         notification.put("errorType", errorType);
         notification.put("priority", "urgent");
-        notification.put("timestamp", LocalDateTime.now());
+        notification.put("timestamp", DateUtils.nowUtcLocalDateTime());
 
         notificationWebSocketHandler.broadcastToTenant(conversation.getTenantId(), notification);
 
@@ -192,7 +193,7 @@ public class ErrorWorkflow {
             notification.put("type", "recovery_ready");
             notification.put("message", "Conversation " + conversationId + " is ready for recovery.");
             notification.put("conversationId", conversationId);
-            notification.put("timestamp", LocalDateTime.now());
+            notification.put("timestamp", DateUtils.nowUtcLocalDateTime());
             notificationWebSocketHandler.broadcastToTenant(conversation.getTenantId(), notification);
         }
     }

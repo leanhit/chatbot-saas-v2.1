@@ -215,7 +215,8 @@ tasks.named('test') {
         'http.nonProxyHosts': 'localhost|127.0.0.1',
         'https.nonProxyHosts': 'localhost|127.0.0.1',
         'file.encoding': 'UTF-8',
-        'sun.jnu.encoding': 'UTF-8'
+        'sun.jnu.encoding': 'UTF-8',
+        'user.timezone': 'UTC'
     ])
     
     // Configure test task for multi-database setup
@@ -278,3 +279,5 @@ protobuf {
         }
     }
 }
+
+

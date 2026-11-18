@@ -36,7 +36,7 @@ public class AuditLogController {
             @RequestParam(required = false) String action) {
         Long tenantId = TenantContext.getTenantId();
         if (tenantId == null) {
-            return ResponseEntity.badRequest().body(Map.of("error", "Tenant context missing"));
+            return ResponseEntity.badRequest().body(com.chatbot.shared.dto.ErrorResponse.fromMessage("Tenant context missing"));
         }
         int safeSize = Math.min(Math.max(size, 1), 100);
         PageRequest pageable = PageRequest.of(Math.max(page, 0), safeSize,

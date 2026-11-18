@@ -19,6 +19,7 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.HexFormat;
 import java.util.List;
+import com.chatbot.shared.utils.DateUtils;
 
 /**
  * Retries failed tenant webhook deliveries with exponential backoff.
@@ -41,7 +42,7 @@ public class WebhookDeliveryRetryService {
     @SchedulerLock(name = "WebhookDeliveryRetryService_retry", lockAtMostFor = "5m", lockAtLeastFor = "1m")
     @Transactional(value = "tenantTransactionManager")
     public void retryPendingDeliveries() {
-        List<TenantWebhookDelivery> due = deliveryRepository.findPendingDue(LocalDateTime.now());
+        List<TenantWebhookDelivery> due = deliveryRepository.findPendingDue(DateUtils.nowUtcLocalDateTime());
         if (due.isEmpty()) {
             return;
         }
@@ -88,7 +89,7 @@ public class WebhookDeliveryRetryService {
                     .block();
 
             delivery.setStatus(TenantWebhookDelivery.Status.DELIVERED);
-            delivery.setDeliveredAt(LocalDateTime.now());
+            delivery.setDeliveredAt(DateUtils.nowUtcLocalDateTime());
             delivery.setLastError(null);
             log.info("[WebhookRetry] Delivered {} to webhook {} on attempt {}",
                     delivery.getEventType(), webhook.getId(), attempt);
@@ -100,7 +101,7 @@ public class WebhookDeliveryRetryService {
                         delivery.getId(), attempt);
             } else {
                 long backoff = BACKOFF_MINUTES[Math.min(attempt - 1, BACKOFF_MINUTES.length - 1)];
-                delivery.setNextRetryAt(LocalDateTime.now().plusMinutes(backoff));
+                delivery.setNextRetryAt(DateUtils.nowUtcLocalDateTime().plusMinutes(backoff));
                 log.info("[WebhookRetry] Delivery {} attempt {} failed, next retry in {}m",
                         delivery.getId(), attempt, backoff);
             }

@@ -10,6 +10,7 @@ import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import com.chatbot.shared.utils.DateUtils;
 
 @Service
 @RequiredArgsConstructor
@@ -64,7 +65,7 @@ public class BankApiService {
                 .amount(amount)
                 .description(description)
                 .status("COMPLETED")
-                .completedAt(LocalDateTime.now())
+                .completedAt(DateUtils.nowUtcLocalDateTime())
                 .build();
 
         mockTransactions.put(referenceCode, transaction);

@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import com.chatbot.shared.utils.DateUtils;
 
 @Service
 @RequiredArgsConstructor
@@ -48,7 +49,7 @@ public class PaymentCancellationService {
             payment.getAmount(),
             payment.getCurrency(),
             reason,
-            LocalDateTime.now(),
+            DateUtils.nowUtcLocalDateTime(),
             payment.getTargetPackageId()
         ));
 

@@ -8,6 +8,7 @@ import org.hibernate.type.SqlTypes;
 import java.time.Instant;
 import java.util.Map;
 import java.util.UUID;
+import com.chatbot.shared.utils.DateUtils;
 
 /**
  * Analytics Event Entity - Persisted analytics events
@@ -68,9 +69,9 @@ public class AnalyticsEvent {
 
     @PrePersist
     protected void onCreate() {
-        createdAt = Instant.now();
+        createdAt = DateUtils.nowUtc();
         if (timestamp == null) {
-            timestamp = Instant.now();
+            timestamp = DateUtils.nowUtc();
         }
     }
 }

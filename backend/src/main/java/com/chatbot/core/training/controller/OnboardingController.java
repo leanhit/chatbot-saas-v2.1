@@ -15,6 +15,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import com.chatbot.core.training.dto.AgentOnboardingTaskResponse;
+import com.chatbot.core.training.dto.AgentOnboardingProgressResponse;
+import com.chatbot.core.training.dto.AgentOnboardingTaskRequest;
 
 @RestController
 @RequestMapping("/api/onboarding")
@@ -52,45 +55,56 @@ public class OnboardingController {
     }
 
     @GetMapping("/tasks")
-    public ResponseEntity<List<AgentOnboardingTask>> getAllOnboardingTasks() {
+    public ResponseEntity<List<AgentOnboardingTaskResponse>> getAllOnboardingTasks() {
         Long tenantId = com.chatbot.core.tenant.infra.TenantContext.getTenantId();
         List<AgentOnboardingTask> tasks = onboardingService.getAllOnboardingTasks(tenantId);
-        return ResponseEntity.ok(tasks);
+        return ResponseEntity.ok(tasks.stream().map(AgentOnboardingTaskResponse::from).toList());
     }
 
     @PostMapping("/tasks")
-    public ResponseEntity<AgentOnboardingTask> createOnboardingTask(@RequestBody AgentOnboardingTask task) {
+    public ResponseEntity<AgentOnboardingTaskResponse> createOnboardingTask(@RequestBody AgentOnboardingTaskRequest request) {
         requireOwnerOrEditor();
+        AgentOnboardingTask task = new AgentOnboardingTask();
+        task.setTitle(request.getTitle());
+        task.setDescription(request.getDescription());
+        task.setType(request.getType());
+        task.setTrainingId(request.getTrainingId());
+        task.setRequired(request.getRequired());
+        task.setDisplayOrder(request.getDisplayOrder());
+        task.setStatus(request.getStatus());
+        task.setEstimatedDurationMinutes(request.getEstimatedDurationMinutes());
+        task.setInstructions(request.getInstructions());
+        task.setExternalUrl(request.getExternalUrl());
         AgentOnboardingTask created = onboardingService.createOnboardingTask(task);
-        return ResponseEntity.ok(created);
+        return ResponseEntity.ok(AgentOnboardingTaskResponse.from(created));
     }
 
     @PostMapping("/progress/start")
-    public ResponseEntity<AgentOnboardingProgress> startTask(
+    public ResponseEntity<AgentOnboardingProgressResponse> startTask(
             @RequestParam Long agentId,
             @RequestParam Long taskId) {
         requireSelfAgentOrOwnerOrEditor(agentId);
         Long tenantId = com.chatbot.core.tenant.infra.TenantContext.getTenantId();
         AgentOnboardingProgress progress = onboardingService.startTask(agentId, taskId, tenantId);
-        return ResponseEntity.ok(progress);
+        return ResponseEntity.ok(AgentOnboardingProgressResponse.from(progress));
     }
 
     @PostMapping("/progress/complete")
-    public ResponseEntity<AgentOnboardingProgress> completeTask(
+    public ResponseEntity<AgentOnboardingProgressResponse> completeTask(
             @RequestParam Long agentId,
             @RequestParam Long taskId,
             @RequestParam(required = false) String notes) {
         requireSelfAgentOrOwnerOrEditor(agentId);
         Long tenantId = com.chatbot.core.tenant.infra.TenantContext.getTenantId();
         AgentOnboardingProgress progress = onboardingService.completeTask(agentId, taskId, tenantId, notes);
-        return ResponseEntity.ok(progress);
+        return ResponseEntity.ok(AgentOnboardingProgressResponse.from(progress));
     }
 
     @GetMapping("/progress/agent/{agentId}")
-    public ResponseEntity<List<AgentOnboardingProgress>> getAgentOnboardingProgress(@PathVariable Long agentId) {
+    public ResponseEntity<List<AgentOnboardingProgressResponse>> getAgentOnboardingProgress(@PathVariable Long agentId) {
         Long tenantId = com.chatbot.core.tenant.infra.TenantContext.getTenantId();
         List<AgentOnboardingProgress> progress = onboardingService.getAgentOnboardingProgress(agentId, tenantId);
-        return ResponseEntity.ok(progress);
+        return ResponseEntity.ok(progress.stream().map(AgentOnboardingProgressResponse::from).toList());
     }
 
     @PostMapping("/progress/approve")

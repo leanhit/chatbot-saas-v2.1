@@ -29,6 +29,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import com.chatbot.shared.utils.DateUtils;
 
 /**
  * Tenant-scoped daily analytics aggregation (Phase 5).
@@ -58,7 +59,7 @@ public class AnalyticsAggregationService {
     @Scheduled(cron = "0 30 1 * * *")
     @SchedulerLock(name = "AnalyticsAggregation_aggregateDaily", lockAtMostFor = "30m", lockAtLeastFor = "1m")
     public void aggregateDailyScheduled() {
-        LocalDate yesterday = LocalDate.now().minusDays(1);
+        LocalDate yesterday = LocalDate.now(DateUtils.UTC_ZONE).minusDays(1);
         try {
             List<Tenant> activeTenants = tenantRepository.findAll();
             for (Tenant tenant : activeTenants) {

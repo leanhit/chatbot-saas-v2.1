@@ -1,6 +1,8 @@
 package com.chatbot.core.tenant.guard;
 
 import com.chatbot.core.tenant.infra.TenantContext;
+import com.chatbot.shared.dto.ErrorResponse;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -10,6 +12,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.annotation.Order;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -29,6 +33,7 @@ import java.time.Duration;
 public class TenantRateLimitFilter extends OncePerRequestFilter {
 
     private final RedisTemplate<String, Object> redisTemplate;
+    private final ObjectMapper objectMapper;
 
     @Value("${app.ratelimit.tenant.requests-per-minute:600}")
     private int requestsPerMinute;
@@ -58,10 +63,12 @@ public class TenantRateLimitFilter extends OncePerRequestFilter {
             }
             if (count != null && count > requestsPerMinute) {
                 log.warn("[RateLimit] Tenant {} exceeded API rate limit ({}/min)", tenantId, requestsPerMinute);
-                response.setStatus(429);
-                response.setContentType("application/json");
-                response.getWriter().write(
-                    "{\"status\":\"error\",\"code\":\"RATE_LIMITED\",\"message\":\"Too many requests, please retry later\"}");
+                response.setStatus(HttpStatus.TOO_MANY_REQUESTS.value());
+                response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+                response.setCharacterEncoding("UTF-8");
+                ErrorResponse error = ErrorResponse.fromRateLimit("Too many requests, please retry later");
+                error.setPath(request.getRequestURI());
+                objectMapper.writeValue(response.getWriter(), error);
                 return;
             }
         } catch (Exception e) {

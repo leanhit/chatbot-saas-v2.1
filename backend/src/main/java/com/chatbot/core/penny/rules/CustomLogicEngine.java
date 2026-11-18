@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import com.chatbot.shared.utils.DateUtils;
 
 /**
  * Custom Logic Engine - Tích hợp custom logic vào Penny Middleware
@@ -59,7 +60,7 @@ public class CustomLogicEngine {
                         .confidence(1.0)
                         .build())
                     .status("success")
-                    .timestamp(java.time.Instant.now())
+                    .timestamp(com.chatbot.shared.utils.DateUtils.nowUtc())
                     .shouldSendResponse(true)
                     .build();
             }
@@ -87,7 +88,7 @@ public class CustomLogicEngine {
                         .confidence(0.9)
                         .build())
                     .status("success")
-                    .timestamp(java.time.Instant.now())
+                    .timestamp(com.chatbot.shared.utils.DateUtils.nowUtc())
                     .shouldSendResponse(true)
                     .quickReplies(convertToQuickReplies(templateResult.getQuickReplies()))
                     .attachments(convertToAttachments(templateResult.getAttachments()))

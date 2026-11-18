@@ -21,6 +21,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import com.chatbot.shared.utils.DateUtils;
 
 /**
  * Service for handling timeout scenarios in conversations
@@ -87,7 +88,7 @@ public class TimeoutWorkflow {
             lastActivity = conversation.getCreatedAt();
         }
 
-        long minutesSinceLastActivity = ChronoUnit.MINUTES.between(lastActivity, LocalDateTime.now());
+        long minutesSinceLastActivity = ChronoUnit.MINUTES.between(lastActivity, DateUtils.nowUtcLocalDateTime());
         return minutesSinceLastActivity >= INACTIVE_TIMEOUT;
     }
 
@@ -140,7 +141,7 @@ public class TimeoutWorkflow {
         ));
         notification.put("conversationId", conversation.getId());
         notification.put("priority", "medium");
-        notification.put("timestamp", LocalDateTime.now());
+        notification.put("timestamp", DateUtils.nowUtcLocalDateTime());
 
         notificationWebSocketHandler.broadcastToTenant(conversation.getTenantId(), notification);
 
@@ -191,7 +192,7 @@ public class TimeoutWorkflow {
         // If agent took over but no agent response time recorded
         if (conversation.getIsTakenOverByAgent() && conversation.getFirstAgentResponseTime() == null) {
             LocalDateTime takeoverTime = conversation.getUpdatedAt();
-            long minutesSinceTakeover = ChronoUnit.MINUTES.between(takeoverTime, LocalDateTime.now());
+            long minutesSinceTakeover = ChronoUnit.MINUTES.between(takeoverTime, DateUtils.nowUtcLocalDateTime());
             return minutesSinceTakeover >= UNRESPONDED_TIMEOUT;
         }
         return false;
@@ -215,7 +216,7 @@ public class TimeoutWorkflow {
         ));
         notification.put("conversationId", conversation.getId());
         notification.put("priority", "high");
-        notification.put("timestamp", LocalDateTime.now());
+        notification.put("timestamp", DateUtils.nowUtcLocalDateTime());
 
         notificationWebSocketHandler.broadcastToTenant(conversation.getTenantId(), notification);
 
@@ -262,7 +263,7 @@ public class TimeoutWorkflow {
         ));
         notification.put("conversationId", conversation.getId());
         notification.put("priority", "medium");
-        notification.put("timestamp", LocalDateTime.now());
+        notification.put("timestamp", DateUtils.nowUtcLocalDateTime());
 
         notificationWebSocketHandler.broadcastToTenant(conversation.getTenantId(), notification);
     }

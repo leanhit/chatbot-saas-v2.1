@@ -23,6 +23,7 @@ import com.chatbot.shared.security.SecurityUtils;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
+import com.chatbot.shared.utils.DateUtils;
 
 @Service
 @RequiredArgsConstructor
@@ -54,7 +55,7 @@ public class TenantPackageService {
                         "Default package not found in database: " + defaultPackageId));
 
         tenant.setCurrentPackageId(defaultPackageId);
-        tenant.setPackageActivatedAt(LocalDateTime.now());
+        tenant.setPackageActivatedAt(DateUtils.nowUtcLocalDateTime());
         tenant.setExpiresAt(null); // Free package không có hạn
 
         tenantRepository.save(tenant);
@@ -84,12 +85,12 @@ public class TenantPackageService {
         String oldPackageId = tenant.getCurrentPackageId();
 
         tenant.setCurrentPackageId(packageId);
-        tenant.setPackageActivatedAt(LocalDateTime.now());
+        tenant.setPackageActivatedAt(DateUtils.nowUtcLocalDateTime());
 
         if (newPackage.isFree()) {
             tenant.setExpiresAt(null);
         } else {
-            LocalDateTime now = LocalDateTime.now();
+            LocalDateTime now = DateUtils.nowUtcLocalDateTime();
             LocalDateTime currentExpiration = tenant.getExpiresAt();
             LocalDateTime baseDate = (currentExpiration != null && currentExpiration.isAfter(now))
                     ? currentExpiration : now;
@@ -301,7 +302,7 @@ public class TenantPackageService {
     public void initializeExistingTenants() {
         log.info("[TenantPackageService] Initializing tenants without packages in batch...");
         try {
-            int updatedCount = tenantRepository.initializeTenantsWithDefaultPackage(defaultPackageId, LocalDateTime.now());
+            int updatedCount = tenantRepository.initializeTenantsWithDefaultPackage(defaultPackageId, DateUtils.nowUtcLocalDateTime());
             log.info("[TenantPackageService] Initialized {} tenants with default package '{}'", updatedCount, defaultPackageId);
         } catch (Exception e) {
             log.error("[TenantPackageService] Failed to batch initialize tenants: {}", e.getMessage(), e);
@@ -340,7 +341,7 @@ public class TenantPackageService {
      * Resolve package ID and expiration date, handling expiration fallback to default.
      */
     private PackageExpirationResult resolvePackageWithExpiration(String packageId, LocalDateTime expiresAt) {
-        if (expiresAt != null && expiresAt.isBefore(LocalDateTime.now())) {
+        if (expiresAt != null && expiresAt.isBefore(DateUtils.nowUtcLocalDateTime())) {
             return new PackageExpirationResult(defaultPackageId, null);
         }
         return new PackageExpirationResult(packageId, expiresAt);
@@ -354,7 +355,7 @@ public class TenantPackageService {
             log.warn("[TenantPackageService] Tenant {} has no package assigned, falling back to default package '{}'", tenant.getTenantKey(), defaultPackageId);
             return resolvePackage(defaultPackageId);
         }
-        if (tenant.getExpiresAt() != null && tenant.getExpiresAt().isBefore(LocalDateTime.now())) {
+        if (tenant.getExpiresAt() != null && tenant.getExpiresAt().isBefore(DateUtils.nowUtcLocalDateTime())) {
             return resolvePackage(defaultPackageId);
         }
         return resolvePackage(tenant.getCurrentPackageId());
@@ -366,7 +367,7 @@ public class TenantPackageService {
     private TenantPackageInfo buildPackageInfoWithExpirationCheck(Tenant tenant) {
         Package currentPackage;
         LocalDateTime expiresAt = tenant.getExpiresAt();
-        if (expiresAt != null && expiresAt.isBefore(LocalDateTime.now())) {
+        if (expiresAt != null && expiresAt.isBefore(DateUtils.nowUtcLocalDateTime())) {
             currentPackage = resolvePackage(defaultPackageId);
             expiresAt = null;
         } else {

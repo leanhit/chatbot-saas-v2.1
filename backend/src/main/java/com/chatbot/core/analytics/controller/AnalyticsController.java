@@ -39,7 +39,7 @@ public class AnalyticsController {
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
         Long tenantId = TenantContext.getTenantId();
         if (tenantId == null) {
-            return ResponseEntity.badRequest().body(Map.of("error", "Tenant context missing"));
+            return ResponseEntity.badRequest().body(com.chatbot.shared.dto.ErrorResponse.fromMessage("Tenant context missing"));
         }
         List<AnalyticsSummaryDTO> summaries = aggregationService.getSummary(tenantId, from, to)
             .stream().map(AnalyticsSummaryDTO::from).toList();
@@ -52,7 +52,7 @@ public class AnalyticsController {
             @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
         Long tenantId = TenantContext.getTenantId();
         if (tenantId == null) {
-            return ResponseEntity.badRequest().body(Map.of("error", "Tenant context missing"));
+            return ResponseEntity.badRequest().body(com.chatbot.shared.dto.ErrorResponse.fromMessage("Tenant context missing"));
         }
         return aggregationService.getSummaryForDate(tenantId, date)
             .map(s -> ResponseEntity.ok(AnalyticsSummaryDTO.from(s)))
@@ -65,7 +65,7 @@ public class AnalyticsController {
             @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
         Long tenantId = TenantContext.getTenantId();
         if (tenantId == null) {
-            return ResponseEntity.badRequest().body(Map.of("error", "Tenant context missing"));
+            return ResponseEntity.badRequest().body(com.chatbot.shared.dto.ErrorResponse.fromMessage("Tenant context missing"));
         }
         AnalyticsDailySummary summary = aggregationService.aggregateForDate(tenantId, date);
         return ResponseEntity.ok(AnalyticsSummaryDTO.from(summary));
@@ -78,7 +78,7 @@ public class AnalyticsController {
     public ResponseEntity<?> getCustomerJourney(@PathVariable Long customerProfileId) {
         Long tenantId = TenantContext.getTenantId();
         if (tenantId == null) {
-            return ResponseEntity.badRequest().body(Map.of("error", "Tenant context missing"));
+            return ResponseEntity.badRequest().body(com.chatbot.shared.dto.ErrorResponse.fromMessage("Tenant context missing"));
         }
         return ResponseEntity.ok(journeyService.getJourney(customerProfileId, tenantId));
     }
@@ -90,7 +90,7 @@ public class AnalyticsController {
     public ResponseEntity<?> getFunnel() {
         Long tenantId = TenantContext.getTenantId();
         if (tenantId == null) {
-            return ResponseEntity.badRequest().body(Map.of("error", "Tenant context missing"));
+            return ResponseEntity.badRequest().body(com.chatbot.shared.dto.ErrorResponse.fromMessage("Tenant context missing"));
         }
         return ResponseEntity.ok(funnelService.computeFunnel(tenantId));
     }
@@ -100,28 +100,40 @@ public class AnalyticsController {
     public ResponseEntity<?> listFunnelStages() {
         Long tenantId = TenantContext.getTenantId();
         if (tenantId == null) {
-            return ResponseEntity.badRequest().body(Map.of("error", "Tenant context missing"));
+            return ResponseEntity.badRequest().body(com.chatbot.shared.dto.ErrorResponse.fromMessage("Tenant context missing"));
         }
         return ResponseEntity.ok(funnelService.listStages(tenantId));
     }
 
     @PostMapping("/funnel/stages")
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
-    public ResponseEntity<?> createFunnelStage(@RequestBody FunnelStage stage) {
+    public ResponseEntity<?> createFunnelStage(@RequestBody com.chatbot.core.analytics.dto.FunnelStageRequest request) {
         Long tenantId = TenantContext.getTenantId();
         if (tenantId == null) {
-            return ResponseEntity.badRequest().body(Map.of("error", "Tenant context missing"));
+            return ResponseEntity.badRequest().body(com.chatbot.shared.dto.ErrorResponse.fromMessage("Tenant context missing"));
         }
+        FunnelStage stage = new FunnelStage();
+        stage.setName(request.getName());
+        stage.setStageOrder(request.getStageOrder());
+        stage.setMatchType(request.getMatchType());
+        stage.setMatchValue(request.getMatchValue());
+        stage.setActive(request.getActive());
         return ResponseEntity.ok(funnelService.createStage(stage, tenantId));
     }
 
     @PutMapping("/funnel/stages/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
-    public ResponseEntity<?> updateFunnelStage(@PathVariable Long id, @RequestBody FunnelStage stage) {
+    public ResponseEntity<?> updateFunnelStage(@PathVariable Long id, @RequestBody com.chatbot.core.analytics.dto.FunnelStageRequest request) {
         Long tenantId = TenantContext.getTenantId();
         if (tenantId == null) {
-            return ResponseEntity.badRequest().body(Map.of("error", "Tenant context missing"));
+            return ResponseEntity.badRequest().body(com.chatbot.shared.dto.ErrorResponse.fromMessage("Tenant context missing"));
         }
+        FunnelStage stage = new FunnelStage();
+        stage.setName(request.getName());
+        stage.setStageOrder(request.getStageOrder());
+        stage.setMatchType(request.getMatchType());
+        stage.setMatchValue(request.getMatchValue());
+        stage.setActive(request.getActive());
         return ResponseEntity.ok(funnelService.updateStage(id, stage, tenantId));
     }
 
@@ -130,7 +142,7 @@ public class AnalyticsController {
     public ResponseEntity<?> deleteFunnelStage(@PathVariable Long id) {
         Long tenantId = TenantContext.getTenantId();
         if (tenantId == null) {
-            return ResponseEntity.badRequest().body(Map.of("error", "Tenant context missing"));
+            return ResponseEntity.badRequest().body(com.chatbot.shared.dto.ErrorResponse.fromMessage("Tenant context missing"));
         }
         funnelService.deleteStage(id, tenantId);
         return ResponseEntity.ok(Map.of("deleted", true));

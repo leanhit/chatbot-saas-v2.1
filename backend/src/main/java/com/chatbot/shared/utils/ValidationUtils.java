@@ -5,6 +5,7 @@ import java.time.LocalDate;
 import java.time.Period;
 import java.util.*;
 import java.util.regex.Pattern;
+import com.chatbot.shared.utils.DateUtils;
 
 public class ValidationUtils {
 
@@ -157,7 +158,7 @@ public class ValidationUtils {
 
     public static boolean isAdult(LocalDate birthDate) {
         if (birthDate == null) return false;
-        return Period.between(birthDate, LocalDate.now()).getYears() >= 18;
+        return Period.between(birthDate, LocalDate.now(DateUtils.UTC_ZONE)).getYears() >= 18;
     }
 
     public static boolean isInRange(Number value, Number min, Number max) {
@@ -179,19 +180,19 @@ public class ValidationUtils {
     }
 
     public static boolean isFutureDate(LocalDate date) {
-        return date != null && date.isAfter(LocalDate.now());
+        return date != null && date.isAfter(LocalDate.now(DateUtils.UTC_ZONE));
     }
 
     public static boolean isPastDate(LocalDate date) {
-        return date != null && date.isBefore(LocalDate.now());
+        return date != null && date.isBefore(LocalDate.now(DateUtils.UTC_ZONE));
     }
 
     public static boolean isTodayOrFuture(LocalDate date) {
-        return date != null && !date.isBefore(LocalDate.now());
+        return date != null && !date.isBefore(LocalDate.now(DateUtils.UTC_ZONE));
     }
 
     public static boolean isTodayOrPast(LocalDate date) {
-        return date != null && !date.isAfter(LocalDate.now());
+        return date != null && !date.isAfter(LocalDate.now(DateUtils.UTC_ZONE));
     }
 
     public static boolean isValidCreditCard(String cardNumber) {

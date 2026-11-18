@@ -1,5 +1,7 @@
 package com.chatbot.core.payment.merchant.controller;
 
+import com.chatbot.core.payment.merchant.dto.MerchantApiKeyRequest;
+import com.chatbot.core.payment.merchant.dto.MerchantApiKeyResponse;
 import com.chatbot.core.payment.merchant.model.MerchantApiKey;
 import com.chatbot.core.payment.merchant.repository.MerchantApiKeyRepository;
 import io.swagger.v3.oas.annotations.Operation;
@@ -13,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import com.chatbot.shared.utils.DateUtils;
 
 @RestController
 @RequestMapping("/api/admin/merchant/keys")
@@ -32,20 +35,15 @@ public class MerchantApiKeyController {
         summary = "Get all merchant API keys (Admin)",
         description = "Get all merchant API keys - Admin only"
     )
-    public ResponseEntity<List<MerchantApiKey>> getAllApiKeys() {
+    public ResponseEntity<List<MerchantApiKeyResponse>> getAllApiKeys() {
         log.info("🔑 Fetching all merchant API keys");
         
         Long tenantId = com.chatbot.core.tenant.infra.TenantContext.getTenantId();
         if (tenantId == null) {
             return ResponseEntity.status(403).build();
         }
-        List<MerchantApiKey> keys = merchantApiKeyRepository.findByTenantId(tenantId);
-        // Hide secrets for security
-        keys.forEach(key -> {
-            key.setApiSecret("********");
-            key.setWebhookSecret("********");
-        });
-        
+        List<MerchantApiKeyResponse> keys = merchantApiKeyRepository.findByTenantId(tenantId)
+                .stream().map(MerchantApiKeyResponse::from).toList();
         return ResponseEntity.ok(keys);
     }
 
@@ -58,16 +56,11 @@ public class MerchantApiKeyController {
         summary = "Get tenant API keys (Admin)",
         description = "Get API keys for a specific tenant - Admin only"
     )
-    public ResponseEntity<List<MerchantApiKey>> getTenantApiKeys(@PathVariable Long tenantId) {
+    public ResponseEntity<List<MerchantApiKeyResponse>> getTenantApiKeys(@PathVariable Long tenantId) {
         log.info("🔑 Fetching API keys for tenant: {}", tenantId);
         
-        List<MerchantApiKey> keys = merchantApiKeyRepository.findByTenantId(tenantId);
-        // Hide secrets for security
-        keys.forEach(key -> {
-            key.setApiSecret("********");
-            key.setWebhookSecret("********");
-        });
-        
+        List<MerchantApiKeyResponse> keys = merchantApiKeyRepository.findByTenantId(tenantId)
+                .stream().map(MerchantApiKeyResponse::from).toList();
         return ResponseEntity.ok(keys);
     }
 
@@ -80,10 +73,18 @@ public class MerchantApiKeyController {
         summary = "Create API key (Admin)",
         description = "Create a new merchant API key - Admin only"
     )
-    public ResponseEntity<MerchantApiKey> createApiKey(@RequestBody MerchantApiKey apiKey) {
-        log.info("🔑 Creating new API key for tenant: {}", apiKey.getTenantId());
+    public ResponseEntity<MerchantApiKeyResponse> createApiKey(@RequestBody MerchantApiKeyRequest request) {
+        log.info("🔑 Creating new API key for tenant: {}", request.getTenantId());
         
         try {
+            MerchantApiKey apiKey = new MerchantApiKey();
+            apiKey.setTenantId(request.getTenantId());
+            apiKey.setName(request.getName());
+            apiKey.setDescription(request.getDescription());
+            apiKey.setWebhookUrl(request.getWebhookUrl());
+            apiKey.setIsActive(request.getIsActive());
+            apiKey.setRateLimitPerMinute(request.getRateLimitPerMinute());
+            apiKey.setExpiresAt(request.getExpiresAt());
             // Auto-generate keys if not provided
             if (apiKey.getApiKey() == null) {
                 apiKey.setApiKey("pk_live_" + java.util.UUID.randomUUID().toString().replace("-", "").substring(0, 24));
@@ -97,8 +98,8 @@ public class MerchantApiKeyController {
             
             MerchantApiKey created = merchantApiKeyRepository.save(apiKey);
             
-            // Return full keys only on creation
-            return ResponseEntity.ok(created);
+            // Secrets are returned only on creation (show-once contract)
+            return ResponseEntity.ok(MerchantApiKeyResponse.from(created, true));
             
         } catch (Exception e) {
             log.error("❌ Failed to create API key: {}", e.getMessage());
@@ -115,9 +116,9 @@ public class MerchantApiKeyController {
         summary = "Update API key (Admin)",
         description = "Update an existing merchant API key - Admin only"
     )
-    public ResponseEntity<MerchantApiKey> updateApiKey(
+    public ResponseEntity<MerchantApiKeyResponse> updateApiKey(
             @PathVariable Long id,
-            @RequestBody MerchantApiKey apiKey) {
+            @RequestBody MerchantApiKeyRequest request) {
         log.info("🔑 Updating API key: {}", id);
         
         try {
@@ -125,20 +126,15 @@ public class MerchantApiKeyController {
                     .orElseThrow(() -> new RuntimeException("API key not found"));
             
             // Update fields (don't update keys themselves)
-            existing.setName(apiKey.getName());
-            existing.setDescription(apiKey.getDescription());
-            existing.setWebhookUrl(apiKey.getWebhookUrl());
-            existing.setIsActive(apiKey.getIsActive());
-            existing.setRateLimitPerMinute(apiKey.getRateLimitPerMinute());
-            existing.setExpiresAt(apiKey.getExpiresAt());
+            existing.setName(request.getName());
+            existing.setDescription(request.getDescription());
+            existing.setWebhookUrl(request.getWebhookUrl());
+            existing.setIsActive(request.getIsActive());
+            existing.setRateLimitPerMinute(request.getRateLimitPerMinute());
+            existing.setExpiresAt(request.getExpiresAt());
             
             MerchantApiKey updated = merchantApiKeyRepository.save(existing);
-            
-            // Hide secrets
-            updated.setApiSecret("********");
-            updated.setWebhookSecret("********");
-            
-            return ResponseEntity.ok(updated);
+            return ResponseEntity.ok(MerchantApiKeyResponse.from(updated));
             
         } catch (Exception e) {
             log.error("❌ Failed to update API key: {}", e.getMessage());
@@ -244,7 +240,7 @@ public class MerchantApiKeyController {
         log.info("🔄 Deactivating expired API keys");
         
         try {
-            List<MerchantApiKey> expiredKeys = merchantApiKeyRepository.findActiveApiKeys(LocalDateTime.now())
+            List<MerchantApiKey> expiredKeys = merchantApiKeyRepository.findActiveApiKeys(DateUtils.nowUtcLocalDateTime())
                     .stream()
                     .filter(key -> !key.isValid())
                     .toList();

@@ -18,6 +18,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
+import com.chatbot.shared.utils.DateUtils;
 
 @RestController
 @RequestMapping({"/api/v1/analytics/payments", "/api/analytics/payments"})
@@ -47,7 +48,7 @@ public class PaymentAnalyticsController {
     public ResponseEntity<Map<String, Object>> getDashboardAnalytics() {
         log.info("📊 Fetching payment dashboard analytics");
 
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = DateUtils.nowUtcLocalDateTime();
         LocalDateTime monthStart = now.withDayOfMonth(1).withHour(0).withMinute(0).withSecond(0);
         LocalDateTime weekStart = now.minusDays(7);
 
@@ -119,8 +120,8 @@ public class PaymentAnalyticsController {
 
         log.info("📊 Fetching top users: limit={}, startDate={}, endDate={}", limit, startDate, endDate);
 
-        LocalDateTime start = parseDate(startDate, LocalDateTime.now().withDayOfMonth(1).withHour(0).withMinute(0));
-        LocalDateTime end = parseDate(endDate, LocalDateTime.now());
+        LocalDateTime start = parseDate(startDate, DateUtils.nowUtcLocalDateTime().withDayOfMonth(1).withHour(0).withMinute(0));
+        LocalDateTime end = parseDate(endDate, DateUtils.nowUtcLocalDateTime());
 
         List<SimplePayment> payments = tenantPayments().stream()
                 .filter(p -> p.getStatus() == PaymentStatus.COMPLETED)
@@ -179,8 +180,8 @@ public class PaymentAnalyticsController {
 
         log.info("📊 Fetching revenue summary: startDate={}, endDate={}", startDate, endDate);
 
-        LocalDateTime start = parseDate(startDate, LocalDateTime.now().withDayOfMonth(1).withHour(0).withMinute(0));
-        LocalDateTime end = parseDate(endDate, LocalDateTime.now());
+        LocalDateTime start = parseDate(startDate, DateUtils.nowUtcLocalDateTime().withDayOfMonth(1).withHour(0).withMinute(0));
+        LocalDateTime end = parseDate(endDate, DateUtils.nowUtcLocalDateTime());
 
         List<SimplePayment> payments = tenantPayments().stream()
                 .filter(p -> p.getCreatedAt() != null && !p.getCreatedAt().isBefore(start) && !p.getCreatedAt().isAfter(end))
@@ -218,8 +219,8 @@ public class PaymentAnalyticsController {
 
         log.info("📊 Fetching daily revenue: year={}, month={}", year, month);
 
-        int targetYear = year != null ? year : LocalDateTime.now().getYear();
-        int targetMonth = month != null ? month : LocalDateTime.now().getMonthValue();
+        int targetYear = year != null ? year : DateUtils.nowUtcLocalDateTime().getYear();
+        int targetMonth = month != null ? month : DateUtils.nowUtcLocalDateTime().getMonthValue();
 
         LocalDateTime start = LocalDateTime.of(targetYear, targetMonth, 1, 0, 0);
         LocalDateTime end = start.plusMonths(1).minusNanos(1);
@@ -258,7 +259,7 @@ public class PaymentAnalyticsController {
     public ResponseEntity<Map<String, Object>> getPaymentTrends(@RequestParam(defaultValue = "30") int days) {
         log.info("📊 Fetching payment trends: days={}", days);
 
-        LocalDateTime since = LocalDateTime.now().minusDays(days);
+        LocalDateTime since = DateUtils.nowUtcLocalDateTime().minusDays(days);
         List<SimplePayment> payments = tenantPayments().stream()
                 .filter(p -> p.getCreatedAt() != null && p.getCreatedAt().isAfter(since))
                 .toList();
@@ -290,8 +291,8 @@ public class PaymentAnalyticsController {
 
         log.info("📊 Fetching package performance: startDate={}, endDate={}", startDate, endDate);
 
-        LocalDateTime start = parseDate(startDate, LocalDateTime.now().withDayOfMonth(1).withHour(0).withMinute(0));
-        LocalDateTime end = parseDate(endDate, LocalDateTime.now());
+        LocalDateTime start = parseDate(startDate, DateUtils.nowUtcLocalDateTime().withDayOfMonth(1).withHour(0).withMinute(0));
+        LocalDateTime end = parseDate(endDate, DateUtils.nowUtcLocalDateTime());
 
         List<SimplePayment> payments = tenantPayments().stream()
                 .filter(p -> p.getStatus() == PaymentStatus.COMPLETED)

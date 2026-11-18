@@ -20,6 +20,7 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import com.chatbot.shared.utils.DateUtils;
 
 @Service
 @RequiredArgsConstructor
@@ -120,7 +121,7 @@ public class PaymentPackageUpgradeService {
 
             // Update audit as success
             audit.setUpgradeStatus(UpgradeStatus.SUCCESS);
-            audit.setProcessedAt(LocalDateTime.now());
+            audit.setProcessedAt(DateUtils.nowUtcLocalDateTime());
             auditRepository.save(audit);
 
             // Log audit
@@ -199,7 +200,7 @@ public class PaymentPackageUpgradeService {
     private void updateAuditAsFailed(PackageUpgradeAudit audit, String error) {
         audit.setUpgradeStatus(UpgradeStatus.FAILED);
         audit.setFailureReason(error);
-        audit.setProcessedAt(LocalDateTime.now());
+        audit.setProcessedAt(DateUtils.nowUtcLocalDateTime());
         auditRepository.save(audit);
     }
 

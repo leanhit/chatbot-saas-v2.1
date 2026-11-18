@@ -17,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import com.chatbot.shared.utils.DateUtils;
 
 @Service
 @RequiredArgsConstructor
@@ -28,7 +29,7 @@ public class CertificationService {
     private final AgentSkillRepository agentSkillRepository;
     private final com.chatbot.core.training.repository.AgentTrainingProgressRepository trainingProgressRepository;
     private final com.chatbot.core.message.store.service.AgentConversationStatsService agentConversationStatsService;
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper;
 
     public CertificationLevel createCertificationLevel(CertificationLevel level) {
         Long tenantId = com.chatbot.core.tenant.infra.TenantContext.getTenantId();
@@ -64,7 +65,7 @@ public class CertificationService {
             .issuedBy(issuedBy)
             .build();
         certification.setTenantId(tenantId);
-        certification.setIssuedAt(LocalDateTime.now().toString());
+        certification.setIssuedAt(DateUtils.nowUtcLocalDateTime().toString());
         return certificationRepository.save(certification);
     }
 
@@ -181,7 +182,7 @@ public class CertificationService {
                         .issuedBy("SYSTEM_AUTO")
                         .build();
                     certification.setTenantId(tenantId);
-                    certification.setIssuedAt(LocalDateTime.now().toString());
+                    certification.setIssuedAt(DateUtils.nowUtcLocalDateTime().toString());
                     certificationRepository.save(certification);
                 }
             }

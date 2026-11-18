@@ -8,6 +8,7 @@ import com.chatbot.shared.exceptions.ValidationException;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import com.chatbot.shared.utils.DateUtils;
 
 @Service
 public class SubscriptionValidationService {
@@ -80,13 +81,13 @@ public class SubscriptionValidationService {
         }
         
         if (subscription.getSubscriptionEnd() != null && 
-            subscription.getSubscriptionEnd().isAfter(LocalDateTime.now().plusDays(30))) {
+            subscription.getSubscriptionEnd().isAfter(DateUtils.nowUtcLocalDateTime().plusDays(30))) {
             throw new ValidationException("Subscription is not due for renewal yet");
         }
     }
     
     public void processSubscription(AppSubscription subscription, SubscriptionPlan plan) {
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = DateUtils.nowUtcLocalDateTime();
         
         switch (plan) {
             case FREE:
@@ -123,7 +124,7 @@ public class SubscriptionValidationService {
     }
     
     public void processPlanChange(AppSubscription subscription, SubscriptionPlan newPlan) {
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = DateUtils.nowUtcLocalDateTime();
         
         // Calculate prorated period if changing from paid plan
         if (subscription.getSubscriptionEnd() != null && 
@@ -148,7 +149,7 @@ public class SubscriptionValidationService {
     }
     
     public void processStatusChange(AppSubscription subscription, SubscriptionStatus newStatus) {
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = DateUtils.nowUtcLocalDateTime();
         
         switch (newStatus) {
             case ACTIVE:
@@ -180,7 +181,7 @@ public class SubscriptionValidationService {
     }
     
     public void processRenewal(AppSubscription subscription) {
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = DateUtils.nowUtcLocalDateTime();
         SubscriptionPlan plan = subscription.getSubscriptionPlan();
         
         // Extend subscription based on plan

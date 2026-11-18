@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import com.chatbot.shared.utils.DateUtils;
 
 /**
  * Penny Bot Controller - Unified bot management API
@@ -309,7 +310,7 @@ public class PennyBotController {
             "message", message,
             "response", botResponse,
             "testMode", isTestMode,
-            "timestamp", java.time.LocalDateTime.now().toString(),
+            "timestamp", com.chatbot.shared.utils.DateUtils.nowUtcLocalDateTime().toString(),
             "status", "success"
         ));
     }
@@ -362,7 +363,7 @@ public class PennyBotController {
             "botName", bot.getBotName(),
             "message", message,
             "response", botResponse,
-            "timestamp", java.time.LocalDateTime.now().toString(),
+            "timestamp", com.chatbot.shared.utils.DateUtils.nowUtcLocalDateTime().toString(),
             "status", "success"
         ));
     }
@@ -553,7 +554,7 @@ public class PennyBotController {
 
         Map<String, Object> exportData = Map.of(
             "version", "2.1",
-            "exportedAt", java.time.LocalDateTime.now().toString(),
+            "exportedAt", com.chatbot.shared.utils.DateUtils.nowUtcLocalDateTime().toString(),
             "botConfig", botConfig,
             "rules", rules,
             "templates", templates,

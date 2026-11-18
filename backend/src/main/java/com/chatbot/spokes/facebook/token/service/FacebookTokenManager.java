@@ -9,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import com.chatbot.shared.utils.DateUtils;
 
 @Service
 @Slf4j
@@ -60,7 +61,7 @@ public class FacebookTokenManager {
             return false;
         }
         
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = DateUtils.nowUtcLocalDateTime();
         LocalDateTime oneHourFromNow = now.plusHours(1);
         
         boolean isExpiring = connection.getTokenExpiresAt().isBefore(oneHourFromNow);
@@ -128,10 +129,10 @@ public class FacebookTokenManager {
      */
     private void updateConnectionToken(FacebookConnection connection, String newToken) {
         connection.setPageAccessToken(newToken);
-        connection.setTokenUpdatedAt(LocalDateTime.now());
+        connection.setTokenUpdatedAt(DateUtils.nowUtcLocalDateTime());
         
         // Calculate new expiry (Facebook page tokens typically last 60 days)
-        LocalDateTime newExpiry = LocalDateTime.now().plusDays(60);
+        LocalDateTime newExpiry = DateUtils.nowUtcLocalDateTime().plusDays(60);
         connection.setTokenExpiresAt(newExpiry);
         
         connectionRepository.save(connection);
@@ -187,7 +188,7 @@ public class FacebookTokenManager {
             return TokenStatus.UNKNOWN;
         }
         
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = DateUtils.nowUtcLocalDateTime();
         
         if (connection.getTokenExpiresAt().isBefore(now)) {
             return TokenStatus.EXPIRED;

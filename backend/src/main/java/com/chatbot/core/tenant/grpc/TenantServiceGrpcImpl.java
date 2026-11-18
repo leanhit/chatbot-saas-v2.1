@@ -18,6 +18,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.List;
 import java.util.stream.Collectors;
+import com.chatbot.shared.utils.DateUtils;
 
 /**
  * gRPC service implementation cho Tenant operations.
@@ -57,11 +58,11 @@ class TenantServiceGrpcImpl extends TenantServiceGrpc.TenantServiceImplBase {
                     .setStatus(tenant.getStatus() != null ? tenant.getStatus().name() : "UNKNOWN")
                     .setVisibility(tenant.getVisibility() != null ? tenant.getVisibility().name() : "UNKNOWN")
                     .setCreatedAt(tenant.getCreatedAt() != null
-                            ? tenant.getCreatedAt().atZone(ZoneId.systemDefault()).toInstant().toString() : "")
+                            ? tenant.getCreatedAt().atZone(DateUtils.UTC_ZONE).toInstant().toString() : "")
                     .setUpdatedAt(tenant.getUpdatedAt() != null
-                            ? tenant.getUpdatedAt().atZone(ZoneId.systemDefault()).toInstant().toString() : "")
+                            ? tenant.getUpdatedAt().atZone(DateUtils.UTC_ZONE).toInstant().toString() : "")
                     .setExpiresAt(tenant.getExpiresAt() != null
-                            ? tenant.getExpiresAt().atZone(ZoneId.systemDefault()).toInstant().toString() : "")
+                            ? tenant.getExpiresAt().atZone(DateUtils.UTC_ZONE).toInstant().toString() : "")
                     .build();
         } catch (Exception e) {
             log.error("[gRPC] Error converting tenant {} to response: {}", tenant.getId(), e.getMessage());
@@ -146,10 +147,10 @@ class TenantServiceGrpcImpl extends TenantServiceGrpc.TenantServiceImplBase {
                     .setDescription(description)
                     .setStatus(tenant.getStatus().name())
                     .setVisibility(tenant.getVisibility().name())
-                    .setCreatedAt(tenant.getCreatedAt().atZone(ZoneId.systemDefault()).toInstant().toString())
-                    .setUpdatedAt(tenant.getUpdatedAt().atZone(ZoneId.systemDefault()).toInstant().toString())
+                    .setCreatedAt(tenant.getCreatedAt().atZone(DateUtils.UTC_ZONE).toInstant().toString())
+                    .setUpdatedAt(tenant.getUpdatedAt().atZone(DateUtils.UTC_ZONE).toInstant().toString())
                     .setExpiresAt(tenant.getExpiresAt() != null
-                            ? tenant.getExpiresAt().atZone(ZoneId.systemDefault()).toInstant().toString() : "")
+                            ? tenant.getExpiresAt().atZone(DateUtils.UTC_ZONE).toInstant().toString() : "")
                     .build());
             responseObserver.onCompleted();
         } catch (Exception e) {
@@ -266,7 +267,7 @@ class TenantServiceGrpcImpl extends TenantServiceGrpc.TenantServiceImplBase {
             if (request.getVisibility() != null && !request.getVisibility().isEmpty()) {
                 tenant.setVisibility(com.chatbot.core.tenant.model.TenantVisibility.valueOf(request.getVisibility()));
             }
-            tenant.setUpdatedAt(LocalDateTime.now());
+            tenant.setUpdatedAt(DateUtils.nowUtcLocalDateTime());
 
             responseObserver.onNext(toGrpcTenantResponse(tenantRepository.save(tenant)));
             responseObserver.onCompleted();
@@ -284,7 +285,7 @@ class TenantServiceGrpcImpl extends TenantServiceGrpc.TenantServiceImplBase {
 
             // Soft-delete: set DELETED thay vì INACTIVE
             tenant.setStatus(com.chatbot.core.tenant.model.TenantStatus.DELETED);
-            tenant.setUpdatedAt(LocalDateTime.now());
+            tenant.setUpdatedAt(DateUtils.nowUtcLocalDateTime());
             tenantRepository.save(tenant);
 
             responseObserver.onNext(DeleteTenantResponse.newBuilder()
@@ -303,7 +304,7 @@ class TenantServiceGrpcImpl extends TenantServiceGrpc.TenantServiceImplBase {
             Tenant tenant = tenantRepository.findByTenantKey(request.getTenantKey())
                     .orElseThrow(() -> new TenantNotFoundException("Không tìm thấy tenant: " + request.getTenantKey()));
             tenant.setStatus(com.chatbot.core.tenant.model.TenantStatus.ACTIVE);
-            tenant.setUpdatedAt(LocalDateTime.now());
+            tenant.setUpdatedAt(DateUtils.nowUtcLocalDateTime());
             responseObserver.onNext(toGrpcTenantResponse(tenantRepository.save(tenant)));
             responseObserver.onCompleted();
         } catch (Exception e) {
@@ -319,7 +320,7 @@ class TenantServiceGrpcImpl extends TenantServiceGrpc.TenantServiceImplBase {
             Tenant tenant = tenantRepository.findByTenantKey(request.getTenantKey())
                     .orElseThrow(() -> new TenantNotFoundException("Không tìm thấy tenant: " + request.getTenantKey()));
             tenant.setStatus(com.chatbot.core.tenant.model.TenantStatus.SUSPENDED);
-            tenant.setUpdatedAt(LocalDateTime.now());
+            tenant.setUpdatedAt(DateUtils.nowUtcLocalDateTime());
             responseObserver.onNext(toGrpcTenantResponse(tenantRepository.save(tenant)));
             responseObserver.onCompleted();
         } catch (Exception e) {

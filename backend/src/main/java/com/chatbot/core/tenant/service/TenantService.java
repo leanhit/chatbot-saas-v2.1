@@ -46,6 +46,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Collections;
+import com.chatbot.shared.utils.DateUtils;
 
 @Service
 @RequiredArgsConstructor
@@ -446,7 +447,7 @@ public class TenantService {
 
         tenantValidationService.validateStatusTransition(tenant.getStatus(), TenantStatus.SUSPENDED);
         tenant.setStatus(TenantStatus.SUSPENDED);
-        tenant.setUpdatedAt(LocalDateTime.now());
+        tenant.setUpdatedAt(DateUtils.nowUtcLocalDateTime());
         tenantRepository.save(tenant);
 
         auditLogService.logAction(tenantId, currentUserEmail, "SUSPEND_TENANT", "Tenant suspended");
@@ -468,7 +469,7 @@ public class TenantService {
 
         tenantValidationService.validateStatusTransition(tenant.getStatus(), TenantStatus.ACTIVE);
         tenant.setStatus(TenantStatus.ACTIVE);
-        tenant.setUpdatedAt(LocalDateTime.now());
+        tenant.setUpdatedAt(DateUtils.nowUtcLocalDateTime());
         tenantRepository.save(tenant);
 
         auditLogService.logAction(tenantId, currentUserEmail, "ACTIVATE_TENANT", "Tenant activated");
@@ -490,7 +491,7 @@ public class TenantService {
 
         tenantValidationService.validateStatusTransition(tenant.getStatus(), TenantStatus.INACTIVE);
         tenant.setStatus(TenantStatus.INACTIVE);
-        tenant.setUpdatedAt(LocalDateTime.now());
+        tenant.setUpdatedAt(DateUtils.nowUtcLocalDateTime());
         tenantRepository.save(tenant);
 
         auditLogService.logAction(tenantId, currentUserEmail, "DEACTIVATE_TENANT", "Tenant deactivated");
@@ -517,7 +518,7 @@ public class TenantService {
         }
 
         tenant.setStatus(TenantStatus.DELETED);
-        tenant.setUpdatedAt(LocalDateTime.now());
+        tenant.setUpdatedAt(DateUtils.nowUtcLocalDateTime());
         tenantRepository.save(tenant);
 
         auditLogService.logAction(tenantId, currentUserEmail, "DELETE_TENANT", "Tenant soft-deleted");

@@ -18,6 +18,7 @@ import java.util.HexFormat;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import com.chatbot.shared.utils.DateUtils;
 
 /**
  * Manages per-bot public API keys for the public chat endpoint.
@@ -115,7 +116,7 @@ public class PennyBotApiKeyService {
             return false;
         }
         String hash = sha256(plaintextKey);
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = DateUtils.nowUtcLocalDateTime();
 
         List<PennyBotApiKey> keys = apiKeyRepository.findByBotId(botId);
         for (PennyBotApiKey key : keys) {
@@ -140,7 +141,7 @@ public class PennyBotApiKeyService {
     public boolean hasActiveKeys(UUID botId) {
         return apiKeyRepository.findByBotId(botId).stream()
             .anyMatch(k -> k.isActive()
-                && (k.getExpiresAt() == null || k.getExpiresAt().isAfter(LocalDateTime.now())));
+                && (k.getExpiresAt() == null || k.getExpiresAt().isAfter(DateUtils.nowUtcLocalDateTime())));
     }
 
     private static String sha256(String input) {

@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
+import com.chatbot.shared.utils.DateUtils;
 
 @Entity
 @Table(
@@ -84,12 +85,12 @@ public class TenantProfessional {
 
     @PrePersist
     void prePersist() {
-        createdAt = LocalDateTime.now();
+        createdAt = DateUtils.nowUtcLocalDateTime();
         updatedAt = createdAt;
     }
 
     @PreUpdate
     void preUpdate() {
-        updatedAt = LocalDateTime.now();
+        updatedAt = DateUtils.nowUtcLocalDateTime();
     }
 }

@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
+import com.chatbot.shared.utils.DateUtils;
 
 /**
  * Service for calculating agent conversation statistics
@@ -101,7 +102,7 @@ public class AgentConversationStatsService {
      * Calculate period start date based on period string
      */
     private LocalDateTime calculatePeriodStart(String period) {
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = DateUtils.nowUtcLocalDateTime();
         switch (period) {
             case "7d":
                 return now.minusDays(7);

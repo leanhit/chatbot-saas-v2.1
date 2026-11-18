@@ -10,6 +10,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import com.chatbot.shared.utils.DateUtils;
 
 @Entity
 @Table(name = "merchant_payment_sessions")
@@ -105,7 +106,7 @@ public class MerchantPaymentSession {
             status = SessionStatus.PENDING;
         }
         if (expiresAt == null) {
-            expiresAt = LocalDateTime.now().plusHours(24); // Default 24 hours
+            expiresAt = DateUtils.nowUtcLocalDateTime().plusHours(24); // Default 24 hours
         }
     }
     
@@ -123,7 +124,7 @@ public class MerchantPaymentSession {
      * Check if session is expired
      */
     public boolean isExpired() {
-        return expiresAt != null && LocalDateTime.now().isAfter(expiresAt);
+        return expiresAt != null && DateUtils.nowUtcLocalDateTime().isAfter(expiresAt);
     }
     
     /**

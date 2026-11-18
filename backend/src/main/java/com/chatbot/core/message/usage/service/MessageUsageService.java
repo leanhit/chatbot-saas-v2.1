@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import com.chatbot.shared.utils.DateUtils;
 
 @Service
 @RequiredArgsConstructor
@@ -24,7 +25,7 @@ public class MessageUsageService {
     private final RedisTemplate<String, String> redisTemplate;
 
     private LocalDateTime getBillingPeriodStart(Long tenantId) {
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = DateUtils.nowUtcLocalDateTime();
         try {
             Tenant tenant = tenantRepository.findById(tenantId).orElse(null);
             if (tenant != null && tenant.getPackageActivatedAt() != null) {
@@ -196,7 +197,7 @@ public class MessageUsageService {
         }
 
         // Get usage for different periods
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = DateUtils.nowUtcLocalDateTime();
         LocalDateTime monthStart = now.withDayOfMonth(1).withHour(0).withMinute(0).withSecond(0);
         LocalDateTime weekStart = now.minusWeeks(1);
         LocalDateTime dayStart = now.toLocalDate().atStartOfDay();

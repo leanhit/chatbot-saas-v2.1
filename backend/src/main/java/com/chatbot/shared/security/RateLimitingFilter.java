@@ -1,5 +1,7 @@
 package com.chatbot.shared.security;
 
+import com.chatbot.shared.dto.ErrorResponse;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import jakarta.servlet.FilterChain;
@@ -9,6 +11,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -21,6 +24,7 @@ import java.util.concurrent.TimeUnit;
 public class RateLimitingFilter extends OncePerRequestFilter {
 
     private final RedisTemplate<String, String> redisTemplate;
+    private final ObjectMapper objectMapper;
 
     // Public API rate limits (stricter for public endpoints)
     @Value("${rate.limit.public.requests:1000}")
@@ -58,28 +62,37 @@ public class RateLimitingFilter extends OncePerRequestFilter {
         String clientId = getClientId(request);
         String key = "rate_limit:" + config.getPrefix() + ":" + clientId;
 
+        boolean allowed = true;
         try {
             String currentCount = redisTemplate.opsForValue().get(key);
-            
+
             if (currentCount == null) {
                 redisTemplate.opsForValue().set(key, "1", config.getWindowSeconds(), TimeUnit.SECONDS);
             } else {
                 int count = Integer.parseInt(currentCount);
                 if (count >= config.getRequestLimit()) {
-                    response.setStatus(HttpStatus.TOO_MANY_REQUESTS.value());
-                    response.setContentType("application/json");
-                    response.getWriter().write("{\"error\":\"Too Many Requests\",\"message\":\"Rate limit exceeded for " + config.getPrefix() + " endpoints\"}");
-                    log.warn("Rate limit exceeded for client {} on endpoint {}", clientId, path);
-                    return;
+                    allowed = false;
+                } else {
+                    redisTemplate.opsForValue().increment(key);
                 }
-                redisTemplate.opsForValue().increment(key);
             }
-
-            filterChain.doFilter(request, response);
         } catch (Exception e) {
-            log.error("Error in rate limiting: {}", e.getMessage());
-            filterChain.doFilter(request, response);
+            // Fail-open: Redis lỗi không được chặn request
+            log.error("Error in rate limiting, allowing request: {}", e.getMessage());
         }
+
+        if (!allowed) {
+            response.setStatus(HttpStatus.TOO_MANY_REQUESTS.value());
+            response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+            response.setCharacterEncoding("UTF-8");
+            ErrorResponse error = ErrorResponse.fromRateLimit(
+                    "Rate limit exceeded for " + config.getPrefix() + " endpoints");
+            objectMapper.writeValue(response.getWriter(), error);
+            log.warn("Rate limit exceeded for client {} on endpoint {}", clientId, path);
+            return;
+        }
+
+        filterChain.doFilter(request, response);
     }
 
     private RateLimitConfig getRateLimitConfig(String path) {

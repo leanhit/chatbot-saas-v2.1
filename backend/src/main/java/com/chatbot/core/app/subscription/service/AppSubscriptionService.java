@@ -20,6 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
+import com.chatbot.shared.utils.DateUtils;
 
 @Service
 @Transactional(transactionManager = "tenantTransactionManager")
@@ -64,7 +65,7 @@ class AppSubscriptionService {
         
         // Set trial period for free plans
         if (request.getSubscriptionPlan() == SubscriptionPlan.FREE) {
-            subscription.setTrialEnd(LocalDateTime.now().plusDays(30));
+            subscription.setTrialEnd(DateUtils.nowUtcLocalDateTime().plusDays(30));
             subscription.setSubscriptionStatus(SubscriptionStatus.TRIAL);
         } else {
             subscription.setSubscriptionStatus(SubscriptionStatus.PENDING);
@@ -185,14 +186,14 @@ class AppSubscriptionService {
     public List<SubscriptionResponse> getExpiredSubscriptions() {
         // Scheduler method - unscoped for global expiry processing
         List<AppSubscription> subscriptions = subscriptionRepository.findExpiredSubscriptions(
-            LocalDateTime.now(), SubscriptionStatus.ACTIVE);
+            DateUtils.nowUtcLocalDateTime(), SubscriptionStatus.ACTIVE);
         return subscriptions.stream().map(this::convertToResponse).collect(Collectors.toList());
     }
 
     @Transactional(readOnly = true)
     public List<SubscriptionResponse> getExpiredSubscriptionsByTenant(Long tenantId) {
         List<AppSubscription> subscriptions = subscriptionRepository.findExpiredSubscriptionsByTenant(
-            tenantId, LocalDateTime.now(), SubscriptionStatus.ACTIVE);
+            tenantId, DateUtils.nowUtcLocalDateTime(), SubscriptionStatus.ACTIVE);
         return subscriptions.stream().map(this::convertToResponse).collect(Collectors.toList());
     }
     
@@ -200,14 +201,14 @@ class AppSubscriptionService {
     public List<SubscriptionResponse> getExpiredTrials() {
         // Scheduler method - unscoped for global trial expiry processing
         List<AppSubscription> subscriptions = subscriptionRepository.findExpiredTrials(
-            LocalDateTime.now(), SubscriptionStatus.TRIAL);
+            DateUtils.nowUtcLocalDateTime(), SubscriptionStatus.TRIAL);
         return subscriptions.stream().map(this::convertToResponse).collect(Collectors.toList());
     }
 
     @Transactional(readOnly = true)
     public List<SubscriptionResponse> getExpiredTrialsByTenant(Long tenantId) {
         List<AppSubscription> subscriptions = subscriptionRepository.findExpiredTrialsByTenant(
-            tenantId, LocalDateTime.now(), SubscriptionStatus.TRIAL);
+            tenantId, DateUtils.nowUtcLocalDateTime(), SubscriptionStatus.TRIAL);
         return subscriptions.stream().map(this::convertToResponse).collect(Collectors.toList());
     }
     

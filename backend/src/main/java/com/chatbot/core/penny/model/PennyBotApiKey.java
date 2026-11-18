@@ -8,6 +8,7 @@ import lombok.Builder;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
+import com.chatbot.shared.utils.DateUtils;
 
 /**
  * Per-bot public API key for the public chat endpoint.
@@ -52,7 +53,7 @@ public class PennyBotApiKey {
 
     @Column(name = "created_at", nullable = false, updatable = false)
     @Builder.Default
-    private LocalDateTime createdAt = LocalDateTime.now();
+    private LocalDateTime createdAt = DateUtils.nowUtcLocalDateTime();
 
     @Column(name = "created_by")
     private String createdBy;
@@ -60,7 +61,7 @@ public class PennyBotApiKey {
     @PrePersist
     protected void onCreate() {
         if (createdAt == null) {
-            createdAt = LocalDateTime.now();
+            createdAt = DateUtils.nowUtcLocalDateTime();
         }
     }
 }

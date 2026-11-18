@@ -2,6 +2,7 @@ package com.chatbot.shared.messaging;
 
 import java.time.LocalDateTime;
 import java.util.Map;
+import com.chatbot.shared.utils.DateUtils;
 
 public class Event {
 
@@ -17,7 +18,7 @@ public class Event {
     private Map<String, Object> metadata;
 
     public Event() {
-        this.timestamp = LocalDateTime.now();
+        this.timestamp = DateUtils.nowUtcLocalDateTime();
         this.version = "1.0";
     }
 
@@ -167,11 +168,11 @@ public class Event {
     }
 
     public long getAgeInSeconds() {
-        return java.time.Duration.between(timestamp, LocalDateTime.now()).getSeconds();
+        return java.time.Duration.between(timestamp, DateUtils.nowUtcLocalDateTime()).getSeconds();
     }
 
     public long getAgeInMinutes() {
-        return java.time.Duration.between(timestamp, LocalDateTime.now()).toMinutes();
+        return java.time.Duration.between(timestamp, DateUtils.nowUtcLocalDateTime()).toMinutes();
     }
 
     public boolean isExpired(long maxAgeSeconds) {
@@ -292,7 +293,7 @@ public class Event {
                 event.setEventId(java.util.UUID.randomUUID().toString());
             }
             if (event.getTimestamp() == null) {
-                event.setTimestamp(LocalDateTime.now());
+                event.setTimestamp(DateUtils.nowUtcLocalDateTime());
             }
             if (event.getVersion() == null) {
                 event.setVersion("1.0");

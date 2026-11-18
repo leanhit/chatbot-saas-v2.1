@@ -24,6 +24,7 @@ import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
 import java.util.List;
 import java.util.Map;
+import com.chatbot.shared.utils.DateUtils;
 
 @RestController
 @RequestMapping("/api/license")
@@ -331,7 +332,7 @@ public class LicenseController {
                     .userId(userId)
                     .planName("Free Plan")
                     .isActive(true)
-                    .expiresAt(java.time.Instant.now().plusSeconds(86400 * 30)) // 30 days
+                    .expiresAt(com.chatbot.shared.utils.DateUtils.nowUtc().plusSeconds(86400 * 30)) // 30 days
                     .features(List.of("facebook", "zalo"))
                     .modules(List.of("reengage", "ai-reply"))
                     .limits(Map.of("bots", 2, "storage", 1000))
@@ -539,7 +540,7 @@ public class LicenseController {
                 .isActive(true)
                 .expiresAt(expiration != null ? 
                     java.time.Instant.ofEpochSecond(expiration) : 
-                    java.time.Instant.now().plusSeconds(86400 * 30)) // 30 days default
+                    com.chatbot.shared.utils.DateUtils.nowUtc().plusSeconds(86400 * 30)) // 30 days default
                 .features(features)
                 .modules(modules)
                 .limits(limits)

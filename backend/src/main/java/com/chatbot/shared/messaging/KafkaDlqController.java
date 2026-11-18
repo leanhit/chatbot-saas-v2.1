@@ -27,9 +27,9 @@ public class KafkaDlqController {
     }
 
     @GetMapping("/topics")
-    public ResponseEntity<Map<String, Object>> listDlqTopics() {
+    public ResponseEntity<?> listDlqTopics() {
         if (kafkaDlqService.isEmpty()) {
-            return ResponseEntity.status(503).body(Map.of("error", "Kafka DLQ service unavailable"));
+            return ResponseEntity.status(503).body(com.chatbot.shared.dto.ErrorResponse.fromMessage("Kafka DLQ service unavailable"));
         }
         return ResponseEntity.ok(kafkaDlqService.get().listDlqTopics());
     }

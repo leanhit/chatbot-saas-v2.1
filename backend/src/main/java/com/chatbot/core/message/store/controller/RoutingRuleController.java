@@ -13,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import com.chatbot.core.message.store.dto.RoutingRuleResponse;
 
 /**
  * REST Controller for Routing Rule management
@@ -40,62 +41,64 @@ public class RoutingRuleController {
      * Get all routing rules for current tenant
      */
     @GetMapping
-    public ResponseEntity<List<RoutingRule>> getRoutingRules() {
+    public ResponseEntity<List<RoutingRuleResponse>> getRoutingRules() {
         Long tenantId = TenantContext.getTenantId();
         if (tenantId == null) {
             return ResponseEntity.badRequest().build();
         }
         
         List<RoutingRule> rules = routingRuleService.getRoutingRules(tenantId);
-        return ResponseEntity.ok(rules);
+        return ResponseEntity.ok(rules.stream().map(RoutingRuleResponse::from).toList());
     }
 
     /**
      * Get active routing rules for current tenant
      */
     @GetMapping("/active")
-    public ResponseEntity<List<RoutingRule>> getActiveRoutingRules() {
+    public ResponseEntity<List<RoutingRuleResponse>> getActiveRoutingRules() {
         Long tenantId = TenantContext.getTenantId();
         if (tenantId == null) {
             return ResponseEntity.badRequest().build();
         }
         
         List<RoutingRule> rules = routingRuleService.getActiveRoutingRules(tenantId);
-        return ResponseEntity.ok(rules);
+        return ResponseEntity.ok(rules.stream().map(RoutingRuleResponse::from).toList());
     }
 
     /**
      * Create a new routing rule
      */
     @PostMapping
-    public ResponseEntity<RoutingRule> createRoutingRule(@RequestBody RoutingRule rule) {
+    public ResponseEntity<RoutingRuleResponse> createRoutingRule(@RequestBody com.chatbot.core.message.store.dto.RoutingRuleRequest request) {
         requireOwnerOrEditor();
         Long tenantId = TenantContext.getTenantId();
         if (tenantId == null) {
             return ResponseEntity.badRequest().build();
         }
         
+        RoutingRule rule = toEntity(request);
         rule.setTenantId(tenantId);
         RoutingRule createdRule = routingRuleService.createRoutingRule(rule);
-        return ResponseEntity.ok(createdRule);
+        return ResponseEntity.ok(RoutingRuleResponse.from(createdRule));
     }
 
     /**
      * Update an existing routing rule
      */
     @PutMapping("/{id}")
-    public ResponseEntity<RoutingRule> updateRoutingRule(
+    public ResponseEntity<RoutingRuleResponse> updateRoutingRule(
             @PathVariable Long id,
-            @Valid @RequestBody RoutingRule rule) {
+            @Valid @RequestBody com.chatbot.core.message.store.dto.RoutingRuleRequest request) {
         requireOwnerOrEditor();
         Long tenantId = TenantContext.getTenantId();
         if (tenantId == null) {
             return ResponseEntity.badRequest().build();
         }
         
+        RoutingRule rule = toEntity(request);
         rule.setTenantId(tenantId);
         RoutingRule updatedRule = routingRuleService.updateRoutingRule(id, rule);
-        return ResponseEntity.ok(updatedRule);
+        return ResponseEntity.ok(RoutingRuleResponse.from(updatedRule));
     }
 
     /**
@@ -121,5 +124,17 @@ public class RoutingRuleController {
         
         routingRuleService.createDefaultRoutingRules(tenantId);
         return ResponseEntity.noContent().build();
+    }
+
+    private RoutingRule toEntity(com.chatbot.core.message.store.dto.RoutingRuleRequest r) {
+        RoutingRule rule = new RoutingRule();
+        rule.setName(r.getName());
+        rule.setDescription(r.getDescription());
+        rule.setPriority(r.getPriority());
+        rule.setConditions(r.getConditions());
+        rule.setAction(r.getAction());
+        rule.setActive(r.getActive());
+        rule.setRuleType(r.getRuleType());
+        return rule;
     }
 }

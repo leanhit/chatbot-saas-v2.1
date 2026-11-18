@@ -365,8 +365,9 @@ public class ConversationController {
     // ENDPOINT MỚI: GET CONVERSATION BY ID
     // --------------------------------------------------------------------------
     @GetMapping("/{conversationId}/events")
-    public ResponseEntity<List<ConversationEvent>> getConversationEvents(@PathVariable Long conversationId) {
-        return ResponseEntity.ok(conversationEventService.getEvents(conversationId));
+    public ResponseEntity<List<com.chatbot.core.message.store.dto.ConversationEventResponse>> getConversationEvents(@PathVariable Long conversationId) {
+        return ResponseEntity.ok(conversationEventService.getEvents(conversationId).stream()
+                .map(com.chatbot.core.message.store.dto.ConversationEventResponse::from).toList());
     }
 
     @GetMapping("/{conversationId}")

@@ -6,6 +6,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import com.chatbot.shared.utils.DateUtils;
+import com.fasterxml.jackson.annotation.JsonFormat;
 
 @Data
 @Builder
@@ -15,7 +17,9 @@ public class TenantPackageDetailResponse {
     private Long tenantId;
     private String tenantKey;
     private String currentPackageId;
+    @JsonFormat(pattern = DateUtils.API_DATETIME_FORMAT, timezone = DateUtils.API_TIMEZONE)
     private LocalDateTime packageActivatedAt;
+    @JsonFormat(pattern = DateUtils.API_DATETIME_FORMAT, timezone = DateUtils.API_TIMEZONE)
     private LocalDateTime expiresAt;
     private String packageName;
     private BigDecimal packagePrice;

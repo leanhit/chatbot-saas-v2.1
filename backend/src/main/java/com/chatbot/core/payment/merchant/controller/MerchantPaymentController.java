@@ -1,6 +1,7 @@
 package com.chatbot.core.payment.merchant.controller;
 
 import com.chatbot.core.payment.merchant.dto.MerchantPaymentRequest;
+import com.chatbot.core.payment.merchant.dto.MerchantPaymentSessionResponse;
 import com.chatbot.core.payment.merchant.dto.MerchantPaymentResponse;
 import com.chatbot.core.payment.merchant.model.MerchantPaymentSession;
 import com.chatbot.core.payment.merchant.service.MerchantPaymentService;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
+import com.chatbot.shared.utils.DateUtils;
 
 @RestController
 @RequestMapping("/api/merchant/payment")
@@ -62,12 +64,12 @@ public class MerchantPaymentController {
         summary = "Get session status",
         description = "Get the status of a payment session"
     )
-    public ResponseEntity<MerchantPaymentSession> getSessionStatus(@PathVariable String sessionId) {
+    public ResponseEntity<MerchantPaymentSessionResponse> getSessionStatus(@PathVariable String sessionId) {
         log.info("🏪 Getting session status: {}", sessionId);
 
         try {
             MerchantPaymentSession session = merchantPaymentService.getSessionStatus(sessionId);
-            return ResponseEntity.ok(session);
+            return ResponseEntity.ok(MerchantPaymentSessionResponse.from(session));
         } catch (Exception e) {
             log.error("❌ Failed to get session status: {}", e.getMessage());
             return ResponseEntity.notFound().build();
@@ -82,12 +84,12 @@ public class MerchantPaymentController {
         summary = "Cancel session",
         description = "Cancel a pending payment session"
     )
-    public ResponseEntity<MerchantPaymentSession> cancelSession(@PathVariable String sessionId) {
+    public ResponseEntity<MerchantPaymentSessionResponse> cancelSession(@PathVariable String sessionId) {
         log.info("🏪 Cancelling session: {}", sessionId);
 
         try {
             MerchantPaymentSession session = merchantPaymentService.cancelSession(sessionId);
-            return ResponseEntity.ok(session);
+            return ResponseEntity.ok(MerchantPaymentSessionResponse.from(session));
         } catch (Exception e) {
             log.error("❌ Failed to cancel session: {}", e.getMessage());
             return ResponseEntity.badRequest().build();
@@ -102,7 +104,7 @@ public class MerchantPaymentController {
         summary = "Get merchant sessions",
         description = "Get all payment sessions for the authenticated merchant"
     )
-    public ResponseEntity<List<MerchantPaymentSession>> getMerchantSessions(HttpServletRequest httpRequest) {
+    public ResponseEntity<List<MerchantPaymentSessionResponse>> getMerchantSessions(HttpServletRequest httpRequest) {
         log.info("🏪 Getting merchant sessions");
 
         try {
@@ -111,7 +113,8 @@ public class MerchantPaymentController {
                 return ResponseEntity.badRequest().build();
             }
 
-            List<MerchantPaymentSession> sessions = merchantPaymentService.getMerchantSessions(merchantId);
+            List<MerchantPaymentSessionResponse> sessions = merchantPaymentService.getMerchantSessions(merchantId)
+                    .stream().map(MerchantPaymentSessionResponse::from).toList();
             return ResponseEntity.ok(sessions);
         } catch (Exception e) {
             log.error("❌ Failed to get merchant sessions: {}", e.getMessage());
@@ -131,7 +134,7 @@ public class MerchantPaymentController {
         return ResponseEntity.ok(Map.of(
             "status", "healthy",
             "service", "merchant-payment-gateway",
-            "timestamp", java.time.LocalDateTime.now()
+            "timestamp", com.chatbot.shared.utils.DateUtils.nowUtcLocalDateTime()
         ));
     }
 }

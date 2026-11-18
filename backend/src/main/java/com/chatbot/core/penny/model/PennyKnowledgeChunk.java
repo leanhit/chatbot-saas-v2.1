@@ -66,10 +66,10 @@ public class PennyKnowledgeChunk {
     @JsonFormat(pattern = DateUtils.STANDARD_JSON_FORMAT, timezone = DateUtils.STANDARD_TIMEZONE)
     @Column(name = "created_at", nullable = false, updatable = false)
     @Builder.Default
-    private LocalDateTime createdAt = LocalDateTime.now();
+    private LocalDateTime createdAt = DateUtils.nowUtcLocalDateTime();
 
     @PrePersist
     protected void onCreate() {
-        createdAt = LocalDateTime.now();
+        createdAt = DateUtils.nowUtcLocalDateTime();
     }
 }

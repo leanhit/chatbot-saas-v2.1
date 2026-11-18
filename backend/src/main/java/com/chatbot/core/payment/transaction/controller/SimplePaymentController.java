@@ -30,6 +30,7 @@ import java.util.Map;
 import com.chatbot.core.payment.transaction.service.PaymentSseService;
 import org.springframework.http.MediaType;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
+import com.chatbot.shared.utils.DateUtils;
 
 @RestController
 @RequestMapping({"/api/payment", "/api/simple-payment"})
@@ -61,7 +62,7 @@ public class SimplePaymentController {
 
         if (userDetails == null) {
             log.warn("❌ Unauthorized deposit request: missing user details");
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Unauthorized: User authentication required"));
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(com.chatbot.shared.dto.ErrorResponse.fromMessage("Unauthorized: User authentication required"));
         }
 
         log.info("📱 Creating deposit request for user: {}", userDetails.getUsername());
@@ -160,7 +161,7 @@ public class SimplePaymentController {
         Map<String, Object> health = Map.of(
             "status", "healthy",
             "service", "payment-transaction",
-            "timestamp", java.time.LocalDateTime.now()
+            "timestamp", com.chatbot.shared.utils.DateUtils.nowUtcLocalDateTime()
         );
 
         return ResponseEntity.ok(health);
@@ -211,14 +212,14 @@ public class SimplePaymentController {
         summary = "Debug user and tenant context",
         description = "Check current authentication and tenant context for debugging"
     )
-    public Map<String, Object> debugContext(
+    public Object debugContext(
             @AuthenticationPrincipal UserDetails userDetails,
             HttpServletRequest httpRequest) {
         
         Map<String, Object> debug = new HashMap<>();
         
         if (userDetails == null) {
-            return Map.of("error", "Unauthorized: User authentication required");
+            return com.chatbot.shared.dto.ErrorResponse.fromMessage("Unauthorized: User authentication required");
         }
 
         try {
@@ -330,7 +331,7 @@ public class SimplePaymentController {
             HttpServletRequest httpRequest) {
 
         if (userDetails == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Unauthorized"));
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(com.chatbot.shared.dto.ErrorResponse.fromMessage("Unauthorized"));
         }
 
         log.info("🔄 Retrying payment: {}", referenceCode);
@@ -365,12 +366,12 @@ public class SimplePaymentController {
         summary = "Check deposit limits",
         description = "Check current deposit limits for free packages"
     )
-    public ResponseEntity<Map<String, Object>> checkDepositLimits(
+    public ResponseEntity<?> checkDepositLimits(
             @AuthenticationPrincipal UserDetails userDetails,
             HttpServletRequest httpRequest) {
 
         if (userDetails == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Unauthorized"));
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(com.chatbot.shared.dto.ErrorResponse.fromMessage("Unauthorized"));
         }
         
         try {
@@ -391,7 +392,7 @@ public class SimplePaymentController {
             Map<String, Object> error = new HashMap<>();
             error.put("error", "Failed to check deposit limits");
             error.put("message", e.getMessage());
-            error.put("timestamp", java.time.LocalDateTime.now());
+            error.put("timestamp", com.chatbot.shared.utils.DateUtils.nowUtcLocalDateTime());
             
             return ResponseEntity.badRequest().body(error);
         }

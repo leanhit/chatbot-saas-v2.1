@@ -9,6 +9,7 @@ import lombok.NoArgsConstructor;
 import java.time.Instant;
 import java.util.Map;
 import java.util.UUID;
+import com.chatbot.shared.utils.DateUtils;
 
 /**
  * Import/Export Changelog Entity
@@ -88,14 +89,14 @@ public class ImportExportChangelog {
     
     @PrePersist
     protected void onCreate() {
-        createdAt = Instant.now();
-        updatedAt = Instant.now();
-        performedAt = Instant.now();
+        createdAt = DateUtils.nowUtc();
+        updatedAt = DateUtils.nowUtc();
+        performedAt = DateUtils.nowUtc();
     }
     
     @PreUpdate
     protected void onUpdate() {
-        updatedAt = Instant.now();
+        updatedAt = DateUtils.nowUtc();
     }
     
     public enum OperationType {

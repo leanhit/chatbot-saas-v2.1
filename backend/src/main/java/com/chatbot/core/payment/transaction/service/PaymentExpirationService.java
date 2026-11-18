@@ -16,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import com.chatbot.shared.utils.DateUtils;
 
 @Service
 @RequiredArgsConstructor
@@ -36,7 +37,7 @@ public class PaymentExpirationService {
     public void expirePendingPayments() {
         log.info("⏰ Checking for expired payments...");
 
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = DateUtils.nowUtcLocalDateTime();
         List<SimplePayment> expiredPayments = paymentRepository.findByStatusAndExpiresAtBefore(
             PaymentStatus.PENDING, now
         );
@@ -68,7 +69,7 @@ public class PaymentExpirationService {
             payment.getAmount(),
             payment.getCurrency(),
             "Payment expired",
-            LocalDateTime.now(),
+            DateUtils.nowUtcLocalDateTime(),
             payment.getTargetPackageId()
         ));
 

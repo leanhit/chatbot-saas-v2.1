@@ -24,7 +24,7 @@ class IdentityInterHubController {
      * Identity Hub gọi Tenant Hub để validate tenant
      */
     @PostMapping("/identity/validate-tenant")
-    public ResponseEntity<Map<String, Object>> validateTenant(@RequestBody Map<String, String> request) {
+    public ResponseEntity<?> validateTenant(@RequestBody Map<String, String> request) {
         try {
             String tenantKey = request.get("tenantKey");
             boolean isValid = tenantGrpcService.validateTenant(tenantKey);
@@ -37,7 +37,7 @@ class IdentityInterHubController {
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             log.error("Lỗi khi validate tenant", e);
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+            return ResponseEntity.badRequest().body(com.chatbot.shared.dto.ErrorResponse.fromMessage(e.getMessage()));
         }
     }
 
@@ -45,7 +45,7 @@ class IdentityInterHubController {
      * Identity Hub gọi Tenant Hub để check tenant exists
      */
     @PostMapping("/identity/check-tenant")
-    public ResponseEntity<Map<String, Object>> checkTenantExists(@RequestBody Map<String, String> request) {
+    public ResponseEntity<?> checkTenantExists(@RequestBody Map<String, String> request) {
         try {
             String tenantKey = request.get("tenantKey");
             boolean exists = tenantGrpcService.checkTenantExists(tenantKey);
@@ -58,7 +58,7 @@ class IdentityInterHubController {
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             log.error("Lỗi khi check tenant exists", e);
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+            return ResponseEntity.badRequest().body(com.chatbot.shared.dto.ErrorResponse.fromMessage(e.getMessage()));
         }
     }
 

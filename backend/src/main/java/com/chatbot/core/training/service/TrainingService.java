@@ -29,6 +29,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
+import com.chatbot.shared.utils.DateUtils;
 
 @Service
 @RequiredArgsConstructor
@@ -170,7 +171,7 @@ public class TrainingService {
         progress.setStatus(AgentTrainingProgress.ProgressStatus.COMPLETED);
         progress.setProgress(100);
         progress.setQuizScore(quizScore);
-        progress.setCompletedAt(java.time.LocalDateTime.now().toString());
+        progress.setCompletedAt(com.chatbot.shared.utils.DateUtils.nowUtcLocalDateTime().toString());
         trainingProgressRepository.save(progress);
 
         // Update skill score based on training completion

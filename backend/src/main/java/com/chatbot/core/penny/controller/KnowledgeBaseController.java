@@ -3,6 +3,7 @@ package com.chatbot.core.penny.controller;
 import com.chatbot.core.penny.kb.EmbeddingService;
 import com.chatbot.core.penny.kb.KnowledgeArticle;
 import com.chatbot.core.penny.kb.KnowledgeArticleRepository;
+import com.chatbot.core.penny.kb.dto.KnowledgeArticleRequest;
 import com.chatbot.core.penny.kb.KnowledgeBaseSearchService;
 import com.chatbot.core.penny.repository.PennyBotRepository;
 import com.chatbot.core.penny.model.PennyBot;
@@ -61,10 +62,11 @@ public class KnowledgeBaseController {
     @PostMapping("/articles")
     public ResponseEntity<KnowledgeArticle> createArticle(
             @PathVariable UUID botId,
-            @Valid @RequestBody KnowledgeArticle article) {
+            @Valid @RequestBody KnowledgeArticleRequest request) {
         
         log.info("📝 Creating knowledge article for bot: {}", botId);
         
+        KnowledgeArticle article = toEntity(request);
         Long tenantId = resolveTenantId(botId);
         article.setBotId(botId);
         article.setTenantId(tenantId);
@@ -144,7 +146,7 @@ public class KnowledgeBaseController {
     public ResponseEntity<KnowledgeArticle> updateArticle(
             @PathVariable UUID botId,
             @PathVariable UUID id,
-            @Valid @RequestBody KnowledgeArticle updatedArticle) {
+            @Valid @RequestBody KnowledgeArticleRequest request) {
         
         log.info("✏️ Updating knowledge article: {} for bot: {}", id, botId);
         
@@ -152,13 +154,15 @@ public class KnowledgeBaseController {
             .filter(article -> article.getBotId().equals(botId))
             .map(existingArticle -> {
                 // Update fields
-                existingArticle.setTitle(updatedArticle.getTitle());
-                existingArticle.setContent(updatedArticle.getContent());
-                existingArticle.setCategory(updatedArticle.getCategory());
-                existingArticle.setTags(updatedArticle.getTags());
-                existingArticle.setSourceUrl(updatedArticle.getSourceUrl());
-                existingArticle.setActive(updatedArticle.isActive());
-                existingArticle.setPriority(updatedArticle.getPriority());
+                existingArticle.setTitle(request.getTitle());
+                existingArticle.setContent(request.getContent());
+                existingArticle.setCategory(request.getCategory());
+                existingArticle.setTags(request.getTags());
+                existingArticle.setSourceUrl(request.getSourceUrl());
+                if (request.getIsActive() != null) {
+                    existingArticle.setActive(request.getIsActive());
+                }
+                existingArticle.setPriority(request.getPriority());
                 
                 // Re-generate embedding if content changed
                 if (embeddingService != null && embeddingService.isEnabled()) {
@@ -210,7 +214,7 @@ public class KnowledgeBaseController {
     @PostMapping("/import")
     public ResponseEntity<Map<String, Object>> importArticles(
             @PathVariable UUID botId,
-            @RequestBody List<@Valid KnowledgeArticle> articles) {
+            @RequestBody List<@Valid KnowledgeArticleRequest> articles) {
         
         log.info("📥 Importing {} knowledge articles for bot: {}", articles.size(), botId);
 
@@ -218,8 +222,9 @@ public class KnowledgeBaseController {
         int successCount = 0;
         int failureCount = 0;
         
-        for (KnowledgeArticle article : articles) {
+        for (KnowledgeArticleRequest request : articles) {
             try {
+                KnowledgeArticle article = toEntity(request);
                 article.setBotId(botId);
                 article.setTenantId(tenantId);
                 article.setId(UUID.randomUUID());
@@ -340,5 +345,19 @@ public class KnowledgeBaseController {
         }
         
         return ResponseEntity.ok(stats);
+    }
+
+    private KnowledgeArticle toEntity(KnowledgeArticleRequest r) {
+        KnowledgeArticle article = new KnowledgeArticle();
+        article.setTitle(r.getTitle());
+        article.setContent(r.getContent());
+        article.setCategory(r.getCategory());
+        article.setTags(r.getTags());
+        article.setSourceUrl(r.getSourceUrl());
+        if (r.getIsActive() != null) {
+            article.setActive(r.getIsActive());
+        }
+        article.setPriority(r.getPriority());
+        return article;
     }
 }

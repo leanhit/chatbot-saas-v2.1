@@ -24,12 +24,14 @@ public class GrpcFailureController {
     private final GrpcCallFailureRepository repository;
 
     @GetMapping("/failures")
-    public ResponseEntity<List<GrpcCallFailure>> listFailures(
+    public ResponseEntity<List<com.chatbot.shared.grpc.dto.GrpcCallFailureResponse>> listFailures(
             @RequestParam(required = false) String method) {
         if (method != null && !method.isBlank()) {
-            return ResponseEntity.ok(repository.findTop100ByMethodOrderByOccurredAtDesc(method));
+            return ResponseEntity.ok(repository.findTop100ByMethodOrderByOccurredAtDesc(method).stream()
+                    .map(com.chatbot.shared.grpc.dto.GrpcCallFailureResponse::from).toList());
         }
-        return ResponseEntity.ok(repository.findTop100ByOrderByOccurredAtDesc());
+        return ResponseEntity.ok(repository.findTop100ByOrderByOccurredAtDesc().stream()
+                .map(com.chatbot.shared.grpc.dto.GrpcCallFailureResponse::from).toList());
     }
 
     @GetMapping("/failures/stats")

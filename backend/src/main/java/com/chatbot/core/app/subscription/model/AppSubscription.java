@@ -72,7 +72,7 @@ public class AppSubscription extends BaseTenantEntity {
     protected void onCreate() {
         super.onCreate();
         if (subscriptionStart == null) {
-            subscriptionStart = LocalDateTime.now();
+            subscriptionStart = DateUtils.nowUtcLocalDateTime();
         }
         if (subscriptionStatus == null) {
             subscriptionStatus = SubscriptionStatus.PENDING;

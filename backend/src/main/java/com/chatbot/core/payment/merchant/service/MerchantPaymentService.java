@@ -17,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import com.chatbot.shared.utils.DateUtils;
 
 @Service
 @RequiredArgsConstructor
@@ -55,7 +56,7 @@ public class MerchantPaymentService {
                 .cancelUrl(request.getCancelUrl())
                 .metadata(request.getMetadata())
                 .status(SessionStatus.PENDING)
-                .expiresAt(LocalDateTime.now().plusHours(24))
+                .expiresAt(DateUtils.nowUtcLocalDateTime().plusHours(24))
                 .build();
 
         MerchantPaymentSession savedSession = sessionRepository.save(session);
@@ -110,7 +111,7 @@ public class MerchantPaymentService {
         }
 
         session.setStatus(SessionStatus.CANCELLED);
-        session.setCancelledAt(LocalDateTime.now());
+        session.setCancelledAt(DateUtils.nowUtcLocalDateTime());
 
         return sessionRepository.save(session);
     }
@@ -136,7 +137,7 @@ public class MerchantPaymentService {
         session.setStatus(SessionStatus.COMPLETED);
         session.setPaymentReferenceCode(paymentReferenceCode);
         session.setBankTransactionId(bankTransactionId);
-        session.setCompletedAt(LocalDateTime.now());
+        session.setCompletedAt(DateUtils.nowUtcLocalDateTime());
 
         MerchantPaymentSession savedSession = sessionRepository.save(session);
 

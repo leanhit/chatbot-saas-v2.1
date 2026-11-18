@@ -10,6 +10,7 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
+import com.chatbot.shared.utils.DateUtils;
 
 @Entity
 @Table(name = "package_upgrade_audit")
@@ -68,7 +69,7 @@ public class PackageUpgradeAudit {
     @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)
     @Builder.Default
-    private LocalDateTime createdAt = LocalDateTime.now();
+    private LocalDateTime createdAt = DateUtils.nowUtcLocalDateTime();
 
     @LastModifiedDate
     @Column(name = "updated_at")

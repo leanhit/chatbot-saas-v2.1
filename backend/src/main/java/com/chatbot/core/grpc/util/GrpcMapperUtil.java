@@ -3,6 +3,7 @@ package com.chatbot.core.grpc.util;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Optional;
+import com.chatbot.shared.utils.DateUtils;
 
 /**
  * Utility class for common gRPC mapping operations
@@ -42,7 +43,7 @@ public final class GrpcMapperUtil {
         if (dateTime == null) {
             return 0;
         }
-        return dateTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
+        return dateTime.atZone(DateUtils.UTC_ZONE).toInstant().toEpochMilli();
     }
 
     /**
@@ -54,7 +55,7 @@ public final class GrpcMapperUtil {
         }
         return LocalDateTime.ofInstant(
             java.time.Instant.ofEpochMilli(timestamp),
-            ZoneId.systemDefault()
+            DateUtils.UTC_ZONE
         );
     }
 

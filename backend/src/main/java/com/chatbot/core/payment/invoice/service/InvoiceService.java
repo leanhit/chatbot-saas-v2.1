@@ -17,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import com.chatbot.shared.utils.DateUtils;
 
 @Service
 @RequiredArgsConstructor
@@ -161,7 +162,7 @@ public class InvoiceService {
      * Format: INV-YYYYMMDD-XXXXX
      */
     private String generateInvoiceNumber() {
-        String datePrefix = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+        String datePrefix = DateUtils.nowUtcLocalDateTime().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
         
         // Get count of invoices today
         long count = invoiceRepository.count();
@@ -181,7 +182,7 @@ public class InvoiceService {
         invoice.setStatus(status);
         
         if (status == InvoiceStatus.PAID) {
-            invoice.setPaidAt(LocalDateTime.now());
+            invoice.setPaidAt(DateUtils.nowUtcLocalDateTime());
         }
 
         return invoiceRepository.save(invoice);

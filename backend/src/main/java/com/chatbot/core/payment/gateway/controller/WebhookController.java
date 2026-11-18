@@ -1,5 +1,7 @@
 package com.chatbot.core.payment.gateway.controller;
 
+import com.chatbot.core.payment.gateway.dto.WebhookRequest;
+import com.chatbot.core.payment.gateway.dto.WebhookResponse;
 import com.chatbot.core.payment.gateway.model.Webhook;
 import com.chatbot.core.payment.gateway.service.WebhookService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -31,10 +33,11 @@ public class WebhookController {
         summary = "Get all webhooks (Admin)",
         description = "Get all active webhooks - Admin only"
     )
-    public ResponseEntity<List<Webhook>> getWebhooks() {
+    public ResponseEntity<List<WebhookResponse>> getWebhooks() {
         log.info("🔔 Fetching all webhooks");
         
-        List<Webhook> webhooks = webhookService.getActiveWebhooks();
+        List<WebhookResponse> webhooks = webhookService.getActiveWebhooks()
+                .stream().map(WebhookResponse::from).toList();
         return ResponseEntity.ok(webhooks);
     }
 
@@ -47,12 +50,12 @@ public class WebhookController {
         summary = "Create webhook (Admin)",
         description = "Create a new webhook - Admin only"
     )
-    public ResponseEntity<Webhook> createWebhook(@RequestBody Webhook webhook) {
-        log.info("🔔 Creating new webhook: {}", webhook.getName());
+    public ResponseEntity<WebhookResponse> createWebhook(@RequestBody WebhookRequest request) {
+        log.info("🔔 Creating new webhook: {}", request.getName());
         
         try {
-            Webhook created = webhookService.createWebhook(webhook);
-            return ResponseEntity.ok(created);
+            Webhook created = webhookService.createWebhook(toEntity(request));
+            return ResponseEntity.ok(WebhookResponse.from(created));
         } catch (Exception e) {
             log.error("❌ Failed to create webhook: {}", e.getMessage());
             return ResponseEntity.badRequest().build();
@@ -68,12 +71,12 @@ public class WebhookController {
         summary = "Update webhook (Admin)",
         description = "Update an existing webhook - Admin only"
     )
-    public ResponseEntity<Webhook> updateWebhook(@PathVariable Long id, @RequestBody Webhook webhook) {
+    public ResponseEntity<WebhookResponse> updateWebhook(@PathVariable Long id, @RequestBody WebhookRequest request) {
         log.info("🔔 Updating webhook: {}", id);
         
         try {
-            Webhook updated = webhookService.updateWebhook(id, webhook);
-            return ResponseEntity.ok(updated);
+            Webhook updated = webhookService.updateWebhook(id, toEntity(request));
+            return ResponseEntity.ok(WebhookResponse.from(updated));
         } catch (Exception e) {
             log.error("❌ Failed to update webhook: {}", e.getMessage());
             return ResponseEntity.badRequest().build();
@@ -145,5 +148,18 @@ public class WebhookController {
             "id", id != null ? id.toString() : "",
             "url", url != null ? url : ""
         ));
+    }
+
+    private Webhook toEntity(WebhookRequest r) {
+        Webhook webhook = new Webhook();
+        webhook.setName(r.getName());
+        webhook.setUrl(r.getUrl());
+        webhook.setSecret(r.getSecret());
+        webhook.setIsActive(r.getIsActive());
+        webhook.setEventTypes(r.getEventTypes());
+        webhook.setRetryCount(r.getRetryCount());
+        webhook.setTimeoutSeconds(r.getTimeoutSeconds());
+        webhook.setDescription(r.getDescription());
+        return webhook;
     }
 }

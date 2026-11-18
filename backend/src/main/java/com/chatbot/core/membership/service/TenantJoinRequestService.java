@@ -22,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import com.chatbot.shared.utils.DateUtils;
 
 @Service
 @RequiredArgsConstructor
@@ -55,7 +56,7 @@ public class TenantJoinRequestService {
                 throw new BusinessLogicException(com.chatbot.shared.exceptions.ErrorCode.JOIN_REQUEST_ALREADY_SENT, "You have already sent a join request for this tenant");
             }
             joinRequest.setStatus(MembershipStatus.PENDING);
-            joinRequest.setCreatedAt(LocalDateTime.now());
+            joinRequest.setCreatedAt(DateUtils.nowUtcLocalDateTime());
         } else {
             Tenant tenant = tenantRepo.findById(tenantId)
                     .orElseThrow(() -> new TenantNotFoundException("Không tìm thấy tenant"));
@@ -64,7 +65,7 @@ public class TenantJoinRequestService {
                     .tenant(tenant)
                     .userId(user.getId()) // Application-level join: store userId instead of User object
                     .status(MembershipStatus.PENDING)
-                    .createdAt(LocalDateTime.now())
+                    .createdAt(DateUtils.nowUtcLocalDateTime())
                     .build();
         }
 
@@ -117,7 +118,7 @@ public class TenantJoinRequestService {
                         .userId(request.getUserId()) // Application-level join: store userId instead of User object
                         .role(TenantRole.MEMBER)
                         .status(MembershipStatus.ACTIVE)
-                        .joinedAt(LocalDateTime.now())
+                        .joinedAt(DateUtils.nowUtcLocalDateTime())
                         .build());
 
                 notificationService.sendJoinRequestApprovedNotification(

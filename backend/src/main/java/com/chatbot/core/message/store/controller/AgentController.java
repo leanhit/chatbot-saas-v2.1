@@ -248,15 +248,15 @@ public class AgentController {
      */
     @PostMapping("/repair/{userId}")
     @Operation(summary = "Repair missing Agent profile for an active member (OWNER only)")
-    public ResponseEntity<Map<String, String>> repairAgentForMember(@PathVariable Long userId) {
+    public ResponseEntity<?> repairAgentForMember(@PathVariable Long userId) {
         Long tenantId = requireTenantId();
         if (tenantId == null) {
-            return ResponseEntity.badRequest().body(Map.of("error", "Tenant context is missing"));
+            return ResponseEntity.badRequest().body(com.chatbot.shared.dto.ErrorResponse.fromMessage("Tenant context is missing"));
         }
 
         String currentEmail = permissionValidator.getCurrentUserEmail();
         if (!isOwner(tenantId)) {
-            return ResponseEntity.status(403).body(Map.of("error", "Only OWNER can repair agent profiles"));
+            return ResponseEntity.status(403).body(com.chatbot.shared.dto.ErrorResponse.fromMessage("Only OWNER can repair agent profiles"));
         }
 
         // Validate the target user is an ACTIVE member of this tenant
@@ -264,12 +264,12 @@ public class AgentController {
                 .existsByTenant_IdAndUserIdAndStatus(tenantId, userId, MembershipStatus.ACTIVE);
         if (!isActiveMember) {
             return ResponseEntity.badRequest().body(
-                    Map.of("error", "User " + userId + " is not an active member of this tenant"));
+                    com.chatbot.shared.dto.ErrorResponse.fromMessage("User " + userId + " is not an active member of this tenant"));
         }
 
         User user = userRepository.findById(userId).orElse(null);
         if (user == null) {
-            return ResponseEntity.badRequest().body(Map.of("error", "User not found: " + userId));
+            return ResponseEntity.badRequest().body(com.chatbot.shared.dto.ErrorResponse.fromMessage("User not found: " + userId));
         }
 
         String fullName = (user.getProfile() != null) ? user.getProfile().getFullName() : user.getEmail();
@@ -281,7 +281,7 @@ public class AgentController {
             return ResponseEntity.ok(Map.of("message", "Agent repaired for userId=" + userId));
         } catch (Exception e) {
             log.error("[AgentController] Repair failed for userId={} in tenantId={}: {}", userId, tenantId, e.getMessage(), e);
-            return ResponseEntity.internalServerError().body(Map.of("error", "Repair failed: " + e.getMessage()));
+            return ResponseEntity.internalServerError().body(com.chatbot.shared.dto.ErrorResponse.fromMessage("Repair failed: " + e.getMessage()));
         }
     }
 

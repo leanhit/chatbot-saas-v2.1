@@ -19,6 +19,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import com.chatbot.shared.utils.DateUtils;
 
 @Service
 @RequiredArgsConstructor
@@ -50,7 +51,7 @@ public class IntelligentSupervisorService {
                 .sessionType(request.getSessionType())
                 .sessionStatus(SupervisorSession.SessionStatus.ACTIVE)
                 .monitoredAgentId(request.getMonitoredAgentId())
-                .joinedAt(LocalDateTime.now())
+                .joinedAt(DateUtils.nowUtcLocalDateTime())
                 .isSilent(request.getIsSilent())
                 .canIntervene(request.getCanIntervene())
                 .interventionCount(0)
@@ -71,7 +72,7 @@ public class IntelligentSupervisorService {
         SupervisorSession session = findSessionForCurrentTenant(sessionId);
 
         session.setSessionStatus(SupervisorSession.SessionStatus.ENDED);
-        session.setLeftAt(LocalDateTime.now());
+        session.setLeftAt(DateUtils.nowUtcLocalDateTime());
 
         if (session.getJoinedAt() != null && session.getLeftAt() != null) {
             long seconds = ChronoUnit.SECONDS.between(session.getJoinedAt(), session.getLeftAt());
@@ -317,7 +318,7 @@ public class IntelligentSupervisorService {
                 .conversationId(conversationId)
                 .sessionType(sessionType)
                 .sessionStatus(SupervisorSession.SessionStatus.ACTIVE)
-                .joinedAt(LocalDateTime.now())
+                .joinedAt(DateUtils.nowUtcLocalDateTime())
                 .isSilent(sessionType == SupervisorSession.SessionType.MONITORING)
                 .canIntervene(sessionType != SupervisorSession.SessionType.MONITORING)
                 .interventionCount(0)
@@ -344,7 +345,7 @@ public class IntelligentSupervisorService {
                 .success(true)
                 .sessionId((Long) saved.getId())
                 .sessionType(sessionType.name())
-                .takenOverAt(LocalDateTime.now())
+                .takenOverAt(DateUtils.nowUtcLocalDateTime())
                 .reason("Takeover successful")
                 .build();
     }
@@ -366,7 +367,7 @@ public class IntelligentSupervisorService {
         }
         
         session.setSessionStatus(SupervisorSession.SessionStatus.ENDED);
-        session.setLeftAt(LocalDateTime.now());
+        session.setLeftAt(DateUtils.nowUtcLocalDateTime());
         
         if (session.getJoinedAt() != null && session.getLeftAt() != null) {
             long seconds = ChronoUnit.SECONDS.between(session.getJoinedAt(), session.getLeftAt());
@@ -390,7 +391,7 @@ public class IntelligentSupervisorService {
                 .supervisorId(session.getSupervisorId())
                 .success(true)
                 .sessionId(sessionId)
-                .releasedAt(LocalDateTime.now())
+                .releasedAt(DateUtils.nowUtcLocalDateTime())
                 .reason("Conversation released successfully")
                 .build();
     }
@@ -438,7 +439,7 @@ public class IntelligentSupervisorService {
                 .conversationId(conversationId)
                 .sessionType(sessionType)
                 .sessionStatus(SupervisorSession.SessionStatus.ACTIVE)
-                .joinedAt(LocalDateTime.now())
+                .joinedAt(DateUtils.nowUtcLocalDateTime())
                 .isSilent(sessionType == SupervisorSession.SessionType.MONITORING)
                 .canIntervene(sessionType != SupervisorSession.SessionType.MONITORING)
                 .interventionCount(0)
@@ -462,7 +463,7 @@ public class IntelligentSupervisorService {
         }
 
         session.setSessionStatus(SupervisorSession.SessionStatus.INTERRUPTED);
-        session.setLeftAt(LocalDateTime.now());
+        session.setLeftAt(DateUtils.nowUtcLocalDateTime());
 
         // Calculate duration
         if (session.getJoinedAt() != null) {

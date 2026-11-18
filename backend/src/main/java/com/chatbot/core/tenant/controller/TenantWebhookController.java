@@ -1,5 +1,8 @@
 package com.chatbot.core.tenant.controller;
 
+import com.chatbot.core.tenant.dto.TenantWebhookDeliveryResponse;
+import com.chatbot.core.tenant.dto.TenantWebhookRequest;
+import com.chatbot.core.tenant.dto.TenantWebhookResponse;
 import com.chatbot.core.tenant.model.TenantWebhook;
 import com.chatbot.core.tenant.model.TenantWebhookDelivery;
 import com.chatbot.core.tenant.service.TenantWebhookService;
@@ -22,21 +25,22 @@ public class TenantWebhookController {
 
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'OWNER', 'EDITOR')")
-    public ResponseEntity<List<TenantWebhook>> listWebhooks() {
-        return ResponseEntity.ok(webhookService.listWebhooks());
+    public ResponseEntity<List<TenantWebhookResponse>> listWebhooks() {
+        return ResponseEntity.ok(webhookService.listWebhooks().stream()
+                .map(TenantWebhookResponse::from).toList());
     }
 
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'OWNER', 'EDITOR')")
-    public ResponseEntity<TenantWebhook> createWebhook(@RequestBody TenantWebhook webhook) {
-        return ResponseEntity.ok(webhookService.createWebhook(webhook));
+    public ResponseEntity<TenantWebhookResponse> createWebhook(@RequestBody TenantWebhookRequest request) {
+        return ResponseEntity.ok(TenantWebhookResponse.from(webhookService.createWebhook(toEntity(request))));
     }
 
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'OWNER', 'EDITOR')")
-    public ResponseEntity<TenantWebhook> updateWebhook(@PathVariable Long id,
-                                                       @RequestBody TenantWebhook webhook) {
-        return ResponseEntity.ok(webhookService.updateWebhook(id, webhook));
+    public ResponseEntity<TenantWebhookResponse> updateWebhook(@PathVariable Long id,
+                                                       @RequestBody TenantWebhookRequest request) {
+        return ResponseEntity.ok(TenantWebhookResponse.from(webhookService.updateWebhook(id, toEntity(request))));
     }
 
     @DeleteMapping("/{id}")
@@ -50,15 +54,25 @@ public class TenantWebhookController {
 
     @GetMapping("/deliveries")
     @PreAuthorize("hasAnyRole('ADMIN', 'OWNER', 'EDITOR')")
-    public ResponseEntity<List<TenantWebhookDelivery>> listDeliveries(
+    public ResponseEntity<List<TenantWebhookDeliveryResponse>> listDeliveries(
             @RequestParam(required = false) TenantWebhookDelivery.Status status,
             @RequestParam(defaultValue = "50") int limit) {
-        return ResponseEntity.ok(webhookService.listDeliveries(status, limit));
+        return ResponseEntity.ok(webhookService.listDeliveries(status, limit).stream()
+                .map(TenantWebhookDeliveryResponse::from).toList());
     }
 
     @GetMapping("/deliveries/stats")
     @PreAuthorize("hasAnyRole('ADMIN', 'OWNER', 'EDITOR')")
     public ResponseEntity<java.util.Map<String, Long>> deliveryStats() {
         return ResponseEntity.ok(webhookService.deliveryStats());
+    }
+
+    private TenantWebhook toEntity(TenantWebhookRequest r) {
+        TenantWebhook webhook = new TenantWebhook();
+        webhook.setUrl(r.getUrl());
+        webhook.setSecret(r.getSecret());
+        webhook.setEvents(r.getEvents());
+        webhook.setIsActive(r.getIsActive());
+        return webhook;
     }
 }

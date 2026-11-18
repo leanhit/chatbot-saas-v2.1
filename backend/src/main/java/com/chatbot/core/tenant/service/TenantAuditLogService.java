@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import com.chatbot.shared.utils.DateUtils;
 
 @Service
 @RequiredArgsConstructor
@@ -33,7 +34,7 @@ public class TenantAuditLogService {
                     .userEmail(userEmail)
                     .action(action)
                     .details(details)
-                    .createdAt(LocalDateTime.now())
+                    .createdAt(DateUtils.nowUtcLocalDateTime())
                     .build();
             auditLogRepository.save(entry);
         } catch (Exception e) {

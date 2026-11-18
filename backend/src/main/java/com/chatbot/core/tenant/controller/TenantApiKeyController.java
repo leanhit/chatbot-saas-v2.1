@@ -1,5 +1,6 @@
 package com.chatbot.core.tenant.controller;
 
+import com.chatbot.core.tenant.dto.TenantApiKeyResponse;
 import com.chatbot.core.tenant.model.TenantApiKey;
 import com.chatbot.core.tenant.service.TenantApiKeyService;
 import lombok.RequiredArgsConstructor;
@@ -23,8 +24,9 @@ public class TenantApiKeyController {
 
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'OWNER', 'EDITOR')")
-    public ResponseEntity<List<TenantApiKey>> listApiKeys() {
-        return ResponseEntity.ok(apiKeyService.listApiKeys());
+    public ResponseEntity<List<TenantApiKeyResponse>> listApiKeys() {
+        return ResponseEntity.ok(apiKeyService.listApiKeys().stream()
+                .map(TenantApiKeyResponse::from).toList());
     }
 
     @PostMapping
@@ -36,8 +38,8 @@ public class TenantApiKeyController {
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'OWNER')")
-    public ResponseEntity<TenantApiKey> revokeApiKey(@PathVariable Long id) {
-        return ResponseEntity.ok(apiKeyService.revokeApiKey(id));
+    public ResponseEntity<TenantApiKeyResponse> revokeApiKey(@PathVariable Long id) {
+        return ResponseEntity.ok(TenantApiKeyResponse.from(apiKeyService.revokeApiKey(id)));
     }
 
     public record CreateKeyRequest(String name, TenantApiKey.KeyRole role, LocalDateTime expiresAt) {}

@@ -2,6 +2,8 @@ package com.chatbot.core.analytics.controller;
 
 import com.chatbot.core.analytics.model.CustomReport;
 import com.chatbot.core.analytics.model.ReportSchedule;
+import com.chatbot.core.analytics.dto.CustomReportRequest;
+import com.chatbot.core.analytics.dto.ReportScheduleRequest;
 import com.chatbot.core.analytics.service.ReportScheduleService;
 import com.chatbot.core.analytics.service.ReportService;
 import com.chatbot.core.tenant.infra.TenantContext;
@@ -31,23 +33,35 @@ public class ReportController {
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'SUPERVISOR')")
     public ResponseEntity<?> listReports() {
         Long tenantId = TenantContext.getTenantId();
-        if (tenantId == null) return ResponseEntity.badRequest().body(Map.of("error", "Tenant context missing"));
+        if (tenantId == null) return ResponseEntity.badRequest().body(com.chatbot.shared.dto.ErrorResponse.fromMessage("Tenant context missing"));
         return ResponseEntity.ok(reportService.listReports(tenantId));
     }
 
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
-    public ResponseEntity<?> createReport(@RequestBody CustomReport report) {
+    public ResponseEntity<?> createReport(@RequestBody CustomReportRequest request) {
         Long tenantId = TenantContext.getTenantId();
-        if (tenantId == null) return ResponseEntity.badRequest().body(Map.of("error", "Tenant context missing"));
+        if (tenantId == null) return ResponseEntity.badRequest().body(com.chatbot.shared.dto.ErrorResponse.fromMessage("Tenant context missing"));
+        CustomReport report = new CustomReport();
+        report.setName(request.getName());
+        report.setDescription(request.getDescription());
+        report.setReportType(request.getReportType());
+        report.setDateRangeDays(request.getDateRangeDays());
+        report.setFilters(request.getFilters());
         return ResponseEntity.ok(reportService.createReport(report, tenantId));
     }
 
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
-    public ResponseEntity<?> updateReport(@PathVariable Long id, @RequestBody CustomReport report) {
+    public ResponseEntity<?> updateReport(@PathVariable Long id, @RequestBody CustomReportRequest request) {
         Long tenantId = TenantContext.getTenantId();
-        if (tenantId == null) return ResponseEntity.badRequest().body(Map.of("error", "Tenant context missing"));
+        if (tenantId == null) return ResponseEntity.badRequest().body(com.chatbot.shared.dto.ErrorResponse.fromMessage("Tenant context missing"));
+        CustomReport report = new CustomReport();
+        report.setName(request.getName());
+        report.setDescription(request.getDescription());
+        report.setReportType(request.getReportType());
+        report.setDateRangeDays(request.getDateRangeDays());
+        report.setFilters(request.getFilters());
         return ResponseEntity.ok(reportService.updateReport(id, report, tenantId));
     }
 
@@ -55,7 +69,7 @@ public class ReportController {
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     public ResponseEntity<?> deleteReport(@PathVariable Long id) {
         Long tenantId = TenantContext.getTenantId();
-        if (tenantId == null) return ResponseEntity.badRequest().body(Map.of("error", "Tenant context missing"));
+        if (tenantId == null) return ResponseEntity.badRequest().body(com.chatbot.shared.dto.ErrorResponse.fromMessage("Tenant context missing"));
         reportService.deleteReport(id, tenantId);
         return ResponseEntity.ok(Map.of("deleted", true));
     }
@@ -64,7 +78,7 @@ public class ReportController {
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'SUPERVISOR')")
     public ResponseEntity<?> generateReport(@PathVariable Long id) {
         Long tenantId = TenantContext.getTenantId();
-        if (tenantId == null) return ResponseEntity.badRequest().body(Map.of("error", "Tenant context missing"));
+        if (tenantId == null) return ResponseEntity.badRequest().body(com.chatbot.shared.dto.ErrorResponse.fromMessage("Tenant context missing"));
         return ResponseEntity.ok(reportService.generateReport(id, tenantId));
     }
 
@@ -72,7 +86,7 @@ public class ReportController {
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'SUPERVISOR')")
     public ResponseEntity<?> getReportResult(@PathVariable Long id) {
         Long tenantId = TenantContext.getTenantId();
-        if (tenantId == null) return ResponseEntity.badRequest().body(Map.of("error", "Tenant context missing"));
+        if (tenantId == null) return ResponseEntity.badRequest().body(com.chatbot.shared.dto.ErrorResponse.fromMessage("Tenant context missing"));
         return ResponseEntity.ok(reportService.getLatestResult(id, tenantId));
     }
 
@@ -82,23 +96,30 @@ public class ReportController {
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     public ResponseEntity<?> listSchedules() {
         Long tenantId = TenantContext.getTenantId();
-        if (tenantId == null) return ResponseEntity.badRequest().body(Map.of("error", "Tenant context missing"));
+        if (tenantId == null) return ResponseEntity.badRequest().body(com.chatbot.shared.dto.ErrorResponse.fromMessage("Tenant context missing"));
         return ResponseEntity.ok(scheduleService.listSchedules(tenantId));
     }
 
     @PostMapping("/schedules")
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
-    public ResponseEntity<?> createSchedule(@RequestBody ReportSchedule schedule) {
+    public ResponseEntity<?> createSchedule(@RequestBody ReportScheduleRequest request) {
         Long tenantId = TenantContext.getTenantId();
-        if (tenantId == null) return ResponseEntity.badRequest().body(Map.of("error", "Tenant context missing"));
+        if (tenantId == null) return ResponseEntity.badRequest().body(com.chatbot.shared.dto.ErrorResponse.fromMessage("Tenant context missing"));
+        ReportSchedule schedule = new ReportSchedule();
+        schedule.setReportId(request.getReportId());
+        schedule.setCronExpression(request.getCronExpression());
+        schedule.setEnabled(request.getEnabled());
         return ResponseEntity.ok(scheduleService.createSchedule(schedule, tenantId));
     }
 
     @PutMapping("/schedules/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
-    public ResponseEntity<?> updateSchedule(@PathVariable Long id, @RequestBody ReportSchedule schedule) {
+    public ResponseEntity<?> updateSchedule(@PathVariable Long id, @RequestBody ReportScheduleRequest request) {
         Long tenantId = TenantContext.getTenantId();
-        if (tenantId == null) return ResponseEntity.badRequest().body(Map.of("error", "Tenant context missing"));
+        if (tenantId == null) return ResponseEntity.badRequest().body(com.chatbot.shared.dto.ErrorResponse.fromMessage("Tenant context missing"));
+        ReportSchedule schedule = new ReportSchedule();
+        schedule.setCronExpression(request.getCronExpression());
+        schedule.setEnabled(request.getEnabled());
         return ResponseEntity.ok(scheduleService.updateSchedule(id, schedule, tenantId));
     }
 
@@ -106,7 +127,7 @@ public class ReportController {
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     public ResponseEntity<?> deleteSchedule(@PathVariable Long id) {
         Long tenantId = TenantContext.getTenantId();
-        if (tenantId == null) return ResponseEntity.badRequest().body(Map.of("error", "Tenant context missing"));
+        if (tenantId == null) return ResponseEntity.badRequest().body(com.chatbot.shared.dto.ErrorResponse.fromMessage("Tenant context missing"));
         scheduleService.deleteSchedule(id, tenantId);
         return ResponseEntity.ok(Map.of("deleted", true));
     }

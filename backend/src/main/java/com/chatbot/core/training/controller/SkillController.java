@@ -11,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import com.chatbot.core.training.dto.AgentSkillResponse;
 
 @RestController
 @RequestMapping("/api/skills")
@@ -30,20 +31,20 @@ public class SkillController {
     }
 
     @GetMapping("/agent/{agentId}")
-    public ResponseEntity<List<AgentSkill>> getAgentSkills(@PathVariable Long agentId) {
+    public ResponseEntity<List<AgentSkillResponse>> getAgentSkills(@PathVariable Long agentId) {
         Long tenantId = com.chatbot.core.tenant.infra.TenantContext.getTenantId();
         List<AgentSkill> skills = skillAssessmentService.getAgentSkills(agentId, tenantId);
-        return ResponseEntity.ok(skills);
+        return ResponseEntity.ok(skills.stream().map(AgentSkillResponse::from).toList());
     }
 
     @PostMapping("/update")
-    public ResponseEntity<AgentSkill> updateSkill(
+    public ResponseEntity<AgentSkillResponse> updateSkill(
             @RequestParam Long agentId,
             @RequestParam Integer score,
             @RequestParam(required = false) String category) {
         requireOwnerOrEditor();
         Long tenantId = TenantContext.getTenantId();
         AgentSkill skill = skillAssessmentService.updateSkill(agentId, category, score, tenantId);
-        return ResponseEntity.ok(skill);
+        return ResponseEntity.ok(AgentSkillResponse.from(skill));
     }
 }

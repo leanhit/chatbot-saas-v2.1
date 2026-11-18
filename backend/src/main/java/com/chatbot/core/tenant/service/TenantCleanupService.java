@@ -24,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import com.chatbot.shared.utils.DateUtils;
 
 /**
  * Service for cleaning up tenant-related data after soft delete
@@ -91,7 +92,7 @@ public class TenantCleanupService {
     @Transactional(value = "tenantTransactionManager", rollbackFor = Exception.class)
     public void scheduledCleanup() {
         log.info("[TenantCleanupService] Starting scheduled cleanup for old deleted tenants");
-        LocalDateTime cutoffDate = LocalDateTime.now().minusDays(30);
+        LocalDateTime cutoffDate = DateUtils.nowUtcLocalDateTime().minusDays(30);
         
         try {
             // Find all tenants deleted more than 30 days ago

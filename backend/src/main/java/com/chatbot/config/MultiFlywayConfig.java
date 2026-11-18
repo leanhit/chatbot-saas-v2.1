@@ -29,7 +29,7 @@ public class MultiFlywayConfig {
                 .baselineOnMigrate(true)
                 .baselineVersion("0")
                 .outOfOrder(true)
-                .validateOnMigrate(false)
+                .validateOnMigrate(validateOnMigrate)
                 .ignoreMigrationPatterns("*:missing", "*:pending", "*:ignored")
                 .table("flyway_identity_schema_history")
                 .load();
@@ -43,7 +43,7 @@ public class MultiFlywayConfig {
                 .baselineOnMigrate(true)
                 .baselineVersion("0")
                 .outOfOrder(true)
-                .validateOnMigrate(false)
+                .validateOnMigrate(validateOnMigrate)
                 .ignoreMigrationPatterns("*:missing", "*:pending", "*:ignored")
                 .table("flyway_user_schema_history")
                 .load();
@@ -57,7 +57,7 @@ public class MultiFlywayConfig {
                 .baselineOnMigrate(true)
                 .baselineVersion("0")
                 .outOfOrder(true)
-                .validateOnMigrate(false)
+                .validateOnMigrate(validateOnMigrate)
                 .ignoreMigrationPatterns("*:missing", "*:pending", "*:ignored")
                 .table("flyway_tenant_schema_history")
                 .load();
@@ -71,7 +71,7 @@ public class MultiFlywayConfig {
                 .baselineOnMigrate(true)
                 .baselineVersion("0")
                 .outOfOrder(true)
-                .validateOnMigrate(false)
+                .validateOnMigrate(validateOnMigrate)
                 .ignoreMigrationPatterns("*:missing", "*:pending", "*:ignored")
                 .table("flyway_app_schema_history")
                 .load();
@@ -85,7 +85,7 @@ public class MultiFlywayConfig {
                 .baselineOnMigrate(true)
                 .baselineVersion("0")
                 .outOfOrder(true)
-                .validateOnMigrate(false)
+                .validateOnMigrate(validateOnMigrate)
                 .ignoreMigrationPatterns("*:missing", "*:pending", "*:ignored")
                 .table("flyway_config_schema_history")
                 .load();
@@ -99,7 +99,7 @@ public class MultiFlywayConfig {
                 .baselineOnMigrate(true)
                 .baselineVersion("0")
                 .outOfOrder(true)
-                .validateOnMigrate(false)
+                .validateOnMigrate(validateOnMigrate)
                 .ignoreMigrationPatterns("*:missing", "*:pending", "*:ignored")
                 .table("flyway_message_schema_history")
                 .load();
@@ -113,7 +113,7 @@ public class MultiFlywayConfig {
                 .baselineOnMigrate(true)
                 .baselineVersion("0")
                 .outOfOrder(true)
-                .validateOnMigrate(false)
+                .validateOnMigrate(validateOnMigrate)
                 .ignoreMigrationPatterns("*:missing", "*:pending", "*:ignored")
                 .table("flyway_shared_schema_history")
                 .load();
@@ -127,7 +127,7 @@ public class MultiFlywayConfig {
                 .baselineOnMigrate(true)
                 .baselineVersion("0")
                 .outOfOrder(true)
-                .validateOnMigrate(false)
+                .validateOnMigrate(validateOnMigrate)
                 .ignoreMigrationPatterns("*:missing", "*:pending", "*:ignored")
                 .table("flyway_spokes_schema_history")
                 .load();

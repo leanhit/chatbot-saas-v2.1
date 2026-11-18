@@ -1,5 +1,6 @@
 package com.chatbot.core.payment.invoice.controller;
 
+import com.chatbot.core.payment.invoice.dto.InvoiceResponse;
 import com.chatbot.core.payment.invoice.model.Invoice;
 import com.chatbot.core.payment.invoice.model.Invoice.InvoiceStatus;
 import com.chatbot.core.payment.invoice.service.InvoiceService;
@@ -32,12 +33,12 @@ public class InvoiceController {
         summary = "Get invoice by number",
         description = "Get a specific invoice by its invoice number"
     )
-    public ResponseEntity<Invoice> getInvoice(@PathVariable String invoiceNumber) {
+    public ResponseEntity<InvoiceResponse> getInvoice(@PathVariable String invoiceNumber) {
         log.info("📄 Fetching invoice: {}", invoiceNumber);
 
         try {
             Invoice invoice = invoiceService.getInvoiceByNumberAndTenant(invoiceNumber, TenantContext.getTenantId());
-            return ResponseEntity.ok(invoice);
+            return ResponseEntity.ok(InvoiceResponse.from(invoice));
         } catch (Exception e) {
             log.error("❌ Failed to fetch invoice: {}", e.getMessage());
             return ResponseEntity.notFound().build();
@@ -52,10 +53,11 @@ public class InvoiceController {
         summary = "Get user invoices",
         description = "Get all invoices for a specific user"
     )
-    public ResponseEntity<List<Invoice>> getUserInvoices(@PathVariable Long userId) {
+    public ResponseEntity<List<InvoiceResponse>> getUserInvoices(@PathVariable Long userId) {
         log.info("📄 Fetching invoices for user: {}", userId);
 
-        List<Invoice> invoices = invoiceService.getUserInvoices(userId, TenantContext.getTenantId());
+        List<InvoiceResponse> invoices = invoiceService.getUserInvoices(userId, TenantContext.getTenantId())
+                .stream().map(InvoiceResponse::from).toList();
         return ResponseEntity.ok(invoices);
     }
 
@@ -67,7 +69,7 @@ public class InvoiceController {
         summary = "Get tenant invoices",
         description = "Get all invoices for a specific tenant"
     )
-    public ResponseEntity<List<Invoice>> getTenantInvoices(@PathVariable Long tenantId) {
+    public ResponseEntity<List<InvoiceResponse>> getTenantInvoices(@PathVariable Long tenantId) {
         log.info("📄 Fetching invoices for tenant: {}", tenantId);
 
         Long contextTenantId = TenantContext.getTenantId();
@@ -75,7 +77,8 @@ public class InvoiceController {
             return ResponseEntity.status(403).build();
         }
 
-        List<Invoice> invoices = invoiceService.getTenantInvoices(tenantId);
+        List<InvoiceResponse> invoices = invoiceService.getTenantInvoices(tenantId)
+                .stream().map(InvoiceResponse::from).toList();
         return ResponseEntity.ok(invoices);
     }
 
@@ -88,7 +91,7 @@ public class InvoiceController {
         summary = "Update invoice status (Admin)",
         description = "Update invoice status - Admin only"
     )
-    public ResponseEntity<Invoice> updateInvoiceStatus(
+    public ResponseEntity<InvoiceResponse> updateInvoiceStatus(
             @PathVariable String invoiceNumber,
             @RequestBody Map<String, String> request) {
 
@@ -97,7 +100,7 @@ public class InvoiceController {
         try {
             InvoiceStatus status = InvoiceStatus.valueOf(request.get("status"));
             Invoice invoice = invoiceService.updateInvoiceStatus(invoiceNumber, status);
-            return ResponseEntity.ok(invoice);
+            return ResponseEntity.ok(InvoiceResponse.from(invoice));
         } catch (Exception e) {
             log.error("❌ Failed to update invoice status: {}", e.getMessage());
             return ResponseEntity.badRequest().build();

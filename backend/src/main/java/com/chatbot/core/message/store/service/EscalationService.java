@@ -25,6 +25,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import com.chatbot.shared.utils.DateUtils;
 
 /**
  * Service for managing multi-tier escalation
@@ -110,7 +111,7 @@ public class EscalationService {
 
         // Determine the tier the conversation should be at based on elapsed time
         LocalDateTime createdAt = conversation.getCreatedAt();
-        long secondsSinceCreation = ChronoUnit.SECONDS.between(createdAt, LocalDateTime.now());
+        long secondsSinceCreation = ChronoUnit.SECONDS.between(createdAt, DateUtils.nowUtcLocalDateTime());
 
         EscalationTier targetTier = null;
         for (EscalationTier tier : tiers) {
@@ -152,7 +153,7 @@ public class EscalationService {
 
         // Determine current tier based on time elapsed
         LocalDateTime createdAt = conversation.getCreatedAt();
-        long secondsSinceCreation = ChronoUnit.SECONDS.between(createdAt, LocalDateTime.now());
+        long secondsSinceCreation = ChronoUnit.SECONDS.between(createdAt, DateUtils.nowUtcLocalDateTime());
 
         EscalationTier targetTier = null;
         for (EscalationTier tier : tiers) {
@@ -164,7 +165,7 @@ public class EscalationService {
         if (targetTier != null) {
             // Persist escalation tracking to Conversation entity
             conversation.setCurrentEscalationTier(targetTier.getLevel());
-            conversation.setLastEscalatedAt(LocalDateTime.now());
+            conversation.setLastEscalatedAt(DateUtils.nowUtcLocalDateTime());
             conversationRepository.save(conversation);
             log.info("Updated escalation tracking for conversation {}: tier={}",
                 conversation.getId(), targetTier.getLevel());
@@ -196,7 +197,7 @@ public class EscalationService {
         if (targetTier != null) {
             // Persist escalation tracking
             conversation.setCurrentEscalationTier(targetTier.getLevel());
-            conversation.setLastEscalatedAt(LocalDateTime.now());
+            conversation.setLastEscalatedAt(DateUtils.nowUtcLocalDateTime());
             conversationRepository.save(conversation);
             sendEscalationNotification(conversation, targetTier);
         } else {
@@ -225,7 +226,7 @@ public class EscalationService {
         notification.put("escalationTier", tier.getLevel());
         notification.put("escalationTierName", tier.getName());
         notification.put("priority", "high");
-        notification.put("timestamp", LocalDateTime.now());
+        notification.put("timestamp", DateUtils.nowUtcLocalDateTime());
         notificationWebSocketHandler.broadcastToTenant(conversation.getTenantId(), notification);
 
         // 2. Email notification (non-blocking, graceful fail)

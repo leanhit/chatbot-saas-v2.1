@@ -20,6 +20,7 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import com.chatbot.shared.utils.DateUtils;
 
 @Service
 @RequiredArgsConstructor
@@ -90,7 +91,7 @@ public class MerchantWebhookDispatcher {
 
             // Update session
             session.setWebhookStatus("SENT");
-            session.setWebhookSentAt(LocalDateTime.now());
+            session.setWebhookSentAt(DateUtils.nowUtcLocalDateTime());
             sessionRepository.save(session);
 
         } catch (Exception e) {
@@ -120,7 +121,7 @@ public class MerchantWebhookDispatcher {
         long maxDelayMs = 60000; // Max 60 seconds
         delayMs = Math.min(delayMs, maxDelayMs);
 
-        LocalDateTime nextRetryAt = LocalDateTime.now().plus(java.time.Duration.ofMillis(delayMs));
+        LocalDateTime nextRetryAt = DateUtils.nowUtcLocalDateTime().plus(java.time.Duration.ofMillis(delayMs));
         log.info("🔄 Scheduling webhook retry for session: {} at: {}", session.getSessionId(), nextRetryAt);
 
         // In production, this would use a scheduled task or message queue
@@ -171,7 +172,7 @@ public class MerchantWebhookDispatcher {
         payload.put("bankTransactionId", session.getBankTransactionId());
         payload.put("completedAt", session.getCompletedAt());
         payload.put("metadata", session.getMetadata());
-        payload.put("timestamp", LocalDateTime.now());
+        payload.put("timestamp", DateUtils.nowUtcLocalDateTime());
         return payload;
     }
 

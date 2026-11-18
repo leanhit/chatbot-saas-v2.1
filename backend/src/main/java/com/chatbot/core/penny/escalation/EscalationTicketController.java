@@ -16,6 +16,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import com.chatbot.shared.utils.DateUtils;
+import com.chatbot.core.penny.escalation.dto.EscalationTicketRequest;
+import com.chatbot.core.penny.escalation.dto.EscalationTicketResponse;
 
 /**
  * EscalationTicketController — Admin REST API for managing escalation tickets
@@ -37,7 +40,7 @@ public class EscalationTicketController {
      * GET /api/penny/bots/{botId}/escalation/tickets?page=0&size=20
      */
     @GetMapping("/tickets")
-    public ResponseEntity<Page<EscalationTicket>> getTickets(
+    public ResponseEntity<Page<EscalationTicketResponse>> getTickets(
             @PathVariable UUID botId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
@@ -58,7 +61,7 @@ public class EscalationTicketController {
         Page<EscalationTicket> tickets = escalationTicketRepository
             .findByBotIdAndTenantId(botId, tenantId, pageable);
         
-        return ResponseEntity.ok(tickets);
+        return ResponseEntity.ok(tickets.map(EscalationTicketResponse::from));
     }
 
     /**
@@ -66,7 +69,7 @@ public class EscalationTicketController {
      * GET /api/penny/bots/{botId}/escalation/tickets/status/{status}
      */
     @GetMapping("/tickets/status/{status}")
-    public ResponseEntity<List<EscalationTicket>> getTicketsByStatus(
+    public ResponseEntity<List<EscalationTicketResponse>> getTicketsByStatus(
             @PathVariable UUID botId,
             @PathVariable String status) {
         
@@ -77,7 +80,7 @@ public class EscalationTicketController {
         List<EscalationTicket> tickets = escalationTicketRepository
             .findByBotIdAndTenantIdAndStatus(botId, tenantId, status);
         
-        return ResponseEntity.ok(tickets);
+        return ResponseEntity.ok(tickets.stream().map(EscalationTicketResponse::from).toList());
     }
 
     /**
@@ -85,7 +88,7 @@ public class EscalationTicketController {
      * GET /api/penny/bots/{botId}/escalation/tickets/{id}
      */
     @GetMapping("/tickets/{id}")
-    public ResponseEntity<EscalationTicket> getTicket(
+    public ResponseEntity<EscalationTicketResponse> getTicket(
             @PathVariable UUID botId,
             @PathVariable UUID id) {
         
@@ -93,7 +96,7 @@ public class EscalationTicketController {
         
         return escalationTicketRepository.findById(id)
             .filter(ticket -> ticket.getBotId().equals(botId))
-            .map(ResponseEntity::ok)
+            .map(ticket -> ResponseEntity.ok(EscalationTicketResponse.from(ticket)))
             .orElse(ResponseEntity.notFound().build());
     }
 
@@ -102,14 +105,23 @@ public class EscalationTicketController {
      * POST /api/penny/bots/{botId}/escalation/tickets
      */
     @PostMapping("/tickets")
-    public ResponseEntity<EscalationTicket> createTicket(
+    public ResponseEntity<EscalationTicketResponse> createTicket(
             @PathVariable UUID botId,
-            @RequestBody EscalationTicket ticket) {
+            @RequestBody EscalationTicketRequest request) {
         
         log.info("📝 Creating escalation ticket for bot: {}", botId);
         
+        EscalationTicket ticket = new EscalationTicket();
         ticket.setBotId(botId);
         ticket.setId(UUID.randomUUID());
+        ticket.setUserId(request.getUserId());
+        ticket.setConversationId(request.getConversationId());
+        ticket.setReason(request.getReason());
+        ticket.setStatus(request.getStatus());
+        ticket.setPriority(request.getPriority());
+        ticket.setAssignedAgentId(request.getAssignedAgentId());
+        ticket.setConfidenceScore(request.getConfidenceScore());
+        ticket.setMetadata(request.getMetadata());
         
         // Set default status if not provided
         if (ticket.getStatus() == null || ticket.getStatus().isBlank()) {
@@ -124,7 +136,7 @@ public class EscalationTicketController {
         EscalationTicket saved = escalationTicketRepository.save(ticket);
         log.info("✅ Created escalation ticket: {}", saved.getId());
         
-        return ResponseEntity.status(HttpStatus.CREATED).body(saved);
+        return ResponseEntity.status(HttpStatus.CREATED).body(EscalationTicketResponse.from(saved));
     }
 
     /**
@@ -132,10 +144,10 @@ public class EscalationTicketController {
      * PUT /api/penny/bots/{botId}/escalation/tickets/{id}
      */
     @PutMapping("/tickets/{id}")
-    public ResponseEntity<EscalationTicket> updateTicket(
+    public ResponseEntity<EscalationTicketResponse> updateTicket(
             @PathVariable UUID botId,
             @PathVariable UUID id,
-            @RequestBody EscalationTicket updatedTicket) {
+            @RequestBody EscalationTicketRequest request) {
         
         log.info("✏️ Updating escalation ticket: {} for bot: {}", id, botId);
         
@@ -143,21 +155,21 @@ public class EscalationTicketController {
             .filter(ticket -> ticket.getBotId().equals(botId))
             .map(existingTicket -> {
                 // Update fields
-                existingTicket.setReason(updatedTicket.getReason());
-                existingTicket.setStatus(updatedTicket.getStatus());
-                existingTicket.setPriority(updatedTicket.getPriority());
-                existingTicket.setAssignedAgentId(updatedTicket.getAssignedAgentId());
-                existingTicket.setMetadata(updatedTicket.getMetadata());
+                existingTicket.setReason(request.getReason());
+                existingTicket.setStatus(request.getStatus());
+                existingTicket.setPriority(request.getPriority());
+                existingTicket.setAssignedAgentId(request.getAssignedAgentId());
+                existingTicket.setMetadata(request.getMetadata());
                 
                 // If resolving, set resolvedAt and resolutionNotes
-                if ("RESOLVED".equals(updatedTicket.getStatus()) && existingTicket.getResolvedAt() == null) {
-                    existingTicket.setResolvedAt(java.time.LocalDateTime.now());
-                    existingTicket.setResolutionNotes(updatedTicket.getResolutionNotes());
+                if ("RESOLVED".equals(request.getStatus()) && existingTicket.getResolvedAt() == null) {
+                    existingTicket.setResolvedAt(com.chatbot.shared.utils.DateUtils.nowUtcLocalDateTime());
+                    existingTicket.setResolutionNotes(request.getResolutionNotes());
                 }
                 
                 EscalationTicket saved = escalationTicketRepository.save(existingTicket);
                 log.info("✅ Updated escalation ticket: {}", saved.getId());
-                return ResponseEntity.ok(saved);
+                return ResponseEntity.ok(EscalationTicketResponse.from(saved));
             })
             .orElse(ResponseEntity.notFound().build());
     }
@@ -188,7 +200,7 @@ public class EscalationTicketController {
      * POST /api/penny/bots/{botId}/escalation/tickets/{id}/assign
      */
     @PostMapping("/tickets/{id}/assign")
-    public ResponseEntity<EscalationTicket> assignTicket(
+    public ResponseEntity<EscalationTicketResponse> assignTicket(
             @PathVariable UUID botId,
             @PathVariable UUID id,
             @RequestBody Map<String, String> request) {
@@ -206,7 +218,7 @@ public class EscalationTicketController {
                 ticket.markAsAssigned(agentId);
                 EscalationTicket saved = escalationTicketRepository.save(ticket);
                 log.info("✅ Assigned ticket {} to agent: {}", id, agentId);
-                return ResponseEntity.ok(saved);
+                return ResponseEntity.ok(EscalationTicketResponse.from(saved));
             })
             .orElse(ResponseEntity.notFound().build());
     }
@@ -216,7 +228,7 @@ public class EscalationTicketController {
      * POST /api/penny/bots/{botId}/escalation/tickets/{id}/resolve
      */
     @PostMapping("/tickets/{id}/resolve")
-    public ResponseEntity<EscalationTicket> resolveTicket(
+    public ResponseEntity<EscalationTicketResponse> resolveTicket(
             @PathVariable UUID botId,
             @PathVariable UUID id,
             @RequestBody Map<String, String> request) {
@@ -231,7 +243,7 @@ public class EscalationTicketController {
                 ticket.markAsResolved(notes);
                 EscalationTicket saved = escalationTicketRepository.save(ticket);
                 log.info("✅ Resolved ticket: {}", id);
-                return ResponseEntity.ok(saved);
+                return ResponseEntity.ok(EscalationTicketResponse.from(saved));
             })
             .orElse(ResponseEntity.notFound().build());
     }
@@ -241,7 +253,7 @@ public class EscalationTicketController {
      * POST /api/penny/bots/{botId}/escalation/tickets/{id}/cancel
      */
     @PostMapping("/tickets/{id}/cancel")
-    public ResponseEntity<EscalationTicket> cancelTicket(
+    public ResponseEntity<EscalationTicketResponse> cancelTicket(
             @PathVariable UUID botId,
             @PathVariable UUID id) {
         
@@ -253,7 +265,7 @@ public class EscalationTicketController {
                 ticket.cancel();
                 EscalationTicket saved = escalationTicketRepository.save(ticket);
                 log.info("✅ Cancelled ticket: {}", id);
-                return ResponseEntity.ok(saved);
+                return ResponseEntity.ok(EscalationTicketResponse.from(saved));
             })
             .orElse(ResponseEntity.notFound().build());
     }
@@ -263,7 +275,7 @@ public class EscalationTicketController {
      * GET /api/penny/bots/{botId}/escalation/tickets/pending
      */
     @GetMapping("/tickets/pending")
-    public ResponseEntity<List<EscalationTicket>> getPendingTickets(
+    public ResponseEntity<List<EscalationTicketResponse>> getPendingTickets(
             @PathVariable UUID botId) {
         
         log.debug("📋 Fetching pending tickets for bot: {}", botId);
@@ -273,7 +285,7 @@ public class EscalationTicketController {
         List<EscalationTicket> tickets = escalationTicketRepository
             .findPendingTickets(botId, tenantId);
         
-        return ResponseEntity.ok(tickets);
+        return ResponseEntity.ok(tickets.stream().map(EscalationTicketResponse::from).toList());
     }
 
     /**

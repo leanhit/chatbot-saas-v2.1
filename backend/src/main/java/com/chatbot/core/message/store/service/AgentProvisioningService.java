@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import com.chatbot.shared.utils.DateUtils;
 
 /**
  * Service responsible for automatically provisioning and deactivating Agent profiles
@@ -81,7 +82,7 @@ public class AgentProvisioningService {
                 .ifPresent(agent -> {
                     agent.setActive(false);
                     agent.setStatus(Agent.AgentStatus.OFFLINE);
-                    agent.setUpdatedAt(LocalDateTime.now());
+                    agent.setUpdatedAt(DateUtils.nowUtcLocalDateTime());
                     agentRepository.save(agent);
                     log.info("[AgentProvisioning] Deactivated agent id={} for userId={} in tenantId={}",
                             agent.getId(), userId, tenantId);
@@ -102,9 +103,9 @@ public class AgentProvisioningService {
                 .currentLoad(0)
                 .active(true)
                 .avatarUrl(event.getUserAvatar())
-                .createdAt(LocalDateTime.now())
-                .updatedAt(LocalDateTime.now())
-                .lastActivityAt(LocalDateTime.now())
+                .createdAt(DateUtils.nowUtcLocalDateTime())
+                .updatedAt(DateUtils.nowUtcLocalDateTime())
+                .lastActivityAt(DateUtils.nowUtcLocalDateTime())
                 .build();
 
         agentRepository.save(agent);
@@ -114,7 +115,7 @@ public class AgentProvisioningService {
 
     private void reactivateAgent(Agent existing) {
         existing.setActive(true);
-        existing.setUpdatedAt(LocalDateTime.now());
+        existing.setUpdatedAt(DateUtils.nowUtcLocalDateTime());
         agentRepository.save(existing);
         log.info("[AgentProvisioning] Reactivated existing agent id={} for userId={} in tenantId={}",
                 existing.getId(), existing.getUserId(), existing.getTenantId());

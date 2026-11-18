@@ -17,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
+import com.chatbot.shared.utils.DateUtils;
 
 @Service
 @RequiredArgsConstructor
@@ -95,7 +96,7 @@ public class TransferService {
         }
 
         transfer.setStatus(ConversationTransfer.TransferStatus.ACCEPTED.name());
-        transfer.setAcceptedAt(LocalDateTime.now());
+        transfer.setAcceptedAt(DateUtils.nowUtcLocalDateTime());
 
         // Update conversation assignment (tenant-scoped)
         Conversation conversation = conversationRepository.findByIdAndTenantId(transfer.getConversationId(), transfer.getTenantId())
@@ -126,7 +127,7 @@ public class TransferService {
         }
 
         transfer.setStatus(ConversationTransfer.TransferStatus.REJECTED.name());
-        transfer.setRejectedAt(LocalDateTime.now());
+        transfer.setRejectedAt(DateUtils.nowUtcLocalDateTime());
         if (reason != null) {
             transfer.setNotes(reason);
         }
@@ -150,7 +151,7 @@ public class TransferService {
         }
 
         transfer.setStatus(ConversationTransfer.TransferStatus.COMPLETED.name());
-        transfer.setCompletedAt(LocalDateTime.now());
+        transfer.setCompletedAt(DateUtils.nowUtcLocalDateTime());
 
         ConversationTransfer updated = transferRepository.save(transfer);
         log.info("Transfer completed successfully");

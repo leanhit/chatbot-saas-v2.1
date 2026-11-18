@@ -14,6 +14,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import com.chatbot.shared.utils.DateUtils;
 
 @Service
 public @RequiredArgsConstructor
@@ -127,7 +128,7 @@ class CategoryService {
         
         category.setName(requestDTO.getName());
         category.setDescription(requestDTO.getDescription());
-        category.setUpdatedAt(LocalDateTime.now());
+        category.setUpdatedAt(DateUtils.nowUtcLocalDateTime());
         
         Category updatedCategory = categoryRepository.save(category);
         return convertToResponseDTO(updatedCategory);

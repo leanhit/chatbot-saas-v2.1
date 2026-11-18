@@ -11,6 +11,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import com.chatbot.shared.utils.DateUtils;
 
 @Entity
 @Table(name = "simple_payments")
@@ -63,7 +64,7 @@ public class SimplePayment {
     @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)
     @Builder.Default
-    private LocalDateTime createdAt = LocalDateTime.now();
+    private LocalDateTime createdAt = DateUtils.nowUtcLocalDateTime();
 
     @LastModifiedDate
     @Column(name = "updated_at")
@@ -78,7 +79,7 @@ public class SimplePayment {
             status = PaymentStatus.PENDING;
         }
         if (expiresAt == null) {
-            expiresAt = LocalDateTime.now().plusHours(24); // QR expires in 24 hours
+            expiresAt = DateUtils.nowUtcLocalDateTime().plusHours(24); // QR expires in 24 hours
         }
     }
 }

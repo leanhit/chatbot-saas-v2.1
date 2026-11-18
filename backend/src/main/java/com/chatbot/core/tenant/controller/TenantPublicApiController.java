@@ -43,7 +43,7 @@ public class TenantPublicApiController {
             try {
                 statusEnum = ConversationStatus.valueOf(status.trim().toUpperCase());
             } catch (IllegalArgumentException e) {
-                return ResponseEntity.badRequest().body(Map.of("error", "Invalid status: " + status));
+                return ResponseEntity.badRequest().body(com.chatbot.shared.dto.ErrorResponse.fromMessage("Invalid status: " + status));
             }
         }
         Page<Conversation> result = (statusEnum != null)

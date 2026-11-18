@@ -19,6 +19,7 @@ import java.util.HexFormat;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import com.chatbot.shared.utils.DateUtils;
 
 /**
  * Dispatches conversation lifecycle events to tenant-configured outbound
@@ -103,7 +104,7 @@ public class ConversationWebhookDispatcher {
                     .payload(body)
                     .status(TenantWebhookDelivery.Status.PENDING)
                     .attempts(0)
-                    .nextRetryAt(LocalDateTime.now().plusMinutes(1))
+                    .nextRetryAt(DateUtils.nowUtcLocalDateTime().plusMinutes(1))
                     .lastError(error)
                     .build());
         } catch (Exception e) {
@@ -118,7 +119,7 @@ public class ConversationWebhookDispatcher {
         sb.append("\"deliveryId\":\"").append(deliveryKey).append("\",");
         sb.append("\"conversationId\":").append(conversationId).append(",");
         sb.append("\"tenantId\":").append(webhook.getTenantId()).append(",");
-        sb.append("\"timestamp\":\"").append(LocalDateTime.now()).append("\",");
+        sb.append("\"timestamp\":\"").append(DateUtils.nowUtcLocalDateTime()).append("\",");
         sb.append("\"data\":{");
         if (payload != null) {
             boolean first = true;

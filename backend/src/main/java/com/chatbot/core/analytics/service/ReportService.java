@@ -16,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
+import com.chatbot.shared.utils.DateUtils;
 
 /**
  * Custom report generation. Reports aggregate tenant-scoped data over a
@@ -77,7 +78,7 @@ public class ReportService {
 
         Map<String, Object> data = buildReportData(report, tenantId);
         report.setLastResult(data);
-        report.setLastGeneratedAt(java.time.LocalDateTime.now());
+        report.setLastGeneratedAt(com.chatbot.shared.utils.DateUtils.nowUtcLocalDateTime());
         reportRepository.save(report);
         return data;
     }
@@ -91,7 +92,7 @@ public class ReportService {
     }
 
     private Map<String, Object> buildReportData(CustomReport report, Long tenantId) {
-        LocalDate to = LocalDate.now();
+        LocalDate to = LocalDate.now(DateUtils.UTC_ZONE);
         LocalDate from = to.minusDays(report.getDateRangeDays() != null ? report.getDateRangeDays() : 30);
         List<AnalyticsDailySummary> summaries = summaryRepository
             .findByTenantIdAndDateRange(tenantId, from, to);

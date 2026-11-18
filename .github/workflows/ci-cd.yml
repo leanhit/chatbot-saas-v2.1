@@ -32,6 +32,35 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
+      - name: Convention guard (datetime & error handling)
+        run: |
+          cd backend/src/main/java
+          FAIL=0
+          check() {
+            local desc="$1"; shift
+            local hits
+            hits=$(grep -rn "$@" . 2>/dev/null | grep -v 'DateUtils\.' || true)
+            if [ -n "$hits" ]; then
+              echo "VIOLATION [$desc]:"; echo "$hits" | head -20; FAIL=1
+            fi
+          }
+          check "LocalDateTime.now()" -E --include='*.java' 'LocalDateTime\.now\(\)'
+          check "Instant.now()" -E --include='*.java' '[^a-zA-Z]Instant\.now\(\)'
+          check "LocalDate.now()" -E --include='*.java' '[^a-zA-Z]LocalDate\.now\(\)'
+          check "ZonedDateTime.now()" -E --include='*.java' '[^a-zA-Z]ZonedDateTime\.now\(\)'
+          check "OffsetDateTime.now()" -E --include='*.java' '[^a-zA-Z]OffsetDateTime\.now\(\)'
+          check "ZoneId.systemDefault()" -E --include='*.java' 'ZoneId\.systemDefault\(\)|[^a-zA-Z]systemDefault\(\)'
+          check "Map.of(error) in controllers" -E --include='*Controller.java' 'Map\.of\("error"'
+          ALLOWED_OM="JsonUtils.java|LocationService.java|UnifiedRedisConfig.java|CacheConfig.java|JacksonConfig.java|JsonMapConverter.java|DataExportService.java"
+          OM_HITS=$(grep -rln 'new ObjectMapper()' --include='*.java' . | grep -vE "$ALLOWED_OM" || true)
+          if [ -n "$OM_HITS" ]; then
+            echo "VIOLATION [new ObjectMapper() outside allowlist]:"; echo "$OM_HITS"; FAIL=1
+          fi
+          if [ "$FAIL" -ne 0 ]; then
+            echo "Convention guard FAILED. See docs/inventory-model-dto-migration.md"; exit 1
+          fi
+          echo "Convention guard passed."
+
       - name: Run tests
         run: ./gradlew test --no-daemon
         env:

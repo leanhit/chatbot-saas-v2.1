@@ -13,6 +13,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import com.chatbot.shared.utils.DateUtils;
 
 /**
  * Data retention purge job (Phase 6).
@@ -73,7 +74,7 @@ public class DataRetentionPurgeService {
     }
 
     private LocalDateTime cutoff(int retentionDays) {
-        return LocalDateTime.now().minusDays(retentionDays);
+        return DateUtils.nowUtcLocalDateTime().minusDays(retentionDays);
     }
 
     private void purge(String entityName, int retentionDays, java.util.function.IntSupplier action) {

@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDate;
 import java.util.Map;
+import com.chatbot.shared.utils.DateUtils;
 
 /**
  * GDPR data export endpoints (Phase 6).
@@ -32,11 +33,11 @@ public class DataExportController {
     public ResponseEntity<?> exportTenantData() {
         Long tenantId = TenantContext.getTenantId();
         if (tenantId == null) {
-            return ResponseEntity.badRequest().body(Map.of("error", "Tenant context missing"));
+            return ResponseEntity.badRequest().body(com.chatbot.shared.dto.ErrorResponse.fromMessage("Tenant context missing"));
         }
         try {
             String json = dataExportService.exportTenantData(tenantId);
-            String filename = "tenant-" + tenantId + "-export-" + LocalDate.now() + ".json";
+            String filename = "tenant-" + tenantId + "-export-" + LocalDate.now(DateUtils.UTC_ZONE) + ".json";
             return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -46,7 +47,7 @@ public class DataExportController {
         } catch (Exception e) {
             log.error("[DataExport] Export failed for tenant {}: {}", tenantId, e.getMessage(), e);
             return ResponseEntity.internalServerError()
-                .body(Map.of("error", "Export failed: " + e.getMessage()));
+                .body(com.chatbot.shared.dto.ErrorResponse.fromMessage("Export failed: " + e.getMessage()));
         }
     }
 }

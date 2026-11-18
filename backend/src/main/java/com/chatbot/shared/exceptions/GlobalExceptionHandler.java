@@ -19,6 +19,7 @@ import java.util.stream.Collectors;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import lombok.extern.slf4j.Slf4j;
+import com.chatbot.shared.utils.DateUtils;
 
 /**
  * Global exception handler that handles all exceptions in the application.
@@ -48,7 +49,7 @@ public class GlobalExceptionHandler {
         
         ErrorResponse errorResponse = new ErrorResponse(code, ex.getMessage())
                 .withPath(path)
-                .withTimestamp(java.time.LocalDateTime.now());
+                .withTimestamp(com.chatbot.shared.utils.DateUtils.nowUtcLocalDateTime());
         
         // Handle ValidationException with errors list
         if (ex instanceof ValidationException) {
@@ -56,7 +57,7 @@ public class GlobalExceptionHandler {
             errorResponse = ErrorResponse.fromValidation(validationEx.getErrors())
                     .withCode(code)
                     .withPath(path)
-                    .withTimestamp(java.time.LocalDateTime.now());
+                    .withTimestamp(com.chatbot.shared.utils.DateUtils.nowUtcLocalDateTime());
         }
         
         if (ex.getDetails() != null) {
@@ -83,7 +84,7 @@ public class GlobalExceptionHandler {
         ErrorResponse errorResponse = ErrorResponse.fromValidation(errors)
                 .withCode(ErrorCode.VALIDATION_ERROR.getCode())
                 .withPath(path)
-                .withTimestamp(java.time.LocalDateTime.now());
+                .withTimestamp(com.chatbot.shared.utils.DateUtils.nowUtcLocalDateTime());
         
         addContextToErrorResponse(errorResponse, request);
         log.warn("MethodArgumentNotValidException at path: {}. Errors: {}", path, errors);
@@ -103,7 +104,7 @@ public class GlobalExceptionHandler {
         ErrorResponse errorResponse = ErrorResponse.fromValidation(errors)
                 .withCode(ErrorCode.VALIDATION_ERROR.getCode())
                 .withPath(path)
-                .withTimestamp(java.time.LocalDateTime.now());
+                .withTimestamp(com.chatbot.shared.utils.DateUtils.nowUtcLocalDateTime());
         
         addContextToErrorResponse(errorResponse, request);
         log.warn("BindException at path: {}. Errors: {}", path, errors);
@@ -123,7 +124,7 @@ public class GlobalExceptionHandler {
         ErrorResponse errorResponse = ErrorResponse.fromValidation(errors)
                 .withCode(ErrorCode.VALIDATION_ERROR.getCode())
                 .withPath(path)
-                .withTimestamp(java.time.LocalDateTime.now());
+                .withTimestamp(com.chatbot.shared.utils.DateUtils.nowUtcLocalDateTime());
         
         addContextToErrorResponse(errorResponse, request);
         log.warn("ConstraintViolationException at path: {}. Violations: {}", path, errors);
@@ -152,7 +153,7 @@ public class GlobalExceptionHandler {
         
         ErrorResponse errorResponse = new ErrorResponse(ErrorCode.BAD_REQUEST.getCode(), message)
                 .withPath(path)
-                .withTimestamp(java.time.LocalDateTime.now());
+                .withTimestamp(com.chatbot.shared.utils.DateUtils.nowUtcLocalDateTime());
         
         addContextToErrorResponse(errorResponse, request);
         log.warn("TypeMismatchException: {} at path: {}", message, path);
@@ -167,7 +168,7 @@ public class GlobalExceptionHandler {
         String path = getCleanPath(request);
         ErrorResponse errorResponse = new ErrorResponse(ErrorCode.BAD_REQUEST.getCode(), ex.getMessage())
                 .withPath(path)
-                .withTimestamp(java.time.LocalDateTime.now());
+                .withTimestamp(com.chatbot.shared.utils.DateUtils.nowUtcLocalDateTime());
         
         addContextToErrorResponse(errorResponse, request);
         log.warn("IllegalArgumentException: {} at path: {}", ex.getMessage(), path);
@@ -182,7 +183,7 @@ public class GlobalExceptionHandler {
         String path = getCleanPath(request);
         ErrorResponse errorResponse = new ErrorResponse(ErrorCode.CONFLICT.getCode(), ex.getMessage())
                 .withPath(path)
-                .withTimestamp(java.time.LocalDateTime.now());
+                .withTimestamp(com.chatbot.shared.utils.DateUtils.nowUtcLocalDateTime());
         
         addContextToErrorResponse(errorResponse, request);
         log.warn("IllegalStateException: {} at path: {}", ex.getMessage(), path);
@@ -201,7 +202,7 @@ public class GlobalExceptionHandler {
         
         ErrorResponse errorResponse = new ErrorResponse(errorCode.getCode(), ex.getReason())
                 .withPath(path)
-                .withTimestamp(java.time.LocalDateTime.now());
+                .withTimestamp(com.chatbot.shared.utils.DateUtils.nowUtcLocalDateTime());
         
         addContextToErrorResponse(errorResponse, request);
         log.warn("ResponseStatusException: status={}, reason={} at path: {}", statusCode, ex.getReason(), path);
@@ -217,7 +218,7 @@ public class GlobalExceptionHandler {
         // Do not expose raw internal exception message to the client (Security constraint)
         ErrorResponse errorResponse = new ErrorResponse(ErrorCode.RUNTIME_ERROR.getCode(), "An internal server error occurred")
                 .withPath(path)
-                .withTimestamp(java.time.LocalDateTime.now());
+                .withTimestamp(com.chatbot.shared.utils.DateUtils.nowUtcLocalDateTime());
         
         addContextToErrorResponse(errorResponse, request);
         log.error("Unhandled RuntimeException at path: {}", path, ex);
@@ -234,7 +235,7 @@ public class GlobalExceptionHandler {
         ErrorResponse errorResponse = new ErrorResponse(ErrorCode.INTERNAL_ERROR.getCode(), "An unexpected error occurred")
                 .withDescription("An unexpected error occurred on the server.")
                 .withPath(path)
-                .withTimestamp(java.time.LocalDateTime.now());
+                .withTimestamp(com.chatbot.shared.utils.DateUtils.nowUtcLocalDateTime());
         
         addContextToErrorResponse(errorResponse, request);
         log.error("Unhandled Exception at path: {}", path, ex);
@@ -249,7 +250,7 @@ public class GlobalExceptionHandler {
         String path = getCleanPath(request);
         ErrorResponse errorResponse = new ErrorResponse(ErrorCode.FORBIDDEN.getCode(), "Access denied")
                 .withPath(path)
-                .withTimestamp(java.time.LocalDateTime.now());
+                .withTimestamp(com.chatbot.shared.utils.DateUtils.nowUtcLocalDateTime());
         
         addContextToErrorResponse(errorResponse, request);
         log.warn("AccessDeniedException: Access denied at path: {}", path);
@@ -264,7 +265,7 @@ public class GlobalExceptionHandler {
         String path = getCleanPath(request);
         ErrorResponse errorResponse = new ErrorResponse(ErrorCode.BAD_CREDENTIALS.getCode(), "Invalid credentials")
                 .withPath(path)
-                .withTimestamp(java.time.LocalDateTime.now());
+                .withTimestamp(com.chatbot.shared.utils.DateUtils.nowUtcLocalDateTime());
         
         addContextToErrorResponse(errorResponse, request);
         log.warn("BadCredentialsException: Invalid credentials at path: {}", path);
@@ -280,7 +281,7 @@ public class GlobalExceptionHandler {
         ErrorResponse errorResponse = new ErrorResponse(ErrorCode.AUTHENTICATION_FAILED.getCode(), "Authentication failed")
                 .withDescription(ex.getMessage())
                 .withPath(path)
-                .withTimestamp(java.time.LocalDateTime.now());
+                .withTimestamp(com.chatbot.shared.utils.DateUtils.nowUtcLocalDateTime());
         
         addContextToErrorResponse(errorResponse, request);
         log.warn("AuthenticationException: {} at path: {}", ex.getMessage(), path);
@@ -295,7 +296,7 @@ public class GlobalExceptionHandler {
         String path = getCleanPath(request);
         ErrorResponse errorResponse = new ErrorResponse(ErrorCode.ENDPOINT_NOT_FOUND.getCode(), "Endpoint not found")
                 .withPath(path)
-                .withTimestamp(java.time.LocalDateTime.now());
+                .withTimestamp(com.chatbot.shared.utils.DateUtils.nowUtcLocalDateTime());
         
         addContextToErrorResponse(errorResponse, request);
         log.warn("NoHandlerFoundException: Endpoint not found at path: {}", path);
@@ -311,7 +312,7 @@ public class GlobalExceptionHandler {
         ErrorResponse errorResponse = new ErrorResponse(ErrorCode.INVALID_REQUEST_BODY.getCode(), "Invalid request body")
                 .withDescription("The HTTP request body is invalid or not readable.")
                 .withPath(path)
-                .withTimestamp(java.time.LocalDateTime.now());
+                .withTimestamp(com.chatbot.shared.utils.DateUtils.nowUtcLocalDateTime());
         
         addContextToErrorResponse(errorResponse, request);
         log.warn("HttpMessageNotReadableException at path: {}: {}", path, ex.getMessage());
@@ -327,7 +328,7 @@ public class GlobalExceptionHandler {
         ErrorResponse errorResponse = new ErrorResponse(ErrorCode.UNSUPPORTED_MEDIA_TYPE.getCode(), "Unsupported media type")
                 .withDescription("Supported media types: " + ex.getSupportedMediaTypes())
                 .withPath(path)
-                .withTimestamp(java.time.LocalDateTime.now());
+                .withTimestamp(com.chatbot.shared.utils.DateUtils.nowUtcLocalDateTime());
         
         addContextToErrorResponse(errorResponse, request);
         log.warn("HttpMediaTypeNotSupportedException at path: {}: {}", path, ex.getMessage());
@@ -343,7 +344,7 @@ public class GlobalExceptionHandler {
         ErrorResponse errorResponse = new ErrorResponse(ErrorCode.METHOD_NOT_ALLOWED.getCode(), "Method not allowed")
                 .withDescription("Supported methods: " + ex.getSupportedHttpMethods())
                 .withPath(path)
-                .withTimestamp(java.time.LocalDateTime.now());
+                .withTimestamp(com.chatbot.shared.utils.DateUtils.nowUtcLocalDateTime());
         
         addContextToErrorResponse(errorResponse, request);
         log.warn("HttpRequestMethodNotSupportedException at path: {}: {}", path, ex.getMessage());
@@ -358,7 +359,7 @@ public class GlobalExceptionHandler {
         String path = getCleanPath(request);
         ErrorResponse errorResponse = new ErrorResponse(ErrorCode.TIMEOUT.getCode(), "Request timed out")
                 .withPath(path)
-                .withTimestamp(java.time.LocalDateTime.now());
+                .withTimestamp(com.chatbot.shared.utils.DateUtils.nowUtcLocalDateTime());
         
         addContextToErrorResponse(errorResponse, request);
         log.warn("TimeoutException at path: {}: {}", path, ex.getMessage());
@@ -375,7 +376,7 @@ public class GlobalExceptionHandler {
         ErrorResponse errorResponse = new ErrorResponse(ErrorCode.DATA_INTEGRITY_VIOLATION.getCode(), "Data integrity violation")
                 .withDescription("Database integrity constraint violation occurred.")
                 .withPath(path)
-                .withTimestamp(java.time.LocalDateTime.now());
+                .withTimestamp(com.chatbot.shared.utils.DateUtils.nowUtcLocalDateTime());
         
         addContextToErrorResponse(errorResponse, request);
         log.error("DataIntegrityViolationException at path: {}", path, ex);
@@ -391,7 +392,7 @@ public class GlobalExceptionHandler {
         ErrorResponse errorResponse = new ErrorResponse(ErrorCode.OPTIMISTIC_LOCK.getCode(), "Optimistic lock failure")
                 .withDescription("The record was modified by another transaction")
                 .withPath(path)
-                .withTimestamp(java.time.LocalDateTime.now());
+                .withTimestamp(com.chatbot.shared.utils.DateUtils.nowUtcLocalDateTime());
         
         addContextToErrorResponse(errorResponse, request);
         log.warn("ObjectOptimisticLockingFailureException at path: {}: {}", path, ex.getMessage());
@@ -407,7 +408,7 @@ public class GlobalExceptionHandler {
         ErrorResponse errorResponse = new ErrorResponse(ErrorCode.PAYLOAD_TOO_LARGE.getCode(), "File size too large")
                 .withDescription("The uploaded file exceeds the maximum allowed size. Please choose a smaller file.")
                 .withPath(path)
-                .withTimestamp(java.time.LocalDateTime.now());
+                .withTimestamp(com.chatbot.shared.utils.DateUtils.nowUtcLocalDateTime());
         
         addContextToErrorResponse(errorResponse, request);
         log.warn("MaxUploadSizeExceededException at path: {}: {}", path, ex.getMessage());
@@ -420,19 +421,19 @@ public class GlobalExceptionHandler {
     protected ErrorResponse createErrorResponse(String code, String message, String path) {
         return new ErrorResponse(code, message)
                 .withPath(path)
-                .withTimestamp(java.time.LocalDateTime.now());
+                .withTimestamp(com.chatbot.shared.utils.DateUtils.nowUtcLocalDateTime());
     }
 
     protected ErrorResponse createErrorResponse(String code, String message, String description, String path) {
         return new ErrorResponse(code, message, description)
                 .withPath(path)
-                .withTimestamp(java.time.LocalDateTime.now());
+                .withTimestamp(com.chatbot.shared.utils.DateUtils.nowUtcLocalDateTime());
     }
 
     protected ErrorResponse createValidationErrorResponse(List<String> errors, String path) {
         return ErrorResponse.fromValidation(errors)
                 .withPath(path)
-                .withTimestamp(java.time.LocalDateTime.now());
+                .withTimestamp(com.chatbot.shared.utils.DateUtils.nowUtcLocalDateTime());
     }
 
     protected void addContextToErrorResponse(ErrorResponse errorResponse, WebRequest request) {

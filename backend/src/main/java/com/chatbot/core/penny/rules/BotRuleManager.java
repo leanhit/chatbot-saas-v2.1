@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
+import com.chatbot.shared.utils.DateUtils;
 
 /**
  * Bot Rule Manager - Quản lý rules tùy chỉnh cho bot
@@ -147,7 +148,7 @@ public class BotRuleManager {
             
             // Soft delete: set isActive = false and record deletion info
             rule.setIsActive(false);
-            rule.setDeletedAt(java.time.LocalDateTime.now());
+            rule.setDeletedAt(com.chatbot.shared.utils.DateUtils.nowUtcLocalDateTime());
             rule.setDeletedBy(deletedBy);
             
             botRuleRepository.save(rule);

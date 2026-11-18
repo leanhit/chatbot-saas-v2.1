@@ -10,6 +10,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.Instant;
 import java.util.List;
+import com.chatbot.shared.utils.DateUtils;
 
 @Entity
 @Table(name = "licenses")
@@ -62,7 +63,7 @@ public class License {
     private Instant updatedAt;
 
     public boolean isExpired() {
-        return expiresAt != null && expiresAt.isBefore(Instant.now());
+        return expiresAt != null && expiresAt.isBefore(DateUtils.nowUtc());
     }
 
     public boolean isValid() {

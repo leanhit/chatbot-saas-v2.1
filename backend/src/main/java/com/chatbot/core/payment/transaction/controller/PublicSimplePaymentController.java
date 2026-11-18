@@ -20,6 +20,7 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import com.chatbot.shared.utils.DateUtils;
 
 @RestController
 @RequestMapping({"/api/public/payment", "/api/public/simple-payment"})
@@ -43,7 +44,7 @@ public class PublicSimplePaymentController {
         Map<String, Object> health = Map.of(
             "status", "healthy",
             "service", "payment-transaction",
-            "timestamp", java.time.LocalDateTime.now()
+            "timestamp", com.chatbot.shared.utils.DateUtils.nowUtcLocalDateTime()
         );
         return ResponseEntity.ok(health);
     }

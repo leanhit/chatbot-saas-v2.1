@@ -15,6 +15,7 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import com.chatbot.shared.utils.DateUtils;
 
 /**
  * Records and queries conversation lifecycle events.
@@ -62,7 +63,7 @@ public class ConversationEventService {
                     .fromValue(fromValue)
                     .toValue(toValue)
                     .metadata(metadata)
-                    .occurredAt(LocalDateTime.now())
+                    .occurredAt(DateUtils.nowUtcLocalDateTime())
                     .build();
             event.setTenantId(tenantId);
             eventRepository.save(event);

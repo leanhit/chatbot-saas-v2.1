@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import com.chatbot.shared.utils.DateUtils;
 
 /**
  * Message Service gRPC Implementation
@@ -484,9 +485,9 @@ class MessageServiceGrpcImpl extends MessageServiceGrpc.MessageServiceImplBase {
             .setDescription("")
             .setStatus(convertToGrpcStatus(domainConversation.getStatus()))
             .setCreatedAt(domainConversation.getCreatedAt() != null ? 
-                domainConversation.getCreatedAt().atZone(ZoneId.systemDefault()).toInstant().toEpochMilli() : 0)
+                domainConversation.getCreatedAt().atZone(DateUtils.UTC_ZONE).toInstant().toEpochMilli() : 0)
             .setUpdatedAt(domainConversation.getUpdatedAt() != null ? 
-                domainConversation.getUpdatedAt().atZone(ZoneId.systemDefault()).toInstant().toEpochMilli() : 0)
+                domainConversation.getUpdatedAt().atZone(DateUtils.UTC_ZONE).toInstant().toEpochMilli() : 0)
             .build();
     }
 

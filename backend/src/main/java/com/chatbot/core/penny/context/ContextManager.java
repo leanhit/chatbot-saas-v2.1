@@ -12,6 +12,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
+import com.chatbot.shared.utils.DateUtils;
 
 /**
  * Context Manager - Quản lý ngữ cảnh hội thoại
@@ -78,7 +79,7 @@ public class ContextManager {
         
         try {
             // Update context with new information
-            context.setLastUpdated(Instant.now());
+            context.setLastUpdated(DateUtils.nowUtc());
             context.incrementMessageCount();
             
             // Add current message to history
@@ -110,8 +111,8 @@ public class ContextManager {
                 .botId(botId)
                 .tenantId(tenantId)
                 .botType(botType.toString())
-                .createdAt(Instant.now())
-                .lastUpdated(Instant.now())
+                .createdAt(DateUtils.nowUtc())
+                .lastUpdated(DateUtils.nowUtc())
                 .messageCount(0)
                 .build();
             
@@ -144,7 +145,7 @@ public class ContextManager {
         try {
             ConversationContext context = databaseStorage.loadContextByBotId(UUID.fromString(botId));
             return context != null && 
-                   Duration.between(context.getLastUpdated(), Instant.now()).toHours() < 24;
+                   Duration.between(context.getLastUpdated(), DateUtils.nowUtc()).toHours() < 24;
         } catch (Exception e) {
             log.error("❌ Error checking bot context health for {}: {}", botId, e.getMessage());
             return false;
@@ -206,8 +207,8 @@ public class ContextManager {
             .userId(request.getUserId())
             .platform(request.getPlatform())
             .tenantId(com.chatbot.core.tenant.infra.TenantContext.getTenantId())
-            .createdAt(Instant.now())
-            .lastUpdated(Instant.now())
+            .createdAt(DateUtils.nowUtc())
+            .lastUpdated(DateUtils.nowUtc())
             .messageCount(0)
             .build();
     }

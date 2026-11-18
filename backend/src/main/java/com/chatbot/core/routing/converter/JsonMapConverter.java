@@ -14,6 +14,11 @@ import java.util.Map;
 public class JsonMapConverter implements AttributeConverter<Map<String, Object>, String> {
 
     private static final ObjectMapper objectMapper = new ObjectMapper();
+    static {
+        objectMapper.registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule());
+        objectMapper.disable(com.fasterxml.jackson.databind.SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+        objectMapper.disable(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+    }
 
     @Override
     public String convertToDatabaseColumn(Map<String, Object> attribute) {

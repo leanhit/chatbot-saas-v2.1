@@ -9,6 +9,8 @@ import lombok.NoArgsConstructor;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.time.LocalDateTime;
+import com.chatbot.shared.utils.DateUtils;
+import com.fasterxml.jackson.annotation.JsonFormat;
 
 @Data
 @Builder
@@ -21,6 +23,7 @@ public class TenantSearchResponse {
     private String name;
     private TenantStatus status;
     private TenantVisibility visibility;
+    @JsonFormat(pattern = DateUtils.API_DATETIME_FORMAT, timezone = DateUtils.API_TIMEZONE)
     private LocalDateTime createdAt;
     private TenantMembershipStatus membershipStatus;
     

@@ -17,6 +17,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.List;
+import com.chatbot.shared.utils.DateUtils;
 
 /**
  * Polls due report schedules and regenerates reports.
@@ -36,7 +37,7 @@ public class ReportScheduler {
     @SchedulerLock(name = "reportScheduleRunner", lockAtMostFor = "10m", lockAtLeastFor = "30s")
     @Transactional
     public void runDueSchedules() {
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = DateUtils.nowUtcLocalDateTime();
         List<ReportSchedule> due = scheduleRepository
             .findByEnabledTrueAndNextRunAtBeforeAndIsDeletedFalse(now);
         if (due.isEmpty()) return;
@@ -71,7 +72,7 @@ public class ReportScheduler {
     private LocalDateTime computeNextRun(String cron, LocalDateTime after) {
         try {
             CronExpression expr = CronExpression.parse(cron);
-            ZonedDateTime next = expr.next(ZonedDateTime.of(after, ZoneId.systemDefault()));
+            ZonedDateTime next = expr.next(ZonedDateTime.of(after, DateUtils.UTC_ZONE));
             return next != null ? next.toLocalDateTime() : after.plusDays(1);
         } catch (Exception e) {
             log.warn("[ReportScheduler] Invalid cron '{}', defaulting to +1 day", cron);

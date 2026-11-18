@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import com.chatbot.shared.utils.DateUtils;
 
 /**
  * GDPR data deletion workflow (Phase 6).
@@ -49,7 +50,7 @@ public class DataDeletionService {
             .requestedBy(requestedBy)
             .reason(reason)
             .status(DataDeletionRequest.Status.PENDING)
-            .scheduledAt(LocalDateTime.now().plusDays(GRACE_PERIOD_DAYS))
+            .scheduledAt(DateUtils.nowUtcLocalDateTime().plusDays(GRACE_PERIOD_DAYS))
             .build();
         DataDeletionRequest saved = requestRepository.save(request);
         auditLogService.logAction(tenantId, requestedBy, "GDPR_DELETION_REQUESTED",
@@ -71,7 +72,7 @@ public class DataDeletionService {
         }
         request.setStatus(DataDeletionRequest.Status.CANCELLED);
         request.setProcessedBy(cancelledBy);
-        request.setProcessedAt(LocalDateTime.now());
+        request.setProcessedAt(DateUtils.nowUtcLocalDateTime());
         auditLogService.logAction(tenantId, cancelledBy, "GDPR_DELETION_CANCELLED",
             "Deletion request id=" + requestId + " cancelled");
         return requestRepository.save(request);
@@ -118,7 +119,7 @@ public class DataDeletionService {
             log.error("[GDPR] Deletion failed for tenant {}: {}", tenantId, e.getMessage(), e);
         }
 
-        request.setProcessedAt(LocalDateTime.now());
+        request.setProcessedAt(DateUtils.nowUtcLocalDateTime());
         request.setProcessedBy(processedBy);
         DataDeletionRequest saved = requestRepository.save(request);
         auditLogService.logAction(tenantId, processedBy, "GDPR_DELETION_" + saved.getStatus().name(),
@@ -130,7 +131,7 @@ public class DataDeletionService {
     @Scheduled(cron = "0 0 * * * *")
     public void processDueRequests() {
         List<DataDeletionRequest> due = requestRepository
-            .findByStatusAndScheduledAtBefore(DataDeletionRequest.Status.PENDING, LocalDateTime.now());
+            .findByStatusAndScheduledAtBefore(DataDeletionRequest.Status.PENDING, DateUtils.nowUtcLocalDateTime());
         for (DataDeletionRequest r : due) {
             try {
                 log.info("[GDPR] Auto-processing due deletion request {} for tenant {}", r.getId(), r.getTenantId());

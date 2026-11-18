@@ -13,6 +13,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import com.chatbot.shared.utils.DateUtils;
 
 /**
  * Service for monitoring Penny system health
@@ -49,7 +50,7 @@ public class PennyHealthService {
         
         // Overall status
         health.put("overall", calculateOverallHealth(health));
-        health.put("timestamp", Instant.now());
+        health.put("timestamp", DateUtils.nowUtc());
         
         return health;
     }

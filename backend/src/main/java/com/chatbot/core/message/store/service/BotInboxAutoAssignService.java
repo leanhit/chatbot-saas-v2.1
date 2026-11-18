@@ -19,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import com.chatbot.shared.utils.DateUtils;
 
 /**
  * Service for auto-assigning bot inbox conversations to agents
@@ -221,7 +222,7 @@ public class BotInboxAutoAssignService {
         stats.put("botInboxCount", botConversations.size());
         stats.put("availableAgentsCount", availableAgents.size());
         stats.put("autoAssignEnabled", true);
-        stats.put("lastAutoAssignTime", LocalDateTime.now());
+        stats.put("lastAutoAssignTime", DateUtils.nowUtcLocalDateTime());
         
         return stats;
     }

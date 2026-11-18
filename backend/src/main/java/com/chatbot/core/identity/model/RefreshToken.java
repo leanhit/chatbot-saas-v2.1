@@ -4,6 +4,7 @@ import java.time.Instant;
 import java.util.UUID;
 import jakarta.persistence.*;
 import lombok.*;
+import com.chatbot.shared.utils.DateUtils;
 
 @Entity
 @Table(name = "refresh_tokens")
@@ -33,14 +34,14 @@ public class RefreshToken {
     
     @PrePersist
     protected void onCreate() {
-        createdDate = Instant.now();
+        createdDate = DateUtils.nowUtc();
         if (expiryDate == null) {
             // Default 30 days expiry
-            expiryDate = Instant.now().plusSeconds(30L * 24 * 60 * 60);
+            expiryDate = DateUtils.nowUtc().plusSeconds(30L * 24 * 60 * 60);
         }
     }
     
     public boolean isExpired() {
-        return Instant.now().isAfter(expiryDate);
+        return DateUtils.nowUtc().isAfter(expiryDate);
     }
 }

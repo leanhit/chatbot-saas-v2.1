@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import com.chatbot.shared.utils.DateUtils;
 
 /**
  * Service for managing agents
@@ -89,9 +90,9 @@ public class AgentService {
     public Agent createAgent(Agent agent) {
         validateAgent(agent);
         
-        agent.setCreatedAt(LocalDateTime.now());
-        agent.setUpdatedAt(LocalDateTime.now());
-        agent.setLastActivityAt(LocalDateTime.now());
+        agent.setCreatedAt(DateUtils.nowUtcLocalDateTime());
+        agent.setUpdatedAt(DateUtils.nowUtcLocalDateTime());
+        agent.setLastActivityAt(DateUtils.nowUtcLocalDateTime());
         
         Agent savedAgent = agentRepository.save(agent);
         log.info("Created new agent: {} for tenant {}", savedAgent.getEmail(), savedAgent.getTenantId());
@@ -121,7 +122,7 @@ public class AgentService {
                 existingAgent.setPhoneNumber(updatedAgent.getPhoneNumber());
                 existingAgent.setAvatarUrl(updatedAgent.getAvatarUrl());
                 existingAgent.setMaxConcurrentConversations(updatedAgent.getMaxConcurrentConversations());
-                existingAgent.setUpdatedAt(LocalDateTime.now());
+                existingAgent.setUpdatedAt(DateUtils.nowUtcLocalDateTime());
                 
                 return agentRepository.save(existingAgent);
             })
@@ -152,7 +153,7 @@ public class AgentService {
         existing.setPhoneNumber(updatedAgent.getPhoneNumber());
         existing.setAvatarUrl(updatedAgent.getAvatarUrl());
         existing.setMaxConcurrentConversations(updatedAgent.getMaxConcurrentConversations());
-        existing.setUpdatedAt(LocalDateTime.now());
+        existing.setUpdatedAt(DateUtils.nowUtcLocalDateTime());
         Agent saved = agentRepository.save(existing);
         auditLogService.logActionAsync(tenantId, currentUserEmail(),
                 "AGENT_UPDATED", "agentId=" + agentId);
@@ -365,8 +366,8 @@ public class AgentService {
                 : agentRepository.findById(agentId);
         agentOpt.ifPresent(agent -> {
             agent.setStatus(status);
-            agent.setLastActivityAt(LocalDateTime.now());
-            agent.setUpdatedAt(LocalDateTime.now());
+            agent.setLastActivityAt(DateUtils.nowUtcLocalDateTime());
+            agent.setUpdatedAt(DateUtils.nowUtcLocalDateTime());
             agentRepository.save(agent);
             
             log.info("Updated agent {} status to {}", agentId, status);
@@ -419,7 +420,7 @@ public class AgentService {
     public void incrementAgentLoad(Long agentId) {
         agentRepository.findById(agentId).ifPresent(agent -> {
             agent.incrementLoad();
-            agent.setUpdatedAt(LocalDateTime.now());
+            agent.setUpdatedAt(DateUtils.nowUtcLocalDateTime());
             agentRepository.save(agent);
             
             log.info("Incremented load for agent {}. Current load: {}", agentId, agent.getCurrentLoad());
@@ -433,7 +434,7 @@ public class AgentService {
     public void decrementAgentLoad(Long agentId) {
         agentRepository.findById(agentId).ifPresent(agent -> {
             agent.decrementLoad();
-            agent.setUpdatedAt(LocalDateTime.now());
+            agent.setUpdatedAt(DateUtils.nowUtcLocalDateTime());
             agentRepository.save(agent);
             
             log.info("Decremented load for agent {}. Current load: {}", agentId, agent.getCurrentLoad());
@@ -446,7 +447,7 @@ public class AgentService {
     @Transactional
     public void updateLastActivity(Long agentId) {
         agentRepository.findById(agentId).ifPresent(agent -> {
-            agent.setLastActivityAt(LocalDateTime.now());
+            agent.setLastActivityAt(DateUtils.nowUtcLocalDateTime());
             agentRepository.save(agent);
         });
     }

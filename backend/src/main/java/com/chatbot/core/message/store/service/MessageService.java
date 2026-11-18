@@ -19,6 +19,7 @@ import java.util.Map;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import com.chatbot.shared.utils.DateUtils;
 
 @Service
 @Slf4j
@@ -30,14 +31,12 @@ public class MessageService {
     private final ObjectMapper objectMapper;
     private final TenantMemberService tenantMemberService;
 
-    public MessageService(MessageRepository messageRepo, ConversationRepository conversationRepo, MessageUsageService messageUsageService, TenantMemberService tenantMemberService) {
+    public MessageService(MessageRepository messageRepo, ConversationRepository conversationRepo, MessageUsageService messageUsageService, TenantMemberService tenantMemberService, ObjectMapper objectMapper) {
         this.messageRepo = messageRepo;
         this.conversationRepo = conversationRepo;
         this.messageUsageService = messageUsageService;
         this.tenantMemberService = tenantMemberService;
-        this.objectMapper = new ObjectMapper();
-        this.objectMapper.registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule());
-        this.objectMapper.configure(com.fasterxml.jackson.databind.SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
+        this.objectMapper = objectMapper;
     }
 
     /**
@@ -115,7 +114,7 @@ public class MessageService {
                 .messageType(messageType) // <--- Trường mới BẮT BUỘC
                 .externalMessageId(externalMessageId) // Set external message ID for idempotency
                 .isRead(false) // <--- Trường mới BẮT BUỘC, mặc định là false (cho Agent/Bot)
-                .sentTime(LocalDateTime.now()) // Có thể set sentTime ở đây, hoặc lấy từ payload
+                .sentTime(DateUtils.nowUtcLocalDateTime()) // Có thể set sentTime ở đây, hoặc lấy từ payload
                 .build();
         Message savedMessage = messageRepo.save(m);
 

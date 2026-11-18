@@ -21,11 +21,9 @@ public class FacebookKafkaProducer {
     private final KafkaTemplate<String, String> kafkaTemplate;
     private final ObjectMapper objectMapper;
 
-    public FacebookKafkaProducer(@Autowired(required = false) KafkaTemplate<String, String> kafkaTemplate) {
+    public FacebookKafkaProducer(@Autowired(required = false) KafkaTemplate<String, String> kafkaTemplate, ObjectMapper objectMapper) {
         this.kafkaTemplate = kafkaTemplate;
-        this.objectMapper = new ObjectMapper();
-        this.objectMapper.registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule());
-        this.objectMapper.configure(com.fasterxml.jackson.databind.SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
+        this.objectMapper = objectMapper;
     }
 
     /**

@@ -23,6 +23,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import com.chatbot.shared.utils.DateUtils;
 
 @Service
 @RequiredArgsConstructor
@@ -60,8 +61,8 @@ public class CustomerProfileService {
                 .avatarUrl(request.getAvatarUrl())
                 .status(request.getStatus() != null ? CustomerProfile.CustomerStatus.valueOf(request.getStatus()) : CustomerProfile.CustomerStatus.ACTIVE)
                 .tier(request.getTier() != null ? CustomerProfile.CustomerTier.valueOf(request.getTier()) : CustomerProfile.CustomerTier.FREE)
-                .firstContactAt(LocalDateTime.now())
-                .lastContactAt(LocalDateTime.now())
+                .firstContactAt(DateUtils.nowUtcLocalDateTime())
+                .lastContactAt(DateUtils.nowUtcLocalDateTime())
                 .totalConversations(0)
                 .totalMessages(0)
                 .customAttributes(request.getCustomAttributes())
@@ -141,7 +142,7 @@ public class CustomerProfileService {
             profile.setIsBlocked(request.getIsBlocked());
             if (request.getIsBlocked()) {
                 profile.setBlockedReason(request.getBlockedReason());
-                profile.setBlockedAt(LocalDateTime.now());
+                profile.setBlockedAt(DateUtils.nowUtcLocalDateTime());
                 profile.setStatus(CustomerProfile.CustomerStatus.BLOCKED);
             } else {
                 profile.setBlockedReason(null);
@@ -266,7 +267,7 @@ public class CustomerProfileService {
         export.put("feedback", feedback);
         export.put("notes", notes);
         export.put("conversations", conversationsExport);
-        export.put("exportedAt", LocalDateTime.now().toString());
+        export.put("exportedAt", DateUtils.nowUtcLocalDateTime().toString());
         log.info("Customer data exported (GDPR) for profile id: {}", id);
         return export;
     }
@@ -280,7 +281,7 @@ public class CustomerProfileService {
             throw new IllegalArgumentException("Access denied: Customer profile does not belong to tenant");
         }
 
-        profile.setLastContactAt(LocalDateTime.now());
+        profile.setLastContactAt(DateUtils.nowUtcLocalDateTime());
         profile.setTotalConversations(profile.getTotalConversations() + 1);
         profile.setTotalMessages(profile.getTotalMessages() + (messageCount != null ? messageCount : 0));
 

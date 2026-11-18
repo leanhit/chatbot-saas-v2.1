@@ -5,6 +5,7 @@ import com.chatbot.core.identity.model.SystemRole;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
+import com.chatbot.shared.utils.DateUtils;
 
 /**
  * System User Entity - Mở rộng từ Auth để quản lý user system
@@ -70,12 +71,12 @@ public class User {
 
     @PrePersist
     void prePersist() {
-        createdAt = LocalDateTime.now();
+        createdAt = DateUtils.nowUtcLocalDateTime();
         updatedAt = createdAt;
     }
 
     @PreUpdate
     void preUpdate() {
-        updatedAt = LocalDateTime.now();
+        updatedAt = DateUtils.nowUtcLocalDateTime();
     }
 }

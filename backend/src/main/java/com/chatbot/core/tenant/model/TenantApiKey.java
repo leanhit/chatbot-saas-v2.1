@@ -78,11 +78,11 @@ public class TenantApiKey {
         if (!Boolean.TRUE.equals(isActive)) {
             return false;
         }
-        return expiresAt == null || expiresAt.isAfter(LocalDateTime.now());
+        return expiresAt == null || expiresAt.isAfter(DateUtils.nowUtcLocalDateTime());
     }
 
     public void recordUsage() {
-        this.lastUsedAt = LocalDateTime.now();
+        this.lastUsedAt = DateUtils.nowUtcLocalDateTime();
         this.usageCount = (this.usageCount == null ? 0 : this.usageCount) + 1;
     }
 }

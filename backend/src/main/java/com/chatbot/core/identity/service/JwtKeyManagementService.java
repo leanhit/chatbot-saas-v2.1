@@ -18,6 +18,7 @@ import java.util.Base64;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+import com.chatbot.shared.utils.DateUtils;
 
 /**
  * Service for managing JWT key rotation
@@ -126,7 +127,7 @@ public class JwtKeyManagementService {
 
         // Check if current key is old enough to rotate
         LocalDateTime rotationThreshold = currentKey.getCreatedAt().plusDays(rotationIntervalDays);
-        if (LocalDateTime.now().isAfter(rotationThreshold)) {
+        if (DateUtils.nowUtcLocalDateTime().isAfter(rotationThreshold)) {
             log.info("Key rotation threshold reached. Rotating keys.");
             rotateKeys();
         } else {
@@ -181,7 +182,7 @@ public class JwtKeyManagementService {
         SecretKey secretKey = keyGenerator.generateKey();
 
         String keyId = generateKeyId();
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = DateUtils.nowUtcLocalDateTime();
         LocalDateTime expiresAt = now.plusDays(rotationIntervalDays * 2); // Keep keys for 2x rotation interval
 
         JwtKey jwtKey = new JwtKey();
@@ -279,14 +280,14 @@ public class JwtKeyManagementService {
             return false;
         }
 
-        return LocalDateTime.now().isBefore(key.getExpiresAt());
+        return DateUtils.nowUtcLocalDateTime().isBefore(key.getExpiresAt());
     }
 
     /**
      * Clean up expired keys
      */
     private void cleanupExpiredKeys() {
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = DateUtils.nowUtcLocalDateTime();
         
         localActiveKeys.entrySet().removeIf(entry -> {
             JwtKey key = entry.getValue();

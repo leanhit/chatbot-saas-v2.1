@@ -901,3 +901,51 @@ Việc cần làm ngay (theo mức độ)
 🟡 Migrate list endpoints — incremental: global cap 200/50 + bounded TrainingMaterial & ConversationTransfer (commit 8867c426); conversations/messages/customers/agents đã Page sẵn; còn ~90 endpoint List nhỏ (config/reference data) cần rà soát dần
 ✅ ~~DLQ monitoring~~ — done: GET /api/tenant/webhooks/deliveries(+stats) + daily FAILED alert (commit 346ff318)
 ✅ ~~Tách router/index.js~~ — done: 11 route modules, 65 routes preserved, build pass (commit b768c5f0); README frontend đã viết lại (commit 740598c9)
+
+===================================================
+
+## Cập nhật kết quả rà soát backend — 18/11/2026
+
+> Bổ sung này dựa trên working tree hiện tại, không phải chỉ commit 17/11 được mô tả ở trên. Working tree có nhiều thay đổi chưa commit; kết luận không mặc nhiên áp dụng cho `HEAD` hoặc môi trường production. Đã quét pattern trên toàn bộ 885 file Java và migration active/legacy, sau đó đọc thủ công các vị trí đại diện. Đây không phải line-by-line audit, chưa kiểm thử migration trên DB thật và chưa truy vết đầy đủ mọi contract đến frontend/webhook/consumer.
+
+### Phát hiện cần ưu tiên
+
+1. **Flyway baseline mới cần kiểm chứng trước khi rollout — rủi ro cao**
+   - Migration theo phiên bản cũ hiện nằm trong `backend/src/main/resources/db/migration-legacy/` (88 SQL files); tám location active mỗi location có `V1__baseline.sql`.
+   - `MultiFlywayConfig` đặt `baselineOnMigrate(true)` và version `0`, hardcode `validateOnMigrate(false)` cho các Flyway instance, đồng thời bỏ qua các trạng thái missing/pending/ignored. Trường `validateOnMigrate` được inject nhưng không dùng.
+   - Các baseline có nhiều câu `CREATE TABLE` không idempotent. Chưa có bằng chứng schema baseline đã được đối chiếu đầy đủ với kết quả áp dụng toàn bộ migration cũ. Kiểm thử riêng DB mới, DB đã có Flyway history và DB có schema nhưng chưa có history; không suy ra tính an toàn chỉ từ việc app khởi động.
+   - Cần xác minh thêm SQL init scripts trong `app-setup/` có còn chạy song song hay không, để tránh hai nguồn schema.
+
+2. **Lỗi luồng trong rate limiting filter**
+   - `backend/src/main/java/com/chatbot/shared/security/RateLimitingFilter.java` đặt `filterChain.doFilter()` trong `try` đang xử lý Redis, rồi gọi lại chain trong `catch`. Nếu downstream ném exception thì cùng request có thể bị dispatch lần hai.
+   - Tách phần thao tác Redis khỏi việc dispatch chain; chỉ quyết định fail-open khi thao tác rate-limit lỗi, và bảo đảm downstream được gọi đúng một lần. Bổ sung test cho lỗi Redis và exception từ downstream.
+
+3. **Request/response boundary chưa đồng đều dù đã có DTO mới**
+   - Pattern scan vẫn thấy entity JPA được nhận qua `@RequestBody` ở 14 controller files, gồm analytics, report, merchant API key, webhook, training, knowledge base, routing/SLA/escalation và package.
+   - Một số response DTO mới trong working tree đã giảm việc trả entity ở merchant/training/webhook/routing và các domain khác; đây chưa phải xử lý đầy đủ khi request vẫn bind trực tiếp vào entity.
+   - Analytics/report còn nhận entity và có luồng trả trực tiếp `FunnelStage`, `CustomReport`/`ReportSchedule`; `KnowledgeBaseController` cũng nhận/trả `KnowledgeArticle`. Tách request/response DTO, whitelist các trường ghi được và thêm validation; kiểm tra tương thích consumer trước khi đổi response.
+
+4. **Error contract còn nhiều nhánh riêng**
+   - Pattern scan có 181 `catch (Exception|RuntimeException|Throwable)` trong 43 controller. Đây là số match để phân loại, không đồng nghĩa mọi catch đều sai.
+   - `MessageController` vẫn đổi `IllegalStateException` thành 403 và mọi `RuntimeException` thành 404. `SimplePaymentController` có nhánh trả 400, body rỗng/khác schema và thông báo exception.
+   - Một số filter tự ghi JSON khác shared `ErrorResponse`; `JwtFilter` dùng shared DTO nhưng nhánh trả lỗi chưa gắn `path`. `ErrorResponse.fromMessage()` cho phép `code == null`.
+   - Chuẩn hóa từng nhánh qua error code/status dùng chung; giữ ngoại lệ chỉ khi giao thức webhook/transport yêu cầu và có contract test.
+
+5. **Datetime còn phụ thuộc giả định UTC và contract lịch sử**
+   - Pattern scan ghi nhận 1.191 hit `LocalDateTime` trên 262 file, 170 hit `Instant` trên 40 file, và 102 hit `@JsonFormat` trên 45 file. Đây là hit tìm kiếm, không phải số field đã inventory.
+   - Có 11 cấu hình datasource đặt `hibernate.jdbc.time_zone=UTC`, nhưng nhiều cột baseline vẫn là `TIMESTAMP WITHOUT TIME ZONE`; cần xác minh semantics UTC/local và timezone của DB/default theo từng field.
+   - `JacksonConfig` serialize `LocalDateTime` với `Z`, theo quy ước UTC wall-clock; kiểu Java không tự bảo đảm dữ liệu đầu vào thật sự là UTC. `DateUtils` chưa có `Clock` injectable. Hằng `ISO_DATETIME_WITH_NANOS` khai báo 10 ký tự `S` (không hợp lệ với `DateTimeFormatter`) nhưng hiện chỉ thấy chỗ khai báo, chưa tìm thấy call site.
+   - Một số DTO payment vẫn có field ngày giờ hiển thị `dd/MM/yyyy HH:mm:ss` bên cạnh timestamp máy đọc được; cần xác nhận consumer rồi deprecate/loại bỏ có kế hoạch.
+
+6. **Mapper JSON tự tạo cần inventory theo mục đích**
+   - Có 7 vị trí `new ObjectMapper()` trong Java source, bao gồm mapper Spring và các mapper/config nội bộ. Không xem tất cả là lỗi; kiểm tra mapper nào serialize API/event hoặc cần cùng JavaTime/UTC contract, mapper nào chủ ý độc lập.
+
+### Hành động đề xuất
+
+1. Tạm coi migration baseline là blocker rollout cho đến khi có đối chiếu schema và kiểm thử upgrade trên các trạng thái DB được hỗ trợ.
+2. Sửa và test `RateLimitingFilter` để downstream không bị gọi lặp.
+3. Lập danh sách endpoint entity-bound và chuyển theo domain sang request/response DTO có validation.
+4. Ưu tiên controller/filter error mapping có thể trả sai status hoặc lộ exception detail; thêm contract tests cho MVC và security filter chain.
+5. Tạo inventory SQL column ↔ entity ↔ DTO/JSON ↔ consumer cho datetime trước khi đổi kiểu hoặc migration.
+
+**Mức độ xác minh:** quét tĩnh toàn backend và migration, cộng xác nhận thủ công các ví dụ nêu trên. Không chạy test/build trong lượt cập nhật tài liệu này; không có kết quả kiểm thử migration trên DB mới/DB hiện hữu. Các con số là snapshot working tree ngày 18/11/2026 và cần cập nhật lại sau khi thay đổi code.

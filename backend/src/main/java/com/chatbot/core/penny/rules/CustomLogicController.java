@@ -16,6 +16,7 @@ import java.util.UUID;
 import com.chatbot.core.tenant.service.TenantPermissionValidator;
 import com.chatbot.core.tenant.exception.InsufficientPermissionException;
 import com.chatbot.shared.exceptions.ErrorCode;
+import com.chatbot.shared.utils.DateUtils;
 
 /**
  * Custom Logic Controller - API quản lý custom logic cho bot
@@ -328,7 +329,7 @@ public class CustomLogicController {
             export.put("version", "1.0");
             export.put("format", "penny-custom-logic");
             export.put("botId", botId);
-            export.put("exportedAt", java.time.Instant.now().toString());
+            export.put("exportedAt", com.chatbot.shared.utils.DateUtils.nowUtc().toString());
             export.put("exportedBy", principal != null ? principal.getName() : "system");
             export.put("rulesCount", exportedRules.size());
             export.put("templatesCount", exportedTemplates.size());

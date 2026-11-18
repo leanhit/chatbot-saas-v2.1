@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
+import com.chatbot.shared.utils.DateUtils;
 
 /**
  * Dead letter queue for failed webhooks.
@@ -75,14 +76,14 @@ public class WebhookDeadLetter {
     
     public void markAsProcessed(String processedBy, String notes) {
         this.status = "PROCESSED";
-        this.processedAt = LocalDateTime.now();
+        this.processedAt = DateUtils.nowUtcLocalDateTime();
         this.processedBy = processedBy;
         this.processingNotes = notes;
     }
     
     public void markAsDiscarded(String notes) {
         this.status = "DISCARDED";
-        this.processedAt = LocalDateTime.now();
+        this.processedAt = DateUtils.nowUtcLocalDateTime();
         this.processingNotes = notes;
     }
 }

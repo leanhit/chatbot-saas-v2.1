@@ -3,6 +3,7 @@ package com.chatbot.shared.saga;
 import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import com.chatbot.shared.utils.DateUtils;
 
 public class SagaInstance {
 
@@ -29,8 +30,8 @@ public class SagaInstance {
     public SagaInstance() {
         this.stepResults = new ConcurrentHashMap<>();
         this.status = SagaStatus.PENDING;
-        this.createdAt = LocalDateTime.now();
-        this.updatedAt = LocalDateTime.now();
+        this.createdAt = DateUtils.nowUtcLocalDateTime();
+        this.updatedAt = DateUtils.nowUtcLocalDateTime();
     }
 
     public String getSagaId() {
@@ -39,7 +40,7 @@ public class SagaInstance {
 
     public void setSagaId(String sagaId) {
         this.sagaId = sagaId;
-        this.updatedAt = LocalDateTime.now();
+        this.updatedAt = DateUtils.nowUtcLocalDateTime();
     }
 
     public String getSagaType() {
@@ -48,7 +49,7 @@ public class SagaInstance {
 
     public void setSagaType(String sagaType) {
         this.sagaType = sagaType;
-        this.updatedAt = LocalDateTime.now();
+        this.updatedAt = DateUtils.nowUtcLocalDateTime();
     }
 
     public Object getSagaData() {
@@ -57,7 +58,7 @@ public class SagaInstance {
 
     public void setSagaData(Object sagaData) {
         this.sagaData = sagaData;
-        this.updatedAt = LocalDateTime.now();
+        this.updatedAt = DateUtils.nowUtcLocalDateTime();
     }
 
     public SagaStatus getStatus() {
@@ -66,12 +67,12 @@ public class SagaInstance {
 
     public void setStatus(SagaStatus status) {
         this.status = status;
-        this.updatedAt = LocalDateTime.now();
+        this.updatedAt = DateUtils.nowUtcLocalDateTime();
         
         if (status == SagaStatus.COMPLETED || 
             status == SagaStatus.COMPENSATED || 
             status == SagaStatus.FAILED) {
-            this.completedAt = LocalDateTime.now();
+            this.completedAt = DateUtils.nowUtcLocalDateTime();
         }
     }
 
@@ -81,7 +82,7 @@ public class SagaInstance {
 
     public void setCurrentStep(int currentStep) {
         this.currentStep = currentStep;
-        this.updatedAt = LocalDateTime.now();
+        this.updatedAt = DateUtils.nowUtcLocalDateTime();
     }
 
     public Map<Integer, Object> getStepResults() {
@@ -90,7 +91,7 @@ public class SagaInstance {
 
     public void setStepResults(Map<Integer, Object> stepResults) {
         this.stepResults = stepResults;
-        this.updatedAt = LocalDateTime.now();
+        this.updatedAt = DateUtils.nowUtcLocalDateTime();
     }
 
     public String getError() {
@@ -99,7 +100,7 @@ public class SagaInstance {
 
     public void setError(String error) {
         this.error = error;
-        this.updatedAt = LocalDateTime.now();
+        this.updatedAt = DateUtils.nowUtcLocalDateTime();
     }
 
     public LocalDateTime getCreatedAt() {
@@ -154,21 +155,21 @@ public class SagaInstance {
 
     public long getDurationInMinutes() {
         if (completedAt == null) {
-            return java.time.Duration.between(createdAt, LocalDateTime.now()).toMinutes();
+            return java.time.Duration.between(createdAt, DateUtils.nowUtcLocalDateTime()).toMinutes();
         }
         return java.time.Duration.between(createdAt, completedAt).toMinutes();
     }
 
     public long getDurationInSeconds() {
         if (completedAt == null) {
-            return java.time.Duration.between(createdAt, LocalDateTime.now()).getSeconds();
+            return java.time.Duration.between(createdAt, DateUtils.nowUtcLocalDateTime()).getSeconds();
         }
         return java.time.Duration.between(createdAt, completedAt).getSeconds();
     }
 
     public void addStepResult(int stepIndex, Object result) {
         this.stepResults.put(stepIndex, result);
-        this.updatedAt = LocalDateTime.now();
+        this.updatedAt = DateUtils.nowUtcLocalDateTime();
     }
 
     public Object getStepResult(int stepIndex) {
@@ -181,7 +182,7 @@ public class SagaInstance {
 
     public void clearStepResults() {
         this.stepResults.clear();
-        this.updatedAt = LocalDateTime.now();
+        this.updatedAt = DateUtils.nowUtcLocalDateTime();
     }
 
     public int getCompletedStepsCount() {

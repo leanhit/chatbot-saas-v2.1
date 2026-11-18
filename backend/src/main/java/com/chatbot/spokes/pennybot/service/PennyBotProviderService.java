@@ -19,6 +19,7 @@ import org.springframework.stereotype.Service;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import com.chatbot.shared.utils.DateUtils;
 
 /**
  * PennyBot Provider Service Implementation for Facebook integration
@@ -361,7 +362,7 @@ public class PennyBotProviderService implements ChatbotProviderService {
             }
             
             // Check if any connection has recent activity
-            java.time.LocalDateTime oneHourAgo = java.time.LocalDateTime.now().minusHours(1);
+            java.time.LocalDateTime oneHourAgo = com.chatbot.shared.utils.DateUtils.nowUtcLocalDateTime().minusHours(1);
             
             for (FacebookConnectionDTO connection : connections) {
                 java.util.Optional<Conversation> recentConversation = conversationRepository

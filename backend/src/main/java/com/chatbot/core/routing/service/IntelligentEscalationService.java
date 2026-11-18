@@ -19,6 +19,7 @@ import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
+import com.chatbot.shared.utils.DateUtils;
 
 @Service
 @RequiredArgsConstructor
@@ -29,7 +30,7 @@ public class IntelligentEscalationService {
     private final EscalationHistoryRepository escalationHistoryRepository;
     private final ConversationRepository conversationRepository;
     private final NotificationWebSocketHandler notificationWebSocketHandler;
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper;
 
     @Transactional
     public EscalationRuleDTO createEscalationRule(CreateEscalationRuleRequest request) {
@@ -242,7 +243,7 @@ public class IntelligentEscalationService {
             return false;
         }
         
-        long minutesSinceResponse = ChronoUnit.MINUTES.between(context.getLastResponseTime(), LocalDateTime.now());
+        long minutesSinceResponse = ChronoUnit.MINUTES.between(context.getLastResponseTime(), DateUtils.nowUtcLocalDateTime());
         Integer threshold = rule.getTimeThresholdMinutes();
         if (threshold == null) {
             threshold = rule.getThresholdValue();
@@ -349,7 +350,7 @@ public class IntelligentEscalationService {
                 .escalatedToSupervisor(escalatedToSupervisor)
                 .escalationRuleId((Long) rule.getId())
                 .escalationAction(escalationAction)
-                .escalatedAt(LocalDateTime.now())
+                .escalatedAt(DateUtils.nowUtcLocalDateTime())
                 .reason("Escalation rule matched: " + rule.getName())
                 .build();
     }

@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
+import com.chatbot.shared.utils.DateUtils;
 
 @Service
 @RequiredArgsConstructor
@@ -46,7 +47,7 @@ public class FeedbackService {
                 .comment(request.getComment())
                 .category(request.getCategory())
                 .isAnonymous(request.getIsAnonymous() != null ? request.getIsAnonymous() : false)
-                .submittedAt(LocalDateTime.now())
+                .submittedAt(DateUtils.nowUtcLocalDateTime())
                 .status(Feedback.FeedbackStatus.PENDING)
                 .build();
 
@@ -136,14 +137,14 @@ public class FeedbackService {
         if (request.getStatus() != null) {
             feedback.setStatus(Feedback.FeedbackStatus.valueOf(request.getStatus()));
             if ("REVIEWED".equals(request.getStatus()) || "RESPONDED".equals(request.getStatus())) {
-                feedback.setReadAt(LocalDateTime.now());
+                feedback.setReadAt(DateUtils.nowUtcLocalDateTime());
                 feedback.setReviewedBy(reviewedBy);
             }
         }
 
         if (request.getAdminResponse() != null) {
             feedback.setAdminResponse(request.getAdminResponse());
-            feedback.setResponseAt(LocalDateTime.now());
+            feedback.setResponseAt(DateUtils.nowUtcLocalDateTime());
             if (feedback.getStatus() == Feedback.FeedbackStatus.REVIEWED) {
                 feedback.setStatus(Feedback.FeedbackStatus.RESPONDED);
             }

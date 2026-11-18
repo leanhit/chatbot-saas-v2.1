@@ -62,7 +62,7 @@ public class Tenant {
 
     @PrePersist
     void prePersist() {
-        createdAt = LocalDateTime.now();
+        createdAt = DateUtils.nowUtcLocalDateTime();
         updatedAt = createdAt;
         // Generate tenantKey if not set
         if (tenantKey == null || tenantKey.isBlank()) {
@@ -72,7 +72,7 @@ public class Tenant {
 
     @PreUpdate
     void preUpdate() {
-        updatedAt = LocalDateTime.now();
+        updatedAt = DateUtils.nowUtcLocalDateTime();
     }
     
     @OneToOne(mappedBy = "tenant", cascade = CascadeType.ALL, orphanRemoval = true)

@@ -24,6 +24,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import com.chatbot.shared.utils.DateUtils;
 
 @Service
 @RequiredArgsConstructor
@@ -221,7 +222,7 @@ public class LicenseService {
         if (existingBindingOpt.isPresent()) {
             DeviceBinding binding = existingBindingOpt.get();
             binding.setStatus("ACTIVE");
-            binding.setLastSeenAt(Instant.now());
+            binding.setLastSeenAt(DateUtils.nowUtc());
             if (deviceName != null && !deviceName.isBlank()) {
                 binding.setDeviceName(deviceName);
             }
@@ -243,8 +244,8 @@ public class LicenseService {
                 .deviceId(deviceId)
                 .deviceName(deviceName != null && !deviceName.isBlank() ? deviceName : "Local Client (" + deviceId + ")")
                 .status("ACTIVE")
-                .activatedAt(Instant.now())
-                .lastSeenAt(Instant.now())
+                .activatedAt(DateUtils.nowUtc())
+                .lastSeenAt(DateUtils.nowUtc())
                 .build();
         
         DeviceBinding saved = deviceBindingRepository.save(newBinding);

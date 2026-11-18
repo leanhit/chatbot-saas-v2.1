@@ -2,6 +2,7 @@ package com.chatbot.shared.infrastructure;
 
 import jakarta.persistence.*;
 import lombok.*;
+import com.chatbot.shared.utils.DateUtils;
 
 @Getter
 @Setter
@@ -24,12 +25,12 @@ public abstract class AuditEntity {
 
     @PrePersist
     protected void onCreate() {
-        this.createdAt = java.time.LocalDateTime.now();
+        this.createdAt = com.chatbot.shared.utils.DateUtils.nowUtcLocalDateTime();
         this.updatedAt = this.createdAt;
     }
 
     @PreUpdate
     protected void onUpdate() {
-        this.updatedAt = java.time.LocalDateTime.now();
+        this.updatedAt = com.chatbot.shared.utils.DateUtils.nowUtcLocalDateTime();
     }
 }

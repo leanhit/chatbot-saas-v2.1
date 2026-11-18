@@ -61,6 +61,7 @@ public class FacebookDatabaseConfig {
         Map<String, Object> properties = new HashMap<>();
         properties.put("hibernate.hbm2ddl.auto", ddlAuto);
         properties.put("hibernate.dialect", "org.hibernate.dialect.PostgreSQLDialect");
+        properties.put("hibernate.jdbc.time_zone", "UTC");
         properties.put("hibernate.show_sql", "false");
         properties.put("hibernate.format_sql", "false");
         properties.put("hibernate.jdbc.lob.non_contextual_creation", "true");

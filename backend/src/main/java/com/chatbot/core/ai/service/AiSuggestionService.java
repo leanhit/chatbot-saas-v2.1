@@ -25,6 +25,7 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import com.chatbot.shared.utils.DateUtils;
 
 /**
  * AI suggestion service for agent assistance.
@@ -155,12 +156,12 @@ public class AiSuggestionService {
      */
     @Transactional(transactionManager = "messageTransactionManager", rollbackFor = Exception.class)
     public int expireStaleSuggestions(Long tenantId, int olderThanHours) {
-        LocalDateTime cutoff = LocalDateTime.now().minusHours(olderThanHours);
+        LocalDateTime cutoff = DateUtils.nowUtcLocalDateTime().minusHours(olderThanHours);
         List<AiSuggestion> stale = suggestionRepository.findPendingOlderThan(
             tenantId, AiSuggestionStatus.PENDING, cutoff);
         for (AiSuggestion s : stale) {
             s.setStatus(AiSuggestionStatus.EXPIRED);
-            s.setRespondedAt(LocalDateTime.now());
+            s.setRespondedAt(DateUtils.nowUtcLocalDateTime());
         }
         suggestionRepository.saveAll(stale);
         return stale.size();
@@ -183,7 +184,7 @@ public class AiSuggestionService {
         }
         suggestion.setStatus(status);
         suggestion.setResponseNote(note);
-        suggestion.setRespondedAt(LocalDateTime.now());
+        suggestion.setRespondedAt(DateUtils.nowUtcLocalDateTime());
         return Optional.of(suggestionRepository.save(suggestion));
     }
 

@@ -17,6 +17,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicLong;
+import com.chatbot.shared.utils.DateUtils;
 
 /**
  * Analytics Collector - Thu thập và phân tích dữ liệu sử dụng
@@ -95,7 +96,7 @@ public class AnalyticsCollector {
             }
             
             // Create analytics event (inner class for queue)
-            QueueEvent event = new QueueEvent("message_processed", Instant.now(), 
+            QueueEvent event = new QueueEvent("message_processed", DateUtils.nowUtc(), 
                 buildEventData(request, response, analysis, processingTime));
             
             // Add to queue for batch processing — a scheduled flush persists
@@ -133,7 +134,7 @@ public class AnalyticsCollector {
                 Map.Entry::getKey,
                 e -> e.getValue().get()
             ))));
-        metrics.setTimestamp(Instant.now());
+        metrics.setTimestamp(DateUtils.nowUtc());
         
         return metrics;
     }
@@ -189,7 +190,7 @@ public class AnalyticsCollector {
         }
         
         try {
-            QueueEvent event = new QueueEvent(eventType, Instant.now(), data);
+            QueueEvent event = new QueueEvent(eventType, DateUtils.nowUtc(), data);
             
             eventQueue.offer(event);
             
@@ -210,7 +211,7 @@ public class AnalyticsCollector {
         data.put("providerType", providerType);
         data.put("processingTime", processingTime);
         data.put("success", success);
-        data.put("timestamp", Instant.now().toString());
+        data.put("timestamp", DateUtils.nowUtc().toString());
         
         trackEvent("provider_performance", data);
     }
@@ -228,7 +229,7 @@ public class AnalyticsCollector {
         data.put("actualIntent", actualIntent);
         data.put("confidence", confidence);
         data.put("accurate", predictedIntent.equals(actualIntent));
-        data.put("timestamp", Instant.now().toString());
+        data.put("timestamp", DateUtils.nowUtc().toString());
         
         trackEvent("intent_accuracy", data);
     }
@@ -245,7 +246,7 @@ public class AnalyticsCollector {
         data.put("errorType", errorType);
         data.put("errorMessage", errorMessage);
         data.put("context", context);
-        data.put("timestamp", Instant.now().toString());
+        data.put("timestamp", DateUtils.nowUtc().toString());
         
         trackEvent("error", data);
     }
@@ -262,7 +263,7 @@ public class AnalyticsCollector {
         summary.setMostUsedProvider(getMostUsedProvider());
         summary.setMostCommonIntent(getMostCommonIntent());
         summary.setQueueSize(eventQueue.size());
-        summary.setTimestamp(Instant.now());
+        summary.setTimestamp(DateUtils.nowUtc());
         
         return summary;
     }
@@ -298,7 +299,7 @@ public class AnalyticsCollector {
         
         // Performance data
         data.put("processingTime", processingTime);
-        data.put("timestamp", Instant.now().toString());
+        data.put("timestamp", DateUtils.nowUtc().toString());
         
         return data;
     }

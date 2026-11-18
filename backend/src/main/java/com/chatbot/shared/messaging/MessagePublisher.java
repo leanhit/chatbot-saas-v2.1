@@ -9,6 +9,7 @@ import org.springframework.stereotype.Component;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import com.chatbot.shared.utils.DateUtils;
 
 @Component
 @ConditionalOnClass(RabbitTemplate.class)
@@ -143,7 +144,7 @@ public class MessagePublisher {
         Event event = new Event();
         event.setEventType(eventType);
         event.setEventData(eventData);
-        event.setTimestamp(java.time.LocalDateTime.now());
+        event.setTimestamp(com.chatbot.shared.utils.DateUtils.nowUtcLocalDateTime());
         event.setEventId(UUID.randomUUID().toString());
         
         publish("chatbot.event." + eventType, event);
@@ -153,7 +154,7 @@ public class MessagePublisher {
         Event event = new Event();
         event.setEventType(eventType);
         event.setEventData(eventData);
-        event.setTimestamp(java.time.LocalDateTime.now());
+        event.setTimestamp(com.chatbot.shared.utils.DateUtils.nowUtcLocalDateTime());
         event.setEventId(UUID.randomUUID().toString());
         event.setCorrelationId(correlationId);
         
@@ -165,7 +166,7 @@ public class MessagePublisher {
             "sagaId", sagaId,
             "stepName", stepName,
             "stepData", stepData,
-            "timestamp", java.time.LocalDateTime.now()
+            "timestamp", com.chatbot.shared.utils.DateUtils.nowUtcLocalDateTime()
         );
         
         publish("chatbot.saga.step", sagaMessage);
@@ -176,7 +177,7 @@ public class MessagePublisher {
             "sagaId", sagaId,
             "success", success,
             "result", result,
-            "timestamp", java.time.LocalDateTime.now()
+            "timestamp", com.chatbot.shared.utils.DateUtils.nowUtcLocalDateTime()
         );
         
         publish("chatbot.saga.completion", sagaMessage);
@@ -187,7 +188,7 @@ public class MessagePublisher {
             "userId", userId,
             "activity", activity,
             "data", data,
-            "timestamp", java.time.LocalDateTime.now()
+            "timestamp", com.chatbot.shared.utils.DateUtils.nowUtcLocalDateTime()
         );
         
         publish("chatbot.user.activity", activityMessage);
@@ -198,7 +199,7 @@ public class MessagePublisher {
             "tenantId", tenantId,
             "activity", activity,
             "data", data,
-            "timestamp", java.time.LocalDateTime.now()
+            "timestamp", com.chatbot.shared.utils.DateUtils.nowUtcLocalDateTime()
         );
         
         publish("chatbot.tenant.activity", activityMessage);
@@ -209,7 +210,7 @@ public class MessagePublisher {
             "appId", appId,
             "activity", activity,
             "data", data,
-            "timestamp", java.time.LocalDateTime.now()
+            "timestamp", com.chatbot.shared.utils.DateUtils.nowUtcLocalDateTime()
         );
         
         publish("chatbot.app.activity", activityMessage);
@@ -227,7 +228,7 @@ public class MessagePublisher {
         Map<String, Object> healthMessage = Map.of(
             "serviceName", serviceName,
             "healthData", healthData,
-            "timestamp", java.time.LocalDateTime.now()
+            "timestamp", com.chatbot.shared.utils.DateUtils.nowUtcLocalDateTime()
         );
         
         publish("chatbot.health.check", healthMessage);

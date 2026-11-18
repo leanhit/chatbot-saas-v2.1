@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
+import com.chatbot.shared.utils.DateUtils;
 
 @Service
 @Slf4j
@@ -21,7 +22,7 @@ public class AuditService {
         auditData.put("email", email);
         auditData.put("details", details);
         auditData.put("success", success);
-        auditData.put("timestamp", LocalDateTime.now());
+        auditData.put("timestamp", DateUtils.nowUtcLocalDateTime());
         auditData.put("ipAddress", getCurrentUserIP());
         
         log.info("AUDIT: {}", auditData);
@@ -75,7 +76,7 @@ public class AuditService {
         auditData.put("targetEmail", targetEmail);
         auditData.put("oldRole", oldRole);
         auditData.put("newRole", newRole);
-        auditData.put("timestamp", LocalDateTime.now());
+        auditData.put("timestamp", DateUtils.nowUtcLocalDateTime());
         auditData.put("ipAddress", getCurrentUserIP());
         
         log.info("AUDIT: {}", auditData);

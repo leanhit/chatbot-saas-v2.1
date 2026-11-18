@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import com.chatbot.shared.utils.DateUtils;
 
 /**
  * Unified Facebook Token Refresh Service
@@ -72,7 +73,7 @@ public class FacebookTokenRefreshService {
         log.info("🔄 Starting proactive Facebook token refresh check");
         
         try {
-            LocalDateTime expiryThreshold = LocalDateTime.now().plusDays(7);
+            LocalDateTime expiryThreshold = DateUtils.nowUtcLocalDateTime().plusDays(7);
             List<FacebookConnection> expiringConnections = connectionRepository
                 .findTokensExpiringBefore(expiryThreshold);
             
@@ -173,8 +174,8 @@ public class FacebookTokenRefreshService {
                 // First, try to validate current token
                 if (validateCurrentToken(connection.getPageAccessToken())) {
                     // Token is still valid, just update timestamps
-                    connection.setTokenUpdatedAt(LocalDateTime.now());
-                    connection.setTokenExpiresAt(LocalDateTime.now().plusDays(60));
+                    connection.setTokenUpdatedAt(DateUtils.nowUtcLocalDateTime());
+                    connection.setTokenExpiresAt(DateUtils.nowUtcLocalDateTime().plusDays(60));
                     connectionRepository.save(connection);
                     
                     // Reset failure count on success
@@ -189,8 +190,8 @@ public class FacebookTokenRefreshService {
                 if (freshPageToken != null) {
                     // Update connection with fresh token
                     connection.setPageAccessToken(freshPageToken);
-                    connection.setTokenUpdatedAt(LocalDateTime.now());
-                    connection.setTokenExpiresAt(LocalDateTime.now().plusDays(60));
+                    connection.setTokenUpdatedAt(DateUtils.nowUtcLocalDateTime());
+                    connection.setTokenExpiresAt(DateUtils.nowUtcLocalDateTime().plusDays(60));
                     connectionRepository.save(connection);
                     
                     // Reset failure count on success
@@ -201,8 +202,8 @@ public class FacebookTokenRefreshService {
                 }
                 
                 // Cannot refresh automatically, mark as needing user intervention
-                connection.setTokenUpdatedAt(LocalDateTime.now());
-                connection.setTokenExpiresAt(LocalDateTime.now()); // Expired
+                connection.setTokenUpdatedAt(DateUtils.nowUtcLocalDateTime());
+                connection.setTokenExpiresAt(DateUtils.nowUtcLocalDateTime()); // Expired
                 connectionRepository.save(connection);
                 
                 // Increment failure count
@@ -407,14 +408,14 @@ public class FacebookTokenRefreshService {
         }
         
         // Check if cooldown period has passed
-        return lastRefresh.isAfter(LocalDateTime.now().minusMinutes(REFRESH_COOLDOWN_MINUTES));
+        return lastRefresh.isAfter(DateUtils.nowUtcLocalDateTime().minusMinutes(REFRESH_COOLDOWN_MINUTES));
     }
     
     /**
      * Mark refresh as complete (remove from cooldown)
      */
     private void markRefreshComplete(String pageId) {
-        refreshInProgress.put(pageId, LocalDateTime.now());
+        refreshInProgress.put(pageId, DateUtils.nowUtcLocalDateTime());
     }
     
     /**
@@ -430,7 +431,7 @@ public class FacebookTokenRefreshService {
         List<FacebookConnection> allConnections = connectionRepository
             .findByTenantIdAndIsActiveTrue(tenantId);
         
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = DateUtils.nowUtcLocalDateTime();
         LocalDateTime soonExpiry = now.plusDays(7);
         
         int totalTokens = allConnections.size();
@@ -471,8 +472,8 @@ public class FacebookTokenRefreshService {
      * Mark token as revoked and log warning for manual intervention
      */
     private void markTokenAsRevoked(FacebookConnection connection) {
-        connection.setTokenUpdatedAt(LocalDateTime.now());
-        connection.setTokenExpiresAt(LocalDateTime.now()); // Mark as expired
+        connection.setTokenUpdatedAt(DateUtils.nowUtcLocalDateTime());
+        connection.setTokenExpiresAt(DateUtils.nowUtcLocalDateTime()); // Mark as expired
         connectionRepository.save(connection);
         
         log.warn("🚨 TOKEN REVOCATION WARNING: Page {} token marked as revoked. Manual re-authentication required.", 

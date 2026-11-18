@@ -6,7 +6,9 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.chatbot.shared.utils.DateUtils;
 import java.time.LocalDateTime;
 
 @Data
@@ -18,7 +20,9 @@ public class TenantPackageInfo {
     @JsonIgnore
     private Long tenantId;
     private Package packageInfo;
+    @JsonFormat(pattern = DateUtils.API_DATETIME_FORMAT, timezone = DateUtils.API_TIMEZONE)
     private LocalDateTime packageActivatedAt;
+    @JsonFormat(pattern = DateUtils.API_DATETIME_FORMAT, timezone = DateUtils.API_TIMEZONE)
     private LocalDateTime packageExpiresAt;
     private String expiresAtDisplay;
     private boolean isExpired;
@@ -39,7 +43,7 @@ public class TenantPackageInfo {
         }
         
         boolean isFree = "free".equals(packageInfo.getPackageId()) || packageInfo.getPrice().doubleValue() == 0;
-        boolean isExpired = !isFree && expiresAt != null && expiresAt.isBefore(LocalDateTime.now());
+        boolean isExpired = !isFree && expiresAt != null && expiresAt.isBefore(DateUtils.nowUtcLocalDateTime());
         
         return TenantPackageInfo.builder()
                 .tenantId(tenantId)

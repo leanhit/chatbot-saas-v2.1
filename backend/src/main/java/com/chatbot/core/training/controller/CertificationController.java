@@ -12,6 +12,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import com.chatbot.core.training.dto.CertificationLevelResponse;
+import com.chatbot.core.training.dto.AgentCertificationResponse;
+import com.chatbot.core.training.dto.CertificationLevelRequest;
 
 @RestController
 @RequestMapping("/api/certifications")
@@ -31,34 +34,47 @@ public class CertificationController {
     }
 
     @GetMapping("/levels")
-    public ResponseEntity<List<CertificationLevel>> getAllCertificationLevels() {
+    public ResponseEntity<List<CertificationLevelResponse>> getAllCertificationLevels() {
         Long tenantId = com.chatbot.core.tenant.infra.TenantContext.getTenantId();
         List<CertificationLevel> levels = certificationService.getAllCertificationLevels(tenantId);
-        return ResponseEntity.ok(levels);
+        return ResponseEntity.ok(levels.stream().map(CertificationLevelResponse::from).toList());
     }
 
     @PostMapping("/levels")
-    public ResponseEntity<CertificationLevel> createCertificationLevel(@RequestBody CertificationLevel level) {
+    public ResponseEntity<CertificationLevelResponse> createCertificationLevel(@RequestBody CertificationLevelRequest request) {
         requireOwnerOrEditor();
+        CertificationLevel level = new CertificationLevel();
+        level.setLevelName(request.getLevelName());
+        level.setDescription(request.getDescription());
+        level.setRequiredTrainingIds(request.getRequiredTrainingIds());
+        level.setRequiredSkillScores(request.getRequiredSkillScores());
+        level.setRequiredStats(request.getRequiredStats());
+        level.setBadgeIcon(request.getBadgeIcon());
+        level.setBadgeColor(request.getBadgeColor());
+        level.setDisplayOrder(request.getDisplayOrder());
+        if (request.getActive() != null) {
+            level.setActive(request.getActive());
+        }
+        level.setValidityDays(request.getValidityDays());
         CertificationLevel created = certificationService.createCertificationLevel(level);
-        return ResponseEntity.ok(created);
+        return ResponseEntity.ok(CertificationLevelResponse.from(created));
     }
 
     @PostMapping("/award")
-    public ResponseEntity<AgentCertification> awardCertification(
+    public ResponseEntity<AgentCertificationResponse> awardCertification(
             @RequestParam Long agentId,
             @RequestParam Long certificationLevelId,
             @RequestParam String issuedBy) {
         requireOwnerOrEditor();
         Long tenantId = TenantContext.getTenantId();
         AgentCertification certification = certificationService.awardCertification(agentId, certificationLevelId, issuedBy, tenantId);
-        return ResponseEntity.ok(certification);
+        return ResponseEntity.ok(AgentCertificationResponse.from(certification));
     }
 
     @GetMapping("/agent/{agentId}")
-    public ResponseEntity<List<AgentCertification>> getAgentCertifications(@PathVariable Long agentId) {
+    public ResponseEntity<List<AgentCertificationResponse>> getAgentCertifications(@PathVariable Long agentId) {
         Long tenantId = com.chatbot.core.tenant.infra.TenantContext.getTenantId();
         List<AgentCertification> certifications = certificationService.getAgentCertifications(agentId, tenantId);
-        return ResponseEntity.ok(certifications);
+        return ResponseEntity.ok(certifications.stream().map(AgentCertificationResponse::from).toList());
     }
 }

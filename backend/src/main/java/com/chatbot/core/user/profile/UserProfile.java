@@ -4,6 +4,7 @@ import com.chatbot.core.user.model.User;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
+import com.chatbot.shared.utils.DateUtils;
 
 /**
  * User Profile Entity - Chứa thông tin chi tiết của system user
@@ -103,12 +104,12 @@ public class UserProfile {
 
     @PrePersist
     void prePersist() {
-        createdAt = LocalDateTime.now();
+        createdAt = DateUtils.nowUtcLocalDateTime();
         updatedAt = createdAt;
     }
 
     @PreUpdate
     void preUpdate() {
-        updatedAt = LocalDateTime.now();
+        updatedAt = DateUtils.nowUtcLocalDateTime();
     }
 }

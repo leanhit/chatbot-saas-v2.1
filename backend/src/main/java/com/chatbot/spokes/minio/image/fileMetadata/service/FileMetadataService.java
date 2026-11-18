@@ -32,6 +32,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import io.minio.RemoveObjectArgs;
+import com.chatbot.shared.utils.DateUtils;
 
 @Service
 @RequiredArgsConstructor
@@ -138,7 +139,7 @@ public class FileMetadataService {
 
         String originalFilename = StringUtils.cleanPath(file.getOriginalFilename());
         String sanitizedFilename = originalFilename.replaceAll("[^a-zA-Z0-9.\\-]", "_");
-        String uniqueFileName = LocalDateTime.now().toString().replace(":", "-") + "_" + UUID.randomUUID() + "_" + sanitizedFilename;
+        String uniqueFileName = DateUtils.nowUtcLocalDateTime().toString().replace(":", "-") + "_" + UUID.randomUUID() + "_" + sanitizedFilename;
 
         try (InputStream inputStream = file.getInputStream()) {
             minioClient.putObject(
@@ -157,7 +158,7 @@ public class FileMetadataService {
         metadata.setFileUrl(fileUrl);
         metadata.setFileSize(file.getSize());
         metadata.setContentType(file.getContentType());
-        metadata.setUpdatedAt(LocalDateTime.now());
+        metadata.setUpdatedAt(DateUtils.nowUtcLocalDateTime());
         metadata.setTitle(request.getTitle());
         metadata.setDescription(request.getDescription());
         metadata.setCategory(category);
@@ -175,7 +176,7 @@ public class FileMetadataService {
             throws IOException, MinioException, InvalidKeyException, NoSuchAlgorithmException {
 
         String originalFilename = StringUtils.getFilename(url);
-        String uniqueFileName = LocalDateTime.now().toString().replace(":", "-") + "_" + UUID.randomUUID() + "_" + originalFilename;
+        String uniqueFileName = DateUtils.nowUtcLocalDateTime().toString().replace(":", "-") + "_" + UUID.randomUUID() + "_" + originalFilename;
 
         try (InputStream inputStream = new URL(url).openStream()) {
             URL urlObject = new URL(url);
@@ -213,7 +214,7 @@ public class FileMetadataService {
             metadata.setFileUrl(finalFileUrl);
             metadata.setFileSize(fileSize);
             metadata.setContentType(contentType);
-            metadata.setUpdatedAt(LocalDateTime.now());
+            metadata.setUpdatedAt(DateUtils.nowUtcLocalDateTime());
             metadata.setTitle(request.getTitle());
             metadata.setDescription(request.getDescription());
             metadata.setCategory(category);
@@ -298,7 +299,7 @@ public class FileMetadataService {
                     // Upload file mới
                     String originalFilename = StringUtils.cleanPath(newFile.getOriginalFilename());
                     String sanitizedFilename = originalFilename.replaceAll("[^a-zA-Z0-9.\\-]", "_");
-                    String uniqueFileName = LocalDateTime.now().toString().replace(":", "-") + "_" + UUID.randomUUID() + "_" + sanitizedFilename;
+                    String uniqueFileName = DateUtils.nowUtcLocalDateTime().toString().replace(":", "-") + "_" + UUID.randomUUID() + "_" + sanitizedFilename;
 
                     try (InputStream inputStream = newFile.getInputStream()) {
                         minioClient.putObject(

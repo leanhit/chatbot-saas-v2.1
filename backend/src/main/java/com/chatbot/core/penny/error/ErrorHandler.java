@@ -15,6 +15,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
+import com.chatbot.shared.utils.DateUtils;
 
 /**
  * Error Handler - Xử lý lỗi và fallback strategies
@@ -214,7 +215,7 @@ public class ErrorHandler {
                 .providerUsed("FALLBACK")
                 .status("fallback")
                 .errorMessage("Original error: " + originalError.getMessage())
-                .timestamp(Instant.now())
+                .timestamp(DateUtils.nowUtc())
                 .shouldSendResponse(true)
                 .build();
                 
@@ -246,7 +247,7 @@ public class ErrorHandler {
                 .providerUsed("FALLBACK")
                 .status("provider_fallback")
                 .errorMessage("Original error: " + originalError.getMessage())
-                .timestamp(Instant.now())
+                .timestamp(DateUtils.nowUtc())
                 .shouldSendResponse(true)
                 .build();
                 
@@ -359,7 +360,7 @@ public class ErrorHandler {
         
         public synchronized void recordFailure() {
             failureCount++;
-            lastFailureTime = Instant.now();
+            lastFailureTime = DateUtils.nowUtc();
             
             if (failureCount >= failureThreshold) {
                 state = State.OPEN;
@@ -369,7 +370,7 @@ public class ErrorHandler {
         
         public synchronized boolean isOpen() {
             if (state == State.OPEN) {
-                if (Instant.now().isAfter(nextAttemptTime)) {
+                if (DateUtils.nowUtc().isAfter(nextAttemptTime)) {
                     state = State.HALF_OPEN;
                     return false;
                 }

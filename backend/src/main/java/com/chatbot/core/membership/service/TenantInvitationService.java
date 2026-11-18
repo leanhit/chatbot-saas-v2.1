@@ -31,6 +31,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import com.chatbot.shared.utils.DateUtils;
 
 @Service
 @RequiredArgsConstructor
@@ -76,7 +77,7 @@ public class TenantInvitationService {
         List<TenantInvitation> pendingInvitations = invitationRepo.findByTenantIdAndEmailAndStatus(
             tenantId, request.getEmail().toLowerCase(), InvitationStatus.PENDING);
         boolean hasValidPendingInvitation = pendingInvitations.stream()
-            .anyMatch(inv -> inv.getExpiresAt() == null || inv.getExpiresAt().isAfter(LocalDateTime.now()));
+            .anyMatch(inv -> inv.getExpiresAt() == null || inv.getExpiresAt().isAfter(DateUtils.nowUtcLocalDateTime()));
         
         if (hasValidPendingInvitation) {
             throw new BusinessLogicException(com.chatbot.shared.exceptions.ErrorCode.INVITATION_ALREADY_PENDING, "There is already a pending invitation for this email");
@@ -89,8 +90,8 @@ public class TenantInvitationService {
             .role(request.getRole())
             .token(UUID.randomUUID().toString())
             .status(InvitationStatus.PENDING)
-            .createdAt(LocalDateTime.now())
-            .expiresAt(LocalDateTime.now().plusDays(expiryDays))
+            .createdAt(DateUtils.nowUtcLocalDateTime())
+            .expiresAt(DateUtils.nowUtcLocalDateTime().plusDays(expiryDays))
             .invitedByUserId(admin.getId()) // Application-level join: store userId instead of User object
             .build();
 
@@ -131,7 +132,7 @@ public class TenantInvitationService {
     public List<InvitationResponse> getMyPendingInvitations(User user) {
         return invitationRepo.findByEmailAndStatus(user.getEmail(), InvitationStatus.PENDING)
                 .stream()
-                .filter(inv -> inv.getExpiresAt() == null || inv.getExpiresAt().isAfter(LocalDateTime.now()))
+                .filter(inv -> inv.getExpiresAt() == null || inv.getExpiresAt().isAfter(DateUtils.nowUtcLocalDateTime()))
                 .map(this::convertToResponse)
                 .collect(Collectors.toList());
     }
@@ -148,7 +149,7 @@ public class TenantInvitationService {
             throw new BusinessLogicException(com.chatbot.shared.exceptions.ErrorCode.INVITATION_NOT_PENDING, "This invitation is no longer pending");
         }
 
-        if (invitation.getExpiresAt() != null && invitation.getExpiresAt().isBefore(LocalDateTime.now())) {
+        if (invitation.getExpiresAt() != null && invitation.getExpiresAt().isBefore(DateUtils.nowUtcLocalDateTime())) {
             throw new BusinessLogicException(com.chatbot.shared.exceptions.ErrorCode.INVITATION_EXPIRED, "This invitation has expired");
         }
 
@@ -161,7 +162,7 @@ public class TenantInvitationService {
             .userId(user.getId()) // Application-level join: store userId instead of User object
             .role(invitation.getRole())
             .status(MembershipStatus.ACTIVE)
-            .joinedAt(LocalDateTime.now())
+            .joinedAt(DateUtils.nowUtcLocalDateTime())
             .build());
 
         invitation.setStatus(InvitationStatus.ACCEPTED);

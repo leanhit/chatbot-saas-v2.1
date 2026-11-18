@@ -9,6 +9,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
+import com.chatbot.shared.utils.DateUtils;
 
 @Entity
 @Table(name = "webhooks")
@@ -110,7 +111,7 @@ public class Webhook {
     
     public void recordSuccess() {
         this.successCount++;
-        this.lastTriggeredAt = LocalDateTime.now();
+        this.lastTriggeredAt = DateUtils.nowUtcLocalDateTime();
         this.currentRetryAttempt = 0;
         this.nextRetryAt = null;
         this.lastError = null;
@@ -119,7 +120,7 @@ public class Webhook {
     
     public void recordFailure(String errorMessage) {
         this.failureCount++;
-        this.lastTriggeredAt = LocalDateTime.now();
+        this.lastTriggeredAt = DateUtils.nowUtcLocalDateTime();
         this.currentRetryAttempt++;
         this.lastError = errorMessage;
         
@@ -136,7 +137,7 @@ public class Webhook {
         long maxDelayMs = 60000; // Max 60 seconds
         delayMs = Math.min(delayMs, maxDelayMs);
         
-        this.nextRetryAt = LocalDateTime.now().plus(java.time.Duration.ofMillis(delayMs));
+        this.nextRetryAt = DateUtils.nowUtcLocalDateTime().plus(java.time.Duration.ofMillis(delayMs));
     }
     
     public boolean canRetry() {
@@ -144,6 +145,6 @@ public class Webhook {
     }
     
     public boolean isRetryDue() {
-        return this.nextRetryAt != null && LocalDateTime.now().isAfter(this.nextRetryAt);
+        return this.nextRetryAt != null && DateUtils.nowUtcLocalDateTime().isAfter(this.nextRetryAt);
     }
 }

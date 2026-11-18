@@ -58,7 +58,8 @@ class MessageServiceTest {
                 messageRepository,
                 conversationRepository,
                 messageUsageService,
-                tenantMemberService
+                tenantMemberService,
+                new com.fasterxml.jackson.databind.ObjectMapper()
         );
 
         // Set tenant context

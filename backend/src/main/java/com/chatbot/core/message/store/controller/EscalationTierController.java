@@ -13,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import com.chatbot.core.message.store.dto.EscalationTierResponse;
 
 /**
  * REST Controller for Escalation Tier management
@@ -41,21 +42,21 @@ public class EscalationTierController {
      * Get all escalation tiers for current tenant
      */
     @GetMapping
-    public ResponseEntity<List<EscalationTier>> getEscalationTiers() {
+    public ResponseEntity<List<EscalationTierResponse>> getEscalationTiers() {
         Long tenantId = TenantContext.getTenantId();
         if (tenantId == null) {
             return ResponseEntity.badRequest().build();
         }
         
         List<EscalationTier> tiers = escalationTierRepository.findByTenantId(tenantId);
-        return ResponseEntity.ok(tiers);
+        return ResponseEntity.ok(tiers.stream().map(EscalationTierResponse::from).toList());
     }
 
     /**
      * Get escalation tier by level
      */
     @GetMapping("/level/{level}")
-    public ResponseEntity<EscalationTier> getEscalationTierByLevel(@PathVariable Integer level) {
+    public ResponseEntity<EscalationTierResponse> getEscalationTierByLevel(@PathVariable Integer level) {
         Long tenantId = TenantContext.getTenantId();
         if (tenantId == null) {
             return ResponseEntity.badRequest().build();
@@ -65,40 +66,54 @@ public class EscalationTierController {
         if (tier == null) {
             return ResponseEntity.notFound().build();
         }
-        return ResponseEntity.ok(tier);
+        return ResponseEntity.ok(EscalationTierResponse.from(tier));
     }
 
     /**
      * Create a new escalation tier
      */
     @PostMapping
-    public ResponseEntity<EscalationTier> createEscalationTier(@RequestBody EscalationTier tier) {
+    public ResponseEntity<EscalationTierResponse> createEscalationTier(@RequestBody com.chatbot.core.message.store.dto.EscalationTierRequest request) {
         requireOwnerOrEditor();
         Long tenantId = TenantContext.getTenantId();
         if (tenantId == null) {
             return ResponseEntity.badRequest().build();
         }
         
+        EscalationTier tier = new EscalationTier();
+        tier.setLevel(request.getLevel());
+        tier.setName(request.getName());
+        tier.setTimeoutSeconds(request.getTimeoutSeconds());
+        tier.setActive(request.getActive());
+        tier.setDescription(request.getDescription());
+        tier.setRequiredRole(request.getRequiredRole());
         tier.setTenantId(tenantId);
         EscalationTier createdTier = escalationTierRepository.save(tier);
-        return ResponseEntity.ok(createdTier);
+        return ResponseEntity.ok(EscalationTierResponse.from(createdTier));
     }
 
     /**
      * Update an existing escalation tier
      */
     @PutMapping("/{id}")
-    public ResponseEntity<EscalationTier> updateEscalationTier(
+    public ResponseEntity<EscalationTierResponse> updateEscalationTier(
             @PathVariable Long id,
-            @RequestBody EscalationTier tier) {
+            @RequestBody com.chatbot.core.message.store.dto.EscalationTierRequest request) {
         requireOwnerOrEditor();
         Long tenantId = TenantContext.getTenantId();
         if (tenantId == null) {
             return ResponseEntity.badRequest().build();
         }
         
+        EscalationTier tier = new EscalationTier();
+        tier.setLevel(request.getLevel());
+        tier.setName(request.getName());
+        tier.setTimeoutSeconds(request.getTimeoutSeconds());
+        tier.setActive(request.getActive());
+        tier.setDescription(request.getDescription());
+        tier.setRequiredRole(request.getRequiredRole());
         EscalationTier updatedTier = escalationService.updateEscalationTier(id, tier);
-        return ResponseEntity.ok(updatedTier);
+        return ResponseEntity.ok(EscalationTierResponse.from(updatedTier));
     }
 
     /**

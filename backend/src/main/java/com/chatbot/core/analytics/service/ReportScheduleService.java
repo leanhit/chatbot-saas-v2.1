@@ -14,6 +14,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.List;
+import com.chatbot.shared.utils.DateUtils;
 
 /**
  * CRUD for report schedules. nextRunAt is computed from the cron expression
@@ -41,7 +42,7 @@ public class ReportScheduleService {
         validateCron(schedule.getCronExpression());
         schedule.setTenantId(tenantId);
         if (schedule.getEnabled() == null) schedule.setEnabled(true);
-        schedule.setNextRunAt(computeNextRun(schedule.getCronExpression(), LocalDateTime.now()));
+        schedule.setNextRunAt(computeNextRun(schedule.getCronExpression(), DateUtils.nowUtcLocalDateTime()));
         return scheduleRepository.save(schedule);
     }
 
@@ -52,7 +53,7 @@ public class ReportScheduleService {
         if (update.getCronExpression() != null) {
             validateCron(update.getCronExpression());
             schedule.setCronExpression(update.getCronExpression());
-            schedule.setNextRunAt(computeNextRun(update.getCronExpression(), LocalDateTime.now()));
+            schedule.setNextRunAt(computeNextRun(update.getCronExpression(), DateUtils.nowUtcLocalDateTime()));
         }
         if (update.getEnabled() != null) schedule.setEnabled(update.getEnabled());
         return scheduleRepository.save(schedule);
@@ -76,7 +77,7 @@ public class ReportScheduleService {
 
     private LocalDateTime computeNextRun(String cron, LocalDateTime after) {
         ZonedDateTime next = CronExpression.parse(cron)
-            .next(ZonedDateTime.of(after, ZoneId.systemDefault()));
+            .next(ZonedDateTime.of(after, DateUtils.UTC_ZONE));
         return next != null ? next.toLocalDateTime() : after.plusDays(1);
     }
 }

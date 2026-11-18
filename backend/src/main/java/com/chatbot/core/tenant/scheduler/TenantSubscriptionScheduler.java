@@ -11,6 +11,7 @@ import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import com.chatbot.shared.utils.DateUtils;
 
 /**
  * Scheduler for automatic handling of expired tenant packages
@@ -33,7 +34,7 @@ public class TenantSubscriptionScheduler {
     public void downgradeExpiredTenants() {
         log.info("⏰ [TenantSubscriptionScheduler] Checking for expired tenant subscriptions...");
         try {
-            LocalDateTime now = LocalDateTime.now();
+            LocalDateTime now = DateUtils.nowUtcLocalDateTime();
             List<Tenant> expiredTenants = tenantRepository.findExpiredTenants(now);
 
             if (expiredTenants.isEmpty()) {

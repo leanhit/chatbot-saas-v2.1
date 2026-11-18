@@ -23,6 +23,8 @@ import java.util.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.mockito.Spy;
 
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
@@ -36,6 +38,9 @@ class EscalationServiceMockitoTest {
 
     @Mock
     private ConversationRepository conversationRepository;
+
+    @Spy
+    private ObjectMapper objectMapper = new ObjectMapper();
 
     @InjectMocks
     private IntelligentEscalationService escalationService;

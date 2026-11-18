@@ -9,6 +9,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.Instant;
+import com.chatbot.shared.utils.DateUtils;
 
 @Entity
 @Table(name = "device_bindings", indexes = {
@@ -41,11 +42,11 @@ public class DeviceBinding {
 
     @Column(name = "activated_at")
     @Builder.Default
-    private Instant activatedAt = Instant.now();
+    private Instant activatedAt = DateUtils.nowUtc();
 
     @Column(name = "last_seen_at")
     @Builder.Default
-    private Instant lastSeenAt = Instant.now();
+    private Instant lastSeenAt = DateUtils.nowUtc();
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)

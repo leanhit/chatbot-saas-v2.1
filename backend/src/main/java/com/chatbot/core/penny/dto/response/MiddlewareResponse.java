@@ -230,7 +230,7 @@ public class MiddlewareResponse {
         analyticsEvents.add(AnalyticsEvent.builder()
             .eventType(eventType)
             .data(data)
-            .timestamp(Instant.now())
+            .timestamp(DateUtils.nowUtc())
             .build());
     }
     
@@ -254,7 +254,7 @@ public class MiddlewareResponse {
             .status("error")
             .errorMessage(errorMessage)
             .errorCode(errorCode)
-            .timestamp(Instant.now())
+            .timestamp(DateUtils.nowUtc())
             .shouldSendResponse(true)
             .build();
     }
@@ -268,7 +268,7 @@ public class MiddlewareResponse {
             .response(response)
             .providerUsed(providerUsed)
             .status("success")
-            .timestamp(Instant.now())
+            .timestamp(DateUtils.nowUtc())
             .shouldSendResponse(true)
             .build();
     }

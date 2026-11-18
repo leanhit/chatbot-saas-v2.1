@@ -11,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import com.chatbot.shared.utils.DateUtils;
 
 /**
  * Scheduled Worker for purging soft-deleted / inactive users and expired user data
@@ -32,7 +33,7 @@ public class UserCleanupService {
     @Transactional(value = "userTransactionManager", rollbackFor = Exception.class)
     public void scheduledUserCleanup() {
         log.info("[UserCleanupService] Starting scheduled purge for inactive users");
-        LocalDateTime cutoffDate = LocalDateTime.now().minusDays(30);
+        LocalDateTime cutoffDate = DateUtils.nowUtcLocalDateTime().minusDays(30);
 
         try {
             List<User> inactiveUsers = userRepository.findInactiveUsersOlderThan(cutoffDate);

@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import com.chatbot.shared.utils.DateUtils;
 
 /**
  * GDPR data portability export (Phase 6).
@@ -62,7 +63,7 @@ public class DataExportService {
 
         Map<String, Object> export = new HashMap<>();
         export.put("exportVersion", "1.0");
-        export.put("exportedAt", LocalDateTime.now().toString());
+        export.put("exportedAt", DateUtils.nowUtcLocalDateTime().toString());
         export.put("tenant", Map.of(
             "id", tenant.getId(),
             "tenantKey", tenant.getTenantKey() != null ? tenant.getTenantKey() : "",

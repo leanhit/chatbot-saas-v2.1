@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 import java.time.Instant;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import com.chatbot.shared.utils.DateUtils;
 
 /**
  * Controller for Penny management operations
@@ -188,7 +189,7 @@ public class PennyManagementController {
         Map<String, Object> status = Map.of(
             "healthy", isHealthy,
             "status", isHealthy ? "HEALTHY" : "UNHEALTHY",
-            "timestamp", Instant.now()
+            "timestamp", DateUtils.nowUtc()
         );
         
         return ResponseEntity.ok(ApiResponse.success(status));
@@ -306,7 +307,7 @@ public class PennyManagementController {
             "metrics", metricsService.getCurrentMetrics(),
             "health", healthService.getSystemHealth(),
             "configuration", configurationService.getCurrentConfiguration(),
-            "timestamp", Instant.now()
+            "timestamp", DateUtils.nowUtc()
         );
         
         return ResponseEntity.ok(ApiResponse.success(overview));

@@ -4,12 +4,16 @@ import com.chatbot.core.tenant.infra.TenantContext;
 import com.chatbot.core.tenant.model.TenantApiKey;
 import com.chatbot.core.tenant.repository.TenantApiKeyRepository;
 import com.chatbot.core.tenant.service.TenantApiKeyService;
+import com.chatbot.shared.dto.ErrorResponse;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -25,6 +29,7 @@ import java.io.IOException;
 public class TenantApiKeyAuthFilter extends OncePerRequestFilter {
 
     private final TenantApiKeyRepository apiKeyRepository;
+    private final ObjectMapper objectMapper;
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
@@ -36,14 +41,14 @@ public class TenantApiKeyAuthFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
         String rawKey = request.getHeader("X-API-Key");
         if (rawKey == null || rawKey.isBlank()) {
-            sendUnauthorized(response, "Missing X-API-Key header");
+            sendUnauthorized(request, response, "Missing X-API-Key header");
             return;
         }
 
         TenantApiKey key = apiKeyRepository.findByKeyHash(TenantApiKeyService.hashKey(rawKey.trim()))
                 .orElse(null);
         if (key == null || !key.isValid()) {
-            sendUnauthorized(response, "Invalid or expired API key");
+            sendUnauthorized(request, response, "Invalid or expired API key");
             return;
         }
 
@@ -62,9 +67,12 @@ public class TenantApiKeyAuthFilter extends OncePerRequestFilter {
         filterChain.doFilter(request, response);
     }
 
-    private void sendUnauthorized(HttpServletResponse response, String message) throws IOException {
-        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-        response.setContentType("application/json");
-        response.getWriter().write("{\"error\":\"" + message + "\"}");
+    private void sendUnauthorized(HttpServletRequest request, HttpServletResponse response, String message) throws IOException {
+        response.setStatus(HttpStatus.UNAUTHORIZED.value());
+        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+        response.setCharacterEncoding("UTF-8");
+        ErrorResponse error = ErrorResponse.fromUnauthorized(message);
+        error.setPath(request.getRequestURI());
+        objectMapper.writeValue(response.getWriter(), error);
     }
 }

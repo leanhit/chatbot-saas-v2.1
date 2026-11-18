@@ -14,6 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import com.chatbot.core.message.store.dto.SLAConfigurationResponse;
 
 /**
  * REST Controller for SLA Configuration management
@@ -42,21 +43,21 @@ public class SLAConfigurationController {
      * Get all SLA configurations for current tenant
      */
     @GetMapping
-    public ResponseEntity<List<SLAConfiguration>> getSLAConfigurations() {
+    public ResponseEntity<List<SLAConfigurationResponse>> getSLAConfigurations() {
         Long tenantId = TenantContext.getTenantId();
         if (tenantId == null) {
             return ResponseEntity.badRequest().build();
         }
         
         List<SLAConfiguration> configs = slaConfigurationRepository.findByTenantId(tenantId);
-        return ResponseEntity.ok(configs);
+        return ResponseEntity.ok(configs.stream().map(SLAConfigurationResponse::from).toList());
     }
 
     /**
      * Get SLA configuration by customer tier
      */
     @GetMapping("/tier/{customerTier}")
-    public ResponseEntity<SLAConfiguration> getSLAConfigurationByTier(@PathVariable String customerTier) {
+    public ResponseEntity<SLAConfigurationResponse> getSLAConfigurationByTier(@PathVariable String customerTier) {
         Long tenantId = TenantContext.getTenantId();
         if (tenantId == null) {
             return ResponseEntity.badRequest().build();
@@ -66,40 +67,42 @@ public class SLAConfigurationController {
         if (config == null) {
             return ResponseEntity.notFound().build();
         }
-        return ResponseEntity.ok(config);
+        return ResponseEntity.ok(SLAConfigurationResponse.from(config));
     }
 
     /**
      * Create a new SLA configuration
      */
     @PostMapping
-    public ResponseEntity<SLAConfiguration> createSLAConfiguration(@RequestBody SLAConfiguration config) {
+    public ResponseEntity<SLAConfigurationResponse> createSLAConfiguration(@RequestBody com.chatbot.core.message.store.dto.SLAConfigurationRequest request) {
         requireOwnerOrEditor();
         Long tenantId = TenantContext.getTenantId();
         if (tenantId == null) {
             return ResponseEntity.badRequest().build();
         }
         
+        SLAConfiguration config = toEntity(request);
         config.setTenantId(tenantId);
         SLAConfiguration createdConfig = slaConfigurationRepository.save(config);
-        return ResponseEntity.ok(createdConfig);
+        return ResponseEntity.ok(SLAConfigurationResponse.from(createdConfig));
     }
 
     /**
      * Update an existing SLA configuration
      */
     @PutMapping("/{id}")
-    public ResponseEntity<SLAConfiguration> updateSLAConfiguration(
+    public ResponseEntity<SLAConfigurationResponse> updateSLAConfiguration(
             @PathVariable Long id,
-            @Valid @RequestBody SLAConfiguration config) {
+            @Valid @RequestBody com.chatbot.core.message.store.dto.SLAConfigurationRequest request) {
         requireOwnerOrEditor();
         Long tenantId = TenantContext.getTenantId();
         if (tenantId == null) {
             return ResponseEntity.badRequest().build();
         }
         
+        SLAConfiguration config = toEntity(request);
         SLAConfiguration updatedConfig = slaMonitorService.updateSLAConfiguration(id, config);
-        return ResponseEntity.ok(updatedConfig);
+        return ResponseEntity.ok(SLAConfigurationResponse.from(updatedConfig));
     }
 
     /**
@@ -125,5 +128,15 @@ public class SLAConfigurationController {
         
         slaMonitorService.createDefaultSLAConfigurations(tenantId);
         return ResponseEntity.noContent().build();
+    }
+
+    private SLAConfiguration toEntity(com.chatbot.core.message.store.dto.SLAConfigurationRequest r) {
+        SLAConfiguration config = new SLAConfiguration();
+        config.setCustomerTier(r.getCustomerTier());
+        config.setExpectedResponseTime(r.getExpectedResponseTime());
+        config.setMaxBreachCount(r.getMaxBreachCount());
+        config.setActive(r.getActive());
+        config.setDescription(r.getDescription());
+        return config;
     }
 }

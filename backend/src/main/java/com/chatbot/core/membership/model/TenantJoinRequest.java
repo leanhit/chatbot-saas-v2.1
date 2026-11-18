@@ -4,6 +4,7 @@ import com.chatbot.core.tenant.model.Tenant;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
+import com.chatbot.shared.utils.DateUtils;
 
 @Entity
 @Table(name = "tenant_join_requests")
@@ -38,12 +39,12 @@ public class TenantJoinRequest {
     
     @PrePersist
     protected void onCreate() {
-        this.createdAt = LocalDateTime.now();
-        this.updatedAt = LocalDateTime.now();
+        this.createdAt = DateUtils.nowUtcLocalDateTime();
+        this.updatedAt = DateUtils.nowUtcLocalDateTime();
     }
     
     @PreUpdate
     protected void onUpdate() {
-        this.updatedAt = LocalDateTime.now();
+        this.updatedAt = DateUtils.nowUtcLocalDateTime();
     }
 }

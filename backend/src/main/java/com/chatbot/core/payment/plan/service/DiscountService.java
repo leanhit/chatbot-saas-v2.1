@@ -13,6 +13,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import com.chatbot.shared.utils.DateUtils;
 
 @Service
 @RequiredArgsConstructor
@@ -28,7 +29,7 @@ public class DiscountService {
     @Cacheable(value = "discounts", key = "'all-active'")
     public List<Discount> getActiveDiscounts() {
         log.info("🎟️ Fetching all active discounts");
-        return discountRepository.findActiveDiscounts(LocalDateTime.now());
+        return discountRepository.findActiveDiscounts(DateUtils.nowUtcLocalDateTime());
     }
 
     /**
@@ -48,7 +49,7 @@ public class DiscountService {
     public DiscountValidationResult validateDiscount(String code, Long userId, BigDecimal amount, String packageId) {
         log.info("🎟️ Validating discount: {} for user: {}, amount: {}", code, userId, amount);
 
-        Optional<Discount> discountOpt = discountRepository.findActiveDiscountByCode(code, LocalDateTime.now());
+        Optional<Discount> discountOpt = discountRepository.findActiveDiscountByCode(code, DateUtils.nowUtcLocalDateTime());
         
         if (discountOpt.isEmpty()) {
             return DiscountValidationResult.invalid("Discount code not found or expired");
@@ -185,7 +186,7 @@ public class DiscountService {
     public void deactivateExpiredDiscounts() {
         log.info("🎟️ Deactivating expired discounts");
         
-        List<Discount> expiredDiscounts = discountRepository.findActiveDiscounts(LocalDateTime.now())
+        List<Discount> expiredDiscounts = discountRepository.findActiveDiscounts(DateUtils.nowUtcLocalDateTime())
                 .stream()
                 .filter(d -> !d.isValid())
                 .toList();

@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import com.chatbot.shared.utils.DateUtils;
 
 @Service
 @RequiredArgsConstructor
@@ -48,7 +49,7 @@ public class OnboardingService {
             .agentId(agentId)
             .taskId(taskId)
             .status(AgentOnboardingProgress.CompletionStatus.IN_PROGRESS)
-            .startedAt(LocalDateTime.now().toString())
+            .startedAt(DateUtils.nowUtcLocalDateTime().toString())
             .build();
         progress.setTenantId(tenantId);
         return onboardingProgressRepository.save(progress);
@@ -61,7 +62,7 @@ public class OnboardingService {
             .orElseThrow(() -> new IllegalArgumentException("Onboarding progress not found"));
 
         progress.setStatus(AgentOnboardingProgress.CompletionStatus.COMPLETED);
-        progress.setCompletedAt(LocalDateTime.now().toString());
+        progress.setCompletedAt(DateUtils.nowUtcLocalDateTime().toString());
         progress.setNotes(notes);
         return onboardingProgressRepository.save(progress);
     }
@@ -104,7 +105,7 @@ public class OnboardingService {
         progress.setSupervisorApproval(AgentOnboardingProgress.SupervisorApproval.APPROVED);
         progress.setSupervisorId(supervisorId);
         progress.setSupervisorComments(comments);
-        progress.setApprovedAt(LocalDateTime.now().toString());
+        progress.setApprovedAt(DateUtils.nowUtcLocalDateTime().toString());
         onboardingProgressRepository.save(progress);
         auditLogService.logActionAsync(tenantId, currentUserEmail(),
                 "ONBOARDING_TASK_APPROVED", "agentId=" + agentId + ", taskId=" + taskId);

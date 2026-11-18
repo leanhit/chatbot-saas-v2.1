@@ -24,7 +24,7 @@ public class ErrorResponse {
     private String tenantId;
 
     public ErrorResponse() {
-        this.timestamp = LocalDateTime.now();
+        this.timestamp = DateUtils.nowUtcLocalDateTime();
     }
 
     public ErrorResponse(String code, String message) {
@@ -53,7 +53,7 @@ public class ErrorResponse {
     }
 
     public static ErrorResponse fromMessage(String message) {
-        return new ErrorResponse(null, message);
+        return new ErrorResponse("ERROR", message);
     }
 
     public static ErrorResponse fromValidation(List<String> errors) {

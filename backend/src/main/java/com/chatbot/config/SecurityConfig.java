@@ -1,9 +1,13 @@
 package com.chatbot.config;
 
 import com.chatbot.core.identity.security.JwtFilter;
+import com.chatbot.shared.dto.ErrorResponse;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -15,6 +19,8 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.AuthenticationEntryPoint;
+import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
@@ -79,11 +85,38 @@ public class SecurityConfig {
         return source;
     }
 
+    // ===================== SECURITY ERROR RESPONSES =====================
+    // 401/403 must use the shared ErrorResponse schema instead of Spring's
+    // default error body.
+    @Bean
+    public AuthenticationEntryPoint authenticationEntryPoint(ObjectMapper objectMapper) {
+        return (request, response, authException) -> {
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+            ErrorResponse error = ErrorResponse.fromUnauthorized("Authentication required");
+            error.withPath(request.getRequestURI());
+            objectMapper.writeValue(response.getWriter(), error);
+        };
+    }
+
+    @Bean
+    public AccessDeniedHandler accessDeniedHandler(ObjectMapper objectMapper) {
+        return (request, response, accessDeniedException) -> {
+            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+            response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+            ErrorResponse error = ErrorResponse.fromForbidden("Access denied");
+            error.withPath(request.getRequestURI());
+            objectMapper.writeValue(response.getWriter(), error);
+        };
+    }
+
     // ===================== SECURITY FILTER CHAIN =====================
     @Bean
     public SecurityFilterChain securityFilterChain(
             HttpSecurity http,
-            JwtFilter jwtFilter
+            JwtFilter jwtFilter,
+            AuthenticationEntryPoint authenticationEntryPoint,
+            AccessDeniedHandler accessDeniedHandler
     ) throws Exception {
 
         http
@@ -103,6 +136,11 @@ public class SecurityConfig {
                     .maxAgeInSeconds(31536000)
                     .includeSubDomains(true)
                 )
+            )
+
+            .exceptionHandling(ex -> ex
+                .authenticationEntryPoint(authenticationEntryPoint)
+                .accessDeniedHandler(accessDeniedHandler)
             )
 
             .authorizeHttpRequests(auth -> auth

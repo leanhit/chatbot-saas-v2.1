@@ -9,6 +9,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
+import com.chatbot.shared.utils.DateUtils;
 
 @Entity
 @Table(name = "merchant_api_keys")
@@ -120,7 +121,7 @@ public class MerchantApiKey {
             return false;
         }
         
-        if (expiresAt != null && LocalDateTime.now().isAfter(expiresAt)) {
+        if (expiresAt != null && DateUtils.nowUtcLocalDateTime().isAfter(expiresAt)) {
             return false;
         }
         
@@ -132,6 +133,6 @@ public class MerchantApiKey {
      */
     public void recordUsage() {
         this.usageCount++;
-        this.lastUsedAt = LocalDateTime.now();
+        this.lastUsedAt = DateUtils.nowUtcLocalDateTime();
     }
 }

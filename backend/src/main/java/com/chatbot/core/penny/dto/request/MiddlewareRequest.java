@@ -234,7 +234,7 @@ public class MiddlewareRequest {
         if (timestamp == null) {
             return 0;
         }
-        return Instant.now().toEpochMilli() - timestamp.toEpochMilli();
+        return DateUtils.nowUtc().toEpochMilli() - timestamp.toEpochMilli();
     }
     
     /**

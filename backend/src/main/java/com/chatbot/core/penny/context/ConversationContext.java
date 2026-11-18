@@ -389,7 +389,7 @@ public class ConversationContext {
         if (expiresAt == null) {
             return false;
         }
-        return Instant.now().isAfter(expiresAt);
+        return DateUtils.nowUtc().isAfter(expiresAt);
     }
     
     /**
@@ -444,7 +444,7 @@ public class ConversationContext {
         if (createdAt == null) {
             return 0;
         }
-        return ChronoUnit.MINUTES.between(createdAt, Instant.now());
+        return ChronoUnit.MINUTES.between(createdAt, DateUtils.nowUtc());
     }
     
     /**
@@ -454,7 +454,7 @@ public class ConversationContext {
         if (createdAt == null) {
             return 0.0;
         }
-        return ChronoUnit.MINUTES.between(createdAt, Instant.now()) / 60.0;
+        return ChronoUnit.MINUTES.between(createdAt, DateUtils.nowUtc()) / 60.0;
     }
     
     /**
@@ -465,7 +465,7 @@ public class ConversationContext {
         if (lastActivity == null) {
             return 0;
         }
-        return ChronoUnit.MINUTES.between(lastActivity, Instant.now());
+        return ChronoUnit.MINUTES.between(lastActivity, DateUtils.nowUtc());
     }
     
     /**
@@ -535,7 +535,7 @@ public class ConversationContext {
         Map<String, String> message = new HashMap<>();
         message.put("user", userMessage);
         message.put("bot", botResponse);
-        message.put("timestamp", Instant.now().toString());
+        message.put("timestamp", DateUtils.nowUtc().toString());
         messageHistory.add(message);
     }
     

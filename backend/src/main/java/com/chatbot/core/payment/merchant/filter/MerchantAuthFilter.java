@@ -3,12 +3,16 @@ package com.chatbot.core.payment.merchant.filter;
 import com.chatbot.core.payment.merchant.model.MerchantApiKey;
 import com.chatbot.core.payment.merchant.repository.MerchantApiKeyRepository;
 import com.chatbot.core.tenant.infra.TenantContext;
+import com.chatbot.shared.dto.ErrorResponse;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -21,6 +25,7 @@ import java.time.LocalDateTime;
 public class MerchantAuthFilter extends OncePerRequestFilter {
 
     private final MerchantApiKeyRepository merchantApiKeyRepository;
+    private final ObjectMapper objectMapper;
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
@@ -43,7 +48,7 @@ public class MerchantAuthFilter extends OncePerRequestFilter {
         String apiKey = request.getHeader("X-API-Key");
         
         if (apiKey == null || apiKey.trim().isEmpty()) {
-            sendUnauthorizedResponse(response, "Missing API key");
+            sendUnauthorizedResponse(request, response, "Missing API key");
             return;
         }
 
@@ -52,12 +57,12 @@ public class MerchantAuthFilter extends OncePerRequestFilter {
                 .orElse(null);
 
         if (merchantKey == null) {
-            sendUnauthorizedResponse(response, "Invalid API key");
+            sendUnauthorizedResponse(request, response, "Invalid API key");
             return;
         }
 
         if (!merchantKey.isValid()) {
-            sendUnauthorizedResponse(response, "API key is inactive or expired");
+            sendUnauthorizedResponse(request, response, "API key is inactive or expired");
             return;
         }
 
@@ -84,10 +89,13 @@ public class MerchantAuthFilter extends OncePerRequestFilter {
         filterChain.doFilter(request, response);
     }
 
-    private void sendUnauthorizedResponse(HttpServletResponse response, String message) throws IOException {
+    private void sendUnauthorizedResponse(HttpServletRequest request, HttpServletResponse response, String message) throws IOException {
         log.warn("⚠️ Merchant authentication failed: {}", message);
-        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-        response.setContentType("application/json");
-        response.getWriter().write("{\"error\":\"" + message + "\"}");
+        response.setStatus(HttpStatus.UNAUTHORIZED.value());
+        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+        response.setCharacterEncoding("UTF-8");
+        ErrorResponse error = ErrorResponse.fromUnauthorized(message);
+        error.setPath(request.getRequestURI());
+        objectMapper.writeValue(response.getWriter(), error);
     }
 }

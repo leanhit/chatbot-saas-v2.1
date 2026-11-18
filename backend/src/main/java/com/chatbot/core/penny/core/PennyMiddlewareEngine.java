@@ -25,6 +25,7 @@ import java.time.Instant;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import com.chatbot.shared.utils.DateUtils;
 
 /**
  * Core Penny Middleware Engine - Trái tim của hệ thống intelligent routing
@@ -131,7 +132,7 @@ public class PennyMiddlewareEngine {
                         .selectionReason("Provider instance null")
                         .confidence(0.0)
                         .build())
-                    .timestamp(Instant.now())
+                    .timestamp(DateUtils.nowUtc())
                     .build();
                 
                 // STEP 6: Update context
@@ -207,7 +208,7 @@ public class PennyMiddlewareEngine {
                 .anyMatch("degraded"::equals) ? "degraded" : "healthy";
         return EngineHealthStatus.builder()
             .status(overall)
-            .timestamp(Instant.now())
+            .timestamp(DateUtils.nowUtc())
             .components(components)
             .build();
     }
@@ -264,7 +265,7 @@ public class PennyMiddlewareEngine {
                 .selectionReason(providerSelection.getSelectionReason())
                 .confidence(analysis.getConfidence())
                 .build())
-            .timestamp(Instant.now())
+            .timestamp(DateUtils.nowUtc())
             .build();
     }
     
@@ -329,14 +330,14 @@ public class PennyMiddlewareEngine {
         // Intent analyzer: in-process component, healthy if bean is wired
         components.put("intentAnalyzer", ComponentHealth.builder()
             .status(intentAnalyzer != null ? "healthy" : "unhealthy")
-            .lastCheck(Instant.now())
+            .lastCheck(DateUtils.nowUtc())
             .message(intentAnalyzer != null ? "In-process analyzer" : "Bean not initialized")
             .build());
             
         // Provider selector: in-process component, healthy if bean is wired
         components.put("providerSelector", ComponentHealth.builder()
             .status(providerSelector != null ? "healthy" : "unhealthy")
-            .lastCheck(Instant.now())
+            .lastCheck(DateUtils.nowUtc())
             .message(providerSelector != null ? "In-process selector" : "Bean not initialized")
             .build());
         
@@ -371,7 +372,7 @@ public class PennyMiddlewareEngine {
         String status = (redisOk && dbOk) ? "healthy" : (!redisOk && !dbOk) ? "unhealthy" : "degraded";
         return ComponentHealth.builder()
             .status(status)
-            .lastCheck(Instant.now())
+            .lastCheck(DateUtils.nowUtc())
             .message(message.length() > 0 ? message.toString() : "redis+db ok")
             .build();
     }

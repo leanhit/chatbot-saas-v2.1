@@ -31,11 +31,11 @@ public class DLQManagementController {
      * Get statistics for all Dead Letter Queues
      */
     @GetMapping("/statistics")
-    public ResponseEntity<Map<String, Object>> getDLQStatistics() {
+    public ResponseEntity<?> getDLQStatistics() {
         log.info("GET /api/admin/dlq/statistics - Getting DLQ statistics");
         if (dlqManagementService.isEmpty()) {
             return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
-                    .body(Map.of("error", "DLQ Service unavailable"));
+                    .body(com.chatbot.shared.dto.ErrorResponse.fromMessage("DLQ Service unavailable"));
         }
         Map<String, Object> stats = dlqManagementService.get().getDLQStatistics();
         return ResponseEntity.ok(stats);
@@ -45,7 +45,7 @@ public class DLQManagementController {
      * Inspect messages in a specific DLQ
      */
     @GetMapping("/inspect/{queueName}")
-    public ResponseEntity<Map<String, Object>> inspectDLQ(
+    public ResponseEntity<?> inspectDLQ(
             @PathVariable String queueName,
             @RequestParam(defaultValue = "10") int maxMessages) {
         log.info("GET /api/admin/dlq/inspect/{} - Inspecting DLQ with max messages: {}", queueName, maxMessages);
@@ -60,7 +60,7 @@ public class DLQManagementController {
         
         if (dlqManagementService.isEmpty()) {
             return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
-                    .body(Map.of("error", "DLQ Service unavailable"));
+                    .body(com.chatbot.shared.dto.ErrorResponse.fromMessage("DLQ Service unavailable"));
         }
         Map<String, Object> result = dlqManagementService.get().inspectDLQ(queueName, maxMessages);
         return ResponseEntity.ok(result);
@@ -70,7 +70,7 @@ public class DLQManagementController {
      * Replay a specific message from DLQ to the original queue
      */
     @PostMapping("/replay/{dlqName}/{originalQueue}/{messageId}")
-    public ResponseEntity<Map<String, Object>> replayMessage(
+    public ResponseEntity<?> replayMessage(
             @PathVariable String dlqName,
             @PathVariable String originalQueue,
             @PathVariable String messageId) {
@@ -78,7 +78,7 @@ public class DLQManagementController {
         
         if (dlqManagementService.isEmpty()) {
             return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
-                    .body(Map.of("error", "DLQ Service unavailable"));
+                    .body(com.chatbot.shared.dto.ErrorResponse.fromMessage("DLQ Service unavailable"));
         }
         boolean success = dlqManagementService.get().replayMessage(dlqName, originalQueue, messageId);
         
@@ -103,14 +103,14 @@ public class DLQManagementController {
      * Replay all messages from a DLQ to the original queue
      */
     @PostMapping("/replay-all/{dlqName}/{originalQueue}")
-    public ResponseEntity<Map<String, Object>> replayAllMessages(
+    public ResponseEntity<?> replayAllMessages(
             @PathVariable String dlqName,
             @PathVariable String originalQueue) {
         log.info("POST /api/admin/dlq/replay-all/{}/{} - Replaying all messages", dlqName, originalQueue);
         
         if (dlqManagementService.isEmpty()) {
             return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
-                    .body(Map.of("error", "DLQ Service unavailable"));
+                    .body(com.chatbot.shared.dto.ErrorResponse.fromMessage("DLQ Service unavailable"));
         }
         Map<String, Object> result = dlqManagementService.get().replayAllMessages(dlqName, originalQueue);
         return ResponseEntity.ok(result);
@@ -120,14 +120,14 @@ public class DLQManagementController {
      * Delete a specific message from DLQ
      */
     @DeleteMapping("/delete/{dlqName}/{messageId}")
-    public ResponseEntity<Map<String, Object>> deleteMessage(
+    public ResponseEntity<?> deleteMessage(
             @PathVariable String dlqName,
             @PathVariable String messageId) {
         log.info("DELETE /api/admin/dlq/delete/{}/{} - Deleting message", dlqName, messageId);
         
         if (dlqManagementService.isEmpty()) {
             return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
-                    .body(Map.of("error", "DLQ Service unavailable"));
+                    .body(com.chatbot.shared.dto.ErrorResponse.fromMessage("DLQ Service unavailable"));
         }
         boolean success = dlqManagementService.get().deleteMessage(dlqName, messageId);
         
@@ -150,7 +150,7 @@ public class DLQManagementController {
      * Clear all messages from a DLQ
      */
     @DeleteMapping("/clear/{dlqName}")
-    public ResponseEntity<Map<String, Object>> clearDLQ(@PathVariable String dlqName) {
+    public ResponseEntity<?> clearDLQ(@PathVariable String dlqName) {
         log.info("DELETE /api/admin/dlq/clear/{} - Clearing DLQ", dlqName);
         
         // Validate queue name ends with .dlq
@@ -163,7 +163,7 @@ public class DLQManagementController {
         
         if (dlqManagementService.isEmpty()) {
             return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
-                    .body(Map.of("error", "DLQ Service unavailable"));
+                    .body(com.chatbot.shared.dto.ErrorResponse.fromMessage("DLQ Service unavailable"));
         }
         boolean success = dlqManagementService.get().clearDLQ(dlqName);
         

@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import java.util.UUID;
+import com.chatbot.shared.utils.DateUtils;
 
 /**
  * DocumentProcessingService — Orchestrates document parsing, chunking, and embedding
@@ -175,7 +176,7 @@ public class DocumentProcessingService {
             // COMPLETED = all chunks embedded, PARTIAL = some failed,
             // FAILED = no chunk could be embedded (not searchable via vectors).
             document.setTotalChunks(savedChunks);
-            document.setProcessedAt(LocalDateTime.now());
+            document.setProcessedAt(DateUtils.nowUtcLocalDateTime());
             if (savedChunks == 0) {
                 document.setStatus("FAILED");
                 document.setMetadata(buildMetadata(null, 0, 0, "No chunks produced"));

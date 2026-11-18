@@ -5,6 +5,7 @@ import com.chatbot.core.tenant.infra.BaseTenantEntity;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
+import com.chatbot.shared.utils.DateUtils;
 
 @Data
 @Builder
@@ -60,7 +61,7 @@ public class FacebookUser extends BaseTenantEntity {
 
     @PrePersist
     protected void onCreate() {
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = DateUtils.nowUtcLocalDateTime();
         this.createdAt = now;
         this.updatedAt = now;
         if (this.lastInteraction == null) {
@@ -70,19 +71,19 @@ public class FacebookUser extends BaseTenantEntity {
 
     @PreUpdate
     protected void onUpdate() {
-        this.updatedAt = LocalDateTime.now();
+        this.updatedAt = DateUtils.nowUtcLocalDateTime();
     }
 
     public void updateFromFacebook(String name, String profilePic) {
         this.name = name != null ? name : this.name;
         this.profilePic = profilePic != null ? profilePic : this.profilePic;
-        this.updatedAt = LocalDateTime.now();
-        this.lastInteraction = LocalDateTime.now();
+        this.updatedAt = DateUtils.nowUtcLocalDateTime();
+        this.lastInteraction = DateUtils.nowUtcLocalDateTime();
     }
 
     public void updateOdooPartnerId(Integer odooPartnerId) {
         this.odooPartnerId = odooPartnerId != null ? odooPartnerId : this.odooPartnerId;
-        this.updatedAt = LocalDateTime.now();
+        this.updatedAt = DateUtils.nowUtcLocalDateTime();
     }
     
     @Column(name = "tenant_id")

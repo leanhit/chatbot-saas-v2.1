@@ -1,5 +1,7 @@
 package com.chatbot.shared.dto;
 
+import com.chatbot.shared.utils.DateUtils;
+
 public class ApiResponse<T> {
     
     private boolean success;
@@ -11,7 +13,7 @@ public class ApiResponse<T> {
         this.success = success;
         this.message = message;
         this.data = data;
-        this.timestamp = java.time.LocalDateTime.now().toString();
+        this.timestamp = DateUtils.formatUtcLocalDateTime(DateUtils.nowUtcLocalDateTime());
     }
     
     public static <T> ApiResponse<T> success(T data) {

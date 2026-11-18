@@ -61,11 +61,11 @@ public class Category extends BaseTenantEntity {
 
     @PrePersist
     protected void onCreate() {
-        this.createdAt = LocalDateTime.now();
+        this.createdAt = DateUtils.nowUtcLocalDateTime();
     }
 
     @PreUpdate
     protected void onUpdate() {
-        this.updatedAt = LocalDateTime.now();
+        this.updatedAt = DateUtils.nowUtcLocalDateTime();
     }
 }

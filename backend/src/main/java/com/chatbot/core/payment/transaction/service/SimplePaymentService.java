@@ -24,6 +24,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import com.chatbot.shared.utils.DateUtils;
 
 @Service
 @RequiredArgsConstructor
@@ -154,7 +155,7 @@ public class SimplePaymentService {
         // Update payment status
         payment.setStatus(PaymentStatus.COMPLETED);
         payment.setBankTransactionId(bankTransactionId);
-        payment.setCompletedAt(LocalDateTime.now());
+        payment.setCompletedAt(DateUtils.nowUtcLocalDateTime());
         paymentRepository.save(payment);
 
         // Publish PaymentCompletedEvent for downstream processing
@@ -223,7 +224,7 @@ public class SimplePaymentService {
     public void checkPendingPayments() {
         log.info("🏦 Checking pending payments...");
 
-        List<SimplePayment> pendingPayments = paymentRepository.findActivePendingPayments(LocalDateTime.now());
+        List<SimplePayment> pendingPayments = paymentRepository.findActivePendingPayments(DateUtils.nowUtcLocalDateTime());
 
         for (SimplePayment payment : pendingPayments) {
             try {

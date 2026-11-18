@@ -18,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import com.chatbot.shared.utils.DateUtils;
 
 /**
  * Penny Bot CRUD Service - Handles Bot lifecycle, CRUD operations, and message processing
@@ -173,7 +174,7 @@ public class PennyBotCrudService {
             bot.setEnabled((Boolean) updates.get("isEnabled"));
         }
         
-        bot.setUpdatedAt(java.time.LocalDateTime.now());
+        bot.setUpdatedAt(com.chatbot.shared.utils.DateUtils.nowUtcLocalDateTime());
         
         PennyBot savedBot = pennyBotRepository.save(bot);
         
@@ -197,7 +198,7 @@ public class PennyBotCrudService {
         
         bot.setEnabled(enabled);
         bot.setActive(enabled);
-        bot.setUpdatedAt(java.time.LocalDateTime.now());
+        bot.setUpdatedAt(com.chatbot.shared.utils.DateUtils.nowUtcLocalDateTime());
         
         PennyBot savedBot = pennyBotRepository.save(bot);
         
@@ -347,13 +348,13 @@ public class PennyBotCrudService {
                         .message(sanitizedMessage)
                         .platform("facebook")
                         .botId(botId.toString())
-                        .timestamp(java.time.Instant.now())
+                        .timestamp(com.chatbot.shared.utils.DateUtils.nowUtc())
                         .build();
                 
                 com.chatbot.core.penny.dto.response.MiddlewareResponse response = 
                     pennyMiddlewareEngine.processMessage(middlewareRequest);
                 
-                bot.setLastUsedAt(java.time.LocalDateTime.now());
+                bot.setLastUsedAt(com.chatbot.shared.utils.DateUtils.nowUtcLocalDateTime());
                 pennyBotRepository.save(bot);
                 
                 return response.getResponse();
@@ -417,7 +418,7 @@ public class PennyBotCrudService {
                 .map(FacebookConnection::getId)
                 .toList();
                 
-            java.time.LocalDateTime sevenDaysAgo = java.time.LocalDateTime.now().minusDays(7);
+            java.time.LocalDateTime sevenDaysAgo = com.chatbot.shared.utils.DateUtils.nowUtcLocalDateTime().minusDays(7);
             return conversationRepository.existsByConnectionIdInAndUpdatedAtAfter(connectionIds, sevenDaysAgo);
         } catch (Exception e) {
             log.warn("Error checking recent conversations for bot {}: {}", botId, e.getMessage());

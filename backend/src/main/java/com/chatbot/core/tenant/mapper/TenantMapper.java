@@ -67,8 +67,6 @@ public class TenantMapper {
 
     // Helper: LocalDateTime → Instant (UTC timezone)
     private static Instant toInstant(LocalDateTime localDateTime) {
-        return localDateTime != null
-                ? localDateTime.atZone(java.time.ZoneOffset.UTC).toInstant()
-                : null;
+        return com.chatbot.shared.utils.DateUtils.toInstant(localDateTime);
     }
 }

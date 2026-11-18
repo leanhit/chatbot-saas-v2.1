@@ -27,6 +27,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.stream.Collectors;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
+import com.chatbot.shared.utils.DateUtils;
 
 @Component
 @RequiredArgsConstructor
@@ -68,7 +69,7 @@ public class TakeoverWebSocketHandler extends TextWebSocketHandler {
         log.info("🔍 [WebSocket] Received message from session {}: {}", session.getId(), payload);
         
         // Update activity timestamp
-        sessionLastActivity.put(session.getId(), LocalDateTime.now());
+        sessionLastActivity.put(session.getId(), DateUtils.nowUtcLocalDateTime());
         
         // Handle heartbeat messages
         if ("ping".equals(payload)) {
@@ -167,7 +168,7 @@ public class TakeoverWebSocketHandler extends TextWebSocketHandler {
     @Override
     public void afterConnectionEstablished(WebSocketSession session) {
         // Initialize session tracking
-        sessionLastActivity.put(session.getId(), LocalDateTime.now());
+        sessionLastActivity.put(session.getId(), DateUtils.nowUtcLocalDateTime());
         
         // Track tenant session for broadcast
         Long tenantId = (Long) session.getAttributes().get("tenantId");
@@ -259,7 +260,7 @@ public class TakeoverWebSocketHandler extends TextWebSocketHandler {
             log.debug("🔍 Performing WebSocket health check (interval: {}ms)", healthCheckInterval);
             
             // Remove inactive sessions
-            LocalDateTime cutoff = LocalDateTime.now().minus(connectionTimeoutMs, ChronoUnit.MILLIS);
+            LocalDateTime cutoff = DateUtils.nowUtcLocalDateTime().minus(connectionTimeoutMs, ChronoUnit.MILLIS);
             
             sessionLastActivity.entrySet().removeIf(entry -> {
                 if (entry.getValue().isBefore(cutoff)) {
@@ -302,7 +303,7 @@ public class TakeoverWebSocketHandler extends TextWebSocketHandler {
                         
                         // Only send heartbeat if session hasn't been active recently
                         LocalDateTime lastActivity = sessionLastActivity.get(session.getId());
-                        if (lastActivity != null && lastActivity.isBefore(LocalDateTime.now().minus(healthCheckInterval / 2, ChronoUnit.MILLIS))) {
+                        if (lastActivity != null && lastActivity.isBefore(DateUtils.nowUtcLocalDateTime().minus(healthCheckInterval / 2, ChronoUnit.MILLIS))) {
                             try {
                                 session.sendMessage(heartbeatTextMessage);
                                 heartbeatSent++;

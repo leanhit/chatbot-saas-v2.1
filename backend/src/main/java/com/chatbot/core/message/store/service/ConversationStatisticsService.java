@@ -19,6 +19,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import com.chatbot.shared.utils.DateUtils;
 
 @Service
 @RequiredArgsConstructor
@@ -36,7 +37,7 @@ public class ConversationStatisticsService {
         Long tenantId = TenantContext.getTenantId();
 
         try {
-            LocalDateTime now = LocalDateTime.now();
+            LocalDateTime now = DateUtils.nowUtcLocalDateTime();
             LocalDateTime todayStart = now.withHour(0).withMinute(0).withSecond(0).withNano(0);
             LocalDateTime last24h = now.minusHours(24);
             LocalDateTime lastMonth = now.minusMonths(1);
@@ -111,7 +112,7 @@ public class ConversationStatisticsService {
         Long tenantId = TenantContext.getTenantId();
         
         try {
-            LocalDateTime now = LocalDateTime.now();
+            LocalDateTime now = DateUtils.nowUtcLocalDateTime();
             LocalDateTime startDate;
             String dateFormat;
             

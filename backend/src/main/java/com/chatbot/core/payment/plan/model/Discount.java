@@ -9,6 +9,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import com.chatbot.shared.utils.DateUtils;
 
 @Entity
 @Table(name = "discounts")
@@ -99,7 +100,7 @@ public class Discount {
     
     // Helper methods
     public boolean isValid() {
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = DateUtils.nowUtcLocalDateTime();
         return isActive 
             && (validFrom == null || !validFrom.isAfter(now))
             && (validUntil == null || !validUntil.isBefore(now))

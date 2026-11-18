@@ -22,8 +22,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
 
 @Component
 @Slf4j
@@ -33,12 +31,10 @@ public class JwtFilter extends OncePerRequestFilter {
     private final AuthService authService;
     private final ObjectMapper objectMapper;
 
-    public JwtFilter(JwtService jwtService, AuthService authService) {
+    public JwtFilter(JwtService jwtService, AuthService authService, ObjectMapper objectMapper) {
         this.jwtService = jwtService;
         this.authService = authService;
-        this.objectMapper = new ObjectMapper();
-        this.objectMapper.registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule());
-        this.objectMapper.configure(com.fasterxml.jackson.databind.SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
+        this.objectMapper = objectMapper;
     }
 
     @Override
@@ -100,11 +96,11 @@ public class JwtFilter extends OncePerRequestFilter {
                 }
             } catch (ClassCastException e) {
                 log.error("Lỗi khi ép kiểu UserDetails sang CustomUserDetails", e);
-                sendErrorResponse(response, "Lỗi xác thực người dùng");
+                sendErrorResponse(request, response, "Lỗi xác thực người dùng");
                 return;
             } catch (Exception e) {
                 log.error("Lỗi khi xác thực người dùng", e);
-                sendErrorResponse(response, "Lỗi xác thực người dùng");
+                sendErrorResponse(request, response, "Lỗi xác thực người dùng");
                 return;
             }
         }
@@ -112,18 +108,15 @@ public class JwtFilter extends OncePerRequestFilter {
         filterChain.doFilter(request, response);
     }
 
-    private void sendErrorResponse(HttpServletResponse response, String message) throws IOException {
+    private void sendErrorResponse(HttpServletRequest request, HttpServletResponse response, String message) throws IOException {
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         response.setCharacterEncoding("UTF-8");
 
-        Map<String, Object> errorDetails = new HashMap<>();
-        errorDetails.put("error", "Unauthorized");
-        errorDetails.put("message", message);
-        errorDetails.put("status", HttpServletResponse.SC_UNAUTHORIZED);
-        errorDetails.put("timestamp", System.currentTimeMillis());
-
-        objectMapper.writeValue(response.getWriter(), errorDetails);
+        com.chatbot.shared.dto.ErrorResponse error =
+                com.chatbot.shared.dto.ErrorResponse.fromUnauthorized(message);
+        error.setPath(request.getRequestURI());
+        objectMapper.writeValue(response.getWriter(), error);
     }
     
     /**

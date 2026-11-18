@@ -19,6 +19,8 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.mockito.Spy;
 
 /**
  * Unit tests for certification threshold rules (no Spring context).
@@ -36,6 +38,9 @@ class CertificationServiceTest {
     private AgentTrainingProgressRepository trainingProgressRepository;
     @Mock
     private com.chatbot.core.message.store.service.AgentConversationStatsService agentConversationStatsService;
+
+    @Spy
+    private ObjectMapper objectMapper = new ObjectMapper();
 
     @InjectMocks
     private CertificationService service;

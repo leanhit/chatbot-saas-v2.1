@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Instant;
 import java.util.UUID;
 import java.util.Optional;
+import com.chatbot.shared.utils.DateUtils;
 
 @Service
 @RequiredArgsConstructor
@@ -35,7 +36,7 @@ public class RefreshTokenService {
         RefreshToken refreshToken = RefreshToken.builder()
                 .userId(user.getId()) // Application-level join: store userId instead of User object
                 .token(UUID.randomUUID().toString())
-                .expiryDate(Instant.now().plusSeconds(refreshTokenExpirationMs))
+                .expiryDate(DateUtils.nowUtc().plusSeconds(refreshTokenExpirationMs))
                 .build();
         
         refreshToken = refreshTokenRepository.save(refreshToken);
@@ -52,7 +53,7 @@ public class RefreshTokenService {
         RefreshToken refreshToken = RefreshToken.builder()
                 .userId(userId) // Application-level join: store userId instead of User object
                 .token(UUID.randomUUID().toString())
-                .expiryDate(Instant.now().plusSeconds(refreshTokenExpirationMs))
+                .expiryDate(DateUtils.nowUtc().plusSeconds(refreshTokenExpirationMs))
                 .build();
         
         refreshToken = refreshTokenRepository.save(refreshToken);

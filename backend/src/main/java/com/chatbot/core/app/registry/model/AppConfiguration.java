@@ -2,6 +2,7 @@ package com.chatbot.core.app.registry.model;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
+import com.chatbot.shared.utils.DateUtils;
 
 @Entity
 @Table(name = "app_configurations")
@@ -41,13 +42,13 @@ public class AppConfiguration {
     
     @PrePersist
     protected void onCreate() {
-        createdAt = LocalDateTime.now();
-        updatedAt = LocalDateTime.now();
+        createdAt = DateUtils.nowUtcLocalDateTime();
+        updatedAt = DateUtils.nowUtcLocalDateTime();
     }
     
     @PreUpdate
     protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
+        updatedAt = DateUtils.nowUtcLocalDateTime();
     }
     
     // Constructors

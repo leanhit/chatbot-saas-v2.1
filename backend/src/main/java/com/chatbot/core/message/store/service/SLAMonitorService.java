@@ -28,6 +28,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import com.chatbot.shared.utils.DateUtils;
 
 /**
  * Service for monitoring SLA compliance and triggering escalations
@@ -69,7 +70,7 @@ public class SLAMonitorService {
     public void recordFirstBotResponse(Long conversationId) {
         conversationRepository.findById(conversationId).ifPresent(conversation -> {
             if (conversation.getFirstBotResponseTime() == null) {
-                conversation.setFirstBotResponseTime(LocalDateTime.now());
+                conversation.setFirstBotResponseTime(DateUtils.nowUtcLocalDateTime());
                 conversationRepository.save(conversation);
                 log.info("Recorded first bot response time for conversation {}", conversationId);
             }
@@ -83,7 +84,7 @@ public class SLAMonitorService {
     public void recordFirstAgentResponse(Long conversationId) {
         conversationRepository.findById(conversationId).ifPresent(conversation -> {
             if (conversation.getFirstAgentResponseTime() == null) {
-                conversation.setFirstAgentResponseTime(LocalDateTime.now());
+                conversation.setFirstAgentResponseTime(DateUtils.nowUtcLocalDateTime());
                 conversationRepository.save(conversation);
                 log.info("Recorded first agent response time for conversation {}", conversationId);
             }
@@ -171,7 +172,7 @@ public class SLAMonitorService {
             // Not yet responded by agent, check if time since creation exceeds SLA
             long timeSinceCreation = ChronoUnit.SECONDS.between(
                 conversation.getCreatedAt(),
-                LocalDateTime.now()
+                DateUtils.nowUtcLocalDateTime()
             );
             return timeSinceCreation > getExpectedResponseTime(conversation);
         }
@@ -220,7 +221,7 @@ public class SLAMonitorService {
     @Transactional
     private void handleSLABreach(Conversation conversation) {
         long expectedSeconds = getExpectedResponseTime(conversation);
-        long actualSeconds = ChronoUnit.SECONDS.between(conversation.getCreatedAt(), LocalDateTime.now());
+        long actualSeconds = ChronoUnit.SECONDS.between(conversation.getCreatedAt(), DateUtils.nowUtcLocalDateTime());
 
         int currentBreachCount = conversation.getSlaBreachCount();
 
@@ -271,7 +272,7 @@ public class SLAMonitorService {
             notification.put("slaBreachCount", conversation.getSlaBreachCount());
             notification.put("customerTier", conversation.getCustomerTier());
             notification.put("priority", "urgent");
-            notification.put("timestamp", LocalDateTime.now());
+            notification.put("timestamp", DateUtils.nowUtcLocalDateTime());
             notificationWebSocketHandler.broadcastToTenant(conversation.getTenantId(), notification);
         } catch (Exception e) {
             log.warn("Failed to broadcast SLA escalation for conversation {}: {}", conversation.getId(), e.getMessage());

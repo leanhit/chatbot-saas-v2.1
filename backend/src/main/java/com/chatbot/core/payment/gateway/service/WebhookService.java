@@ -25,6 +25,7 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import com.chatbot.shared.utils.DateUtils;
 
 @Service
 @RequiredArgsConstructor
@@ -181,7 +182,7 @@ public class WebhookService {
     public void retryFailedWebhooks() {
         log.info("🔄 Retrying failed webhooks...");
 
-        List<Webhook> webhooksToRetry = webhookRepository.findWebhooksReadyForRetry(LocalDateTime.now());
+        List<Webhook> webhooksToRetry = webhookRepository.findWebhooksReadyForRetry(DateUtils.nowUtcLocalDateTime());
 
         for (Webhook webhook : webhooksToRetry) {
             try {
@@ -217,7 +218,7 @@ public class WebhookService {
         payload.put("targetPackageId", event.getTargetPackageId());
         payload.put("completedAt", event.getCompletedAt());
         payload.put("description", event.getDescription());
-        payload.put("timestamp", LocalDateTime.now());
+        payload.put("timestamp", DateUtils.nowUtcLocalDateTime());
         return payload;
     }
 
@@ -235,7 +236,7 @@ public class WebhookService {
         payload.put("failureReason", event.getFailureReason());
         payload.put("targetPackageId", event.getTargetPackageId());
         payload.put("failedAt", event.getFailedAt());
-        payload.put("timestamp", LocalDateTime.now());
+        payload.put("timestamp", DateUtils.nowUtcLocalDateTime());
         return payload;
     }
 

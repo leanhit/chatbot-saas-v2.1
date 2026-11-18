@@ -5,7 +5,6 @@ import jakarta.validation.constraints.Size;
 import lombok.Data;
 import java.time.Instant;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.util.Date;
 import com.chatbot.core.tenant.model.TenantStatus;
 import com.chatbot.core.tenant.model.TenantVisibility;
@@ -30,7 +29,7 @@ public class TenantBasicInfoRequest {
     // Getter/Setter để chuyển đổi Instant -> LocalDateTime cho service layer
     public LocalDateTime getExpiresAt() {
         return expiresAtInstant != null ? 
-            LocalDateTime.ofInstant(expiresAtInstant, ZoneId.systemDefault()) : null;
+            LocalDateTime.ofInstant(expiresAtInstant, DateUtils.UTC_ZONE) : null;
     }
     
     @JsonSetter("expiresAt")
@@ -38,7 +37,7 @@ public class TenantBasicInfoRequest {
         if (expiresAtString != null && !expiresAtString.trim().isEmpty()) {
             try {
                 // Use DateUtils for consistent datetime parsing
-                this.expiresAtInstant = DateUtils.parseInstant(expiresAtString, DateUtils.API_DATETIME_FORMAT);
+                this.expiresAtInstant = DateUtils.parseInstantUtc(expiresAtString, DateUtils.API_DATETIME_FORMAT);
             } catch (Exception e) {
                 throw new IllegalArgumentException("Invalid datetime format. Expected: " + DateUtils.API_DATETIME_FORMAT + ", got: " + expiresAtString);
             }

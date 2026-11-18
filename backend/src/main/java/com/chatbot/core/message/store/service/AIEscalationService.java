@@ -15,6 +15,7 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import com.chatbot.shared.utils.DateUtils;
 
 /**
  * Service for AI-based escalation decisions
@@ -160,7 +161,7 @@ public class AIEscalationService {
             aiAnalysis.put("sentiment", sentiment);
             aiAnalysis.put("complexity", complexity);
             aiAnalysis.put("shouldEscalate", shouldEscalate);
-            aiAnalysis.put("analyzedAt", LocalDateTime.now());
+            aiAnalysis.put("analyzedAt", DateUtils.nowUtcLocalDateTime());
 
             String existingAttributes = conversation.getCustomAttributes();
             Map<String, Object> attributes;
@@ -205,7 +206,7 @@ public class AIEscalationService {
         notification.put("complexity", complexity);
         notification.put("summary", summary);
         notification.put("priority", "high");
-        notification.put("timestamp", LocalDateTime.now());
+        notification.put("timestamp", DateUtils.nowUtcLocalDateTime());
 
         notificationWebSocketHandler.broadcastToTenant(conversation.getTenantId(), notification);
     }
@@ -229,7 +230,7 @@ public class AIEscalationService {
         notification.put("complexity", complexity);
         notification.put("summary", summary);
         notification.put("priority", "urgent");
-        notification.put("timestamp", LocalDateTime.now());
+        notification.put("timestamp", DateUtils.nowUtcLocalDateTime());
 
         notificationWebSocketHandler.broadcastToTenant(conversation.getTenantId(), notification);
     }

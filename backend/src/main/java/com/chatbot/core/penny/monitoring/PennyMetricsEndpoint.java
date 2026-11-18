@@ -15,6 +15,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import com.chatbot.shared.utils.DateUtils;
 
 /**
  * PennyMetricsEndpoint — Admin metrics and circuit breaker API for Penny Bot monitoring
@@ -227,7 +228,7 @@ public class PennyMetricsEndpoint {
 
         response.put("status", "success");
         response.put("circuitBreakers", breakers);
-        response.put("timestamp", LocalDateTime.now().toString());
+        response.put("timestamp", DateUtils.nowUtcLocalDateTime().toString());
 
         return response;
     }
@@ -294,7 +295,7 @@ public class PennyMetricsEndpoint {
     private Map<String, Object> getSystemInfo() {
         Map<String, Object> systemInfo = new HashMap<>();
         
-        systemInfo.put("timestamp", LocalDateTime.now());
+        systemInfo.put("timestamp", DateUtils.nowUtcLocalDateTime());
         systemInfo.put("version", "1.0.0");
         systemInfo.put("environment", System.getenv().getOrDefault("SPRING_PROFILES_ACTIVE", "default"));
         

@@ -29,11 +29,11 @@ class TenantInterHubController {
      * Tenant Hub gọi Identity Hub để validate token
      */
     @PostMapping("/tenant/validate-token")
-    public ResponseEntity<Map<String, Object>> validateToken(
+    public ResponseEntity<?> validateToken(
             @RequestHeader("X-Internal-Secret") String internalSecret,
             @RequestBody Map<String, String> request) {
         if (!internalApiKey.equals(internalSecret)) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Unauthorized access"));
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(com.chatbot.shared.dto.ErrorResponse.fromMessage("Unauthorized access"));
         }
         try {
             String token = request.get("token");
@@ -46,7 +46,7 @@ class TenantInterHubController {
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             log.error("Lỗi khi validate token", e);
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+            return ResponseEntity.badRequest().body(com.chatbot.shared.dto.ErrorResponse.fromMessage(e.getMessage()));
         }
     }
 
@@ -54,11 +54,11 @@ class TenantInterHubController {
      * Tenant Hub gọi Identity Hub để validate user
      */
     @PostMapping("/tenant/validate-user")
-    public ResponseEntity<Map<String, Object>> validateUser(
+    public ResponseEntity<?> validateUser(
             @RequestHeader("X-Internal-Secret") String internalSecret,
             @RequestBody Map<String, String> request) {
         if (!internalApiKey.equals(internalSecret)) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Unauthorized access"));
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(com.chatbot.shared.dto.ErrorResponse.fromMessage("Unauthorized access"));
         }
         try {
             String userId = request.get("userId");
@@ -72,7 +72,7 @@ class TenantInterHubController {
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             log.error("Lỗi khi validate user", e);
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+            return ResponseEntity.badRequest().body(com.chatbot.shared.dto.ErrorResponse.fromMessage(e.getMessage()));
         }
     }
 
@@ -80,11 +80,11 @@ class TenantInterHubController {
      * Tenant Hub gọi Identity Hub để get user role
      */
     @GetMapping("/tenant/user-role/{userId}")
-    public ResponseEntity<Map<String, Object>> getUserRole(
+    public ResponseEntity<?> getUserRole(
             @RequestHeader("X-Internal-Secret") String internalSecret,
             @PathVariable String userId) {
         if (!internalApiKey.equals(internalSecret)) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Unauthorized access"));
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(com.chatbot.shared.dto.ErrorResponse.fromMessage("Unauthorized access"));
         }
         try {
             String role = identityGrpcService.getUserRole(userId);
@@ -97,7 +97,7 @@ class TenantInterHubController {
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             log.error("Lỗi khi get user role", e);
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+            return ResponseEntity.badRequest().body(com.chatbot.shared.dto.ErrorResponse.fromMessage(e.getMessage()));
         }
     }
 
@@ -105,11 +105,11 @@ class TenantInterHubController {
      * Tenant Hub gọi Identity Hub để check user active
      */
     @GetMapping("/tenant/user-active/{userId}")
-    public ResponseEntity<Map<String, Object>> isUserActive(
+    public ResponseEntity<?> isUserActive(
             @RequestHeader("X-Internal-Secret") String internalSecret,
             @PathVariable String userId) {
         if (!internalApiKey.equals(internalSecret)) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Unauthorized access"));
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(com.chatbot.shared.dto.ErrorResponse.fromMessage("Unauthorized access"));
         }
         try {
             boolean isActive = identityGrpcService.isUserActive(userId);
@@ -122,7 +122,7 @@ class TenantInterHubController {
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             log.error("Lỗi khi check user active", e);
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+            return ResponseEntity.badRequest().body(com.chatbot.shared.dto.ErrorResponse.fromMessage(e.getMessage()));
         }
     }
 

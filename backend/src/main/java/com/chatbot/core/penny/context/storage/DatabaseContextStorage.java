@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import com.chatbot.shared.utils.DateUtils;
 
 /**
  * Database Context Storage - Persistent storage for Penny conversation contexts.
@@ -74,7 +75,7 @@ public class DatabaseContextStorage {
             }
 
             String contextKey = buildContextKey(context);
-            Instant now = Instant.now();
+            Instant now = DateUtils.nowUtc();
 
             PennyConversationContext entity = contextRepository.findByContextKey(contextKey)
                 .orElseGet(() -> PennyConversationContext.builder()
@@ -146,12 +147,12 @@ public class DatabaseContextStorage {
     public int cleanupExpiredContexts() {
         try {
             StructuredLogging.debug("Cleaning up expired contexts in database");
-            List<PennyConversationContext> expired = contextRepository.findByExpiresAtBefore(Instant.now());
+            List<PennyConversationContext> expired = contextRepository.findByExpiresAtBefore(DateUtils.nowUtc());
             int count = 0;
             for (PennyConversationContext entity : expired) {
                 if (!"expired".equals(entity.getStatus())) {
                     entity.setStatus("expired");
-                    entity.setLastUpdated(Instant.now());
+                    entity.setLastUpdated(DateUtils.nowUtc());
                     contextRepository.save(entity);
                     count++;
                 }
@@ -249,7 +250,7 @@ public class DatabaseContextStorage {
                 .filter(entity -> tenantId.equals(entity.getTenantId()))
                 .ifPresent(entity -> {
                     entity.setStatus(status);
-                    entity.setLastUpdated(Instant.now());
+                    entity.setLastUpdated(DateUtils.nowUtc());
                     contextRepository.save(entity);
                 });
         } catch (Exception e) {

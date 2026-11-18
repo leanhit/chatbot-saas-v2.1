@@ -21,6 +21,7 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
+import com.chatbot.shared.utils.DateUtils;
 
 @Service
 @RequiredArgsConstructor
@@ -476,7 +477,7 @@ public class IntelligentRoutingService {
                 .assignedTeamId(assignedTeamId)
                 .routingRuleId((Long) rule.getId())
                 .routingStrategy(routingStrategy)
-                .assignedAt(LocalDateTime.now())
+                .assignedAt(DateUtils.nowUtcLocalDateTime())
                 .reason("Routing rule matched: " + rule.getName())
                 .build();
     }
@@ -946,7 +947,7 @@ public class IntelligentRoutingService {
         
         // Increment agent workload
         workload.setActiveConversations(workload.getActiveConversations() + 1);
-        workload.setLastActivityAt(LocalDateTime.now());
+        workload.setLastActivityAt(DateUtils.nowUtcLocalDateTime());
         agentWorkloadRepository.save(workload);
         
         // Create routing history
@@ -967,7 +968,7 @@ public class IntelligentRoutingService {
                 .assigned(true)
                 .assignedAgentId(agentId)
                 .routingStrategy("MANUAL_ASSIGNMENT")
-                .assignedAt(LocalDateTime.now())
+                .assignedAt(DateUtils.nowUtcLocalDateTime())
                 .reason(reason != null ? reason : "Manually assigned to agent")
                 .build();
     }

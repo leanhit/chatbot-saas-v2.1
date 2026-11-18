@@ -41,6 +41,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.core.ParameterizedTypeReference;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import com.chatbot.shared.utils.DateUtils;
 
 @Service
 @RequiredArgsConstructor
@@ -103,8 +104,8 @@ public class FacebookConnectionService {
         newConnection.setFanpageUrl(request.getFanpageUrl());
         newConnection.setOwnerId(ownerId);
         newConnection.setFbUserId("");
-        newConnection.setCreatedAt(LocalDateTime.now());
-        newConnection.setUpdatedAt(LocalDateTime.now());
+        newConnection.setCreatedAt(DateUtils.nowUtcLocalDateTime());
+        newConnection.setUpdatedAt(DateUtils.nowUtcLocalDateTime());
         newConnection.setEnabled(request.isEnabled());
         newConnection.setActive(true);
 
@@ -383,7 +384,7 @@ public class FacebookConnectionService {
         if (request.getIsActive() != null) {
             connection.setActive(request.getIsActive());
         }
-        connection.setUpdatedAt(LocalDateTime.now());
+        connection.setUpdatedAt(DateUtils.nowUtcLocalDateTime());
         FacebookConnection updatedConnection = connectionRepository.save(connection);
         
         // Publish event for other spokes - DECOUPLED ARCHITECTURE
@@ -576,8 +577,8 @@ public class FacebookConnectionService {
             
             // Update connection health status
             connection.setIsHealthy(isHealthy);
-            connection.setLastHealthCheckAt(LocalDateTime.now());
-            connection.setLastUsedAt(LocalDateTime.now()); // Update last used time on successful health check
+            connection.setLastHealthCheckAt(DateUtils.nowUtcLocalDateTime());
+            connection.setLastUsedAt(DateUtils.nowUtcLocalDateTime()); // Update last used time on successful health check
             
             if (isHealthy) {
                 connection.setHealthCheckFailures(0); // Reset failure count on success
@@ -595,7 +596,7 @@ public class FacebookConnectionService {
             boolean isTokenError = facebookErrorHandler.isTokenError(e.getResponseBodyAsString());
             
             connection.setIsHealthy(false);
-            connection.setLastHealthCheckAt(LocalDateTime.now());
+            connection.setLastHealthCheckAt(DateUtils.nowUtcLocalDateTime());
             int failures = (connection.getHealthCheckFailures() != null ? connection.getHealthCheckFailures() : 0) + 1;
             connection.setHealthCheckFailures(failures);
             connectionRepository.save(connection);
@@ -610,7 +611,7 @@ public class FacebookConnectionService {
             
         } catch (Exception e) {
             connection.setIsHealthy(false);
-            connection.setLastHealthCheckAt(LocalDateTime.now());
+            connection.setLastHealthCheckAt(DateUtils.nowUtcLocalDateTime());
             int failures = (connection.getHealthCheckFailures() != null ? connection.getHealthCheckFailures() : 0) + 1;
             connection.setHealthCheckFailures(failures);
             connectionRepository.save(connection);
@@ -685,7 +686,7 @@ public class FacebookConnectionService {
                     .orElse(null);
             
             if (connection != null) {
-                connection.setLastUsedAt(LocalDateTime.now());
+                connection.setLastUsedAt(DateUtils.nowUtcLocalDateTime());
                 connectionRepository.save(connection);
                 log.debug("🕐 Updated last used time for connection: {}", connectionId);
             }

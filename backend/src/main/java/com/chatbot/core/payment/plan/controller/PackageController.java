@@ -1,5 +1,6 @@
 package com.chatbot.core.payment.plan.controller;
 
+import com.chatbot.core.payment.plan.dto.PackageRequest;
 import com.chatbot.core.payment.plan.dto.PackageResponse;
 import com.chatbot.core.payment.plan.model.Package;
 import com.chatbot.core.payment.plan.service.PackageService;
@@ -88,11 +89,11 @@ public class PackageController {
         summary = "Create package (Admin)",
         description = "Create a new package - Admin only"
     )
-    public ResponseEntity<PackageResponse> createPackage(@RequestBody Package packageEntity) {
-        log.info("📦 Creating new package: {}", packageEntity.getPackageId());
+    public ResponseEntity<PackageResponse> createPackage(@RequestBody PackageRequest request) {
+        log.info("📦 Creating new package: {}", request.getPackageId());
         
         try {
-            Package created = packageService.createPackage(packageEntity);
+            Package created = packageService.createPackage(toEntity(request));
             return ResponseEntity.ok(PackageResponse.from(created));
         } catch (Exception e) {
             log.error("❌ Failed to create package: {}", e.getMessage());
@@ -111,11 +112,11 @@ public class PackageController {
     )
     public ResponseEntity<PackageResponse> updatePackage(
             @PathVariable String packageId,
-            @RequestBody Package packageEntity) {
+            @RequestBody PackageRequest request) {
         log.info("📦 Updating package: {}", packageId);
         
         try {
-            Package updated = packageService.updatePackage(packageId, packageEntity);
+            Package updated = packageService.updatePackage(packageId, toEntity(request));
             return ResponseEntity.ok(PackageResponse.from(updated));
         } catch (Exception e) {
             log.error("❌ Failed to update package: {}", e.getMessage());
@@ -209,5 +210,28 @@ public class PackageController {
             log.error("❌ Failed to permanently delete package: {}", e.getMessage());
             return ResponseEntity.badRequest().build();
         }
+    }
+
+    private Package toEntity(PackageRequest r) {
+        Package p = new Package();
+        p.setPackageId(r.getPackageId());
+        p.setName(r.getName());
+        p.setPrice(r.getPrice());
+        p.setCurrency(r.getCurrency());
+        p.setDuration(r.getDuration());
+        p.setDescription(r.getDescription());
+        p.setMessageLimit(r.getMessageLimit());
+        p.setChatbotLimit(r.getChatbotLimit());
+        p.setHasPrioritySupport(r.getHasPrioritySupport());
+        p.setHasAnalytics(r.getHasAnalytics());
+        p.setHasAdvancedAnalytics(r.getHasAdvancedAnalytics());
+        p.setHasCustomIntegrations(r.getHasCustomIntegrations());
+        p.setHasDedicatedSupport(r.getHasDedicatedSupport());
+        p.setHasCustomFeatures(r.getHasCustomFeatures());
+        p.setHasSlaGuarantee(r.getHasSlaGuarantee());
+        p.setIsActive(r.getIsActive());
+        p.setSortOrder(r.getSortOrder());
+        p.setBadge(r.getBadge());
+        return p;
     }
 }

@@ -4,6 +4,7 @@ import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
+import com.chatbot.shared.utils.DateUtils;
 
 public class DateUtils {
 
@@ -11,7 +12,7 @@ public class DateUtils {
     public static final String ISO_DATETIME_FORMAT = "yyyy-MM-dd'T'HH:mm:ss";
     public static final String ISO_DATETIME_WITH_ZONE = "yyyy-MM-dd'T'HH:mm:ssXXX";
     public static final String ISO_DATETIME_WITH_MILLIS = "yyyy-MM-dd'T'HH:mm:ss.SSSXXX";
-    public static final String ISO_DATETIME_WITH_NANOS = "yyyy-MM-dd'T'HH:mm:ss.SSSSSSSSSSXXX";
+    public static final String ISO_DATETIME_WITH_NANOS = "yyyy-MM-dd'T'HH:mm:ss.SSSSSSSSSXXX";
     public static final String DEFAULT_FORMAT = "yyyy-MM-dd HH:mm:ss";
     public static final String STANDARD_JSON_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'";
     public static final String STANDARD_TIMEZONE = "UTC";
@@ -32,7 +33,7 @@ public class DateUtils {
 
     public static String formatInstant(Instant instant, String pattern) {
         if (instant == null) return null;
-        return LocalDateTime.ofInstant(instant, ZoneId.systemDefault())
+        return LocalDateTime.ofInstant(instant, DateUtils.UTC_ZONE)
                 .format(DateTimeFormatter.ofPattern(pattern));
     }
 
@@ -49,27 +50,27 @@ public class DateUtils {
     public static Instant parseInstant(String instantString, String pattern) {
         if (instantString == null || instantString.trim().isEmpty()) return null;
         LocalDateTime localDateTime = LocalDateTime.parse(instantString, DateTimeFormatter.ofPattern(pattern));
-        return localDateTime.atZone(ZoneId.systemDefault()).toInstant();
+        return localDateTime.atZone(DateUtils.UTC_ZONE).toInstant();
     }
 
     public static LocalDate toLocalDate(Date date) {
         if (date == null) return null;
-        return date.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+        return date.toInstant().atZone(DateUtils.UTC_ZONE).toLocalDate();
     }
 
     public static LocalDateTime toLocalDateTime(Date date) {
         if (date == null) return null;
-        return date.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
+        return date.toInstant().atZone(DateUtils.UTC_ZONE).toLocalDateTime();
     }
 
     public static Date toDate(LocalDate localDate) {
         if (localDate == null) return null;
-        return Date.from(localDate.atStartOfDay(ZoneId.systemDefault()).toInstant());
+        return Date.from(localDate.atStartOfDay(DateUtils.UTC_ZONE).toInstant());
     }
 
     public static Date toDate(LocalDateTime localDateTime) {
         if (localDateTime == null) return null;
-        return Date.from(localDateTime.atZone(ZoneId.systemDefault()).toInstant());
+        return Date.from(localDateTime.atZone(DateUtils.UTC_ZONE).toInstant());
     }
 
     public static long daysBetween(LocalDate startDate, LocalDate endDate) {
@@ -123,21 +124,21 @@ public class DateUtils {
 
     public static String getAgeString(LocalDate birthDate) {
         if (birthDate == null) return null;
-        long years = ChronoUnit.YEARS.between(birthDate, LocalDate.now());
+        long years = ChronoUnit.YEARS.between(birthDate, LocalDate.now(DateUtils.UTC_ZONE));
         return years + " years";
     }
 
     public static boolean isToday(LocalDate date) {
-        return date != null && date.equals(LocalDate.now());
+        return date != null && date.equals(LocalDate.now(DateUtils.UTC_ZONE));
     }
 
     public static boolean isYesterday(LocalDate date) {
-        return date != null && date.equals(LocalDate.now().minusDays(1));
+        return date != null && date.equals(LocalDate.now(DateUtils.UTC_ZONE).minusDays(1));
     }
 
     public static boolean isThisWeek(LocalDate date) {
         if (date == null) return false;
-        LocalDate now = LocalDate.now();
+        LocalDate now = LocalDate.now(DateUtils.UTC_ZONE);
         LocalDate weekStart = now.minusDays(now.getDayOfWeek().getValue() - 1);
         LocalDate weekEnd = weekStart.plusDays(6);
         return !date.isBefore(weekStart) && !date.isAfter(weekEnd);
@@ -145,14 +146,14 @@ public class DateUtils {
 
     public static boolean isThisMonth(LocalDate date) {
         return date != null && 
-               date.getYear() == LocalDate.now().getYear() &&
-               date.getMonth() == LocalDate.now().getMonth();
+               date.getYear() == LocalDate.now(DateUtils.UTC_ZONE).getYear() &&
+               date.getMonth() == LocalDate.now(DateUtils.UTC_ZONE).getMonth();
     }
 
     public static String getTimeAgo(LocalDateTime dateTime) {
         if (dateTime == null) return null;
         
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = DateUtils.nowUtcLocalDateTime();
         long minutes = ChronoUnit.MINUTES.between(dateTime, now);
         long hours = ChronoUnit.HOURS.between(dateTime, now);
         long days = ChronoUnit.DAYS.between(dateTime, now);
@@ -163,5 +164,62 @@ public class DateUtils {
         if (days < 30) return days + " days ago";
         
         return formatLocalDateTime(dateTime, "MMM dd, yyyy");
+    }
+
+    // ===== UTC contract helpers (Phase 1) =====
+    // Use these for all new code. Existing methods above keep legacy
+    // DateUtils.UTC_ZONE behavior until migrated per-domain.
+
+    public static final ZoneId UTC_ZONE = ZoneId.of("UTC");
+
+    /** Current instant in UTC. */
+    public static Instant nowUtc() {
+        return Instant.now(Clock.systemUTC());
+    }
+
+    /** Current LocalDateTime in UTC (for TIMESTAMP-without-tz columns storing UTC). */
+    public static LocalDateTime nowUtcLocalDateTime() {
+        return LocalDateTime.now(UTC_ZONE);
+    }
+
+    /** Convert Instant to UTC LocalDateTime. */
+    public static LocalDateTime toUtcLocalDateTime(Instant instant) {
+        return instant == null ? null : LocalDateTime.ofInstant(instant, UTC_ZONE);
+    }
+
+    /** Convert UTC LocalDateTime to Instant. */
+    public static Instant toInstant(LocalDateTime utcLocalDateTime) {
+        return utcLocalDateTime == null ? null : utcLocalDateTime.atZone(UTC_ZONE).toInstant();
+    }
+
+    /** Format Instant as ISO-8601 UTC string (e.g. 2026-11-17T09:30:00.123Z). */
+    public static String formatInstantUtc(Instant instant) {
+        return instant == null ? null : instant.toString();
+    }
+
+    /** Format UTC LocalDateTime as ISO-8601 UTC string with Z suffix. */
+    public static String formatUtcLocalDateTime(LocalDateTime utcLocalDateTime) {
+        if (utcLocalDateTime == null) return null;
+        return utcLocalDateTime.atZone(UTC_ZONE).toInstant().toString();
+    }
+
+    /** Parse ISO-8601 instant string (with offset/Z) to Instant. */
+    public static Instant parseInstantUtc(String instantString) {
+        if (instantString == null || instantString.trim().isEmpty()) return null;
+        return Instant.parse(instantString);
+    }
+
+    /** Parse ISO-8601 UTC string ending with 'Z' to UTC LocalDateTime. */
+    public static LocalDateTime parseUtcLocalDateTime(String utcString) {
+        if (utcString == null || utcString.trim().isEmpty()) return null;
+        return LocalDateTime.ofInstant(Instant.parse(utcString), UTC_ZONE);
+    }
+
+    /** Parse a datetime string in the given pattern as UTC wall-clock to Instant. */
+    public static Instant parseInstantUtc(String value, String pattern) {
+        if (value == null || value.trim().isEmpty()) return null;
+        return LocalDateTime.parse(value.trim(), DateTimeFormatter.ofPattern(pattern))
+                .atZone(UTC_ZONE)
+                .toInstant();
     }
 }

@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
+import com.chatbot.shared.utils.DateUtils;
 
 @Slf4j
 @Service
@@ -108,7 +109,7 @@ public class FbAutoConnectService {
                 conn.setFbUserId(fbUserId);
                 conn.setPageId(pageId);
                 conn.setFanpageUrl("https://www.facebook.com/" + pageId);
-                conn.setCreatedAt(LocalDateTime.now());
+                conn.setCreatedAt(DateUtils.nowUtcLocalDateTime());
 
                 connectedPages.add(pageName);
                 log.info("➡️ Tạo mới kết nối cho trang: {} ({})", pageName, pageId);
@@ -127,7 +128,7 @@ public class FbAutoConnectService {
             conn.setBotName(pageName);
             conn.setEnabled(true);
             conn.setActive(true);
-            conn.setUpdatedAt(LocalDateTime.now());
+            conn.setUpdatedAt(DateUtils.nowUtcLocalDateTime());
             toSave.add(conn);
 
             webhookQueue.add(new ConnectionToProcess(conn, isNew || wasInactive, false));
@@ -141,7 +142,7 @@ public class FbAutoConnectService {
         for (FacebookConnection conn : currentFbUserConnections) {
             if (!fbPageIds.contains(conn.getPageId()) && conn.isActive()) {
                 conn.setActive(false);
-                conn.setUpdatedAt(LocalDateTime.now());
+                conn.setUpdatedAt(DateUtils.nowUtcLocalDateTime());
                 toSave.add(conn);
 
                 inactivePages.add(conn.getBotName());
@@ -194,7 +195,7 @@ public class FbAutoConnectService {
 
                 // Cập nhật trạng thái inactive nếu lỗi đăng ký webhook
                 conn.setActive(false);
-                conn.setUpdatedAt(LocalDateTime.now());
+                conn.setUpdatedAt(DateUtils.nowUtcLocalDateTime());
                 connectionRepository.save(conn);
                 log.warn("⚠️ Đã đánh dấu trang {} là inactive do lỗi webhook.", conn.getPageId());
             }

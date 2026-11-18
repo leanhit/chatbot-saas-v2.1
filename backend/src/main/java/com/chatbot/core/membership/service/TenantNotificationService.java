@@ -9,6 +9,7 @@ import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.UUID;
 import java.util.Optional;
+import com.chatbot.shared.utils.DateUtils;
 
 /**
  * Service for sending tenant-related notifications
@@ -37,8 +38,8 @@ public class TenantNotificationService {
             "role", role,
             "token", token,
             "invitedBy", invitedBy,
-            "createdAt", LocalDateTime.now(),
-            "expiresAt", LocalDateTime.now().plusDays(7)
+            "createdAt", DateUtils.nowUtcLocalDateTime(),
+            "expiresAt", DateUtils.nowUtcLocalDateTime().plusDays(7)
         );
 
         try {
@@ -66,7 +67,7 @@ public class TenantNotificationService {
             "tenantName", tenantName,
             "requesterEmail", requesterEmail,
             "requesterName", requesterName,
-            "createdAt", LocalDateTime.now()
+            "createdAt", DateUtils.nowUtcLocalDateTime()
         );
 
         try {
@@ -94,7 +95,7 @@ public class TenantNotificationService {
             "tenantName", tenantName,
             "memberEmail", memberEmail,
             "role", role,
-            "createdAt", LocalDateTime.now()
+            "createdAt", DateUtils.nowUtcLocalDateTime()
         );
 
         try {
@@ -120,7 +121,7 @@ public class TenantNotificationService {
             "tenantId", tenantId,
             "tenantName", tenantName,
             "memberEmail", memberEmail,
-            "createdAt", LocalDateTime.now()
+            "createdAt", DateUtils.nowUtcLocalDateTime()
         );
 
         try {
