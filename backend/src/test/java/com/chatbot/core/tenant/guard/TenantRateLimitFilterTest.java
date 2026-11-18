@@ -34,7 +34,7 @@ class TenantRateLimitFilterTest {
 
     @BeforeEach
     void setUp() {
-        filter = new TenantRateLimitFilter(redisTemplate);
+        filter = new TenantRateLimitFilter(redisTemplate, new com.fasterxml.jackson.databind.ObjectMapper().registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule()));
         ReflectionTestUtils.setField(filter, "requestsPerMinute", 3);
         ReflectionTestUtils.setField(filter, "enabled", true);
         lenient().when(redisTemplate.opsForValue()).thenReturn(valueOps);
@@ -112,7 +112,9 @@ class TenantRateLimitFilterTest {
 
         verify(response).setStatus(429);
         verify(response).setContentType("application/json");
-        assertTrue(sw.toString().contains("RATE_LIMITED"));
+        String body = sw.toString();
+        assertTrue(body.contains("RATE_LIMIT_EXCEEDED"));
+        assertTrue(body.contains("/api/test"));
         verify(filterChain, never()).doFilter(request, response);
     }
 

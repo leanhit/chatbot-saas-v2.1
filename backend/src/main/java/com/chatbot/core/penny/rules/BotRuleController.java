@@ -98,7 +98,7 @@ public class BotRuleController {
             
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of(
-                "error", e.getMessage()
+                "error", "Request failed"
             ));
         } catch (Exception e) {
             log.error("❌ Error creating rule: {}", e.getMessage(), e);
@@ -149,7 +149,7 @@ public class BotRuleController {
             
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of(
-                "error", e.getMessage()
+                "error", "Request failed"
             ));
         } catch (Exception e) {
             log.error("❌ Error updating rule: {}", e.getMessage(), e);
@@ -306,7 +306,7 @@ public class BotRuleController {
         } catch (Exception e) {
             log.error("❌ Error testing rule: {}", e.getMessage(), e);
             return ResponseEntity.internalServerError().body(Map.of(
-                "error", "Error testing rule: " + e.getMessage()
+                "error", "Error testing rule"
             ));
         }
     }
@@ -438,7 +438,7 @@ public class BotRuleController {
         } catch (Exception e) {
             log.error("❌ Error importing rules from CSV: {}", e.getMessage(), e);
             return ResponseEntity.internalServerError().body(Map.of(
-                "error", "Error importing CSV: " + e.getMessage()
+                "error", "Error importing CSV"
             ));
         }
     }

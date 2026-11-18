@@ -46,7 +46,7 @@ class TenantInterHubController {
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             log.error("Lỗi khi validate token", e);
-            return ResponseEntity.badRequest().body(com.chatbot.shared.dto.ErrorResponse.fromMessage(e.getMessage()));
+            return ResponseEntity.badRequest().body(com.chatbot.shared.dto.ErrorResponse.fromMessage("Request failed"));
         }
     }
 
@@ -72,7 +72,7 @@ class TenantInterHubController {
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             log.error("Lỗi khi validate user", e);
-            return ResponseEntity.badRequest().body(com.chatbot.shared.dto.ErrorResponse.fromMessage(e.getMessage()));
+            return ResponseEntity.badRequest().body(com.chatbot.shared.dto.ErrorResponse.fromMessage("Request failed"));
         }
     }
 
@@ -97,7 +97,7 @@ class TenantInterHubController {
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             log.error("Lỗi khi get user role", e);
-            return ResponseEntity.badRequest().body(com.chatbot.shared.dto.ErrorResponse.fromMessage(e.getMessage()));
+            return ResponseEntity.badRequest().body(com.chatbot.shared.dto.ErrorResponse.fromMessage("Request failed"));
         }
     }
 
@@ -122,7 +122,7 @@ class TenantInterHubController {
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             log.error("Lỗi khi check user active", e);
-            return ResponseEntity.badRequest().body(com.chatbot.shared.dto.ErrorResponse.fromMessage(e.getMessage()));
+            return ResponseEntity.badRequest().body(com.chatbot.shared.dto.ErrorResponse.fromMessage("Request failed"));
         }
     }
 

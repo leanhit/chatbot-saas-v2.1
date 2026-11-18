@@ -86,7 +86,7 @@ public class ResponseTemplateController {
             
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of(
-                "error", e.getMessage()
+                "error", "Request failed"
             ));
         } catch (Exception e) {
             log.error("❌ Error creating response template: {}", e.getMessage(), e);
@@ -140,7 +140,7 @@ public class ResponseTemplateController {
             
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of(
-                "error", e.getMessage()
+                "error", "Request failed"
             ));
         } catch (Exception e) {
             log.error("❌ Error updating response template: {}", e.getMessage(), e);
@@ -265,7 +265,7 @@ public class ResponseTemplateController {
             
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of(
-                "error", e.getMessage()
+                "error", "Request failed"
             ));
         } catch (Exception e) {
             log.error("❌ Error processing template: {}", e.getMessage(), e);
@@ -364,7 +364,7 @@ public class ResponseTemplateController {
             
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of(
-                "error", e.getMessage()
+                "error", "Request failed"
             ));
         } catch (Exception e) {
             log.error("❌ Error previewing template: {}", e.getMessage(), e);

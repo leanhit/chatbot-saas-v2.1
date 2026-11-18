@@ -105,7 +105,7 @@ public class FacebookConnectionController {
             
         } catch (Exception e) {
             log.error("❌ Failed to create Facebook connection with long-lived token: {}", e.getMessage());
-            return ResponseEntity.badRequest().body("Failed to create connection: " + e.getMessage());
+            return ResponseEntity.badRequest().body("Failed to create connection");
         }
     }
 

@@ -102,7 +102,8 @@ public class AnalyticsController {
         if (tenantId == null) {
             return ResponseEntity.badRequest().body(com.chatbot.shared.dto.ErrorResponse.fromMessage("Tenant context missing"));
         }
-        return ResponseEntity.ok(funnelService.listStages(tenantId));
+        return ResponseEntity.ok(funnelService.listStages(tenantId).stream()
+                .map(com.chatbot.core.analytics.dto.FunnelStageResponse::from).toList());
     }
 
     @PostMapping("/funnel/stages")
@@ -118,7 +119,7 @@ public class AnalyticsController {
         stage.setMatchType(request.getMatchType());
         stage.setMatchValue(request.getMatchValue());
         stage.setActive(request.getActive());
-        return ResponseEntity.ok(funnelService.createStage(stage, tenantId));
+        return ResponseEntity.ok(com.chatbot.core.analytics.dto.FunnelStageResponse.from(funnelService.createStage(stage, tenantId)));
     }
 
     @PutMapping("/funnel/stages/{id}")
@@ -134,7 +135,7 @@ public class AnalyticsController {
         stage.setMatchType(request.getMatchType());
         stage.setMatchValue(request.getMatchValue());
         stage.setActive(request.getActive());
-        return ResponseEntity.ok(funnelService.updateStage(id, stage, tenantId));
+        return ResponseEntity.ok(com.chatbot.core.analytics.dto.FunnelStageResponse.from(funnelService.updateStage(id, stage, tenantId)));
     }
 
     @DeleteMapping("/funnel/stages/{id}")

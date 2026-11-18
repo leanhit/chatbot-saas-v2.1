@@ -84,7 +84,7 @@ public class AvatarController {
             }
             
             Map<String, String> errorResponse = new HashMap<>();
-            errorResponse.put("error", "Failed to upload avatar: " + e.getMessage());
+            errorResponse.put("error", "Failed to upload avatar");
             return ResponseEntity.badRequest().body(errorResponse);
         }
     }
@@ -122,7 +122,7 @@ public class AvatarController {
             }
             
             Map<String, String> errorResponse = new HashMap<>();
-            errorResponse.put("error", "Failed to upload logo: " + e.getMessage());
+            errorResponse.put("error", "Failed to upload logo");
             return ResponseEntity.badRequest().body(errorResponse);
         }
     }
@@ -155,7 +155,7 @@ public class AvatarController {
         } catch (Exception e) {
             log.error("Error deleting user avatar", e);
             Map<String, String> errorResponse = new HashMap<>();
-            errorResponse.put("error", "Failed to delete avatar: " + e.getMessage());
+            errorResponse.put("error", "Failed to delete avatar");
             return ResponseEntity.badRequest().body(errorResponse);
         }
     }
@@ -182,7 +182,7 @@ public class AvatarController {
         } catch (Exception e) {
             log.error("Error deleting tenant logo", e);
             Map<String, String> errorResponse = new HashMap<>();
-            errorResponse.put("error", "Failed to delete logo: " + e.getMessage());
+            errorResponse.put("error", "Failed to delete logo");
             return ResponseEntity.badRequest().body(errorResponse);
         }
     }
@@ -204,7 +204,7 @@ public class AvatarController {
         } catch (Exception e) {
             log.error("Error checking avatar buckets", e);
             Map<String, String> errorResponse = new HashMap<>();
-            errorResponse.put("error", "Failed to check/create buckets: " + e.getMessage());
+            errorResponse.put("error", "Failed to check/create buckets");
             return ResponseEntity.badRequest().body(errorResponse);
         }
     }

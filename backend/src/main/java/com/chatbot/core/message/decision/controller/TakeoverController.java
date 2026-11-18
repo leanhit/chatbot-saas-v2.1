@@ -116,7 +116,7 @@ public class TakeoverController {
             throw e;
         } catch (Exception e) {
             log.error("Error sending message: {}", e.getMessage(), e);
-            throw new ConversationException(ErrorCode.INTERNAL_ERROR, "Failed to send message: " + e.getMessage(), e);
+            throw new ConversationException(ErrorCode.INTERNAL_ERROR, "Failed to send message", e);
         }
     }
 

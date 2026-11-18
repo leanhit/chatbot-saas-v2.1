@@ -372,7 +372,7 @@ public class LicenseController {
             log.error("Failed to process browser activation: {}", e.getMessage(), e);
             // Redirect to error page
             return ResponseEntity.status(HttpStatus.FOUND)
-                .header("Location", "/error?message=" + e.getMessage())
+                .header("Location", "/error?message=activation_failed")
                 .build();
         }
     }
@@ -447,7 +447,7 @@ public class LicenseController {
         } catch (Exception e) {
             log.error("Failed to generate activation token for user {}: {}", userId, e.getMessage(), e);
             return ResponseEntity.badRequest()
-                .body(ApiResponse.<Map<String, Object>>error("Failed to generate token: " + e.getMessage()));
+                .body(ApiResponse.<Map<String, Object>>error("Failed to generate token"));
         }
     }
 
@@ -476,7 +476,7 @@ public class LicenseController {
         } catch (Exception e) {
             log.error("Failed to retrieve public key: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(ApiResponse.error("Failed to retrieve public key: " + e.getMessage()));
+                .body(ApiResponse.error("Failed to retrieve public key"));
         }
     }
 
@@ -562,7 +562,7 @@ public class LicenseController {
         } catch (Exception e) {
             log.error("Failed to process activation callback: {}", e.getMessage(), e);
             return ResponseEntity.badRequest()
-                .body(ApiResponse.<Map<String, Object>>error("Failed to activate license: " + e.getMessage()));
+                .body(ApiResponse.<Map<String, Object>>error("Failed to activate license"));
         }
     }
 

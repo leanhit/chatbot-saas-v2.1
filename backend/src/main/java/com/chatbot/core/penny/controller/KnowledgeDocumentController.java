@@ -84,7 +84,7 @@ public class KnowledgeDocumentController {
         } catch (Exception e) {
             log.error("Error uploading document: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(new ErrorResponse("Failed to process document: " + e.getMessage()));
+                .body(new ErrorResponse("Failed to process document"));
         }
     }
 
@@ -105,7 +105,7 @@ public class KnowledgeDocumentController {
         } catch (Exception e) {
             log.error("Error fetching documents: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(new ErrorResponse("Failed to fetch documents: " + e.getMessage()));
+                .body(new ErrorResponse("Failed to fetch documents"));
         }
     }
 
@@ -126,7 +126,7 @@ public class KnowledgeDocumentController {
         } catch (Exception e) {
             log.error("Error fetching document: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(new ErrorResponse("Failed to fetch document: " + e.getMessage()));
+                .body(new ErrorResponse("Failed to fetch document"));
         }
     }
 
@@ -144,7 +144,7 @@ public class KnowledgeDocumentController {
         } catch (Exception e) {
             log.error("Error deleting document: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(new ErrorResponse("Failed to delete document: " + e.getMessage()));
+                .body(new ErrorResponse("Failed to delete document"));
         }
     }
 
@@ -162,7 +162,7 @@ public class KnowledgeDocumentController {
         } catch (Exception e) {
             log.error("Error deleting documents for bot: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(new ErrorResponse("Failed to delete documents: " + e.getMessage()));
+                .body(new ErrorResponse("Failed to delete documents"));
         }
     }
 
@@ -190,7 +190,7 @@ public class KnowledgeDocumentController {
         } catch (Exception e) {
             log.error("Error reprocessing document: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(new ErrorResponse("Failed to reprocess document: " + e.getMessage()));
+                .body(new ErrorResponse("Failed to reprocess document"));
         }
     }
 

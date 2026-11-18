@@ -270,7 +270,7 @@ public class CustomLogicController {
         } catch (Exception e) {
             log.error("❌ Error testing custom logic: {}", e.getMessage(), e);
             return ResponseEntity.internalServerError().body(Map.of(
-                "error", "Error testing custom logic: " + e.getMessage()
+                "error", "Error testing custom logic"
             ));
         }
     }
@@ -372,7 +372,7 @@ public class CustomLogicController {
             );
             
             return ResponseEntity.internalServerError().body(Map.of(
-                "error", "Error exporting custom logic: " + e.getMessage()
+                "error", "Error exporting custom logic"
             ));
         }
     }
@@ -515,7 +515,7 @@ public class CustomLogicController {
         } catch (Exception e) {
             log.error("❌ Error validating import data: {}", e.getMessage(), e);
             return ResponseEntity.internalServerError().body(Map.of(
-                "error", "Error validating import data: " + e.getMessage()
+                "error", "Error validating import data"
             ));
         }
     }
@@ -718,7 +718,7 @@ public class CustomLogicController {
         } catch (Exception e) {
             log.error("❌ Error diffing exports: {}", e.getMessage(), e);
             return ResponseEntity.internalServerError().body(Map.of(
-                "error", "Error diffing exports: " + e.getMessage()
+                "error", "Error diffing exports"
             ));
         }
     }
@@ -1078,7 +1078,7 @@ public class CustomLogicController {
             );
             
             // Transaction will automatically rollback due to @Transactional
-            throw new RuntimeException("Import failed, transaction rolled back: " + e.getMessage(), e);
+            throw new RuntimeException("Import failed, transaction rolled back", e);
         }
     }
 
@@ -1284,7 +1284,7 @@ public class CustomLogicController {
             );
             
             // Transaction will automatically rollback due to @Transactional
-            throw new RuntimeException("Botpress import failed, transaction rolled back: " + e.getMessage(), e);
+            throw new RuntimeException("Botpress import failed, transaction rolled back", e);
         }
     }
 
@@ -1390,7 +1390,7 @@ public class CustomLogicController {
         } catch (Exception e) {
             log.error("❌ Error retrieving changelog: {}", e.getMessage(), e);
             return ResponseEntity.internalServerError().body(Map.of(
-                "error", "Error retrieving changelog: " + e.getMessage()
+                "error", "Error retrieving changelog"
             ));
         }
     }

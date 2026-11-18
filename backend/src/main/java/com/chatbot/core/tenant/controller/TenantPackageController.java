@@ -54,7 +54,7 @@ public class TenantPackageController {
             return ResponseEntity.ok(ApiResponse.success(packageInfo, "Current package info retrieved successfully"));
         } catch (Exception e) {
             log.error("Error getting current package info: {}", e.getMessage(), e);
-            return ResponseEntity.badRequest().body(ApiResponse.error("Error getting current package info: " + e.getMessage()));
+            return ResponseEntity.badRequest().body(ApiResponse.error("Error getting current package info: "));
         }
     }
 
@@ -71,7 +71,7 @@ public class TenantPackageController {
             return ResponseEntity.ok(ApiResponse.success(packageInfo, "Current package info retrieved successfully"));
         } catch (Exception e) {
             log.error("Error getting current package info for tenant {}: {}", tenantKey, e.getMessage(), e);
-            return ResponseEntity.badRequest().body(ApiResponse.error("Error getting current package info: " + e.getMessage()));
+            return ResponseEntity.badRequest().body(ApiResponse.error("Error getting current package info: "));
         }
     }
 
@@ -101,7 +101,7 @@ public class TenantPackageController {
             return ResponseEntity.ok(ApiResponse.success(packageResponse, "Current package retrieved successfully"));
         } catch (Exception e) {
             log.error("❌ Error getting current package: {}", e.getMessage(), e);
-            return ResponseEntity.badRequest().body(ApiResponse.error("Error getting current package: " + e.getMessage()));
+            return ResponseEntity.badRequest().body(ApiResponse.error("Error getting current package: "));
         }
     }
 
@@ -123,7 +123,7 @@ public class TenantPackageController {
             return ResponseEntity.ok(ApiResponse.success(packageResponse, "Current package retrieved successfully"));
         } catch (Exception e) {
             log.error("❌ Error getting current package for tenant {}: {}", tenantKey, e.getMessage(), e);
-            return ResponseEntity.badRequest().body(ApiResponse.error("Error getting current package: " + e.getMessage()));
+            return ResponseEntity.badRequest().body(ApiResponse.error("Error getting current package: "));
         }
     }
 
@@ -141,7 +141,7 @@ public class TenantPackageController {
             return ResponseEntity.ok(ApiResponse.success("Package upgraded successfully", "Tenant package upgraded to " + packageId));
         } catch (Exception e) {
             log.error("❌ Error upgrading package for tenant {}: {}", tenantId, e.getMessage(), e);
-            return ResponseEntity.badRequest().body(ApiResponse.error("Error upgrading package: " + e.getMessage()));
+            return ResponseEntity.badRequest().body(ApiResponse.error("Error upgrading package: "));
         }
     }
 
@@ -159,7 +159,7 @@ public class TenantPackageController {
             return ResponseEntity.ok(ApiResponse.success(hasPackage, "Package check completed"));
         } catch (Exception e) {
             log.error("❌ Error checking package for tenant {}: {}", tenantId, e.getMessage(), e);
-            return ResponseEntity.badRequest().body(ApiResponse.error("Error checking package: " + e.getMessage()));
+            return ResponseEntity.badRequest().body(ApiResponse.error("Error checking package: "));
         }
     }
 
@@ -175,7 +175,7 @@ public class TenantPackageController {
             return ResponseEntity.ok(ApiResponse.success("Initialization completed", "Existing tenants initialized with free package"));
         } catch (Exception e) {
             log.error("Error initializing existing tenants: {}", e.getMessage(), e);
-            return ResponseEntity.badRequest().body(ApiResponse.error("Error initializing tenants: " + e.getMessage()));
+            return ResponseEntity.badRequest().body(ApiResponse.error("Error initializing tenants: "));
         }
     }
 
@@ -207,7 +207,7 @@ public class TenantPackageController {
             return ResponseEntity.ok(ApiResponse.success("Package upgraded successfully", "Your package has been upgraded to " + packageId));
         } catch (Exception e) {
             log.error("Error upgrading package for current user: {}", e.getMessage(), e);
-            return ResponseEntity.badRequest().body(ApiResponse.error("Error upgrading package: " + e.getMessage()));
+            return ResponseEntity.badRequest().body(ApiResponse.error("Error upgrading package: "));
         }
     }
 
@@ -232,7 +232,7 @@ public class TenantPackageController {
             return ResponseEntity.ok(ApiResponse.success(response, "Package info retrieved successfully"));
         } catch (Exception e) {
             log.error("Error getting package info: {}", e.getMessage(), e);
-            return ResponseEntity.badRequest().body(ApiResponse.error("Error getting package info: " + e.getMessage()));
+            return ResponseEntity.badRequest().body(ApiResponse.error("Error getting package info: "));
         }
     }
 

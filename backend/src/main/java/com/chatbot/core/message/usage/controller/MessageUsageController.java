@@ -38,7 +38,7 @@ public class MessageUsageController {
             return ResponseEntity.ok(ApiResponse.success(usage, "Message usage retrieved successfully"));
         } catch (Exception e) {
             log.error("❌ Error getting message usage: {}", e.getMessage(), e);
-            return ResponseEntity.badRequest().body(ApiResponse.error("Error getting message usage: " + e.getMessage()));
+            return ResponseEntity.badRequest().body(ApiResponse.error("Error getting message usage: "));
         }
     }
 
@@ -61,7 +61,7 @@ public class MessageUsageController {
                     canSend ? "You can send more messages" : "Message limit reached"));
         } catch (Exception e) {
             log.error("❌ Error checking message limit: {}", e.getMessage(), e);
-            return ResponseEntity.badRequest().body(ApiResponse.error("Error checking message limit: " + e.getMessage()));
+            return ResponseEntity.badRequest().body(ApiResponse.error("Error checking message limit: "));
         }
     }
 
@@ -83,7 +83,7 @@ public class MessageUsageController {
             return ResponseEntity.ok(ApiResponse.success(stats, "Message statistics retrieved successfully"));
         } catch (Exception e) {
             log.error("❌ Error getting message statistics: {}", e.getMessage(), e);
-            return ResponseEntity.badRequest().body(ApiResponse.error("Error getting message statistics: " + e.getMessage()));
+            return ResponseEntity.badRequest().body(ApiResponse.error("Error getting message statistics: "));
         }
     }
 
@@ -100,7 +100,7 @@ public class MessageUsageController {
             return ResponseEntity.ok(ApiResponse.success(usage, "Tenant message usage retrieved successfully"));
         } catch (Exception e) {
             log.error("❌ Error getting tenant message usage: {}", e.getMessage(), e);
-            return ResponseEntity.badRequest().body(ApiResponse.error("Error getting tenant message usage: " + e.getMessage()));
+            return ResponseEntity.badRequest().body(ApiResponse.error("Error getting tenant message usage: "));
         }
     }
 
@@ -117,7 +117,7 @@ public class MessageUsageController {
             return ResponseEntity.ok(ApiResponse.success(stats, "Tenant message statistics retrieved successfully"));
         } catch (Exception e) {
             log.error("❌ Error getting tenant message statistics: {}", e.getMessage(), e);
-            return ResponseEntity.badRequest().body(ApiResponse.error("Error getting tenant message statistics: " + e.getMessage()));
+            return ResponseEntity.badRequest().body(ApiResponse.error("Error getting tenant message statistics: "));
         }
     }
 }

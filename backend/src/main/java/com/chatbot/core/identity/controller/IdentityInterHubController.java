@@ -37,7 +37,7 @@ class IdentityInterHubController {
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             log.error("Lỗi khi validate tenant", e);
-            return ResponseEntity.badRequest().body(com.chatbot.shared.dto.ErrorResponse.fromMessage(e.getMessage()));
+            return ResponseEntity.badRequest().body(com.chatbot.shared.dto.ErrorResponse.fromMessage("Request failed"));
         }
     }
 
@@ -58,7 +58,7 @@ class IdentityInterHubController {
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             log.error("Lỗi khi check tenant exists", e);
-            return ResponseEntity.badRequest().body(com.chatbot.shared.dto.ErrorResponse.fromMessage(e.getMessage()));
+            return ResponseEntity.badRequest().body(com.chatbot.shared.dto.ErrorResponse.fromMessage("Request failed"));
         }
     }
 

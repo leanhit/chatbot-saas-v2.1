@@ -281,7 +281,7 @@ public class AgentController {
             return ResponseEntity.ok(Map.of("message", "Agent repaired for userId=" + userId));
         } catch (Exception e) {
             log.error("[AgentController] Repair failed for userId={} in tenantId={}: {}", userId, tenantId, e.getMessage(), e);
-            return ResponseEntity.internalServerError().body(com.chatbot.shared.dto.ErrorResponse.fromMessage("Repair failed: " + e.getMessage()));
+            return ResponseEntity.internalServerError().body(com.chatbot.shared.dto.ErrorResponse.fromMessage("Repair failed"));
         }
     }
 

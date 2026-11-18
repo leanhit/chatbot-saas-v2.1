@@ -156,7 +156,7 @@ public class AuthController {
             }
         } catch (Exception e) {
             log.error("Simple logout failed", e);
-            return ResponseEntity.badRequest().body(ApiResponse.error("Logout failed: " + e.getMessage()));
+            return ResponseEntity.badRequest().body(ApiResponse.error("Logout failed"));
         }
     }
 

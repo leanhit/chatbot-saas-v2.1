@@ -62,7 +62,7 @@ public class TokenHealthController {
             Map<String, Object> errorResponse = new HashMap<>();
             errorResponse.put("pageId", pageId);
             errorResponse.put("status", "ERROR");
-            errorResponse.put("message", "Failed to check token status: " + e.getMessage());
+            errorResponse.put("message", "Failed to check token status");
             errorResponse.put("error", true);
             errorResponse.put("timestamp", System.currentTimeMillis());
             
@@ -97,7 +97,7 @@ public class TokenHealthController {
             Map<String, Object> errorResponse = new HashMap<>();
             errorResponse.put("pageId", pageId);
             errorResponse.put("success", false);
-            errorResponse.put("message", "Failed to refresh token: " + e.getMessage());
+            errorResponse.put("message", "Failed to refresh token");
             errorResponse.put("error", true);
             errorResponse.put("timestamp", System.currentTimeMillis());
             
@@ -132,7 +132,7 @@ public class TokenHealthController {
             Map<String, Object> errorResponse = new HashMap<>();
             errorResponse.put("pageId", pageId);
             errorResponse.put("error", true);
-            errorResponse.put("message", "Failed to get valid token: " + e.getMessage());
+            errorResponse.put("message", "Failed to get valid token");
             errorResponse.put("timestamp", System.currentTimeMillis());
             
             return ResponseEntity.internalServerError().body(errorResponse);

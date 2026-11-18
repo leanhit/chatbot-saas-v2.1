@@ -74,7 +74,7 @@ public class FbAutoConnectController {
       } catch (Exception e) {
         log.error("Failed to create connection for page {}: {}", connectionData.getPageId(), e.getMessage());
         failureCount++;
-        message.append("Failed to connect page ").append(connectionData.getPageId()).append(": ").append(e.getMessage()).append("; ");
+        message.append("Failed to connect page ").append(connectionData.getPageId()).append("; ");
       }
     }
     

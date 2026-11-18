@@ -3,7 +3,9 @@ package com.chatbot.core.analytics.controller;
 import com.chatbot.core.analytics.model.CustomReport;
 import com.chatbot.core.analytics.model.ReportSchedule;
 import com.chatbot.core.analytics.dto.CustomReportRequest;
+import com.chatbot.core.analytics.dto.CustomReportResponse;
 import com.chatbot.core.analytics.dto.ReportScheduleRequest;
+import com.chatbot.core.analytics.dto.ReportScheduleResponse;
 import com.chatbot.core.analytics.service.ReportScheduleService;
 import com.chatbot.core.analytics.service.ReportService;
 import com.chatbot.core.tenant.infra.TenantContext;
@@ -34,7 +36,8 @@ public class ReportController {
     public ResponseEntity<?> listReports() {
         Long tenantId = TenantContext.getTenantId();
         if (tenantId == null) return ResponseEntity.badRequest().body(com.chatbot.shared.dto.ErrorResponse.fromMessage("Tenant context missing"));
-        return ResponseEntity.ok(reportService.listReports(tenantId));
+        return ResponseEntity.ok(reportService.listReports(tenantId).stream()
+                .map(CustomReportResponse::from).toList());
     }
 
     @PostMapping
@@ -48,7 +51,7 @@ public class ReportController {
         report.setReportType(request.getReportType());
         report.setDateRangeDays(request.getDateRangeDays());
         report.setFilters(request.getFilters());
-        return ResponseEntity.ok(reportService.createReport(report, tenantId));
+        return ResponseEntity.ok(CustomReportResponse.from(reportService.createReport(report, tenantId)));
     }
 
     @PutMapping("/{id}")
@@ -62,7 +65,7 @@ public class ReportController {
         report.setReportType(request.getReportType());
         report.setDateRangeDays(request.getDateRangeDays());
         report.setFilters(request.getFilters());
-        return ResponseEntity.ok(reportService.updateReport(id, report, tenantId));
+        return ResponseEntity.ok(CustomReportResponse.from(reportService.updateReport(id, report, tenantId)));
     }
 
     @DeleteMapping("/{id}")
@@ -97,7 +100,8 @@ public class ReportController {
     public ResponseEntity<?> listSchedules() {
         Long tenantId = TenantContext.getTenantId();
         if (tenantId == null) return ResponseEntity.badRequest().body(com.chatbot.shared.dto.ErrorResponse.fromMessage("Tenant context missing"));
-        return ResponseEntity.ok(scheduleService.listSchedules(tenantId));
+        return ResponseEntity.ok(scheduleService.listSchedules(tenantId).stream()
+                .map(ReportScheduleResponse::from).toList());
     }
 
     @PostMapping("/schedules")
@@ -109,7 +113,7 @@ public class ReportController {
         schedule.setReportId(request.getReportId());
         schedule.setCronExpression(request.getCronExpression());
         schedule.setEnabled(request.getEnabled());
-        return ResponseEntity.ok(scheduleService.createSchedule(schedule, tenantId));
+        return ResponseEntity.ok(ReportScheduleResponse.from(scheduleService.createSchedule(schedule, tenantId)));
     }
 
     @PutMapping("/schedules/{id}")
@@ -120,7 +124,7 @@ public class ReportController {
         ReportSchedule schedule = new ReportSchedule();
         schedule.setCronExpression(request.getCronExpression());
         schedule.setEnabled(request.getEnabled());
-        return ResponseEntity.ok(scheduleService.updateSchedule(id, schedule, tenantId));
+        return ResponseEntity.ok(ReportScheduleResponse.from(scheduleService.updateSchedule(id, schedule, tenantId)));
     }
 
     @DeleteMapping("/schedules/{id}")

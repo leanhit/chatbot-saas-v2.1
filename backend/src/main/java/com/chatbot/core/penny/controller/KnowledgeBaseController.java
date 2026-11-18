@@ -4,6 +4,7 @@ import com.chatbot.core.penny.kb.EmbeddingService;
 import com.chatbot.core.penny.kb.KnowledgeArticle;
 import com.chatbot.core.penny.kb.KnowledgeArticleRepository;
 import com.chatbot.core.penny.kb.dto.KnowledgeArticleRequest;
+import com.chatbot.core.penny.kb.dto.KnowledgeArticleResponse;
 import com.chatbot.core.penny.kb.KnowledgeBaseSearchService;
 import com.chatbot.core.penny.repository.PennyBotRepository;
 import com.chatbot.core.penny.model.PennyBot;
@@ -60,7 +61,7 @@ public class KnowledgeBaseController {
      * POST /api/penny/bots/{botId}/kb/articles
      */
     @PostMapping("/articles")
-    public ResponseEntity<KnowledgeArticle> createArticle(
+    public ResponseEntity<KnowledgeArticleResponse> createArticle(
             @PathVariable UUID botId,
             @Valid @RequestBody KnowledgeArticleRequest request) {
         
@@ -90,7 +91,7 @@ public class KnowledgeBaseController {
         KnowledgeArticle saved = knowledgeArticleRepository.save(article);
         log.info("✅ Created knowledge article: {}", saved.getId());
         
-        return ResponseEntity.status(HttpStatus.CREATED).body(saved);
+        return ResponseEntity.status(HttpStatus.CREATED).body(KnowledgeArticleResponse.from(saved));
     }
 
     /**
@@ -98,7 +99,7 @@ public class KnowledgeBaseController {
      * GET /api/penny/bots/{botId}/kb/articles?page=0&size=20
      */
     @GetMapping("/articles")
-    public ResponseEntity<Page<KnowledgeArticle>> getArticles(
+    public ResponseEntity<Page<KnowledgeArticleResponse>> getArticles(
             @PathVariable UUID botId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
@@ -115,8 +116,9 @@ public class KnowledgeBaseController {
         // Get tenant ID from security context or bot fallback
         Long tenantId = resolveTenantId(botId);
         
-        Page<KnowledgeArticle> articles = knowledgeArticleRepository
-            .findByBotIdAndTenantIdAndIsActiveTrue(botId, tenantId, pageable);
+        Page<KnowledgeArticleResponse> articles = knowledgeArticleRepository
+            .findByBotIdAndTenantIdAndIsActiveTrue(botId, tenantId, pageable)
+            .map(KnowledgeArticleResponse::from);
         
         return ResponseEntity.ok(articles);
     }
@@ -126,7 +128,7 @@ public class KnowledgeBaseController {
      * GET /api/penny/bots/{botId}/kb/articles/{id}
      */
     @GetMapping("/articles/{id}")
-    public ResponseEntity<KnowledgeArticle> getArticle(
+    public ResponseEntity<KnowledgeArticleResponse> getArticle(
             @PathVariable UUID botId,
             @PathVariable UUID id) {
         
@@ -134,7 +136,7 @@ public class KnowledgeBaseController {
         
         return knowledgeArticleRepository.findById(id)
             .filter(article -> article.getBotId().equals(botId))
-            .map(ResponseEntity::ok)
+            .map(article -> ResponseEntity.ok(KnowledgeArticleResponse.from(article)))
             .orElse(ResponseEntity.notFound().build());
     }
 
@@ -143,7 +145,7 @@ public class KnowledgeBaseController {
      * PUT /api/penny/bots/{botId}/kb/articles/{id}
      */
     @PutMapping("/articles/{id}")
-    public ResponseEntity<KnowledgeArticle> updateArticle(
+    public ResponseEntity<KnowledgeArticleResponse> updateArticle(
             @PathVariable UUID botId,
             @PathVariable UUID id,
             @Valid @RequestBody KnowledgeArticleRequest request) {
@@ -181,7 +183,7 @@ public class KnowledgeBaseController {
                 
                 KnowledgeArticle saved = knowledgeArticleRepository.save(existingArticle);
                 log.info("✅ Updated knowledge article: {}", saved.getId());
-                return ResponseEntity.ok(saved);
+                return ResponseEntity.ok(KnowledgeArticleResponse.from(saved));
             })
             .orElse(ResponseEntity.notFound().build());
     }
@@ -261,7 +263,7 @@ public class KnowledgeBaseController {
      * POST /api/penny/bots/{botId}/kb/articles/{id}/reembed
      */
     @PostMapping("/articles/{id}/reembed")
-    public ResponseEntity<KnowledgeArticle> reembedArticle(
+    public ResponseEntity<KnowledgeArticleResponse> reembedArticle(
             @PathVariable UUID botId,
             @PathVariable UUID id) {
         
@@ -282,12 +284,12 @@ public class KnowledgeBaseController {
                         article.setEmbeddingModel(embeddingService.getEmbeddingModel());
                         KnowledgeArticle saved = knowledgeArticleRepository.save(article);
                         log.info("✅ Re-generated embedding for article: {}", id);
-                        return ResponseEntity.ok(saved);
+                        return ResponseEntity.ok(KnowledgeArticleResponse.from(saved));
                     }
-                    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).<KnowledgeArticle>build();
+                    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).<KnowledgeArticleResponse>build();
                 } catch (Exception e) {
                     log.error("❌ Failed to re-generate embedding: {}", e.getMessage());
-                    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).<KnowledgeArticle>build();
+                    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).<KnowledgeArticleResponse>build();
                 }
             })
             .orElse(ResponseEntity.notFound().build());
@@ -316,7 +318,7 @@ public class KnowledgeBaseController {
         Map<String, Object> result = new HashMap<>();
         result.put("query", q);
         result.put("count", articles.size());
-        result.put("articles", articles);
+        result.put("articles", articles.stream().map(KnowledgeArticleResponse::from).toList());
         
         return ResponseEntity.ok(result);
     }

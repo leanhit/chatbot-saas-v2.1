@@ -47,7 +47,7 @@ public class DataExportController {
         } catch (Exception e) {
             log.error("[DataExport] Export failed for tenant {}: {}", tenantId, e.getMessage(), e);
             return ResponseEntity.internalServerError()
-                .body(com.chatbot.shared.dto.ErrorResponse.fromMessage("Export failed: " + e.getMessage()));
+                .body(com.chatbot.shared.dto.ErrorResponse.fromMessage("Export failed"));
         }
     }
 }

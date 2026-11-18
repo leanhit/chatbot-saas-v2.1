@@ -378,7 +378,7 @@ public class UserController {
                 "duration", "Vĩnh viễn"
             ));
             response.put("packageHistory", List.of());
-            response.put("error", e.getMessage());
+            response.put("error", "Failed to load package info");
             
             return ResponseEntity.ok(response);
         }

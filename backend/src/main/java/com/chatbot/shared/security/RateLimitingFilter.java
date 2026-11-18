@@ -87,6 +87,7 @@ public class RateLimitingFilter extends OncePerRequestFilter {
             response.setCharacterEncoding("UTF-8");
             ErrorResponse error = ErrorResponse.fromRateLimit(
                     "Rate limit exceeded for " + config.getPrefix() + " endpoints");
+            error.setPath(path);
             objectMapper.writeValue(response.getWriter(), error);
             log.warn("Rate limit exceeded for client {} on endpoint {}", clientId, path);
             return;

@@ -39,7 +39,7 @@ public class PackageLimitController {
             return ResponseEntity.ok(ApiResponse.success(limitInfo, "Chatbot limit information retrieved successfully"));
         } catch (Exception e) {
             log.error("Error getting chatbot limit info", e);
-            return ResponseEntity.badRequest().body(ApiResponse.error("Error getting chatbot limit info: " + e.getMessage()));
+            return ResponseEntity.badRequest().body(ApiResponse.error("Error getting chatbot limit info: "));
         }
     }
 
@@ -58,7 +58,7 @@ public class PackageLimitController {
             return ResponseEntity.ok(ApiResponse.success(limitInfo, "Chatbot limit information retrieved successfully"));
         } catch (Exception e) {
             log.error("Error getting chatbot limit info for tenant {}", tenantId, e);
-            return ResponseEntity.badRequest().body(ApiResponse.error("Error getting chatbot limit info: " + e.getMessage()));
+            return ResponseEntity.badRequest().body(ApiResponse.error("Error getting chatbot limit info: "));
         }
     }
 
@@ -76,7 +76,7 @@ public class PackageLimitController {
                     canCreate ? "Tenant can create more chatbots" : "Tenant has reached chatbot limit"));
         } catch (Exception e) {
             log.error("Error checking chatbot creation limit for tenant {}", tenantId, e);
-            return ResponseEntity.badRequest().body(ApiResponse.error("Error checking chatbot limit: " + e.getMessage()));
+            return ResponseEntity.badRequest().body(ApiResponse.error("Error checking chatbot limit: "));
         }
     }
 
@@ -93,7 +93,7 @@ public class PackageLimitController {
             return ResponseEntity.ok(ApiResponse.success(remainingSlots, "Remaining chatbot slots retrieved successfully"));
         } catch (Exception e) {
             log.error("Error getting remaining chatbot slots for tenant {}", tenantId, e);
-            return ResponseEntity.badRequest().body(ApiResponse.error("Error getting remaining slots: " + e.getMessage()));
+            return ResponseEntity.badRequest().body(ApiResponse.error("Error getting remaining slots: "));
         }
     }
 
@@ -110,7 +110,7 @@ public class PackageLimitController {
             return ResponseEntity.ok(ApiResponse.success("OK", "Tenant can create chatbots"));
         } catch (Exception e) {
             log.warn("Chatbot creation validation failed for tenant {}: {}", tenantId, e.getMessage());
-            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
+            return ResponseEntity.badRequest().body(ApiResponse.error("Error processing request"));
         }
     }
 }

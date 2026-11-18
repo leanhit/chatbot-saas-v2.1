@@ -755,7 +755,7 @@ public class PennyBotController {
 
         } catch (Exception e) {
             log.error("❌ Failed to import bot configuration: {}", e.getMessage(), e);
-            throw new IllegalStateException("Failed to import bot configuration: " + e.getMessage());
+            throw new IllegalStateException("Failed to import bot configuration");
         }
     }
 }

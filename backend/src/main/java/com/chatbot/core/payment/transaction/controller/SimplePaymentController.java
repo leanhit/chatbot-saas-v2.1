@@ -88,7 +88,7 @@ public class SimplePaymentController {
         } catch (Exception e) {
             log.error("❌ Failed to create deposit request: {}", e.getMessage(), e);
             Map<String, String> error = new HashMap<>();
-            error.put("error", e.getMessage());
+            error.put("error", "Failed to create deposit request");
             return ResponseEntity.badRequest().body(error);
         }
     }
@@ -283,7 +283,7 @@ public class SimplePaymentController {
 
         } catch (Exception e) {
             log.error("❌ Failed to cancel payment {}: {}", referenceCode, e.getMessage());
-            return ResponseEntity.badRequest().body("Failed to cancel payment: " + e.getMessage());
+            return ResponseEntity.badRequest().body("Failed to cancel payment");
         }
     }
 
@@ -313,7 +313,7 @@ public class SimplePaymentController {
             
         } catch (Exception e) {
             log.error("❌ Failed to refund payment {}: {}", referenceCode, e.getMessage());
-            return ResponseEntity.badRequest().body("Failed to refund payment: " + e.getMessage());
+            return ResponseEntity.badRequest().body("Failed to refund payment");
         }
     }
 
@@ -353,7 +353,7 @@ public class SimplePaymentController {
         } catch (Exception e) {
             log.error("❌ Failed to retry payment {}: {}", referenceCode, e.getMessage());
             Map<String, String> error = new HashMap<>();
-            error.put("error", e.getMessage());
+            error.put("error", "Failed to retry payment");
             return ResponseEntity.badRequest().body(error);
         }
     }
@@ -391,7 +391,6 @@ public class SimplePaymentController {
             
             Map<String, Object> error = new HashMap<>();
             error.put("error", "Failed to check deposit limits");
-            error.put("message", e.getMessage());
             error.put("timestamp", com.chatbot.shared.utils.DateUtils.nowUtcLocalDateTime());
             
             return ResponseEntity.badRequest().body(error);
@@ -448,7 +447,7 @@ public class SimplePaymentController {
         } catch (Exception e) {
             log.error("❌ Failed to simulate payment: {}", e.getMessage(), e);
             Map<String, String> error = new HashMap<>();
-            error.put("error", "Simulation failed: " + e.getMessage());
+            error.put("error", "Simulation failed");
             return ResponseEntity.badRequest().body(error);
         }
     }

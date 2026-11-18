@@ -164,7 +164,7 @@ public class TenantProfileController {
             throw e;
         } catch (Exception e) {
             log.error("💥 [TENANT PROFILE CONTROLLER] Unexpected error: {}", e.getMessage(), e);
-            throw new BusinessLogicException("Failed to update logo: " + e.getMessage());
+            throw new BusinessLogicException("Failed to update logo");
         }
     }
 

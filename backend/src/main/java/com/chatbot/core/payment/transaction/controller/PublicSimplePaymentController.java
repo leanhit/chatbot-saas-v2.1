@@ -162,7 +162,7 @@ public class PublicSimplePaymentController {
         } catch (Exception e) {
             log.error("❌ Failed to simulate payment: {}", e.getMessage(), e);
             Map<String, String> error = new HashMap<>();
-            error.put("error", "Simulation failed: " + e.getMessage());
+            error.put("error", "Simulation failed");
             return ResponseEntity.badRequest().body(error);
         }
     }

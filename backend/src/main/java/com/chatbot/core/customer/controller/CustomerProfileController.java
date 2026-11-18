@@ -182,7 +182,7 @@ public class CustomerProfileController {
         } catch (IllegalArgumentException e) {
             return ResponseEntity.notFound().build();
         } catch (SecurityException e) {
-            return ResponseEntity.status(403).body(com.chatbot.shared.dto.ErrorResponse.fromMessage(e.getMessage()));
+            return ResponseEntity.status(403).body(com.chatbot.shared.dto.ErrorResponse.fromMessage("Request failed"));
         }
     }
 
