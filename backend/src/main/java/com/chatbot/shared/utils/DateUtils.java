@@ -172,14 +172,25 @@ public class DateUtils {
 
     public static final ZoneId UTC_ZONE = ZoneId.of("UTC");
 
+    /** Injectable clock for tests; production default is system UTC. */
+    private static volatile Clock clock = Clock.systemUTC();
+
+    public static void setClock(Clock testClock) {
+        clock = testClock != null ? testClock : Clock.systemUTC();
+    }
+
+    public static Clock getClock() {
+        return clock;
+    }
+
     /** Current instant in UTC. */
     public static Instant nowUtc() {
-        return Instant.now(Clock.systemUTC());
+        return Instant.now(clock);
     }
 
     /** Current LocalDateTime in UTC (for TIMESTAMP-without-tz columns storing UTC). */
     public static LocalDateTime nowUtcLocalDateTime() {
-        return LocalDateTime.now(UTC_ZONE);
+        return LocalDateTime.now(clock.withZone(UTC_ZONE));
     }
 
     /** Convert Instant to UTC LocalDateTime. */

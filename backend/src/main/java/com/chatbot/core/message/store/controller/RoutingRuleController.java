@@ -69,7 +69,7 @@ public class RoutingRuleController {
      * Create a new routing rule
      */
     @PostMapping
-    public ResponseEntity<RoutingRuleResponse> createRoutingRule(@RequestBody com.chatbot.core.message.store.dto.RoutingRuleRequest request) {
+    public ResponseEntity<RoutingRuleResponse> createRoutingRule(@Valid @RequestBody com.chatbot.core.message.store.dto.RoutingRuleRequest request) {
         requireOwnerOrEditor();
         Long tenantId = TenantContext.getTenantId();
         if (tenantId == null) {

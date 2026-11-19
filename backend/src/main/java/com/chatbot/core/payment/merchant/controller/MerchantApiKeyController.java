@@ -16,6 +16,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import com.chatbot.shared.utils.DateUtils;
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/admin/merchant/keys")
@@ -73,7 +74,7 @@ public class MerchantApiKeyController {
         summary = "Create API key (Admin)",
         description = "Create a new merchant API key - Admin only"
     )
-    public ResponseEntity<MerchantApiKeyResponse> createApiKey(@RequestBody MerchantApiKeyRequest request) {
+    public ResponseEntity<MerchantApiKeyResponse> createApiKey(@Valid @RequestBody MerchantApiKeyRequest request) {
         log.info("🔑 Creating new API key for tenant: {}", request.getTenantId());
         
         try {
@@ -118,7 +119,7 @@ public class MerchantApiKeyController {
     )
     public ResponseEntity<MerchantApiKeyResponse> updateApiKey(
             @PathVariable Long id,
-            @RequestBody MerchantApiKeyRequest request) {
+            @Valid @RequestBody MerchantApiKeyRequest request) {
         log.info("🔑 Updating API key: {}", id);
         
         try {

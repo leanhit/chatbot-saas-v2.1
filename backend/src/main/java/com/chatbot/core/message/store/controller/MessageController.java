@@ -51,21 +51,15 @@ public class MessageController {
     // POST /api/messages/send
     @PostMapping("/send")
     public ResponseEntity<?> send(@RequestBody MessageSendRequest req) {
-        try {
-            // Cần truyền đủ các trường mới cho service
-            Message msg = messageService.saveMessage(
-                    req.getConversationId(),
-                    req.getSender(),
-                    req.getContent(),
-                    req.getMessageType(),
-                    null // rawPayload: Vì request chỉ chứa nội dung đơn giản, ta truyền null.
-                );
+        // Cần truyền đủ các trường mới cho service
+        Message msg = messageService.saveMessage(
+                req.getConversationId(),
+                req.getSender(),
+                req.getContent(),
+                req.getMessageType(),
+                null // rawPayload: Vì request chỉ chứa nội dung đơn giản, ta truyền null.
+            );
 
-            return ResponseEntity.ok(MessageMapper.toDTO(msg, "bot".equals(req.getSender())));
-        } catch (IllegalStateException e) {
-            return ResponseEntity.status(403).body(e.getMessage());
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(404).body(e.getMessage());
-        }
+        return ResponseEntity.ok(MessageMapper.toDTO(msg, "bot".equals(req.getSender())));
     }
 }

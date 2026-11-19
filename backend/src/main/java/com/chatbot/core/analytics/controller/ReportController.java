@@ -16,6 +16,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
+import jakarta.validation.Valid;
 
 /**
  * Custom reports + schedules. All operations tenant-scoped.
@@ -42,7 +43,7 @@ public class ReportController {
 
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
-    public ResponseEntity<?> createReport(@RequestBody CustomReportRequest request) {
+    public ResponseEntity<?> createReport(@Valid @RequestBody CustomReportRequest request) {
         Long tenantId = TenantContext.getTenantId();
         if (tenantId == null) return ResponseEntity.badRequest().body(com.chatbot.shared.dto.ErrorResponse.fromMessage("Tenant context missing"));
         CustomReport report = new CustomReport();
@@ -56,7 +57,7 @@ public class ReportController {
 
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
-    public ResponseEntity<?> updateReport(@PathVariable Long id, @RequestBody CustomReportRequest request) {
+    public ResponseEntity<?> updateReport(@PathVariable Long id, @Valid @RequestBody CustomReportRequest request) {
         Long tenantId = TenantContext.getTenantId();
         if (tenantId == null) return ResponseEntity.badRequest().body(com.chatbot.shared.dto.ErrorResponse.fromMessage("Tenant context missing"));
         CustomReport report = new CustomReport();
@@ -106,9 +107,12 @@ public class ReportController {
 
     @PostMapping("/schedules")
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
-    public ResponseEntity<?> createSchedule(@RequestBody ReportScheduleRequest request) {
+    public ResponseEntity<?> createSchedule(@Valid @RequestBody ReportScheduleRequest request) {
         Long tenantId = TenantContext.getTenantId();
         if (tenantId == null) return ResponseEntity.badRequest().body(com.chatbot.shared.dto.ErrorResponse.fromMessage("Tenant context missing"));
+        if (request.getReportId() == null) {
+            return ResponseEntity.badRequest().body(com.chatbot.shared.dto.ErrorResponse.fromMessage("reportId is required"));
+        }
         ReportSchedule schedule = new ReportSchedule();
         schedule.setReportId(request.getReportId());
         schedule.setCronExpression(request.getCronExpression());
@@ -118,7 +122,7 @@ public class ReportController {
 
     @PutMapping("/schedules/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
-    public ResponseEntity<?> updateSchedule(@PathVariable Long id, @RequestBody ReportScheduleRequest request) {
+    public ResponseEntity<?> updateSchedule(@PathVariable Long id, @Valid @RequestBody ReportScheduleRequest request) {
         Long tenantId = TenantContext.getTenantId();
         if (tenantId == null) return ResponseEntity.badRequest().body(com.chatbot.shared.dto.ErrorResponse.fromMessage("Tenant context missing"));
         ReportSchedule schedule = new ReportSchedule();

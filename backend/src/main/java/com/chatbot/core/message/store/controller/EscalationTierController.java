@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import com.chatbot.core.message.store.dto.EscalationTierResponse;
+import jakarta.validation.Valid;
 
 /**
  * REST Controller for Escalation Tier management
@@ -73,7 +74,7 @@ public class EscalationTierController {
      * Create a new escalation tier
      */
     @PostMapping
-    public ResponseEntity<EscalationTierResponse> createEscalationTier(@RequestBody com.chatbot.core.message.store.dto.EscalationTierRequest request) {
+    public ResponseEntity<EscalationTierResponse> createEscalationTier(@Valid @RequestBody com.chatbot.core.message.store.dto.EscalationTierRequest request) {
         requireOwnerOrEditor();
         Long tenantId = TenantContext.getTenantId();
         if (tenantId == null) {
@@ -98,7 +99,7 @@ public class EscalationTierController {
     @PutMapping("/{id}")
     public ResponseEntity<EscalationTierResponse> updateEscalationTier(
             @PathVariable Long id,
-            @RequestBody com.chatbot.core.message.store.dto.EscalationTierRequest request) {
+            @Valid @RequestBody com.chatbot.core.message.store.dto.EscalationTierRequest request) {
         requireOwnerOrEditor();
         Long tenantId = TenantContext.getTenantId();
         if (tenantId == null) {

@@ -576,9 +576,9 @@ Sidebar và fullscreen hoạt động bình thường sau migrate
 P1-D: Datasource & Migration consolidation
 Vấn đề:
 
-Flyway chỉ được bật cho message database, các hub khác dùng hibernate.ddl-auto
-Hai nguồn schema: Flyway migrations + SQL init scripts trong app-setup/
-CI không test migrations từ DB rỗng
+Flyway đã bật cho cả 8 hub databases qua MultiFlywayConfig; hibernate.ddl-auto=validate ở production
+SQL init scripts trong app-setup/ chủ yếu là bootstrap (extension/grant), không phải nguồn schema — chỉ postgres-init-routing-tables*.sql có CREATE TABLE cần đối chiếu
+CI chưa test migrations từ DB rỗng và từ DB có history cũ
 Công việc cần làm
 1. Bật Flyway cho tất cả hub databases:
 
@@ -611,7 +611,7 @@ yaml
 - name: Test migration from scratch
   run: |
     ./gradlew test -Dspring.profiles.active=test-migrate
-5. Đồng bộ SQL init scripts trong app-setup/ với Flyway migrations — chọn một nguồn duy nhất.
+5. Đối chiếu `postgres-init-routing-tables.sql`/`-alter.sql` (agent_workload, team_workload, routing_history) với Flyway migrations; các init script còn lại chỉ tạo extension/grant nên giữ nguyên.
 
 File cần sửa
 [MODIFY] application.properties — extend flyway locations
@@ -912,29 +912,31 @@ Việc cần làm ngay (theo mức độ)
 
 1. **Flyway baseline mới cần kiểm chứng trước khi rollout — rủi ro cao**
    - Migration theo phiên bản cũ hiện nằm trong `backend/src/main/resources/db/migration-legacy/` (88 SQL files); tám location active mỗi location có `V1__baseline.sql`.
-   - `MultiFlywayConfig` đặt `baselineOnMigrate(true)` và version `0`, hardcode `validateOnMigrate(false)` cho các Flyway instance, đồng thời bỏ qua các trạng thái missing/pending/ignored. Trường `validateOnMigrate` được inject nhưng không dùng.
+   - `MultiFlywayConfig` đặt `baselineOnMigrate(true)` và version `0`; `validateOnMigrate` **đã được wire vào cả 8 Flyway bean** và đọc từ `spring.flyway.validate-on-migrate` — mặc định `true` trong `application.properties`, `true` trong `application-production.yml`. `ignoreMigrationPatterns("*:missing", "*:pending", "*:ignored")` vẫn còn — cần thiết trong giai đoạn chuyển legacy→baseline, phải gỡ sau khi verify xong.
    - Các baseline có nhiều câu `CREATE TABLE` không idempotent. Chưa có bằng chứng schema baseline đã được đối chiếu đầy đủ với kết quả áp dụng toàn bộ migration cũ. Kiểm thử riêng DB mới, DB đã có Flyway history và DB có schema nhưng chưa có history; không suy ra tính an toàn chỉ từ việc app khởi động.
-   - Cần xác minh thêm SQL init scripts trong `app-setup/` có còn chạy song song hay không, để tránh hai nguồn schema.
+   - SQL init scripts trong `app-setup/` chủ yếu chỉ `CREATE EXTENSION` + `GRANT` (bootstrap permission), không phải nguồn schema song song; ngoại lệ `postgres-init-routing-tables.sql`/`-alter.sql` có `CREATE TABLE IF NOT EXISTS` — cần đối chiếu 2 bảng này (`agent_workload`, `team_workload`, `routing_history`) với Flyway migrations.
 
-2. **Lỗi luồng trong rate limiting filter**
-   - `backend/src/main/java/com/chatbot/shared/security/RateLimitingFilter.java` đặt `filterChain.doFilter()` trong `try` đang xử lý Redis, rồi gọi lại chain trong `catch`. Nếu downstream ném exception thì cùng request có thể bị dispatch lần hai.
-   - Tách phần thao tác Redis khỏi việc dispatch chain; chỉ quyết định fail-open khi thao tác rate-limit lỗi, và bảo đảm downstream được gọi đúng một lần. Bổ sung test cho lỗi Redis và exception từ downstream.
+2. ~~**Lỗi luồng trong rate limiting filter**~~ — **ĐÃ SỬA**
+   - `RateLimitingFilter` không còn gọi `filterChain.doFilter()` trong `try`/`catch` Redis; downstream chỉ được dispatch đúng một lần ở cuối method.
+   - Rate limit giờ dùng Lua script atomic `INCR`+`EXPIRE` (không còn race condition GET-then-increment, không còn key không TTL); `trustProxyHeaders` được honor — tắt thì bỏ qua `X-Forwarded-For`/`X-Real-IP`.
+   - `RateLimitingFilterTest` (7 tests) cover: downstream throw → gọi đúng 1 lần, 429 body `RATE_LIMIT_EXCEEDED`+`path`, script chứa INCR+EXPIRE, fail-open khi Redis/script lỗi, proxy trust on/off.
 
-3. **Request/response boundary chưa đồng đều dù đã có DTO mới**
-   - Pattern scan vẫn thấy entity JPA được nhận qua `@RequestBody` ở 14 controller files, gồm analytics, report, merchant API key, webhook, training, knowledge base, routing/SLA/escalation và package.
-   - Một số response DTO mới trong working tree đã giảm việc trả entity ở merchant/training/webhook/routing và các domain khác; đây chưa phải xử lý đầy đủ khi request vẫn bind trực tiếp vào entity.
-   - Analytics/report còn nhận entity và có luồng trả trực tiếp `FunnelStage`, `CustomReport`/`ReportSchedule`; `KnowledgeBaseController` cũng nhận/trả `KnowledgeArticle`. Tách request/response DTO, whitelist các trường ghi được và thêm validation; kiểm tra tương thích consumer trước khi đổi response.
+3. ~~**Request/response boundary chưa đồng đều**~~ — **ĐÃ SỬA phần lớn**
+   - Toàn bộ controller không còn nhận entity qua `@RequestBody` — đã tách sang request DTO (training, analytics/report, message store, payment, penny/tenant) kèm manual mapping.
+   - Response: analytics/report trả `FunnelStageResponse`/`CustomReportResponse`/`ReportScheduleResponse`; `KnowledgeBaseController` trả `KnowledgeArticleResponse` (không lộ embedding vector); sweep toàn bộ `*Controller` không còn `ResponseEntity<Entity>`.
+   - Validation: request DTO có constraint (`@NotBlank`/`@NotNull`/`@Min`/`@Max`) và endpoint dùng `@Valid`; `reportId` check riêng khi tạo schedule.
+   - Còn lại: inventory field-level DB–entity–DTO–consumer để xác nhận không sót field.
 
-4. **Error contract còn nhiều nhánh riêng**
-   - Pattern scan có 181 `catch (Exception|RuntimeException|Throwable)` trong 43 controller. Đây là số match để phân loại, không đồng nghĩa mọi catch đều sai.
-   - `MessageController` vẫn đổi `IllegalStateException` thành 403 và mọi `RuntimeException` thành 404. `SimplePaymentController` có nhánh trả 400, body rỗng/khác schema và thông báo exception.
-   - Một số filter tự ghi JSON khác shared `ErrorResponse`; `JwtFilter` dùng shared DTO nhưng nhánh trả lỗi chưa gắn `path`. `ErrorResponse.fromMessage()` cho phép `code == null`.
-   - Chuẩn hóa từng nhánh qua error code/status dùng chung; giữ ngoại lệ chỉ khi giao thức webhook/transport yêu cầu và có contract test.
+4. **Error contract — đã chuẩn hóa phần lớn**
+   - `MessageController` đã bỏ catch thủ công: `ConversationNotFoundException`→404 theo `ErrorCode`, `IllegalStateException`→409, `RuntimeException`→500 qua `GlobalExceptionHandler` với `ErrorResponse` chuẩn.
+   - ~20 controller đã loại raw `e.getMessage()` khỏi response body (payment, tenant, penny/rules, message store, facebook, presence, license, identity, customer); giữ lại có chủ đích: business exception messages, per-item import validation, debug endpoints.
+   - 4 filter (`TenantApiKeyAuthFilter`, `MerchantAuthFilter`, `TenantRateLimitFilter`, `RateLimitingFilter`) dùng shared `ErrorResponse` + `ObjectMapper`; `JwtFilter` có `path`; `ErrorResponse.fromMessage` có `code` mặc định `"ERROR"`.
+   - Còn lại: contract test HTTP end-to-end cho 401/403 qua security chain; rà soát status mapping thủ công trong `ConversationController`/`DataDeletionController`.
 
 5. **Datetime còn phụ thuộc giả định UTC và contract lịch sử**
    - Pattern scan ghi nhận 1.191 hit `LocalDateTime` trên 262 file, 170 hit `Instant` trên 40 file, và 102 hit `@JsonFormat` trên 45 file. Đây là hit tìm kiếm, không phải số field đã inventory.
    - Có 11 cấu hình datasource đặt `hibernate.jdbc.time_zone=UTC`, nhưng nhiều cột baseline vẫn là `TIMESTAMP WITHOUT TIME ZONE`; cần xác minh semantics UTC/local và timezone của DB/default theo từng field.
-   - `JacksonConfig` serialize `LocalDateTime` với `Z`, theo quy ước UTC wall-clock; kiểu Java không tự bảo đảm dữ liệu đầu vào thật sự là UTC. `DateUtils` chưa có `Clock` injectable. Hằng `ISO_DATETIME_WITH_NANOS` khai báo 10 ký tự `S` (không hợp lệ với `DateTimeFormatter`) nhưng hiện chỉ thấy chỗ khai báo, chưa tìm thấy call site.
+   - `JacksonConfig` serialize `LocalDateTime` với `Z`, theo quy ước UTC wall-clock; kiểu Java không tự bảo đảm dữ liệu đầu vào thật sự là UTC. `DateUtils` đã có `Clock` injectable (`setClock`/`getClock`) cho `nowUtc()`/`nowUtcLocalDateTime()` — hiện là static setter, chưa phải DI bean; cần thêm test fixed-clock. Hằng `ISO_DATETIME_WITH_NANOS` đã sửa thành 9 chữ `S` hợp lệ.
    - Một số DTO payment vẫn có field ngày giờ hiển thị `dd/MM/yyyy HH:mm:ss` bên cạnh timestamp máy đọc được; cần xác nhận consumer rồi deprecate/loại bỏ có kế hoạch.
 
 6. **Mapper JSON tự tạo cần inventory theo mục đích**
@@ -943,9 +945,9 @@ Việc cần làm ngay (theo mức độ)
 ### Hành động đề xuất
 
 1. Tạm coi migration baseline là blocker rollout cho đến khi có đối chiếu schema và kiểm thử upgrade trên các trạng thái DB được hỗ trợ.
-2. Sửa và test `RateLimitingFilter` để downstream không bị gọi lặp.
-3. Lập danh sách endpoint entity-bound và chuyển theo domain sang request/response DTO có validation.
-4. Ưu tiên controller/filter error mapping có thể trả sai status hoặc lộ exception detail; thêm contract tests cho MVC và security filter chain.
+2. ~~Sửa và test `RateLimitingFilter`~~ — đã xong (Lua atomic + 7 tests).
+3. ~~Chuyển endpoint entity-bound sang request/response DTO~~ — đã xong; còn inventory field-level.
+4. Error mapping đã chuẩn hóa; còn contract test HTTP end-to-end 401/403 qua security chain.
 5. Tạo inventory SQL column ↔ entity ↔ DTO/JSON ↔ consumer cho datetime trước khi đổi kiểu hoặc migration.
 
 **Mức độ xác minh:** quét tĩnh toàn backend và migration, cộng xác nhận thủ công các ví dụ nêu trên. Không chạy test/build trong lượt cập nhật tài liệu này; không có kết quả kiểm thử migration trên DB mới/DB hiện hữu. Các con số là snapshot working tree ngày 18/11/2026 và cần cập nhật lại sau khi thay đổi code.

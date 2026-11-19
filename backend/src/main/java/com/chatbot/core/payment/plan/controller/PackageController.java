@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping({"/api/payment/packages", "/api/v1/packages"})
@@ -89,7 +90,7 @@ public class PackageController {
         summary = "Create package (Admin)",
         description = "Create a new package - Admin only"
     )
-    public ResponseEntity<PackageResponse> createPackage(@RequestBody PackageRequest request) {
+    public ResponseEntity<PackageResponse> createPackage(@Valid @RequestBody PackageRequest request) {
         log.info("📦 Creating new package: {}", request.getPackageId());
         
         try {
@@ -112,7 +113,7 @@ public class PackageController {
     )
     public ResponseEntity<PackageResponse> updatePackage(
             @PathVariable String packageId,
-            @RequestBody PackageRequest request) {
+            @Valid @RequestBody PackageRequest request) {
         log.info("📦 Updating package: {}", packageId);
         
         try {

@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping({"/api/payment/webhooks", "/api/v1/webhooks", "/api/webhooks"})
@@ -50,7 +51,7 @@ public class WebhookController {
         summary = "Create webhook (Admin)",
         description = "Create a new webhook - Admin only"
     )
-    public ResponseEntity<WebhookResponse> createWebhook(@RequestBody WebhookRequest request) {
+    public ResponseEntity<WebhookResponse> createWebhook(@Valid @RequestBody WebhookRequest request) {
         log.info("🔔 Creating new webhook: {}", request.getName());
         
         try {
@@ -71,7 +72,7 @@ public class WebhookController {
         summary = "Update webhook (Admin)",
         description = "Update an existing webhook - Admin only"
     )
-    public ResponseEntity<WebhookResponse> updateWebhook(@PathVariable Long id, @RequestBody WebhookRequest request) {
+    public ResponseEntity<WebhookResponse> updateWebhook(@PathVariable Long id, @Valid @RequestBody WebhookRequest request) {
         log.info("🔔 Updating webhook: {}", id);
         
         try {

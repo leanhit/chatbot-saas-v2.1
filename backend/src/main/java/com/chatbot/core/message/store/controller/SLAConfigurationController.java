@@ -74,7 +74,7 @@ public class SLAConfigurationController {
      * Create a new SLA configuration
      */
     @PostMapping
-    public ResponseEntity<SLAConfigurationResponse> createSLAConfiguration(@RequestBody com.chatbot.core.message.store.dto.SLAConfigurationRequest request) {
+    public ResponseEntity<SLAConfigurationResponse> createSLAConfiguration(@Valid @RequestBody com.chatbot.core.message.store.dto.SLAConfigurationRequest request) {
         requireOwnerOrEditor();
         Long tenantId = TenantContext.getTenantId();
         if (tenantId == null) {

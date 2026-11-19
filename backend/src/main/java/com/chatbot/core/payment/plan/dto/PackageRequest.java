@@ -1,12 +1,15 @@
 package com.chatbot.core.payment.plan.dto;
 
+import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
 import java.math.BigDecimal;
 
 @Data
 public class PackageRequest {
+    @NotBlank(message = "packageId is required")
     private String packageId;
+    @NotBlank(message = "name is required")
     private String name;
     private BigDecimal price;
     private String currency;

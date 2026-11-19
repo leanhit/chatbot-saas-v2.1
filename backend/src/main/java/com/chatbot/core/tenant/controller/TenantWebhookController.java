@@ -12,6 +12,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import jakarta.validation.Valid;
 
 /**
  * Tenant outbound webhook management (conversation events).
@@ -32,14 +33,14 @@ public class TenantWebhookController {
 
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'OWNER', 'EDITOR')")
-    public ResponseEntity<TenantWebhookResponse> createWebhook(@RequestBody TenantWebhookRequest request) {
+    public ResponseEntity<TenantWebhookResponse> createWebhook(@Valid @RequestBody TenantWebhookRequest request) {
         return ResponseEntity.ok(TenantWebhookResponse.from(webhookService.createWebhook(toEntity(request))));
     }
 
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'OWNER', 'EDITOR')")
     public ResponseEntity<TenantWebhookResponse> updateWebhook(@PathVariable Long id,
-                                                       @RequestBody TenantWebhookRequest request) {
+                                                       @Valid @RequestBody TenantWebhookRequest request) {
         return ResponseEntity.ok(TenantWebhookResponse.from(webhookService.updateWebhook(id, toEntity(request))));
     }
 

@@ -10,18 +10,29 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.util.concurrent.TimeUnit;
+import java.util.List;
 
 @Component
 @RequiredArgsConstructor
 @Slf4j
 public class RateLimitingFilter extends OncePerRequestFilter {
+
+    /**
+     * Atomic INCR + EXPIRE: đặt TTL ngay trong cùng script để tránh key
+     * không hết hạn nếu process chết giữa INCR và EXPIRE.
+     */
+    private static final DefaultRedisScript<Long> INCR_WITH_TTL = new DefaultRedisScript<>(
+            "local c = redis.call('INCR', KEYS[1]) " +
+            "if c == 1 then redis.call('EXPIRE', KEYS[1], ARGV[1]) end " +
+            "return c",
+            Long.class);
 
     private final RedisTemplate<String, String> redisTemplate;
     private final ObjectMapper objectMapper;
@@ -64,17 +75,13 @@ public class RateLimitingFilter extends OncePerRequestFilter {
 
         boolean allowed = true;
         try {
-            String currentCount = redisTemplate.opsForValue().get(key);
-
-            if (currentCount == null) {
-                redisTemplate.opsForValue().set(key, "1", config.getWindowSeconds(), TimeUnit.SECONDS);
-            } else {
-                int count = Integer.parseInt(currentCount);
-                if (count >= config.getRequestLimit()) {
-                    allowed = false;
-                } else {
-                    redisTemplate.opsForValue().increment(key);
-                }
+            // Atomic INCR+EXPIRE qua Lua: tránh race condition và key không TTL
+            Long count = redisTemplate.execute(
+                    INCR_WITH_TTL,
+                    List.of(key),
+                    String.valueOf(config.getWindowSeconds()));
+            if (count != null && count > config.getRequestLimit()) {
+                allowed = false;
             }
         } catch (Exception e) {
             // Fail-open: Redis lỗi không được chặn request
@@ -117,16 +124,18 @@ public class RateLimitingFilter extends OncePerRequestFilter {
     }
 
     private String getClientId(HttpServletRequest request) {
-        String xForwardedFor = request.getHeader("X-Forwarded-For");
-        if (xForwardedFor != null && !xForwardedFor.trim().isEmpty()) {
-            return xForwardedFor.split(",")[0].trim();
+        if (trustProxyHeaders) {
+            String xForwardedFor = request.getHeader("X-Forwarded-For");
+            if (xForwardedFor != null && !xForwardedFor.trim().isEmpty()) {
+                return xForwardedFor.split(",")[0].trim();
+            }
+
+            String xRealIp = request.getHeader("X-Real-IP");
+            if (xRealIp != null && !xRealIp.trim().isEmpty()) {
+                return xRealIp;
+            }
         }
-        
-        String xRealIp = request.getHeader("X-Real-IP");
-        if (xRealIp != null && !xRealIp.trim().isEmpty()) {
-            return xRealIp;
-        }
-        
+
         return request.getRemoteAddr();
     }
 

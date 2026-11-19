@@ -1,7 +1,9 @@
 package com.chatbot.shared.utils;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
+import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -51,6 +53,23 @@ class DateUtilsUtcTest {
         assertNull(DateUtils.parseInstantUtc(null));
         assertNull(DateUtils.parseUtcLocalDateTime(null));
         assertNull(DateUtils.parseUtcLocalDateTime(""));
+    }
+
+    @AfterEach
+    void resetClock() {
+        DateUtils.setClock(null);
+    }
+
+    @Test
+    void nowUtc_usesInjectedClock() {
+        Instant fixed = Instant.parse("2026-01-15T10:00:00Z");
+        DateUtils.setClock(Clock.fixed(fixed, ZoneOffset.UTC));
+        try {
+            assertEquals(fixed, DateUtils.nowUtc());
+            assertEquals(LocalDateTime.of(2026, 1, 15, 10, 0), DateUtils.nowUtcLocalDateTime());
+        } finally {
+            DateUtils.setClock(null);
+        }
     }
 
     @Test

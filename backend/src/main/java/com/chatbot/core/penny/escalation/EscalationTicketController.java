@@ -19,6 +19,7 @@ import java.util.UUID;
 import com.chatbot.shared.utils.DateUtils;
 import com.chatbot.core.penny.escalation.dto.EscalationTicketRequest;
 import com.chatbot.core.penny.escalation.dto.EscalationTicketResponse;
+import jakarta.validation.Valid;
 
 /**
  * EscalationTicketController — Admin REST API for managing escalation tickets
@@ -107,7 +108,7 @@ public class EscalationTicketController {
     @PostMapping("/tickets")
     public ResponseEntity<EscalationTicketResponse> createTicket(
             @PathVariable UUID botId,
-            @RequestBody EscalationTicketRequest request) {
+            @Valid @RequestBody EscalationTicketRequest request) {
         
         log.info("📝 Creating escalation ticket for bot: {}", botId);
         
@@ -147,7 +148,7 @@ public class EscalationTicketController {
     public ResponseEntity<EscalationTicketResponse> updateTicket(
             @PathVariable UUID botId,
             @PathVariable UUID id,
-            @RequestBody EscalationTicketRequest request) {
+            @Valid @RequestBody EscalationTicketRequest request) {
         
         log.info("✏️ Updating escalation ticket: {} for bot: {}", id, botId);
         

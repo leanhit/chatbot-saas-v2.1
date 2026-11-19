@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
+import jakarta.validation.Valid;
 
 /**
  * Tenant-scoped analytics endpoints (Phase 5).
@@ -108,7 +109,7 @@ public class AnalyticsController {
 
     @PostMapping("/funnel/stages")
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
-    public ResponseEntity<?> createFunnelStage(@RequestBody com.chatbot.core.analytics.dto.FunnelStageRequest request) {
+    public ResponseEntity<?> createFunnelStage(@Valid @RequestBody com.chatbot.core.analytics.dto.FunnelStageRequest request) {
         Long tenantId = TenantContext.getTenantId();
         if (tenantId == null) {
             return ResponseEntity.badRequest().body(com.chatbot.shared.dto.ErrorResponse.fromMessage("Tenant context missing"));
@@ -124,7 +125,7 @@ public class AnalyticsController {
 
     @PutMapping("/funnel/stages/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
-    public ResponseEntity<?> updateFunnelStage(@PathVariable Long id, @RequestBody com.chatbot.core.analytics.dto.FunnelStageRequest request) {
+    public ResponseEntity<?> updateFunnelStage(@PathVariable Long id, @Valid @RequestBody com.chatbot.core.analytics.dto.FunnelStageRequest request) {
         Long tenantId = TenantContext.getTenantId();
         if (tenantId == null) {
             return ResponseEntity.badRequest().body(com.chatbot.shared.dto.ErrorResponse.fromMessage("Tenant context missing"));
